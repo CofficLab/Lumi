@@ -79,8 +79,10 @@ struct LumiKernelTests {
         let fileURL = URL(fileURLWithPath: "/tmp/Project/Sources/Main.swift")
         kernel.project?.updateCurrentFile(fileURL)
 
+        #expect(project.openFileURLs == [fileURL.standardizedFileURL])
         #expect(project.currentFileURL == fileURL.standardizedFileURL)
         #expect(kernel.project?.currentFileURL == fileURL.standardizedFileURL)
+        #expect(kernel.project?.openFileURLs == [fileURL.standardizedFileURL])
     }
 }
 
@@ -105,6 +107,7 @@ private final class MockStorageService: StorageProviding {
 @MainActor
 private final class MockProjectService: ProjectProviding {
     @Published var currentProject: ProjectInfo?
+    @Published var openFileURLs: [URL] = []
     @Published var currentFileURL: URL?
     @Published var projects: [ProjectInfo] = []
 
@@ -115,11 +118,26 @@ private final class MockProjectService: ProjectProviding {
     }
 
     func updateCurrentFile(_ fileURL: URL?) {
-        currentFileURL = fileURL?.standardizedFileURL
+        let standardizedURL = fileURL?.standardizedFileURL
+        currentFileURL = standardizedURL
+        guard let standardizedURL else { return }
+        updateOpenFiles(openFileURLs + [standardizedURL])
+    }
+
+    func updateOpenFiles(_ fileURLs: [URL]) {
+        var uniqueURLs: [URL] = []
+        for fileURL in fileURLs {
+            let standardizedURL = fileURL.standardizedFileURL
+            if !uniqueURLs.contains(standardizedURL) {
+                uniqueURLs.append(standardizedURL)
+            }
+        }
+        openFileURLs = uniqueURLs
     }
 
     func closeProject() async {
         currentProject = nil
+        openFileURLs = []
         currentFileURL = nil
     }
 

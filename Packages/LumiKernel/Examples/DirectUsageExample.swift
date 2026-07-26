@@ -65,9 +65,12 @@ private final class StorageService: StorageProviding {
 @MainActor
 private final class ProjectService: ProjectProviding {
     var currentProject: ProjectInfo? { nil }
+    var openFileURLs: [URL] { [] }
     var projects: [ProjectInfo] { [] }
 
     func openProject(at path: String) async throws {}
+    func updateOpenFiles(_ fileURLs: [URL]) {}
+    func updateCurrentFile(_ fileURL: URL?) {}
     func closeProject() async {}
     func refreshProjects() async throws {}
 }

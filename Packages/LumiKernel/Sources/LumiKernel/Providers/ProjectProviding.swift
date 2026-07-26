@@ -13,6 +13,9 @@ public protocol ProjectProviding: ObservableObject where ObjectWillChangePublish
     /// 当前打开的项目
     var currentProject: ProjectInfo? { get }
 
+    /// 当前项目已打开的文件
+    var openFileURLs: [URL] { get }
+
     /// 当前选中的文件
     var currentFileURL: URL? { get }
 
@@ -25,6 +28,9 @@ public protocol ProjectProviding: ObservableObject where ObjectWillChangePublish
     /// 更新当前文件
     func updateCurrentFile(_ fileURL: URL?)
 
+    /// 更新当前项目已打开的文件
+    func updateOpenFiles(_ fileURLs: [URL])
+
     /// 关闭当前项目
     func closeProject() async
 
@@ -33,7 +39,11 @@ public protocol ProjectProviding: ObservableObject where ObjectWillChangePublish
 }
 
 public extension ProjectProviding {
+    var openFileURLs: [URL] { [] }
+
     var currentFileURL: URL? { nil }
 
     func updateCurrentFile(_ fileURL: URL?) {}
+
+    func updateOpenFiles(_ fileURLs: [URL]) {}
 }
