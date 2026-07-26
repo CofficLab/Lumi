@@ -327,6 +327,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
                 self.onExpansionChange?(relativePath, !fileItem.isExpanded)
             }
         )
+        kernel?.project?.updateCurrentFile(fileItem.url)
 
         // 刷新所有可见 cell 以同步选中状态（避免上一个选中项的高亮残留）
         reloadVisibleItems()

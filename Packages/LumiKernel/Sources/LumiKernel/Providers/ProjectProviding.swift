@@ -13,15 +13,27 @@ public protocol ProjectProviding: ObservableObject where ObjectWillChangePublish
     /// 当前打开的项目
     var currentProject: ProjectInfo? { get }
 
+    /// 当前选中的文件
+    var currentFileURL: URL? { get }
+
     /// 所有项目列表
     var projects: [ProjectInfo] { get }
 
     /// 打开项目
     func openProject(at path: String) async throws
 
+    /// 更新当前文件
+    func updateCurrentFile(_ fileURL: URL?)
+
     /// 关闭当前项目
     func closeProject() async
 
     /// 刷新项目列表
     func refreshProjects() async throws
+}
+
+public extension ProjectProviding {
+    var currentFileURL: URL? { nil }
+
+    func updateCurrentFile(_ fileURL: URL?) {}
 }

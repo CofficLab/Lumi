@@ -69,6 +69,19 @@ struct LumiKernelTests {
         """)
         #expect(input.isInputFocused == true)
     }
+
+    @Test("Project service can store and expose current file")
+    func testProjectServiceCurrentFile() async throws {
+        let kernel = LumiKernel()
+        let project = MockProjectService()
+        kernel.registerProject(project)
+
+        let fileURL = URL(fileURLWithPath: "/tmp/Project/Sources/Main.swift")
+        kernel.project?.updateCurrentFile(fileURL)
+
+        #expect(project.currentFileURL == fileURL.standardizedFileURL)
+        #expect(kernel.project?.currentFileURL == fileURL.standardizedFileURL)
+    }
 }
 
 // MARK: - Mock Services
@@ -87,6 +100,30 @@ private final class MockStorageService: StorageProviding {
     func coreDataDirectory() -> URL {
         dataRootDirectory.appendingPathComponent("Core")
     }
+}
+
+@MainActor
+private final class MockProjectService: ProjectProviding {
+    @Published var currentProject: ProjectInfo?
+    @Published var currentFileURL: URL?
+    @Published var projects: [ProjectInfo] = []
+
+    func openProject(at path: String) async throws {
+        let url = URL(fileURLWithPath: path)
+        currentProject = ProjectInfo(name: url.lastPathComponent, path: path)
+        currentFileURL = nil
+    }
+
+    func updateCurrentFile(_ fileURL: URL?) {
+        currentFileURL = fileURL?.standardizedFileURL
+    }
+
+    func closeProject() async {
+        currentProject = nil
+        currentFileURL = nil
+    }
+
+    func refreshProjects() async throws {}
 }
 
 @MainActor
