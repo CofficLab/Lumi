@@ -1,29 +1,16 @@
 import Foundation
-import SwiftData
-import SuperLogKit
 import LumiKernel
 import os
-
-// MARK: - Error
-
-public enum ConversationStoreError: Error, LocalizedError {
-    case initializationFailed(String)
-
-    public var errorDescription: String? {
-        switch self {
-        case .initializationFailed(let message):
-            return message
-        }
-    }
-}
+import SuperLogKit
+import SwiftData
 
 /// Conversation storage service using SwiftData
 ///
 /// Manages conversation persistence with SQLite database in plugin directory.
 /// Thread-safe via Actor isolation, following `TaskStateManager` pattern.
 public actor ConversationStore: SuperLog {
-    nonisolated public static let emoji = "💬"
-    nonisolated public static let verbose = false
+    public nonisolated static let emoji = "💬"
+    public nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "conversation.store")
 
     // MARK: - Properties
@@ -38,7 +25,7 @@ public actor ConversationStore: SuperLog {
 
     static func makeContainer(databaseRootURL: URL) throws -> ModelContainer {
         let schema = Schema([ConversationModel.self])
-        let dbDir = databaseRootURL.appendingPathComponent("ConversationManagerPlugin", isDirectory: true)
+        let dbDir = databaseRootURL
         let dbURL = dbDir.appendingPathComponent("conversations.sqlite")
         let fileManager = FileManager.default
 
@@ -46,7 +33,7 @@ public actor ConversationStore: SuperLog {
             quarantineFileIfItBlocksDirectory(at: dbDir)
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
         } catch {
-            throw ConversationStoreError.initializationFailed("ConversationManagerPlugin 数据库目录: \(error.localizedDescription)")
+            throw ConversationStoreError.initializationFailed("ConversationStore 数据库目录: \(error.localizedDescription)")
         }
 
         let config = ModelConfiguration(
@@ -70,7 +57,7 @@ public actor ConversationStore: SuperLog {
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            throw ConversationStoreError.initializationFailed("ConversationManagerPlugin 数据库重建失败: \(error.localizedDescription)")
+            throw ConversationStoreError.initializationFailed("ConversationStore 数据库重建失败: \(error.localizedDescription)")
         }
     }
 
@@ -79,7 +66,7 @@ public actor ConversationStore: SuperLog {
         let storeURLs = [
             dbURL,
             URL(fileURLWithPath: dbURL.path + "-shm"),
-            URL(fileURLWithPath: dbURL.path + "-wal")
+            URL(fileURLWithPath: dbURL.path + "-wal"),
         ]
 
         for url in storeURLs where fileManager.fileExists(atPath: url.path) {
@@ -320,6 +307,6 @@ public actor ConversationStore: SuperLog {
 public extension ConversationStore {
     /// Default database root URL (temporary directory)
     static var defaultDatabaseRootURL: URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/ConversationManager")
+        FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/ConversationStore")
     }
 }

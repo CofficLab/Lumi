@@ -28,8 +28,8 @@ public struct ConversationStoreOnReadyHook {
         let dataDirectory: URL
 
         if let storage = kernel.storage {
-            databaseRootURL = storage.dataRootDirectory
-            dataDirectory = storage.dataRootDirectory
+            dataDirectory = storage.pluginDataDirectory(for: "ConversationStore")
+            databaseRootURL = dataDirectory
         } else {
             databaseRootURL = ConversationStore.defaultDatabaseRootURL
             dataDirectory = ConversationStore.defaultDatabaseRootURL

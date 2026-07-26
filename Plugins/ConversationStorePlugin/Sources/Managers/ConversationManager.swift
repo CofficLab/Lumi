@@ -64,12 +64,17 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             let loaded = await store.fetchConversations()
             await MainActor.run {
                 self.conversations = loaded
+                if self.selectedConversationID == nil {
+                    self.selectedConversationID = self.loadPersistedSelectedConversationID()
+                }
+
                 // Restore selected conversation if it still exists
                 if let selectedID = self.selectedConversationID,
                    !loaded.contains(where: { $0.id == selectedID }) {
                     self.selectedConversationID = loaded.first?.id
                 }
                 self.updateCurrentTitle()
+                self.persistSelectedConversationID()
                 self.notifyConversationsChanged()
 
                 if Self.verbose {
@@ -108,6 +113,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         selectedConversationID = id
         updateCurrentTitle()
         notifyConversationsChanged()
+        persistSelectedConversationID()
 
         // Persist to database async
         Task {
@@ -133,6 +139,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
         selectedConversationID = id
         updateCurrentTitle()
+        persistSelectedConversationID()
 
         // Touch the conversation to update its timestamp (async)
         Task {
@@ -150,6 +157,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         if selectedConversationID == id {
             selectedConversationID = conversations.first?.id
             updateCurrentTitle()
+            persistSelectedConversationID()
         }
 
         notifyConversationsChanged()
@@ -264,9 +272,32 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         let newTitle = conversation.title.isEmpty ? "Untitled" : conversation.title
         currentTitle = newTitle
     }
+
+    private func loadPersistedSelectedConversationID() -> UUID? {
+        guard let data = try? Data(contentsOf: stateFileURL),
+              let state = try? JSONDecoder().decode(ConversationState.self, from: data) else {
+            return nil
+        }
+        return state.selectedConversationID
+    }
+
+    private func persistSelectedConversationID() {
+        let state = ConversationState(selectedConversationID: selectedConversationID)
+        guard let data = try? JSONEncoder().encode(state) else {
+            return
+        }
+
+        let directory = stateFileURL.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try? data.write(to: stateFileURL, options: .atomic)
+    }
 }
 
 // MARK: - Runtime Bridge
+
+private struct ConversationState: Codable {
+    let selectedConversationID: UUID?
+}
 
 @MainActor
 final class ConversationManagerRuntimeBridge: @unchecked Sendable {
@@ -276,4 +307,11 @@ final class ConversationManagerRuntimeBridge: @unchecked Sendable {
     var dataDirectory: URL?
 
     private init() {}
+}
+
+private extension ConversationManager {
+    var stateFileURL: URL {
+        dataDirectory
+            .appendingPathComponent("state.json", isDirectory: false)
+    }
 }
