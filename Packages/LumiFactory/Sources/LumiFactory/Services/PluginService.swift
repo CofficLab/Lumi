@@ -30,6 +30,7 @@ import EditorKernelPlugin
 import EditorPanelPlugin
 import EditorTabStripPlugin
 import EditorPreviewPlugin
+import TerminalPlugin
 import HostsManagerPlugin
 import InputPlugin
 import LayoutKernelPlugin
@@ -187,6 +188,7 @@ public enum PluginService {
             StripHeaderPlugin(),
             // Editor 预览面板 — 在 PanelBottom 显示文件预览。
             EditorPreviewBottomPanelPlugin(),
+            TerminalPlugin(),
             // CADDesignerPlugin(),  // Not included in Xcode project
             DeviceInfoPlugin(),
             ProjectFileTreePlugin(),
