@@ -505,11 +505,15 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
     public func requestEntryDebugState() {
         guard status == .running else {
-            Self.logger.info("\(self.t)📝 requestEntryDebugState skipped: status=\(self.status.description, privacy: .public)")
+            if Self.verbose {
+                Self.logger.info("\(self.t)📝 requestEntryDebugState skipped: status=\(self.status.description, privacy: .public)")
+            }
             return
         }
         guard case .loaded = entryStatus else {
-            Self.logger.info("\(self.t)📝 requestEntryDebugState skipped: entryStatus=\(self.entryStatus.description, privacy: .public)")
+            if Self.verbose {
+                Self.logger.info("\(self.t)📝 requestEntryDebugState skipped: entryStatus=\(self.entryStatus.description, privacy: .public)")
+            }
             return
         }
         isRequestingEntryDebugState = true
@@ -517,18 +521,18 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             do {
                 let response = try await self?.session.requestEntryDebugState()
                 if Self.verbose {
-                if Self.verbose {
-                Self.logger.info("\(Self.t)📝 requestEntryDebugState response: success=\(response?.success == true, privacy: .public) message=\(response?.message ?? "nil", privacy: .public)")
-                }
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)📝 requestEntryDebugState response: success=\(response?.success == true, privacy: .public) message=\(response?.message ?? "nil", privacy: .public)")
+                    }
                 }
                 if response?.success == false {
                     self?.entryDebugState = response?.message
                 }
             } catch {
                 if Self.verbose {
-                if Self.verbose {
-                Self.logger.error("\(Self.t)📝 requestEntryDebugState failed: \(error.localizedDescription, privacy: .public)")
-                }
+                    if Self.verbose {
+                        Self.logger.error("\(Self.t)📝 requestEntryDebugState failed: \(error.localizedDescription, privacy: .public)")
+                    }
                 }
                 self?.entryDebugState = error.localizedDescription
             }
@@ -734,48 +738,74 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
     private func updatePreviewMode(for url: URL?) {
         guard let url else {
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: url=nil → unsupported")
+            }
             previewMode = .unsupported(nil)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: url=nil → unsupported")
             return
         }
 
         let ext = url.pathExtension.lowercased()
         if ext == "swift" {
             previewMode = .swift
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → swift")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → swift")
+            }
         } else if ext == "xcassets" {
             previewMode = .xcassets(url)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → xcassets")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → xcassets")
+            }
         } else if Self.imageExtensions.contains(ext) {
             previewMode = .image(url)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → image")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → image")
+            }
         } else if Self.markdownExtensions.contains(ext) {
             previewMode = .markdown(url)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → markdown (ext=\(ext, privacy: .public))")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → markdown (ext=\(ext, privacy: .public))")
+            }
         } else if Self.stringCatalogExtensions.contains(ext) {
             previewMode = .stringCatalog(url)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → stringCatalog")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → stringCatalog")
+            }
         } else if Self.jsonExtensions.contains(ext) {
             previewMode = .json(url)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → json")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → json")
+            }
         } else if Self.plistExtensions.contains(ext) {
             previewMode = .plist(url)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → plist")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → plist")
+            }
         } else if Self.csvExtensions.contains(ext) {
             previewMode = .csv(url)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → csv")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → csv")
+            }
         } else if Self.htmlExtensions.contains(ext) {
             previewMode = .html(url)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → html")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → html")
+            }
         } else if Self.pdfExtensions.contains(ext) {
             previewMode = .pdf(url)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → pdf")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → pdf")
+            }
         } else if Self.docExtensions.contains(ext) {
             previewMode = .doc(url)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → doc")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → doc")
+            }
         } else {
             previewMode = .unsupported(url)
-            Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → unsupported (ext=\(ext, privacy: .public))")
+            if Self.verbose {
+                Self.logger.info("\(self.t)🎯 updatePreviewMode: \(url.lastPathComponent) → unsupported (ext=\(ext, privacy: .public))")
+            }
         }
     }
 
