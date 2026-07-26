@@ -103,6 +103,7 @@ import OpenInGitHubDesktopPlugin
 import OpenInGitOKPlugin
 import OpenRemotePlugin
 import ProjectRAGPlugin
+import GitPlugin
 // import CADDesignerPlugin  // Not included in Xcode project
 
 /// 插件服务
@@ -161,6 +162,7 @@ public enum PluginService {
             ConversationListPlugin(),
             ConversationNewPlugin(),
             ProjectRAGPlugin(),
+            GitPlugin(),
             CommandPlugin(),
             ChatPanelPlugin(),
             ModelSelectorPlugin(),
