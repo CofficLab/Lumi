@@ -35,12 +35,12 @@ public struct RegisterAppIconArtifactTool: LumiAgentTool {
         "Register app icon candidate"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = IconToolSupport.language(kernel)
         guard let path = arguments["path"]?.anyValue as? String, !path.isEmpty else {
             return IconToolSupport.missingParameter("path", language: language)
         }

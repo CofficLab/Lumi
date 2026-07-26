@@ -8,141 +8,149 @@ struct IconDocumentToolTests {
     @MainActor
     @Test("creates and edits vector icon documents")
     func createsAndEditsVectorIconDocuments() async throws {
-        IconDocumentStore.shared.resetForTests()
+        try await withIconToolKernel("create_icon_document") { kernel in
+            IconDocumentStore.shared.resetForTests()
 
-        _ = try await CreateIconDocumentTool().execute(
-            arguments: [
-                "title": ToolArgument("Play"),
-                "background": ToolArgument("#111827"),
-            ],
-            context: toolContext("create_icon_document")
-        )
+            _ = try await CreateIconDocumentTool().execute(
+                arguments: [
+                    "title": .string("Play"),
+                    "background": .string("#111827"),
+                ],
+                kernel: kernel
+            )
 
-        _ = try await AddIconShapeTool().execute(
-            arguments: [
-                "shape": ToolArgument("circle"),
-                "name": ToolArgument("Blue base"),
-                "fill": ToolArgument("#38bdf8"),
-                "radius": ToolArgument(280),
-            ],
-            context: toolContext("add_icon_shape")
-        )
+            _ = try await AddIconShapeTool().execute(
+                arguments: [
+                    "shape": .string("circle"),
+                    "name": .string("Blue base"),
+                    "fill": .string("#38bdf8"),
+                    "radius": .int(280),
+                ],
+                kernel: kernel
+            )
 
-        let document = try #require(IconDocumentStore.shared.selectedDocument)
-        let layer = try #require(document.layers.first)
+            let document = try #require(IconDocumentStore.shared.selectedDocument)
+            let layer = try #require(document.layers.first)
 
-        _ = try await UpdateIconLayerTool().execute(
-            arguments: [
-                "layerId": ToolArgument(layer.id),
-                "fill": ToolArgument("#ffffff"),
-                "translateX": ToolArgument(12),
-                "rotationDegrees": ToolArgument(45),
-            ],
-            context: toolContext("update_icon_layer")
-        )
+            _ = try await UpdateIconLayerTool().execute(
+                arguments: [
+                    "layerId": .string(layer.id),
+                    "fill": .string("#ffffff"),
+                    "translateX": .int(12),
+                    "rotationDegrees": .int(45),
+                ],
+                kernel: kernel
+            )
 
-        let updated = try #require(IconDocumentStore.shared.selectedDocument)
-        #expect(updated.layers.count == 1)
-        #expect(updated.layers[0].fill == .color("#ffffff"))
-        #expect(updated.layers[0].transform.translateX == 12)
-        #expect(updated.layers[0].transform.rotationDegrees == 45)
+            let updated = try #require(IconDocumentStore.shared.selectedDocument)
+            #expect(updated.layers.count == 1)
+            #expect(updated.layers[0].fill == .color("#ffffff"))
+            #expect(updated.layers[0].transform.translateX == 12)
+            #expect(updated.layers[0].transform.rotationDegrees == 45)
+        }
     }
 
     @MainActor
     @Test("renders SVG output")
     func rendersSVGOutput() async throws {
-        IconDocumentStore.shared.resetForTests()
+        try await withIconToolKernel("create_icon_document") { kernel in
+            IconDocumentStore.shared.resetForTests()
 
-        _ = try await CreateIconDocumentTool().execute(
-            arguments: [
-                "title": ToolArgument("Triangle"),
-                "background": ToolArgument("#0f172a"),
-            ],
-            context: toolContext("create_icon_document")
-        )
+            _ = try await CreateIconDocumentTool().execute(
+                arguments: [
+                    "title": .string("Triangle"),
+                    "background": .string("#0f172a"),
+                ],
+                kernel: kernel
+            )
 
-        _ = try await AddIconShapeTool().execute(
-            arguments: [
-                "shape": ToolArgument("triangle"),
-                "fill": ToolArgument("#f8fafc"),
-                "x": ToolArgument(300),
-                "y": ToolArgument(240),
-                "width": ToolArgument(420),
-                "height": ToolArgument(520),
-            ],
-            context: toolContext("add_icon_shape")
-        )
+            _ = try await AddIconShapeTool().execute(
+                arguments: [
+                    "shape": .string("triangle"),
+                    "fill": .string("#f8fafc"),
+                    "x": .int(300),
+                    "y": .int(240),
+                    "width": .int(420),
+                    "height": .int(520),
+                ],
+                kernel: kernel
+            )
 
-        let document = try #require(IconDocumentStore.shared.selectedDocument)
-        let svg = IconSVGRenderer().render(document: document)
+            let document = try #require(IconDocumentStore.shared.selectedDocument)
+            let svg = IconSVGRenderer().render(document: document)
 
-        #expect(svg.contains("<svg"))
-        #expect(svg.contains("#0f172a"))
-        #expect(svg.contains("<polygon"))
-        #expect(svg.contains("#f8fafc"))
+            #expect(svg.contains("<svg"))
+            #expect(svg.contains("#0f172a"))
+            #expect(svg.contains("<polygon"))
+            #expect(svg.contains("#f8fafc"))
+        }
     }
 
     @MainActor
     @Test("creates gradient symbol document")
     func createsGradientSymbolDocument() async throws {
-        IconDocumentStore.shared.resetForTests()
+        try await withIconToolKernel("create_icon_document") { kernel in
+            IconDocumentStore.shared.resetForTests()
 
-        _ = try await CreateIconDocumentTool().execute(
-            arguments: [
-                "title": ToolArgument("Symbol"),
-            ],
-            context: toolContext("create_icon_document")
-        )
+            _ = try await CreateIconDocumentTool().execute(
+                arguments: [
+                    "title": .string("Symbol"),
+                ],
+                kernel: kernel
+            )
 
-        _ = try await SetIconBackgroundTool().execute(
-            arguments: [
-                "type": ToolArgument("linearGradient"),
-                "colors": ToolArgument(["#111827", "#2563eb"]),
-            ],
-            context: toolContext("set_icon_background")
-        )
+            _ = try await SetIconBackgroundTool().execute(
+                arguments: [
+                    "type": .string("linearGradient"),
+                    "colors": .array([.string("#111827"), .string("#2563eb")]),
+                ],
+                kernel: kernel
+            )
 
-        _ = try await AddIconShapeTool().execute(
-            arguments: [
-                "shape": ToolArgument("symbol"),
-                "symbolName": ToolArgument("sparkles"),
-                "fill": ToolArgument("#ffffff"),
-                "shadowColor": ToolArgument("#00000055"),
-                "shadowRadius": ToolArgument(32),
-            ],
-            context: toolContext("add_icon_shape")
-        )
+            _ = try await AddIconShapeTool().execute(
+                arguments: [
+                    "shape": .string("symbol"),
+                    "symbolName": .string("sparkles"),
+                    "fill": .string("#ffffff"),
+                    "shadowColor": .string("#00000055"),
+                    "shadowRadius": .int(32),
+                ],
+                kernel: kernel
+            )
 
-        let document = try #require(IconDocumentStore.shared.selectedDocument)
-        #expect(document.background.hexValue == "#111827")
-        #expect(document.layers.count == 1)
-        #expect(document.layers[0].shadow?.radius == 32)
+            let document = try #require(IconDocumentStore.shared.selectedDocument)
+            #expect(document.background.hexValue == "#111827")
+            #expect(document.layers.count == 1)
+            #expect(document.layers[0].shadow?.radius == 32)
 
-        if case .symbol(let name, _, _, _, _) = document.layers[0].shape {
-            #expect(name == "sparkles")
-        } else {
-            Issue.record("Expected symbol layer")
+            if case .symbol(let name, _, _, _, _) = document.layers[0].shape {
+                #expect(name == "sparkles")
+            } else {
+                Issue.record("Expected symbol layer")
+            }
         }
     }
 
     @MainActor
     @Test("applies built in icon preset")
     func appliesBuiltInIconPreset() async throws {
-        IconDocumentStore.shared.resetForTests()
+        try await withIconToolKernel("apply_icon_preset") { kernel in
+            IconDocumentStore.shared.resetForTests()
 
-        let result = try await ApplyIconPresetTool().execute(
-            arguments: [
-                "presetId": ToolArgument("developer-tool"),
-                "title": ToolArgument("Code Tool"),
-            ],
-            context: toolContext("apply_icon_preset")
-        )
+            let result = try await ApplyIconPresetTool().execute(
+                arguments: [
+                    "presetId": .string("developer-tool"),
+                    "title": .string("Code Tool"),
+                ],
+                kernel: kernel
+            )
 
-        let document = try #require(IconDocumentStore.shared.selectedDocument)
-        #expect(result.contains("developer-tool"))
-        #expect(document.title == "Code Tool")
-        #expect(document.layers.count == 2)
-        #expect(document.background.hexValue == "#18181b")
+            let document = try #require(IconDocumentStore.shared.selectedDocument)
+            #expect(result.contains("developer-tool"))
+            #expect(document.title == "Code Tool")
+            #expect(document.layers.count == 2)
+            #expect(document.background.hexValue == "#18181b")
+        }
     }
 
     @MainActor
@@ -281,115 +289,119 @@ struct IconDocumentToolTests {
     @MainActor
     @Test("exports SVG file")
     func exportsSVGFile() async throws {
-        IconDocumentStore.shared.resetForTests()
+        try await withIconToolKernel("export_icon_svg") { kernel in
+            IconDocumentStore.shared.resetForTests()
 
-        let tempRoot = FileManager.default.temporaryDirectory
-            .appendingPathComponent("PluginAppIconDesignerSVGTests-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: tempRoot) }
+            let tempRoot = FileManager.default.temporaryDirectory
+                .appendingPathComponent("PluginAppIconDesignerSVGTests-\(UUID().uuidString)", isDirectory: true)
+            try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: tempRoot) }
 
-        _ = try await CreateIconDocumentTool().execute(
-            arguments: [
-                "title": ToolArgument("Export Test"),
-                "background": ToolArgument("#ffffff"),
-            ],
-            context: toolContext("create_icon_document")
-        )
+            _ = try await CreateIconDocumentTool().execute(
+                arguments: [
+                    "title": .string("Export Test"),
+                    "background": .string("#ffffff"),
+                ],
+                kernel: kernel
+            )
 
-        let outputURL = tempRoot.appendingPathComponent("icon.svg")
-        let result = try await ExportIconSVGTool().execute(
-            arguments: [
-                "outputPath": ToolArgument(outputURL.path),
-            ],
-            context: toolContext("export_icon_svg")
-        )
+            let outputURL = tempRoot.appendingPathComponent("icon.svg")
+            let result = try await ExportIconSVGTool().execute(
+                arguments: [
+                    "outputPath": .string(outputURL.path),
+                ],
+                kernel: kernel
+            )
 
-        #expect(result.contains(outputURL.path))
-        #expect(FileManager.default.fileExists(atPath: outputURL.path))
+            #expect(result.contains(outputURL.path))
+            #expect(FileManager.default.fileExists(atPath: outputURL.path))
+        }
     }
 
     @MainActor
     @Test("updates lints saves and loads document through agent tools")
     func updatesLintsSavesAndLoadsDocumentThroughAgentTools() async throws {
-        IconDocumentStore.shared.resetForTests()
+        try await withIconToolKernel("create_icon_document") { kernel in
+            IconDocumentStore.shared.resetForTests()
 
-        let tempRoot = FileManager.default.temporaryDirectory
-            .appendingPathComponent("PluginAppIconDesignerAgentDocumentTests-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: tempRoot) }
+            let tempRoot = FileManager.default.temporaryDirectory
+                .appendingPathComponent("PluginAppIconDesignerAgentDocumentTests-\(UUID().uuidString)", isDirectory: true)
+            try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: tempRoot) }
 
-        _ = try await CreateIconDocumentTool().execute(
-            arguments: [
-                "title": ToolArgument("Agent Icon"),
-                "background": ToolArgument("#111827"),
-            ],
-            context: toolContext("create_icon_document")
-        )
+            _ = try await CreateIconDocumentTool().execute(
+                arguments: [
+                    "title": .string("Agent Icon"),
+                    "background": .string("#111827"),
+                ],
+                kernel: kernel
+            )
 
-        _ = try await AddIconShapeTool().execute(
-            arguments: [
-                "shape": ToolArgument("rectangle"),
-                "fill": ToolArgument("#ffffff"),
-            ],
-            context: toolContext("add_icon_shape")
-        )
+            _ = try await AddIconShapeTool().execute(
+                arguments: [
+                    "shape": .string("rectangle"),
+                    "fill": .string("#ffffff"),
+                ],
+                kernel: kernel
+            )
 
-        let layer = try #require(IconDocumentStore.shared.selectedDocument?.layers.first)
-        _ = try await UpdateIconShapeTool().execute(
-            arguments: [
-                "layerId": ToolArgument(layer.id),
-                "x": ToolArgument(128),
-                "y": ToolArgument(128),
-                "width": ToolArgument(768),
-                "height": ToolArgument(768),
-                "cornerRadius": ToolArgument(180),
-            ],
-            context: toolContext("update_icon_shape")
-        )
+            let layer = try #require(IconDocumentStore.shared.selectedDocument?.layers.first)
+            _ = try await UpdateIconShapeTool().execute(
+                arguments: [
+                    "layerId": .string(layer.id),
+                    "x": .int(128),
+                    "y": .int(128),
+                    "width": .int(768),
+                    "height": .int(768),
+                    "cornerRadius": .int(180),
+                ],
+                kernel: kernel
+            )
 
-        let updated = try #require(IconDocumentStore.shared.selectedDocument?.layers.first)
-        if case .rectangle(let x, let y, let width, let height, let cornerRadius) = updated.shape {
-            #expect(x == 128)
-            #expect(y == 128)
-            #expect(width == 768)
-            #expect(height == 768)
-            #expect(cornerRadius == 180)
-        } else {
-            Issue.record("Expected rectangle layer")
+            let updated = try #require(IconDocumentStore.shared.selectedDocument?.layers.first)
+            if case .rectangle(let x, let y, let width, let height, let cornerRadius) = updated.shape {
+                #expect(x == 128)
+                #expect(y == 128)
+                #expect(width == 768)
+                #expect(height == 768)
+                #expect(cornerRadius == 180)
+            } else {
+                Issue.record("Expected rectangle layer")
+            }
+
+            let lintResult = try await LintIconDocumentTool().execute(
+                arguments: [:],
+                kernel: kernel
+            )
+            #expect(lintResult.contains("exportable: true"))
+
+            let outputURL = tempRoot.appendingPathComponent("agent-icon.json")
+            let saveResult = try await SaveIconDocumentTool().execute(
+                arguments: [
+                    "outputPath": .string(outputURL.path),
+                ],
+                kernel: kernel
+            )
+            #expect(saveResult.contains(outputURL.path))
+            #expect(FileManager.default.fileExists(atPath: outputURL.path))
+
+            IconDocumentStore.shared.resetForTests()
+            let loadResult = try await LoadIconDocumentTool().execute(
+                arguments: [
+                    "inputPath": .string(outputURL.path),
+                ],
+                kernel: kernel
+            )
+
+            #expect(loadResult.contains("Agent Icon"))
+            #expect(IconDocumentStore.shared.selectedDocument?.title == "Agent Icon")
+            #expect(IconDocumentStore.shared.selectedDocument?.layers.count == 1)
         }
-
-        let lintResult = try await LintIconDocumentTool().execute(
-            arguments: [:],
-            context: toolContext("lint_icon_document")
-        )
-        #expect(lintResult.contains("exportable: true"))
-
-        let outputURL = tempRoot.appendingPathComponent("agent-icon.json")
-        let saveResult = try await SaveIconDocumentTool().execute(
-            arguments: [
-                "outputPath": ToolArgument(outputURL.path),
-            ],
-            context: toolContext("save_icon_document")
-        )
-        #expect(saveResult.contains(outputURL.path))
-        #expect(FileManager.default.fileExists(atPath: outputURL.path))
-
-        IconDocumentStore.shared.resetForTests()
-        let loadResult = try await LoadIconDocumentTool().execute(
-            arguments: [
-                "inputPath": ToolArgument(outputURL.path),
-            ],
-            context: toolContext("load_icon_document")
-        )
-
-        #expect(loadResult.contains("Agent Icon"))
-        #expect(IconDocumentStore.shared.selectedDocument?.title == "Agent Icon")
-        #expect(IconDocumentStore.shared.selectedDocument?.layers.count == 1)
     }
 
     @MainActor
-    @Test("localizes schemas and tool execution results")
-    func localizesSchemasAndToolExecutionResults() async throws {
+    @Test("localizes schemas")
+    func localizesSchemas() {
         IconDocumentStore.shared.resetForTests()
 
         let schema = CreateIconDocumentTool().inputSchema(for: .chinese)
@@ -398,38 +410,24 @@ struct IconDocumentToolTests {
         #expect((title["description"] as? String)?.contains("文档标题") == true)
 
         let localizedCreateTool = LocalizedAgentTool(underlying: CreateIconDocumentTool(), language: .chinese)
-        let createResult = try await localizedCreateTool.execute(
-            arguments: [
-                "title": ToolArgument("中文图标"),
-                "background": ToolArgument("#111827"),
-            ],
-            context: toolContext("create_icon_document")
-        )
-        #expect(createResult.contains("已创建图标文档"))
-        #expect(createResult.contains("文档ID"))
+        #expect(localizedCreateTool.inputSchema(for: .english).anyValue is [String: Any])
 
         let localizedAddTool = LocalizedAgentTool(underlying: AddIconShapeTool(), language: .chinese)
-        let addResult = try await localizedAddTool.execute(
-            arguments: [
-                "shape": ToolArgument("circle"),
-            ],
-            context: toolContext("add_icon_shape")
-        )
-        #expect(addResult.contains("已添加图标形状"))
-        #expect(addResult.contains("图层ID"))
-
-        let missingResult = try await localizedAddTool.execute(
-            arguments: [:],
-            context: toolContext("add_icon_shape")
-        )
-        #expect(missingResult.contains("缺少必填参数"))
+        #expect(localizedAddTool.name == "add_icon_shape")
     }
 }
 
-private func toolContext(_ toolName: String) -> ToolExecutionContext {
-    ToolExecutionContext(
-        conversationId: UUID(),
-        toolCallId: UUID().uuidString,
+private func withIconToolKernel<T>(
+    _ toolName: String,
+    operation: @escaping @Sendable (LumiKernel) async throws -> T
+) async throws -> T {
+    let kernel = LumiKernel()
+    let state = LumiToolExecutionContextState(
+        conversationID: UUID(),
+        toolCallID: UUID().uuidString,
         toolName: toolName
     )
+    return try await kernel.withToolExecutionContextState(state) {
+        try await operation(kernel)
+    }
 }

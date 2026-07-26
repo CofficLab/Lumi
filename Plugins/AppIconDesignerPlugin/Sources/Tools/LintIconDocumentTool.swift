@@ -18,12 +18,12 @@ public struct LintIconDocumentTool: LumiAgentTool {
         "Lint icon document"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = IconToolSupport.language(kernel)
         do {
             let document = try await MainActor.run {
                 guard let document = IconDocumentStore.shared.selectedDocument else {

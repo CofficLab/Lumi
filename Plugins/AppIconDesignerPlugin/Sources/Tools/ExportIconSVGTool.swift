@@ -23,12 +23,12 @@ public struct ExportIconSVGTool: LumiAgentTool {
         "Export icon SVG"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = IconToolSupport.language(kernel)
         do {
             let document = try await MainActor.run {
                 guard let document = IconDocumentStore.shared.selectedDocument else {

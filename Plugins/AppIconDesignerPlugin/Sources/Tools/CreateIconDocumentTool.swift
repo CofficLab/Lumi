@@ -26,12 +26,12 @@ public struct CreateIconDocumentTool: LumiAgentTool {
         "Create icon document"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = IconToolSupport.language(kernel)
         let title = IconToolSupport.string(arguments, "title")
         let width = IconToolSupport.double(arguments, "width", default: 1024)
         let height = IconToolSupport.double(arguments, "height", default: 1024)
