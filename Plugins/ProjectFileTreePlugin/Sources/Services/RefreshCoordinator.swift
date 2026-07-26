@@ -10,7 +10,7 @@ private final class WeakBox<T: AnyObject>: @unchecked Sendable {
     public init(_ value: T? = nil) { self.value = value }
 }
 
-/// Editor Rail 文件树刷新协调器
+/// 文件树刷新协调器
 ///
 /// 作为 FileTreeKit.FileTreeWatcher 和 SwiftUI 视图之间的桥梁：
 /// - 接收 watcher 的文件系统变化通知

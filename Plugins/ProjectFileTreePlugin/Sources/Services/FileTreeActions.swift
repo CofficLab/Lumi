@@ -28,7 +28,7 @@ enum FileTreeActions {
         textField.stringValue = defaultName
         textField.placeholderString = defaultName.isEmpty ? LumiPluginLocalization.string("name", bundle: .module) : defaultName
         // 预填时全选，方便整体替换
-        textField.currentEditor()?.selectAll(nil)
+        textField.selectText(nil)
         alert.accessoryView = textField
         alert.window.initialFirstResponder = textField
 

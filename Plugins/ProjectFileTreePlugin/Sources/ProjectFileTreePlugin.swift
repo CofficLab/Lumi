@@ -72,6 +72,4 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
-    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
-    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

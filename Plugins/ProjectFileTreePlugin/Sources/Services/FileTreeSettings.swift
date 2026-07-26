@@ -1,10 +1,10 @@
 import Foundation
 import FileSystemKit
 
-/// Editor Rail 文件树本地存储
+/// 文件树本地存储
 ///
 /// 负责持久化文件树的展开状态和最近项目路径。
-/// 存储位置沿用旧目录：<dataRoot>/AgentEditorFileTree/settings.plist
+/// 存储位置：<dataRoot>/ProjectFileTree/settings.plist
 ///
 /// 作为 FileTreeKit.FileTreeStore 的单例包装器，
 /// 通过 currentLumiCore 注入存储目录。
@@ -23,7 +23,7 @@ public final class FileTreeSettings: @unchecked Sendable {
     private init() {
         let root = (ProjectFileTreePluginRuntimeBridge.dataRootDirectory
             ?? ProjectFileTreePluginRuntimeBridge.fallbackRootDirectory)
-            .appendingPathComponent("AgentEditorFileTree", isDirectory: true)
+            .appendingPathComponent("ProjectFileTree", isDirectory: true)
         self.store = FileTreeStore(directory: root)
     }
 
@@ -74,6 +74,6 @@ public final class FileTreeSettings: @unchecked Sendable {
     }
 
     private func packageSectionExpandedKey(_ projectRoot: String) -> String {
-        "EditorRailFileTree.packageDependencies.expanded.\(projectRoot)"
+        "ProjectFileTree.packageDependencies.expanded.\(projectRoot)"
     }
 }

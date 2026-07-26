@@ -186,5 +186,10 @@ public extension LumiPlugin {
 
     /// 默认描述:空字符串。
     var pluginDescription: String { "" }
-}
 
+    /// 默认不注册编辑器扩展。
+    func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+
+    /// 默认不配置编辑器运行时。
+    func configureEditorRuntime(kernel: LumiKernel) async {}
+}

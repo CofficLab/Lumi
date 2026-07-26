@@ -8,7 +8,7 @@ import SuperLogKit
 /// 基于 NSCollectionView 的原生渲染实现，优化 LLM 流式响应期间的滚动性能。
 /// 对外暴露与 TreeView 相同的接口，便于无缝切换。
 ///
-/// 仅负责展示文件树;不承载任何 editor 协同行为。
+/// 仅负责展示文件树;不承载其他协同行为。
 public struct TreeViewV2: View, SuperLog {
     public nonisolated static let emoji = "🌲"
     public nonisolated static var verbose: Bool { ProjectFileTreePlugin.verbose }
