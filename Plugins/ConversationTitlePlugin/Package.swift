@@ -18,9 +18,6 @@ let package = Package(
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
-        .package(path: "../../Packages/LumiCoreChat"),
-        .package(path: "../../Packages/LumiCoreMessage"),
-        .package(path: "../../Packages/LumiCoreAgentTool"),
     ],
     targets: [
         .target(

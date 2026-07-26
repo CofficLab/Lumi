@@ -253,7 +253,7 @@ public struct ConversationStoreSettingsView: View {
     // MARK: - Formatting
 
     private func displayTitle(for conversation: LumiConversationSummary) -> String {
-        conversation.title.isEmpty ? "Untitled" : conversation.title
+        conversation.displayTitle
     }
 
     private func relativeDate(_ date: Date) -> String {

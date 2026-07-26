@@ -94,15 +94,16 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     public func createConversation(title: String?) throws -> UUID {
         let now = Date()
         let id = UUID()
-        let conversationTitle = title ?? "New Chat"
+        let conversationTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedTitle = conversationTitle?.isEmpty == true ? nil : conversationTitle
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)Creating conversation: \(conversationTitle)")
+            Self.logger.info("\(Self.t)Creating conversation: \(normalizedTitle ?? "nil")")
         }
 
         let conversation = LumiConversationSummary(
             id: id,
-            title: conversationTitle,
+            title: normalizedTitle,
             preview: "",
             createdAt: now,
             updatedAt: now
@@ -118,7 +119,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         // Persist to database async
         Task {
             do {
-                try await store?.createConversation(id: id, title: conversationTitle, preview: "", createdAt: now)
+                try await store?.createConversation(id: id, title: normalizedTitle, preview: "", createdAt: now)
             } catch {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)Failed to persist conversation: \(error)")
@@ -269,7 +270,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             currentTitle = "No conversation"
             return
         }
-        let newTitle = conversation.title.isEmpty ? "Untitled" : conversation.title
+        let newTitle = conversation.displayTitle
         currentTitle = newTitle
     }
 

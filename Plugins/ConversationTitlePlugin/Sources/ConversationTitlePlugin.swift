@@ -1,5 +1,5 @@
+import Foundation
 import SwiftUI
-import LumiKernel
 import LumiKernel
 import SuperLogKit
 import os
@@ -25,6 +25,13 @@ public final class ConversationTitlePlugin: LumiPlugin, SuperLog {
         }
     }
 
+    public func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
+        Self.sendMiddlewares(lumiCore: kernel) + messages
+    }
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        Self.makeAgentTools(kernel: kernel)
+    }
 
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] {
         if Self.verbose {
@@ -36,9 +43,6 @@ public final class ConversationTitlePlugin: LumiPlugin, SuperLog {
             }
         ]
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -68,4 +72,22 @@ public final class ConversationTitlePlugin: LumiPlugin, SuperLog {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
+
+    @MainActor
+    public static func agentTools(lumiCore: Any) -> [any LumiAgentTool] {
+        if let kernel = lumiCore as? LumiKernel {
+            return makeAgentTools(kernel: kernel)
+        }
+        return [ConversationTitleUpdateTool()]
+    }
+
+    @MainActor
+    private static func makeAgentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        guard let conversations = kernel.conversations else {
+            return []
+        }
+        return [
+            ConversationTitleUpdateTool(conversations: conversations)
+        ]
+    }
 }

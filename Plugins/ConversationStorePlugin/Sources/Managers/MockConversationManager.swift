@@ -77,7 +77,7 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
             currentTitle = "No conversation"
             return
         }
-        let newTitle = conversation.title.isEmpty ? "Untitled" : conversation.title
+        let newTitle = conversation.displayTitle
         if Self.verbose {
             Self.logger.info("\(Self.t)updateCurrentTitle - setting title to: '\(newTitle)'")
         }
@@ -89,12 +89,15 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
         let id = UUID()
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)Creating conversation: \(title ?? "Untitled")")
+            Self.logger.info("\(Self.t)Creating conversation: \(title ?? "nil")")
         }
+
+        let normalizedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let storedTitle = normalizedTitle?.isEmpty == true ? nil : normalizedTitle
 
         let conversation = LumiConversationSummary(
             id: id,
-            title: title ?? "New Chat",
+            title: storedTitle,
             preview: "",
             createdAt: now,
             updatedAt: now

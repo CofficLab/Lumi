@@ -82,10 +82,12 @@ public final class ConversationService: ConversationManaging {
     public func createConversation(title: String?) throws -> UUID {
         let now = Date()
         let id = UUID()
+        let normalizedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let storedTitle = normalizedTitle?.isEmpty == true ? nil : normalizedTitle
 
         let conversation = LumiConversationSummary(
             id: id,
-            title: title ?? "",
+            title: storedTitle,
             preview: "",
             createdAt: now,
             updatedAt: now
@@ -118,7 +120,7 @@ public final class ConversationService: ConversationManaging {
             currentTitle = "No conversation"
             return
         }
-        currentTitle = conversation.title.isEmpty ? "Untitled" : conversation.title
+        currentTitle = conversation.displayTitle
     }
 
     public func deleteConversation(id: UUID) {

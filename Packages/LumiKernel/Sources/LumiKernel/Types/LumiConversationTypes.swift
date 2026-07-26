@@ -90,7 +90,7 @@ public enum LumiModelRoutingMode: String, Codable, Sendable, CaseIterable {
 
 public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendable {
     public let id: UUID
-    public var title: String
+    public var title: String?
     public var preview: String
     public var createdAt: Date
     public var updatedAt: Date
@@ -103,7 +103,7 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
 
     public init(
         id: UUID = UUID(),
-        title: String,
+        title: String? = nil,
         preview: String = "",
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
@@ -125,5 +125,15 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         self.providerID = providerID
         self.modelName = modelName
         self.projectPath = projectPath
+    }
+
+    public var displayTitle: String {
+        let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? "Untitled" : trimmed
+    }
+
+    public var hasCustomTitle: Bool {
+        let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return !trimmed.isEmpty
     }
 }

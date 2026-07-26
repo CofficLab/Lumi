@@ -72,9 +72,10 @@ final public class ConversationModel: @unchecked Sendable {
 public extension ConversationModel {
     /// Convert from LumiConversationSummary to ConversationModel
     static func from(summary: LumiConversationSummary) -> ConversationModel {
-        ConversationModel(
+        let storedTitle = summary.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return ConversationModel(
             id: summary.id.uuidString,
-            title: summary.title,
+            title: storedTitle,
             preview: summary.preview,
             createdAt: summary.createdAt.timeIntervalSince1970,
             updatedAt: summary.updatedAt.timeIntervalSince1970,
@@ -103,7 +104,7 @@ public extension ConversationModel {
 
         return LumiConversationSummary(
             id: uuid,
-            title: title,
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : title,
             preview: preview,
             createdAt: Date(timeIntervalSince1970: createdAt),
             updatedAt: Date(timeIntervalSince1970: updatedAt),
