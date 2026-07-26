@@ -3,7 +3,7 @@ import LumiKernel
 
 enum IconToolSupport {
     static func language(_ kernel: LumiKernel?) -> LumiLanguagePreference {
-        kernel.language
+        kernel?.language ?? .english
     }
 
     static func localized(_ language: LumiLanguagePreference, en: String, zh: String) -> String {
