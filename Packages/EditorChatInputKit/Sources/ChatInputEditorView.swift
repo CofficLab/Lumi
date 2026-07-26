@@ -4,6 +4,7 @@ import SwiftUI
 public struct ChatInputEditorView: NSViewRepresentable {
     public static let minHeight: CGFloat = 64
     public static let maxHeight: CGFloat = 300
+    public static let collapsedPasteThreshold = 1200
 
     @Binding private var text: String
     @Binding private var height: CGFloat
@@ -70,6 +71,10 @@ public struct ChatInputEditorView: NSViewRepresentable {
         textView.keyDownHandler = { [weak coordinator = context.coordinator] event in
             coordinator?.handleKeyDown(event) ?? false
         }
+        textView.pasteHandler = { [weak coordinator = context.coordinator, weak textView] pasteboard in
+            guard let coordinator, let textView else { return false }
+            return coordinator.handlePaste(pasteboard, in: textView)
+        }
         textView.fileDropHandler = { [weak coordinator = context.coordinator] url in
             coordinator?.handleFileDrop(url)
         }
@@ -107,6 +112,10 @@ public struct ChatInputEditorView: NSViewRepresentable {
         textView.keyDownHandler = { [weak coordinator = context.coordinator] event in
             coordinator?.handleKeyDown(event) ?? false
         }
+        textView.pasteHandler = { [weak coordinator = context.coordinator, weak textView] pasteboard in
+            guard let coordinator, let textView else { return false }
+            return coordinator.handlePaste(pasteboard, in: textView)
+        }
         textView.fileDropHandler = { [weak coordinator = context.coordinator] url in
             coordinator?.handleFileDrop(url)
         }
@@ -128,7 +137,8 @@ public struct ChatInputEditorView: NSViewRepresentable {
             return
         }
 
-        let textChanged = textView.string != text
+        let currentText = resolvedText(from: textView)
+        let textChanged = currentText != text
         if textChanged {
             textView.delegate = nil
             textView.string = text
@@ -183,6 +193,26 @@ public struct ChatInputEditorView: NSViewRepresentable {
             }
         }
     }
+
+    private func resolvedText(from textView: NSTextView) -> String {
+        guard let textStorage = textView.textStorage, textStorage.length > 0 else {
+            return textView.string
+        }
+
+        let fullRange = NSRange(location: 0, length: textStorage.length)
+        var result = String()
+        result.reserveCapacity(textStorage.length)
+
+        textStorage.enumerateAttributes(in: fullRange, options: []) { attributes, range, _ in
+            if let attachment = attributes[.attachment] as? PastePreviewAttachment {
+                result += attachment.originalText
+            } else {
+                result += textStorage.attributedSubstring(from: range).string
+            }
+        }
+
+        return result
+    }
 }
 
 extension ChatInputEditorView {
@@ -198,7 +228,7 @@ extension ChatInputEditorView {
 
         public func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
-            parent.text = textView.string
+            parent.text = parent.resolvedText(from: textView)
 
             let utf16Location = textView.selectedRange().location
             let swiftLocation = ChatInputEditorRules.utf16ToSwiftIndex(utf16Location, in: textView.string)
@@ -209,6 +239,23 @@ extension ChatInputEditorView {
             lastSyncedCursorPosition = swiftLocation
 
             parent.updateHeight(for: textView)
+        }
+
+        @MainActor
+        func handlePaste(_ pasteboard: NSPasteboard, in textView: EditorTextView) -> Bool {
+            guard let text = pasteboard.string(forType: .string)?.trimmingCharacters(in: .newlines),
+                  !text.isEmpty else {
+                return false
+            }
+
+            guard text.count >= ChatInputEditorView.collapsedPasteThreshold else {
+                return false
+            }
+
+            let attachment = PastePreviewAttachment(originalText: text)
+            let attributed = NSAttributedString(attachment: attachment)
+            textView.insertText(attributed, replacementRange: textView.selectedRange())
+            return true
         }
 
         public func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
@@ -274,9 +321,26 @@ extension ChatInputEditorView {
 }
 
 final class EditorTextView: NSTextView {
+    var pasteHandler: ((NSPasteboard) -> Bool)?
     var imageDragHoverHandler: ((Bool) -> Void)?
     var keyDownHandler: ((NSEvent) -> Bool)?
     var fileDropHandler: ((URL) -> Void)?
+    private var pastePreviewPopover: NSPopover?
+
+    override func paste(_ sender: Any?) {
+        if pasteHandler?(NSPasteboard.general) == true {
+            return
+        }
+        super.paste(sender)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        if showPastePreviewIfNeeded(at: point) {
+            return
+        }
+        super.mouseDown(with: event)
+    }
 
     override func keyDown(with event: NSEvent) {
         if !hasMarkedText(), keyDownHandler?(event) == true {
@@ -349,5 +413,278 @@ final class EditorTextView: NSTextView {
                 .contains(where: ChatInputEditorRules.isChatImageFileURL)
         }
         return false
+    }
+
+    private func showPastePreviewIfNeeded(at point: NSPoint) -> Bool {
+        guard let textStorage, let layoutManager, let textContainer else {
+            return false
+        }
+
+        let containerPoint = NSPoint(
+            x: point.x - textContainerOrigin.x,
+            y: point.y - textContainerOrigin.y
+        )
+        let charIndex = layoutManager.characterIndex(
+            for: containerPoint,
+            in: textContainer,
+            fractionOfDistanceBetweenInsertionPoints: nil
+        )
+        guard charIndex < textStorage.length,
+              let attachment = textStorage.attribute(.attachment, at: charIndex, effectiveRange: nil) as? PastePreviewAttachment
+        else {
+            return false
+        }
+
+        let glyphRange = layoutManager.glyphRange(
+            forCharacterRange: NSRange(location: charIndex, length: 1),
+            actualCharacterRange: nil
+        )
+        let attachmentRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
+            .offsetBy(dx: textContainerOrigin.x, dy: textContainerOrigin.y)
+
+        showPastePreviewPopover(attachment: attachment, from: attachmentRect)
+        return true
+    }
+
+    private func showPastePreviewPopover(attachment: PastePreviewAttachment, from rect: NSRect) {
+        pastePreviewPopover?.performClose(nil)
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentSize = NSSize(width: 620, height: 460)
+        popover.contentViewController = PastePreviewPopoverViewController(
+            text: attachment.originalText,
+            characterCount: attachment.characterCount,
+            lineCount: attachment.lineCount
+        )
+        popover.show(relativeTo: rect, of: self, preferredEdge: .maxY)
+        pastePreviewPopover = popover
+    }
+}
+
+final class PastePreviewAttachment: NSTextAttachment {
+    let originalText: String
+    let previewText: String
+    let summaryText: String
+    let lineCount: Int
+    let characterCount: Int
+
+    init(originalText: String) {
+        self.originalText = originalText
+        self.previewText = Self.previewText(for: originalText)
+        self.lineCount = Self.lineCount(for: originalText)
+        self.characterCount = originalText.count
+        self.summaryText = Self.summaryText(for: originalText, lineCount: lineCount, characterCount: characterCount)
+
+        let image = Self.makeImage(
+            previewText: previewText,
+            summaryText: summaryText
+        )
+
+        super.init(data: nil, ofType: nil)
+        self.image = image
+        self.bounds = CGRect(origin: .zero, size: image.size)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private static func previewText(for text: String) -> String {
+        let collapsed = text
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if collapsed.isEmpty {
+            return "Empty paste"
+        }
+        if collapsed.count <= 60 {
+            return collapsed
+        }
+        let prefix = String(collapsed.prefix(60))
+        return prefix + "…"
+    }
+
+    private static func lineCount(for text: String) -> Int {
+        let normalized = text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
+        return max(1, normalized.split(separator: "\n", omittingEmptySubsequences: false).count)
+    }
+
+    private static func summaryText(for text: String, lineCount: Int, characterCount: Int) -> String {
+        let sizeText = ByteCountFormatter.string(fromByteCount: Int64(text.utf8.count), countStyle: .file)
+        return "\(characterCount) chars · \(lineCount) lines · \(sizeText)"
+    }
+
+    private static func makeImage(previewText: String, summaryText: String) -> NSImage {
+        let size = NSSize(width: 392, height: 74)
+        let image = NSImage(size: size)
+        image.lockFocusFlipped(false)
+        defer { image.unlockFocus() }
+
+        let rect = NSRect(origin: .zero, size: size)
+        let rounded = NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), xRadius: 14, yRadius: 14)
+
+        NSColor.controlBackgroundColor.withAlphaComponent(0.96).setFill()
+        rounded.fill()
+
+        NSColor.separatorColor.withAlphaComponent(0.65).setStroke()
+        rounded.lineWidth = 1
+        rounded.stroke()
+
+        let iconRect = NSRect(x: 14, y: 24, width: 24, height: 24)
+        if let icon = NSImage(systemSymbolName: "doc.text.fill", accessibilityDescription: nil) {
+            icon.isTemplate = true
+            icon.draw(in: iconRect)
+        }
+
+        let titleAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
+            .foregroundColor: NSColor.labelColor
+        ]
+        let summaryAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedSystemFont(ofSize: 10.5, weight: .medium),
+            .foregroundColor: NSColor.secondaryLabelColor
+        ]
+        let previewAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 12),
+            .foregroundColor: NSColor.secondaryLabelColor
+        ]
+
+        ("Large paste" as NSString).draw(
+            in: NSRect(x: 48, y: 42, width: 324, height: 16),
+            withAttributes: titleAttributes
+        )
+        ((summaryText + " · click to inspect") as NSString).draw(
+            in: NSRect(x: 48, y: 25, width: 324, height: 14),
+            withAttributes: summaryAttributes
+        )
+        (previewText as NSString).draw(
+            in: NSRect(x: 48, y: 8, width: 324, height: 14),
+            withAttributes: previewAttributes
+        )
+
+        return image
+    }
+}
+
+final class PastePreviewPopoverViewController: NSViewController {
+    private let text: String
+    private let characterCount: Int
+    private let lineCount: Int
+    private weak var copyButton: NSButton?
+    private var copyFeedbackResetItem: DispatchWorkItem?
+
+    init(text: String, characterCount: Int, lineCount: Int) {
+        self.text = text
+        self.characterCount = characterCount
+        self.lineCount = lineCount
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        let container = NSView()
+        let scrollView = NSScrollView()
+        scrollView.drawsBackground = false
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
+
+        let textView = NSTextView()
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.isRichText = false
+        textView.drawsBackground = false
+        textView.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
+        textView.textColor = .labelColor
+        textView.textContainerInset = NSSize(width: 12, height: 12)
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.containerSize = NSSize(width: 560, height: CGFloat.greatestFiniteMagnitude)
+        textView.frame = NSRect(x: 0, y: 0, width: 560, height: 360)
+        textView.string = text
+
+        scrollView.documentView = textView
+
+        let header = NSStackView()
+        header.orientation = .horizontal
+        header.alignment = .centerY
+        header.distribution = .fill
+        header.spacing = 10
+        header.translatesAutoresizingMaskIntoConstraints = false
+        header.heightAnchor.constraint(equalToConstant: 44).isActive = true
+
+        let titleStack = NSStackView()
+        titleStack.orientation = .vertical
+        titleStack.alignment = .leading
+        titleStack.spacing = 2
+        titleStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let titleLabel = NSTextField(labelWithString: "Large paste preview")
+        titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        titleLabel.textColor = .labelColor
+
+        let detailLabel = NSTextField(labelWithString: "\(characterCount) chars · \(lineCount) lines")
+        detailLabel.font = .monospacedSystemFont(ofSize: 11, weight: .medium)
+        detailLabel.textColor = .secondaryLabelColor
+
+        titleStack.addArrangedSubview(titleLabel)
+        titleStack.addArrangedSubview(detailLabel)
+
+        let spacer = NSView()
+        spacer.translatesAutoresizingMaskIntoConstraints = false
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+        let copyButton = NSButton(title: "Copy original", target: self, action: #selector(copyOriginalText))
+        copyButton.bezelStyle = .rounded
+        copyButton.translatesAutoresizingMaskIntoConstraints = false
+        let closeButton = NSButton(title: "Close", target: self, action: #selector(closePopover))
+        closeButton.bezelStyle = .rounded
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+
+        header.addArrangedSubview(titleStack)
+        header.addArrangedSubview(spacer)
+        header.addArrangedSubview(copyButton)
+        header.addArrangedSubview(closeButton)
+        self.copyButton = copyButton
+
+        let stack = NSStackView(views: [header, scrollView])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 8
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: container.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+
+        view = container
+    }
+
+    @objc private func copyOriginalText() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+
+        copyButton?.title = "Copied"
+        copyButton?.isEnabled = false
+
+        copyFeedbackResetItem?.cancel()
+        let resetItem = DispatchWorkItem { [weak self] in
+            self?.copyButton?.title = "Copy original"
+            self?.copyButton?.isEnabled = true
+        }
+        copyFeedbackResetItem = resetItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: resetItem)
+    }
+
+    @objc private func closePopover() {
+        view.window?.performClose(nil)
     }
 }
