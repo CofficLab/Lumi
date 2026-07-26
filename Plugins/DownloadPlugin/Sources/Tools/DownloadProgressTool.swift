@@ -45,11 +45,11 @@ public struct DownloadProgressTool: LumiAgentTool, SuperLog {
         return "查询下载进度"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let taskId = arguments["task_id"]?.stringValue else {
             return "❌ 错误：task_id 参数必需"
         }

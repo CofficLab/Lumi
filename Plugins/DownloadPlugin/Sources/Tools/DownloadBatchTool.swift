@@ -49,11 +49,11 @@ public struct DownloadBatchTool: LumiAgentTool, SuperLog {
         return "批量下载"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let urlStrings: [String]
         
         if let urlsValue = arguments["urls"] {

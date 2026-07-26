@@ -37,11 +37,11 @@ public struct ListDownloadsTool: LumiAgentTool, SuperLog {
         "列出所有下载任务"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let states = await manager.allTaskStates()
 
         if states.isEmpty {
