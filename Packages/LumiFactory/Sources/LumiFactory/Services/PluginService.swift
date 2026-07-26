@@ -106,6 +106,7 @@ import OpenRemotePlugin
 import ProjectRAGPlugin
 import GitPlugin
 import AgentRulesPlugin
+import CaffeinatePlugin
 // import CADDesignerPlugin  // Not included in Xcode project
 
 /// 插件服务
@@ -210,6 +211,7 @@ public enum PluginService {
             RClickPlugin(),
             InputPlugin(),
             MenuBarManagerPlugin(),
+            CaffeinatePlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

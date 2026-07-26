@@ -7,7 +7,10 @@ public final class CaffeinatePlugin: LumiPlugin {
     public let id = "Caffeinate"
     public let name = "Caffeinate"
     public let order = 1
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .enabled
+    public let category: LumiPluginCategory = .system
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Prevent system sleep during long-running tasks."
 
     public init() {}
 
