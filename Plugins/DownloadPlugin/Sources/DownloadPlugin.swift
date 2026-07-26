@@ -1,20 +1,34 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 
 @MainActor
-public final class DownloadPlugin: LumiPlugin {
+public final class DownloadPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "📥"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.download"
+    )
+
     public let id = "com.coffic.lumi.plugin.download-agent"
     public let name = "Download Agent"
     public let order = 92
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Download files with progress tracking and batch support."
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        if Self.verbose {
+            Self.logger.info("📥 Download 插件初始化完成")
+        }
     }
 
 

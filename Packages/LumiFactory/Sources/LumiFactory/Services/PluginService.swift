@@ -112,6 +112,7 @@ import AppIconDesignerPlugin
 import WebFetchPlugin
 import WebSearchPlugin
 import MemoryPlugin
+import DownloadPlugin
 // import CADDesignerPlugin  // Not included in Xcode project
 
 /// 插件服务
@@ -221,6 +222,7 @@ public enum PluginService {
             WebFetchPlugin(),
             WebSearchPlugin(),
             MemoryPlugin(),
+            DownloadPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

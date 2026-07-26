@@ -131,6 +131,7 @@ let package = Package(
         .package(path: "../../Plugins/WebFetchPlugin"),
         .package(path: "../../Plugins/WebSearchPlugin"),
         .package(path: "../../Plugins/MemoryPlugin"),
+        .package(path: "../../Plugins/DownloadPlugin"),
     ],
     targets: [
         .target(
@@ -259,6 +260,7 @@ let package = Package(
                 .product(name: "WebFetchPlugin", package: "WebFetchPlugin"),
                 .product(name: "WebSearchPlugin", package: "WebSearchPlugin"),
                 .product(name: "MemoryPlugin", package: "MemoryPlugin"),
+                .product(name: "DownloadPlugin", package: "DownloadPlugin"),
             ],
             resources: [
                 .process("Resources")
