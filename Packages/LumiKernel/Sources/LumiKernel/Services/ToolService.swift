@@ -8,6 +8,7 @@ public final class ToolService: ToolManaging {
     nonisolated public static let emoji = "🛠️"
     nonisolated public static let verbose = false
 
+    public weak var kernel: LumiKernel?
     public var environment: (any ToolServiceEnvironment)?
 
     private(set) public var tools: [any LumiAgentTool] = []
@@ -72,7 +73,7 @@ public final class ToolService: ToolManaging {
         let verbosity = environment?.verbosity(for: conversationID).rawValue
         let projectPath = environment?.currentProjectPath
         let startedAt = Date()
-        let context = LumiToolExecutionContext(
+        let context = LumiToolExecutionContextState(
             conversationID: conversationID,
             toolCallID: toolCall.id,
             toolName: toolCall.name,
@@ -82,9 +83,17 @@ public final class ToolService: ToolManaging {
 
         do {
             let arguments = try Self.decodeArguments(toolCall.arguments)
-            let output = try await Task.detached { [context] in
-                try await tool.execute(arguments: arguments, context: context)
-            }.value
+            guard let kernel else {
+                return LumiToolResult(
+                    content: "Tool execution failed: kernel is unavailable",
+                    duration: Date().timeIntervalSince(startedAt),
+                    isError: true
+                )
+            }
+            let output: String
+            output = try await kernel.withToolExecutionContextState(context) {
+                try await tool.execute(arguments: arguments, kernel: kernel)
+            }
             let images = context.collectImages()
             let duration = Date().timeIntervalSince(startedAt)
             if Self.verbose {

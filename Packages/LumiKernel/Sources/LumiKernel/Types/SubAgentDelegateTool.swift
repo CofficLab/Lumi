@@ -44,16 +44,16 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
     @MainActor
     public func execute(
         arguments: [String: LumiJSONValue],
-        context: LumiToolExecutionContext
+        kernel: LumiKernel
     ) async throws -> String {
-        try context.checkCancellation()
+        try kernel.checkCancellation()
         guard let task = arguments["task"]?.stringValue, !task.isEmpty else {
             throw SubAgentError.missingArgument("task")
         }
@@ -69,7 +69,7 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
             task: task,
             tools: tools,
             toolService: executionToolService,
-            conversationID: context.conversationID,
+            conversationID: kernel.conversationID,
             maxTurns: definition.maxTurns
         )
         return formatResult(result)

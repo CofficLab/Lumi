@@ -27,9 +27,9 @@ public enum LumiCommandRiskLevel: String, Codable, Equatable, Sendable, CaseIter
     }
 }
 
-// MARK: - LumiToolExecutionContext
+// MARK: - Tool Call State
 
-public final class LumiToolExecutionContext: @unchecked Sendable {
+public final class LumiToolExecutionContextState: @unchecked Sendable {
     public typealias CancellationHandler = @Sendable () -> Void
 
     public let conversationID: UUID
@@ -158,8 +158,8 @@ public protocol LumiAgentTool: Sendable {
     var name: String { get }
     var toolDescription: String { get }
     var inputSchema: LumiJSONValue { get }
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String
-    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel
     func displayDescription(arguments: [String: LumiJSONValue]) -> String
 }
 
@@ -167,7 +167,7 @@ public extension LumiAgentTool {
     var name: String { Self.info.id }
     var toolDescription: String { Self.info.description }
     var tags: Set<LumiToolTag> { [] }
-    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
     func displayDescription(arguments: [String: LumiJSONValue]) -> String { Self.info.displayName }
 }
 
