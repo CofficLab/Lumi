@@ -28,7 +28,19 @@ public final class ZhipuPlugin: LumiPlugin {
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
-    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        [
+            StatusBarItem(
+                id: "\(id).quota",
+                title: "Zhipu GLM Coding Plan",
+                systemImage: "chart.bar.fill",
+                placement: .trailing,
+                statusBarView: {
+                    ZhipuStatusBarVisibilityView(kernel: kernel)
+                }
+            )
+        ]
+    }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }

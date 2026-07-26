@@ -5,8 +5,8 @@ import LumiKernel
 
 /// 智谱 GLM 配额状态栏视图
 ///
-/// 显示/隐藏由 ``ZhipuPlugin`` 在插件层根据 ``LumiPluginContext.activeProviderID`` 控制，
-/// 此视图被创建时即可假定当前活跃供应商为智谱。
+/// 显示/隐藏由 ``ZhipuStatusBarVisibilityView`` 根据内核当前选择的供应商控制，
+/// 此视图被创建时即可假定当前选择的供应商为智谱。
 struct StatusBarView: View {
     @State private var quotaStatus: QuotaStatus = .loading
     @State private var lastUpdateTime: Date?
