@@ -1,12 +1,14 @@
 import Foundation
 import LumiKernel
+import LocalizationKit
 
 struct ListTempFilesTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
         id: "list_temp_files",
-        displayName: PluginAgentTempStorageLocalization.string("List Temp Files"),
-        description: PluginAgentTempStorageLocalization.string(
-            "List files in the agent temp storage directory with paths and modification times."
+        displayName: LumiPluginLocalization.string("List Temp Files", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "List files in the agent temp storage directory with paths and modification times.",
+            bundle: .module
         )
     )
 

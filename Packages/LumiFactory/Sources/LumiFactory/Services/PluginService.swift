@@ -28,7 +28,7 @@ import DockerManagerPlugin
 import EditorProviderPlugin
 import EditorKernelPlugin
 import EditorPanelPlugin
-import EditorTabStripPlugin
+import ProjectFilesPlugin
 import EditorPreviewPlugin
 import TerminalPlugin
 import HostsManagerPlugin
@@ -107,6 +107,7 @@ import ProjectRAGPlugin
 import GitPlugin
 import AgentRulesPlugin
 import CaffeinatePlugin
+import AgentTempStoragePlugin
 // import CADDesignerPlugin  // Not included in Xcode project
 
 /// 插件服务
@@ -184,9 +185,8 @@ public enum PluginService {
             // Editor UI Shell — 贡献 "Code Editor" 视图容器,托管 EditorService。
             // 依赖 EditorKernelPlugin 在 OnBoot 注册的具象 EditorService。
             EditorPanelPlugin(),
-            // Editor 标签栏 — 在 PanelHeader 显示已打开文件的标签。
-            // 通过 EditorTabStripCoordination 协议消费编辑器能力。
-            StripHeaderPlugin(),
+            // Project files panel — 在 PanelHeader 显示项目已打开的文件。
+            ProjectFilesPlugin(),
             // Editor 预览面板 — 在 PanelBottom 显示文件预览。
             EditorPreviewBottomPanelPlugin(),
             TerminalPlugin(),
@@ -212,6 +212,7 @@ public enum PluginService {
             InputPlugin(),
             MenuBarManagerPlugin(),
             CaffeinatePlugin(),
+            AgentTempStoragePlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

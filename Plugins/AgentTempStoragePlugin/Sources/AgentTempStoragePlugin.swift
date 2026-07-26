@@ -1,20 +1,41 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 
 @MainActor
-public final class AgentTempStoragePlugin: LumiPlugin {
+public final class AgentTempStoragePlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🗃️"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.agent-temp-storage"
+    )
+
     public let id = "com.coffic.lumi.plugin.agent-temp-storage"
     public let name = "Agent Temp Storage"
     public let order = 80
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .developer
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Temporary file storage for agent workflows."
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        // 设置插件数据目录
+        guard let storage = kernel.storage else {
+            Self.logger.error("🗃️ Storage service not available")
+            return
+        }
+        AgentTempStoragePluginRuntimeBridge.pluginDirectory = storage.pluginDataDirectory(for: "AgentTempStorage")
+
+        if Self.verbose {
+            Self.logger.info("🗃️ AgentTempStorage 插件初始化完成")
+        }
     }
 
 

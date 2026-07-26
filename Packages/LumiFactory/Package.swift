@@ -22,7 +22,7 @@ let package = Package(
         .package(path: "../../Plugins/EditorProviderPlugin"),
         .package(path: "../../Plugins/EditorKernelPlugin"),
         .package(path: "../../Plugins/EditorPanelPlugin"),
-        .package(path: "../../Plugins/EditorTabStripPlugin"),
+        .package(path: "../../Plugins/ProjectFilesPlugin"),
         .package(path: "../../Plugins/EditorPreviewPlugin"),
         .package(path: "../../Plugins/TerminalPlugin"),
         .package(path: "../../Plugins/CommandPlugin"),
@@ -126,6 +126,7 @@ let package = Package(
         .package(path: "../../Plugins/ProjectRAGPlugin"),
         .package(path: "../../Plugins/AgentRulesPlugin"),
         .package(path: "../../Plugins/CaffeinatePlugin"),
+        .package(path: "../../Plugins/AgentTempStoragePlugin"),
     ],
     targets: [
         .target(
@@ -144,7 +145,7 @@ let package = Package(
                 .product(name: "EditorProviderPlugin", package: "EditorProviderPlugin"),
                 .product(name: "EditorKernelPlugin", package: "EditorKernelPlugin"),
                 .product(name: "EditorPanelPlugin", package: "EditorPanelPlugin"),
-                .product(name: "EditorTabStripPlugin", package: "EditorTabStripPlugin"),
+                .product(name: "ProjectFilesPlugin", package: "ProjectFilesPlugin"),
                 .product(name: "EditorPreviewPlugin", package: "EditorPreviewPlugin"),
                 .product(name: "TerminalPlugin", package: "TerminalPlugin"),
                 .product(name: "CommandPlugin", package: "CommandPlugin"),
@@ -249,6 +250,7 @@ let package = Package(
                 .product(name: "ProjectRAGPlugin", package: "ProjectRAGPlugin"),
                 .product(name: "AgentRulesPlugin", package: "AgentRulesPlugin"),
                 .product(name: "CaffeinatePlugin", package: "CaffeinatePlugin"),
+                .product(name: "AgentTempStoragePlugin", package: "AgentTempStoragePlugin"),
             ],
             resources: [
                 .process("Resources")

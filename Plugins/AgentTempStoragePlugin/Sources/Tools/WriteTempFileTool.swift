@@ -1,12 +1,14 @@
 import Foundation
 import LumiKernel
+import LocalizationKit
 
 struct WriteTempFileTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
         id: "write_temp_file",
-        displayName: PluginAgentTempStorageLocalization.string("Write Temp File"),
-        description: PluginAgentTempStorageLocalization.string(
-            "Write UTF-8 text to the agent temp storage directory. Files are auto-deleted after the retention period (default 7 days)."
+        displayName: LumiPluginLocalization.string("Write Temp File", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Write UTF-8 text to the agent temp storage directory. Files are auto-deleted after the retention period (default 7 days).",
+            bundle: .module
         )
     )
 

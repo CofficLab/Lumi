@@ -1,12 +1,14 @@
 import Foundation
 import LumiKernel
+import LocalizationKit
 
 struct ReadTempFileTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
         id: "read_temp_file",
-        displayName: PluginAgentTempStorageLocalization.string("Read Temp File"),
-        description: PluginAgentTempStorageLocalization.string(
-            "Read UTF-8 text from a file in the agent temp storage directory."
+        displayName: LumiPluginLocalization.string("Read Temp File", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Read UTF-8 text from a file in the agent temp storage directory.",
+            bundle: .module
         )
     )
 
