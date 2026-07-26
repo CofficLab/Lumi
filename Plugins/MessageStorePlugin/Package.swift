@@ -20,5 +20,10 @@ let package = Package(
             ],
             path: "Sources"
         ),
+        .testTarget(
+            name: "MessageStorePluginTests",
+            dependencies: ["MessageStorePlugin"],
+            path: "Tests"
+        ),
     ]
 )

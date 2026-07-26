@@ -1,6 +1,6 @@
 import LumiKernel
-import LumiKernel
 import LumiUI
+import MarkdownKit
 import SuperLogKit
 import SwiftUI
 import os
@@ -13,8 +13,13 @@ struct MessageListView: View, SuperLog {
 
     @LumiTheme private var theme
     @State private var messages: [LumiChatMessage] = []
+    @State private var paging = MessageListPagingState()
+    @State private var hasEarlierMessages = false
     @State private var hasSelectedConversation = false
     @State private var showRawMessage = false
+
+    private let messagePageSize = 10
+    private static let bottomAnchorID = "message-list-bottom"
 
     private var isEmpty: Bool {
         messages.isEmpty && !isSending
@@ -40,6 +45,10 @@ struct MessageListView: View, SuperLog {
             return messages + [statusMessage]
         }
         return messages
+    }
+
+    private var selectedConversationID: UUID? {
+        kernel.conversations?.selectedConversationID
     }
 
     // MARK: - SuperLog
@@ -68,13 +77,15 @@ struct MessageListView: View, SuperLog {
             }
             loadMessages()
         }
-        .onChange(of: kernel.conversations?.selectedConversationID) { _, newValue in
+        .onChange(of: selectedConversationID) { _, newValue in
             if Self.verbose {
                 Self.logger.info("\(Self.t)Conversation changed: \(newValue?.uuidString.prefix(8) ?? "nil")")
             }
+            paging.resetForConversationChange()
             loadMessages()
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("com.coffic.lumi.messagesDidChange"))) { _ in
+            guard paging.shouldAutoRefreshLatestOnMessageChange else { return }
             if Self.verbose {
                 Self.logger.info("\(Self.t)Messages changed notification received")
             }
@@ -84,19 +95,38 @@ struct MessageListView: View, SuperLog {
 
     private var messageListView: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(displayMessages) { message in
-                        MessageRowView(
-                            message: message,
-                            renderer: kernel.messageRendererManager?.renderer(for: message),
-                            showRawMessage: $showRawMessage
-                        )
-                        .id(message.id)
+            List {
+                if hasEarlierMessages {
+                    Button(action: loadEarlierMessages) {
+                        Text("Load earlier messages")
+                            .font(.appCaption)
+                            .foregroundColor(theme.textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
                     }
+                    .buttonStyle(.plain)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                    .listRowSeparator(.hidden)
                 }
-                .padding(16)
+
+                ForEach(displayMessages) { message in
+                    MessageRowView(
+                        message: message,
+                        renderer: kernel.messageRendererManager?.renderer(for: message),
+                        showRawMessage: $showRawMessage
+                    )
+                    .id(message.id)
+                    .padding(.horizontal, ChatMessageListLayout.messageRowHorizontalPadding)
+                    .padding(.vertical, ChatMessageListLayout.messageRowVerticalPadding)
+                    .listRowInsets(ChatMessageListLayout.messageRowInsets)
+                    .listRowSeparator(.hidden)
+                }
+
+                bottomAnchor
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .environment(\.preferOuterScroll, ChatMessageListLayout.prefersOuterScrollForMarkdown)
             .onAppear {
                 // 视图首次出现时（进入会话 / 从空状态切到有消息）定位到最底部，
                 // 让用户直接看到最新消息。
@@ -105,7 +135,7 @@ struct MessageListView: View, SuperLog {
                 }
                 scrollToBottom(proxy: proxy, animated: false)
             }
-            .onChange(of: messages.last?.id) { _, _ in
+            .onChange(of: displayMessages.last?.id) { _, _ in
                 // 用户刚刚发送消息时，消息列表末尾为 `.user` 角色的消息；
                 // 此时强制滚动到最底部，确保用户立即看到自己刚发出的内容。
                 guard let last = messages.last, last.role == .user else { return }
@@ -123,32 +153,85 @@ struct MessageListView: View, SuperLog {
     /// - Parameter animated: 是否使用动画。首次定位建议关闭动画以避免初次闪烁；
     ///   用户发送消息触发的滚动开启动画，过渡更自然。
     private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
-        guard let lastID = displayMessages.last?.id else { return }
+        guard !displayMessages.isEmpty else { return }
         if animated {
             withAnimation(.easeOut(duration: 0.2)) {
-                proxy.scrollTo(lastID, anchor: .bottom)
+                proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
             }
         } else {
-            proxy.scrollTo(lastID, anchor: .bottom)
+            proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
         }
     }
 
+    private var bottomAnchor: some View {
+        Color.clear
+            .frame(height: 1)
+            .id(Self.bottomAnchorID)
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
+            .accessibilityHidden(true)
+    }
+
+    private func loadEarlierMessages() {
+        Task { await loadEarlierMessagesAsync() }
+    }
+
     private func loadMessages() {
-        guard let conversationID = kernel.conversations?.selectedConversationID else {
+        Task { await loadMessagesAsync() }
+    }
+
+    @MainActor
+    private func loadEarlierMessagesAsync() async {
+        guard let conversationID = selectedConversationID else { return }
+        guard let manager = kernel.messageManager else { return }
+
+        let olderPage = await manager.visibleMessages(
+            for: conversationID,
+            limit: messagePageSize,
+            beforeMessageID: paging.oldestVisibleMessageID
+        )
+        guard !olderPage.isEmpty else { return }
+
+        messages = olderPage + messages
+        paging.didLoadEarlierPage(firstMessageID: messages.first?.id)
+        hasEarlierMessages = await manager.hasEarlierMessages(
+            for: conversationID,
+            beforeMessageID: paging.oldestVisibleMessageID
+        )
+    }
+
+    @MainActor
+    private func loadMessagesAsync() async {
+        guard let conversationID = selectedConversationID else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)No conversation selected, clearing messages")
             }
             messages = []
             hasSelectedConversation = false
+            hasEarlierMessages = false
             return
         }
         hasSelectedConversation = true
-        // 使用 displayMessages(for:) 获取已根据详细程度过滤的消息,
-        // 无需在 UI 层自行判断工具调用可见性。
-        let loaded = kernel.messageManager?.displayMessages(for: conversationID) ?? []
+        // 只加载当前窗口的一页消息,避免把整段历史一次性拉入内存。
+        guard let manager = kernel.messageManager else {
+            messages = []
+            hasEarlierMessages = false
+            return
+        }
+
+        let loaded = await manager.visibleMessages(
+            for: conversationID,
+            limit: messagePageSize,
+            beforeMessageID: nil
+        )
         if Self.verbose {
             Self.logger.info("\(Self.t)Loaded \(loaded.count) messages for conversation \(conversationID.uuidString.prefix(8))")
         }
         messages = loaded
+        paging.didLoadLatestPage(firstMessageID: loaded.first?.id)
+        hasEarlierMessages = await manager.hasEarlierMessages(
+            for: conversationID,
+            beforeMessageID: paging.oldestVisibleMessageID
+        )
     }
 }

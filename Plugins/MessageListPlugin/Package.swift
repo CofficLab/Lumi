@@ -9,6 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/MarkdownKit"),
         .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
@@ -16,9 +17,18 @@ let package = Package(
             name: "MessageListPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources"
+        ),
+        .testTarget(
+            name: "MessageListPluginTests",
+            dependencies: [
+                "MessageListPlugin",
+                .product(name: "MarkdownKitTesting", package: "MarkdownKit"),
+            ],
+            path: "Tests"
         ),
     ]
 )

@@ -179,6 +179,80 @@ public actor MessageStore: SuperLog {
         }
     }
 
+    /// Fetch a single page of messages for a conversation.
+    ///
+    /// - Parameters:
+    ///   - limit: Maximum number of messages to return.
+    ///   - beforeMessageID: If provided, returns the page immediately before this message.
+    ///     When `nil`, returns the latest page.
+    func fetchMessagePage(
+        conversationId: UUID,
+        limit: Int,
+        beforeMessageID: UUID? = nil
+    ) -> [LumiChatMessage] {
+        guard limit > 0 else { return [] }
+
+        let context = ModelContext(container)
+        let conversationIdString = conversationId.uuidString
+
+        if let beforeMessageID {
+            guard let pivot = fetchMessage(id: beforeMessageID) else { return [] }
+            let pivotCreatedAt = pivot.createdAt.timeIntervalSince1970
+            let pivotID = beforeMessageID.uuidString
+
+            var descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> {
+                    $0.conversationId == conversationIdString &&
+                    (
+                        $0.createdAt < pivotCreatedAt ||
+                        ($0.createdAt == pivotCreatedAt && $0.id < pivotID)
+                    )
+                },
+                sortBy: [
+                    SortDescriptor(\.createdAt, order: .reverse),
+                    SortDescriptor(\.id, order: .reverse),
+                ]
+            )
+            descriptor.fetchLimit = limit
+
+            do {
+                let models = try context.fetch(descriptor)
+                return models.reversed().compactMap { $0.toLumiChatMessage() }
+            } catch {
+                Self.logger.error("\(Self.t)查询消息分页失败：\(error.localizedDescription)")
+                return []
+            }
+        }
+
+        var descriptor = FetchDescriptor<MessageModel>(
+            predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString },
+            sortBy: [
+                SortDescriptor(\.createdAt, order: .reverse),
+                SortDescriptor(\.id, order: .reverse),
+            ]
+        )
+        descriptor.fetchLimit = limit
+
+        do {
+            let models = try context.fetch(descriptor)
+            return models.reversed().compactMap { $0.toLumiChatMessage() }
+        } catch {
+            Self.logger.error("\(Self.t)查询消息分页失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// Whether there are earlier messages before the given message.
+    func hasEarlierMessages(conversationId: UUID, beforeMessageID: UUID? = nil) -> Bool {
+        let pageSize = 10
+
+        if let beforeMessageID {
+            return !fetchMessagePage(conversationId: conversationId, limit: 1, beforeMessageID: beforeMessageID).isEmpty
+        }
+
+        return fetchMessagePage(conversationId: conversationId, limit: pageSize + 1, beforeMessageID: nil).count > pageSize
+    }
+
     /// Fetch a single message by ID
     func fetchMessage(id: UUID) -> LumiChatMessage? {
         let context = ModelContext(container)

@@ -1,16 +1,15 @@
 import Foundation
 import LumiKernel
-import LumiKernel
-import SuperLogKit
 import os
+import SuperLogKit
 
 /// Message Manager Service
 ///
 /// Implements MessageManaging protocol with SwiftData persistence.
 @MainActor
 public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
-    nonisolated public static let emoji = "💬"
-    nonisolated(unsafe) public static var verbose = false
+    public nonisolated static let emoji = "💬"
+    public nonisolated(unsafe) static var verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
 
     private weak var kernel: LumiKernel?
@@ -63,7 +62,11 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             loadMessages(for: conversationID)
         }
         let cached = messageCache[conversationID] ?? []
-        Self.logger.info("\(Self.t)messages(for:) conversationID=\(conversationID.uuidString.prefix(8)), cached count=\(cached.count), cache keys=\(self.messageCache.keys.map { $0.uuidString.prefix(8) })")
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)messages(for:) conversationID=\(conversationID.uuidString.prefix(8)), cached count=\(cached.count), cache keys=\(self.messageCache.keys.map { $0.uuidString.prefix(8) })")
+        }
+
         return cached
     }
 
@@ -76,6 +79,29 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             return all.filter { $0.role != .tool }
         }
         return all
+    }
+
+    public func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) async -> [LumiChatMessage] {
+        guard let store else { return [] }
+
+        let page = await store.fetchMessagePage(
+            conversationId: conversationID,
+            limit: limit,
+            beforeMessageID: beforeMessageID
+        )
+
+        let verbosity = kernel?.conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
+        return page.filter {
+            if verbosity == .detailed {
+                return $0.role != .status || $0.renderKind == "turn-completed"
+            }
+            return $0.role != .tool && ($0.role != .status || $0.renderKind == "turn-completed")
+        }
+    }
+
+    public func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) async -> Bool {
+        guard let store else { return false }
+        return await store.hasEarlierMessages(conversationId: conversationID, beforeMessageID: beforeMessageID)
     }
 
     public nonisolated func messagesAsync(for conversationID: UUID) async -> [LumiChatMessage] {
