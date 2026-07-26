@@ -31,7 +31,7 @@ public struct ListSwiftPackagesTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
@@ -39,14 +39,14 @@ public struct ListSwiftPackagesTool: LumiAgentTool, SuperLog {
         "列出 Swift Package 依赖"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
 
         guard let projectPath = arguments["project_path"]?.stringValue, !projectPath.isEmpty else {
             throw XcodePackageToolError.missingArgument("project_path")
         }
 
-        try context.checkCancellation()
+        try kernel.checkCancellation()
 
         return try await packageService.listPackages(projectPath: projectPath)
     }
