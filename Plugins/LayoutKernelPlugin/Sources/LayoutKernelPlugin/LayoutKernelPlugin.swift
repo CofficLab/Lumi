@@ -6,7 +6,12 @@ import SwiftUI
 
 /// 布局插件
 ///
-/// 向 LumiKernel 注册 Layout 服务。
+/// 1. 向 LumiKernel 注册 Layout 服务（LayoutManager / LayoutStore）。
+/// 2. 继续承担原 LayoutPlugin 的 UI 注册职责：
+///    - 标题栏右侧「Layout」工具栏按钮
+///    - 根视图覆盖层事件监听与持久化恢复
+///
+/// 这样可以直接删除 LayoutPlugin，避免同一布局能力分散在两个包里。
 @MainActor
 public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
@@ -28,12 +33,29 @@ public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
         try LayoutKernelOnReadyHook().execute(kernel)
     }
 
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+        [
+            LumiTitleToolbarItem(
+                id: "\(id).layout-menu",
+                title: "Layout",
+                placement: .trailing
+            ) {
+                LayoutMenuButton(kernel: kernel)
+            },
+        ]
+    }
+
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] {
+        [
+            
+        ]
+    }
+
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
@@ -50,7 +72,6 @@ public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
-    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}

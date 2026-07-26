@@ -17,9 +17,11 @@ public struct LayoutMenuButton: View {
     }
 
     public var body: some View {
-        AppIconButton(
+        let layoutManager = kernel.layoutManager
+
+        return AppIconButton(
             systemImage: "sidebar.leading",
-            label: LumiPluginLocalization.string("Layout", bundle: .module),
+            label: LumiPluginLocalization.string("Layout"),
             isActive: isPopoverPresented
         ) {
             isPopoverPresented.toggle()
@@ -28,11 +30,11 @@ public struct LayoutMenuButton: View {
             VStack(alignment: .leading, spacing: 0) {
                 LayoutPopoverToggle(
                     isOn: Binding(
-                        get: { kernel.layout?.layoutState.isChatVisible ?? true },
-                        set: { kernel.layout?.layoutState.setChatVisible($0) }
+                        get: { layoutManager?.layoutState.isChatVisible ?? true },
+                        set: { layoutManager?.layoutState.setChatVisible($0) }
                     ),
                     icon: "rectangle.rightthird.inset.filled",
-                    title: LumiPluginLocalization.string("Right Sidebar", bundle: .module)
+                    title: LumiPluginLocalization.string("Right Sidebar")
                 )
 
                 Divider()
@@ -40,11 +42,11 @@ public struct LayoutMenuButton: View {
 
                 LayoutPopoverToggle(
                     isOn: Binding(
-                        get: { kernel.layout?.layoutState.isPanelVisible ?? true },
-                        set: { kernel.layout?.layoutState.setPanelVisible($0) }
+                        get: { layoutManager?.layoutState.isPanelVisible ?? true },
+                        set: { layoutManager?.layoutState.setPanelVisible($0) }
                     ),
                     icon: "rectangle.inset.filled",
-                    title: LumiPluginLocalization.string("Bottom Panel", bundle: .module)
+                    title: LumiPluginLocalization.string("Bottom Panel")
                 )
             }
             .padding(12)
@@ -55,28 +57,8 @@ public struct LayoutMenuButton: View {
                 ThemeWindowAppearanceBridge()
             }
         }
-        .help(LumiPluginLocalization.string("Layout", bundle: .module))
+        .help(LumiPluginLocalization.string("Layout"))
     }
 }
 
-private struct LayoutPopoverToggle: View {
-    @LumiTheme private var theme
-    @Binding var isOn: Bool
-    let icon: String
-    let title: String
 
-    var body: some View {
-        Toggle(isOn: $isOn) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(title)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(theme.textPrimary)
-            }
-        }
-        .toggleStyle(.checkbox)
-    }
-}
