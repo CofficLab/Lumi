@@ -26,6 +26,19 @@ public final class GitHubPlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
+        // 设置插件数据目录
+        guard let storage = kernel.storage else {
+            Self.logger.error("🐙 Storage service not available")
+            return
+        }
+        GitHubInsightRuntimeBridge.rootDirectory = storage.pluginDataDirectory(for: "GitHubInsight")
+
+        // 设置 LocalStore 的数据库目录（预先计算 URL 以避免 Sendable 问题）
+        let pluginDataDir = storage.pluginDataDirectory(for: "GitHubPlugin")
+        GitHubPluginLocalStore.dbFolderURLProvider = {
+            pluginDataDir
+        }
+
         if Self.verbose {
             Self.logger.info("🐙 GitHub 插件初始化完成")
         }
