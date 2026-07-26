@@ -36,7 +36,7 @@ struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
         LumiPluginLocalization.string("创建新对话", bundle: .module)
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let customTitle = arguments["title"]?.stringValue?
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -128,11 +128,11 @@ struct DeleteConversationLumiTool: LumiAgentTool, @unchecked Sendable {
         return LumiPluginLocalization.string("删除对话 \(shortId)", bundle: .module)
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let idString = arguments["conversationId"]?.stringValue else {
             throw NSError(
                 domain: "DeleteConversationLumiTool",
@@ -234,7 +234,7 @@ struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
         let created: String
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let limit = min(max(arguments["limit"]?.intValue ?? 5, 1), 20)
 
         let (allCount, recentConversations) = await MainActor.run { () -> (Int, [ConversationInfo]) in
@@ -251,7 +251,7 @@ struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
                 let projectName: String
                 if let projectPath = conversation.projectPath {
                     let name = URL(fileURLWithPath: projectPath).lastPathComponent
-                    let isCurrent = projectPath == context.currentProjectPath ? " (current)" : ""
+                    let isCurrent = projectPath == kernel.currentProjectPath ? " (current)" : ""
                     projectName = name + isCurrent
                 } else {
                     projectName = "-"
@@ -309,8 +309,8 @@ struct GetConversationCountLumiTool: LumiAgentTool, @unchecked Sendable {
         LumiPluginLocalization.string("获取对话总数", bundle: .module)
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let projectPath = context.currentProjectPath
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let projectPath = kernel.currentProjectPath
 
         let (totalCount, projectCount, projectName) = await MainActor.run { () -> (Int, Int, String?) in
             guard let svc = ConversationListToolRuntimeBridge.conversations else {
