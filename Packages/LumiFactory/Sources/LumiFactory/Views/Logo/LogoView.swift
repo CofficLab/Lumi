@@ -19,8 +19,7 @@ struct LogoView: View {
     }
 
     private var logoItem: LogoItem? {
-        kernel?.logo?.allLogoItems
-            .max { $0.order < $1.order }
+        kernel?.logo?.highestPriorityLogoItem
     }
 
     private var logoView: AnyView? {

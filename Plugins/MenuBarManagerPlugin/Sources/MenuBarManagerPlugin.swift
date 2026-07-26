@@ -63,7 +63,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] {
         [
             MenuBarContentItem(id: "\(id).logo") {
-                MenuBarLogoView()
+                MenuBarLogoView(kernel: kernel)
             }
         ]
     }
@@ -297,11 +297,27 @@ private struct MenuBarIconView: View {
 }
 
 private struct MenuBarLogoView: View {
+    let kernel: LumiKernel
+
+    private var logoItem: LogoItem? {
+        kernel.logo?.highestPriorityLogoItem
+    }
+
+    private var logoView: AnyView? {
+        logoItem?.makeView(.statusBar)
+    }
+
     var body: some View {
-        Image(nsImage: NSApp.applicationIconImage)
-            .resizable()
-            .renderingMode(.template)
-            .frame(width: 16, height: 16)
+        Group {
+            if let view = logoView {
+                view
+            } else {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .renderingMode(.template)
+            }
+        }
+        .frame(width: 16, height: 16)
     }
 }
 
