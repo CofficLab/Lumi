@@ -23,7 +23,7 @@ import SuperLogKit
 public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-turn-runner")
     public nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // MARK: - Properties
 
@@ -130,6 +130,10 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
             // Build request with current message history
             let history = kernel.messageManager?.messages(for: conversationID) ?? []
             let tools = kernel.toolManager?.allAgentTools() ?? []
+            if Self.verbose {
+                let metrics = Self.messageMetrics(history)
+                Self.logger.info("\(Self.t)LLM history loaded conversation=\(conversationID.uuidString.prefix(8)) messages=\(history.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars) toolCallArgumentChars=\(metrics.toolCallArgumentChars)")
+            }
 
             guard let provider = kernel.llmProvider?.allLLMProviders().first else {
                 if Self.verbose {
@@ -156,6 +160,12 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
             // 抽取最近一条 user message 的文件附件(由 MessageSender 写入 metadata["fileAttachments"])。
             // 文本类文件正文在下游 MessageBridge 注入用户消息文本。
             let pendingFiles = LumiFileAttachmentMetadata.extract(from: history)
+            if Self.verbose {
+                let imageBase64Chars = pendingImages.reduce(0) { $0 + $1.base64Data.count }
+                let fileBase64Chars = pendingFiles.reduce(0) { $0 + $1.base64Data.count }
+                let fileTextChars = pendingFiles.reduce(0) { $0 + ($1.textContent?.count ?? 0) }
+                Self.logger.info("\(Self.t)LLM attachments extracted conversation=\(conversationID.uuidString.prefix(8)) images=\(pendingImages.count) imageBase64Chars=\(imageBase64Chars) files=\(pendingFiles.count) fileBase64Chars=\(fileBase64Chars) fileTextChars=\(fileTextChars)")
+            }
 
             // 调用所有插件的 willSendToLLM 钩子,让插件可注入/修改 system prompt 等内容。
             // 钩子按插件 order 升序串行执行,每个插件拿到上一个插件处理后的 messages。
@@ -163,6 +173,10 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
             for plugin in kernel.pluginManager.allPlugins {
                 guard plugin.policy.shouldRegister else { continue }
                 preparedMessages = await plugin.willSendToLLM(kernel: kernel, messages: preparedMessages)
+                if Self.verbose {
+                    let metrics = Self.messageMetrics(preparedMessages)
+                    Self.logger.info("\(Self.t)willSendToLLM plugin=\(plugin.id) messages=\(preparedMessages.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars)")
+                }
             }
 
             // 拼接策略:把所有插件注入的 system 消息合并为单条,放在 messages 首位,
@@ -177,6 +191,9 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                     content: mergedSystem
                 )
                 preparedMessages = [systemMessage] + nonSystem
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)Merged system prompt fragments=\(systemFragments.count) mergedChars=\(mergedSystem.count) nonSystemMessages=\(nonSystem.count)")
+                }
             }
 
             let request = LumiLLMRequest(
@@ -190,6 +207,10 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
             // Call LLM
             let assistantMessage: LumiChatMessage
             do {
+                if Self.verbose {
+                    let metrics = Self.messageMetrics(preparedMessages)
+                    Self.logger.info("\(Self.t)LLM request start provider=\(type(of: targetProvider).info.id) model=\(model) messages=\(preparedMessages.count) tools=\(tools.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars)")
+                }
                 assistantMessage = try await targetProvider.send(request)
             } catch {
                 if Self.verbose {
@@ -215,7 +236,8 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
             postMessageSavedNotification(message: assistantMessage, conversationID: conversationID)
 
             if Self.verbose {
-                Self.logger.info("\(Self.t)收到 assistant 消息, toolCalls=\(assistantMessage.toolCalls?.count ?? 0)")
+                let toolArgChars = assistantMessage.toolCalls?.reduce(0) { $0 + $1.arguments.count } ?? 0
+                Self.logger.info("\(Self.t)收到 assistant 消息 contentChars=\(assistantMessage.content.count) reasoningChars=\(assistantMessage.reasoningContent?.count ?? 0) toolCalls=\(assistantMessage.toolCalls?.count ?? 0) toolCallArgumentChars=\(toolArgChars)")
             }
 
             // No tool calls → turn complete
@@ -245,6 +267,10 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                 }
 
                 let result = await toolManager.execute(toolCall, conversationID: conversationID)
+                if Self.verbose {
+                    let imageBase64Chars = result.imageAttachments.reduce(0) { $0 + $1.base64Data.count }
+                    Self.logger.info("\(Self.t)工具结果 received tool=\(toolCall.name) contentChars=\(result.content.count) images=\(result.imageAttachments.count) imageBase64Chars=\(imageBase64Chars) isError=\(result.isError)")
+                }
 
                 // Update the assistant message's toolCall with the result
                 // This allows the UI to show correct visual state (success/failure/duration)
@@ -351,5 +377,26 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
         )
         kernel.messageManager?.insertMessage(errorMessage, to: conversationID)
         postMessageSavedNotification(message: errorMessage, conversationID: conversationID)
+    }
+
+    private static func messageMetrics(_ messages: [LumiChatMessage]) -> (
+        contentChars: Int,
+        metadataChars: Int,
+        reasoningChars: Int,
+        toolCallArgumentChars: Int
+    ) {
+        var contentChars = 0
+        var metadataChars = 0
+        var reasoningChars = 0
+        var toolCallArgumentChars = 0
+
+        for message in messages {
+            contentChars += message.content.count
+            metadataChars += message.metadata.reduce(0) { $0 + $1.key.count + $1.value.count }
+            reasoningChars += message.reasoningContent?.count ?? 0
+            toolCallArgumentChars += message.toolCalls?.reduce(0) { $0 + $1.arguments.count } ?? 0
+        }
+
+        return (contentChars, metadataChars, reasoningChars, toolCallArgumentChars)
     }
 }
