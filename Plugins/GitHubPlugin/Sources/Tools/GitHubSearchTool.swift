@@ -24,11 +24,11 @@ public struct GitHubSearchTool: LumiAgentTool, SuperLog {
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {        "搜索 GitHub"    }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let query = arguments["query"]?.anyValue as? String else {
             throw NSError(
                 domain: Self.info.id,

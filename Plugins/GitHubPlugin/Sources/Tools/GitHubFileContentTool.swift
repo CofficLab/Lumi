@@ -21,11 +21,11 @@ public struct GitHubFileContentTool: LumiAgentTool, SuperLog {
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {        "查看文件内容"    }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let owner = arguments["owner"]?.anyValue as? String,
               let repo = arguments["repo"]?.anyValue as? String,
               let path = arguments["path"]?.anyValue as? String else {

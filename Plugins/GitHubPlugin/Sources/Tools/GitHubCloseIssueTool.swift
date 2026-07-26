@@ -21,11 +21,11 @@ public struct GitHubCloseIssueTool: LumiAgentTool, SuperLog {
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {        "关闭 Issue"    }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let owner = arguments["owner"]?.anyValue as? String,
               let repo = arguments["repo"]?.anyValue as? String,
               let issueNumber = GitHubToolArgumentNormalizer.issueNumber(arguments["issueNumber"]?.anyValue) else {
