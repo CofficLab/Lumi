@@ -47,12 +47,12 @@ private struct SublyxMappedTool: LumiAgentTool {
     var toolDescription: String { wrapped.toolDescription }
     var inputSchema: LumiJSONValue { wrapped.inputSchema }
     
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try await wrapped.execute(arguments: arguments, context: context)
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try await wrapped.execute(arguments: arguments, kernel: kernel)
     }
     
-    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
-        wrapped.riskLevel(arguments: arguments, context: context)
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+        wrapped.riskLevel(arguments: arguments, kernel: kernel)
     }
     
     func displayDescription(arguments: [String: LumiJSONValue]) -> String {
