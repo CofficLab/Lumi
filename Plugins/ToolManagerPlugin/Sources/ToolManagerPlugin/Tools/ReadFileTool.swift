@@ -50,7 +50,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
@@ -68,7 +68,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
         return "读取 \(fileName)"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let path = arguments["path"]?.stringValue else {
             throw NSError(
                 domain: "ReadFileTool",
@@ -77,7 +77,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
             )
         }
 
-        if !context.isPathAllowed(path) {
+        if !kernel.isPathAllowed(path) {
             throw NSError(
                 domain: "ReadFileTool",
                 code: 403,
@@ -95,7 +95,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
 
             // 图片文件：读取并以图片形式回传给 LLM（而非报 UTF-8 错误）。
             if let mimeType = Self.imageMimeType(forPathExtension: url.pathExtension),
-               let imageMessage = Self.readAsImage(data: data, url: url, mimeType: mimeType, context: context) {
+               let imageMessage = Self.readAsImage(data: data, url: url, mimeType: mimeType, kernel: kernel) {
                 if Self.verbose {
                     Self.logger.info("\(self.t)识别为图片文件：\(path)，mimeType=\(mimeType)，大小=\(ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file))")
                 }
@@ -114,7 +114,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
             let modificationDate = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
             if let modificationDate {
                 ReadFileStateRegistry.shared.recordRead(
-                    conversationID: context.conversationID,
+                    conversationID: kernel.conversationID,
                     path: url.path,
                     snapshot: WorkspaceReadFileSnapshot(modificationDate: modificationDate)
                 )
@@ -166,7 +166,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
         data: Data,
         url: URL,
         mimeType: String,
-        context: LumiToolExecutionContext
+        kernel: LumiKernel
     ) -> String? {
         // NSImage(data:) 与 representations 读取在后台线程安全可用。
         guard let image = NSImage(data: data), image.isValid else {
@@ -181,7 +181,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
             acc.height = max(acc.height, rep.pixelsHigh)
         }
 
-        context.attachImage(
+        kernel.attachImage(
             LumiImageAttachment(
                 mimeType: mimeType,
                 base64Data: data.base64EncodedString(),

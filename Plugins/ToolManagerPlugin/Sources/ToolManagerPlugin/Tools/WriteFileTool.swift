@@ -28,7 +28,7 @@ public struct WriteFileTool: LumiAgentTool {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
@@ -39,14 +39,14 @@ public struct WriteFileTool: LumiAgentTool {
         return "写入 \(URL(fileURLWithPath: path).lastPathComponent)"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let path = arguments["path"]?.stringValue,
               let content = arguments["content"]?.stringValue
         else {
             throw NSError(domain: "WriteFileTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing path or content"])
         }
 
-        if !context.isPathAllowed(path) {
+        if !kernel.isPathAllowed(path) {
             throw NSError(domain: "WriteFileTool", code: 403, userInfo: [NSLocalizedDescriptionKey: "Path access denied: \(path)"])
         }
 

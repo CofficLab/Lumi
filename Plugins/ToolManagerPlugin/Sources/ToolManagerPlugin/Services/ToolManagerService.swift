@@ -1,12 +1,12 @@
 import Foundation
 import LumiKernel
-import LumiKernel
-import LumiKernel
-import LumiKernel
 
 /// Agent 工具服务实现
 @MainActor
 public final class ToolManagerService: ToolManaging {
+
+    /// Kernel 引用，用于在执行工具时直接传递给工具
+    public weak var kernel: LumiKernel?
 
     /// 已注册的工具
     private var registeredTools: [String: any LumiAgentTool] = [:]
@@ -77,44 +77,6 @@ public final class ToolManagerService: ToolManaging {
         allAgentTools()
     }
 
-    public func executeTool(name: String, arguments: String, context: LumiToolExecutionContext) async throws -> String {
-        guard let tool = registeredTools[name] else {
-            throw AgentToolError.toolNotFound(name: name)
-        }
-
-        // 解析参数 JSON
-        var argumentsDict: [String: LumiJSONValue] = [:]
-        if let data = arguments.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            argumentsDict = Self.convertToLumiJSONValue(json)
-        }
-
-        return try await tool.execute(arguments: argumentsDict, context: context)
-    }
-
-    // MARK: - JSON Conversion
-
-    private static func convertToLumiJSONValue(_ dict: [String: Any]) -> [String: LumiJSONValue] {
-        dict.mapValues { value -> LumiJSONValue in
-            convertValueToLumiJSONValue(value)
-        }
-    }
-
-    private static func convertValueToLumiJSONValue(_ value: Any) -> LumiJSONValue {
-        switch value {
-        case let s as String: return .string(s)
-        case let n as Int: return .int(n)
-        case let n as Double: return .double(n)
-        case let b as Bool: return .bool(b)
-        case let arr as [Any]:
-            return .array(arr.map { convertValueToLumiJSONValue($0) })
-        case let obj as [String: Any]:
-            return .object(convertToLumiJSONValue(obj))
-        case is NSNull: return .null
-        default: return .null
-        }
-    }
-
     // MARK: - Argument Decoding
 
     private static func decodeArguments(_ json: String) throws -> [String: LumiJSONValue] {
@@ -134,13 +96,23 @@ public final class ToolManagerService: ToolManaging {
         }
 
         let startedAt = Date()
+        let executionState = LumiToolExecutionContextState(
+            conversationID: conversationID,
+            toolCallID: toolCall.id,
+            toolName: toolCall.name
+        )
         do {
             let arguments = try Self.decodeArguments(toolCall.arguments)
-            let output = try await tool.execute(arguments: arguments, context: LumiToolExecutionContext(
-                conversationID: conversationID,
-                toolCallID: toolCall.id,
-                toolName: toolCall.name
-            ))
+            guard let kernel else {
+                return LumiToolResult(
+                    content: "Tool execution failed: kernel is not configured",
+                    duration: Date().timeIntervalSince(startedAt),
+                    isError: true
+                )
+            }
+            let output = try await kernel.withToolExecutionContextState(executionState) {
+                try await tool.execute(arguments: arguments, kernel: kernel)
+            }
             let duration = Date().timeIntervalSince(startedAt)
             return LumiToolResult(content: output, duration: duration)
         } catch {
@@ -152,4 +124,3 @@ public final class ToolManagerService: ToolManaging {
         }
     }
 }
-

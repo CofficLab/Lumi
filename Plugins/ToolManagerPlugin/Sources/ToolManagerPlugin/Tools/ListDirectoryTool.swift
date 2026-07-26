@@ -30,7 +30,7 @@ public struct ListDirectoryTool: LumiAgentTool {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
@@ -40,12 +40,12 @@ public struct ListDirectoryTool: LumiAgentTool {
         return "列出 \(dirName) 目录"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let path = arguments["path"]?.stringValue else {
             throw NSError(domain: "ListDirectoryTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' argument"])
         }
 
-        if !context.isPathAllowed(path) {
+        if !kernel.isPathAllowed(path) {
             throw NSError(
                 domain: "ListDirectoryTool",
                 code: 403,

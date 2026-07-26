@@ -43,7 +43,7 @@ public struct EditFileTool: LumiAgentTool {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .high
     }
 
@@ -54,7 +54,7 @@ public struct EditFileTool: LumiAgentTool {
         return "编辑 \(URL(fileURLWithPath: filePath).lastPathComponent)"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let filePath = arguments["file_path"]?.stringValue,
               let oldString = arguments["old_string"]?.stringValue,
               let newString = arguments["new_string"]?.stringValue
@@ -66,7 +66,7 @@ public struct EditFileTool: LumiAgentTool {
             )
         }
 
-        if !context.isPathAllowed(filePath) {
+        if !kernel.isPathAllowed(filePath) {
             throw NSError(
                 domain: "EditFileTool",
                 code: 403,
@@ -82,7 +82,7 @@ public struct EditFileTool: LumiAgentTool {
                 oldString: oldString,
                 newString: newString,
                 replaceAll: replaceAll,
-                conversationID: context.conversationID,
+                conversationID: kernel.conversationID,
                 readState: ReadFileStateRegistry.shared
             )
             switch outcome {

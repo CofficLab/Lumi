@@ -36,7 +36,7 @@ public struct ShellTool: LumiAgentTool {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         guard let command = arguments["command"]?.stringValue else {
             return .high
         }
@@ -57,7 +57,7 @@ public struct ShellTool: LumiAgentTool {
         return "运行 \(preview)"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let command = arguments["command"]?.stringValue,
               !command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else {
@@ -73,7 +73,7 @@ public struct ShellTool: LumiAgentTool {
         }
 
         let options = ShellOptions(
-            workingDirectory: context.currentProjectPath,
+            workingDirectory: kernel.currentProjectPath,
             timeout: timeout,
             throwsOnError: false
         )

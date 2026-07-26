@@ -16,6 +16,7 @@ public struct ToolManagerOnBootHook {
     /// 执行 boot
     public func execute(_ kernel: LumiKernel) async throws {
         let toolManagerService = ToolManagerService()
+        toolManagerService.kernel = kernel
         kernel.registerToolManagerService(toolManagerService)
 
         if Self.verbose {

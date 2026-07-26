@@ -24,6 +24,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {
         let toolManagerService = ToolManagerService()
+        toolManagerService.kernel = kernel
         kernel.registerToolManagerService(toolManagerService)
 
         if Self.verbose {
