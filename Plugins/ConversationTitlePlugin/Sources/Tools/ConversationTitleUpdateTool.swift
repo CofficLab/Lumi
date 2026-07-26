@@ -37,11 +37,11 @@ public struct ConversationTitleUpdateTool: LumiAgentTool, @unchecked Sendable {
         return "Update conversation title to \"\(title)\""
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let title = arguments["title"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !title.isEmpty else {
             throw NSError(
@@ -68,7 +68,7 @@ public struct ConversationTitleUpdateTool: LumiAgentTool, @unchecked Sendable {
         }
 
         let updated = await MainActor.run {
-            chatService.updateConversationTitle(title, for: context.conversationID)
+            chatService.updateConversationTitle(title, for: kernel.conversationID)
         }
 
         guard updated else {
@@ -82,7 +82,7 @@ public struct ConversationTitleUpdateTool: LumiAgentTool, @unchecked Sendable {
         return """
         ## Conversation Title Updated ✅
 
-        **Conversation ID**: `\(context.conversationID.uuidString)`
+        **Conversation ID**: `\(kernel.conversationID.uuidString)`
         **Title**: \(title)
         """
     }
