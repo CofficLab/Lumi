@@ -23,6 +23,11 @@ public protocol MessageManaging: ObservableObject {
     ///   - beforeMessageID: 以该消息为边界，返回它之前的消息页；传 `nil` 时返回最近一页。
     func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) async -> [LumiChatMessage]
 
+    /// 获取指定对话的消息数量。
+    ///
+    /// 列表、徽标等轻量 UI 应使用此方法，避免为了计数加载整段消息正文或附件。
+    func messageCount(for conversationID: UUID) async -> Int
+
     /// 指定消息之前是否还有更早的消息。
     func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) async -> Bool
 
