@@ -112,11 +112,11 @@ public struct ShowImageTool: LumiAgentTool, SuperLog {
         "显示图片"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let rawSource = arguments.string("source") else {
             return "Error: Missing required 'source' parameter. Please provide a local file path or a remote URL."
         }

@@ -70,7 +70,7 @@ struct PluginShowImageTests {
     func toolRiskLevel() {
         let tool = ShowImageTool()
 
-        #expect(tool.riskLevel(arguments: [:], context: nil) == .low)
+        #expect(tool.riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
     }
 
     @Test("max width is clamped to supported range")
@@ -90,12 +90,15 @@ struct PluginShowImageTests {
     func toolTrimsCopiedRemoteSourceWhitespace() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let context = LumiToolExecutionContext(conversationID: UUID(), toolCallID: "call_1", toolName: tool.name)
+        let kernel = LumiKernel()
+        let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call_1", toolName: tool.name)
 
-        let result = try await tool.execute(
-            arguments: ["source": .string(" \nhttps://example.com/image.png\t")],
-            context: context
-        )
+        let result = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(
+                arguments: ["source": .string(" \nhttps://example.com/image.png\t")],
+                kernel: kernel
+            )
+        }
 
         #expect(result == "Image displayed successfully. Source: https://example.com/image.png")
         #expect(ShowImageState.shared.displayItem?.source == .remote("https://example.com/image.png"))
@@ -120,12 +123,15 @@ struct PluginShowImageTests {
     func toolAcceptsUppercaseHTTPSRemoteSource() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let context = LumiToolExecutionContext(conversationID: UUID(), toolCallID: "call_upper_https", toolName: tool.name)
+        let kernel = LumiKernel()
+        let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call_upper_https", toolName: tool.name)
 
-        let result = try await tool.execute(
-            arguments: ["source": .string("HTTPS://example.com/image.png")],
-            context: context
-        )
+        let result = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(
+                arguments: ["source": .string("HTTPS://example.com/image.png")],
+                kernel: kernel
+            )
+        }
 
         #expect(result == "Image displayed successfully. Source: HTTPS://example.com/image.png")
         #expect(ShowImageState.shared.displayItem?.source == .remote("HTTPS://example.com/image.png"))
@@ -137,12 +143,15 @@ struct PluginShowImageTests {
     func toolReportsUnsupportedRemoteURLScheme() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let context = LumiToolExecutionContext(conversationID: UUID(), toolCallID: "call_ftp", toolName: tool.name)
+        let kernel = LumiKernel()
+        let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call_ftp", toolName: tool.name)
 
-        let result = try await tool.execute(
-            arguments: ["source": .string("ftp://example.com/image.png")],
-            context: context
-        )
+        let result = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(
+                arguments: ["source": .string("ftp://example.com/image.png")],
+                kernel: kernel
+            )
+        }
 
         #expect(result == "Error: Unsupported image URL scheme 'ftp'. Only HTTP/HTTPS URLs are supported.")
         #expect(ShowImageState.shared.displayItem == nil)
@@ -153,15 +162,18 @@ struct PluginShowImageTests {
     func toolClampsDisplayedRemoteMaxWidth() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let context = LumiToolExecutionContext(conversationID: UUID(), toolCallID: "call_2", toolName: tool.name)
+        let kernel = LumiKernel()
+        let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call_2", toolName: tool.name)
 
-        _ = try await tool.execute(
-            arguments: [
-                "source": .string("https://example.com/image.png"),
-                "maxWidth": .int(9_999),
-            ],
-            context: context
-        )
+        _ = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(
+                arguments: [
+                    "source": .string("https://example.com/image.png"),
+                    "maxWidth": .int(9_999),
+                ],
+                kernel: kernel
+            )
+        }
 
         #expect(ShowImageState.shared.displayItem?.maxWidth == ShowImageTool.maxMaxWidth)
         ShowImageState.shared.clear()
@@ -172,25 +184,30 @@ struct PluginShowImageTests {
     func toolAcceptsJSONStyleMaxWidthValues() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let context = LumiToolExecutionContext(conversationID: UUID(), toolCallID: "call_3", toolName: tool.name)
+        let kernel = LumiKernel()
+        let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call_3", toolName: tool.name)
 
-        _ = try await tool.execute(
-            arguments: [
-                "source": .string("https://example.com/image.png"),
-                "maxWidth": .double(640.0),
-            ],
-            context: context
-        )
+        _ = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(
+                arguments: [
+                    "source": .string("https://example.com/image.png"),
+                    "maxWidth": .double(640.0),
+                ],
+                kernel: kernel
+            )
+        }
 
         #expect(ShowImageState.shared.displayItem?.maxWidth == 640)
 
-        _ = try await tool.execute(
-            arguments: [
-                "source": .string("https://example.com/image.png"),
-                "maxWidth": .string("500"),
-            ],
-            context: context
-        )
+        _ = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(
+                arguments: [
+                    "source": .string("https://example.com/image.png"),
+                    "maxWidth": .string("500"),
+                ],
+                kernel: kernel
+            )
+        }
 
         #expect(ShowImageState.shared.displayItem?.maxWidth == 500)
         ShowImageState.shared.clear()
