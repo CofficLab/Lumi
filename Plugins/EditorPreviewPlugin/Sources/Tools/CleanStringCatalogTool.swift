@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LumiKernel
 import StringCatalogKit
@@ -8,7 +7,13 @@ import os
 /// 清理 xcstrings 文件中废弃 key 的工具
 ///
 /// 当 xcstrings 文件中存在被标记为 stale 的 key 时，AI 可以调用此工具自动清理它们。
-public struct CleanStringCatalogTool: SuperAgentTool, SuperLog {
+public struct CleanStringCatalogTool: LumiAgentTool, SuperLog {
+    public static let info = LumiAgentToolInfo(
+        id: "clean_string_catalog",
+        displayName: "Clean String Catalog",
+        description: "Clean stale keys from a specified xcstrings file."
+    )
+
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "plugin.editor-preview.clean-string-catalog"
@@ -16,47 +21,35 @@ public struct CleanStringCatalogTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🧹"
     public nonisolated static let verbose: Bool = true
 
-    public let name = "clean_string_catalog"
-
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return "清理指定 xcstrings 文件中被标记为废弃（stale）的 key。接受 xcstrings 文件的绝对路径作为参数，返回清理结果。"
-        case .english:
-            return """
-    Clean stale keys from a specified xcstrings file. \
-    Takes the absolute path to an xcstrings file as parameter and returns the cleanup result.
-    """
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "file_path": .object([
+                    "type": .string("string"),
+                    "description": .string("The absolute path to the xcstrings file to clean"),
+                ]),
+            ]),
+            "required": .array([.string("file_path")]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "file_path": [
-                    "type": "string",
-                    "description": "The absolute path to the xcstrings file to clean",
-                ],
-            ],
-            "required": ["file_path"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        let filePath = arguments["file_path"]?.value as? String ?? "unknown"
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        let filePath = arguments["file_path"]?.stringValue ?? "unknown"
         let fileName = URL(fileURLWithPath: filePath).lastPathComponent
         return "清理 \(fileName) 中的废弃 key"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .medium }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+        .medium
+    }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
 
-        guard let filePath = arguments["file_path"]?.value as? String else {
+        guard let filePath = arguments["file_path"]?.stringValue else {
             return LumiPluginLocalization.string("Error: file_path is required", bundle: .module)
         }
 

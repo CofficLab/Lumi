@@ -1,4 +1,3 @@
-import AgentToolKit
 import Foundation
 import LumiKernel
 import StringCatalogKit
@@ -12,7 +11,13 @@ import os
 /// - 缺失翻译
 /// - 未实际翻译（翻译值与 key 相同）
 /// - 占位符不匹配
-public struct InspectStringCatalogTool: SuperAgentTool, SuperLog {
+public struct InspectStringCatalogTool: LumiAgentTool, SuperLog {
+    public static let info = LumiAgentToolInfo(
+        id: "inspect_string_catalog",
+        displayName: "Inspect String Catalog",
+        description: "Inspect issues in a specified xcstrings file."
+    )
+
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "plugin.editor-preview.inspect-string-catalog"
@@ -20,52 +25,35 @@ public struct InspectStringCatalogTool: SuperAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = true
 
-    public let name = "inspect_string_catalog"
-
     public init() {}
 
-    public func description(for language: LanguagePreference) -> String {
-        switch language {
-        case .chinese:
-            return """
-            检查指定 xcstrings 文件中存在的问题。接受 xcstrings 文件的绝对路径作为参数，\
-            检测并报告废弃 key、缺失翻译、未翻译内容等问题。仅做检查，不会修改文件。
-            """
-        case .english:
-            return """
-            Inspect issues in a specified xcstrings file. \
-            Takes the absolute path to an xcstrings file as parameter, \
-            detects and reports stale keys, missing translations, untranslated entries, etc. \
-            Read-only — does not modify the file.
-            """
-        }
+    public var inputSchema: LumiJSONValue {
+        .object([
+            "type": .string("object"),
+            "properties": .object([
+                "file_path": .object([
+                    "type": .string("string"),
+                    "description": .string("The absolute path to the xcstrings file to inspect"),
+                ]),
+            ]),
+            "required": .array([.string("file_path")]),
+        ])
     }
 
-    public func inputSchema(for language: LanguagePreference) -> [String: Any] {
-        [
-            "type": "object",
-            "properties": [
-                "file_path": [
-                    "type": "string",
-                    "description": "The absolute path to the xcstrings file to inspect",
-                ],
-            ],
-            "required": ["file_path"],
-        ]
-    }
-
-    public func displayDescription(for arguments: [String: ToolArgument]) -> String {
-        let filePath = arguments["file_path"]?.value as? String ?? "unknown"
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        let filePath = arguments["file_path"]?.stringValue ?? "unknown"
         let fileName = URL(fileURLWithPath: filePath).lastPathComponent
         return "检查 \(fileName) 中的翻译问题"
     }
 
-    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+        .low
+    }
 
-    public func execute(arguments: [String: ToolArgument], context: ToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
 
-        guard let filePath = arguments["file_path"]?.value as? String else {
+        guard let filePath = arguments["file_path"]?.stringValue else {
             return LumiPluginLocalization.string("Error: file_path is required", bundle: .module)
         }
 
