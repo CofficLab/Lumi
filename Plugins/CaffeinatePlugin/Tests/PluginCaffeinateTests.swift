@@ -40,14 +40,14 @@ struct PluginCaffeinateTests {
         let activateProperties = Self.extractProperties(activate.inputSchema)
         #expect(activateProperties?["mode"] != nil)
         #expect(activateProperties?["duration"] != nil)
-        #expect(activate.riskLevel(arguments: [:], context: nil) == .low)
+        #expect(activate.riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
 
         let turnOffDisplayProperties = Self.extractProperties(CaffeinateTurnOffDisplayTool().inputSchema)
         #expect(turnOffDisplayProperties?["duration"] != nil)
 
-        #expect(CaffeinateDeactivateTool().riskLevel(arguments: [:], context: nil) == .low)
-        #expect(CaffeinateStatusTool().riskLevel(arguments: [:], context: nil) == .low)
-        #expect(CaffeinateTurnOffDisplayTool().riskLevel(arguments: [:], context: nil) == .low)
+        #expect(CaffeinateDeactivateTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(CaffeinateStatusTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(CaffeinateTurnOffDisplayTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
     }
 
     /// 从 LumiJSONValue schema 中提取 properties 对象。

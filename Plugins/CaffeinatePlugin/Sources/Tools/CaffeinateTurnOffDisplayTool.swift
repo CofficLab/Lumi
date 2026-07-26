@@ -29,12 +29,12 @@ struct CaffeinateTurnOffDisplayTool: LumiAgentTool, SuperLog {
     }
 
     func displayDescription(arguments: [String: LumiJSONValue]) -> String { "关闭显示器" }
-    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
     @MainActor
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let duration = arguments.double("duration") ?? 0
 
         if Self.verbose {
