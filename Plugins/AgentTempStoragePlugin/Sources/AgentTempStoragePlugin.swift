@@ -17,7 +17,7 @@ public final class AgentTempStoragePlugin: LumiPlugin, SuperLog {
     public let name = "Agent Temp Storage"
     public let order = 80
     public let policy: LumiPluginPolicy = .optOut
-    public let category: LumiPluginCategory = .developer
+    public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Temporary file storage for agent workflows."
 
