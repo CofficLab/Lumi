@@ -3,17 +3,6 @@ import Foundation
 import os
 import SuperLogKit
 
-// MARK: - Notification Names
-
-private extension Notification.Name {
-    static let selectedRemoteProviderIDDidChange = Notification.Name("LumiProviderState.SelectedRemoteProviderIDDidChange")
-    static let selectedLocalProviderIDDidChange = Notification.Name("LumiProviderState.SelectedLocalProviderIDDidChange")
-    static let selectedModelsDidChange = Notification.Name("LumiProviderState.SelectedModelsDidChange")
-    static let routingModeDidChange = Notification.Name("LumiProviderState.RoutingModeDidChange")
-    static let providerAvailabilityDidChange = Notification.Name("LumiProviderState.AvailabilityDidChange")
-    static let providerStatusesDidChange = Notification.Name("LumiProviderState.StatusesDidChange")
-}
-
 @MainActor
 public final class LumiProviderState: ObservableObject, SuperLog {
     nonisolated public static let emoji = "🤖"
@@ -25,7 +14,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
             guard selectedRemoteProviderID != oldValue else { return }
             let value = selectedRemoteProviderID
             if Self.verbose { Self.logger.info("selectedRemoteProviderID → \(value ?? "nil")") }
-            NotificationCenter.default.post(name: .selectedRemoteProviderIDDidChange, object: nil, userInfo: ["providerID": value as Any])
+            NotificationCenter.default.post(name: .lumiSelectedRemoteProviderIDDidChange, object: nil, userInfo: ["providerID": value as Any])
         }
     }
 
@@ -34,7 +23,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
             guard selectedLocalProviderID != oldValue else { return }
             let value = selectedLocalProviderID
             if Self.verbose { Self.logger.info("selectedLocalProviderID → \(value ?? "nil")") }
-            NotificationCenter.default.post(name: .selectedLocalProviderIDDidChange, object: nil, userInfo: ["providerID": value as Any])
+            NotificationCenter.default.post(name: .lumiSelectedLocalProviderIDDidChange, object: nil, userInfo: ["providerID": value as Any])
         }
     }
 
@@ -42,7 +31,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
         didSet {
             guard self.selectedModels != oldValue else { return }
             if Self.verbose { Self.logger.info("selectedModels → \(self.selectedModels)") }
-            NotificationCenter.default.post(name: .selectedModelsDidChange, object: nil, userInfo: ["selectedModels": self.selectedModels])
+            NotificationCenter.default.post(name: .lumiSelectedModelsDidChange, object: nil, userInfo: ["selectedModels": self.selectedModels])
         }
     }
 
@@ -50,7 +39,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
         didSet {
             guard self.routingMode != oldValue else { return }
             if Self.verbose { Self.logger.info("routingMode → \(String(describing: self.routingMode))") }
-            NotificationCenter.default.post(name: .routingModeDidChange, object: nil, userInfo: ["routingMode": self.routingMode])
+            NotificationCenter.default.post(name: .lumiRoutingModeDidChange, object: nil, userInfo: ["routingMode": self.routingMode])
         }
     }
 
@@ -58,7 +47,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
         didSet {
             guard self.availabilityResults != oldValue else { return }
             if Self.verbose { Self.logger.info("availabilityResults.count → \(self.availabilityResults.count)") }
-            NotificationCenter.default.post(name: .providerAvailabilityDidChange, object: nil, userInfo: ["availabilityResults": self.availabilityResults])
+            NotificationCenter.default.post(name: .lumiProviderAvailabilityDidChange, object: nil, userInfo: ["availabilityResults": self.availabilityResults])
         }
     }
 
@@ -66,7 +55,7 @@ public final class LumiProviderState: ObservableObject, SuperLog {
         didSet {
             guard self.providerStatuses != oldValue else { return }
             if Self.verbose { Self.logger.info("providerStatuses.count → \(self.providerStatuses.count)") }
-            NotificationCenter.default.post(name: .providerStatusesDidChange, object: nil, userInfo: ["providerStatuses": self.providerStatuses])
+            NotificationCenter.default.post(name: .lumiProviderStatusesDidChange, object: nil, userInfo: ["providerStatuses": self.providerStatuses])
         }
     }
 

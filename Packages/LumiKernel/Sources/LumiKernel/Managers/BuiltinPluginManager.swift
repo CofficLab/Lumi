@@ -29,7 +29,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
 
     /// 插件启用状态变化时广播通知
     public func notifyEnabledPluginsDidChange() {
-        NotificationCenter.default.post(name: .lumiEnabledPluginsDidChange, object: self)
+        kernel?.eventManager.postEnabledPluginsDidChange(object: self)
     }
 
     init() {}
