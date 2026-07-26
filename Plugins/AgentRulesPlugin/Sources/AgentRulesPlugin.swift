@@ -7,7 +7,10 @@ public final class AgentRulesPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.agent-rules"
     public let name = "Agent Rules"
     public let order = 50
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .disabled
+    public let category: LumiPluginCategory = .general
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Manage rule documents in .agent/rules directory."
 
     public init() {}
 

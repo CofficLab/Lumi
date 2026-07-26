@@ -104,6 +104,7 @@ import OpenInGitOKPlugin
 import OpenRemotePlugin
 import ProjectRAGPlugin
 import GitPlugin
+import AgentRulesPlugin
 // import CADDesignerPlugin  // Not included in Xcode project
 
 /// 插件服务
@@ -163,6 +164,7 @@ public enum PluginService {
             ConversationNewPlugin(),
             ProjectRAGPlugin(),
             GitPlugin(),
+            AgentRulesPlugin(),
             CommandPlugin(),
             ChatPanelPlugin(),
             ModelSelectorPlugin(),
