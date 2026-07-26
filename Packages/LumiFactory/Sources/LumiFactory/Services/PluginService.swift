@@ -116,6 +116,7 @@ import DownloadPlugin
 import BrowserPlugin
 import ShowImagePlugin
 import GitHubPlugin
+import GoalTaskPlugin
 // import CADDesignerPlugin  // Not included in Xcode project
 
 /// 插件服务
@@ -229,6 +230,7 @@ public enum PluginService {
             BrowserPlugin(),
             ShowImagePlugin(),
             GitHubPlugin(),
+            GoalTaskPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

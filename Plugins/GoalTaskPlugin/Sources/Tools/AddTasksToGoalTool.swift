@@ -90,7 +90,7 @@ public struct AddTasksToGoalTool: LumiAgentTool, SuperLog {
             return "Error: no valid tasks found"
         }
         
-        guard let manager = await GoalTaskPlugin.currentManager() else {
+        guard let manager = GoalTaskPlugin.currentManager() else {
             return "Error: goal task manager is not initialized"
         }
         

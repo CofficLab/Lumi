@@ -1,20 +1,57 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import SuperLogKit
+import os
+
+/// GoalTaskPlugin 类型别名，便于工具和视图引用
+public typealias GoalTaskPlugin = Plugin
 
 @MainActor
-public final class Plugin: LumiPlugin {
+public final class Plugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🎯"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.goal-task"
+    )
+
     public let id = "com.coffic.lumi.plugin.goal-task"
-    public let name = ""
+    public let name = "GoalTask"
     public let order = 91
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Goal and task management for multi-step objectives."
+
+    /// 共享的 GoalStateManager 实例
+    private nonisolated(unsafe) static var _sharedManager: GoalStateManager?
 
     public init() {}
+
+    /// 获取共享的 GoalStateManager
+    public nonisolated static func currentManager() -> GoalStateManager? {
+        _sharedManager
+    }
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        // 设置 GoalStateManager
+        guard let storage = kernel.storage else {
+            Self.logger.error("🎯 Storage service not available")
+            return
+        }
+
+        let pluginDataDir = storage.pluginDataDirectory(for: "GoalTaskPlugin")
+        do {
+            Self._sharedManager = try GoalStateManager(databaseRootURL: pluginDataDir)
+            if Self.verbose {
+                Self.logger.info("🎯 GoalTask 插件初始化完成")
+            }
+        } catch {
+            Self.logger.error("🎯 GoalStateManager 初始化失败: \(error.localizedDescription)")
+        }
     }
 
 
@@ -45,7 +82,13 @@ public final class Plugin: LumiPlugin {
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
-    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {
+        await TurnFinishedHook.handle(
+            lumiCore: kernel,
+            conversationID: conversationID,
+            reason: reason
+        )
+    }
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}

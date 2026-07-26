@@ -59,7 +59,7 @@ public actor GoalStateManager: SuperLog {
         } catch {
             // 目录创建失败属于不可恢复的环境错误，抛出让 lifecycle 上层走 CrashedView，
             // 而不是静默降级到内存库（会导致数据不落盘但用户无感）。
-            throw LumiPluginDependencyError.stateNotInitialized("GoalTaskPlugin 数据库目录: \(error.localizedDescription)")
+            throw NSError(domain: "GoalTaskPlugin", code: 1, userInfo: [NSLocalizedDescriptionKey: "GoalTaskPlugin 数据库目录: \(error.localizedDescription)"])
         }
 
         let config = ModelConfiguration(
@@ -83,7 +83,7 @@ public actor GoalStateManager: SuperLog {
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            throw LumiPluginDependencyError.stateNotInitialized("GoalTaskPlugin 数据库重建失败: \(error.localizedDescription)")
+            throw NSError(domain: "GoalTaskPlugin", code: 2, userInfo: [NSLocalizedDescriptionKey: "GoalTaskPlugin 数据库重建失败: \(error.localizedDescription)"])
         }
     }
     

@@ -1,5 +1,4 @@
 import LumiKernel
-import LumiKernel
 import LumiUI
 import SwiftUI
 
@@ -7,7 +6,6 @@ import SwiftUI
 
 /// 显示在 chat 工具栏的 Goal 按钮（Verbosity 按钮右侧），点击展示当前对话的所有 Goal 列表。
 struct GoalToolbarButton: View {
-    @ObservedObject private var chatService: ChatService
     @StateObject private var viewModel: GoalToolbarViewModel
     @State private var isPopoverPresented = false
 
@@ -16,10 +14,6 @@ struct GoalToolbarButton: View {
     }
 
     init(chatService: any LumiChatServicing) {
-        guard let chatService = chatService as? ChatService else {
-            preconditionFailure("GoalToolbarButton requires ChatService")
-        }
-        _chatService = ObservedObject(wrappedValue: chatService)
         _viewModel = StateObject(wrappedValue: GoalToolbarViewModel(chatService: chatService))
     }
 
@@ -49,7 +43,7 @@ final class GoalToolbarViewModel: ObservableObject {
     @Published public var goals: [GoalListItem] = []
     @Published public var isLoading: Bool = false
 
-    private let chatService: ChatService
+    private let chatService: (any LumiChatServicing)
 
     private var manager: GoalStateManager? {
         GoalTaskPlugin.currentManager()
@@ -60,7 +54,7 @@ final class GoalToolbarViewModel: ObservableObject {
         goals.contains { (item: GoalListItem) in item.goal.isTerminal == false }
     }
 
-    init(chatService: ChatService) {
+    init(chatService: any LumiChatServicing) {
         self.chatService = chatService
     }
 
@@ -277,4 +271,3 @@ private struct GoalRowView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
-

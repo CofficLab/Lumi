@@ -71,7 +71,7 @@ public struct UpdateTaskStatusTool: LumiAgentTool, SuperLog {
         let result = arguments["result"]?.anyValue as? String
         let errorMessage = arguments["error_message"]?.anyValue as? String
 
-        guard let manager = await GoalTaskPlugin.currentManager() else {
+        guard let manager = GoalTaskPlugin.currentManager() else {
             return "Error: goal task manager is not initialized"
         }
         

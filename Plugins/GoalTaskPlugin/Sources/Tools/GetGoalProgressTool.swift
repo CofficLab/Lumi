@@ -43,7 +43,7 @@ public struct GetGoalProgressTool: LumiAgentTool, SuperLog {
             return "Error: goal_id is required"
         }
         
-        guard let manager = await GoalTaskPlugin.currentManager() else {
+        guard let manager = GoalTaskPlugin.currentManager() else {
             return "Error: goal task manager is not initialized"
         }
 

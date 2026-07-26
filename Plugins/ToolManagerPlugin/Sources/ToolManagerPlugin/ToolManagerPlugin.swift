@@ -54,28 +54,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
-        let toolManager = kernel.toolManager
-        let groups = toolManager?.agentToolsGroupedByPlugin() ?? []
-        var pluginNames: [String: String] = [:]
-        for plugin in kernel.pluginManager.allPlugins {
-            pluginNames[plugin.id] = plugin.name
-        }
-        let totalTools = toolManager?.allAgentTools().count ?? 0
-        return [
-            StatusBarItem(
-                id: "\(id).tools",
-                title: "Available Tools",
-                systemImage: "wrench.and.screwdriver",
-                placement: .trailing,
-                popover: {
-                    ToolManagerAvailableToolsDetailView(
-                        groups: groups,
-                        pluginDisplayNames: pluginNames,
-                        totalToolCount: totalTools
-                    )
-                }
-            ),
-        ]
+        return []
     }
 
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
