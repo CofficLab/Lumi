@@ -23,5 +23,10 @@ public protocol LogoProviding: ObservableObject {
 }
 
 public extension LogoProviding {
+    /// 当前最高优先级的 Logo 项。
+    var highestPriorityLogoItem: LogoItem? {
+        allLogoItems.max { $0.order < $1.order }
+    }
+
     func clearAllContributions() {}
 }
