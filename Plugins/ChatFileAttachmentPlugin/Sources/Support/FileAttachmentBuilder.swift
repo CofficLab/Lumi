@@ -1,5 +1,7 @@
 import Foundation
 import LumiKernel
+import os
+import SuperLogKit
 import UniformTypeIdentifiers
 
 /// 把用户选择的 `[URL]` 转换成附件集合的纯函数构建器。
@@ -9,7 +11,10 @@ import UniformTypeIdentifiers
 ///
 /// 所有文件读取都经过 `startAccessingSecurityScopedResource` 安全沙盒访问
 /// (`.fileImporter` 返回的 URL 是安全作用域的)。
-enum FileAttachmentBuilder {
+enum FileAttachmentBuilder: SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-file-attachment.builder")
+    nonisolated static let verbose = true
+
     /// 构建结果:图片附件走图片链路,文件附件走文件链路。
     struct Outcome {
         let images: [LumiImageAttachment]
@@ -19,6 +24,9 @@ enum FileAttachmentBuilder {
     static func build(from urls: [URL]) -> Outcome {
         var images: [LumiImageAttachment] = []
         var files: [LumiFileAttachment] = []
+        if Self.verbose {
+            Self.logger.info("\(Self.t)build attachments start urls=\(urls.count)")
+        }
 
         for url in urls {
             let didStartAccess = url.startAccessingSecurityScopedResource()
@@ -28,6 +36,12 @@ enum FileAttachmentBuilder {
                 }
             }
             process(url: url, images: &images, files: &files)
+        }
+        if Self.verbose {
+            let imageBase64Chars = images.reduce(0) { $0 + $1.base64Data.count }
+            let fileBase64Chars = files.reduce(0) { $0 + $1.base64Data.count }
+            let fileTextChars = files.reduce(0) { $0 + ($1.textContent?.count ?? 0) }
+            Self.logger.info("\(Self.t)build attachments done images=\(images.count) imageBase64Chars=\(imageBase64Chars) files=\(files.count) fileBase64Chars=\(fileBase64Chars) fileTextChars=\(fileTextChars)")
         }
         return Outcome(images: images, files: files)
     }
@@ -40,9 +54,15 @@ enum FileAttachmentBuilder {
         guard let data = try? Data(contentsOf: url) else { return }
         let fileName = url.lastPathComponent
         let mimeType = mimeType(for: url)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)process attachment file=\(fileName) bytes=\(data.count) mimeType=\(mimeType)")
+        }
 
         if isImage(mimeType: mimeType, url: url) {
             let base64 = data.base64EncodedString()
+            if Self.verbose {
+                Self.logger.info("\(Self.t)image attachment encoded file=\(fileName) bytes=\(data.count) base64Chars=\(base64.count)")
+            }
             images.append(
                 LumiImageAttachment(
                     mimeType: mimeType,
@@ -58,6 +78,9 @@ enum FileAttachmentBuilder {
                 text = Self.cap(decoded)
             } else {
                 text = nil
+            }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)file attachment encoded file=\(fileName) bytes=\(data.count) base64Chars=\(base64.count) textChars=\(text?.count ?? 0) isText=\(text != nil)")
             }
             files.append(
                 LumiFileAttachment(
