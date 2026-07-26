@@ -1,29 +1,33 @@
 import LumiKernel
 import LumiUI
 import SwiftUI
-import os
 
-/// Editor Tab Strip Plugin
-///
-/// 在 PanelHeader 贡献标签栏 UI。通过 `EditorTabStripCoordination` 协议消费编辑器能力,
-/// 不直接依赖 `EditorService`。
 @MainActor
-public final class StripHeaderPlugin: LumiPlugin {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-tab-strip")
-
-    public let id = "com.coffic.lumi.plugin.editor-tab-strip-header"
-    public let name = "Editor Tab Strip"
+public final class ProjectFilesPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.project-files"
+    public let name = "Project Files"
     public let order = 70
     public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
-
     public func onReady(kernel: LumiKernel) async throws {}
 
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] {
+        [
+            PanelHeaderItem(id: id) {
+                ProjectFilesHeaderView(kernel: kernel)
+            }
+        ]
+    }
 
-    // MARK: - LumiPlugin stubs
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            GetCurrentFileTool(),
+            SetCurrentFileTool(),
+        ]
+    }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -31,22 +35,6 @@ public final class StripHeaderPlugin: LumiPlugin {
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
-    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] {
-        // 声明式贡献(由 BuiltinPluginManager.registerPluginUIContributions 收集)。
-        // 不要用 onReady 命令式注册——registerPluginUIContributions 会先 clearAllContributions
-        // 再从 hook 收集,命令式注册的会被冲掉。
-        let pluginName = name
-        return [
-            PanelHeaderItem(id: id) {
-                let coordination = kernel.resolveService(EditorTabStripCoordination.self)
-                if let coordination {
-                    HeaderView(coordination: coordination, kernel: kernel)
-                } else {
-                    StripHeaderErrorView(pluginName: pluginName)
-                }
-            }
-        ]
-    }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
@@ -67,6 +55,4 @@ public final class StripHeaderPlugin: LumiPlugin {
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
-    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
-    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

@@ -1,5 +1,4 @@
 import EditorService
-import EditorTabStripPlugin
 import LumiKernel
 import LumiUI
 import os
@@ -48,13 +47,6 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
             ) {
                 EditorPanelHostView(kernel: kernel)
             }
-        ]
-    }
-
-    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
-        [
-            GetCurrentFileTool(),
-            SetCurrentFileTool(),
         ]
     }
 

@@ -1,20 +1,14 @@
 import Foundation
 import LumiKernel
-import LumiKernel
-import LumiKernel
-import SuperLogKit
 
-/// 设置当前文件工具
-///
-/// 基于 StripStore 的 activeTabPath 设置当前活跃文件。
-public struct SetCurrentFileTool: LumiAgentTool, SuperLog {
+public struct SetCurrentFileTool: LumiAgentTool {
     public nonisolated static let emoji = "📄"
     public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "set_current_file",
-        displayName: LumiPluginLocalization.string("Set Current File", bundle: .module),
-        description: LumiPluginLocalization.string("Set the current selected file. Requires a file path. This will open the file in the editor tab strip and switch the UI to display it, making it the active tab visible to the user.", bundle: .module)
+        displayName: "Set Current File",
+        description: "Set the current file for the active project."
     )
 
     public init() {}
@@ -32,7 +26,10 @@ public struct SetCurrentFileTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "设置当前文件" }
+    public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        "Set current file"
+    }
+
     public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
@@ -42,7 +39,6 @@ public struct SetCurrentFileTool: LumiAgentTool, SuperLog {
             return "❌ Error: Missing required parameter 'path'"
         }
 
-        // 验证路径是否存在且为文件
         let fm = FileManager.default
         var isDirectory: ObjCBool = false
 
@@ -54,27 +50,25 @@ public struct SetCurrentFileTool: LumiAgentTool, SuperLog {
             return "❌ Error: Path is a directory, not a file: \(path)"
         }
 
-        let projectPath = kernel.currentProjectPath
-
-        guard let projectPath else {
-            return "❌ Error: No project selected. Use `set_current_project` first."
+        let hasProject = await MainActor.run {
+            kernel.project != nil
         }
 
-        let fileName = URL(fileURLWithPath: path).lastPathComponent
+        guard hasProject else {
+            return "❌ Error: No project selected."
+        }
 
-        let store = StripStore.shared
-        store.setCurrentFilePath(path: path, forProject: projectPath)
-
-        NotificationCenter.postCurrentFileDidChange(path: path)
+        let fileURL = URL(fileURLWithPath: path)
+        await MainActor.run {
+            kernel.project?.updateCurrentFile(fileURL)
+        }
 
         return """
         ✅ Successfully set current file
 
-        **File Name**: \(fileName)
+        **File Name**: \(fileURL.lastPathComponent)
 
-        **File Path**: \(path)
-
-        The file has been saved and is ready to use.
+        **File Path**: \(fileURL.path)
         """
     }
 }
