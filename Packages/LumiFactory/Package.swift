@@ -125,6 +125,7 @@ let package = Package(
         .package(path: "../../Plugins/OpenRemotePlugin"),
         .package(path: "../../Plugins/ProjectRAGPlugin"),
         .package(path: "../../Plugins/AgentRulesPlugin"),
+        .package(path: "../../Plugins/CaffeinatePlugin"),
     ],
     targets: [
         .target(
@@ -247,6 +248,7 @@ let package = Package(
                 .product(name: "OpenRemotePlugin", package: "OpenRemotePlugin"),
                 .product(name: "ProjectRAGPlugin", package: "ProjectRAGPlugin"),
                 .product(name: "AgentRulesPlugin", package: "AgentRulesPlugin"),
+                .product(name: "CaffeinatePlugin", package: "CaffeinatePlugin"),
             ],
             resources: [
                 .process("Resources")
