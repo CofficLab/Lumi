@@ -37,11 +37,11 @@ public struct GitShowTool: LumiAgentTool, SuperLog {
         "查看提交详情"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let path = arguments.string("path")
         guard let hash = arguments.string("hash") else {
             throw NSError(domain: "GitShowTool", code: -1,
@@ -54,7 +54,7 @@ public struct GitShowTool: LumiAgentTool, SuperLog {
 
         do {
             // 验证路径是否在允许的范围内
-            let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+            let validatedPath = try GitService.validatePath(path, allowedDirectories: kernel.allowedDirectories)
 
             let detail = try await GitService.shared.getCommitDetail(path: validatedPath, hash: hash)
             let changedFiles = try GitService.shared.getCommitChangedFiles(path: validatedPath, hash: hash)
