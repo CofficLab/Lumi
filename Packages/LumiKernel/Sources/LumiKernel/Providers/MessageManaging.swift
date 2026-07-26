@@ -16,6 +16,16 @@ public protocol MessageManaging: ObservableObject {
     /// UI 层（如 MessageListView）应使用此方法,无需自行判断详细程度。
     func displayMessages(for conversationID: UUID) -> [LumiChatMessage]
 
+    /// 获取指定对话的一页可见消息。
+    ///
+    /// - Parameters:
+    ///   - limit: 最多返回多少条消息。
+    ///   - beforeMessageID: 以该消息为边界，返回它之前的消息页；传 `nil` 时返回最近一页。
+    func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) async -> [LumiChatMessage]
+
+    /// 指定消息之前是否还有更早的消息。
+    func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) async -> Bool
+
     /// 删除指定消息
     func deleteMessage(id: UUID, in conversationID: UUID)
 

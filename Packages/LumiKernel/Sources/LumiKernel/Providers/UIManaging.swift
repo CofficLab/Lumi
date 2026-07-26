@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// 统一管理所有外部共享的 UI 组件（标题栏工具栏、聊天分区、状态栏、面板、菜单栏）。
 @MainActor
-public protocol SharedUIProviding: ObservableObject {
+public protocol UIManaging: ObservableObject {
     // MARK: - Title Toolbar
 
     /// 所有标题栏工具栏项（按 order 排序）
@@ -142,6 +142,6 @@ public protocol SharedUIProviding: ObservableObject {
     func clearAllContributions()
 }
 
-public extension SharedUIProviding {
+public extension UIManaging {
     func clearAllContributions() {}
 }

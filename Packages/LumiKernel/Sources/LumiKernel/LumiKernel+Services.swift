@@ -25,8 +25,8 @@ extension LumiKernelContainer {
     }
 
     /// Shared UI service
-    public var sharedUI: (any SharedUIProviding)? {
-        resolveService(SharedUIProviding.self)
+    public var uiManager: (any UIManaging)? {
+        resolveService(UIManaging.self)
     }
 
     /// Send middleware service (removed: now handled via LumiPlugin.willSendToLLM hook)

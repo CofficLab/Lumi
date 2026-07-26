@@ -26,7 +26,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
         guard policy.shouldRegister else { return }
 
         // 注册菜单栏内容（order 自动从插件继承）
-        kernel.sharedUI?.registerMenuBarContent(
+        kernel.uiManager?.registerMenuBarContent(
             MenuBarContentItem(
                 id: "\(id).metrics"
             ) {
@@ -35,7 +35,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
         )
 
         // 注册菜单栏弹出项（order 自动从插件继承）
-        kernel.sharedUI?.registerMenuBarPopup(
+        kernel.uiManager?.registerMenuBarPopup(
             MenuBarPopupItem(
                 id: "\(id).cpu"
             ) {
@@ -43,7 +43,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
             }
         )
 
-        kernel.sharedUI?.registerMenuBarPopup(
+        kernel.uiManager?.registerMenuBarPopup(
             MenuBarPopupItem(
                 id: "\(id).memory"
             ) {

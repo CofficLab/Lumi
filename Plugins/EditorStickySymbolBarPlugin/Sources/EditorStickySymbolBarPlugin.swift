@@ -19,7 +19,7 @@ public final class EditorStickySymbolBarHeaderPlugin: LumiPlugin {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        kernel.sharedUI?.registerPanelHeaderItem(
+        kernel.uiManager?.registerPanelHeaderItem(
             PanelHeaderItem(id: id) {
                 if let service = EditorStickySymbolBarBridge.editorServiceProvider?() {
                     EditorStickySymbolBarHeaderView(service: service)

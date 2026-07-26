@@ -25,8 +25,8 @@ extension LumiKernelContainer {
     }
 
     /// Register shared UI service
-    public func registerSharedUIService(_ sharedUI: any SharedUIProviding) {
-        registerService(SharedUIProviding.self, sharedUI)
+    public func registerSharedUIService(_ sharedUI: any UIManaging) {
+        registerService(UIManaging.self, sharedUI)
     }
 
     /// Register send middleware service (removed: now handled via LumiPlugin.willSendToLLM hook)

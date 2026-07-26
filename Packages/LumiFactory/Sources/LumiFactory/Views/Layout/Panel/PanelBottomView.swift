@@ -11,7 +11,7 @@ struct PanelBottomView: View {
     @LumiTheme private var theme
 
     private var tabs: [PanelBottomTabItem] {
-        kernel.sharedUI?.allPanelBottomTabItems ?? []
+        kernel.uiManager?.allPanelBottomTabItems ?? []
     }
 
     private var viewContainerID: String {

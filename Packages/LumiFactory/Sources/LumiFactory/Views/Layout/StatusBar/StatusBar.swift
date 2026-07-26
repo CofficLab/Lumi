@@ -30,7 +30,7 @@ struct StatusBar: View {
 
     private var statusBarResult: Result<StatusBarItems, Error> {
         do {
-            guard let sharedUIService = kernel.sharedUI else {
+            guard let sharedUIService = kernel.uiManager else {
                 throw LumiKernelError.serviceNotAvailable(service: "SharedUI")
             }
             let leading = try sharedUIService.statusBarItems(placement: .leading)

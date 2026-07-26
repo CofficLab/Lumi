@@ -99,7 +99,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
         // 首次启动时各 registry 为空,清空为 no-op,不影响行为。
         clearInternalContributions()
         kernel.settings?.clearAllContributions()
-        kernel.sharedUI?.clearAllContributions()
+        kernel.uiManager?.clearAllContributions()
         kernel.logo?.clearAllContributions()
         // onboarding 服务当前未注册(kernel.onboarding == nil),无需处理。
 
@@ -117,20 +117,20 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
 
             // Menu Bar
             for content in plugin.menuBarContentItems(kernel: kernel) {
-                kernel.sharedUI?.registerMenuBarContent(content)
+                kernel.uiManager?.registerMenuBarContent(content)
             }
             for popup in plugin.menuBarPopupItems(kernel: kernel) {
-                kernel.sharedUI?.registerMenuBarPopup(popup)
+                kernel.uiManager?.registerMenuBarPopup(popup)
             }
 
             // Title Toolbar
             for item in plugin.titleToolbarItems(kernel: kernel) {
-                kernel.sharedUI?.registerTitleToolbarItem(item)
+                kernel.uiManager?.registerTitleToolbarItem(item)
             }
 
             // Panel
             for item in plugin.panelHeaderItems(kernel: kernel) {
-                kernel.sharedUI?.registerPanelHeaderItem(item)
+                kernel.uiManager?.registerPanelHeaderItem(item)
             }
             for item in plugin.panelBottomTabItems(kernel: kernel) {
                 var tabItem = PanelBottomTabItem(
@@ -140,7 +140,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 tabItem.order = pluginOrder
-                kernel.sharedUI?.registerPanelBottomTabItem(tabItem)
+                kernel.uiManager?.registerPanelBottomTabItem(tabItem)
             }
             for item in plugin.panelRailTabItems(kernel: kernel) {
                 var railItem = PanelRailTabItem(
@@ -150,7 +150,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 railItem.order = pluginOrder
-                kernel.sharedUI?.registerPanelRailTabItem(railItem)
+                kernel.uiManager?.registerPanelRailTabItem(railItem)
             }
 
             // View Containers
@@ -197,7 +197,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 chatItem.order = pluginOrder
-                kernel.sharedUI?.registerChatSectionItem(chatItem)
+                kernel.uiManager?.registerChatSectionItem(chatItem)
             }
             for item in plugin.chatSectionToolbarItems(kernel: kernel) {
                 var toolbarItem = ChatSectionToolbarItem(
@@ -206,7 +206,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 toolbarItem.order = pluginOrder
-                kernel.sharedUI?.registerChatSectionToolbarItem(toolbarItem)
+                kernel.uiManager?.registerChatSectionToolbarItem(toolbarItem)
             }
             for item in plugin.chatSectionToolbarBarItems(kernel: kernel) {
                 var barItem = ChatSectionToolbarBarItem(
@@ -214,7 +214,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 barItem.order = pluginOrder
-                kernel.sharedUI?.registerChatSectionToolbarBarItem(barItem)
+                kernel.uiManager?.registerChatSectionToolbarBarItem(barItem)
             }
             for item in plugin.chatSectionHeaderItems(kernel: kernel) {
                 var headerItem = ChatSectionHeaderItem(
@@ -222,7 +222,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 headerItem.order = pluginOrder
-                kernel.sharedUI?.registerChatSectionHeaderItem(headerItem)
+                kernel.uiManager?.registerChatSectionHeaderItem(headerItem)
             }
             for item in plugin.chatSectionActionBarItems(kernel: kernel) {
                 var actionBarItem = ChatSectionActionBarItem(
@@ -231,12 +231,12 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                     content: item.makeView
                 )
                 actionBarItem.order = pluginOrder
-                kernel.sharedUI?.registerChatSectionActionBarItem(actionBarItem)
+                kernel.uiManager?.registerChatSectionActionBarItem(actionBarItem)
             }
 
             // Status Bar
             for item in plugin.statusBarItems(kernel: kernel) {
-                kernel.sharedUI?.registerStatusBarItem(item)
+                kernel.uiManager?.registerStatusBarItem(item)
             }
 
             // Settings

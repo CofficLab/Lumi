@@ -2,13 +2,11 @@ import Foundation
 import LumiKernel
 import SwiftUI
 
-// MARK: - Default Shared UI Provider
-
-/// 默认共享 UI 服务实现
+/// UI 服务实现
 ///
 /// 合并管理所有外部共享的 UI 组件（标题栏工具栏、聊天分区、状态栏、面板、菜单栏）。
 @MainActor
-public final class DefaultSharedUIProviding: SharedUIProviding {
+public final class UIManager: UIManaging {
     // MARK: - Title Toolbar
 
     public private(set) var allTitleToolbarItems: [TitleToolbarItem] = []

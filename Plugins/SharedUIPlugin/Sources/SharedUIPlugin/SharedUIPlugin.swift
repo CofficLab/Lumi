@@ -16,12 +16,12 @@ public final class SharedUIPlugin: LumiPlugin, SuperLog {
     public let order = 16
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件，优先注册
 
-    private var sharedUIService: DefaultSharedUIProviding?
+    private var sharedUIService: UIManager?
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
-        let sharedUIServiceInstance = DefaultSharedUIProviding()
+        let sharedUIServiceInstance = UIManager()
         kernel.registerSharedUIService(sharedUIServiceInstance)
         self.sharedUIService = sharedUIServiceInstance
 

@@ -53,7 +53,7 @@ public struct ConversationStoreOnReadyHook {
                     manager.loadConversations()
                 }
                 if !progress.isActive {
-                    kernel.sharedUI?.unregisterStatusBarItem(id: itemID)
+                    kernel.uiManager?.unregisterStatusBarItem(id: itemID)
                 }
             }
 

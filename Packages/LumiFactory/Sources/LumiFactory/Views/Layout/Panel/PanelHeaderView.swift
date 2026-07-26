@@ -11,7 +11,7 @@ struct PanelHeaderView: View {
     @LumiTheme private var theme
 
     private var items: [PanelHeaderItem] {
-        kernel.sharedUI?.allPanelHeaderItems ?? []
+        kernel.uiManager?.allPanelHeaderItems ?? []
     }
 
     var body: some View {

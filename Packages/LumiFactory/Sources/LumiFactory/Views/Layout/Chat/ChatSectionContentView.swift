@@ -7,11 +7,11 @@ struct ChatSectionContentView: View {
     @ObservedObject var kernel: LumiKernel
 
     private var stackItems: [ChatSectionItem] {
-        kernel.sharedUI?.allChatSectionItems.filter { $0.placement == .stack } ?? []
+        kernel.uiManager?.allChatSectionItems.filter { $0.placement == .stack } ?? []
     }
 
     private var bottomItems: [ChatSectionItem] {
-        kernel.sharedUI?.allChatSectionItems.filter { $0.placement == .bottomFixed } ?? []
+        kernel.uiManager?.allChatSectionItems.filter { $0.placement == .bottomFixed } ?? []
     }
 
     var body: some View {

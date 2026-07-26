@@ -14,7 +14,7 @@ struct RailTabBarView: View {
     @LumiTheme private var theme
 
     private var tabs: [PanelRailTabItem] {
-        kernel.sharedUI?.allPanelRailTabItems ?? []
+        kernel.uiManager?.allPanelRailTabItems ?? []
     }
 
     private var activeRailTabID: String {

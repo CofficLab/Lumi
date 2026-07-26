@@ -7,7 +7,7 @@ struct RailContentView: View {
     @ObservedObject var kernel: LumiKernel
 
     private var tabs: [PanelRailTabItem] {
-        kernel.sharedUI?.allPanelRailTabItems ?? []
+        kernel.uiManager?.allPanelRailTabItems ?? []
     }
 
     private var activeTabID: String {
