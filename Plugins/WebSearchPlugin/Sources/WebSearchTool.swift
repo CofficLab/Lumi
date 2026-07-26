@@ -41,11 +41,11 @@ public struct WebSearchTool: LumiAgentTool, SuperLog {
         "搜索网页"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let rawQuery = arguments["query"]?.stringValue else {
             return "Error: Missing required 'query' parameter"
         }
@@ -58,9 +58,9 @@ public struct WebSearchTool: LumiAgentTool, SuperLog {
             Self.logger.info("\(Self.t)🔍 Searching for: \(query)")
         }
 
-        try context.checkCancellation()
+        try kernel.checkCancellation()
         let results = try await searchClient(query)
-        try context.checkCancellation()
+        try kernel.checkCancellation()
 
         if results.isEmpty {
             return """

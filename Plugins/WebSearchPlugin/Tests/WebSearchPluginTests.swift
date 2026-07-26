@@ -58,11 +58,10 @@ struct PluginWebSearchTests {
                 )
             ]
         }
-        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
-
+        let kernel = LumiKernel()
         let result = try await tool.execute(
-            arguments: ["query": ToolArgument(" \nLumi release notes\t")],
-            context: context
+            arguments: ["query": .string(" \nLumi release notes\t")],
+            kernel: kernel
         )
 
         #expect(result.contains("**Query**: Lumi release notes"))
@@ -73,11 +72,9 @@ struct PluginWebSearchTests {
     @Test("tool rejects blank copied query")
     func toolRejectsBlankCopiedQuery() async throws {
         let tool = WebSearchTool()
-        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
-
         let result = try await tool.execute(
-            arguments: ["query": ToolArgument(" \n\t ")],
-            context: context
+            arguments: ["query": .string(" \n\t ")],
+            kernel: LumiKernel()
         )
 
         #expect(result == "Error: Missing required 'query' parameter")
@@ -86,11 +83,9 @@ struct PluginWebSearchTests {
     @Test("tool reports empty search result")
     func toolReportsEmptySearchResult() async throws {
         let tool = WebSearchTool { _ in [] }
-        let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
-
         let result = try await tool.execute(
-            arguments: ["query": ToolArgument("unknown term")],
-            context: context
+            arguments: ["query": .string("unknown term")],
+            kernel: LumiKernel()
         )
 
         #expect(result.contains("**Status**: No results found."))
