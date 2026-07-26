@@ -64,10 +64,10 @@ struct PluginMemoryTests {
 
     @Test("all tools have low risk level")
     func allToolsLowRisk() {
-        #expect(SaveMemoryTool().riskLevel(arguments: [:], context: nil) == .low)
-        #expect(RecallMemoryTool().riskLevel(arguments: [:], context: nil) == .low)
-        #expect(ListMemoriesTool().riskLevel(arguments: [:], context: nil) == .low)
-        #expect(DeleteMemoryTool().riskLevel(arguments: [:], context: nil) == .low)
+        #expect(SaveMemoryTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(RecallMemoryTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(ListMemoriesTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(DeleteMemoryTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
     }
 
     // MARK: - LumiJSONValue schema helpers
