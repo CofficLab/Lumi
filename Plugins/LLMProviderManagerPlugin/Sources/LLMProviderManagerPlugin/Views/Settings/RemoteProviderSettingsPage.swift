@@ -1,0 +1,156 @@
+import Foundation
+import LumiKernel
+import LumiUI
+import SwiftUI
+
+/// 远程（云端）供应商设置页面
+///
+/// 展示非本地供应商列表，支持搜索、API Key 管理和模型查看。
+struct RemoteProviderSettingsPage: View {
+    @LumiTheme private var theme
+    let kernel: LumiKernel
+
+    @State private var selectedProviderID: String = ""
+    @State private var apiKey: String = ""
+    @State private var isLoadingSettings: Bool = false
+    @State private var stats: ModelUsageStatsSnapshot?
+
+    private var llmProvider: (any LLMProviderManaging)? {
+        kernel.resolveService((any LLMProviderManaging).self)
+    }
+
+    private var selectedProviderInstance: (any LumiLLMProvider)? {
+        llmProvider?.llmProvider(id: selectedProviderID)
+    }
+
+    private var availabilityState: ModelAvailabilityState {
+        (llmProvider as? LLMProviderManager)?.providerAvailabilityState ?? ModelAvailabilityState()
+    }
+
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+    }
+
+    var body: some View {
+        ProviderSettingsPage(
+            kernel: kernel,
+            title: "Cloud Providers",
+            systemIcon: "cloud.fill",
+            localizedProvidersKey: "%lld cloud providers",
+            isLocalProvider: { !$0.isLocal },
+            selectedProviderID: $selectedProviderID
+        ) { provider in
+            VStack(alignment: .leading, spacing: 32) {
+                if let customItem = kernel.settings?.allLLMProviderSettingsItems.first(where: { $0.providerID == provider.id }),
+                   let instance = llmProvider?.llmProvider(id: provider.id) {
+                    customItem.makeContent(for: instance)
+                } else {
+                    apiKeySection(provider: provider)
+                    modelSection(provider: provider)
+                }
+            }
+        }
+        .onChange(of: selectedProviderID) { _, _ in
+            loadAPIKey()
+        }
+        .onChange(of: apiKey) { _, _ in
+            saveAPIKey()
+        }
+        .onAppear {
+            loadAPIKey()
+            reloadStats()
+        }
+    }
+
+    // MARK: - API Key Section
+
+    private func apiKeySection(provider: LumiLLMProviderInfo) -> some View {
+        AppSettingsSection(title: "API 密钥", subtitle: "配置你的访问凭证", spacing: 12) {
+            AppSettingsSecureFieldRow(
+                "API Key",
+                placeholder: "输入 API Key",
+                allowsReveal: true,
+                allowsCopy: true,
+                text: $apiKey
+            )
+            .id(provider.id)
+
+            if !apiKey.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(theme.success)
+                    Text(String(localized: "Saved"))
+                        .font(.appCaption)
+                        .foregroundColor(theme.success)
+                }
+            }
+        }
+    }
+
+    // MARK: - Model Section
+
+    private func modelSection(provider: LumiLLMProviderInfo) -> some View {
+        AppSettingsSection(title: "可用模型", spacing: 12) {
+            VStack(spacing: 0) {
+                ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
+                    ProviderModelRow(
+                        provider: provider,
+                        model: model,
+                        stat: stat(for: provider.id, modelName: model),
+                        dailyUsage: dailyUsage(for: provider.id, modelName: model),
+                        availability: availabilityState
+                    )
+
+                    if index < provider.availableModels.count - 1 {
+                        AppSettingsDivider()
+                            .padding(.horizontal, 8)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Stats
+
+    private func stat(for providerID: String, modelName: String) -> ModelPerformanceStats? {
+        stats?.detailedStats["\(providerID)|\(modelName)"]
+    }
+
+    private func dailyUsage(for providerID: String, modelName: String) -> ModelDailyTokenSeries? {
+        stats?.dailyUsage["\(providerID)|\(modelName)"]
+    }
+
+    private func reloadStats() {
+        guard let messageManager = kernel.messageManager,
+              let conversationManaging = kernel.resolveService((any ConversationManaging).self)
+        else { return }
+        let messages = conversationManaging.conversations.flatMap { messageManager.messages(for: $0.id) }
+        stats = ModelUsageStatsService.buildSnapshot(
+            messages: messages,
+            providers: llmProvider?.allLLMProviders().map { type(of: $0).info } ?? []
+        )
+    }
+
+    // MARK: - API Key Operations
+
+    private func loadAPIKey() {
+        guard let instance = selectedProviderInstance else {
+            apiKey = ""
+            return
+        }
+        isLoadingSettings = true
+        apiKey = instance.getApiKey()
+        DispatchQueue.main.async {
+            isLoadingSettings = false
+        }
+    }
+
+    private func saveAPIKey() {
+        guard !isLoadingSettings,
+              let instance = selectedProviderInstance
+        else {
+            return
+        }
+        instance.setApiKey(apiKey)
+    }
+}

@@ -1521,6 +1521,9 @@
         }
       }
     },
+    "Saved" : {
+
+    },
     "Search providers" : {
       "extractionState" : "manual",
       "localizations" : {

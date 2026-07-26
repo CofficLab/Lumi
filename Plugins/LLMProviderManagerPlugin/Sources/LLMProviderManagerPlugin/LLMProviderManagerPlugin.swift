@@ -6,15 +6,6 @@ import SuperLogKit
 import SwiftUI
 
 /// LLM Provider Manager Plugin
-///
-/// Registers an `LLMProviderProviding` implementation with the kernel.
-/// Individual LLM Provider plugins call
-/// `kernel.llmProvider?.registerLLMProvider(...)` in their own
-/// `register(kernel:)` to make themselves available.
-///
-/// Order = 10 (after `PluginManagementPlugin` order 5, before any
-/// LLM Provider plugin in the 100+ range), so that the manager is in
-/// place when downstream LLM provider plugins attempt to register.
 @MainActor
 public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider-manager")
@@ -66,7 +57,24 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
 
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
-        return []
+        return [
+            SettingsTabItem(
+                id: "\(id).remote-providers",
+                title: "Cloud Providers",
+                systemImage: "cloud",
+                order: 0
+            ) {
+                AnyView(RemoteProviderSettingsPage(kernel: kernel))
+            },
+            SettingsTabItem(
+                id: "\(id).local-providers",
+                title: "Local Providers",
+                systemImage: "cpu",
+                order: 1
+            ) {
+                AnyView(LocalProviderSettingsPage(kernel: kernel))
+            },
+        ]
     }
 
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
