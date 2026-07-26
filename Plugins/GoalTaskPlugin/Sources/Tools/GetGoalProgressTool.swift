@@ -34,10 +34,10 @@ public struct GetGoalProgressTool: LumiAgentTool, SuperLog {
     }
     
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "Get goal progress" }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
     
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
         
         guard let goalId = arguments["goal_id"]?.anyValue as? String else {
             return "Error: goal_id is required"
