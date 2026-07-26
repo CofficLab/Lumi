@@ -80,7 +80,7 @@ struct CoverArtMakerTests {
         let root = makeTemporaryProjectDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
 
-        let context = LumiToolExecutionContext(
+        let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "tool-1",
             toolName: "app-store-connect.create-cover-art",
