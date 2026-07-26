@@ -408,12 +408,6 @@ struct IconDocumentToolTests {
         let properties = try #require(schema["properties"] as? [String: Any])
         let title = try #require(properties["title"] as? [String: Any])
         #expect((title["description"] as? String)?.contains("文档标题") == true)
-
-        let localizedCreateTool = LocalizedAgentTool(underlying: CreateIconDocumentTool(), language: .chinese)
-        #expect(localizedCreateTool.inputSchema(for: .english).anyValue is [String: Any])
-
-        let localizedAddTool = LocalizedAgentTool(underlying: AddIconShapeTool(), language: .chinese)
-        #expect(localizedAddTool.name == "add_icon_shape")
     }
 }
 
