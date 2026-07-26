@@ -1,20 +1,34 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 
 @MainActor
-public final class BrowserPlugin: LumiPlugin {
+public final class BrowserPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🌐"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.browser"
+    )
+
     public let id = "Browser"
     public let name = "Browser"
     public let order = 102
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Control web browser for viewing and interacting with web pages."
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        if Self.verbose {
+            Self.logger.info("🌐 Browser 插件初始化完成")
+        }
     }
 
 
