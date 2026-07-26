@@ -58,13 +58,13 @@ public struct DelayMessageTool: LumiAgentTool, SuperLog {
         "延迟发送消息"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
-        let conversationId = context.conversationID
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
+        let conversationId = kernel.conversationID
 
         // 解析 message
         let message = (arguments.string("message") ?? "")
