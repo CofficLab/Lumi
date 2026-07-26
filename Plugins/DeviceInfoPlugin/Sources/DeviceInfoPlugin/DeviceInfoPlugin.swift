@@ -23,36 +23,9 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        guard policy.shouldRegister else { return }
-
-        // 注册菜单栏内容（order 自动从插件继承）
-        kernel.uiManager?.registerMenuBarContent(
-            MenuBarContentItem(
-                id: "\(id).metrics"
-            ) {
-                DeviceInfoMenuBarContentView()
-            }
-        )
-
-        // 注册菜单栏弹出项（order 自动从插件继承）
-        kernel.uiManager?.registerMenuBarPopup(
-            MenuBarPopupItem(
-                id: "\(id).cpu"
-            ) {
-                DeviceInfoMenuBarPopupView()
-            }
-        )
-
-        kernel.uiManager?.registerMenuBarPopup(
-            MenuBarPopupItem(
-                id: "\(id).memory"
-            ) {
-                MemoryMenuBarPopupView()
-            }
-        )
-
         if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 DeviceInfo 视图容器到内核")        }
+            Self.logger.info("\(Self.t)已准备 DeviceInfo 菜单栏贡献")
+        }
     }
 
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
@@ -76,8 +49,24 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
-    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
-    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] {
+        [
+            MenuBarContentItem(id: "\(id).metrics", order: order) {
+                DeviceInfoMenuBarContentView()
+            }
+        ]
+    }
+
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] {
+        [
+            MenuBarPopupItem(id: "\(id).cpu", order: order) {
+                DeviceInfoMenuBarPopupView()
+            },
+            MenuBarPopupItem(id: "\(id).memory", order: order) {
+                MemoryMenuBarPopupView()
+            }
+        ]
+    }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }

@@ -30,13 +30,6 @@ public final class QuickLauncherPlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // 注册菜单栏弹窗（order 自动从插件继承）
-        kernel.uiManager?.registerMenuBarPopup(
-            MenuBarPopupItem(id: "\(id).launcher") {
-                QuickLauncherMenuBarPopupView()
-            }
-        )
-
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 QuickLauncher 插件到内核")
         }
@@ -49,7 +42,14 @@ public final class QuickLauncherPlugin: LumiPlugin, SuperLog {
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
-    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] {
+        [
+            MenuBarPopupItem(id: "\(id).launcher") {
+                QuickLauncherMenuBarPopupView()
+            }
+        ]
+    }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }

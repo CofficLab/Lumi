@@ -1,3 +1,5 @@
+import AppKit
+import Combine
 import Foundation
 import LumiKernel
 import LumiUI
@@ -7,20 +9,33 @@ import os
 
 /// Menu Bar Manager Plugin
 @MainActor
-public final class MenuBarManagerPlugin: LumiPlugin {
+public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menubar-manager")
     nonisolated public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.menubar-manager"
     public let name = "Menu Bar Manager"
     public let order = 20
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
+
+    private weak var kernel: LumiKernel?
+    private(set) public var isMenuBarPresented: Bool = false
+    private var presentedMenuBarContentItems: [LumiMenuBarContentItem] = []
+    private var presentedMenuBarPopupItems: [LumiMenuBarPopupItem] = []
+    private var statusItem: NSStatusItem?
+    private var hostingView: MenuBarHostingView<MenuBarIconView>?
+    private var popover: NSPopover?
+    private var uiManagerObservation: AnyCancellable?
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        self.kernel = kernel
+        kernel.registerService(MenuBarPresenting.self, self)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
+        self.kernel = kernel
         if let storage = kernel.storage {
             MenuBarManagerPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
         }
@@ -45,7 +60,13 @@ public final class MenuBarManagerPlugin: LumiPlugin {
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
-    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] {
+        [
+            MenuBarContentItem(id: "\(id).logo") {
+                MenuBarLogoView()
+            }
+        ]
+    }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
@@ -70,6 +91,276 @@ public final class MenuBarManagerPlugin: LumiPlugin {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
+
+    // MARK: - MenuBarPresenting
+
+    public func presentMenuBar(
+        contentItems: [LumiMenuBarContentItem],
+        popupItems: [LumiMenuBarPopupItem]
+    ) {
+        presentedMenuBarContentItems = Self.sortedMenuBarContentItems(contentItems)
+        presentedMenuBarPopupItems = Self.sortedMenuBarPopupItems(popupItems)
+        isMenuBarPresented = true
+        ensureStatusItem()
+        updateMenuBarPresentation()
+        startObservingUIManagerChangesIfNeeded()
+    }
+
+    public func refreshMenuBar(
+        contentItems: [LumiMenuBarContentItem],
+        popupItems: [LumiMenuBarPopupItem]
+    ) {
+        if !isMenuBarPresented {
+            presentMenuBar(contentItems: contentItems, popupItems: popupItems)
+            return
+        }
+
+        presentedMenuBarContentItems = Self.sortedMenuBarContentItems(contentItems)
+        presentedMenuBarPopupItems = Self.sortedMenuBarPopupItems(popupItems)
+        updateMenuBarPresentation()
+    }
+
+    public func dismissMenuBar() {
+        isMenuBarPresented = false
+        presentedMenuBarContentItems.removeAll()
+        presentedMenuBarPopupItems.removeAll()
+        uiManagerObservation?.cancel()
+        uiManagerObservation = nil
+
+        popover?.close()
+        popover = nil
+
+        if let statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+        }
+        statusItem = nil
+        hostingView = nil
+    }
+
+    // MARK: - Private
+
+    private func ensureStatusItem() {
+        guard statusItem == nil else { return }
+
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem = item
+
+        guard let button = item.button else { return }
+
+        let hostingView = MenuBarHostingView(rootView: MenuBarIconView(contentItems: presentedMenuBarContentItems))
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        self.hostingView = hostingView
+
+        button.title = ""
+        button.image = nil
+        button.target = self
+        button.action = #selector(togglePopover(_:))
+        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+
+        button.subviews.forEach { $0.removeFromSuperview() }
+        button.addSubview(hostingView)
+
+        NSLayoutConstraint.activate([
+            hostingView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+            hostingView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+            hostingView.heightAnchor.constraint(equalToConstant: 22),
+        ])
+
+        configurePopoverIfNeeded()
+    }
+
+    private func configurePopoverIfNeeded() {
+        guard popover == nil else { return }
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = true
+        popover.contentSize = NSSize(width: 280, height: 1)
+        popover.contentViewController = NSHostingController(
+            rootView: MenuBarPopupView(
+                popupItems: presentedMenuBarPopupItems,
+                onShowMainWindow: { [weak self] in self?.showMainWindow() },
+                onCheckForUpdates: { [weak self] in self?.checkForUpdates() },
+                onQuit: { [weak self] in self?.quitApp() }
+            )
+        )
+        self.popover = popover
+    }
+
+    private func updateMenuBarPresentation() {
+        guard let statusItem, let button = statusItem.button else { return }
+
+        hostingView?.rootView = MenuBarIconView(contentItems: presentedMenuBarContentItems)
+
+        if let popover {
+            popover.contentViewController = NSHostingController(
+                rootView: MenuBarPopupView(
+                    popupItems: presentedMenuBarPopupItems,
+                    onShowMainWindow: { [weak self] in self?.showMainWindow() },
+                    onCheckForUpdates: { [weak self] in self?.checkForUpdates() },
+                    onQuit: { [weak self] in self?.quitApp() }
+                )
+            )
+            popover.contentSize = popover.contentViewController?.view.fittingSize ?? NSSize(width: 280, height: 1)
+        }
+
+        button.needsDisplay = true
+    }
+
+    private func startObservingUIManagerChangesIfNeeded() {
+        guard uiManagerObservation == nil, let kernel, let uiManager = kernel.uiManager else { return }
+        guard let observable = uiManager as? any ObservableObject else { return }
+
+        let publisher = observable.objectWillChange as! ObservableObjectPublisher
+        uiManagerObservation = publisher
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                Task { @MainActor in
+                    self.refreshFromKernel()
+                }
+            }
+    }
+
+    private func refreshFromKernel() {
+        guard let kernel else { return }
+        refreshMenuBar(
+            contentItems: kernel.uiManager?.allMenuBarContents ?? [],
+            popupItems: kernel.uiManager?.allMenuBarPopups ?? []
+        )
+    }
+
+    @objc
+    private func togglePopover(_ sender: Any?) {
+        guard let statusItem, let button = statusItem.button else { return }
+        guard let popover else { return }
+
+        if popover.isShown {
+            popover.performClose(sender)
+            return
+        }
+
+        NSApp.activate(ignoringOtherApps: true)
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+    }
+
+    private func showMainWindow() {
+        NSApp.activate(ignoringOtherApps: true)
+        if let mainWindow = NSApp.mainWindow ?? NSApp.windows.first {
+            mainWindow.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    private func checkForUpdates() {
+        _ = NSApp.sendAction(Selector(("checkForUpdates:")), to: nil, from: nil)
+    }
+
+    private func quitApp() {
+        NSApp.terminate(nil)
+    }
+
+    private static func sortedMenuBarContentItems(_ items: [LumiMenuBarContentItem]) -> [LumiMenuBarContentItem] {
+        items.sorted {
+            if $0.order == $1.order { return $0.id < $1.id }
+            return $0.order < $1.order
+        }
+    }
+
+    private static func sortedMenuBarPopupItems(_ items: [LumiMenuBarPopupItem]) -> [LumiMenuBarPopupItem] {
+        items.sorted {
+            if $0.order == $1.order { return $0.id < $1.id }
+            return $0.order < $1.order
+        }
+    }
+}
+
+private final class MenuBarHostingView<Content: View>: NSHostingView<Content> {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+}
+
+private struct MenuBarIconView: View {
+    let contentItems: [LumiMenuBarContentItem]
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(contentItems) { item in
+                item.makeView()
+                    .fixedSize()
+            }
+        }
+        .padding(.horizontal, 4)
+        .frame(height: 22)
+    }
+}
+
+private struct MenuBarLogoView: View {
+    var body: some View {
+        Image(nsImage: NSApp.applicationIconImage)
+            .resizable()
+            .renderingMode(.template)
+            .frame(width: 16, height: 16)
+    }
+}
+
+private struct MenuBarPopupView: View {
+    let popupItems: [LumiMenuBarPopupItem]
+    let onShowMainWindow: () -> Void
+    let onCheckForUpdates: () -> Void
+    let onQuit: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if !popupItems.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(popupItems) { item in
+                        item.makeView()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+
+                        if item.id != popupItems.last?.id {
+                            Divider()
+                        }
+                    }
+                }
+
+                Divider()
+            }
+
+            MenuBarActionRow(title: "Open Lumi", systemImage: "macwindow", action: onShowMainWindow)
+            Divider().padding(.leading, 36)
+            MenuBarActionRow(title: "Check for Updates", systemImage: "arrow.down.circle", action: onCheckForUpdates)
+            Divider().padding(.leading, 36)
+            MenuBarActionRow(title: "Quit Lumi", systemImage: "power", action: onQuit)
+        }
+        .frame(width: 280)
+        .padding(.vertical, 6)
+    }
+}
+
+private struct MenuBarActionRow: View {
+    let title: String
+    let systemImage: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .frame(width: 16)
+                Text(title)
+                Spacer()
+            }
+            .contentShape(Rectangle())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 enum MenuBarManagerPluginRuntimeBridge {

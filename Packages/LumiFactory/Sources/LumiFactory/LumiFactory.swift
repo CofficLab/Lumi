@@ -51,13 +51,10 @@ public enum LumiFactory: SuperLog {
         // 4. 订阅插件变更通知，当插件启用/禁用时重新注册 UI 贡献
         subscribeToPluginChanges(kernel: kernel)
 
-        // 5. 启动内核（调用插件生命周期 + 服务校验 + LLM Provider 收集）
+        // 5. 启动内核（调用插件生命周期 + 服务校验 + UI/LLM/Tool 收集）
         try await kernel.startup()
 
-        // 6. 注册所有插件的 UI 贡献
-        kernel.pluginManager.registerPluginUIContributions(in: kernel)
-
-        // 7. 保存到内核列表
+        // 6. 保存到内核列表
         kernels.append(kernel)
 
         if verbose {
@@ -77,6 +74,7 @@ public enum LumiFactory: SuperLog {
             guard let kernel else { return }
             // 全量重建:禁用插件的贡献即时撤回,启用插件的贡献即时加入。
             kernel.pluginManager.rebuildAllContributions(in: kernel)
+            kernel.refreshMenuBarPresentation()
         }
     }
 

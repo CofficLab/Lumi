@@ -114,12 +114,15 @@ public final class LumiKernelContainer: ObservableObject {
         // 3. 插件系统 On Ready — 阶段 2:依赖服务的异步初始化
         try await pluginManager.onReady(kernel: self)
 
-        // 4. 收集所有插件贡献的 LLM Provider,并注册到内核 LLMProviderManaging
+        // 4. 收集所有插件贡献的 UI 视图,并注册到内核的共享 UI 服务
+        pluginManager.registerPluginUIContributions(in: self)
+
+        // 5. 收集所有插件贡献的 LLM Provider,并注册到内核 LLMProviderManaging
         //    — 在 onReady 之后执行,确保 `kernel.llmProvider` 服务可用,
         //    且各插件的 `llmProviders(kernel:)` 可以在完整内核上运行。
         try pluginManager.registerLLMProviders(in: self)
 
-        // 5. 收集所有插件贡献的 Agent 工具,并注册到内核 ToolManaging
+        // 6. 收集所有插件贡献的 Agent 工具,并注册到内核 ToolManaging
         //    — 在 onReady 之后执行,确保 `kernel.toolManager` 服务可用,
         //    且各插件的 `agentTools(kernel:)` 可以在完整内核上运行。
         try pluginManager.registerAgentTools(in: self)
@@ -137,6 +140,23 @@ public final class LumiKernelContainer: ObservableObject {
                 panel: container.isPanelVisible
             )
         }
+
+        // 7. 将 UIManager 中已收集的菜单栏视图交给展示层
+        refreshMenuBarPresentation()
+    }
+
+    /// 让菜单栏展示层刷新为当前 UIManager 收集到的内容。
+    public func refreshMenuBarPresentation() {
+        guard let presenter = menuBarPresenter else { return }
+        presenter.refreshMenuBar(
+            contentItems: uiManager?.allMenuBarContents ?? [],
+            popupItems: uiManager?.allMenuBarPopups ?? []
+        )
+    }
+
+    /// 卸载菜单栏展示层。
+    public func dismissMenuBarPresentation() {
+        menuBarPresenter?.dismissMenuBar()
     }
 }
 

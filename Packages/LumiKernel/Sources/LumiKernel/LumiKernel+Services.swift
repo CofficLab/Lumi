@@ -29,6 +29,11 @@ extension LumiKernelContainer {
         resolveService(UIManaging.self)
     }
 
+    /// Menu bar presentation service
+    public var menuBarPresenter: (any MenuBarPresenting)? {
+        resolveService(MenuBarPresenting.self)
+    }
+
     /// Send middleware service (removed: now handled via LumiPlugin.willSendToLLM hook)
 
     /// Message send service (user input → persist + dispatch)
