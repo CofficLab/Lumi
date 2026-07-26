@@ -44,7 +44,7 @@ final class InputState: ObservableObject, ConversationInputProviding {
 
     /// 当前是否在向内核发送中
     func isSending(kernel: LumiKernel) -> Bool {
-        kernel.messageSender?.isSending ?? false
+        kernel.messageSender?.isSending(for: kernel.conversations?.selectedConversationID) ?? false
     }
 
     /// 是否满足发送条件（文本非空且未在发送中）

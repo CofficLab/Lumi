@@ -1,7 +1,5 @@
 import Foundation
 import LumiKernel
-import LumiKernel
-import LumiKernel
 import os
 import SuperLogKit
 
@@ -20,15 +18,20 @@ import SuperLogKit
 ///    using that provider's `defaultModel` for the request. Insert
 ///    the returned assistant message back into the message history.
 ///
-/// `isSending` flips true → false around steps 3-4 via `defer`, so it
-/// always settles back to `false` whether the call completes or throws.
+/// `isSending` is tracked per conversation, so one chat can be sending while
+/// another stays idle. The active conversation IDs are stored in-memory and
+/// bridged through `objectWillChange` via `@Published`.
 @MainActor
 public final class MessageSender: MessageSending, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-send-manager.service")
     public nonisolated static let emoji = "📤"
     nonisolated static let verbose = false
 
-    @Published public private(set) var isSending: Bool = false
+    @Published private var sendingConversationIDs: Set<UUID> = []
+
+    public var isSending: Bool {
+        !sendingConversationIDs.isEmpty
+    }
 
     /// 当前挂起、等待下次发送时随消息一起送出的图片附件。
     /// `addAttachment / removeAttachment / clearAttachments` 维护此集合。
@@ -45,6 +48,13 @@ public final class MessageSender: MessageSending, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)MessageSendManager (kernel=\(String(describing: ObjectIdentifier(kernel))))")
         }
+    }
+
+    public func isSending(for conversationID: UUID?) -> Bool {
+        guard let conversationID else {
+            return isSending
+        }
+        return sendingConversationIDs.contains(conversationID)
     }
 
     // MARK: - 附件挂起池
@@ -132,7 +142,10 @@ public final class MessageSender: MessageSending, SuperLog {
         conversationID: UUID?
     ) async throws {
         if Self.verbose {
-            Self.logger.info("\(Self.t)sendMessage 开始 ➡️ conversationID=\(conversationID?.uuidString ?? "nil"), content.len=\(content.count), attachments=\(imageAttachments.count)")
+            let selectedConversationID = self.kernel?.conversations?.selectedConversationID?.uuidString.prefix(8) ?? "nil"
+            let pendingFiles = self.pendingFileAttachments.count
+            let sendingState = self.isSending(for: conversationID)
+            Self.logger.info("\(Self.t)sendMessage 开始 ➡️ conversationID=\(conversationID?.uuidString.prefix(8) ?? "nil"), selectedConversationID=\(selectedConversationID), content.len=\(content.count), attachments=\(imageAttachments.count), pendingFiles=\(pendingFiles), isSending(forTarget)=\(sendingState), activeSendingConversations=\(self.sendingConversationIDs.count)")
         }
 
         // 1. Trim & early-return on empty input
@@ -174,9 +187,13 @@ public final class MessageSender: MessageSending, SuperLog {
         }
 
         // 3. Persist user message into the message history
-        isSending = true
         if Self.verbose {
-            Self.logger.info("\(Self.t)isSending -> true, 准备写入 user 消息到会话 \(targetID.uuidString.prefix(8))…")
+            let hasLastMessage = self.kernel?.messageManager?.lastMessage(in: targetID) != nil
+            Self.logger.info("\(Self.t)准备进入发送态 ➡️ target=\(targetID.uuidString.prefix(8))…, hasLastMessage=\(hasLastMessage)")
+        }
+        beginSending(in: targetID)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)isSending -> true, 准备写入 user 消息到会话 \(targetID.uuidString.prefix(8))…, activeSendingConversations=\(self.sendingConversationIDs.count)")
         }
 
         // 把 attachments 序列化进 metadata["imageAttachments"] JSON(如有)
@@ -204,25 +221,40 @@ public final class MessageSender: MessageSending, SuperLog {
             content: trimmed,
             metadata: metadata
         )
+        if Self.verbose {
+            Self.logger.info("\(Self.t)即将插入 user 消息 ➡️ id=\(userMessage.id.uuidString.prefix(8))…, target=\(targetID.uuidString.prefix(8))…, metadataKeys=\(metadata.keys.sorted().joined(separator: ","))")
+        }
         kernel?.messageManager?.insertMessage(userMessage, to: targetID)
         if Self.verbose {
-            Self.logger.info("\(Self.t)user 消息已落库 ➡️ id=\(userMessage.id.uuidString.prefix(8))…, content.len=\(trimmed.count), attachments=\(imageAttachments.count)")
+            let cached = kernel?.messageManager?.message(id: userMessage.id, in: targetID)
+            Self.logger.info("\(Self.t)user 消息已提交给 MessageManager ➡️ id=\(userMessage.id.uuidString.prefix(8))…, cacheHit=\(cached != nil), content.len=\(trimmed.count), attachments=\(imageAttachments.count)")
+        }
+
+        defer {
+            endSending(in: targetID)
+            clearAttachments()
+            clearFileAttachments()
+            if Self.verbose {
+                Self.logger.info("\(Self.t)isSending -> false, sendMessage 结束 ➡️ target=\(targetID.uuidString.prefix(8))…, activeSendingConversations=\(self.sendingConversationIDs.count)")
+            }
         }
 
         // 4. Delegate to AgentTurnRunner to execute the full agent loop.
         guard let kernelInstance = kernel else {
-            isSending = false
             return
         }
 
         do {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)准备调用 agentTurnRunner.runTurn ➡️ target=\(targetID.uuidString.prefix(8))…, lastMessage=\(kernelInstance.messageManager?.lastMessage(in: targetID)?.id.uuidString.prefix(8) ?? "nil")")
+            }
             try await kernelInstance.agentTurnRunner?.runTurn(in: targetID)
             if Self.verbose {
-                Self.logger.info("\(Self.t)agentTurnRunner.runTurn 完成")
+                Self.logger.info("\(Self.t)agentTurnRunner.runTurn 完成 ➡️ target=\(targetID.uuidString.prefix(8))…")
             }
         } catch {
             if Self.verbose {
-                Self.logger.error("\(Self.t)sendMessage ➡️ agentTurnRunner 抛出 error: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)sendMessage ➡️ agentTurnRunner 抛出 error target=\(targetID.uuidString.prefix(8))…: \(error.localizedDescription)")
             }
             // Insert error message into conversation
             let errorMessage = LumiChatMessage(
@@ -235,30 +267,26 @@ public final class MessageSender: MessageSending, SuperLog {
                 Self.logger.info("\(Self.t)error 消息已落库 ➡️ id=\(errorMessage.id.uuidString.prefix(8))…")
             }
         }
-
-        // 5. Clean up sending state (after turn completes)
-        isSending = false
-        // 附件已在步骤 3 序列化进消息 metadata,与该消息绑定;回合期间 AgentTurnRunner
-        // 从 metadata(而非挂起池)读取附件,故此处可安全清空预览池,避免发送后残留。
-        clearAttachments()
-        clearFileAttachments()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)isSending -> false, sendMessage 结束")
-        }
     }
 
     public func cancelCurrentRequest() {
-        if isSending {
-            isSending = false
+        if let conversationID = kernel?.conversations?.selectedConversationID, isSending(for: conversationID) {
+            endSending(in: conversationID)
             // Cancel the agent turn if one is running
-            if let conversationID = kernel?.conversations?.selectedConversationID {
-                kernel?.agentTurnRunner?.cancelTurn(in: conversationID)
-            }
+            kernel?.agentTurnRunner?.cancelTurn(in: conversationID)
             if Self.verbose {
-                Self.logger.info("\(Self.t)cancelCurrentRequest ➡️ isSending -> false, turn cancelled")
+                Self.logger.info("\(Self.t)cancelCurrentRequest ➡️ conversation=\(conversationID.uuidString.prefix(8))…, turn cancelled, activeSendingConversations=\(self.sendingConversationIDs.count)")
             }
         } else if Self.verbose {
             Self.logger.info("\(Self.t)cancelCurrentRequest ➡️ 当前无 in-flight 发送, no-op")
         }
+    }
+
+    private func beginSending(in conversationID: UUID) {
+        sendingConversationIDs.insert(conversationID)
+    }
+
+    private func endSending(in conversationID: UUID) {
+        sendingConversationIDs.remove(conversationID)
     }
 }

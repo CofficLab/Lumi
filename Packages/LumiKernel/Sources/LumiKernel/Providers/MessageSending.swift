@@ -8,8 +8,13 @@ import Foundation
 /// 由实现方决定；本协议只规定调用方需要看到的能力。
 @MainActor
 public protocol MessageSending: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
-    /// 是否有正在进行的发送任务
+    /// 是否存在任意正在进行的发送任务。
     var isSending: Bool { get }
+
+    /// 指定对话是否正在发送中。
+    ///
+    /// - Parameter conversationID: 目标对话 ID。传 `nil` 时返回任意对话是否处于发送中。
+    func isSending(for conversationID: UUID?) -> Bool
 
     // MARK: - 附件挂起池(可观察、可修改)
 
@@ -95,6 +100,11 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
 // MARK: - 默认实现
 
 public extension MessageSending {
+    func isSending(for conversationID: UUID?) -> Bool {
+        guard conversationID != nil else { return isSending }
+        return isSending
+    }
+
     /// text-only 路径的默认转发:复用当前 `pendingAttachments` 作为本次发送的图片附件。
     /// (文件附件 `pendingFileAttachments` 不走此重载签名,由具体实现如 `MessageSender`
     /// 在落库时直接读取自己的文件挂起池并序列化进 metadata。)
