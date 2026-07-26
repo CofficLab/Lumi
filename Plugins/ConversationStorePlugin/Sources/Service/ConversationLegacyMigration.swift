@@ -23,6 +23,7 @@ import os
 public struct ConversationLegacyMigration: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
     nonisolated public static let emoji = "💬"
+    static let verbose: Bool = false
 
     /// 迁移策略
     public enum MigrationPolicy {
@@ -62,26 +63,34 @@ public struct ConversationLegacyMigration: SuperLog {
 
         // 幂等:.once 策略下,已迁移过则直接跳过
         if policy == .once, defaults.bool(forKey: markerKey) {
-            Self.logger.info("\(Self.t)会话迁移跳过(marker 已标记完成)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)会话迁移跳过(marker 已标记完成)")
+            }
             return
         }
 
         guard let legacy = kernel.legacyData else {
             // 无 legacy 服务(全新安装或迁移窗口期已过)
-            Self.logger.info("\(Self.t)会话迁移跳过(无 legacy 服务,全新安装或迁移窗口期已过)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)会话迁移跳过(无 legacy 服务,全新安装或迁移窗口期已过)")
+            }
             return
         }
 
         guard legacy.hasLegacyData() else {
             // 没有可迁移的旧数据
             defaults.set(true, forKey: markerKey)
-            Self.logger.info("\(Self.t)会话迁移跳过(无 v4 旧数据)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)会话迁移跳过(无 v4 旧数据)")
+            }
             return
         }
 
         let startTime = Date()
         await progress.start()
-        Self.logger.info("\(Self.t)会话迁移开始")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)会话迁移开始")
+        }
 
         do {
             let summaries = try legacy.fetchLegacyConversations()
@@ -90,7 +99,9 @@ public struct ConversationLegacyMigration: SuperLog {
             guard !summaries.isEmpty else {
                 defaults.set(true, forKey: markerKey)
                 await progress.finish()
-                Self.logger.info("\(Self.t)会话迁移跳过(v4 会话为空)")
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)会话迁移跳过(v4 会话为空)")
+                }
                 return
             }
 
@@ -102,12 +113,16 @@ public struct ConversationLegacyMigration: SuperLog {
 
             let elapsed = Date().timeIntervalSince(startTime)
             let policyLabel = policy == .once ? "once" : "always"
-            Self.logger.info("\(Self.t)会话迁移完成:读取 \(summaries.count) 条,导入 \(imported) 条,耗时 \(String(format: "%.2f", elapsed))s [策略=\(policyLabel)]")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)会话迁移完成:读取 \(summaries.count) 条,导入 \(imported) 条,耗时 \(String(format: "%.2f", elapsed))s [策略=\(policyLabel)]")
+            }
         } catch {
             // 吞错 + 记日志,不向上抛(避免阻塞 onReady 串行链)
             // .once 策略下不写 marker,下次启动会重试;.always 策略下本就每次都跑。
             await progress.fail()
-            Self.logger.error("\(Self.t)会话迁移失败,已跳过,下次启动将重试: \(error.localizedDescription)")
+            if Self.verbose {
+                Self.logger.error("\(Self.t)会话迁移失败,已跳过,下次启动将重试: \(error.localizedDescription)")
+            }
         }
     }
 }
