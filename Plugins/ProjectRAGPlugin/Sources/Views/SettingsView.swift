@@ -32,7 +32,7 @@ public struct RAGSettingsView: View, SuperLog {
                     .frame(maxWidth: .infinity, minHeight: 200)
                 } else {
                     if let loadError {
-                        AppSettingSection(title: "Status", titleAlignment: .leading) {
+                        AppSettingSection(title: LumiPluginLocalization.string("Status", bundle: .module), titleAlignment: .leading) {
                             VStack(spacing: 0) {
                                 AppSettingRow(
                                     title: loadError,
@@ -85,10 +85,10 @@ public struct RAGSettingsView: View, SuperLog {
 
     @ViewBuilder
     private func runtimeSection(_ info: RAGRuntimeInfo) -> some View {
-        AppSettingSection(title: "Runtime", titleAlignment: .leading) {
+        AppSettingSection(title: LumiPluginLocalization.string("Runtime", bundle: .module), titleAlignment: .leading) {
             VStack(spacing: 0) {
                 AppSettingRow(
-                    title: "Vector Backend",
+                    title: LumiPluginLocalization.string("Vector Backend", bundle: .module),
                     icon: "cpu"
                 ) {
                     Text(info.vectorBackend.rawValue)

@@ -23,7 +23,7 @@ struct RAGSettingsProjectSectionView: View {
         ) {
             VStack(spacing: 0) {
                 AppSettingRow(
-                    title: "Path",
+                    title: LumiPluginLocalization.string("Path", bundle: .module),
                     icon: "folder"
                 ) {
                     Text(project.path)
@@ -40,7 +40,7 @@ struct RAGSettingsProjectSectionView: View {
 
                 if let status = statusesByPath[project.path] {
                     AppSettingRow(
-                        title: "Last Indexed",
+                        title: LumiPluginLocalization.string("Last Indexed", bundle: .module),
                         icon: "clock"
                     ) {
                         Text(relativeDate(status.lastIndexedAt))
@@ -50,7 +50,7 @@ struct RAGSettingsProjectSectionView: View {
                     Divider().padding(.vertical, 8)
 
                     AppSettingRow(
-                        title: "Files",
+                        title: LumiPluginLocalization.string("Files", bundle: .module),
                         icon: "doc"
                     ) {
                         Text("\(status.fileCount)")
@@ -60,7 +60,7 @@ struct RAGSettingsProjectSectionView: View {
                     Divider().padding(.vertical, 8)
 
                     AppSettingRow(
-                        title: "Chunks",
+                        title: LumiPluginLocalization.string("Chunks", bundle: .module),
                         icon: "square.stack.3d.up"
                     ) {
                         Text("\(status.chunkCount)")
@@ -70,7 +70,7 @@ struct RAGSettingsProjectSectionView: View {
                     Divider().padding(.vertical, 8)
 
                     AppSettingRow(
-                        title: "Embedding",
+                        title: LumiPluginLocalization.string("Embedding", bundle: .module),
                         description: "dim \(status.embeddingDimension)",
                         icon: "brain.head.profile"
                     ) {
@@ -80,19 +80,19 @@ struct RAGSettingsProjectSectionView: View {
                     }
                 } else if isLoading {
                     AppSettingRow(
-                        title: "Status",
+                        title: LumiPluginLocalization.string("Status", bundle: .module),
                         icon: "ellipsis.circle"
                     ) {
-                        Text("Loading…")
+                        Text(LumiPluginLocalization.string("Loading…", bundle: .module))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 } else {
                     AppSettingRow(
-                        title: "Status",
+                        title: LumiPluginLocalization.string("Status", bundle: .module),
                         icon: "circle.dashed"
                     ) {
-                        Text("Not indexed yet")
+                        Text(LumiPluginLocalization.string("Not indexed yet", bundle: .module))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -103,13 +103,20 @@ struct RAGSettingsProjectSectionView: View {
                    !progress.isFinished {
                     Divider().padding(.vertical, 8)
                     AppSettingRow(
-                        title: "Progress",
+                        title: LumiPluginLocalization.string("Progress", bundle: .module),
                         icon: "progress.indicator"
                     ) {
                         HStack(spacing: 8) {
                             ProgressView(value: Double(progress.scannedFiles), total: Double(progress.totalFiles))
                                 .frame(maxWidth: 160)
-                            Text("\(progress.scannedFiles)/\(progress.totalFiles)")
+                            Text(
+                                String(
+                                    format: LumiPluginLocalization.string("Progress: %lld/%lld", bundle: .module),
+                                    locale: .current,
+                                    progress.scannedFiles,
+                                    progress.totalFiles
+                                )
+                            )
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
@@ -126,40 +133,40 @@ struct RAGSettingsProjectSectionView: View {
     private func statusRow(for project: RAGTrackedProject) -> some View {
         if let progress = progressByPath[project.path], !progress.isFinished {
             AppSettingRow(
-                title: "Status",
+                title: LumiPluginLocalization.string("Status", bundle: .module),
                 icon: "arrow.triangle.2.circlepath"
             ) {
-                statusPill(text: "Indexing", color: .blue, spinning: true)
+                statusPill(text: LumiPluginLocalization.string("Indexing", bundle: .module), color: .blue, spinning: true)
             }
         } else if let status = statusesByPath[project.path] {
             if status.isStale {
                 AppSettingRow(
-                    title: "Status",
+                    title: LumiPluginLocalization.string("Status", bundle: .module),
                     icon: "exclamationmark.triangle.fill"
                 ) {
-                    statusPill(text: "Outdated", color: .orange, spinning: false)
+                    statusPill(text: LumiPluginLocalization.string("Outdated", bundle: .module), color: .orange, spinning: false)
                 }
             } else {
                 AppSettingRow(
-                    title: "Status",
+                    title: LumiPluginLocalization.string("Status", bundle: .module),
                     icon: "checkmark.circle.fill"
                 ) {
-                    statusPill(text: "Up to Date", color: .green, spinning: false)
+                    statusPill(text: LumiPluginLocalization.string("Up to Date", bundle: .module), color: .green, spinning: false)
                 }
             }
         } else if isLoading {
             AppSettingRow(
-                title: "Status",
+                title: LumiPluginLocalization.string("Status", bundle: .module),
                 icon: "ellipsis.circle"
             ) {
-                statusPill(text: "Loading…", color: .secondary, spinning: false)
+                statusPill(text: LumiPluginLocalization.string("Loading…", bundle: .module), color: .secondary, spinning: false)
             }
         } else {
             AppSettingRow(
-                title: "Status",
+                title: LumiPluginLocalization.string("Status", bundle: .module),
                 icon: "circle.dashed"
             ) {
-                statusPill(text: "Not Indexed", color: .secondary, spinning: false)
+                statusPill(text: LumiPluginLocalization.string("Not Indexed", bundle: .module), color: .secondary, spinning: false)
             }
         }
     }
