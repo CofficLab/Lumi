@@ -41,6 +41,11 @@ extension LumiKernelContainer {
         resolveService(MessageSending.self)
     }
 
+    /// Conversation input service
+    public var conversationInput: (any ConversationInputProviding)? {
+        resolveService(ConversationInputProviding.self)
+    }
+
     /// Conversation management service
     public var conversations: (any ConversationManaging)? {
         resolveService(ConversationManaging.self)

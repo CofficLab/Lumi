@@ -22,7 +22,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
 
     // MARK: - 内部状态
 
-    /// 输入状态（供输入视图和发送按钮共享）
+    /// 输入状态（由内核注册并共享给输入视图和发送按钮）
     let inputState = InputState()
 
     // MARK: - Initialization
@@ -35,7 +35,9 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
 
     // MARK: - LumiPlugin
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        kernel.registerConversationInputService(inputState)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
         if Self.verbose {
@@ -55,7 +57,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                ConversationInputView(kernel: kernel, inputState: self.inputState)
+                ConversationInputView(kernel: kernel)
             }
         ]
     }
@@ -63,7 +65,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
         [
             ChatSectionActionBarItem(id: "\(id).send-button", placement: .trailing) {
-                SendActionBarButton(kernel: kernel, inputState: self.inputState)
+                SendActionBarButton(kernel: kernel)
             }
         ]
     }

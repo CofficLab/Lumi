@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import SwiftUI
 @testable import LumiKernel
 
 @Suite("LumiKernel Tests")
@@ -18,6 +19,37 @@ struct LumiKernelTests {
         let resolved = kernel.resolveService(StorageProviding.self)
         #expect(resolved != nil)
     }
+
+    @Test("Conversation input service can be registered and resolved")
+    func testConversationInputServiceRegistration() async throws {
+        let kernel = LumiKernel()
+        let input = MockConversationInputService()
+
+        kernel.registerConversationInputService(input)
+
+        let resolved = kernel.conversationInput
+        #expect(resolved != nil)
+        #expect(resolved as? MockConversationInputService === input)
+    }
+
+    @Test("Conversation input state is shared through kernel")
+    func testConversationInputStateSharedThroughKernel() async throws {
+        let kernel = LumiKernel()
+        let input = MockConversationInputService()
+        kernel.registerConversationInputService(input)
+
+        kernel.conversationInput?.text = "hello kernel"
+        kernel.conversationInput?.inputHeight = 120
+        kernel.conversationInput?.isInputFocused = true
+        kernel.conversationInput?.inputCursorPosition = 3
+        kernel.conversationInput?.errorMessage = "boom"
+
+        #expect(input.text == "hello kernel")
+        #expect(input.inputHeight == 120)
+        #expect(input.isInputFocused == true)
+        #expect(input.inputCursorPosition == 3)
+        #expect(input.errorMessage == "boom")
+    }
 }
 
 // MARK: - Mock Services
@@ -35,5 +67,35 @@ private final class MockStorageService: StorageProviding {
 
     func coreDataDirectory() -> URL {
         dataRootDirectory.appendingPathComponent("Core")
+    }
+}
+
+@MainActor
+private final class MockConversationInputService: ConversationInputProviding {
+    @Published var text: String = ""
+    @Published var inputHeight: CGFloat = 64
+    @Published var isInputFocused: Bool = false
+    @Published var inputCursorPosition: Int = 0
+    @Published var errorMessage: String?
+
+    var isSendingValue: Bool = false
+    var canSendValue: Bool = true
+    var stopCallCount: Int = 0
+    var sendCallCount: Int = 0
+
+    func isSending(kernel: LumiKernel) -> Bool {
+        isSendingValue
+    }
+
+    func canSend(kernel: LumiKernel) -> Bool {
+        canSendValue
+    }
+
+    func send(kernel: LumiKernel) {
+        sendCallCount += 1
+    }
+
+    func stop(kernel: LumiKernel) {
+        stopCallCount += 1
     }
 }

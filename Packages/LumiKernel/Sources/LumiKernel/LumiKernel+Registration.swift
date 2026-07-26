@@ -36,6 +36,11 @@ extension LumiKernelContainer {
         registerService(MessageSending.self, messageSend)
     }
 
+    /// Register conversation input service
+    public func registerConversationInputService(_ conversationInput: any ConversationInputProviding) {
+        registerService(ConversationInputProviding.self, conversationInput)
+    }
+
     /// Register conversation managing service
     public func registerConversations(_ conversations: any ConversationManaging) {
         registerService(ConversationManaging.self, conversations)

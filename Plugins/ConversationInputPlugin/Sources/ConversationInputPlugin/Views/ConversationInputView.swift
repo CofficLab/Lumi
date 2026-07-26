@@ -11,27 +11,27 @@ struct ConversationInputView: View, SuperLog {
 
     @LumiTheme private var theme
     @ObservedObject var kernel: LumiKernel
-    @ObservedObject var inputState: InputState
 
     var body: some View {
-        VStack(spacing: 0) {
-            AppDivider()
+        if let inputState = kernel.conversationInput {
+            VStack(spacing: 0) {
+                AppDivider()
 
-            if let errorMessage = inputState.errorMessage {
-                InputErrorView(message: errorMessage, onDismiss: {
-                    inputState.errorMessage = nil
-                })
-                .padding(.bottom, 4)
+                if let errorMessage = inputState.errorMessage {
+                    InputErrorView(message: errorMessage, onDismiss: {
+                        inputState.errorMessage = nil
+                    })
+                    .padding(.bottom, 4)
+                }
+
+                ComposerView(
+                    inputState: inputState,
+                    onSend: { inputState.send(kernel: kernel) }
+                )
             }
-
-            ComposerView(
-                text: $inputState.text,
-                inputHeight: $inputState.inputHeight,
-                isInputFocused: $inputState.isInputFocused,
-                inputCursorPosition: $inputState.inputCursorPosition,
-                onSend: { inputState.send(kernel: kernel) }
-            )
+            .background(theme.background)
+        } else {
+            EmptyView()
         }
-        .background(theme.background)
     }
 }

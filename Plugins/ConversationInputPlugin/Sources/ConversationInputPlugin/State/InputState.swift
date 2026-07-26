@@ -5,7 +5,7 @@ import LumiKernel
 
 /// 输入状态（插件内部共享）
 @MainActor
-final class InputState: ObservableObject {
+final class InputState: ObservableObject, ConversationInputProviding {
     /// 当前输入框的文本
     @Published var text: String = ""
 
