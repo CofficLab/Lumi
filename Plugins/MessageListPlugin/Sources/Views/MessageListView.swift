@@ -232,15 +232,27 @@ struct MessageListView: View, SuperLog {
             return
         }
 
+        let shouldFollowLatest = paging.shouldAutoRefreshLatestOnMessageChange
         if Self.verbose {
-            Self.logger.info("\(Self.t)loadMessagesAsync 开始 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, isSending=\(isSending), localMessages=\(messages.count), currentFirst=\(messages.first?.id.uuidString.prefix(8) ?? "nil"), currentLast=\(messages.last?.id.uuidString.prefix(8) ?? "nil"), oldestVisible=\(paging.oldestVisibleMessageID?.uuidString.prefix(8) ?? "nil")")
+            Self.logger.info("\(Self.t)loadMessagesAsync 开始 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, isSending=\(isSending), followLatest=\(shouldFollowLatest), localMessages=\(messages.count), currentFirst=\(messages.first?.id.uuidString.prefix(8) ?? "nil"), currentLast=\(messages.last?.id.uuidString.prefix(8) ?? "nil"), oldestVisible=\(paging.oldestVisibleMessageID?.uuidString.prefix(8) ?? "nil")")
         }
 
-        let loaded = await manager.visibleMessages(
-            for: conversationID,
-            limit: messagePageSize,
-            beforeMessageID: nil
-        )
+        // When we are following the latest page, prefer the in-memory cache from
+        // MessageManager. This avoids a race where the UI refreshes on the
+        // `messagesDidChange` notification before the async store write finishes.
+        //
+        // Once a user loads earlier messages, we keep using paged store reads to
+        // preserve the "older history above, latest page below" behavior.
+        let loaded: [LumiChatMessage]
+        if shouldFollowLatest {
+            loaded = manager.displayMessages(for: conversationID)
+        } else {
+            loaded = await manager.visibleMessages(
+                for: conversationID,
+                limit: messagePageSize,
+                beforeMessageID: nil
+            )
+        }
         if Self.verbose {
             Self.logger.info("\(Self.t)loadMessagesAsync 拉取完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, loaded=\(loaded.count), first=\(loaded.first?.id.uuidString.prefix(8) ?? "nil"), last=\(loaded.last?.id.uuidString.prefix(8) ?? "nil"), roles=\(loaded.map { $0.role.rawValue }.joined(separator: ","))")
         }
