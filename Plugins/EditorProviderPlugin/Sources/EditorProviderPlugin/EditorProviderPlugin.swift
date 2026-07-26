@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import LumiKernel
 import LumiUI
 import EditorService
@@ -28,6 +29,10 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
     /// 持有 provider 实例,以便在 OnReady 阶段注入 EditorService。
     /// OnBoot 阶段创建并注册;此时 EditorService 可能尚未注册(EditorKernelPlugin 同为 order=1,无先后保证)。
     private var editorProvider: EditorProvider?
+    private var kernelObservation: AnyCancellable?
+    private var projectObservation: AnyCancellable?
+    private var projectSyncTask: Task<Void, Never>?
+    private var lastSyncedProjectFilePath: String?
 
     public init() {}
 
@@ -47,6 +52,9 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)EditorProviderPlugin: attached EditorService to EditorProvider")
             }
+            bindKernelProjectObservation(kernel: kernel)
+            bindProjectCurrentFileObservation(kernel: kernel)
+            scheduleProjectCurrentFileSync(kernel: kernel)
         } else {
             Self.logger.warning("\(Self.t)EditorProviderPlugin: EditorService unavailable at onReady — openFile/closeFile will fall back to stub")
         }
@@ -81,6 +89,54 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
+
+    // MARK: - Project Sync
+
+    private func bindKernelProjectObservation(kernel: LumiKernel) {
+        kernelObservation?.cancel()
+        kernelObservation = kernel.objectWillChange.sink { [weak self] _ in
+            self?.scheduleProjectCurrentFileSync(kernel: kernel)
+        }
+    }
+
+    private func bindProjectCurrentFileObservation(kernel: LumiKernel) {
+        projectObservation?.cancel()
+        projectObservation = nil
+
+        guard let project = kernel.project else { return }
+
+        projectObservation = project.objectWillChange.sink { [weak self] _ in
+            self?.scheduleProjectCurrentFileSync(kernel: kernel)
+        }
+    }
+
+    private func scheduleProjectCurrentFileSync(kernel: LumiKernel) {
+        projectSyncTask?.cancel()
+        projectSyncTask = Task { @MainActor [weak self] in
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            self?.syncProjectCurrentFile(kernel: kernel)
+        }
+    }
+
+    private func syncProjectCurrentFile(kernel: LumiKernel) {
+        guard let editorProvider else { return }
+
+        let projectFilePath = kernel.project?.currentFileURL?.standardizedFileURL.path
+        guard projectFilePath != lastSyncedProjectFilePath else { return }
+        lastSyncedProjectFilePath = projectFilePath
+
+        guard let projectFilePath else { return }
+
+        let currentEditorPath = editorProvider.currentFilePath.map {
+            URL(fileURLWithPath: $0).standardizedFileURL.path
+        }
+        guard currentEditorPath != projectFilePath else { return }
+
+        Task { @MainActor in
+            try? await editorProvider.openFile(at: projectFilePath)
+        }
+    }
 }
 
 // MARK: - EditorProvider
@@ -117,7 +173,7 @@ public final class EditorProvider: EditorProviding {
     public func openFile(at path: String) async throws {
         if let service = editorService {
             let url = URL(fileURLWithPath: path)
-            service.sessions.openFile(at: url)
+            service.sessions.open(at: url)
             return
         }
         // 降级:EditorService 尚未注入时仅记录路径。

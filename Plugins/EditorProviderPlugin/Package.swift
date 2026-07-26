@@ -21,5 +21,12 @@ let package = Package(
                 .product(name: "EditorService", package: "EditorService"),
             ]
         ),
+        .testTarget(
+            name: "EditorProviderPluginTests",
+            dependencies: [
+                "EditorProviderPlugin",
+                .product(name: "EditorService", package: "EditorService"),
+            ]
+        ),
     ]
 )
