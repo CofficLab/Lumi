@@ -1,4 +1,3 @@
-import LLMProviderManagerPlugin
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -15,34 +14,18 @@ public final class ModelSelectorPlugin: LumiPlugin {
     public func onBoot(kernel: LumiKernel) async throws {}
     public func onReady(kernel: LumiKernel) async throws {}
 
-    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] {
-        return []
-    }
-
-    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] {
-        return []
-    }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
 
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
-        guard let llmProvider = kernel.resolveService((any LLMProviderManaging).self) else {
-            return []
-        }
-        let conversationManaging = kernel.resolveService((any ConversationManaging).self)
-
         return [
             ChatSectionActionBarItem(id: "\(id).action-bar-button", placement: .leading) {
-                ModelSelectorActionBarButton(
-                    llmProvider: llmProvider,
-                    conversationManaging: conversationManaging
-                )
+                ActionBarButton(kernel: kernel)
             },
         ]
     }
 
-    public func agentTools(kernel: LumiKernel) -> [LumiAgentTool] {
-        return []
-    }
-
+    public func agentTools(kernel: LumiKernel) -> [LumiAgentTool] { [] }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
