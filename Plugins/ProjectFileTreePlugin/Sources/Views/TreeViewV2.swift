@@ -37,6 +37,7 @@ public struct TreeViewV2: View, SuperLog {
                 NoProjectView()
             } else {
                 FileTreeNSViewBridge(
+                    kernel: kernel,
                     projectRootPath: projectPath,
                     onExpansionChange: { relativePath, isExpanded in
                         handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)

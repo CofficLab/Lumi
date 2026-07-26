@@ -1,4 +1,5 @@
 import AppKit
+import LumiKernel
 import SwiftUI
 import LumiUI
 import MagicAlert
@@ -28,6 +29,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     private var hoveredItemURL: URL?
     private var trackingArea: NSTrackingArea?
     private let theme: any LumiAppChromeTheme = LumiFallbackChromeTheme()
+    var kernel: LumiKernel?
 
     /// 展开状态变化回调
     var onExpansionChange: ((String, Bool) -> Void)?
@@ -365,6 +367,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
 
     private func buildMenu(for url: URL, isDirectory: Bool) -> NSMenu {
         let menu = NSMenu()
+        let conversationTargets = selectionState.actionTargets(for: url)
 
         if isDirectory {
             menu.addItem(menuItem(
@@ -403,6 +406,12 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             url: url
         ))
         menu.addItem(menuItem(
+            title: LumiPluginLocalization.string("Send to Conversation", bundle: .module),
+            action: #selector(sendToConversation(_:)),
+            urls: conversationTargets,
+            enabled: kernel?.conversationInput != nil
+        ))
+        menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Copy Path", bundle: .module),
             action: #selector(copyPath(_:)),
             url: url
@@ -423,6 +432,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
         item.representedObject = url
         item.target = self
+        return item
+    }
+
+    private func menuItem(title: String, action: Selector, urls: [URL], enabled: Bool) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.representedObject = urls
+        item.target = self
+        item.isEnabled = enabled
         return item
     }
 
@@ -543,6 +560,24 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         FileTreeFacade.copyPath(url)
         alert_success(LumiPluginLocalization.string("Path copied to clipboard", bundle: .module),
                       subtitle: url.lastPathComponent)
+    }
+
+    @objc private func sendToConversation(_ sender: NSMenuItem) {
+        guard let urls = sender.representedObject as? [URL], !urls.isEmpty else { return }
+        guard let conversationInput = kernel?.conversationInput else {
+            alert_error(LumiPluginLocalization.string(
+                "Conversation input is unavailable.",
+                bundle: .module
+            ))
+            return
+        }
+        conversationInput.addToConversation(
+            fileURLs: urls,
+            windowId: nil
+        )
+        let subtitle = urls.count == 1 ? urls[0].lastPathComponent : "\(urls.count) files"
+        alert_success(LumiPluginLocalization.string("Sent to Conversation", bundle: .module),
+                      subtitle: subtitle)
     }
 
     // MARK: - File Operation Helpers

@@ -1,4 +1,5 @@
 import AppKit
+import LumiKernel
 import SwiftUI
 import os
 import SuperLogKit
@@ -11,6 +12,7 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
     private static let verbose = ProjectFileTreePlugin.verbose
     public nonisolated static let emoji: String = ""
 
+    let kernel: LumiKernel
     let projectRootPath: String
     let onExpansionChange: ((String, Bool) -> Void)?
     let onTreeMutation: (() -> Void)?
@@ -35,6 +37,7 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
             Self.logger.info("\(Self.t)✅ ViewController 创建完成")
         }
 
+        viewController.kernel = kernel
         viewController.setProjectRoot(projectRootPath)
         viewController.setPackageDependencies(packageDependencies)
         viewController.onExpansionChange = onExpansionChange
