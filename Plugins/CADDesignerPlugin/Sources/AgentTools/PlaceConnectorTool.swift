@@ -29,12 +29,12 @@ public struct PlaceConnectorTool: LumiAgentTool {
         "Place connector \(CADToolSupport.string(arguments, "connectorId") ?? "?")"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = CADToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = CADToolSupport.language(kernel)
         guard let connectorId = CADToolSupport.string(arguments, "connectorId") else {
             return CADToolSupport.missingParameter("connectorId", language: language)
         }

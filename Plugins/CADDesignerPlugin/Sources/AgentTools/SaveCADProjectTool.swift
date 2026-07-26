@@ -25,18 +25,18 @@ public struct SaveCADProjectTool: LumiAgentTool {
         "Save CAD project"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = CADToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = CADToolSupport.language(kernel)
         guard let path = CADToolSupport.string(arguments, "path") else {
             return CADToolSupport.missingParameter("path", language: language)
         }
 
         let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-        if !context.isPathAllowed(url.path) {
+        if !kernel.isPathAllowed(url.path) {
             return CADToolSupport.localized(
                 language,
                 en: "Error: Path is not allowed: \(url.path)",

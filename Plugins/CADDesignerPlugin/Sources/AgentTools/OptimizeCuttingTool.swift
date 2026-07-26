@@ -24,12 +24,12 @@ public struct OptimizeCuttingTool: LumiAgentTool {
         "Optimize cutting"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = CADToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = CADToolSupport.language(kernel)
         let stockLength = CADToolSupport.double(arguments, "stockLength", default: 6000)
 
         let result = await MainActor.run {
