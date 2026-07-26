@@ -114,6 +114,7 @@ import WebSearchPlugin
 import MemoryPlugin
 import DownloadPlugin
 import BrowserPlugin
+import ShowImagePlugin
 // import CADDesignerPlugin  // Not included in Xcode project
 
 /// 插件服务
@@ -225,6 +226,7 @@ public enum PluginService {
             MemoryPlugin(),
             DownloadPlugin(),
             BrowserPlugin(),
+            ShowImagePlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

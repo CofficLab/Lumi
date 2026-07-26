@@ -1,20 +1,34 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 
 @MainActor
-public final class ShowImagePlugin: LumiPlugin {
+public final class ShowImagePlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🖼️"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.show-image"
+    )
+
     public let id = "ShowImage"
     public let name = "ShowImage"
     public let order = 97
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Display images in the conversation for visual content."
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        if Self.verbose {
+            Self.logger.info("🖼️ ShowImage 插件初始化完成")
+        }
     }
 
 
