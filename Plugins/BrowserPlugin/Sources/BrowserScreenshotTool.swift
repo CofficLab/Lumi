@@ -56,16 +56,16 @@ public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
         "网页截图"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
-        return try await executeScreenshot(arguments: arguments, context: context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
+        return try await executeScreenshot(arguments: arguments, kernel: kernel)
     }
 
-    private func executeScreenshot(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    private func executeScreenshot(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let rawURLString = arguments["url"]?.stringValue else {
             return "Error: Missing required 'url' parameter"
         }
@@ -85,14 +85,14 @@ public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
         }
 
         do {
-            try context.checkCancellation()
+            try kernel.checkCancellation()
             let screenshotPath = try await takeScreenshot(
                 url: url,
                 width: width,
                 waitSeconds: waitSeconds,
-                context: context
+                kernel: kernel
             )
-            try context.checkCancellation()
+            try kernel.checkCancellation()
             return screenshotPath
         } catch {
             if Self.verbose {
@@ -182,9 +182,9 @@ public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
         url: URL,
         width: Int,
         waitSeconds: Double,
-        context: LumiToolExecutionContext
+        kernel: LumiKernel?
     ) async throws -> String {
-        try context.checkCancellation()
+        try kernel.checkCancellation()
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
         config.preferences.javaScriptEnabled = true
@@ -194,11 +194,11 @@ public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
         webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
 
         let request = URLRequest(url: url)
-        try await webView.loadAndWait(request, timeout: 30, context: context)
-        try context.checkCancellation()
+        try await webView.loadAndWait(request, timeout: 30, kernel: kernel)
+        try kernel.checkCancellation()
 
         try await Task.sleep(for: .seconds(max(0.1, waitSeconds)))
-        try context.checkCancellation()
+        try kernel.checkCancellation()
 
         let rawContentHeight = try await webView.evaluateJavaScript("""
         Math.max(
@@ -214,7 +214,7 @@ public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
 
         webView.frame = CGRect(x: 0, y: 0, width: width, height: finalHeight)
         try await Task.sleep(for: .milliseconds(200))
-        try context.checkCancellation()
+        try kernel.checkCancellation()
 
         let snapshotConfig = WKSnapshotConfiguration()
         snapshotConfig.rect = CGRect(x: 0, y: 0, width: width, height: finalHeight)
@@ -244,13 +244,13 @@ public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
 
 extension WKWebView {
     /// 加载请求并等待页面加载完成
-    func loadAndWait(_ request: URLRequest, timeout: TimeInterval = 30, context: LumiToolExecutionContext) async throws {
-        try context.checkCancellation()
+    func loadAndWait(_ request: URLRequest, timeout: TimeInterval = 30, kernel: LumiKernel?) async throws {
+        try kernel.checkCancellation()
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 let delegate = NavigationObserver()
                 self.navigationDelegate = delegate
-                let cancellationHandlerId = context.onCancel { [weak self, weak delegate] in
+                let cancellationHandlerId = kernel.onCancel { [weak self, weak delegate] in
                     Task { @MainActor in
                         self?.stopLoading()
                         delegate?.onCancel()
@@ -258,7 +258,7 @@ extension WKWebView {
                 }
 
                 delegate.onComplete = { error in
-                    context.removeCancellationHandler(cancellationHandlerId)
+                    kernel.removeCancellationHandler(cancellationHandlerId)
                     if let error {
                         continuation.resume(throwing: error)
                     } else {
@@ -274,7 +274,7 @@ extension WKWebView {
                 }
             }
         } onCancel: { [weak self] in
-            context.cancel()
+            kernel.cancel()
             Task { @MainActor in
                 self?.stopLoading()
             }
