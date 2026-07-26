@@ -1,14 +1,7 @@
 import Foundation
 import LumiKernel
-import LumiKernel
 import SuperLogKit
 import os
-
-// MARK: - Notifications
-
-public extension Notification.Name {
-    static let conversationsDidChange = Notification.Name("com.coffic.lumi.conversationsDidChange")
-}
 
 /// Conversation Manager - real implementation using SwiftData persistence
 ///
@@ -24,7 +17,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     @Published public private(set) var currentTitle: String = "No conversation"
 
     /// Notification posted when conversations list changes
-    static let conversationsDidChangeNotification = Notification.Name("com.coffic.lumi.conversationsDidChange")
+    static let conversationsDidChangeNotification = Notification.Name.lumiConversationsDidChange
 
     private weak var kernel: LumiKernel?
 
@@ -86,7 +79,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
     /// Notify observers that conversations changed
     private func notifyConversationsChanged() {
-        NotificationCenter.default.post(name: Self.conversationsDidChangeNotification, object: self)
+        kernel?.eventManager.postConversationsDidChange(object: self)
     }
 
     // MARK: - ConversationManaging

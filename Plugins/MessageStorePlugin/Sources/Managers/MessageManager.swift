@@ -39,16 +39,20 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             return
         }
 
+        if Self.verbose {
+            Self.logger.info("\(Self.t)loadMessages(for:) ➡️ conversation=\(conversationID.uuidString.prefix(8))…, cacheBefore=\(self.messageCache[conversationID]?.count ?? 0)")
+        }
+
         Task {
             let loaded = await store.fetchMessages(conversationId: conversationID)
             await MainActor.run {
                 self.messageCache[conversationID] = loaded
                 if Self.verbose {
                     let metrics = Self.messageMetrics(loaded)
-                    Self.logger.info("\(Self.t)Loaded full message history conversation=\(conversationID.uuidString.prefix(8)) messages=\(loaded.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars) toolCallArgumentChars=\(metrics.toolCallArgumentChars)")
+                    Self.logger.info("\(Self.t)loadMessages(for:) 完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, messages=\(loaded.count), first=\(loaded.first?.id.uuidString.prefix(8) ?? "nil"), last=\(loaded.last?.id.uuidString.prefix(8) ?? "nil"), contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars) toolCallArgumentChars=\(metrics.toolCallArgumentChars)")
                 }
                 // Notify UI to refresh
-                NotificationCenter.default.post(name: Self.messagesDidChangeNotification, object: self)
+                self.kernel?.eventManager.postMessagesDidChange(object: self)
             }
         }
     }
@@ -88,6 +92,10 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     public func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) async -> [LumiChatMessage] {
         guard let store else { return [] }
 
+        if Self.verbose {
+            Self.logger.info("\(Self.t)visibleMessages 开始 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, limit=\(limit), before=\(beforeMessageID?.uuidString.prefix(8) ?? "nil")")
+        }
+
         let page = await store.fetchMessagePage(
             conversationId: conversationID,
             limit: limit,
@@ -95,12 +103,18 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         )
 
         let verbosity = kernel?.conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
-        return page.filter {
+        let filtered = page.filter {
             if verbosity == .detailed {
                 return $0.role != .status || $0.renderKind == "turn-completed"
             }
             return $0.role != .tool && ($0.role != .status || $0.renderKind == "turn-completed")
         }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)visibleMessages 完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, raw=\(page.count), filtered=\(filtered.count), first=\(filtered.first?.id.uuidString.prefix(8) ?? "nil"), last=\(filtered.last?.id.uuidString.prefix(8) ?? "nil"), roles=\(filtered.map { $0.role.rawValue }.joined(separator: ",")), verbosity=\(verbosity.rawValue)")
+        }
+
+        return filtered
     }
 
     public func messageCount(for conversationID: UUID) async -> Int {
@@ -129,10 +143,13 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
     public func deleteMessage(id: UUID, in conversationID: UUID) {
         // Remove from cache
+        if Self.verbose {
+            Self.logger.info("\(Self.t)deleteMessage ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(id.uuidString.prefix(8))…, cacheBefore=\(self.messageCache[conversationID]?.count ?? 0)")
+        }
         messageCache[conversationID]?.removeAll { $0.id == id }
 
         // Notify observers that messages changed
-        NotificationCenter.default.post(name: Self.messagesDidChangeNotification, object: self)
+        kernel?.eventManager.postMessagesDidChange(object: self)
 
         // Delete from store async
         Task {
@@ -142,7 +159,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
     public func insertMessage(_ message: LumiChatMessage, to conversationID: UUID) {
         if Self.verbose {
-            Self.logger.info("\(Self.t)insertMessage called messageConversation=\(message.conversationID.uuidString.prefix(8)) targetConversation=\(conversationID.uuidString.prefix(8)) role=\(message.role.rawValue) contentChars=\(message.content.count) metadataChars=\(Self.metadataCharacterCount(message.metadata)) reasoningChars=\(message.reasoningContent?.count ?? 0) toolCalls=\(message.toolCalls?.count ?? 0)")
+            Self.logger.info("\(Self.t)insertMessage called ➡️ messageConversation=\(message.conversationID.uuidString.prefix(8)) targetConversation=\(conversationID.uuidString.prefix(8)) role=\(message.role.rawValue) contentChars=\(message.content.count) metadataChars=\(Self.metadataCharacterCount(message.metadata)) reasoningChars=\(message.reasoningContent?.count ?? 0) toolCalls=\(message.toolCalls?.count ?? 0) cacheBefore=\(self.messageCache[conversationID]?.count ?? 0)")
         }
 
         // Ensure message has the correct conversationID
@@ -185,16 +202,25 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
         let totalCount = self.messageCache[conversationID]?.count ?? 0
         if Self.verbose {
-            Self.logger.info("\(Self.t)Inserted message to cache message=\(messageToInsert.id.uuidString.prefix(8)) conversation=\(conversationID.uuidString.prefix(8)) cachedMessages=\(totalCount) cacheConversations=\(self.messageCache.keys.count)")
+            Self.logger.info("\(Self.t)Inserted message to cache ➡️ message=\(messageToInsert.id.uuidString.prefix(8)) conversation=\(conversationID.uuidString.prefix(8)) cachedMessages=\(totalCount) cacheConversations=\(self.messageCache.keys.count)")
         }
 
         // Notify observers that messages changed
-        NotificationCenter.default.post(name: Self.messagesDidChangeNotification, object: self)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)准备发布 messagesDidChange ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(messageToInsert.id.uuidString.prefix(8))…, cacheContainsMessage=\(self.messageCache[conversationID]?.contains(where: { $0.id == messageToInsert.id }) ?? false)")
+        }
+        kernel?.eventManager.postMessagesDidChange(object: self)
 
         // Persist to store async
         Task {
             do {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)开始异步写入 store ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(messageToInsert.id.uuidString.prefix(8))…")
+                }
                 try await store?.insertMessage(messageToInsert)
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)异步写入 store 完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(messageToInsert.id.uuidString.prefix(8))…")
+                }
             } catch {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)Failed to persist message: \(error)")
@@ -236,7 +262,10 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         )
 
         // Notify UI to refresh (previously missing — content updates did not trigger re-render)
-        NotificationCenter.default.post(name: Self.messagesDidChangeNotification, object: self)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)updateMessage ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(id.uuidString.prefix(8))…, newContentChars=\(content.count)")
+        }
+        kernel?.eventManager.postMessagesDidChange(object: self)
 
         // Update in store async
         Task {
@@ -245,6 +274,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     }
 
     public func clearMessages(in conversationID: UUID) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)clearMessages ➡️ conversation=\(conversationID.uuidString.prefix(8))…, cacheBefore=\(self.messageCache[conversationID]?.count ?? 0)")
+        }
         messageCache[conversationID] = []
 
         Task {
@@ -319,11 +351,11 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         messageCache[conversationID]![index] = updatedMessage
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)updateToolCallResult: updated toolCall \(toolCallID) in message \(assistantMessageID)")
+            Self.logger.info("\(Self.t)updateToolCallResult ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(assistantMessageID.uuidString.prefix(8))…, toolCall=\(toolCallID)")
         }
 
         // Notify UI to refresh
-        NotificationCenter.default.post(name: Self.messagesDidChangeNotification, object: self)
+        kernel?.eventManager.postMessagesDidChange(object: self)
 
         // Persist the rebuilt tool calls (incl. nested tool-result images) so they
         // survive a restart. Previously only the in-memory cache was updated.
@@ -333,14 +365,8 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     }
 }
 
-// MARK: - Notification
-
-public extension Notification.Name {
-    static let messagesDidChange = Notification.Name("com.coffic.lumi.messagesDidChange")
-}
-
 public extension MessageManager {
-    static let messagesDidChangeNotification = Notification.Name("com.coffic.lumi.messagesDidChange")
+    static let messagesDidChangeNotification = Notification.Name.lumiMessagesDidChange
 }
 
 private extension MessageManager {

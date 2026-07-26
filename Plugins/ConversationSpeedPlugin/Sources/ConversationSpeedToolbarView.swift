@@ -30,7 +30,7 @@ struct ConversationSpeedToolbarView: View {
                 EmptyView()
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("com.coffic.lumi.messagesDidChange"))) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { _ in
             self.updateTPS()
         }
         .onAppear {

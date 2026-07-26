@@ -154,7 +154,7 @@ public final class ConversationListContext: ObservableObject, SuperLog {
     private func bindMessageManaging() {
         guard messageManaging != nil else { return }
 
-        NotificationCenter.default.publisher(for: Notification.Name("com.coffic.lumi.messagesDidChange"))
+        NotificationCenter.default.publisher(for: .lumiMessagesDidChange)
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.messageVersion += 1

@@ -54,7 +54,7 @@ struct MessageListView: View, SuperLog {
     // MARK: - SuperLog
 
     nonisolated public static let emoji = "💬"
-    nonisolated(unsafe) public static var verbose = false
+    nonisolated(unsafe) public static var verbose = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message-list.view")
 
     var body: some View {
@@ -73,21 +73,26 @@ struct MessageListView: View, SuperLog {
         .background(theme.surface)
         .onAppear {
             if Self.verbose {
-                Self.logger.info("\(Self.t)MessageListView appeared")
+                Self.logger.info("\(Self.t)MessageListView appeared ➡️ selectedConversationID=\(selectedConversationID?.uuidString.prefix(8) ?? "nil"), isSending=\(isSending), localMessages=\(messages.count), displayMessages=\(displayMessages.count)")
             }
             loadMessages()
         }
         .onChange(of: selectedConversationID) { _, newValue in
             if Self.verbose {
-                Self.logger.info("\(Self.t)Conversation changed: \(newValue?.uuidString.prefix(8) ?? "nil")")
+                Self.logger.info("\(Self.t)Conversation changed ➡️ new=\(newValue?.uuidString.prefix(8) ?? "nil"), isSending=\(isSending), localMessages=\(messages.count)")
             }
             paging.resetForConversationChange()
             loadMessages()
         }
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("com.coffic.lumi.messagesDidChange"))) { _ in
+        .onChange(of: isSending) { _, newValue in
+            if Self.verbose {
+                Self.logger.info("\(Self.t)isSending changed ➡️ \(newValue), selectedConversationID=\(selectedConversationID?.uuidString.prefix(8) ?? "nil"), localMessages=\(messages.count), displayMessages=\(displayMessages.count)")
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { _ in
             guard paging.shouldAutoRefreshLatestOnMessageChange else { return }
             if Self.verbose {
-                Self.logger.info("\(Self.t)Messages changed notification received")
+                Self.logger.info("\(Self.t)Messages changed notification received ➡️ selectedConversationID=\(selectedConversationID?.uuidString.prefix(8) ?? "nil"), isSending=\(isSending), localMessages=\(messages.count), displayMessages=\(displayMessages.count), followsLatest=\(paging.shouldAutoRefreshLatestOnMessageChange)")
             }
             loadMessages()
         }
@@ -185,6 +190,10 @@ struct MessageListView: View, SuperLog {
         guard let conversationID = selectedConversationID else { return }
         guard let manager = kernel.messageManager else { return }
 
+        if Self.verbose {
+            Self.logger.info("\(Self.t)loadEarlierMessagesAsync ➡️ conversation=\(conversationID.uuidString.prefix(8))…, before=\(paging.oldestVisibleMessageID?.uuidString.prefix(8) ?? "nil"), localMessages=\(messages.count)")
+        }
+
         let olderPage = await manager.visibleMessages(
             for: conversationID,
             limit: messagePageSize,
@@ -198,6 +207,10 @@ struct MessageListView: View, SuperLog {
             for: conversationID,
             beforeMessageID: paging.oldestVisibleMessageID
         )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)loadEarlierMessagesAsync 完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, loaded=\(olderPage.count), first=\(messages.first?.id.uuidString.prefix(8) ?? "nil"), last=\(messages.last?.id.uuidString.prefix(8) ?? "nil"), hasEarlier=\(hasEarlierMessages)")
+        }
     }
 
     @MainActor
@@ -219,13 +232,17 @@ struct MessageListView: View, SuperLog {
             return
         }
 
+        if Self.verbose {
+            Self.logger.info("\(Self.t)loadMessagesAsync 开始 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, isSending=\(isSending), localMessages=\(messages.count), currentFirst=\(messages.first?.id.uuidString.prefix(8) ?? "nil"), currentLast=\(messages.last?.id.uuidString.prefix(8) ?? "nil"), oldestVisible=\(paging.oldestVisibleMessageID?.uuidString.prefix(8) ?? "nil")")
+        }
+
         let loaded = await manager.visibleMessages(
             for: conversationID,
             limit: messagePageSize,
             beforeMessageID: nil
         )
         if Self.verbose {
-            Self.logger.info("\(Self.t)Loaded \(loaded.count) messages for conversation \(conversationID.uuidString.prefix(8))")
+            Self.logger.info("\(Self.t)loadMessagesAsync 拉取完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, loaded=\(loaded.count), first=\(loaded.first?.id.uuidString.prefix(8) ?? "nil"), last=\(loaded.last?.id.uuidString.prefix(8) ?? "nil"), roles=\(loaded.map { $0.role.rawValue }.joined(separator: ","))")
         }
         messages = loaded
         paging.didLoadLatestPage(firstMessageID: loaded.first?.id)
@@ -233,5 +250,9 @@ struct MessageListView: View, SuperLog {
             for: conversationID,
             beforeMessageID: paging.oldestVisibleMessageID
         )
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)loadMessagesAsync 状态更新完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, localMessages=\(messages.count), first=\(messages.first?.id.uuidString.prefix(8) ?? "nil"), last=\(messages.last?.id.uuidString.prefix(8) ?? "nil"), hasEarlier=\(hasEarlierMessages)")
+        }
     }
 }
