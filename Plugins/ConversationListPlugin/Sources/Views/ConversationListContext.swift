@@ -8,16 +8,22 @@ public final class ConversationListContext: ObservableObject {
     @Published public private(set) var lastChange: ConversationListChange?
     @Published public private(set) var statusVersion: Int = 0
     @Published public private(set) var unreadCount: Int = 0
+    @Published public private(set) var messageVersion: Int = 0
 
     private let conversationManaging: any ConversationManaging
+    private let messageManaging: (any MessageManaging)?
     private var conversationSnapshots: [UUID: Date] = [:]
     private var cancellables = Set<AnyCancellable>()
     private var previousConversations: [LumiConversationSummary] = []
     private var previousSelectedID: UUID?
     private var syncTimer: AnyCancellable?
 
-    public init(conversationManaging: any ConversationManaging) {
+    public init(
+        conversationManaging: any ConversationManaging,
+        messageManaging: (any MessageManaging)? = nil
+    ) {
         self.conversationManaging = conversationManaging
+        self.messageManaging = messageManaging
         self.previousConversations = conversationManaging.conversations
         self.previousSelectedID = conversationManaging.selectedConversationID
 
@@ -25,6 +31,7 @@ public final class ConversationListContext: ObservableObject {
             uniqueKeysWithValues: conversationManaging.conversations.map { ($0.id, $0.updatedAt) }
         )
         bindConversationManaging()
+        bindMessageManaging()
     }
 
     public var selectedConversationId: UUID? {
@@ -60,15 +67,24 @@ public final class ConversationListContext: ObservableObject {
         return sorted
             .dropFirst(offset)
             .prefix(limit)
-            .map { ConversationListItem.from($0) }
+            .map { summary in
+                ConversationListItem.from(summary, messageCount: messageCount(for: summary.id))
+            }
     }
 
     public func fetchConversation(id: UUID) -> ConversationListItem? {
-        conversationManaging.conversations.first(where: { $0.id == id }).map(ConversationListItem.from)
+        conversationManaging.conversations.first(where: { $0.id == id }).map {
+            ConversationListItem.from($0, messageCount: messageCount(for: $0.id))
+        }
     }
 
     public func isConversationProcessing(_ conversationID: UUID) -> Bool {
         conversationManaging.isSending(for: conversationID)
+    }
+
+    public func messageCount(for conversationID: UUID) -> Int? {
+        guard let messageManaging else { return nil }
+        return messageManaging.messages(for: conversationID).count
     }
 
     @discardableResult
@@ -102,6 +118,17 @@ public final class ConversationListContext: ObservableObject {
             .sink { [weak self] _ in
                 self?.syncFromSource()
             }
+    }
+
+    private func bindMessageManaging() {
+        guard messageManaging != nil else { return }
+
+        NotificationCenter.default.publisher(for: Notification.Name("com.coffic.lumi.messagesDidChange"))
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.messageVersion += 1
+            }
+            .store(in: &cancellables)
     }
 
     /// Sync state from ConversationManaging and publish granular changes.

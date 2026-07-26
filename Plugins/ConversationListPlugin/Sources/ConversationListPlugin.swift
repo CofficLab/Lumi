@@ -128,7 +128,12 @@ struct ConversationListPopoverContent: View {
             // conversations unavailable — crash early in debug.
             fatalError("kernel.conversations is nil when creating ConversationListPopoverContent")
         }
-        _context = StateObject(wrappedValue: ConversationListContext(conversationManaging: conv))
+        _context = StateObject(
+            wrappedValue: ConversationListContext(
+                conversationManaging: conv,
+                messageManaging: kernel.messageManager
+            )
+        )
     }
 
     var body: some View {

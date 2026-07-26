@@ -56,6 +56,9 @@ public struct ConversationListView: View, SuperLog {
             guard let change else { return }
             handleConversationChange(change)
         }
+        .onChange(of: context.messageVersion) { _, _ in
+            refreshVisibleMessageCounts()
+        }
         .onChange(of: context.statusVersion, handleStatusVersionChanged)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -218,6 +221,26 @@ extension ConversationListView {
         nextOffset = 0
         hasMore = true
         loadNextPageIfNeeded()
+    }
+
+    private func refreshVisibleMessageCounts() {
+        guard !conversations.isEmpty else { return }
+        conversations = conversations.map { conversation in
+            let updatedCount = context.messageCount(for: conversation.id)
+            if conversation.messageCount == updatedCount {
+                return conversation
+            }
+            return ConversationListItem(
+                id: conversation.id,
+                projectPath: conversation.projectPath,
+                title: conversation.title,
+                createdAt: conversation.createdAt,
+                updatedAt: conversation.updatedAt,
+                providerID: conversation.providerID,
+                modelName: conversation.modelName,
+                messageCount: updatedCount
+            )
+        }
     }
 
 

@@ -26,7 +26,10 @@ struct ConversationRailView: View, SuperLog {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
             if context == nil, let conversations = kernel.conversations {
-                context = ConversationListContext(conversationManaging: conversations)
+                context = ConversationListContext(
+                    conversationManaging: conversations,
+                    messageManaging: kernel.messageManager
+                )
             }
         }
     }

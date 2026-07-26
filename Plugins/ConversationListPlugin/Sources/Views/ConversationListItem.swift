@@ -9,6 +9,7 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
     public let updatedAt: Date
     public let providerID: String?
     public let modelName: String?
+    public let messageCount: Int?
 
     public var displayTitle: String {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -22,7 +23,8 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
         createdAt: Date,
         updatedAt: Date,
         providerID: String? = nil,
-        modelName: String? = nil
+        modelName: String? = nil,
+        messageCount: Int? = nil
     ) {
         self.id = id
         self.projectPath = projectPath
@@ -31,9 +33,10 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
         self.updatedAt = updatedAt
         self.providerID = providerID
         self.modelName = modelName
+        self.messageCount = messageCount
     }
 
-    static func from(_ summary: LumiConversationSummary) -> ConversationListItem {
+    static func from(_ summary: LumiConversationSummary, messageCount: Int? = nil) -> ConversationListItem {
         ConversationListItem(
             id: summary.id,
             projectPath: summary.projectPath,
@@ -41,7 +44,8 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
             createdAt: summary.createdAt,
             updatedAt: summary.updatedAt,
             providerID: summary.providerID,
-            modelName: summary.modelName
+            modelName: summary.modelName,
+            messageCount: messageCount
         )
     }
 }
