@@ -12,14 +12,8 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
     public nonisolated static let emoji: String = ""
 
     let projectRootPath: String
-    let onSelect: (URL) -> Void
     let onExpansionChange: ((String, Bool) -> Void)?
     let onTreeMutation: (() -> Void)?
-    let onCloseEditorTabs: (([URL]) -> Void)?
-    let onRenameEditorTab: ((URL, URL) -> Void)?
-    let onAddToConversation: (([URL]) -> Void)?
-    let flashTrigger: (path: String, id: UUID)?
-    let onMiddleClick: ((URL) -> Void)?
     let gitStatusSnapshot: GitStatusSnapshot
     let packageDependencies: [PackageDependency]
 
@@ -43,13 +37,8 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
 
         viewController.setProjectRoot(projectRootPath)
         viewController.setPackageDependencies(packageDependencies)
-        viewController.onSelect = onSelect
         viewController.onExpansionChange = onExpansionChange
         viewController.onTreeMutation = onTreeMutation
-        viewController.onCloseEditorTabs = onCloseEditorTabs
-        viewController.onRenameEditorTab = onRenameEditorTab
-        viewController.onAddToConversation = onAddToConversation
-        viewController.onMiddleClick = onMiddleClick
         viewController.gitStatusSnapshot = gitStatusSnapshot
 
         context.coordinator.viewController = viewController
@@ -86,10 +75,6 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
         viewController.setPackageDependencies(packageDependencies)
 
         viewController.gitStatusSnapshot = gitStatusSnapshot
-
-        if let flashTrigger, !flashTrigger.path.isEmpty {
-            viewController.triggerFlash(path: flashTrigger.path)
-        }
 
         // 精准刷新：watcher 检测到外部文件系统变化时，RefreshCoordinator 递增
         // targetedRefreshToken 并下发 changedDirectoryPaths。此处据此驱动 reloadDirectory，

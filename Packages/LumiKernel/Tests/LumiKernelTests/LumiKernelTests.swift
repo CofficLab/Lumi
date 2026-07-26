@@ -50,6 +50,25 @@ struct LumiKernelTests {
         #expect(input.inputCursorPosition == 3)
         #expect(input.errorMessage == "boom")
     }
+
+    @Test("Conversation input can accept conversation file references")
+    func testConversationInputConversationReferences() async throws {
+        let kernel = LumiKernel()
+        let input = MockConversationInputService()
+        kernel.registerConversationInputService(input)
+
+        let fileA = URL(fileURLWithPath: "/tmp/A.swift")
+        let fileB = URL(fileURLWithPath: "/tmp/B.swift")
+
+        kernel.conversationInput?.addToConversation(fileURLs: [fileA, fileB], windowId: nil)
+
+        #expect(input.text == """
+        Files to add to conversation:
+        - /tmp/A.swift
+        - /tmp/B.swift
+        """)
+        #expect(input.isInputFocused == true)
+    }
 }
 
 // MARK: - Mock Services
@@ -97,5 +116,19 @@ private final class MockConversationInputService: ConversationInputProviding {
 
     func stop(kernel: LumiKernel) {
         stopCallCount += 1
+    }
+
+    func addToConversation(fileURLs: [URL], windowId: UUID?) {
+        let paths = fileURLs.map { $0.standardizedFileURL.path }
+        guard !paths.isEmpty else { return }
+
+        let referenceBlock = (["Files to add to conversation:"] + paths.map { "- \($0)" })
+            .joined(separator: "\n")
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            text = referenceBlock
+        } else {
+            text = text.trimmingCharacters(in: .whitespacesAndNewlines) + "\n\n" + referenceBlock
+        }
+        isInputFocused = true
     }
 }

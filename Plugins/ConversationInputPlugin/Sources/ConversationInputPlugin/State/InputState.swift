@@ -23,6 +23,23 @@ final class InputState: ObservableObject, ConversationInputProviding {
 
     init() {}
 
+    func addToConversation(fileURLs: [URL], windowId: UUID?) {
+        let paths = fileURLs
+            .map { $0.standardizedFileURL.path }
+            .filter { !$0.isEmpty }
+        guard !paths.isEmpty else { return }
+
+        let referenceBlock = Self.makeReferenceBlock(from: paths)
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            text = referenceBlock
+        } else {
+            text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            text += "\n\n"
+            text += referenceBlock
+        }
+        isInputFocused = true
+    }
+
     // MARK: - Sending
 
     /// 当前是否在向内核发送中
@@ -62,5 +79,11 @@ final class InputState: ObservableObject, ConversationInputProviding {
     /// 取消当前发送请求。
     func stop(kernel: LumiKernel) {
         kernel.messageSender?.cancelCurrentRequest()
+    }
+
+    private static func makeReferenceBlock(from paths: [String]) -> String {
+        var lines = ["Files to add to conversation:"]
+        lines.append(contentsOf: paths.map { "- \($0)" })
+        return lines.joined(separator: "\n")
     }
 }

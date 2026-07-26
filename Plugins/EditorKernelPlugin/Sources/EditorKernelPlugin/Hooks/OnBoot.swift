@@ -33,7 +33,7 @@ public struct EditorKernelOnBootHook: SuperLog {
 
         // 创建文件树/编辑器协同器并注册到内核,供文件树等 UI 组件通过
         // `FileTreeEditorCoordination` 协议消费(无需直接依赖 EditorService)。
-        let editorContext = EditorContext(service: editorService)
+        let editorContext = EditorContext(service: editorService, kernel: kernel)
         kernel.registerFileTreeEditorCoordination(editorContext)
         // 同一实例同时实现标签栏协同协议。
         kernel.registerEditorTabStripCoordination(editorContext)

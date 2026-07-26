@@ -11,7 +11,6 @@ struct NodeRowView: View {
     let isHovered: Bool
     let gitStatus: GitStatus?
     let theme: any LumiAppChromeTheme
-    let flashOpacity: Double
 
     var body: some View {
         HStack(spacing: 4) {
@@ -85,10 +84,6 @@ struct NodeRowView: View {
             } else {
                 Color.clear
             }
-            // 闪烁高亮覆盖层
-            if flashOpacity > 0 {
-                Color.accentColor.opacity(flashOpacity)
-            }
         }
     }
 
@@ -115,8 +110,7 @@ extension NodeRowView {
             ),
             isSelected: false, isHovered: false,
             gitStatus: nil,
-            theme: LumiFallbackChromeTheme(),
-            flashOpacity: 0
+            theme: LumiFallbackChromeTheme()
         )
     }
 }

@@ -20,9 +20,6 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     public nonisolated static let gitStatusEnabled = true
     /// 是否启用拖放(文件移动)。
     public nonisolated static let dragAndDropEnabled = true
-    /// 是否启用外部定位文件的闪烁高亮。
-    public nonisolated static let flashHighlightEnabled = true
-
     public let id = "com.coffic.lumi.plugin.project-file-tree"
     public let name = "Project File Tree"
     public let order = 0

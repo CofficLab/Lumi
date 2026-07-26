@@ -29,33 +29,14 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     private var trackingArea: NSTrackingArea?
     private let theme: any LumiAppChromeTheme = LumiFallbackChromeTheme()
 
-    /// 文件选择回调
-    var onSelect: ((URL) -> Void)?
-
     /// 展开状态变化回调
     var onExpansionChange: ((String, Bool) -> Void)?
 
     /// 树结构变化回调
     var onTreeMutation: (() -> Void)?
 
-    /// 删除文件后关闭对应编辑器 tab 的回调
-    var onCloseEditorTabs: (([URL]) -> Void)?
-
-    /// 重命名文件后迁移编辑器 tab 的回调（旧 URL → 新 URL）
-    var onRenameEditorTab: ((URL, URL) -> Void)?
-
-    /// 将文件加入对话的回调
-    var onAddToConversation: (([URL]) -> Void)?
-
-    /// 中键点击预览回调
-    var onMiddleClick: ((URL) -> Void)?
-
     /// Git 状态快照
     var gitStatusSnapshot: GitStatusSnapshot = .empty
-
-    /// 闪烁高亮不透明度（由外部通过 triggerFlash 设置）
-    private var flashItemURL: URL?
-    private var flashOpacity: Double = 0
 
     private static let cellIdentifier = NSUserInterfaceItemIdentifier("FileTreeNodeCellView")
     private static let packageCellIdentifier = NSUserInterfaceItemIdentifier("PackageDependencyNodeCellView")
@@ -106,7 +87,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
 
         view.addSubview(scrollView)
 
-        // 启用拖放：支持文件 URL 拖出到输入框等目标，以及拖入目录 cell 移动文件
+        // 启用拖放：支持文件 URL 拖出到其他目标，以及拖入目录 cell 移动文件
         collectionView.registerForDraggedTypes([.fileURL])
 
         NSLayoutConstraint.activate([
@@ -131,15 +112,13 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
                 let isSelected = self.selectionState.isSelected(fileItem.url)
                 let isHovered = self.hoveredItemURL == fileItem.url
                 let gitStatus = self.gitStatus(for: fileItem.url)
-                let itemFlashOpacity: Double = (self.flashItemURL == fileItem.url) ? self.flashOpacity : 0
 
                 cell.configure(
                     with: fileItem,
                     isSelected: isSelected,
                     isHovered: isHovered,
                     gitStatus: gitStatus,
-                    theme: self.theme,
-                    flashOpacity: itemFlashOpacity
+                    theme: self.theme
                 )
 
                 return cell
@@ -268,23 +247,6 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         reloadVisibleItems()
     }
 
-    func triggerFlash(path: String) {
-        guard ProjectFileTreePlugin.flashHighlightEnabled else { return }
-        let targetURL = URL(fileURLWithPath: path)
-        flashItemURL = targetURL
-        flashOpacity = 0.25
-        reloadVisibleItems()
-
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(0.6 * 1_000_000_000))
-            flashOpacity = 0
-            reloadVisibleItems()
-            try? await Task.sleep(nanoseconds: UInt64(0.4 * 1_000_000_000))
-            flashItemURL = nil
-            flashOpacity = 0
-        }
-    }
-
     private func reloadVisibleItems() {
         let visibleItems = collectionView.indexPathsForVisibleItems()
         guard !visibleItems.isEmpty else { return }
@@ -343,7 +305,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             return
         }
 
-        // 只处理 file 类型的点击
         guard case .file(let fileItem) = item else {
             collectionView.deselectItems(at: indexPaths)
             return
@@ -355,9 +316,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             url: fileItem.url,
             isDirectory: fileItem.isDirectory,
             modifiers: modifiers,
-            onOpenFile: {
-                self.onSelect?(fileItem.url)
-            },
             onToggleExpand: {
                 self.fileTreeDataSource.toggleExpansion(at: fileItem.url)
                 let relativePath = PathFormatter.expansionPath(
@@ -428,12 +386,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             url: url
         ))
         menu.addItem(.separator())
-
-        menu.addItem(menuItem(
-            title: LumiPluginLocalization.string("Add to Conversation", bundle: .module),
-            action: #selector(addToConversation(_:)),
-            url: url
-        ))
 
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Reveal in Finder", bundle: .module),
@@ -547,7 +499,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         if Self.verbose {
             Self.logger.info("\(Self.t)重命名: \(url.lastPathComponent) → \(newURL.lastPathComponent)")
         }
-        onRenameEditorTab?(url, newURL)
         refreshAfterMutation(parentURL: newURL.deletingLastPathComponent())
         alert_success(LumiPluginLocalization.string("Rename", bundle: .module),
                       subtitle: "\(url.lastPathComponent) → \(newURL.lastPathComponent)")
@@ -566,7 +517,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         if Self.verbose {
             Self.logger.info("\(Self.t)删除: \(url.path)")
         }
-        onCloseEditorTabs?([url])
         selectionState.clearSelection()
         refreshAfterMutation(parentURL: url.deletingLastPathComponent())
         alert_success(LumiPluginLocalization.string("Moved to Trash", bundle: .module),
@@ -592,13 +542,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         guard let url = sender.representedObject as? URL else { return }
         FileTreeFacade.copyPath(url)
         alert_success(LumiPluginLocalization.string("Path copied to clipboard", bundle: .module),
-                      subtitle: url.lastPathComponent)
-    }
-
-    @objc private func addToConversation(_ sender: NSMenuItem) {
-        guard let url = sender.representedObject as? URL else { return }
-        onAddToConversation?([url])
-        alert_success(LumiPluginLocalization.string("Added to Conversation", bundle: .module),
                       subtitle: url.lastPathComponent)
     }
 
@@ -637,10 +580,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         case .rejected:
             return false
         case .moved(let pairs, let affectedParents):
-            for (old, new) in pairs {
-                onRenameEditorTab?(old, new)
-            }
-
             onTreeMutation?()
 
             for parent in affectedParents {

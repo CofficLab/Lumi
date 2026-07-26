@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// 对话输入能力协议
@@ -21,6 +22,12 @@ public protocol ConversationInputProviding: ObservableObject {
 
     /// 最近一次发送失败时的错误信息
     var errorMessage: String? { get set }
+
+    /// 将文件加入当前输入草稿。
+    ///
+    /// 典型用途是把文件树/编辑器里的文件路径整理成可发送的引用文本，交给用户
+    /// 继续编辑后发送。实现方决定具体呈现格式。
+    func addToConversation(fileURLs: [URL], windowId: UUID?)
 
     /// 当前是否正在发送
     func isSending(kernel: LumiKernel) -> Bool

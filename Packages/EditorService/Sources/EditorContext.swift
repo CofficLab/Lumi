@@ -15,6 +15,7 @@ public final class EditorContext: ObservableObject {
     @Published public private(set) var fileTreeHighlightedFileURL: URL?
 
     private let service: EditorService
+    private weak var kernel: LumiKernel?
     private let themeVM: AppThemeVM
     private var cancellables = Set<AnyCancellable>()
 
@@ -22,8 +23,9 @@ public final class EditorContext: ObservableObject {
     public var activeChromeTheme: (any LumiAppChromeTheme)? { themeVM.activeChromeTheme }
     public var activeFileIconTheme: LumiFileIconThemeContributor? { LumiDefaultFileIconThemeContributor() }
 
-    public init(service: EditorService, themeVM: AppThemeVM = .shared) {
+    public init(service: EditorService, kernel: LumiKernel? = nil, themeVM: AppThemeVM = .shared) {
         self.service = service
+        self.kernel = kernel
         self.themeVM = themeVM
         fileTreeHighlightedFileURL = service.files.currentFileURL
         bindFileTreeHighlightToEditorCurrentFile()
@@ -94,6 +96,11 @@ public final class EditorContext: ObservableObject {
 
     /// 将多个文件路径加入当前窗口的对话输入区。
     public func addToConversation(fileURLs: [URL], windowId: UUID?) {
+        if let input = kernel?.conversationInput {
+            input.addToConversation(fileURLs: fileURLs, windowId: windowId ?? service.state.windowId)
+            return
+        }
+
         for fileURL in fileURLs {
             let standardized = fileURL.standardizedFileURL
             let resolvedWindowId = windowId ?? service.state.windowId
