@@ -87,11 +87,11 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
         return "Search code: \(preview)"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let rawQuery = arguments.string("query") else {
             return "## Code Search\n\nMissing required `query` parameter."
         }
@@ -106,7 +106,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
         let pathFilter = trimmedNonEmpty(arguments.string("pathFilter"))
         let timeoutSeconds = Self.normalizedTimeout(arguments["timeout"]?.anyValue)
 
-        guard let projectPath = resolveProjectPath(arguments: arguments, context: context) else {
+        guard let projectPath = resolveProjectPath(arguments: arguments, kernel: kernel) else {
             return """
             ## Code Search
 
@@ -114,7 +114,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
             """
         }
 
-        if !context.isPathAllowed(projectPath) {
+        if !kernel.isPathAllowed(projectPath) {
             return """
             ## Code Search
 
@@ -134,7 +134,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
                     projectPath: projectPath,
                     pathFilter: pathFilter,
                     limit: topK,
-                    context: context
+                    kernel: kernel
                 )
             }
             : nil
@@ -184,7 +184,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
             }
         }
 
-        try context.checkCancellation()
+        try kernel.checkCancellation()
         let merged = mergeResults(results, limit: topK)
         return render(results: merged, query: query, mode: mode, projectPath: projectPath, timedOut: timedOut, timeoutSeconds: timeoutSeconds)
     }
@@ -197,7 +197,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
         projectPath: String,
         pathFilter: String?,
         limit: Int,
-        context: LumiToolExecutionContext
+        kernel: LumiKernel
     ) async -> [CodeSearchResult] {
         let keywordStart = CFAbsoluteTimeGetCurrent()
         // 优先使用 grep，失败时回退到 Swift 逐文件搜索
@@ -216,7 +216,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
                 projectPath: projectPath,
                 pathFilter: pathFilter,
                 limit: limit,
-                context: context
+                kernel: kernel
             )
             let merged = mergeResults(grepResults + fallbackResults, limit: limit)
             logKeywordTiming(start: keywordStart, count: merged.count, mode: "grep+fallback")
@@ -229,7 +229,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
             projectPath: projectPath,
             pathFilter: pathFilter,
             limit: limit,
-            context: context
+            kernel: kernel
         )
         logKeywordTiming(start: keywordStart, count: fallbackResults.count, mode: "swift-fallback")
         return fallbackResults
@@ -390,7 +390,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
         projectPath: String,
         pathFilter: String?,
         limit: Int,
-        context: LumiToolExecutionContext
+        kernel: LumiKernel?
     ) -> [CodeSearchResult] {
         let lowerQuery = query.lowercased()
         let files = RAGFileScanner.discoverFilesCached(in: projectPath)
@@ -465,9 +465,9 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
 
     // MARK: - Helpers
 
-    private func resolveProjectPath(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) -> String? {
+    private func resolveProjectPath(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> String? {
         let explicit = trimmedNonEmpty(arguments.string("projectPath"))
-        let current = trimmedNonEmpty(context.currentProjectPath)
+        let current = trimmedNonEmpty(kernel.currentProjectPath)
 
         guard let path = explicit ?? current else { return nil }
         return RAGPathUtils.normalizeProjectPath(path)

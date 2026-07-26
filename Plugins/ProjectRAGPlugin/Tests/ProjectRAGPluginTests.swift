@@ -114,7 +114,7 @@ import Testing
     }
     """.write(to: fileURL, atomically: true, encoding: .utf16)
 
-    let context = LumiToolExecutionContext(
+    let context = LumiToolExecutionContextState(
         conversationID: UUID(),
         toolCallID: "test-search-code",
         toolName: "search_code",
@@ -151,7 +151,7 @@ import Testing
         """.write(to: fileURL, atomically: true, encoding: .utf8)
     }
 
-    let context = LumiToolExecutionContext(
+    let context = LumiToolExecutionContextState(
         conversationID: UUID(),
         toolCallID: "test-search-code-topk",
         toolName: "search_code",
