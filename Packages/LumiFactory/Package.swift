@@ -128,6 +128,8 @@ let package = Package(
         .package(path: "../../Plugins/CaffeinatePlugin"),
         .package(path: "../../Plugins/AgentTempStoragePlugin"),
         .package(path: "../../Plugins/AppIconDesignerPlugin"),
+        .package(path: "../../Plugins/WebFetchPlugin"),
+        .package(path: "../../Plugins/WebSearchPlugin"),
     ],
     targets: [
         .target(
@@ -253,6 +255,8 @@ let package = Package(
                 .product(name: "CaffeinatePlugin", package: "CaffeinatePlugin"),
                 .product(name: "AgentTempStoragePlugin", package: "AgentTempStoragePlugin"),
                 .product(name: "AppIconDesignerPlugin", package: "AppIconDesignerPlugin"),
+                .product(name: "WebFetchPlugin", package: "WebFetchPlugin"),
+                .product(name: "WebSearchPlugin", package: "WebSearchPlugin"),
             ],
             resources: [
                 .process("Resources")

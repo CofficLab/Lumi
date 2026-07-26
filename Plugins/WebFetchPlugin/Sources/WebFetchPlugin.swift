@@ -1,20 +1,34 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 
 @MainActor
-public final class WebFetchPlugin: LumiPlugin {
+public final class WebFetchPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🌐"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.web-fetch"
+    )
+
     public let id = "WebFetch"
     public let name = "WebFetch"
     public let order = 100
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Fetch and extract content from web pages."
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        if Self.verbose {
+            Self.logger.info("🌐 WebFetch 插件初始化完成")
+        }
     }
 
 

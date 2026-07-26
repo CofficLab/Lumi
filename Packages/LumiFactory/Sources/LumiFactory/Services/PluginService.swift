@@ -109,6 +109,8 @@ import AgentRulesPlugin
 import CaffeinatePlugin
 import AgentTempStoragePlugin
 import AppIconDesignerPlugin
+import WebFetchPlugin
+import WebSearchPlugin
 // import CADDesignerPlugin  // Not included in Xcode project
 
 /// 插件服务
@@ -215,6 +217,8 @@ public enum PluginService {
             CaffeinatePlugin(),
             AgentTempStoragePlugin(),
             AppIconDesignerPlugin(),
+            WebFetchPlugin(),
+            WebSearchPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),
