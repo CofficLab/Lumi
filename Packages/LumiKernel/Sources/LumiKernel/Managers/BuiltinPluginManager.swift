@@ -112,6 +112,7 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
             // Message Renderers
             for renderer in plugin.messageRenderers(kernel: kernel) {
                 registerMessageRenderer(renderer)
+                kernel.messageRendererManager?.registerMessageRenderer(renderer)
             }
 
             // Menu Bar

@@ -109,6 +109,13 @@ public enum LumiLLMProviderErrorSupport {
         }
 
         metadata.merge(disposition.metadataEntries) { _, new in new }
+        let resolvedRenderKind: String?
+        if case LumiLLMProviderSupportError.missingAPIKey = error {
+            resolvedRenderKind = renderKind ?? LumiLLMProviderAPIKeyMessage.renderKind
+        } else {
+            resolvedRenderKind = renderKind
+        }
+
         return LumiChatMessage(
             conversationID: conversationID,
             role: .error,
@@ -117,7 +124,7 @@ public enum LumiLLMProviderErrorSupport {
             modelName: request.model,
             isError: true,
             rawErrorDetail: detail.summary.isEmpty ? detail.availabilityDisplayText : detail.summary,
-            renderKind: renderKind,
+            renderKind: resolvedRenderKind,
             metadata: metadata
         )
     }

@@ -40,7 +40,9 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
-    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
+        [ProviderAPIKeyMissingRenderer.item(kernel: kernel)]
+    }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }

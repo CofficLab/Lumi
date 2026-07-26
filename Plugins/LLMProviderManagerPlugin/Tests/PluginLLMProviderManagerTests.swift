@@ -3,6 +3,47 @@ import LumiKernel
 import Testing
 @testable import LLMProviderManagerPlugin
 
+// MARK: - Provider API Key Message Renderer
+
+@MainActor
+@Test func providerAPIKeyRendererMatchesMissingKeyMessages() {
+    let plugin = LLMProviderManagerPlugin()
+    let renderer = plugin.messageRenderers(kernel: LumiKernel()).first {
+        $0.id == LumiLLMProviderAPIKeyMessage.renderKind
+    }
+    let conversationID = UUID()
+    let genericMessage = LumiChatMessage(
+        conversationID: conversationID,
+        role: .error,
+        content: "",
+        providerID: "openai",
+        isError: true,
+        rawErrorDetail: "Missing API key for: OpenAI",
+        renderKind: LumiLLMProviderAPIKeyMessage.renderKind
+    )
+    let legacyProviderMessage = LumiChatMessage(
+        conversationID: conversationID,
+        role: .error,
+        content: "",
+        providerID: "xiaomi-api",
+        isError: true,
+        rawErrorDetail: "Missing API key for: Xiaomi API",
+        renderKind: "xiaomi-api-key-missing"
+    )
+    let normalError = LumiChatMessage(
+        conversationID: conversationID,
+        role: .error,
+        content: "",
+        providerID: "openai",
+        isError: true,
+        rawErrorDetail: "HTTP 500"
+    )
+
+    #expect(renderer?.canRender(genericMessage) == true)
+    #expect(renderer?.canRender(legacyProviderMessage) == true)
+    #expect(renderer?.canRender(normalError) == false)
+}
+
 // MARK: - ModelCheckState
 
 @Test func modelCheckStateDefaultsAreNotChecked() {

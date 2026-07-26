@@ -139,7 +139,15 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                 return
             }
 
-            let model = kernel.llmProvider?.selectedModel ?? type(of: provider).info.defaultModel
+            let targetProvider: any LumiLLMProvider
+            if let selectedProviderID = kernel.llmProvider?.selectedProviderID,
+               let selectedProvider = kernel.llmProvider?.llmProvider(id: selectedProviderID) {
+                targetProvider = selectedProvider
+            } else {
+                targetProvider = provider
+            }
+
+            let model = kernel.llmProvider?.selectedModel ?? type(of: targetProvider).info.defaultModel
 
             // 抽取最近一条 user message 的图片附件(由 MessageSender 写入 metadata["imageAttachments"])。
             // 实现细节见 LumiKernel.LumiImageAttachmentMetadata.extract。
@@ -182,12 +190,23 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
             // Call LLM
             let assistantMessage: LumiChatMessage
             do {
-                assistantMessage = try await kernel.llmProvider!.sendToSelectedProvider(request)
+                assistantMessage = try await targetProvider.send(request)
             } catch {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)LLM 调用失败: \(error.localizedDescription)")
                 }
-                appendErrorMessage(conversationID: conversationID, content: error.localizedDescription)
+                let disposition = targetProvider.retryDisposition(
+                    for: error,
+                    context: LumiLLMRetryContext(attempt: 1, maxAttempts: 1)
+                )
+                let errorMessage = targetProvider.makeErrorMessage(
+                    conversationID: conversationID,
+                    request: request,
+                    error: error,
+                    disposition: disposition
+                )
+                kernel.messageManager?.insertMessage(errorMessage, to: conversationID)
+                postMessageSavedNotification(message: errorMessage, conversationID: conversationID)
                 return
             }
 

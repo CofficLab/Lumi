@@ -11,6 +11,9 @@
         }
       }
     },
+    "%@ API Key required" : {
+
+    },
     "%@, total %@ tokens, peak %@" : {
       "localizations" : {
         "en" : {
@@ -563,6 +566,9 @@
         }
       }
     },
+    "Details" : {
+
+    },
     "Detect available LLM providers and models via health checks" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -626,6 +632,12 @@
           }
         }
       }
+    },
+    "Enter an API Key here, then resend your message." : {
+
+    },
+    "Enter API Key" : {
+
     },
     "Fast" : {
       "extractionState" : "stale",
@@ -725,6 +737,9 @@
           }
         }
       }
+    },
+    "Hide API Key" : {
+
     },
     "Idle" : {
       "extractionState" : "stale",
@@ -1221,6 +1236,9 @@
         }
       }
     },
+    "Open provider website" : {
+
+    },
     "peak %@" : {
 
     },
@@ -1328,6 +1346,9 @@
           }
         }
       }
+    },
+    "Provider is not registered yet. Open Settings to configure this key." : {
+
     },
     "Providers" : {
       "extractionState" : "stale",
@@ -1587,6 +1608,9 @@
           }
         }
       }
+    },
+    "Show API Key" : {
+
     },
     "Switch Model" : {
       "extractionState" : "stale",
