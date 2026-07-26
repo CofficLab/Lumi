@@ -17,7 +17,7 @@ public final class GitPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.git"
     public let name = "Git"
     public let order = 11
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .development
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Git integration: history, commit details, branches, diffs."
@@ -57,9 +57,6 @@ public final class GitPlugin: LumiPlugin, SuperLog {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
-
-    // MARK: - Agent Tools
-
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
             GitBranchTool(),
