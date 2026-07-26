@@ -1,20 +1,48 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 
 @MainActor
-public final class MemoryPlugin: LumiPlugin {
+public final class MemoryPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🧠"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.memory"
+    )
+
+    /// 插件配置（由 onReady 设置存储目录）
+    public static var config: MemoryPluginConfig = .default
+
     public let id = "com.coffic.lumi.plugin.memory"
     public let name = "Memory"
     public let order = 15
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Agent memory system for persistent context across conversations."
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        // 设置插件数据目录
+        guard let storage = kernel.storage else {
+            Self.logger.error("🧠 Storage service not available")
+            return
+        }
+
+        // 更新配置，使用 kernel 提供的存储目录
+        Self.config = MemoryPluginConfig(
+            memoryRootURL: storage.pluginDataDirectory(for: "Memory")
+        )
+
+        if Self.verbose {
+            Self.logger.info("🧠 Memory 插件初始化完成")
+        }
     }
 
 
