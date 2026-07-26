@@ -41,7 +41,7 @@ let package = Package(
             exclude: ["CSQLite"],
             resources: [
                 .process("../Resources/Localizable.xcstrings"),
-                .copy("Resources/vec0.dylib")
+                .copy("../Resources/vec0.dylib")
             ]
         ),
         .testTarget(

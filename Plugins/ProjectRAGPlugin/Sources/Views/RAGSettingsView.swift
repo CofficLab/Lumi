@@ -2,9 +2,14 @@ import LumiUI
 import SuperLogKit
 import SwiftUI
 import LumiKernel
+import os
 
 @MainActor
 public struct RAGSettingsView: View, SuperLog {
+    public nonisolated static let emoji = ProjectRAGPlugin.emoji
+    public nonisolated static let verbose: Bool = true
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
+
     let kernel: LumiKernel
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var runtimeInfo: RAGRuntimeInfo?
@@ -265,24 +270,53 @@ public struct RAGSettingsView: View, SuperLog {
 extension RAGSettingsView {
     private func loadStatus() async {
         let projects = trackedProjects
-        guard !projects.isEmpty else { return }
+        guard !projects.isEmpty else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)Settings loadStatus skipped: no tracked projects")
+            }
+            return
+        }
         isLoading = true
         defer { isLoading = false }
 
         do {
             let service = ProjectRAGPlugin.getService()
+            if Self.verbose {
+                Self.logger.info("\(Self.t)Settings loadStatus begin projects=\(projects.count) initialized=\(service.isInitialized)")
+            }
+            try await service.initialize()
+            if Self.verbose {
+                Self.logger.info("\(Self.t)Settings service initialized=\(service.isInitialized)")
+            }
             runtimeInfo = try await service.getRuntimeInfo()
+            if Self.verbose, let runtimeInfo {
+                Self.logger.info("\(Self.t)Settings runtime loaded backend=\(runtimeInfo.vectorBackend.rawValue)")
+            }
 
             var next: [String: RAGIndexStatus] = [:]
             for project in projects {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)Settings loading index status project=\(project.path)")
+                }
                 if let status = try await service.getIndexStatus(projectPath: project.path) {
                     next[project.path] = status
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)Settings status loaded project=\(project.path) files=\(status.fileCount) chunks=\(status.chunkCount) stale=\(status.isStale)")
+                    }
+                } else if Self.verbose {
+                    Self.logger.info("\(Self.t)Settings status missing project=\(project.path)")
                 }
             }
             statusesByPath = next
             loadError = nil
+            if Self.verbose {
+                Self.logger.info("\(Self.t)Settings loadStatus completed statuses=\(next.count)")
+            }
         } catch {
             loadError = error.localizedDescription
+            if Self.verbose {
+                Self.logger.error("\(Self.t)Settings loadStatus failed initialized=\(ProjectRAGPlugin.getService().isInitialized) error=\(error.localizedDescription)")
+            }
         }
     }
 }

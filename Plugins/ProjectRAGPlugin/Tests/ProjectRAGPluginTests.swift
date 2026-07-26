@@ -30,6 +30,12 @@ import Testing
     #expect(true)
 }
 
+@MainActor
+@Test func pluginExposesCodeSearchAgentTool() {
+    let tools = ProjectRAGPlugin().agentTools(kernel: LumiKernel())
+    #expect(tools.map(\.name).contains(RAGCodeSearchTool.info.id))
+}
+
 @Test func searchCodeSchemaDeclaresBoundedControls() throws {
     let schema = RAGCodeSearchTool().inputSchema
 

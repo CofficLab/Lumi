@@ -30,6 +30,7 @@
       }
     },
     "%lld days ago" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -58,6 +59,7 @@
       }
     },
     "%lld hours ago" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -86,6 +88,7 @@
       }
     },
     "%lld minutes ago" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -182,6 +185,7 @@
       }
     },
     "Checking index status..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -210,6 +214,7 @@
       }
     },
     "Chunk Count" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -267,6 +272,7 @@
       }
     },
     "Current File" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -295,6 +301,7 @@
       }
     },
     "Document Chunks" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -323,6 +330,7 @@
       }
     },
     "Embedding Model" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -351,6 +359,7 @@
       }
     },
     "Failed to get index status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -379,6 +388,7 @@
       }
     },
     "Failed to get status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -465,6 +475,7 @@
       }
     },
     "File Count" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -579,6 +590,7 @@
       }
     },
     "Indexed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -607,6 +619,7 @@
       }
     },
     "Indexing..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -663,6 +676,7 @@
       }
     },
     "Just now" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -776,6 +790,7 @@
       }
     },
     "No Projects" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -917,6 +932,7 @@
       }
     },
     "Project" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1001,6 +1017,7 @@
       }
     },
     "RAG Index Not Initialized" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1029,6 +1046,7 @@
       }
     },
     "RAG Index Status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1113,6 +1131,7 @@
       }
     },
     "RAG service will initialize automatically when the plugin is enabled" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1517,6 +1536,7 @@
       }
     },
     "Scanned" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1602,6 +1622,7 @@
       }
     },
     "Skipped" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1630,6 +1651,7 @@
       }
     },
     "sqlite-vec extension did not load; semantic search falls back to slower in-memory scoring." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1714,6 +1736,7 @@
       }
     },
     "Vector acceleration unavailable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1770,6 +1793,7 @@
       }
     },
     "Vector Dimensions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

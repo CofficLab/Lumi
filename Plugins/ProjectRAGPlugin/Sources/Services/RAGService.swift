@@ -9,7 +9,7 @@ import os
 /// - 负责查询检索并返回相关片段
 public actor RAGService: SuperLog {
     public nonisolated static let emoji = "🔎"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag.service")
 
     private static let pluginName = "RAGPlugin"
@@ -107,7 +107,7 @@ public actor RAGService: SuperLog {
 
         let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000
         if Self.verbose {
-            Self.logger.info("\(Self.t)⏱️ initialize 耗时：\(RAGUtils.formatDuration(duration))")
+            Self.logger.info("\(Self.t)⏱️ initialize 完成 耗时：\(RAGUtils.formatDuration(duration)) initialized=\(self.isInitialized)")
         }
     }
 
@@ -368,16 +368,26 @@ public actor RAGService: SuperLog {
     }
 
     public func getIndexStatus(projectPath: String) async throws -> RAGIndexStatus? {
-        guard isInitialized else { throw RAGError.notInitialized }
+        guard isInitialized else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)getIndexStatus rejected: service not initialized project=\(projectPath)")
+            }
+            throw RAGError.notInitialized
+        }
         guard let store else { throw RAGError.internalStateCorrupted }
 
         let normalized = RAGPathUtils.normalizeProjectPath(projectPath)
         guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
 
-        guard let state = try store.fetchProjectIndexState(projectPath: normalized) else { return nil }
+        guard let state = try store.fetchProjectIndexState(projectPath: normalized) else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)getIndexStatus no index state project=\(normalized)")
+            }
+            return nil
+        }
 
         let lastIndexed = Date(timeIntervalSince1970: state.lastIndexedAt)
-        return RAGIndexStatus(
+        let status = RAGIndexStatus(
             projectPath: state.projectPath,
             lastIndexedAt: lastIndexed,
             fileCount: state.fileCount,
@@ -386,12 +396,25 @@ public actor RAGService: SuperLog {
             embeddingDimension: state.embeddingDimension,
             isStale: isIndexStateStale(state, now: Date())
         )
+        if Self.verbose {
+            Self.logger.info("\(Self.t)getIndexStatus found project=\(normalized) files=\(status.fileCount) chunks=\(status.chunkCount) stale=\(status.isStale)")
+        }
+        return status
     }
 
     public func getRuntimeInfo() async throws -> RAGRuntimeInfo {
-        guard isInitialized else { throw RAGError.notInitialized }
+        guard isInitialized else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)getRuntimeInfo rejected: service not initialized")
+            }
+            throw RAGError.notInitialized
+        }
         guard let store else { throw RAGError.internalStateCorrupted }
-        return store.runtimeInfo
+        let info = store.runtimeInfo
+        if Self.verbose {
+            Self.logger.info("\(Self.t)getRuntimeInfo backend=\(info.vectorBackend.rawValue) note=\(info.note ?? "")")
+        }
+        return info
     }
 
     // MARK: - Static Helpers

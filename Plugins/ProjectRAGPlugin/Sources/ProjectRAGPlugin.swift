@@ -8,7 +8,7 @@ import SwiftUI
 public final class ProjectRAGPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
     nonisolated public static let emoji = "📚"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     public let id = "com.coffic.lumi.plugin.project.rag"
     public let name = "Project RAG"
@@ -20,20 +20,17 @@ public final class ProjectRAGPlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)onReady")
-        }
-        // RAG capabilities are provided through RAGPluginService singleton.
-        RAGPluginRuntime.kernel = kernel
-        RAGPluginService.configure(kernel: kernel)
-        ProjectRAGPlugin.bootstrapRuntime(kernel: kernel)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)onReady completed")
-        }
+        try await ProjectRAGOnReadyHook().execute(kernel)
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            RAGCodeSearchTool(),
+        ]
+    }
+
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }

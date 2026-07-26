@@ -1,10 +1,13 @@
 import Foundation
 import LumiKernel
+import SuperLogKit
 import os
 
 @MainActor
-enum RAGPluginService {
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag")
+enum RAGPluginService: SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
+    nonisolated static let emoji = ProjectRAGPlugin.emoji
+    nonisolated static let verbose = true
 
     private(set) static var service: RAGService = RAGService(
         databaseDirectoryProvider: {
@@ -16,7 +19,10 @@ enum RAGPluginService {
     )
 
     static func getService() -> RAGService {
-        service
+        if Self.verbose {
+            Self.logger.info("\(Self.t)getService initialized=\(service.isInitialized)")
+        }
+        return service
     }
 
     static func configure(kernel: LumiKernel) {
@@ -29,6 +35,11 @@ enum RAGPluginService {
             return storage.pluginDataDirectory(for: "RAG")
         }()
 
+        if Self.verbose {
+            let hasStorage = kernel.storage != nil
+            Self.logger.info("\(Self.t)configure hasStorage=\(hasStorage) dbDir=\(resolvedDirectory.path)")
+        }
+
         let directoryProvider: @Sendable () -> URL = { resolvedDirectory }
 
         let onProgress: @Sendable (RAGIndexProgressEvent) -> Void = { event in
@@ -39,18 +50,12 @@ enum RAGPluginService {
             databaseDirectoryProvider: directoryProvider,
             onProgress: onProgress
         )
-    }
 
-    static func initializeIfNeeded() {
-        guard !service.isInitialized else { return }
-        Task {
-            do {
-                try await service.initialize()
-            } catch {
-                logger.error("RAG 服务初始化失败：\(error.localizedDescription)")
-            }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)configure completed initialized=\(service.isInitialized)")
         }
     }
+
 }
 
 extension ProjectRAGPlugin {

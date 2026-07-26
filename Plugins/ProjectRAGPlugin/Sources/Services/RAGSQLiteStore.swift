@@ -555,9 +555,9 @@ final class RAGSQLiteStore: @unchecked Sendable {
             return RAGRuntimeInfo(vectorBackend: .swiftCosine, sqliteVecPath: nil, note: "数据库未就绪")
         }
 
-        let fm = FileManager.default
-        let candidates = bundledSQLiteVecCandidates()
-        guard let path = candidates.first(where: { fm.fileExists(atPath: $0) }) else {
+        let existingCandidates = bundledSQLiteVecCandidates()
+            .filter { FileManager.default.fileExists(atPath: $0) }
+        guard !existingCandidates.isEmpty else {
             return RAGRuntimeInfo(
                 vectorBackend: .swiftCosine,
                 sqliteVecPath: nil,
@@ -570,35 +570,49 @@ final class RAGSQLiteStore: @unchecked Sendable {
             let versionStr = String(cString: sqlite3_libversion())
             return RAGRuntimeInfo(
                 vectorBackend: .swiftCosine,
-                sqliteVecPath: path,
+                sqliteVecPath: existingCandidates.first,
                 note: "SQLite \(versionStr) 低于 vec0 所需 3.51.3，已回退 Swift 余弦"
             )
         }
 
-        do {
-            try loadSQLiteExtension(at: path)
-            try ensureVectorTable(dimension: embeddingDimension)
-            try rebuildVectorTableFromChunks()
-            sqliteVecPathLoaded = path
-            return RAGRuntimeInfo(
-                vectorBackend: .sqliteVec,
-                sqliteVecPath: path,
-                note: "sqlite-vec 已加载，ANN 检索已启用"
-            )
-        } catch {
-            return RAGRuntimeInfo(
-                vectorBackend: .swiftCosine,
-                sqliteVecPath: path,
-                note: "sqlite-vec 加载失败，回退 Swift 余弦: \(error.localizedDescription)"
-            )
+        var failures: [String] = []
+        for path in existingCandidates {
+            do {
+                try loadSQLiteExtension(at: path)
+                try ensureVectorTable(dimension: embeddingDimension)
+                try rebuildVectorTableFromChunks()
+                sqliteVecPathLoaded = path
+                return RAGRuntimeInfo(
+                    vectorBackend: .sqliteVec,
+                    sqliteVecPath: path,
+                    note: "sqlite-vec 已加载，ANN 检索已启用"
+                )
+            } catch {
+                failures.append("\(path): \(error.localizedDescription)")
+            }
         }
+
+        return RAGRuntimeInfo(
+            vectorBackend: .swiftCosine,
+            sqliteVecPath: existingCandidates.first,
+            note: "sqlite-vec 加载失败，回退 Swift 余弦: \(failures.joined(separator: " | "))"
+        )
     }
 
     private func bundledSQLiteVecCandidates() -> [String] {
         var candidates: [String] = []
         let libraryNames = ["vec0.dylib"]
 
-        // 优先：Swift Package 资源 bundle（ProjectRAGPlugin 内部打包的 vec0.dylib）
+        // 优先：App Frameworks 目录。Hardened Runtime 下动态库应作为代码签名后放在这里。
+        let main = Bundle.main
+        if let frameworksPath = main.privateFrameworksPath {
+            for name in libraryNames {
+                candidates.append((frameworksPath as NSString).appendingPathComponent(name))
+            }
+        }
+
+        // Swift Package 资源 bundle（ProjectRAGPlugin 内部打包的 vec0.dylib）。
+        // 单元测试中可直接加载；App 中可能因资源 bundle 内的 dylib 未按嵌入代码签名而失败。
         let moduleBundle = Bundle.module
         for name in libraryNames {
             if let url = moduleBundle.url(forResource: name, withExtension: nil) {
@@ -608,14 +622,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
             }
         }
 
-        // 兜底：App bundle 内的可能路径
-        let main = Bundle.main
-        if let frameworksPath = main.privateFrameworksPath {
-            for name in libraryNames {
-                candidates.append((frameworksPath as NSString).appendingPathComponent(name))
-            }
-        }
-
+        // 兜底：App bundle 内的其它可能路径。
         if let builtInPlugInsPath = main.builtInPlugInsPath {
             for name in libraryNames {
                 candidates.append((builtInPlugInsPath as NSString).appendingPathComponent(name))
