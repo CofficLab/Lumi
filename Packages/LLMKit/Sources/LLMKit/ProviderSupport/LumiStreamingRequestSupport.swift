@@ -1,11 +1,16 @@
 import Foundation
 import HttpKit
 import LumiKernel
+import os
+import SuperLogKit
 
 /// 流式请求处理工具函数
 ///
 /// 提供统一的流式请求处理逻辑，各供应商可以使用这些工具函数来实现 `sendStreaming`。
-public enum LumiStreamingRequestSupport {
+public enum LumiStreamingRequestSupport: SuperLog {
+    public static let emoji = "🌊"
+    static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.streaming-request")
+    static let verbose = true
     
     // MARK: - OpenAI Compatible Streaming
     
@@ -43,6 +48,12 @@ public enum LumiStreamingRequestSupport {
             tools: request.tools.map(LumiToolSchema.init),
             systemPrompt: ""
         )
+        if Self.verbose {
+            let metrics = requestMessageMetrics(request.messages)
+            let bodyMessageCount = (body["messages"] as? [[String: Any]])?.count ?? 0
+            let toolCount = (body["tools"] as? [[String: Any]])?.count ?? 0
+            Self.logger.info("\(Self.t)OpenAI streaming body built conversation=\(conversationID.uuidString.prefix(8)) model=\(request.model) sourceMessages=\(request.messages.count) bodyMessages=\(bodyMessageCount) tools=\(toolCount) sourceContentChars=\(metrics.contentChars) sourceMetadataChars=\(metrics.metadataChars) sourceReasoningChars=\(metrics.reasoningChars)")
+        }
         let apiKeyValue = try resolveAPIKey()
         
         var lastError: Error?
@@ -95,6 +106,11 @@ public enum LumiStreamingRequestSupport {
     ) async -> StreamingAttemptResult {
         let httpRequest = buildRequest(url, apiKey)
         let state = StreamingState(startTime: CFAbsoluteTimeGetCurrent())
+        if Self.verbose {
+            let bodyMessageCount = (body["messages"] as? [[String: Any]])?.count ?? 0
+            let toolCount = (body["tools"] as? [[String: Any]])?.count ?? 0
+            Self.logger.info("\(Self.t)OpenAI streaming attempt start urlHost=\(url.host ?? "nil") conversation=\(conversationID.uuidString.prefix(8)) bodyMessages=\(bodyMessageCount) tools=\(toolCount)")
+        }
         
         do {
             try await apiService.sendStreamingRequest(
@@ -164,6 +180,9 @@ public enum LumiStreamingRequestSupport {
             },
             reasoningContent: await state.getFinalThinking()
         )
+        if Self.verbose {
+            Self.logger.info("\(Self.t)OpenAI streaming attempt success conversation=\(conversationID.uuidString.prefix(8)) contentChars=\(message.content.count) reasoningChars=\(message.reasoningContent?.count ?? 0) toolCalls=\(message.toolCalls?.count ?? 0)")
+        }
         return .success(message)
     }
     
@@ -204,6 +223,12 @@ public enum LumiStreamingRequestSupport {
             systemPrompt: systemPrompt
         )
         customizeBody?(&body, request)
+        if Self.verbose {
+            let metrics = requestMessageMetrics(request.messages)
+            let bodyMessageCount = (body["messages"] as? [[String: Any]])?.count ?? 0
+            let toolCount = (body["tools"] as? [[String: Any]])?.count ?? 0
+            Self.logger.info("\(Self.t)Anthropic streaming body built conversation=\(conversationID.uuidString.prefix(8)) model=\(request.model) sourceMessages=\(request.messages.count) bodyMessages=\(bodyMessageCount) tools=\(toolCount) sourceContentChars=\(metrics.contentChars) sourceMetadataChars=\(metrics.metadataChars) sourceReasoningChars=\(metrics.reasoningChars)")
+        }
         
         let apiKeyValue = try resolveAPIKey()
         
@@ -255,6 +280,11 @@ public enum LumiStreamingRequestSupport {
     ) async -> StreamingAttemptResult {
         let httpRequest = buildRequest(url, apiKey)
         let state = StreamingState(startTime: CFAbsoluteTimeGetCurrent())
+        if Self.verbose {
+            let bodyMessageCount = (body["messages"] as? [[String: Any]])?.count ?? 0
+            let toolCount = (body["tools"] as? [[String: Any]])?.count ?? 0
+            Self.logger.info("\(Self.t)Anthropic streaming attempt start urlHost=\(url.host ?? "nil") conversation=\(conversationID.uuidString.prefix(8)) bodyMessages=\(bodyMessageCount) tools=\(toolCount)")
+        }
         
         do {
             try await apiService.sendStreamingRequest(
@@ -329,6 +359,9 @@ public enum LumiStreamingRequestSupport {
             },
             reasoningContent: await state.getFinalThinking()
         )
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Anthropic streaming attempt success conversation=\(conversationID.uuidString.prefix(8)) contentChars=\(message.content.count) reasoningChars=\(message.reasoningContent?.count ?? 0) toolCalls=\(message.toolCalls?.count ?? 0)")
+        }
         return .success(message)
     }
     
@@ -459,5 +492,23 @@ public enum LumiStreamingRequestSupport {
             headers[key] = String(describing: value)
         }
         return headers
+    }
+
+    private static func requestMessageMetrics(_ messages: [LumiChatMessage]) -> (
+        contentChars: Int,
+        metadataChars: Int,
+        reasoningChars: Int
+    ) {
+        var contentChars = 0
+        var metadataChars = 0
+        var reasoningChars = 0
+
+        for message in messages {
+            contentChars += message.content.count
+            metadataChars += message.metadata.reduce(0) { $0 + $1.key.count + $1.value.count }
+            reasoningChars += message.reasoningContent?.count ?? 0
+        }
+
+        return (contentChars, metadataChars, reasoningChars)
     }
 }
