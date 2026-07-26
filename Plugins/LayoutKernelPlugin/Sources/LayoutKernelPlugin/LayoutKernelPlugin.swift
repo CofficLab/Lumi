@@ -38,7 +38,8 @@ public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
             LumiTitleToolbarItem(
                 id: "\(id).layout-menu",
                 title: "Layout",
-                placement: .trailing
+                placement: .trailing,
+                order: 1000
             ) {
                 LayoutMenuButton(kernel: kernel)
             },

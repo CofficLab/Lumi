@@ -21,7 +21,6 @@ public struct LayoutMenuButton: View {
 
         return AppIconButton(
             systemImage: "sidebar.leading",
-            label: LumiPluginLocalization.string("Layout"),
             isActive: isPopoverPresented
         ) {
             isPopoverPresented.toggle()

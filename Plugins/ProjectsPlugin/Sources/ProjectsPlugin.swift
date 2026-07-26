@@ -89,7 +89,8 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
             LumiTitleToolbarItem(
                 id: "\(id).toolbar",
                 title: "Projects",
-                placement: .center
+                placement: .center,
+                order: 0
             ) {
                 ProjectControlView(viewModel: viewModel)
             }

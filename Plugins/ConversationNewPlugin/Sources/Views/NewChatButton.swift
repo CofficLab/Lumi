@@ -21,7 +21,6 @@ public struct NewChatButton: View {
             if isChatSectionVisible {
                 AppIconButton(
                     systemImage: "plus",
-                    label: LumiPluginLocalization.string("Start New Conversation", bundle: .module)
                 ) {
                     createConversation()
                 }

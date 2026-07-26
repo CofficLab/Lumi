@@ -25,7 +25,8 @@ public final class ConversationNewPlugin: LumiPlugin {
             LumiTitleToolbarItem(
                 id: "\(id).new-chat",
                 title: "New Chat",
-                placement: .trailing
+                placement: .trailing,
+                order: 30
             ) {
                 NewChatButton(kernel: kernel)
             },

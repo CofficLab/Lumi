@@ -211,6 +211,7 @@
       }
     },
     "Start New Conversation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

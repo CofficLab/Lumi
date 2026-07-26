@@ -61,7 +61,8 @@ public final class ConversationListPlugin: LumiPlugin {
             LumiTitleToolbarItem(
                 id: "\(id).conversation-list",
                 title: "Chats",
-                placement: .trailing
+                placement: .trailing,
+                order: 200
             ) {
                 ConversationListToolbarButton(kernel: kernel)
             },
@@ -90,29 +91,6 @@ public final class ConversationListPlugin: LumiPlugin {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
-}
-
-// MARK: - Toolbar Button
-
-/// 工具栏会话列表按钮
-struct ConversationListToolbarButton: View {
-    let kernel: LumiKernel
-    @State private var isPresented = false
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            AppIconButton(
-                systemImage: "message.fill",
-                label: LumiPluginLocalization.string("Chats", bundle: .module)
-            ) {
-                isPresented.toggle()
-            }
-            .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-                ConversationListPopoverContent(kernel: kernel)
-                    .frame(width: 300, height: 480)
-            }
-        }
-    }
 }
 
 // MARK: - Popover Content

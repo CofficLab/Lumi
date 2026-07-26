@@ -69,7 +69,14 @@ public final class UIManager: UIManaging {
     // MARK: - Title Toolbar
 
     public func titleToolbarItems(placement: TitleToolbarPlacement) -> [TitleToolbarItem] {
-        allTitleToolbarItems.filter { $0.placement == placement }
+        allTitleToolbarItems
+            .filter { $0.placement == placement }
+            .sorted {
+                if $0.order == $1.order {
+                    return $0.id < $1.id
+                }
+                return $0.order < $1.order
+            }
     }
 
     public func registerTitleToolbarItem(_ item: TitleToolbarItem) {
@@ -89,7 +96,12 @@ public final class UIManager: UIManaging {
     private func updateSortedTitleToolbarItems() {
         objectWillChange.send()
         allTitleToolbarItems = titleToolbarItemOrder.compactMap { titleToolbarItems[$0] }
-            .sorted(by: { $0.order < $1.order })
+            .sorted {
+                if $0.order == $1.order {
+                    return $0.id < $1.id
+                }
+                return $0.order < $1.order
+            }
     }
 
     // MARK: - Chat Section
