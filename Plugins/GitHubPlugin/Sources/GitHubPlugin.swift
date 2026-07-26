@@ -1,20 +1,34 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 
 @MainActor
-public final class GitHubPlugin: LumiPlugin {
+public final class GitHubPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🐙"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.github"
+    )
+
     public let id = "com.coffic.lumi.plugin.github"
     public let name = "GitHub"
     public let order = 16
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "GitHub integration for issues, repos, and code search."
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        if Self.verbose {
+            Self.logger.info("🐙 GitHub 插件初始化完成")
+        }
     }
 
 

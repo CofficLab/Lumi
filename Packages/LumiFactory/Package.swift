@@ -134,6 +134,7 @@ let package = Package(
         .package(path: "../../Plugins/DownloadPlugin"),
         .package(path: "../../Plugins/BrowserPlugin"),
         .package(path: "../../Plugins/ShowImagePlugin"),
+        .package(path: "../../Plugins/GitHubPlugin"),
     ],
     targets: [
         .target(
@@ -265,6 +266,7 @@ let package = Package(
                 .product(name: "DownloadPlugin", package: "DownloadPlugin"),
                 .product(name: "BrowserPlugin", package: "BrowserPlugin"),
                 .product(name: "ShowImagePlugin", package: "ShowImagePlugin"),
+                .product(name: "GitHubPlugin", package: "GitHubPlugin"),
             ],
             resources: [
                 .process("Resources")
