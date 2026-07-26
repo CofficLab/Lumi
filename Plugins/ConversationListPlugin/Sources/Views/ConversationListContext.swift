@@ -1,10 +1,16 @@
 import Combine
 import Foundation
 import LumiKernel
+import os
+import SuperLogKit
 import SwiftUI
 
 @MainActor
-public final class ConversationListContext: ObservableObject {
+public final class ConversationListContext: ObservableObject, SuperLog {
+    public nonisolated static let emoji = "📜"
+    public nonisolated static let verbose = true
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "conversation-list.context")
+
     @Published public private(set) var lastChange: ConversationListChange?
     @Published public private(set) var statusVersion: Int = 0
     @Published public private(set) var unreadCount: Int = 0
@@ -61,34 +67,55 @@ public final class ConversationListContext: ObservableObject {
         conversationManaging.conversations.count
     }
 
-    public func fetchConversationsPage(limit: Int, offset: Int) -> [ConversationListItem] {
+    public func fetchConversationsPage(limit: Int, offset: Int) async -> [ConversationListItem] {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)fetchConversationsPage start limit=\(limit) offset=\(offset) totalConversations=\(self.conversationManaging.conversations.count)")
+        }
         let sorted = conversationManaging.conversations.sorted { lhs, rhs in
             if lhs.updatedAt == rhs.updatedAt {
                 return lhs.createdAt > rhs.createdAt
             }
             return lhs.updatedAt > rhs.updatedAt
         }
-        return sorted
-            .dropFirst(offset)
-            .prefix(limit)
-            .map { summary in
-                ConversationListItem.from(summary, messageCount: messageCount(for: summary.id))
-            }
+        var items: [ConversationListItem] = []
+        items.reserveCapacity(limit)
+        for summary in sorted.dropFirst(offset).prefix(limit) {
+            let count = await messageCount(for: summary.id)
+            items.append(ConversationListItem.from(summary, messageCount: count))
+        }
+        if Self.verbose {
+            let countedItems = items.filter { $0.messageCount != nil }.count
+            let totalMessages = items.reduce(0) { $0 + ($1.messageCount ?? 0) }
+            Self.logger.info("\(Self.t)fetchConversationsPage done limit=\(limit) offset=\(offset) items=\(items.count) countedItems=\(countedItems) pageMessageCountSum=\(totalMessages)")
+        }
+        return items
     }
 
-    public func fetchConversation(id: UUID) -> ConversationListItem? {
-        conversationManaging.conversations.first(where: { $0.id == id }).map {
-            ConversationListItem.from($0, messageCount: messageCount(for: $0.id))
+    public func fetchConversation(id: UUID) async -> ConversationListItem? {
+        guard let summary = conversationManaging.conversations.first(where: { $0.id == id }) else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)fetchConversation missing id=\(id.uuidString.prefix(8))")
+            }
+            return nil
         }
+        let count = await messageCount(for: id)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)fetchConversation id=\(id.uuidString.prefix(8)) messageCount=\(count ?? -1)")
+        }
+        return ConversationListItem.from(summary, messageCount: count)
     }
 
     public func isConversationProcessing(_ conversationID: UUID) -> Bool {
         conversationManaging.isSending(for: conversationID)
     }
 
-    public func messageCount(for conversationID: UUID) -> Int? {
+    public func messageCount(for conversationID: UUID) async -> Int? {
         guard let messageManaging else { return nil }
-        return messageManaging.messages(for: conversationID).count
+        let count = await messageManaging.messageCount(for: conversationID)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)messageCount conversation=\(conversationID.uuidString.prefix(8)) count=\(count)")
+        }
+        return count
     }
 
     @discardableResult

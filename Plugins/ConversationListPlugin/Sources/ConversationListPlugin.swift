@@ -20,6 +20,12 @@ public final class ConversationListPlugin: LumiPlugin {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            ConversationListRuntimeBridge.shared.storageDirectory = storage.pluginDataDirectory(for: "ConversationList")
+        } else {
+            ConversationListRuntimeBridge.shared.storageDirectory = ConversationListRuntimeBridge.defaultStorageDirectory
+        }
+
         // 桥接 kernel.conversations 到 tools RuntimeBridge。
         // 注意 SetConversationProjectLumiTool 暂未启用 —— 等 ConversationManaging
         // 协议扩展 setConversationProjectPath(...) 之后再补。
@@ -92,4 +98,3 @@ public final class ConversationListPlugin: LumiPlugin {
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 }
-

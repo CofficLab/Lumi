@@ -13,9 +13,11 @@ final class MockConversationManaging: ObservableObject, ConversationManaging {
 
     func createConversation(title: String?) throws -> UUID {
         let id = UUID()
+        let normalizedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let storedTitle = normalizedTitle?.isEmpty == true ? nil : normalizedTitle
         let conv = LumiConversationSummary(
             id: id,
-            title: title ?? "New Chat",
+            title: storedTitle,
             preview: "",
             createdAt: Date(),
             updatedAt: Date(),
@@ -65,6 +67,10 @@ final class MockMessageManaging: ObservableObject, MessageManaging {
         Array(messages(for: conversationID).prefix(limit))
     }
 
+    func messageCount(for conversationID: UUID) async -> Int {
+        messages(for: conversationID).count
+    }
+
     func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) async -> Bool { false }
     func deleteMessage(id: UUID, in conversationID: UUID) {}
     func insertMessage(_ message: LumiChatMessage, to conversationID: UUID) {}
@@ -92,7 +98,7 @@ enum ConversationListPreviewSupport {
         let mock = MockConversationManaging()
         let messageMock = MockMessageManaging()
         for i in 0..<5 {
-            let conversationID = try! mock.createConversation(title: "Sample Conversation \(i + 1)")
+            let conversationID = try! mock.createConversation(title: i == 0 ? nil : "Sample Conversation \(i + 1)")
             messageMock.messagesByConversationID[conversationID] = (0..<(i + 1)).map { index in
                 LumiChatMessage(
                     conversationID: conversationID,

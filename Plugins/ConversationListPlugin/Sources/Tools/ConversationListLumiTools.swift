@@ -174,13 +174,13 @@ struct DeleteConversationLumiTool: LumiAgentTool, @unchecked Sendable {
                 """
             }
 
-            let title = conversation.title
+            let title = conversation.displayTitle
             let wasSelected = svc.selectedConversationID == conversationID
 
             svc.deleteConversation(id: conversationID)
 
             var output = "## Conversation Deleted ✅\n\n"
-            output += "**Title**: \(title.isEmpty ? "(untitled)" : title)\n"
+            output += "**Title**: \(title)\n"
             output += "**Conversation ID**: `\(idString)`\n"
 
             if wasSelected {
@@ -259,7 +259,7 @@ struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
                 let created = dateFormatter.string(from: conversation.createdAt)
                 return ConversationInfo(
                     id: conversation.id.uuidString,
-                    title: conversation.title,
+                    title: conversation.displayTitle,
                     project: projectName,
                     created: created
                 )

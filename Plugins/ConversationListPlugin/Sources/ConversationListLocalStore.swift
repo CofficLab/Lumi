@@ -5,7 +5,7 @@ import SuperLogKit
 /// ConversationList Plugin 本地存储
 ///
 /// 负责持久化插件的配置和设置项。
-/// 存储位置：ConversationListContext.databaseDirectory()/ConversationListPlugin/settings.plist
+/// 存储位置：`db_debug_v5/ConversationList/conversation_selection.plist`
 public final class ConversationListLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list.local-store")
     
@@ -31,19 +31,16 @@ public final class ConversationListLocalStore: SuperLog, @unchecked Sendable {
     }()
     
     // MARK: - Initialization
-    
+
     public convenience init() {
-        self.init(databaseDirectory: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory)
+        self.init(pluginDirectory: Self.defaultPluginDirectory)
     }
 
-    public convenience init(databaseDirectory: URL) {
-        self.init(settingsDirectory: databaseDirectory
-            .appendingPathComponent("ConversationListPlugin", isDirectory: true)
-            .appendingPathComponent("settings", isDirectory: true))
+    public convenience init(storageDirectory: URL) {
+        self.init(pluginDirectory: storageDirectory)
     }
 
-    init(settingsDirectory root: URL) {
+    init(pluginDirectory root: URL) {
         self.pluginDirectory = root
         self.settingsFileURL = root.appendingPathComponent("conversation_selection.plist")
         self.corruptSettingsFileURL = root.appendingPathComponent("conversation_selection.corrupt.plist")
@@ -154,7 +151,6 @@ public final class ConversationListLocalStore: SuperLog, @unchecked Sendable {
             
             let legacyFile = pluginDirectory
                 .deletingLastPathComponent()
-                .deletingLastPathComponent()
                 .appendingPathComponent("app_settings", isDirectory: true)
                 .appendingPathComponent(sanitizeLegacyKey(Self.legacyKey) + ".plist")
             
@@ -178,5 +174,9 @@ public final class ConversationListLocalStore: SuperLog, @unchecked Sendable {
             .map { CharacterSet.alphanumerics.contains($0) || $0 == "_" ? String($0) : "_" }
             .joined()
         return safe.isEmpty ? "key" : safe
+    }
+
+    static var defaultPluginDirectory: URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("Lumi/ConversationList")
     }
 }

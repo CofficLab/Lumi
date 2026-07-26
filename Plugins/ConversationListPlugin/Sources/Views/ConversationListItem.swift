@@ -40,7 +40,7 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
         ConversationListItem(
             id: summary.id,
             projectPath: summary.projectPath,
-            title: summary.title,
+            title: summary.displayTitle,
             createdAt: summary.createdAt,
             updatedAt: summary.updatedAt,
             providerID: summary.providerID,
