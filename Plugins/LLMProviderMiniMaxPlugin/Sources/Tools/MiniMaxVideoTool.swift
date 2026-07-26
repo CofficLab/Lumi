@@ -98,9 +98,9 @@ public struct MiniMaxVideoTool: LumiAgentTool {
 
     public func execute(
         arguments: [String: LumiJSONValue],
-        context: LumiToolExecutionContext
+        kernel: LumiKernel
     ) async throws -> String {
-        try context.checkCancellation()
+        try kernel.checkCancellation()
 
         // 1. 解析参数
         guard let prompt = arguments["prompt"]?.stringValue, !prompt.isEmpty else {
@@ -116,7 +116,7 @@ public struct MiniMaxVideoTool: LumiAgentTool {
 
         // 2. 构建 shouldContinue 闭包（支持取消）
         let shouldContinue: @Sendable () async -> Bool = {
-            !context.isCancelled
+            !kernel.isCancelled
         }
 
         // 3. 调用 client 执行四步交付链
@@ -133,10 +133,10 @@ public struct MiniMaxVideoTool: LumiAgentTool {
                 pollInterval: MiniMaxVideoConstants.pollInterval
             )
 
-            try context.checkCancellation()
+            try kernel.checkCancellation()
 
-            // 4. 通过 context.attachImage() 回传视频
-            context.attachImage(
+            // 4. 通过 kernel.attachImage() 回传视频
+            kernel.attachImage(
                 LumiImageAttachment(
                     mimeType: asset.mimeType,
                     base64Data: asset.base64Data,

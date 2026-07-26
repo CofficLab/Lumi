@@ -67,8 +67,9 @@ struct MiniMaxVideoToolTests {
     func testEmptyPrompt() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
+        let kernel = LumiKernel()
 
-        let context = LumiToolExecutionContext(
+        let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-1",
             toolName: "minimax_generate_video",
@@ -83,7 +84,9 @@ struct MiniMaxVideoToolTests {
             "model": .string("MiniMax-Hailuo-2.3")
         ]
 
-        let result = try await tool.execute(arguments: arguments, context: context)
+        let result = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(arguments: arguments, kernel: kernel)
+        }
 
         #expect(result.contains("prompt"))
         #expect(result.contains("empty"))
@@ -94,8 +97,9 @@ struct MiniMaxVideoToolTests {
     func testMissingPrompt() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
+        let kernel = LumiKernel()
 
-        let context = LumiToolExecutionContext(
+        let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-2",
             toolName: "minimax_generate_video",
@@ -109,7 +113,9 @@ struct MiniMaxVideoToolTests {
             "model": .string("MiniMax-Hailuo-2.3")
         ]
 
-        let result = try await tool.execute(arguments: arguments, context: context)
+        let result = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(arguments: arguments, kernel: kernel)
+        }
 
         #expect(result.contains("prompt"))
         #expect(result.contains("empty"))
@@ -120,8 +126,9 @@ struct MiniMaxVideoToolTests {
     func testSuccessfulGenerationWithDefaults() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
+        let kernel = LumiKernel()
 
-        let context = LumiToolExecutionContext(
+        let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-3",
             toolName: "minimax_generate_video",
@@ -135,7 +142,9 @@ struct MiniMaxVideoToolTests {
             "prompt": .string("A cat playing piano")
         ]
 
-        let result = try await tool.execute(arguments: arguments, context: context)
+        let result = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(arguments: arguments, kernel: kernel)
+        }
 
         #expect(result.contains("Video Generated"))
         #expect(result.contains("MiniMax-Hailuo-2.3"))
@@ -155,8 +164,9 @@ struct MiniMaxVideoToolTests {
     func testCustomParameters() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
+        let kernel = LumiKernel()
 
-        let context = LumiToolExecutionContext(
+        let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-4",
             toolName: "minimax_generate_video",
@@ -174,7 +184,9 @@ struct MiniMaxVideoToolTests {
             "prompt_optimizer": .bool(true)
         ]
 
-        let result = try await tool.execute(arguments: arguments, context: context)
+        let result = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(arguments: arguments, kernel: kernel)
+        }
 
         #expect(result.contains("Video Generated"))
         #expect(result.contains("Hailuo-02"))
@@ -190,8 +202,9 @@ struct MiniMaxVideoToolTests {
         mockClient.failAtStep = .submit
 
         let tool = MiniMaxVideoTool(client: mockClient)
+        let kernel = LumiKernel()
 
-        let context = LumiToolExecutionContext(
+        let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-5",
             toolName: "minimax_generate_video",
@@ -205,7 +218,9 @@ struct MiniMaxVideoToolTests {
             "prompt": .string("Invalid prompt")
         ]
 
-        let result = try await tool.execute(arguments: arguments, context: context)
+        let result = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(arguments: arguments, kernel: kernel)
+        }
 
         #expect(result.contains("Error"))
         #expect(result.contains("400"))
@@ -219,8 +234,9 @@ struct MiniMaxVideoToolTests {
         mockClient.failAtStep = .poll
 
         let tool = MiniMaxVideoTool(client: mockClient)
+        let kernel = LumiKernel()
 
-        let context = LumiToolExecutionContext(
+        let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-6",
             toolName: "minimax_generate_video",
@@ -234,7 +250,9 @@ struct MiniMaxVideoToolTests {
             "prompt": .string("A test prompt")
         ]
 
-        let result = try await tool.execute(arguments: arguments, context: context)
+        let result = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(arguments: arguments, kernel: kernel)
+        }
 
         #expect(result.contains("Error"))
         #expect(result.contains("failed"))
@@ -245,8 +263,9 @@ struct MiniMaxVideoToolTests {
     func testCancellation() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
+        let kernel = LumiKernel()
 
-        let context = LumiToolExecutionContext(
+        let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-7",
             toolName: "minimax_generate_video",
@@ -261,8 +280,11 @@ struct MiniMaxVideoToolTests {
         ]
 
         // Start task
+        let kernel = LumiKernel()
         let task = Task {
-            return try await tool.execute(arguments: arguments, context: context)
+            return try await kernel.withToolExecutionContextState(context) {
+                try await tool.execute(arguments: arguments, kernel: kernel)
+            }
         }
 
         // Wait a short time then cancel (mock loops 20 times with 50ms delay each)
@@ -280,8 +302,9 @@ struct MiniMaxVideoToolTests {
     func testByteCountFormatting() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
+        let kernel = LumiKernel()
 
-        let context = LumiToolExecutionContext(
+        let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-8",
             toolName: "minimax_generate_video",
@@ -295,7 +318,9 @@ struct MiniMaxVideoToolTests {
             "prompt": .string("A test")
         ]
 
-        let result = try await tool.execute(arguments: arguments, context: context)
+        let result = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(arguments: arguments, kernel: kernel)
+        }
 
         // Mock returns 2048 bytes, should display as 2.0 KB
         #expect(result.contains("2.0 KB"))
