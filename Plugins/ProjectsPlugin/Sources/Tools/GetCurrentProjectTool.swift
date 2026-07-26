@@ -22,7 +22,7 @@ struct GetCurrentProjectTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let viewModel = await MainActor.run(body: { ProjectsToolRuntimeBridge.viewModel }) else {
             return """
             ## Current Project Status

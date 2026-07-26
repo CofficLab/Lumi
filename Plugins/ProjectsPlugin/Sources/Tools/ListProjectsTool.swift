@@ -29,7 +29,7 @@ struct ListProjectsTool: LumiAgentTool, SuperLog {
 
     private let maxLimit = 500
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let limit = min(arguments.int("limit") ?? 5, maxLimit)
 
         guard let viewModel = await MainActor.run(body: { ProjectsToolRuntimeBridge.viewModel }) else {
