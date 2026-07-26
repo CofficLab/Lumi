@@ -57,7 +57,7 @@ struct PluginWebFetchTests {
     func toolRiskLevel() {
         let tool = WebFetchTool()
 
-        #expect(tool.riskLevel(arguments: [:], context: nil) == .medium)
+        #expect(tool.riskLevel(arguments: [:], kernel: LumiKernel()) == .medium)
     }
 
     @Test("localization catalog is packaged")
