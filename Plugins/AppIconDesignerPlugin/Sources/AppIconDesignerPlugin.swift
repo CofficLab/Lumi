@@ -1,20 +1,34 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 
 @MainActor
-public final class AppIconDesignerPlugin: LumiPlugin {
+public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🎨"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.app-icon-designer"
+    )
+
     public let id = "AppIconDesigner"
     public let name = "AppIconDesigner"
     public let order = 79
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Design app icons with shapes, layers, and export capabilities."
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        if Self.verbose {
+            Self.logger.info("🎨 AppIconDesigner 插件初始化完成")
+        }
     }
 
 

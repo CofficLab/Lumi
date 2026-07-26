@@ -108,6 +108,7 @@ import GitPlugin
 import AgentRulesPlugin
 import CaffeinatePlugin
 import AgentTempStoragePlugin
+import AppIconDesignerPlugin
 // import CADDesignerPlugin  // Not included in Xcode project
 
 /// 插件服务
@@ -213,6 +214,7 @@ public enum PluginService {
             MenuBarManagerPlugin(),
             CaffeinatePlugin(),
             AgentTempStoragePlugin(),
+            AppIconDesignerPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),
