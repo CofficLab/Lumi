@@ -33,11 +33,11 @@ public struct SetCurrentFileTool: LumiAgentTool, SuperLog {
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "设置当前文件" }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let path = arguments["path"]?.stringValue else {
             return "❌ Error: Missing required parameter 'path'"
         }
@@ -54,7 +54,7 @@ public struct SetCurrentFileTool: LumiAgentTool, SuperLog {
             return "❌ Error: Path is a directory, not a file: \(path)"
         }
 
-        let projectPath = context.currentProjectPath
+        let projectPath = kernel.currentProjectPath
 
         guard let projectPath else {
             return "❌ Error: No project selected. Use `set_current_project` first."
