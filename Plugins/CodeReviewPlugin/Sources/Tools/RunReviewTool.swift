@@ -39,11 +39,11 @@ public struct RunReviewTool: LumiAgentTool, SuperLog {
         "代码审查"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let sendMessage = CodeReviewRuntime.sendMessage,
               let config = CodeReviewRuntime.currentConfigProvider() else {
             return "Code review failed: LLM service is unavailable."
@@ -57,7 +57,7 @@ public struct RunReviewTool: LumiAgentTool, SuperLog {
         do {
             await ReviewReportStore.shared.setState(.reviewing)
             let reviewContext = try await ReviewAnalyzer().buildContext(repositoryPath: path, scope: scope, file: file)
-            let report = try await ReviewEngine(config: config, sendMessage: sendMessage).review(context: reviewContext)
+            let report = try await ReviewEngine(config: config, sendMessage: sendMessage).review(kernel: reviewContext)
             try await ReviewReportStore.shared.save(report)
             return format(report: report)
         } catch {
