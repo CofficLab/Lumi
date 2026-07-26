@@ -17,6 +17,7 @@ public final class AgentOpenRemotePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-remote"
     public let name = "Open Remote Repository"
     public let order = 62
+    public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optOut
 
     public init() {}

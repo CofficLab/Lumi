@@ -12,6 +12,7 @@ public final class AgentOpenInFinderPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-finder"
     public let name = "Open in Finder"
     public let order = 61
+    public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optOut
 
     public init() {}

@@ -12,6 +12,7 @@ public final class AgentOpenInXcodePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-xcode"
     public let name = "Open in Xcode"
     public let order = 95
+    public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optOut
 
     public init() {}

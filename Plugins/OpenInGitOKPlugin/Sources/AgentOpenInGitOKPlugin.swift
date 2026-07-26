@@ -15,6 +15,7 @@ public final class AgentOpenInGitOKPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-gitok"
     public let name = "Open in GitOK"
     public let order = 98
+    public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optOut
 
     public init() {}

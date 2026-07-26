@@ -12,6 +12,7 @@ public final class AgentOpenInGitHubDesktopPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-github-desktop"
     public let name = "Open in GitHub Desktop"
     public let order = 97
+    public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optOut
 
     public init() {}

@@ -1,6 +1,7 @@
 public enum LumiPluginCategory: String, Sendable, Codable, CaseIterable {
     case general
     case system
+    case open
     case agent
     case llmProvider
     case theme
@@ -12,6 +13,8 @@ public enum LumiPluginCategory: String, Sendable, Codable, CaseIterable {
             "通用"
         case .system:
             "系统"
+        case .open:
+            "打开"
         case .agent:
             "智能体"
         case .llmProvider:
@@ -29,6 +32,8 @@ public enum LumiPluginCategory: String, Sendable, Codable, CaseIterable {
             "puzzlepiece.extension"
         case .system:
             "desktopcomputer"
+        case .open:
+            "arrow.up.right.square"
         case .agent:
             "bubble.left.and.bubble.right"
         case .llmProvider:
@@ -46,6 +51,8 @@ public enum LumiPluginCategory: String, Sendable, Codable, CaseIterable {
             10
         case .system:
             20
+        case .open:
+            22
         case .agent:
             25
         case .llmProvider:
