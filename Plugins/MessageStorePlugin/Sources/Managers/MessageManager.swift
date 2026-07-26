@@ -9,7 +9,7 @@ import SuperLogKit
 @MainActor
 public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     public nonisolated static let emoji = "💬"
-    public nonisolated(unsafe) static var verbose = false
+    public nonisolated(unsafe) static var verbose = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
 
     private weak var kernel: LumiKernel?
@@ -44,7 +44,8 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             await MainActor.run {
                 self.messageCache[conversationID] = loaded
                 if Self.verbose {
-                    Self.logger.info("\(Self.t)Loaded \(loaded.count) messages for conversation \(conversationID.uuidString.prefix(8))")
+                    let metrics = Self.messageMetrics(loaded)
+                    Self.logger.info("\(Self.t)Loaded full message history conversation=\(conversationID.uuidString.prefix(8)) messages=\(loaded.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars) toolCallArgumentChars=\(metrics.toolCallArgumentChars)")
                 }
                 // Notify UI to refresh
                 NotificationCenter.default.post(name: Self.messagesDidChangeNotification, object: self)
@@ -57,14 +58,17 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     public func messages(for conversationID: UUID) -> [LumiChatMessage] {
         // If cache doesn't exist for this conversation, trigger async load
         if messageCache[conversationID] == nil {
-            Self.logger.info("\(Self.t)Cache miss for conversationID=\(conversationID.uuidString.prefix(8)), loading from database async")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)Full-history cache miss conversation=\(conversationID.uuidString.prefix(8)), loading from database async")
+            }
             // Start async load - UI will be updated via notification
             loadMessages(for: conversationID)
         }
         let cached = messageCache[conversationID] ?? []
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)messages(for:) conversationID=\(conversationID.uuidString.prefix(8)), cached count=\(cached.count), cache keys=\(self.messageCache.keys.map { $0.uuidString.prefix(8) })")
+            let metrics = Self.messageMetrics(cached)
+            Self.logger.info("\(Self.t)messages(for:) conversation=\(conversationID.uuidString.prefix(8)) cachedMessages=\(cached.count) cacheConversations=\(self.messageCache.keys.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars)")
         }
 
         return cached
@@ -99,6 +103,21 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         }
     }
 
+    public func messageCount(for conversationID: UUID) async -> Int {
+        if let cached = messageCache[conversationID] {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)messageCount cache-hit conversation=\(conversationID.uuidString.prefix(8)) count=\(cached.count)")
+            }
+            return cached.count
+        }
+        guard let store else { return 0 }
+        let count = await store.messageCount(conversationId: conversationID)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)messageCount store-count conversation=\(conversationID.uuidString.prefix(8)) count=\(count) fullHistoryLoaded=false")
+        }
+        return count
+    }
+
     public func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) async -> Bool {
         guard let store else { return false }
         return await store.hasEarlierMessages(conversationId: conversationID, beforeMessageID: beforeMessageID)
@@ -122,12 +141,16 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     }
 
     public func insertMessage(_ message: LumiChatMessage, to conversationID: UUID) {
-        Self.logger.info("\(Self.t)insertMessage called: message.conversationID=\(message.conversationID.uuidString.prefix(8)), target conversationID=\(conversationID.uuidString.prefix(8))")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)insertMessage called messageConversation=\(message.conversationID.uuidString.prefix(8)) targetConversation=\(conversationID.uuidString.prefix(8)) role=\(message.role.rawValue) contentChars=\(message.content.count) metadataChars=\(Self.metadataCharacterCount(message.metadata)) reasoningChars=\(message.reasoningContent?.count ?? 0) toolCalls=\(message.toolCalls?.count ?? 0)")
+        }
 
         // Ensure message has the correct conversationID
         var messageToInsert = message
         if messageToInsert.conversationID != conversationID {
-            Self.logger.info("\(Self.t)conversationID mismatch, creating new message with target ID")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)conversationID mismatch, creating new message with target ID")
+            }
             messageToInsert = LumiChatMessage(
                 id: messageToInsert.id,
                 conversationID: conversationID,
@@ -154,12 +177,16 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         // Add to cache immediately
         if messageCache[conversationID] == nil {
             messageCache[conversationID] = []
-            Self.logger.info("\(Self.t)Created new cache array for conversationID=\(conversationID.uuidString.prefix(8))")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)Created new cache array conversation=\(conversationID.uuidString.prefix(8))")
+            }
         }
         messageCache[conversationID]?.append(messageToInsert)
 
         let totalCount = self.messageCache[conversationID]?.count ?? 0
-        Self.logger.info("\(Self.t)Inserted message \(messageToInsert.id.uuidString.prefix(8)) to cache, total: \(totalCount), all cache keys=\(self.messageCache.keys.map { $0.uuidString.prefix(8) })")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Inserted message to cache message=\(messageToInsert.id.uuidString.prefix(8)) conversation=\(conversationID.uuidString.prefix(8)) cachedMessages=\(totalCount) cacheConversations=\(self.messageCache.keys.count)")
+        }
 
         // Notify observers that messages changed
         NotificationCenter.default.post(name: Self.messagesDidChangeNotification, object: self)
@@ -314,4 +341,31 @@ public extension Notification.Name {
 
 public extension MessageManager {
     static let messagesDidChangeNotification = Notification.Name("com.coffic.lumi.messagesDidChange")
+}
+
+private extension MessageManager {
+    static func messageMetrics(_ messages: [LumiChatMessage]) -> (
+        contentChars: Int,
+        metadataChars: Int,
+        reasoningChars: Int,
+        toolCallArgumentChars: Int
+    ) {
+        var contentChars = 0
+        var metadataChars = 0
+        var reasoningChars = 0
+        var toolCallArgumentChars = 0
+
+        for message in messages {
+            contentChars += message.content.count
+            metadataChars += metadataCharacterCount(message.metadata)
+            reasoningChars += message.reasoningContent?.count ?? 0
+            toolCallArgumentChars += message.toolCalls?.reduce(0) { $0 + $1.arguments.count } ?? 0
+        }
+
+        return (contentChars, metadataChars, reasoningChars, toolCallArgumentChars)
+    }
+
+    static func metadataCharacterCount(_ metadata: [String: String]) -> Int {
+        metadata.reduce(0) { $0 + $1.key.count + $1.value.count }
+    }
 }

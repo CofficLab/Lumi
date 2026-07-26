@@ -172,7 +172,12 @@ public actor MessageStore: SuperLog {
 
         do {
             let models = try context.fetch(descriptor)
-            return models.compactMap { $0.toLumiChatMessage() }
+            let messages = models.compactMap { $0.toLumiChatMessage() }
+            if Self.verbose {
+                let metrics = Self.messageMetrics(messages)
+                Self.logger.info("\(Self.t)fetchMessages materialized conversation=\(conversationId.uuidString.prefix(8)) messages=\(messages.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars) toolCallArgumentChars=\(metrics.toolCallArgumentChars)")
+            }
+            return messages
         } catch {
             Self.logger.error("\(Self.t)查询消息失败：\(error.localizedDescription)")
             return []
@@ -251,6 +256,26 @@ public actor MessageStore: SuperLog {
         }
 
         return fetchMessagePage(conversationId: conversationId, limit: pageSize + 1, beforeMessageID: nil).count > pageSize
+    }
+
+    /// Count messages for a conversation without materializing message bodies.
+    func messageCount(conversationId: UUID) -> Int {
+        let context = ModelContext(container)
+        let conversationIdString = conversationId.uuidString
+        let descriptor = FetchDescriptor<MessageModel>(
+            predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString }
+        )
+
+        do {
+            let count = try context.fetchCount(descriptor)
+            if Self.verbose {
+                Self.logger.info("\(Self.t)messageCount fetchCount conversation=\(conversationId.uuidString.prefix(8)) count=\(count) materializedMessages=false")
+            }
+            return count
+        } catch {
+            Self.logger.error("\(Self.t)统计消息数量失败：\(error.localizedDescription)")
+            return 0
+        }
     }
 
     /// Fetch a single message by ID
@@ -357,6 +382,27 @@ public actor MessageStore: SuperLog {
             Self.logger.error("\(Self.t)\(operation)失败：\(error.localizedDescription)")
             return false
         }
+    }
+
+    private static func messageMetrics(_ messages: [LumiChatMessage]) -> (
+        contentChars: Int,
+        metadataChars: Int,
+        reasoningChars: Int,
+        toolCallArgumentChars: Int
+    ) {
+        var contentChars = 0
+        var metadataChars = 0
+        var reasoningChars = 0
+        var toolCallArgumentChars = 0
+
+        for message in messages {
+            contentChars += message.content.count
+            metadataChars += message.metadata.reduce(0) { $0 + $1.key.count + $1.value.count }
+            reasoningChars += message.reasoningContent?.count ?? 0
+            toolCallArgumentChars += message.toolCalls?.reduce(0) { $0 + $1.arguments.count } ?? 0
+        }
+
+        return (contentChars, metadataChars, reasoningChars, toolCallArgumentChars)
     }
 }
 
