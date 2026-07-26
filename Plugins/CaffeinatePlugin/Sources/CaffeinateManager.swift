@@ -2,6 +2,7 @@ import Foundation
 import IOKit.pwr_mgt
 import Observation
 import SuperLogKit
+import LocalizationKit
 
 /// Caffeinate Manager: Responsible for managing system power state
 @MainActor
@@ -274,11 +275,11 @@ extension CaffeinateManager {
         var displayName: String {
             switch self {
             case .indefinite:
-                return PluginCaffeinateLocalization.string("Indefinite")
+                return LumiPluginLocalization.string("Indefinite", bundle: .module)
             case let .minutes(m):
-                return "\(m) \(PluginCaffeinateLocalization.string("Minutes"))"
+                return "\(m) \(LumiPluginLocalization.string("Minutes", bundle: .module))"
             case let .hours(h):
-                return "\(h) \(PluginCaffeinateLocalization.string("Hours"))"
+                return "\(h) \(LumiPluginLocalization.string("Hours", bundle: .module))"
             }
         }
 

@@ -16,7 +16,7 @@ public final class CaffeinatePlugin: LumiPlugin, SuperLog {
     public let id = "Caffeinate"
     public let name = "Caffeinate"
     public let order = 1
-    public let policy: LumiPluginPolicy = .enabled
+    public let policy: LumiPluginPolicy = .optOut
     public let category: LumiPluginCategory = .system
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Prevent system sleep during long-running tasks."
