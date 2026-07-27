@@ -2,6 +2,7 @@ import LumiUI
 import SuperLogKit
 import SwiftUI
 import LumiKernel
+import AppKit
 import os
 
 @MainActor
@@ -11,6 +12,7 @@ public struct RAGSettingsView: View, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
 
     let kernel: LumiKernel
+    @LumiTheme private var theme
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
@@ -24,6 +26,8 @@ public struct RAGSettingsView: View, SuperLog {
     public var body: some View {
         AppSettingsContentScaffold(maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 24) {
+                header
+
                 if trackedProjects.isEmpty {
                     AppEmptyState(
                         icon: "folder.badge.questionmark",
@@ -79,6 +83,19 @@ public struct RAGSettingsView: View, SuperLog {
                 Task { await loadStatus() }
             }
         }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Spacer()
+            AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+                openDataDirectory()
+            }
+        }
+        .font(.appCaption)
+        .foregroundStyle(theme.textSecondary)
     }
 
     // MARK: - Sections
@@ -193,5 +210,13 @@ extension RAGSettingsView {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    /// 在 Finder 中打开本插件的磁盘数据目录(RAG 数据库所在位置)。
+    private func openDataDirectory() {
+        let url = kernel.storage?.pluginDataDirectory(for: "RAG")
+            ?? RAGPluginRuntime.databaseDirectoryProvider()
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        _ = NSWorkspace.shared.open(url)
     }
 }
