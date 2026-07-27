@@ -25,7 +25,13 @@ struct ComposerView: View {
             onSubmit: onSend,
             onEnter: onSend,
             onFileDrop: { url in
-                inputState.addToConversation(fileURLs: [url], windowId: nil)
+                // 拖入文件时把文件路径插入输入框文本（而非作为附件上传）
+                let path = url.path
+                if inputState.text.isEmpty {
+                    inputState.text = path
+                } else {
+                    inputState.text += "\n\(path)"
+                }
             },
             isFocused: Binding(
                 get: { inputState.isInputFocused },
