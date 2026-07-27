@@ -91,8 +91,12 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
 
         view.addSubview(scrollView)
 
-        // 启用拖放：支持文件 URL 拖出到其他目标，以及拖入目录 cell 移动文件
+        // 启用拖放：支持文件 URL 拖出到其他目标（如 Finder 复制），以及拖入目录 cell 移动文件
         collectionView.registerForDraggedTypes([.fileURL])
+        // 拖出到其他应用（Finder/桌面）时允许复制；应用内拖动（拖到目录 cell）允许移动。
+        // NSCollectionView 作为 dragging source，必须显式设置操作掩码，否则跨应用拖动不生效。
+        collectionView.setDraggingSourceOperationMask(.copy, forLocal: false)
+        collectionView.setDraggingSourceOperationMask(.move, forLocal: true)
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -691,10 +695,9 @@ extension FileTreeCollectionViewController {
 
     func collectionView(
         _ collectionView: NSCollectionView,
-        pasteboardWriterForItemAt item: NSCollectionViewItem
+        pasteboardWriterForItemAt indexPath: IndexPath
     ) -> NSPasteboardWriting? {
-        guard let indexPath = collectionView.indexPath(for: item),
-              let collectionItem = dataSource.itemIdentifier(for: indexPath),
+        guard let collectionItem = dataSource.itemIdentifier(for: indexPath),
               case .file(let fileItem) = collectionItem else {
             return nil
         }
