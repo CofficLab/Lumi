@@ -22,6 +22,7 @@ let package = Package(
         .package(path: "../../Plugins/EditorProviderPlugin"),
         .package(path: "../../Plugins/EditorKernelPlugin"),
         .package(path: "../../Plugins/EditorPanelPlugin"),
+        .package(path: "../../Plugins/EditorSwiftPlugin"),
         .package(path: "../../Plugins/ProjectFilesPlugin"),
         .package(path: "../../Plugins/EditorPreviewPlugin"),
         .package(path: "../../Plugins/TerminalPlugin"),
@@ -142,6 +143,7 @@ let package = Package(
         .package(path: "../../Plugins/ShowImagePlugin"),
         .package(path: "../../Plugins/GitHubPlugin"),
         .package(path: "../../Plugins/GoalTaskPlugin"),
+        .package(path: "../../Plugins/AppStoreConnectPlugin"),
     ],
     targets: [
         .target(
@@ -160,6 +162,7 @@ let package = Package(
                 .product(name: "EditorProviderPlugin", package: "EditorProviderPlugin"),
                 .product(name: "EditorKernelPlugin", package: "EditorKernelPlugin"),
                 .product(name: "EditorPanelPlugin", package: "EditorPanelPlugin"),
+                .product(name: "EditorSwiftPlugin", package: "EditorSwiftPlugin"),
                 .product(name: "ProjectFilesPlugin", package: "ProjectFilesPlugin"),
                 .product(name: "EditorPreviewPlugin", package: "EditorPreviewPlugin"),
                 .product(name: "TerminalPlugin", package: "TerminalPlugin"),
@@ -281,6 +284,7 @@ let package = Package(
                 .product(name: "ShowImagePlugin", package: "ShowImagePlugin"),
                 .product(name: "GitHubPlugin", package: "GitHubPlugin"),
                 .product(name: "GoalTaskPlugin", package: "GoalTaskPlugin"),
+                .product(name: "AppStoreConnectPlugin", package: "AppStoreConnectPlugin"),
             ],
             resources: [
                 .process("Resources")

@@ -4,7 +4,7 @@ import LumiKernel
 private enum CoverArtToolSupport {
     static let store = CoverArtDocumentStore()
 
-    static func resolveProjectPath(arguments: [String: LumiJSONValue], kernel: LumiKernel?) -> String? {
+    static func resolveProjectPath(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> String? {
         if let explicit = arguments["projectPath"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
            !explicit.isEmpty {
             return explicit
@@ -16,7 +16,7 @@ private enum CoverArtToolSupport {
         return nil
     }
 
-    static func validateAccess(projectPath: String, kernel: LumiKernel?) throws {
+    static func validateAccess(projectPath: String, kernel: LumiKernel) throws {
         guard CoverArtDocumentStore.isPathAllowed(projectPath, allowedDirectories: kernel.allowedDirectories) else {
             throw CoverArtStoreError.pathNotAllowed(projectPath)
         }

@@ -1,5 +1,5 @@
 {
-  "originHash" : "5fc99b37e55013190913a29e32c5081afa53e66f4d60d967a3b70de018945855",
+  "originHash" : "084d66e09e40bf58379ba972cac55271a7a5432274ba96364506969b1376b73b",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -322,6 +322,15 @@
       "state" : {
         "revision" : "da6fe9beb4f7f67beb75914ca8e0d48ae48d6406",
         "version" : "0.25.10"
+      }
+    },
+    {
+      "identity" : "tree-sitter-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/alex-pinkus/tree-sitter-swift.git",
+      "state" : {
+        "branch" : "with-generated-files",
+        "revision" : "31d17fe7e818a2048c808b5c6fdc2dc792f4f5b5"
       }
     },
     {

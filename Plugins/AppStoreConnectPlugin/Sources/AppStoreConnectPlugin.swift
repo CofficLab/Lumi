@@ -1,22 +1,51 @@
-import SwiftUI
+import Foundation
+import os.log
 import LumiKernel
 import LumiUI
+import SuperLogKit
+import SwiftUI
 
 @MainActor
-public final class AppStoreConnectPlugin: LumiPlugin {
+public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.app-store-connect"
     public let name = "AppStoreConnect"
     public let order = 65
-	public let policy: LumiPluginPolicy = .disabled
+    public nonisolated static let emoji = "🚀"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-store-connect", category: "AppStoreConnectPlugin")
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
-
-    public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+    public func onBoot(kernel: LumiKernel) async throws {
+        AppStoreConnectPlugin.bootstrapFromLumiCoreIfNeeded(kernel: kernel)
     }
 
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            ListAppStoreConnectAppsTool(),
+            ListAppStoreConnectVersionsTool(),
+            CreateAppStoreConnectVersionTool(),
+            ListAppStoreConnectLocalizationsTool(),
+            ListAppStoreConnectScreenshotSetsTool(),
+            ListAppStoreConnectScreenshotsTool(),
+            ListAppStoreConnectCiProductsTool(),
+            ListAppStoreConnectCiWorkflowsTool(),
+            ReadAppStoreConnectCiWorkflowTool(),
+            ListAppStoreConnectCiBuildRunsTool(),
+            UpdateAppStoreConnectLocalizationTool(),
+            CreateAppStoreConnectScreenshotSetTool(),
+            StartAppStoreConnectCiBuildRunTool(),
+            SetAppStoreConnectCiWorkflowEnabledTool(),
+            ListAppStoreConnectCoverArtTool(),
+            ReadAppStoreConnectCoverArtTool(),
+            CreateAppStoreConnectCoverArtTool(),
+            UpdateAppStoreConnectCoverArtTool(),
+            ExportAppStoreConnectCoverArtTool(),
+        ]
+    }
 
     // MARK: - LumiPlugin stubs
 
@@ -39,7 +68,7 @@ public final class AppStoreConnectPlugin: LumiPlugin {
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
-    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { AnyView(AboutView()) }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
