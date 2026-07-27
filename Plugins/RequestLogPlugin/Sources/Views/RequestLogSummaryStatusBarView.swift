@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 struct RequestLogSummaryStatusBarView: View {
     var body: some View {

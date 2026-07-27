@@ -1,6 +1,7 @@
 @testable import EditorSwiftPlugin
 import AgentToolKit
 import Foundation
+import LumiKernel
 import Testing
 
 @Test func addSwiftPackageToolMetadata() {
@@ -18,44 +19,58 @@ import Testing
     #expect((tool.inputSchema(for: .english)["required"] as? [String])?.contains("project_path") == true)
 }
 
-@Test func generateXcodeProjectToolMetadataAndRisk() {
+@Test func generateXcodeProjectToolMetadataAndRisk() async {
     let tool = GenerateXcodeProjectTool()
     #expect(tool.name == "generate_xcode_project")
     #expect(tool.permissionRiskLevel(arguments: [:]) == .high)
 
-    let allowedContext = ToolExecutionContext(
-        conversationId: UUID(),
-        toolCallId: "call_1",
+    let args: [String: LumiJSONValue] = [
+        "project_root": .string("/tmp/LumiProject/NewApp"),
+    ]
+    let allowedKernel = LumiKernel()
+    let allowedState = LumiToolExecutionContextState(
+        conversationID: UUID(),
+        toolCallID: "call_1",
         toolName: tool.name,
         allowedDirectories: ["/tmp/LumiProject"]
     )
-    let args: [String: ToolArgument] = [
-        "project_root": ToolArgument("/tmp/LumiProject/NewApp"),
-    ]
-    #expect(tool.permissionRiskLevel(arguments: args, context: allowedContext) == .medium)
+    #expect(try await allowedKernel.withToolExecutionContextState(allowedState) {
+        tool.riskLevel(arguments: args, kernel: allowedKernel)
+    } == .medium)
 
-    let blockedContext = ToolExecutionContext(
-        conversationId: UUID(),
-        toolCallId: "call_2",
+    let blockedKernel = LumiKernel()
+    let blockedState = LumiToolExecutionContextState(
+        conversationID: UUID(),
+        toolCallID: "call_2",
         toolName: tool.name,
         allowedDirectories: ["/tmp/Other"]
     )
-    #expect(tool.permissionRiskLevel(arguments: args, context: blockedContext) == .high)
+    #expect(try await blockedKernel.withToolExecutionContextState(blockedState) {
+        tool.riskLevel(arguments: args, kernel: blockedKernel)
+    } == .high)
 }
 
 @Test func generateXcodeProjectToolDisplayDescription() {
     let tool = GenerateXcodeProjectTool()
-    let description = tool.displayDescription(for: [
-        "project_name": ToolArgument("Demo"),
-        "targets": ToolArgument([["name": "Demo", "kind": "app"]]),
+    let description = tool.displayDescription(arguments: [
+        "project_name": .string("Demo"),
+        "targets": .array([
+            .object([
+                "name": .string("Demo"),
+                "kind": .string("app"),
+            ])
+        ]),
     ])
     #expect(description.contains("Demo"))
 }
 
 @Test func listSwiftPackagesToolRequiresProjectPath() async {
     let tool = ListSwiftPackagesTool()
-    let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call", toolName: tool.name)
+    let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call", toolName: tool.name)
+    let kernel = LumiKernel()
     await #expect(throws: Error.self) {
-        _ = try await tool.execute(arguments: [:], context: context)
+        _ = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(arguments: [:], kernel: kernel)
+        }
     }
 }

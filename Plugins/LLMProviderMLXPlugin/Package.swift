@@ -14,10 +14,11 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLLMProviderSupport"),
+        .package(path: "../../Packages/LLMKit"),
+        .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/LumiLocalizationKit"),
+        .package(path: "../../Packages/LocalizationKit"),
+        .package(path: "../../Packages/LumiCoreChat"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(
             url: "https://github.com/ml-explore/mlx-swift-lm.git",
@@ -34,11 +35,11 @@ let package = Package(
         .target(
             name: "LLMProviderMLXPlugin",
             dependencies: [
+                .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "DownloadKit", package: "DownloadKit"),

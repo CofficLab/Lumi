@@ -1,126 +1,52 @@
-import LumiCoreKit
-import LumiUI
 import SwiftUI
+import LumiKernel
+import LumiUI
 
-public enum AppStoreConnectPlugin: LumiPlugin {
+@MainActor
+public final class AppStoreConnectPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.app-store-connect"
+    public let name = "AppStoreConnect"
+    public let order = 65
+	public let policy: LumiPluginPolicy = .disabled
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.app-store-connect",
-        displayName: AppStoreConnectLocalization.string("App Store"),
-        description: AppStoreConnectLocalization.string("Manage App Store Connect apps, metadata, and screenshots"),
-        order: 65,
-        category: .development,
-        policy: .optIn,
-        stage: .beta,
-        iconName: "bag",
-    )
+    public init() {}
 
-    public static var id: String { info.id }
-    public static var displayName: String { info.displayName }
-    public static var description: String { info.description }
-    public static var order: Int { info.order }
+    public func onBoot(kernel: LumiKernel) async throws {}
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        return [
-            ListAppStoreConnectAppsTool(),
-            ListAppStoreConnectVersionsTool(),
-            CreateAppStoreConnectVersionTool(),
-            ListAppStoreConnectLocalizationsTool(),
-            ListAppStoreConnectScreenshotSetsTool(),
-            ListAppStoreConnectScreenshotsTool(),
-            ListAppStoreConnectCiProductsTool(),
-            ListAppStoreConnectCiWorkflowsTool(),
-            ReadAppStoreConnectCiWorkflowTool(),
-            ListAppStoreConnectCiBuildRunsTool(),
-            UpdateAppStoreConnectLocalizationTool(),
-            CreateAppStoreConnectScreenshotSetTool(),
-            StartAppStoreConnectCiBuildRunTool(),
-            SetAppStoreConnectCiWorkflowEnabledTool(),
-            ListAppStoreConnectCoverArtTool(),
-            ReadAppStoreConnectCoverArtTool(),
-            CreateAppStoreConnectCoverArtTool(),
-            UpdateAppStoreConnectCoverArtTool(),
-            ExportAppStoreConnectCoverArtTool()
-        ]
+    public func onReady(kernel: LumiKernel) async throws {
+        // Register services here
     }
 
-    @MainActor
-    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        guard context.activeSectionID == info.id else { return [] }
 
-        return [
-            LumiTitleToolbarItem(
-                id: "\(info.id).app-picker",
-                title: AppStoreConnectLocalization.string("Select App"),
-                placement: .center
-            ) {
-                ToolbarAppPicker()
-            }
-        ]
-    }
+    // MARK: - LumiPlugin stubs
 
-    @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        let provider: @MainActor @Sendable () -> String = {
-            context.lumiCore?.projectComponent.currentProject?.path ?? ""
-        }
-        AddToChat.currentProjectPathProvider = provider
-        CoverArtRuntime.currentProjectPathProvider = provider
-        return [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName,
-                chatSection: .narrow
-            ) {
-                MainView()
-            }
-        ]
-    }
-
-    @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(AboutView())
-    }
-
-    @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "square.grid.2x2",
-                            title: AppStoreConnectLocalization.string("Apps & versions"),
-                            description: AppStoreConnectLocalization.string("Browse apps, versions, and localizations")
-                        ),
-                        .init(
-                            icon: "hammer.fill",
-                            title: AppStoreConnectLocalization.string("CI"),
-                            description: AppStoreConnectLocalization.string("Trigger and watch Xcode Cloud workflows")
-                        ),
-                    ],
-                    tip: AppStoreConnectLocalization.string("Open App Store from the sidebar and pick an app to begin.")
-                )
-            )
-        ]
-    }
-}
-
-enum AppStoreConnectLocalization {
-    static let table = "Localizable"
-    static let bundle = Bundle.module
-
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
-    }
-
-    static func string(_ key: String, _ args: CVarArg...) -> String {
-        String(format: string(key), locale: Locale.current, arguments: args)
-    }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

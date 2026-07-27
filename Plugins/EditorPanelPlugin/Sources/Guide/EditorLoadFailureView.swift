@@ -1,5 +1,4 @@
 import SwiftUI
-import LumiCoreKit
 
 public struct EditorLoadFailureView: View {
     public let fileName: String

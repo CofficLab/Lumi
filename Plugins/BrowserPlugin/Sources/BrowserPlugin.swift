@@ -1,42 +1,66 @@
-import Foundation
-import LumiCoreKit
+import SwiftUI
+import LumiKernel
+import LumiUI
+import os
+import SuperLogKit
 
-/// Browser 插件。
-///
-/// 提供网页截图与浏览器自动化功能。
-/// - `browser_screenshot`：使用 WKWebView 渲染网页并截图
-/// - `browser_agent`：基于 agent-browser CLI 的浏览器自动化
-public enum BrowserPlugin: LumiPlugin {
-
-    public static let info = LumiPluginInfo(
-        id: "Browser",
-        displayName: PluginBrowserLocalization.string("Browser"),
-        description: PluginBrowserLocalization.string("提供网页截图与浏览器自动化功能，包括 WKWebView 截图和 agent-browser CLI 自动化。"),
-        order: 102,
-        category: .general,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "safari",
+@MainActor
+public final class BrowserPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🌐"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.browser"
     )
 
-    public static var id: String { info.id }
-    public static var displayName: String { info.displayName }
-    public static var order: Int { info.order }
+    public let id = "Browser"
+    public let name = "Browser"
+    public let order = 102
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Control web browser for viewing and interacting with web pages."
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [
-            BrowserScreenshotTool(),
-            BrowserAgentTool(),
-        ]
+    public init() {}
+
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        if Self.verbose {
+            Self.logger.info("🌐 Browser 插件初始化完成")
+        }
     }
-}
 
-enum PluginBrowserLocalization {
-    static let table = "Localizable"
-    static let bundle = Bundle.module
 
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
-    }
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

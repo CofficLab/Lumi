@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 import XcodeKit
 import XcodeProj
@@ -62,16 +62,16 @@ public struct AddSwiftPackageTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         let baseRisk: LumiCommandRiskLevel = .medium
 
-        guard let context, !context.allowedDirectories.isEmpty else {
+        guard let kernel, !kernel.allowedDirectories.isEmpty else {
             return baseRisk
         }
 
         let projectPath = arguments["project_path"]?.stringValue
 
-        guard let projectPath, context.isPathAllowed(projectPath) else {
+        guard let projectPath, kernel.isPathAllowed(projectPath) else {
             return .high
         }
 
@@ -84,8 +84,8 @@ public struct AddSwiftPackageTool: LumiAgentTool, SuperLog {
         return "添加 Swift Package \(productName) 到 \(targetName)"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
 
         guard let projectPath = arguments["project_path"]?.stringValue, !projectPath.isEmpty else {
             throw XcodePackageToolError.missingArgument("project_path")
@@ -101,7 +101,7 @@ public struct AddSwiftPackageTool: LumiAgentTool, SuperLog {
 
         let packageType = arguments["package_type"]?.stringValue ?? "remote"
 
-        try context.checkCancellation()
+        try kernel.checkCancellation()
 
         if packageType == "remote" {
             guard let repositoryURL = arguments["repository_url"]?.stringValue, !repositoryURL.isEmpty else {
@@ -113,7 +113,7 @@ public struct AddSwiftPackageTool: LumiAgentTool, SuperLog {
 
             let versionRequirement = parseVersionRequirement(kind: versionKind, version: versionValue)
 
-            try context.checkCancellation()
+            try kernel.checkCancellation()
 
             return try await packageService.addRemotePackage(
                 projectPath: projectPath,
@@ -128,7 +128,7 @@ public struct AddSwiftPackageTool: LumiAgentTool, SuperLog {
                 throw XcodePackageToolError.missingArgument("relative_path")
             }
 
-            try context.checkCancellation()
+            try kernel.checkCancellation()
 
             return try await packageService.addLocalPackage(
                 projectPath: projectPath,

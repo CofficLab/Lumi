@@ -683,6 +683,7 @@
       }
     },
     "History" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -785,6 +786,7 @@
       }
     },
     "Manage clipboard history and snippets" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

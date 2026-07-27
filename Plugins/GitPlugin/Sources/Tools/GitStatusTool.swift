@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// Git 状态工具
@@ -32,11 +32,11 @@ public struct GitStatusTool: LumiAgentTool, SuperLog {
         "查看 Git 状态"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let path = arguments.string("path")
 
         if Self.verbose {
@@ -45,7 +45,7 @@ public struct GitStatusTool: LumiAgentTool, SuperLog {
 
         do {
             // 验证路径是否在允许的范围内
-            let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+            let validatedPath = try GitService.validatePath(path, allowedDirectories: kernel.allowedDirectories)
 
             let status = try await GitService.shared.getStatus(path: validatedPath)
             return formatStatus(status)

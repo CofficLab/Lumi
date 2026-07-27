@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 放置型材到当前项目。
 public struct PlaceProfileTool: LumiAgentTool {
@@ -30,12 +30,12 @@ public struct PlaceProfileTool: LumiAgentTool {
         "Place profile \(CADToolSupport.string(arguments, "profileId") ?? "?")"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = CADToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = CADToolSupport.language(kernel)
         guard let profileId = CADToolSupport.string(arguments, "profileId") else {
             return CADToolSupport.missingParameter("profileId", language: language)
         }

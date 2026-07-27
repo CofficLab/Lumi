@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/HTMLPreviewKit"),
-        .package(path: "../../Packages/LumiCoreKit"),
+        .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiPreviewKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/AgentToolKit"),
@@ -31,7 +31,7 @@ let package = Package(
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "HTMLPreviewKit", package: "HTMLPreviewKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiPreviewKit", package: "LumiPreviewKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),

@@ -1,4 +1,5 @@
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 
 enum SublyxRenderKind {
     static let apiKeyMissing = "sublyx-api-key-missing"

@@ -28,7 +28,7 @@ let package = Package(
         // Logging protocol
         .package(path: "../SuperLogKit"),
         // Runtime localization
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
     ],
     targets: [
         // The main text view target.
@@ -39,7 +39,7 @@ let package = Package(
                 .product(name: "Collections", package: "swift-collections"),
                 "EditorTextViewObjC",
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources",
             exclude: ["EditorTextViewObjC"],

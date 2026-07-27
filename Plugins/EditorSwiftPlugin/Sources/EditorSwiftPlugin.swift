@@ -1,94 +1,52 @@
-import EditorService
-import LumiCoreKit
-import LumiUI
 import SwiftUI
-import SuperLogKit
+import LumiKernel
+import LumiUI
 
-/// Swift / Xcode 集成插件：scheme 工具栏与 Agent 工具。
-public enum EditorSwiftPlugin: LumiPlugin {
+@MainActor
+public final class EditorSwiftPlugin: LumiPlugin {
+    public let id = "EditorSwiftIntegration"
+    public let name = "Swift Integration"
+    public let order = 5
+	public let policy: LumiPluginPolicy = .disabled
 
-    /// Code Editor 面板 section id（与 `EditorPanelPlugin.info.id` 一致）。
-    private static let editorPanelSectionID = "LumiEditor"
+    public init() {}
 
-    public static let info = LumiPluginInfo(
-        id: "EditorSwiftIntegration",
-        displayName: LumiPluginLocalization.string("Swift Integration", bundle: .module),
-        description: LumiPluginLocalization.string("Provides scheme toolbar, Xcode project integration, and Swift agent tools.", bundle: .module),
-        order: 5,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "swift",
-    )
+    public func onBoot(kernel: LumiKernel) async throws {}
 
-    @MainActor
-    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        guard context.activeSectionID == editorPanelSectionID,
-              context.resolve(LumiEditorServicing.self) != nil
-        else {
-            return []
-        }
-
-        configureBuildOutputPresentation(context: context)
-
-        return [
-            LumiTitleToolbarItem(
-                id: "\(info.id).xcode-scheme",
-                title: LumiPluginLocalization.string("Xcode Scheme", bundle: .module),
-                placement: .leading
-            ) {
-                XcodeProjectStatusBar(viewModel: EditorSwiftWindowScopeRegistry.activeStatusBarViewModel)
-            }
-        ]
+    public func onReady(kernel: LumiKernel) async throws {
+        // Register services here
     }
 
-    @MainActor
-    public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
-        guard context.showsPanelChrome,
-              context.activeSectionID == editorPanelSectionID,
-              context.resolve(LumiEditorServicing.self) != nil
-        else {
-            return []
-        }
 
-        configureBuildOutputPresentation(context: context)
+    // MARK: - LumiPlugin stubs
 
-        return [
-            LumiPanelBottomTabItem(
-                id: SwiftBuildPanelIDs.bottomTab,
-                order: info.order,
-                title: LumiPluginLocalization.string("Build", bundle: .module),
-                systemImage: "play.fill"
-            ) {
-                SwiftBuildOutputView(
-                    buildRunManager: EditorSwiftWindowScopeRegistry.activeBuildRunManager
-                )
-            }
-        ]
-    }
-
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [
-            AddSwiftPackageTool(),
-            ListSwiftPackagesTool(),
-            GenerateXcodeProjectTool(),
-        ]
-    }
-
-    @MainActor
-    private static func configureBuildOutputPresentation(context: LumiPluginContext) {
-        guard context.showsPanelChrome,
-              let layoutState = context.lumiCore?.layoutComponent.state
-        else {
-            return
-        }
-
-        let tabID = SwiftBuildPanelIDs.bottomTab
-        let viewContainerID = context.activeSectionID
-        EditorSwiftWindowScopeRegistry.activeBuildRunManager.onPresentOutput = {
-            layoutState.presentBottomTab(id: tabID, viewContainerID: viewContainerID)
-        }
-    }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
 
 struct ProjectRowView: View {
     let project: LumiProject

@@ -1,6 +1,6 @@
 import Foundation
 import HttpKit
-import LumiCoreKit
+import LumiKernel
 
 /// MiniMax 视频生成客户端协议，便于测试时注入 mock 实现。
 public protocol MiniMaxVideoClientProtocol: Sendable {

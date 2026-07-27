@@ -1,57 +1,46 @@
-import LumiCoreKit
-import LumiUI
 import AppKit
+import LumiKernel
+import LumiUI
 import SwiftUI
 
 /// 在 GitHub Desktop 中打开项目插件
 ///
-/// 在 Agent 模式的状态栏左侧添加图标，点击后在 GitHub Desktop 中打开当前项目。
-/// 
-/// ## 实现方式
-///
-/// 使用 OpenInKit 提供的 `URL.openInGitHubDesktop()` 方法：
-/// - 首选 URL Scheme: `github-desktop://openLocalRepo?path=...`
-/// - 回退方案: 通过 Bundle ID `com.github.GitHubClient` 打开应用
-///
-/// ## 注意事项
-///
-/// 如果用户未安装 GitHub Desktop，按钮会被禁用或无响应。
-public enum AgentOpenInGitHubDesktopPlugin: LumiPlugin {
+/// 在状态栏添加图标，点击后在 GitHub Desktop 中打开当前项目。当前项目路径由内核的
+/// `ProjectProviding` 提供（响应式）。
+@MainActor
+public final class AgentOpenInGitHubDesktopPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.open-in-github-desktop"
+    public let name = "Open in GitHub Desktop"
+    public let order = 97
+    public let category: LumiPluginCategory = .open
+    public let policy: LumiPluginPolicy = .optOut
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.open-in-github-desktop",
-        displayName: LumiPluginLocalization.string("Open in GitHub Desktop", bundle: .module),
-        description: LumiPluginLocalization.string("Open current project in GitHub Desktop", bundle: .module),
-        order: 97,
-        category: .general,
-        policy: .optOut,
-        stage: .beta,
-        iconName: "desktopcomputer",
-    )
+    public init() {}
 
-    @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard let lumiCore = context.lumiCore else { return [] }
+    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        guard let project = kernel.project else { return [] }
         return [
-            LumiStatusBarItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName,
+            StatusBarItem(
+                id: "\(id).status",
+                title: name,
+                systemImage: "desktopcomputer",
                 placement: .leading,
                 statusBarView: {
-                    OpenInGitHubDesktopStatusBarView(lumiCore: lumiCore)
+                    OpenInGitHubDesktopStatusBarView(project: project)
                 }
             )
         ]
     }
 
-    @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
+                Text(name)
                     .font(.title2.weight(.semibold))
-                Text(info.description)
+                Text("Open current project in GitHub Desktop")
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }
@@ -59,6 +48,35 @@ public enum AgentOpenInGitHubDesktopPlugin: LumiPlugin {
         )
     }
 
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }
 
 private enum GitHubDesktopOpener {
@@ -77,15 +95,15 @@ private enum GitHubDesktopOpener {
 
 /// GitHub Desktop 打开状态栏视图
 public struct OpenInGitHubDesktopStatusBarView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-    let lumiCore: LumiCoreAccessing
+    @LumiTheme private var theme: any LumiUITheme
+    @StateObject private var observer: ProjectPathObserver
 
-    public init(lumiCore: LumiCoreAccessing) {
-        self.lumiCore = lumiCore
+    public init(project: any ProjectProviding) {
+        self._observer = StateObject(wrappedValue: ProjectPathObserver(project: project))
     }
 
     private var currentProjectPath: String {
-        lumiCore.projectComponent.currentProject?.path ?? ""
+        observer.path
     }
 
     public var body: some View {
@@ -101,7 +119,7 @@ public struct OpenInGitHubDesktopStatusBarView: View {
     /// 有项目时的视图
     private var hasProjectView: some View {
         StatusBarHoverContainer(
-            detailView: OpenInGitHubDesktopDetailView(lumiCore: lumiCore),
+            detailView: OpenInGitHubDesktopDetailView(path: currentProjectPath),
             id: "open-in-github-desktop-status"
         ) {
             Button(action: {
@@ -145,16 +163,8 @@ public struct OpenInGitHubDesktopStatusBarView: View {
 
 /// GitHub Desktop 打开详情视图（在 popover 中显示）
 public struct OpenInGitHubDesktopDetailView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-    let lumiCore: LumiCoreAccessing
-
-    public init(lumiCore: LumiCoreAccessing) {
-        self.lumiCore = lumiCore
-    }
-
-    private var currentProjectPath: String {
-        lumiCore.projectComponent.currentProject?.path ?? ""
-    }
+    @LumiTheme private var theme: any LumiUITheme
+    let path: String
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -162,6 +172,7 @@ public struct OpenInGitHubDesktopDetailView: View {
             HStack(spacing: 8) {
                 Image(systemName: "desktopcomputer")
                     .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Text(LumiPluginLocalization.string("GitHub Desktop", bundle: .module))
                     .font(.appBodyEmphasized)
@@ -190,7 +201,7 @@ public struct OpenInGitHubDesktopDetailView: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
-                Text(currentProjectPath)
+                Text(path)
                     .font(.appMonoCaption)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
@@ -200,7 +211,7 @@ public struct OpenInGitHubDesktopDetailView: View {
 
                 Button(action: {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(currentProjectPath, forType: .string)
+                    NSPasteboard.general.setString(path, forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
                         .font(.appCaption)
@@ -214,8 +225,8 @@ public struct OpenInGitHubDesktopDetailView: View {
     }
 
     private func openInGitHubDesktop() {
-        guard !currentProjectPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: currentProjectPath)
+        guard !path.isEmpty else { return }
+        let url = URL(fileURLWithPath: path)
         GitHubDesktopOpener.open(url)
     }
 }

@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 在两个组件之间建立装配连接关系。
 public struct ConnectComponentsTool: LumiAgentTool {
@@ -41,12 +41,12 @@ public struct ConnectComponentsTool: LumiAgentTool {
         "Connect components"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = CADToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = CADToolSupport.language(kernel)
         guard let fromId = CADToolSupport.string(arguments, "fromComponentId") else {
             return CADToolSupport.missingParameter("fromComponentId", language: language)
         }

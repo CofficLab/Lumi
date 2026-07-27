@@ -14,19 +14,23 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiChatKit"),
+        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/EditorChatInputKit")
+        .package(path: "../../Packages/EditorChatInputKit"),
+        .package(path: "../../Packages/LumiCoreChat"),
+        .package(path: "../../Packages/LumiCoreMessage"),
+        .package(path: "../../Packages/LumiCoreAgentTool"),
+        .package(path: "../../Packages/LumiCoreLayout"),
     ],
     targets: [
         .target(
             name: "ChatPanelPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiChatKit", package: "LumiChatKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "EditorChatInputKit", package: "EditorChatInputKit")
+                .product(name: "EditorChatInputKit", package: "EditorChatInputKit"),
             ],
             path: "Sources",
             resources: [

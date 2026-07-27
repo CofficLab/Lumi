@@ -1,91 +1,66 @@
-import LumiCoreKit
-import LumiUI
 import SwiftUI
+import LumiKernel
+import LumiUI
+import os
+import SuperLogKit
 
-public enum AppIconDesignerPlugin: LumiPlugin {
-
-    public static let info = LumiPluginInfo(
-        id: "AppIconDesigner",
-        displayName: AppIconDesignerLocalization.string("App Icon Designer"),
-        description: AppIconDesignerLocalization.string(
-            "Design vector app icons with manual drawing tools, layer controls, and Xcode icon set export."
-        ),
-        order: 79,
-        category: .general,
-        policy: .optOut,
-        stage: .beta,
-        iconName: "app.dashed",
+@MainActor
+public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🎨"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.app-icon-designer"
     )
 
-    @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
-            ) {
-                AppIconDesignerView()
-            }
-        ]
+    public let id = "AppIconDesigner"
+    public let name = "AppIconDesigner"
+    public let order = 79
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Design app icons with shapes, layers, and export capabilities."
+
+    public init() {}
+
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        if Self.verbose {
+            Self.logger.info("🎨 AppIconDesigner 插件初始化完成")
+        }
     }
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [
-            ApplyIconPresetTool(),
-            CreateIconDocumentTool(),
-            SetIconBackgroundTool(),
-            AddIconShapeTool(),
-            UpdateIconLayerTool(),
-            UpdateIconShapeTool(),
-            LintIconDocumentTool(),
-            SaveIconDocumentTool(),
-            LoadIconDocumentTool(),
-            ExportIconSVGTool(),
-            RegisterAppIconArtifactTool(),
-            ExportAppIconTool(),
-        ]
-    }
 
-        @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
-    }
+    // MARK: - LumiPlugin stubs
 
-    @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "scribble.variable",
-                            title: AppIconDesignerLocalization.string("Vector drawing"),
-                            description: AppIconDesignerLocalization.string("Build icons with shapes, layers, and presets")
-                        ),
-                        .init(
-                            icon: "square.and.arrow.up",
-                            title: AppIconDesignerLocalization.string("Xcode export"),
-                            description: AppIconDesignerLocalization.string("Generate a ready-to-use AppIcon.appiconset")
-                        ),
-                    ],
-                    tip: AppIconDesignerLocalization.string("Open App Icon Designer from the sidebar to start a new icon.")
-                )
-            )
-        ]
-    }
-
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

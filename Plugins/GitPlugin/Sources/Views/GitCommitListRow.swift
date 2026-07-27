@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 
 /// Shared Git commit row used by the panel sidebar and compact status bar popover.
 public struct GitCommitListRow: View {

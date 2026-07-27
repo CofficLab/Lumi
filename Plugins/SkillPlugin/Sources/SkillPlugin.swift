@@ -1,51 +1,52 @@
-import LumiChatKit
-import LumiCoreKit
 import SwiftUI
-import os
+import LumiKernel
+import LumiUI
 
-/// Skill 插件
-///
-/// 负责扫描 `.agent/skills/` 目录，加载领域技能并注入到 LLM 上下文。
-public enum SkillPlugin: LumiPlugin {
-    
-    // MARK: - 日志
-    
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.skill")
-    nonisolated static let verbose = false
+@MainActor
+public final class SkillPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.skill"
+    public let name = "Skills"
+    public let order = 51
+	public let policy: LumiPluginPolicy = .disabled
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.skill",
-        displayName: LumiPluginLocalization.string("Skills", bundle: .module),
-        description: LumiPluginLocalization.string("Load domain skills from .agent/skills/ directory", bundle: .module),
-        order: 51,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+    public init() {}
 
-    @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        [SkillChatMiddleware()]
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        // Register services here
     }
 
-    @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard context.isChatSectionVisible else {
-            return []
-        }
 
-        let projectPath = context.lumiCore?.projectComponent.currentProject?.path ?? ""
-        return [
-            LumiStatusBarItem(
-                id: "\(info.id).skills",
-                title: LumiPluginLocalization.string("Skills", bundle: .module),
-                systemImage: iconName,
-                placement: .trailing,
-                statusBarView: {
-                    SkillStatusBarView(projectPath: projectPath)
-                }
-            )
-        ]
-    }
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

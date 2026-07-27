@@ -15,14 +15,14 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../HttpKit"),
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
     ],
     targets: [
         .target(
             name: "WebFetchKit",
             dependencies: [
                 .product(name: "HttpKit", package: "HttpKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources",
             resources: [

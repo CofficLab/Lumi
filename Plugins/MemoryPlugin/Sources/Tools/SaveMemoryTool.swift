@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 保存记忆工具。
 ///
@@ -9,7 +9,7 @@ public struct SaveMemoryTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
         id: "save_memory",
         displayName: "Save Memory",
-        description: "Save a memory to the persistent memory system. You should proactively save important information that helps you provide better assistance in future conversations, such as: user preferences and workflows, project-specific conventions and practices, feedback about your behavior or output style, recurring patterns in user requests, and lessons learned from debugging sessions. Save when you discover something valuable that is not obvious from the current context."
+        description: "Save a memory to the persistent memory system. You should proactively save important information that helps you provide better assistance in future conversations, such as: user preferences and workflows, project-specific conventions and practices, feedback about your behavior or output style, recurring patterns in user requests, and lessons learned from debugging sessions. Save when you discover something valuable that is not obvious from the current kernel."
     )
 
     public init() {}
@@ -25,7 +25,7 @@ public struct SaveMemoryTool: LumiAgentTool {
                 "type": .object([
                     "type": .string("string"),
                     "enum": .array([.string("user"), .string("feedback"), .string("project"), .string("reference")]),
-                    "description": .string("Memory type: user (user preferences), feedback (behavioral guidance), project (project context), reference (external system pointers)"),
+                    "description": .string("Memory type: user (user preferences), feedback (behavioral guidance), project (project kernel), reference (external system pointers)"),
                 ]),
                 "name": .object([
                     "type": .string("string"),
@@ -57,11 +57,11 @@ public struct SaveMemoryTool: LumiAgentTool {
         "保存记忆"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let id = MemoryToolInput.string(arguments["id"]?.anyValue) else {
             throw MemoryToolError.missingArgument("id")
         }

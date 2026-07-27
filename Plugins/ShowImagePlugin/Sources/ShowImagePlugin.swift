@@ -1,48 +1,66 @@
-import Foundation
-import LumiCoreKit
 import SwiftUI
+import LumiKernel
+import LumiUI
+import os
+import SuperLogKit
 
-/// 图片显示插件。
-///
-/// 提供一个 `show_image` 工具，允许 LLM 在 UI 中展示图片。
-/// 支持本地文件路径和远程 URL 两种图片源。
-public enum ShowImagePlugin: LumiPlugin {
-
-    public static let info = LumiPluginInfo(
-        id: "ShowImage",
-        displayName: PluginShowImageLocalization.string("Show Image"),
-        description: PluginShowImageLocalization.string("Display images in the UI with support for local paths and remote URLs."),
-        order: 97,
-        category: .general,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "photo.on.rectangle",
+@MainActor
+public final class ShowImagePlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🖼️"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.show-image"
     )
 
-    public static var id: String { info.id }
-    public static var displayName: String { info.displayName }
-    public static var order: Int { info.order }
+    public let id = "ShowImage"
+    public let name = "ShowImage"
+    public let order = 97
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Display images in the conversation for visual content."
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [ShowImageTool()]
+    public init() {}
+
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        if Self.verbose {
+            Self.logger.info("🖼️ ShowImage 插件初始化完成")
+        }
     }
 
-    @MainActor
-    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
-        [
-            LumiRootOverlayItem(id: "\(info.id).overlay", order: info.order) { content in
-                ShowImageOverlay { content }
-            }
-        ]
-    }
-}
 
-enum PluginShowImageLocalization {
-    static let table = "Localizable"
-    static let bundle = Bundle.module
+    // MARK: - LumiPlugin stubs
 
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
-    }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

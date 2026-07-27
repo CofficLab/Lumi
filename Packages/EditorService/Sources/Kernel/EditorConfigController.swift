@@ -47,7 +47,7 @@ final class EditorConfigController {
             snapshot.autoSaveDelay = value
         }
 
-        // 注意：主题 ID 不在此恢复，由 ThemeStatusBarPlugin 通过 AppThemeVM 驱动
+        // 注意：主题 ID 不在此恢复，由 ThemeManagerPlugin 通过 AppThemeVM 驱动
         // EditorState 通过 observeThemeChanges() 监听通知来同步编辑器主题
 
         return snapshot
@@ -87,7 +87,7 @@ final class EditorConfigController {
         EditorConfigStore.saveValue(snapshot.showFoldingRibbon, forKey: EditorConfigStore.showFoldingRibbonKey)
         EditorConfigStore.saveValue(snapshot.autoSaveMode.rawValue, forKey: EditorConfigStore.autoSaveModeKey)
         EditorConfigStore.saveValue(snapshot.autoSaveDelay, forKey: EditorConfigStore.autoSaveDelayKey)
-        // 注意：currentThemeId 不在此持久化，主题持久化由 ThemeStatusBarPlugin 全权负责
+        // 注意：currentThemeId 不在此持久化，主题持久化由 ThemeManagerPlugin 全权负责
     }
 
     func overrideSnapshot(

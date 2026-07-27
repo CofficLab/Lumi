@@ -1,34 +1,65 @@
 import EditorService
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
 import os
 
-public enum EditorStickySymbolBarHeaderPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-sticky-symbol-bar-header")
+/// Editor Sticky Symbol Bar Plugin
+@MainActor
+public final class EditorStickySymbolBarHeaderPlugin: LumiPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-sticky-symbol-bar-header")
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.editor-sticky-symbol-bar-header",
-        displayName: LumiPluginLocalization.string("Editor Sticky Symbol Bar", bundle: .module),
-        description: LumiPluginLocalization.string("Sticky symbol bar for the editor panel.", bundle: .module),
-        order: 85,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "line.3.horizontal",
-    )
+    public let id = "com.coffic.lumi.plugin.editor-sticky-symbol-bar-header"
+    public let name = "Editor Sticky Symbol Bar"
+    public let order = 85
+	public let policy: LumiPluginPolicy = .disabled
 
-    @MainActor
-    public static func panelHeaderItems(context: LumiPluginContext) -> [LumiPanelHeaderItem] {
-        guard context.showsPanelChrome else {
-            return []
-        }
-        guard let service = context.resolve(LumiEditorServicing.self)?.editorService else { return [] }
+    public init() {}
 
-        return [
-            LumiPanelHeaderItem(id: info.id) {
-                EditorStickySymbolBarHeaderView(service: service)
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        kernel.uiManager?.registerPanelHeaderItem(
+            PanelHeaderItem(id: id) {
+                if let service = EditorStickySymbolBarBridge.editorServiceProvider?() {
+                    EditorStickySymbolBarHeaderView(service: service)
+                } else {
+                    EmptyView()
+                }
             }
-        ]
+        )
     }
+
+
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

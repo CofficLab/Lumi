@@ -1,71 +1,73 @@
-import LumiCoreKit
+import Foundation
+import LumiKernel
 import LumiUI
-import SwiftUI
 import os
+import SuperLogKit
+import SwiftUI
 
-public enum DisplayControlPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.display-control",
-        displayName: LumiPluginLocalization.string("Display Control", bundle: .module),
-        description: LumiPluginLocalization.string(
-            "Control brightness, volume, and contrast for external displays via DDC/CI.",
-            bundle: .module
-        ),
-        order: 21,
-        category: .system,
-        policy: .optIn,
-        stage: .beta,
-        iconName: "display",
-    )
+/// Display Control Plugin
+///
+/// Control brightness, volume, and contrast for external displays via DDC/CI.
+@MainActor
+public final class DisplayControlPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.display-control")
+    static let verbose: Bool = false
 
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.display-control")
+    public let id = "com.coffic.lumi.plugin.display-control"
+    public let name = "Display Control"
+    public let order = 210
+    public let policy: LumiPluginPolicy = .optOut
 
-    @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
+    public init() {}
+
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         [
-            LumiViewContainerItem(
-                id: info.id,
-                title: LumiPluginLocalization.string("Display Control", bundle: .module),
-                systemImage: iconName
+            ViewContainerItem(
+                id: id,
+                title: "Display Control",
+                systemImage: "display",
+                isRailVisible: false,
+                isChatVisible: false,
+                isContentVisible: true,
+                isPanelVisible: true,
+                isPanelHeaderVisible: false,
+                isPanelBottomVisible: false
             ) {
                 DisplayControlView()
-            }
+            },
         ]
     }
 
-    @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(DisplayControlAboutView())
-    }
-
-    @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "sun.max",
-                            title: LumiPluginLocalization.string("Brightness & contrast", bundle: .module),
-                            description: LumiPluginLocalization.string("Adjust external displays via DDC/CI", bundle: .module)
-                        ),
-                        .init(
-                            icon: "speaker.wave.2",
-                            title: LumiPluginLocalization.string("Volume", bundle: .module),
-                            description: LumiPluginLocalization.string("Control built-in speakers", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Open Display Control from the sidebar to tune your screens.", bundle: .module)
-                )
-            )
-        ]
-    }
-
-    @MainActor
-    public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
-        []
-    }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

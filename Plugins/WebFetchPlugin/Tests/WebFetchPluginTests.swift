@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import Testing
 @testable import WebFetchPlugin
 
@@ -18,7 +18,7 @@ struct PluginWebFetchTests {
     @Test("plugin registers one web fetch tool")
     func pluginRegistersTool() {
         let tools = WebFetchPlugin.agentTools(
-            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
         )
 
         #expect(tools.count == 1)
@@ -57,7 +57,7 @@ struct PluginWebFetchTests {
     func toolRiskLevel() {
         let tool = WebFetchTool()
 
-        #expect(tool.riskLevel(arguments: [:], context: nil) == .medium)
+        #expect(tool.riskLevel(arguments: [:], kernel: LumiKernel()) == .medium)
     }
 
     @Test("localization catalog is packaged")

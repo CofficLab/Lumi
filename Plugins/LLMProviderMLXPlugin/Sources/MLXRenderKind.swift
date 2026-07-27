@@ -1,4 +1,5 @@
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 
 /// MLX 供应商错误消息的渲染类型判定。
 ///

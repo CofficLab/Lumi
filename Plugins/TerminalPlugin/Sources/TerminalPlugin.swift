@@ -1,73 +1,107 @@
-import LumiCoreKit
-import LumiUI
+import Foundation
 import SwiftUI
+import LumiKernel
+import LumiUI
+import TerminalCoreKit
 
-public enum TerminalPlugin: LumiPlugin {
+@MainActor
+public final class TerminalPlugin: LumiPlugin {
+    nonisolated(unsafe) private var pluginsChangedObserver: NSObjectProtocol?
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.terminal",
-        displayName: LumiPluginLocalization.string("Terminal", bundle: .module),
-        description: LumiPluginLocalization.string("Native interactive terminal powered by SwiftTerm", bundle: .module),
-        order: 90,
-        category: .development,
-        policy: .optOut,
-        stage: .beta,
-        iconName: "terminal",
-    )
+    public let id = "com.coffic.lumi.plugin.terminal"
+    public let name = "Terminal"
+    public let order = 279
+	public let policy: LumiPluginPolicy = .optOut
 
-    @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
-            ) { [lumiCore = context.lumiCore] in
-                if let lumiCore = lumiCore {
-                    TerminalMainView(lumiCore: lumiCore)
+    public init() {}
+
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        TerminalPluginBridge.editorThemeIdProvider = {
+            LumiUIThemeRegistry.shared.resolvedEditorThemeId(
+                colorScheme: SystemAppearanceResolver.effectiveColorScheme
+            ) ?? "xcode-dark"
+        }
+
+        pluginsChangedObserver = NotificationCenter.default.addObserver(
+            forName: .lumiEnabledPluginsDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self, weak kernel] _ in
+            Task { @MainActor [weak self, weak kernel] in
+                guard let self, let kernel else { return }
+                guard kernel.pluginManager.isPluginEnabled(id: self.id) else {
+                    TerminalTabsViewModel.shared.closeAllSessions()
+                    return
                 }
             }
-        ]
+        }
     }
 
-        @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
+    deinit {
+        if let pluginsChangedObserver {
+            NotificationCenter.default.removeObserver(pluginsChangedObserver)
+        }
     }
 
-    @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "rectangle.3.group",
-                            title: LumiPluginLocalization.string("Multiple sessions", bundle: .module),
-                            description: LumiPluginLocalization.string("Open several shells side by side", bundle: .module)
-                        ),
-                        .init(
-                            icon: "keyboard",
-                            title: LumiPluginLocalization.string("Full keyboard", bundle: .module),
-                            description: LumiPluginLocalization.string("Complete VT escapes and shell integration", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Open Terminal from the sidebar at any time.", bundle: .module)
-                )
-            )
+            ViewContainerItem(
+                id: id,
+                title: name,
+                systemImage: "terminal",
+                isRailVisible: false,
+                isChatVisible: false,
+                isContentVisible: true,
+                isPanelVisible: true,
+                isPanelHeaderVisible: false,
+                isPanelBottomVisible: false
+            ) {
+                TerminalMainView(projectProvider: kernel.project)
+            }
         ]
     }
 
+
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] {
+        [
+            PanelBottomTabItem(
+                id: "\(id).bottom",
+                title: name,
+                systemImage: "terminal"
+            ) {
+                TerminalMainView(projectProvider: kernel.project)
+            }
+        ]
+    }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

@@ -1,54 +1,53 @@
 import EditorService
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
-import os
 
-public enum EditorCallHierarchyPanelPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-call-hierarchy-panel")
+@MainActor
+public final class EditorCallHierarchyPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.editor-bottom-call-hierarchy"
+    public let name = "Editor Call Hierarchy"
+    public let order = 6
+	public let policy: LumiPluginPolicy = .disabled
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.editor-bottom-call-hierarchy",
-        displayName: LumiPluginLocalization.string("Editor Call Hierarchy", bundle: .module),
-        description: LumiPluginLocalization.string("Call hierarchy panel in the editor rail and bottom area.", bundle: .module),
-        order: 6,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "point.3.connected.trianglepath.dotted",
-    )
+    public init() {}
 
-    @MainActor
-    public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
-        guard context.showsPanelChrome else { return [] }
-        guard let service = context.resolve(LumiEditorServicing.self)?.editorService else { return [] }
+    public func onBoot(kernel: LumiKernel) async throws {}
 
-        return [
-            LumiPanelBottomTabItem(
-                id: "editor-bottom-call-hierarchy",
-                order: info.order,
-                title: LumiPluginLocalization.string("Call Hierarchy", bundle: .module),
-                systemImage: iconName
-            ) {
-                BottomEditorCallHierarchyPanelView(service: service)
-            }
-        ]
+    public func onReady(kernel: LumiKernel) async throws {
+        // Panel items are registered via panelBottomTabItems/panelRailTabItems
     }
 
-    @MainActor
-    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        guard context.showsRail else { return [] }
-        guard let service = context.resolve(LumiEditorServicing.self)?.editorService else { return [] }
 
-        return [
-            LumiPanelRailTabItem(
-                id: "call-hierarchy",
-                order: info.order,
-                title: LumiPluginLocalization.string("Call Hierarchy", bundle: .module),
-                systemImage: iconName
-            ) {
-                BottomEditorCallHierarchyPanelView(service: service)
-            }
-        ]
-    }
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

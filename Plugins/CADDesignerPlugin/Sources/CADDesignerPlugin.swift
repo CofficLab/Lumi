@@ -1,66 +1,82 @@
-import LumiCoreKit
+import Foundation
+import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 import SwiftUI
 
-/// CAD Designer 插件：铝型材 3D 设计工具。
+/// CAD Designer 插件
 ///
-/// 参考文档 `docs/cad-designer-plugin-proposal.md`。提供 3D 视口、组件库、BOM、
-/// 切割优化、项目保存/加载，以及一组 AgentTool 供 AI 用自然语言操控设计。
-public enum CADDesignerPlugin: LumiPlugin {
+/// 提供铝型材 CAD 设计功能的插件,支持项目创建、组件放置、连接生成等操作。
+@MainActor
+public final class CADDesignerPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.cad-designer")
+    public nonisolated static let emoji = "📐"
+    nonisolated static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.cad-designer",
-        displayName: CADDesignerLocalization.string("CAD Designer"),
-        description: CADDesignerLocalization.string(
-            "Design aluminum profile frames with 3D preview, BOM, and cut optimization."
-        ),
-        order: 80,
-        category: .general,
-        policy: .optIn,
-        stage: .beta,
-        iconName: "cube.transparent.fill",
-    )
+    // MARK: - LumiPlugin
 
-    @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
-            ) {
-                CADDesignerView()
-            }
-        ]
+    public let id = "com.coffic.lumi.plugin.cad-designer"
+    public let name = "CAD Designer"
+    public let order = 80
+    public let policy: LumiPluginPolicy = .optIn
+
+    public init() {}
+
+    public func onBoot(kernel: LumiKernel) async throws {
+        try await CADDesignerOnBootHook().execute(kernel)
     }
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
+    public func onReady(kernel: LumiKernel) async throws {
+        try await CADDesignerOnReadyHook().execute(kernel)
+    }
+
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
             CreateCADProjectTool(),
+            LoadCADProjectTool(),
+            SaveCADProjectTool(),
+            BuildFrameTool(),
             PlaceProfileTool(),
-            UpdateProfileTool(),
             PlaceConnectorTool(),
             ConnectComponentsTool(),
+            UpdateProfileTool(),
             GenerateBOMTool(),
             OptimizeCuttingTool(),
-            SaveCADProjectTool(),
-            LoadCADProjectTool(),
-            BuildFrameTool(),
         ]
     }
 
-    @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
-    }
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

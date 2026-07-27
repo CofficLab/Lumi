@@ -4,6 +4,16 @@
     "" : {
 
     },
+    "%lld / %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld"
+          }
+        }
+      }
+    },
     "Configure your MiniMax TokenPlan API Key below, then resend your message." : {
       "localizations" : {
         "en" : {
@@ -344,6 +354,9 @@
           }
         }
       }
+    },
+    "MiniMax Token Plan" : {
+
     },
     "MiniMax Token Plan (Anthropic-compatible)" : {
       "localizations" : {
@@ -786,6 +799,24 @@
           }
         }
       }
+    },
+    "使用率:" : {
+
+    },
+    "剩余配额:" : {
+
+    },
+    "加载中..." : {
+
+    },
+    "无法获取配额信息" : {
+
+    },
+    "模型:" : {
+
+    },
+    "认证失败，请检查 API Key" : {
+
     }
   },
   "version" : "1.0"

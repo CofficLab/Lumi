@@ -1,5 +1,5 @@
 import Foundation
-import LumiLocalizationKit
+import LocalizationKit
 
 public enum GitBranchMonitorKitLocalization {
     public static func string(_ key: String, bundle: Bundle, locale: Locale = .current) -> String {

@@ -1,12 +1,14 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
+import LocalizationKit
 
 struct ListTempFilesTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
         id: "list_temp_files",
-        displayName: PluginAgentTempStorageLocalization.string("List Temp Files"),
-        description: PluginAgentTempStorageLocalization.string(
-            "List files in the agent temp storage directory with paths and modification times."
+        displayName: LumiPluginLocalization.string("List Temp Files", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "List files in the agent temp storage directory with paths and modification times.",
+            bundle: .module
         )
     )
 
@@ -19,7 +21,7 @@ struct ListTempFilesTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let files = try await TempFileStorageService.shared.listFiles()
         let directory = await TempFileStorageService.shared.storageDirectoryPath
         let retentionDays = AgentTempStoragePluginLocalStore.shared.retentionDays

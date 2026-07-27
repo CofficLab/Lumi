@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import ShellKit
 import SuperLogKit
 import os
@@ -49,18 +49,18 @@ public struct BrowserAgentTool: LumiAgentTool, SuperLog {
         "浏览器自动化"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
-        return try await executeCommand(arguments: arguments, context: context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
+        return try await executeCommand(arguments: arguments, kernel: kernel)
     }
 
     // MARK: - Implementation
 
-    private func executeCommand(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    private func executeCommand(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let command = arguments["command"]?.stringValue else {
             return "Error: Missing required 'command' parameter"
         }
@@ -77,7 +77,7 @@ public struct BrowserAgentTool: LumiAgentTool, SuperLog {
         }
 
         do {
-            try context.checkCancellation()
+            try kernel.checkCancellation()
 
             guard let args = Self.parseCommandArguments(command), !args.isEmpty else {
                 return "Error: Command contains an unterminated quote or no arguments"
@@ -93,7 +93,7 @@ public struct BrowserAgentTool: LumiAgentTool, SuperLog {
                 options: options
             )
 
-            try context.checkCancellation()
+            try kernel.checkCancellation()
 
             if Self.verbose {
                 Self.logger.info("\(self.t)✅ Command completed (exit: \(result.exitCode))")

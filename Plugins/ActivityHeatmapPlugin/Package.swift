@@ -14,30 +14,20 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),
+        .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
             name: "ActivityHeatmapPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings")
             ]
-        ),
-        .testTarget(
-            name: "ActivityHeatmapPluginTests",
-            dependencies: [
-                "ActivityHeatmapPlugin",
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-            ],
-            path: "Tests"
         )
     ]
 )

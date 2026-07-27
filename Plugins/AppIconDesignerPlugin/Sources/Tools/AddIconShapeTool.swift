@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 public struct AddIconShapeTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -54,12 +54,12 @@ public struct AddIconShapeTool: LumiAgentTool {
         "Add icon shape"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = IconToolSupport.language(kernel)
         guard let shapeName = IconToolSupport.string(arguments, "shape") else {
             return IconToolSupport.missingParameter("shape", language: language)
         }

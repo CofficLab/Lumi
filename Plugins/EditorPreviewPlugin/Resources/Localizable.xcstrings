@@ -1471,6 +1471,7 @@
       }
     },
     "Embedded preview powered by LumiPreviewKit" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

@@ -1,67 +1,93 @@
-import LumiChatKit
-import LumiCoreKit
+import Foundation
 import SwiftUI
+import LumiKernel
+import SuperLogKit
+import os
 
-/// Conversation Title Plugin: title header UI, auto-generation, and drift hints during chat sends.
-public enum ConversationTitlePlugin: LumiPlugin {
+@MainActor
+public final class ConversationTitlePlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-title")
+    nonisolated public static let emoji = "✏️"
+    public static let verbose = false
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.conversation-title",
-        displayName: LumiPluginLocalization.string("Auto Conversation Title", bundle: .module),
-        description: LumiPluginLocalization.string(
-            "Automatically generate conversation titles from the first user message",
-            bundle: .module
-        ),
-        order: 77,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "character.cursor.ibeam",
-    )
+    public let id = "com.coffic.lumi.plugin.conversation-title"
+    public let name = "Conversation Title"
+    public let order = 77
+    public let policy: LumiPluginPolicy = .alwaysOn
 
-    static var verbose: Bool { false }
+    public init() {}
 
-    @MainActor
-    public static func bootstrap(
-        chatServiceProvider: @escaping @MainActor () -> (any LumiChatServicing)?
-    ) {
-        ConversationTitleRuntimeBridge.chatServiceProvider = chatServiceProvider
-        ConversationTitleNotificationObserver.start()
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Registered conversation title header")
+        }
     }
 
-    @MainActor
-    public static func chatSectionHeaderItems(context: LumiPluginContext) -> [LumiChatSectionHeaderItem] {
-        guard context.showsChatSection else {
-            return []
-        }
+    public func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
+        Self.sendMiddlewares(lumiCore: kernel) + messages
+    }
 
-        // ChatSectionCoordinator 不可用时显示错误按钮
-        // header 排在 info.order + 4，介于 info.order (77) 和顶部 error 区域 (95/96) 之间。
-        guard let coordinator = context.resolve(ChatSectionCoordinator.self) else {
-            return [
-                LumiChatSectionHeaderItem(id: "\(info.id).header-error", order: info.order + 4) {
-                    ChatSectionCoordinatorErrorButton()
-                }
-            ]
-        }
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        Self.makeAgentTools(kernel: kernel)
+    }
 
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Providing chat section header item")
+        }
         return [
-            LumiChatSectionHeaderItem(id: "\(info.id).header", order: info.order + 4) {
-                ConversationTitleSectionView(coordinator: coordinator)
+            ChatSectionHeaderItem(id: id) {
+                ConversationTitleHeaderView(kernel: kernel)
             }
         ]
     }
 
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
+
     @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        [ConversationTitleChatMiddleware()]
+    public static func agentTools(lumiCore: Any) -> [any LumiAgentTool] {
+        if let kernel = lumiCore as? LumiKernel {
+            return makeAgentTools(kernel: kernel)
+        }
+        return [ConversationTitleUpdateTool()]
     }
 
     @MainActor
-    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
-        guard let chatService = context.resolve((any LumiChatServicing).self) else {
-            throw LumiPluginDependencyError.serviceUnavailable("LumiChatServicing")
+    private static func makeAgentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        guard let conversations = kernel.conversations else {
+            return []
         }
-        return [UpdateConversationTitleLumiTool(chatService: chatService)]
+        return [
+            ConversationTitleUpdateTool(conversations: conversations)
+        ]
     }
 }

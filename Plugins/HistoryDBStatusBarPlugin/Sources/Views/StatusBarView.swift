@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 
 public struct StatusBarView: View {
     private let historyService: (any HistoryQueryService)?

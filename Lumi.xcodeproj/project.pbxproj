@@ -7,8 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0BBD822E30067A13005CCD05 /* LumiAppKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0BBD822D30067A13005CCD05 /* LumiAppKit */; };
+		0B3231D330111C1600423DC1 /* LumiFactory in Frameworks */ = {isa = PBXBuildFile; productRef = 0B3231D230111C1600423DC1 /* LumiFactory */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
+		F5CBA19130119F6C00425FF6 /* LumiFactory in Frameworks */ = {isa = PBXBuildFile; productRef = F5CBA19030119F6C00425FF6 /* LumiFactory */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,7 +43,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0BBD822E30067A13005CCD05 /* LumiAppKit in Frameworks */,
+				F5CBA19130119F6C00425FF6 /* LumiFactory in Frameworks */,
+				0B3231D330111C1600423DC1 /* LumiFactory in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -76,6 +78,7 @@
 				F54F8C7A2F1A3B6500AABB2A /* Sources */,
 				F54F8C7B2F1A3B6500AABB2A /* Frameworks */,
 				F54F8C7C2F1A3B6500AABB2A /* Resources */,
+				F5A4E9203026524000A90001 /* Embed Signed RAG Vector Extension */,
 				IPH1000000000000000001 /* Embed Inline Preview Host */,
 			);
 			buildRules = (
@@ -87,7 +90,8 @@
 			);
 			name = Lumi;
 			packageProductDependencies = (
-				0BBD822D30067A13005CCD05 /* LumiAppKit */,
+				0B3231D230111C1600423DC1 /* LumiFactory */,
+				F5CBA19030119F6C00425FF6 /* LumiFactory */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -121,7 +125,7 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				0BA53AEF30066CF900CADEEB /* XCLocalSwiftPackageReference "Packages/LumiAppKit" */,
+				F5CBA19C3011A02800425FF6 /* XCLocalSwiftPackageReference "Packages/LumiFactory" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -145,6 +149,27 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		F5A4E9203026524000A90001 /* Embed Signed RAG Vector Extension */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Plugins/ProjectRAGPlugin/Resources/vec0.dylib",
+			);
+			name = "Embed Signed RAG Vector Extension";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(FRAMEWORKS_FOLDER_PATH)/vec0.dylib",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "set -euo pipefail\n\nAPP_RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nAPP_FRAMEWORKS=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nSOURCE=\"\"\n\nif [[ -d \"${APP_RESOURCES}\" ]]; then\n  SOURCE=\"$(/usr/bin/find \"${APP_RESOURCES}\" -path '*ProjectRAGPlugin_ProjectRAGPlugin.bundle*' -name 'vec0.dylib' -type f -print -quit)\"\nfi\n\nif [[ -z \"${SOURCE}\" ]]; then\n  SOURCE=\"${SRCROOT}/Plugins/ProjectRAGPlugin/Resources/vec0.dylib\"\nfi\n\nDEST=\"${APP_FRAMEWORKS}/vec0.dylib\"\n/bin/mkdir -p \"${APP_FRAMEWORKS}\"\n/bin/cp -f \"${SOURCE}\" \"${DEST}\"\n/bin/chmod 755 \"${DEST}\"\n\nif [[ \"${CODE_SIGNING_ALLOWED:-NO}\" == \"YES\" ]]; then\n  SIGN_IDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:-}\"\n  if [[ -z \"${SIGN_IDENTITY}\" ]]; then\n    SIGN_IDENTITY=\"${CODE_SIGN_IDENTITY:-}\"\n  fi\n  if [[ -n \"${SIGN_IDENTITY}\" ]]; then\n    /usr/bin/codesign --force --sign \"${SIGN_IDENTITY}\" --timestamp=none \"${DEST}\"\n  fi\nfi\n";
+		};
 		IPH1000000000000000001 /* Embed Inline Preview Host */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -310,7 +335,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 248;
+				CURRENT_PROJECT_VERSION = 500;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = NO;
@@ -326,7 +351,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 4.19.0;
+				MARKETING_VERSION = 5.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -344,7 +369,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 248;
+				CURRENT_PROJECT_VERSION = 500;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = NO;
@@ -360,7 +385,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 4.19.0;
+				MARKETING_VERSION = 5.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -393,17 +418,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		0BA53AEF30066CF900CADEEB /* XCLocalSwiftPackageReference "Packages/LumiAppKit" */ = {
+		F5CBA19C3011A02800425FF6 /* XCLocalSwiftPackageReference "Packages/LumiFactory" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiAppKit;
+			relativePath = Packages/LumiFactory;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		0BBD822D30067A13005CCD05 /* LumiAppKit */ = {
+		0B3231D230111C1600423DC1 /* LumiFactory */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 0BA53AEF30066CF900CADEEB /* XCLocalSwiftPackageReference "Packages/LumiAppKit" */;
-			productName = LumiAppKit;
+			productName = LumiFactory;
+		};
+		F5CBA19030119F6C00425FF6 /* LumiFactory */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LumiFactory;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -1,7 +1,7 @@
 import Foundation
 import SuperLogKit
 import LibGit2Swift
-import LumiCoreKit
+import LumiKernel
 import os
 import SwiftUI
 

@@ -1,5 +1,6 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 
 /// Xcode 构建子Agent
 ///

@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// 向已有 Goal 追加 Tasks 工具
@@ -46,7 +46,7 @@ public struct AddTasksToGoalTool: LumiAgentTool, SuperLog {
                             ]),
                             "executionContext": .object([
                                 "type": .string("string"),
-                                "description": .string("Technical context")
+                                "description": .string("Technical kernel")
                             ]),
                             "parallelGroup": .object([
                                 "type": .string("string"),
@@ -62,10 +62,10 @@ public struct AddTasksToGoalTool: LumiAgentTool, SuperLog {
     }
     
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "Add tasks to goal" }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
     
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
         
         guard let goalId = arguments["goal_id"]?.anyValue as? String else {
             return "Error: goal_id is required"
@@ -90,7 +90,7 @@ public struct AddTasksToGoalTool: LumiAgentTool, SuperLog {
             return "Error: no valid tasks found"
         }
         
-        guard let manager = await GoalTaskPlugin.currentManager() else {
+        guard let manager = GoalTaskPlugin.currentManager() else {
             return "Error: goal task manager is not initialized"
         }
         

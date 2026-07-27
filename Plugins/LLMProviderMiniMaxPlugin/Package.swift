@@ -14,18 +14,20 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/LLMKit"),
+        .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/HttpKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),
-        .package(path: "../../Packages/LumiLLMProviderSupport"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
             name: "LLMProviderMiniMaxPlugin",
             dependencies: [
+                .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "HttpKit", package: "HttpKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
-                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",
@@ -37,8 +39,7 @@ let package = Package(
             name: "LLMProviderMiniMaxPluginTests",
             dependencies: [
                 "LLMProviderMiniMaxPlugin",
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
-                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Tests"
         )

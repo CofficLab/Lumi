@@ -1,7 +1,8 @@
 import Foundation
 import HttpKit
-import LumiCoreKit
-import LumiLLMProviderSupport
+import LumiKernel
+import LLMKit
+import LumiKernel
 import Testing
 @testable import LLMProviderSublyxPlugin
 

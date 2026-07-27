@@ -1,52 +1,51 @@
-import LumiCoreKit
-import SuperLogKit
-import LumiUI
 import AppKit
-import SwiftUI
 import Foundation
+import LumiKernel
+import LumiUI
 import os
 import ShellKit
+import SwiftUI
 
 /// 在浏览器中打开远程仓库插件
 ///
-/// 在 Agent 模式的状态栏添加一个图标，点击后在浏览器中打开当前项目的远程仓库地址。
-public enum AgentOpenRemotePlugin: LumiPlugin {
+/// 在状态栏添加图标，点击后在浏览器中打开当前项目的远程仓库地址。
+/// 当前项目路径由内核的 `ProjectProviding` 提供（响应式）。
+@MainActor
+public final class AgentOpenRemotePlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.open-remote")
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.open-remote",
-        displayName: LumiPluginLocalization.string("Open Remote Repository", bundle: .module),
-        description: LumiPluginLocalization.string("Displays a button in the header to open the current project's remote repository in browser", bundle: .module),
-        order: 90,
-        category: .general,
-        policy: .optOut,
-        stage: .beta,
-        iconName: "safari",
-    )
+    public let id = "com.coffic.lumi.plugin.open-remote"
+    public let name = "Open Remote Repository"
+    public let order = 62
+    public let category: LumiPluginCategory = .open
+    public let policy: LumiPluginPolicy = .optOut
 
-    @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        let projectPath = context.lumiCore?.projectComponent.currentProject?.path ?? ""
+    public init() {}
+
+    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        guard let project = kernel.project else { return [] }
         return [
-            LumiStatusBarItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName,
+            StatusBarItem(
+                id: "\(id).status",
+                title: name,
+                systemImage: "safari",
                 placement: .leading,
                 statusBarView: {
-                    OpenRemoteStatusBarView(projectPath: projectPath)
+                    OpenRemoteStatusBarView(project: project)
                 }
             )
         ]
     }
 
-        @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
+                Text(name)
                     .font(.title2.weight(.semibold))
-                Text(info.description)
+                Text("Displays a button in the header to open the current project's remote repository in browser")
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }
@@ -54,20 +53,54 @@ public enum AgentOpenRemotePlugin: LumiPlugin {
         )
     }
 
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }
 
 // MARK: - Status Bar View
 
 /// 远程仓库状态栏视图
 public struct OpenRemoteStatusBarView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @LumiTheme private var theme: any LumiUITheme
+    @StateObject private var observer: ProjectPathObserver
 
-    private let projectPath: String
     @State private var remoteURL: URL?
     @State private var isLoading = false
+    @State private var lastResolvedPath: String = ""
 
-    public init(projectPath: String) {
-        self.projectPath = projectPath
+    public init(project: any ProjectProviding) {
+        self._observer = StateObject(wrappedValue: ProjectPathObserver(project: project))
+    }
+
+    private var currentProjectPath: String {
+        observer.path
     }
 
     public var body: some View {
@@ -83,7 +116,7 @@ public struct OpenRemoteStatusBarView: View {
         .onAppear {
             updateRemoteURL()
         }
-        .onChange(of: projectPath) { _, _ in
+        .onChange(of: currentProjectPath) { _, _ in
             updateRemoteURL()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
@@ -148,20 +181,27 @@ public struct OpenRemoteStatusBarView: View {
     }
 
     private func updateRemoteURL() {
-        guard !projectPath.isEmpty else {
+        let path = currentProjectPath
+        // 避免对同一路径重复解析
+        guard path != lastResolvedPath else { return }
+        lastResolvedPath = path
+
+        guard !path.isEmpty else {
             remoteURL = nil
+            isLoading = false
             return
         }
 
         isLoading = true
 
         Task {
-            let url = await fetchRemoteURL(for: projectPath)
+            let url = await fetchRemoteURL(for: path)
 
-            await MainActor.run {
-                self.remoteURL = url
-                self.isLoading = false
-            }
+            // 仅当仍在解析同一路径时才应用结果
+            guard lastResolvedPath == path else { return }
+
+            remoteURL = url
+            isLoading = false
         }
     }
 
@@ -197,7 +237,7 @@ public struct OpenRemoteStatusBarView: View {
     }
 
     private func runGit(args: [String], in directory: URL) async -> String? {
-        let result = try? await Shell.execute(
+        let result = try? await ShellExecutor.execute(
             executable: "/usr/bin/git",
             arguments: args,
             options: ShellOptions(
@@ -221,7 +261,7 @@ public struct OpenRemoteStatusBarView: View {
 
 /// 远程仓库详情视图（在 popover 中显示）
 public struct OpenRemoteDetailView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @LumiTheme private var theme: any LumiUITheme
 
     public let url: URL?
 

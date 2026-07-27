@@ -107,6 +107,7 @@
       }
     },
     "Switch between Brief, Normal, and Detailed response styles" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -209,7 +210,11 @@
         }
       }
     },
+    "Verbosity Level" : {
+
+    },
     "详细级别" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

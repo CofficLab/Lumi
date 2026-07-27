@@ -1,67 +1,64 @@
-import AppKit
-import Combine
-import Foundation
-import LumiCoreKit
-import LumiUI
-import SuperLogKit
 import SwiftUI
+import LumiKernel
+import LumiUI
 import os
+import SuperLogKit
 
-/// 防休眠插件：阻止系统休眠，支持定时和手动控制
-public enum CaffeinatePlugin: LumiPlugin {
-    public static var verbose: Bool { false }
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.caffeinate")
-
-    public static let navigationId = "caffeinate_settings"
-
-    public static let info = LumiPluginInfo(
-        id: "Caffeinate",
-        displayName: PluginCaffeinateLocalization.string("Anti-Sleep"),
-        description: PluginCaffeinateLocalization.string("Prevent system sleep with timer and manual control"),
-        order: 1,
-        category: .system,
-        policy: .optOut,
-        stage: .beta,
-        iconName: "bolt",
+@MainActor
+public final class CaffeinatePlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "☕️"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.caffeinate"
     )
 
-    public static var id: String { info.id }
-    public static var displayName: String { info.displayName }
-    public static var description: String { info.description }
-    public static var order: Int { info.order }
-    public static var isConfigurable: Bool { policy.isConfigurable }
+    public let id = "Caffeinate"
+    public let name = "Caffeinate"
+    public let order = 1
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .system
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Prevent system sleep during long-running tasks."
 
-    @MainActor
-    public static func menuBarPopupItems(context: LumiPluginContext) -> [LumiMenuBarPopupItem] {
-        [
-            LumiMenuBarPopupItem(id: "\(info.id).popup", order: Self.info.order) {
-                CaffeinateMenuBarPopupView()
-            }
-        ]
+    public init() {}
+
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        // Register services here
     }
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [
-            CaffeinateActivateTool(),
-            CaffeinateDeactivateTool(),
-            CaffeinateStatusTool(),
-            CaffeinateTurnOffDisplayTool(),
-        ]
-    }
 
-        @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(CaffeinateAboutView())
-    }
+    // MARK: - LumiPlugin stubs
 
-}
-
-enum PluginCaffeinateLocalization {
-    static let table = "Localizable"
-    static let bundle = Bundle.module
-
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
-    }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

@@ -1,5 +1,4 @@
 import SwiftUI
-import LumiCoreKit
 
 /// 不支持文件类型提示视图。
 ///

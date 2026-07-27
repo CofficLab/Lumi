@@ -1,142 +1,100 @@
-import LumiChatKit
-import LumiCoreKit
+import AppKit
+import Combine
+import LumiKernel
+import LumiUI
 import os
 import SwiftUI
 
-/// Conversation List Plugin: rail conversation list, project switch guidance, and agent tools.
-public enum ConversationListPlugin: LumiPlugin {
+@MainActor
+public final class ConversationListPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.conversation-list"
+    public let name = "Conversation List"
+    public let order = 76
+    public let policy: LumiPluginPolicy = .alwaysOn
+
     public static let verbose = false
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
-    public static let t = "💬"
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.conversation-list",
-        displayName: LumiPluginLocalization.string("Conversation List", bundle: .module),
-        description: LumiPluginLocalization.string("Show all conversation history", bundle: .module),
-        order: 76,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "message.fill",
-    )
+    public init() {}
 
-    @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        [ProjectSwitchChatMiddleware()]
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            ConversationListRuntimeBridge.shared.storageDirectory = storage.pluginDataDirectory(for: "ConversationList")
+        } else {
+            ConversationListRuntimeBridge.shared.storageDirectory = ConversationListRuntimeBridge.defaultStorageDirectory
+        }
+
+        // 桥接 kernel.conversations 到 tools RuntimeBridge。
+        // 注意 SetConversationProjectLumiTool 暂未启用 —— 等 ConversationManaging
+        // 协议扩展 setConversationProjectPath(...) 之后再补。
+        if let conversations = kernel.conversations {
+            ConversationListToolRuntimeBridge.conversations = conversations
+        }
     }
 
-    @MainActor
-    public static func titleToolbarItems(context: LumiPluginContext) -> [LumiTitleToolbarItem] {
-        guard context.showsChatSection else {
-            return []
-        }
-
-        let chatService = context.resolve(LumiChatServicing.self) as? ChatService
-
-        // 如果 ChatService 不可用，显示错误按钮
-        guard let chatService else {
-            return [
-                LumiTitleToolbarItem(
-                    id: "\(info.id).conversation-list",
-                    title: LumiPluginLocalization.string("会话列表", bundle: .module),
-                    placement: .trailing
-                ) {
-                    ConversationListErrorButton()
-                },
-            ]
-        }
-
-        let projectComponent = context.lumiCore?.projectComponent
-        return [
-            LumiTitleToolbarItem(
-                id: "\(info.id).conversation-list",
-                title: LumiPluginLocalization.string("会话列表", bundle: .module),
-                placement: .trailing
-            ) {
-                ConversationListPopoverButton(
-                    chatService: chatService,
-                    projectPathStore: projectComponent,
-                    projectStore: projectComponent
-                )
-            },
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            CreateNewConversationLumiTool(),
+            DeleteConversationLumiTool(),
+            GetRecentConversationsLumiTool(),
+            GetConversationCountLumiTool(),
         ]
     }
 
-    @MainActor
-    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        guard context.showsRail else {
-            return []
-        }
+    // toolbar item 由 titleToolbarItems(kernel:) 声明式提供,不在此处注册。
 
-        let chatService = context.resolve(LumiChatServicing.self) as? ChatService
-
-        // ChatService 不可用时显示错误视图
-        guard let chatService else {
-            return [
-                LumiPanelRailTabItem(
-                    id: "chats-error",
-                    order: info.order,
-                    title: LumiPluginLocalization.string("Chats", bundle: .module),
-                    systemImage: "message.fill"
-                ) {
-                    ConversationListErrorView()
-                },
-            ]
-        }
-
-        let projectComponent = context.lumiCore?.projectComponent
-
-        return [
-            LumiPanelRailTabItem(
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        [
+            PanelRailTabItem(
                 id: "chats",
-                order: info.order,
-                title: LumiPluginLocalization.string("Chats", bundle: .module),
+                title: "Chats",
                 systemImage: "message.fill"
             ) {
-                ConversationRailPanelView(
-                    chatService: chatService,
-                    projectPathStore: projectComponent,
-                    projectStore: projectComponent
-                )
+                RailView(kernel: kernel)
             },
         ]
     }
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
-        guard let chatService = context.resolve((any LumiChatServicing).self) else {
-            throw LumiPluginDependencyError.serviceUnavailable("LumiChatServicing")
-        }
-        return [
-            CreateNewConversationLumiTool(chatService: chatService),
-            DeleteConversationLumiTool(chatService: chatService),
-            GetRecentConversationsLumiTool(chatService: chatService),
-            GetConversationCountLumiTool(chatService: chatService),
-            SetConversationProjectLumiTool(chatService: chatService),
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+        [
+            LumiTitleToolbarItem(
+                id: "\(id).conversation-list",
+                title: "Chats",
+                placement: .trailing,
+                order: 200
+            ) {
+                ConversationListToolbarButton(kernel: kernel)
+            },
         ]
     }
 
-    @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 12) {
-                Text(verbatim: LumiPluginLocalization.string(
-                    "会话列表插件会在工具栏右侧展示一个对话历史入口，支持快速搜索、新建、删除和按项目过滤会话。",
-                    bundle: .module
-                ))
-                .font(.appCaption)
-                .foregroundStyle(.secondary)
-
-                Divider()
-
-                Label(
-                    LumiPluginLocalization.string("策略：始终启用，无法关闭", bundle: .module),
-                    systemImage: "lock.fill"
-                )
-                .font(.appMicro)
-                .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-        )
-    }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

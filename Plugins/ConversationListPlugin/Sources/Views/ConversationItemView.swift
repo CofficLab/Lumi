@@ -1,6 +1,6 @@
 import LumiUI
 import SuperLogKit
-import LumiCoreKit
+import LumiKernel
 import SwiftUI
 
 /// 会话项视图
@@ -137,6 +137,17 @@ extension ConversationItemView {
                     .foregroundColor(theme.textTertiary)
             }
 
+            if let messageCount = conversation.messageCount {
+                Text(String(format: LumiPluginLocalization.string("%d messages", bundle: .module), messageCount))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+                    .lineLimit(1)
+
+                Text(verbatim: LumiPluginLocalization.string("•", bundle: .module))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
+            }
+
             // 项目信息
             if let projectPath = conversation.projectPath {
                 let projectName = URL(fileURLWithPath: projectPath).lastPathComponent
@@ -200,7 +211,7 @@ extension ConversationItemView {
 #Preview("会话项 - 默认状态") {
     ConversationItemView(
         conversation: ConversationListItem.example(),
-        onDelete: { if ConversationListPlugin.verbose { ConversationListPlugin.logger.info("\(ConversationListPlugin.t)删除") } }
+        onDelete: {}
     )
     .frame(width: 200)
     .padding()
@@ -243,7 +254,8 @@ extension ConversationListItem {
         projectPath: String? = "/Users/example/project",
         minutesAgo: Int = 30,
         providerID: String? = "anthropic",
-        modelName: String? = "claude-sonnet-4-20250514"
+        modelName: String? = "claude-sonnet-4-20250514",
+        messageCount: Int? = 14
     ) -> ConversationListItem {
         ConversationListItem(
             id: UUID(),
@@ -252,7 +264,8 @@ extension ConversationListItem {
             createdAt: Date().addingTimeInterval(-Double(minutesAgo + 30) * 60),
             updatedAt: Date().addingTimeInterval(-Double(minutesAgo) * 60),
             providerID: providerID,
-            modelName: modelName
+            modelName: modelName,
+            messageCount: messageCount
         )
     }
 }

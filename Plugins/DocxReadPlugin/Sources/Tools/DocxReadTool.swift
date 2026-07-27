@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// DOCX 读取工具
@@ -34,7 +34,7 @@ public struct DocxReadTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
@@ -43,7 +43,7 @@ public struct DocxReadTool: LumiAgentTool, SuperLog {
         return "读取 \(URL(fileURLWithPath: path).lastPathComponent)"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let path = arguments["path"]?.stringValue else {
             throw NSError(
                 domain: "DocxReadTool",
@@ -52,7 +52,7 @@ public struct DocxReadTool: LumiAgentTool, SuperLog {
             )
         }
 
-        if !context.isPathAllowed(path) {
+        if !kernel.isPathAllowed(path) {
             throw NSError(
                 domain: "DocxReadTool",
                 code: 403,

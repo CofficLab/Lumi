@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// FileLogPlugin 的运行时桥接:持有 plugin 专属数据目录,
 /// 供 `DefaultFileLogConfiguration.logsDirectory()` 读取
@@ -19,7 +19,7 @@ enum FileLogPluginRuntimeBridge {
 
 @MainActor
 public extension FileLogPlugin {
-    static func bootstrapFromLumiCoreIfNeeded(context: LumiPluginContext) {
+    static func bootstrapFromLumiCoreIfNeeded(context: any LumiCoreAccessing) {
         guard !didBootstrapFromLumiCore else { return }
         if let core = context.lumiCore {
             FileLogPluginRuntimeBridge.pluginSubdirectory = core.storage.pluginDataDirectory(for: FileLogPluginRuntimeBridge.pluginName)

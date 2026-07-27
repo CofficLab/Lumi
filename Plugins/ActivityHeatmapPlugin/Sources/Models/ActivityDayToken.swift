@@ -1,10 +1,16 @@
 import Foundation
 
-/// Single-day token usage data point for the line chart.
-struct ActivityDayToken: Identifiable, Hashable {
-    /// Stable per-day identity: the day's date.
-    var id: Date { date }
-    let date: Date
+/// A single day's total token consumption for the line chart.
+public struct ActivityDayToken: Identifiable, Sendable, Equatable {
+    public let id: UUID
+    /// Calendar date (start of day).
+    public let date: Date
     /// Total tokens consumed on this day.
-    let totalTokens: Int
+    public let totalTokens: Int
+
+    public init(id: UUID = UUID(), date: Date, totalTokens: Int) {
+        self.id = id
+        self.date = date
+        self.totalTokens = totalTokens
+    }
 }

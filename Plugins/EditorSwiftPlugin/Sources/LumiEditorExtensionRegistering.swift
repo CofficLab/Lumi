@@ -1,5 +1,5 @@
 import EditorService
-import LumiCoreKit
+import LumiKernel
 
 extension EditorSwiftEditorPlugin: LumiEditorExtensionRegistering {
     public static var extensionPluginInfo: LumiPluginInfo {
@@ -7,7 +7,8 @@ extension EditorSwiftEditorPlugin: LumiEditorExtensionRegistering {
             id: info.id,
             displayName: info.displayName,
             description: info.description,
-            order: info.order
+            order: info.order,
+            policy: policy
         )
     }
 

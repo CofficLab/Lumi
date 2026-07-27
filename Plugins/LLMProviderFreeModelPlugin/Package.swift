@@ -14,16 +14,18 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiLocalizationKit"),
-        .package(path: "../../Packages/LumiLLMProviderSupport"),
+        .package(path: "../../Packages/LLMKit"),
+        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "LLMProviderFreeModelPlugin",
             dependencies: [
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
-                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "LLMKit", package: "LLMKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",

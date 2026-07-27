@@ -3,7 +3,6 @@ import PackageDescription
 
 let package = Package(
     name: "ModelSelectorPlugin",
-    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -14,35 +13,22 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
-        .package(path: "../../Packages/LumiChatKit"),
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiLLMProviderSupport"),
+        .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
             name: "ModelSelectorPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "LumiChatKit", package: "LumiChatKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources",
-            resources: [
-                .process("../Resources/Localizable.xcstrings")
-            ]
+            path: "Sources"
         ),
         .testTarget(
             name: "ModelSelectorPluginTests",
-            dependencies: [
-                "ModelSelectorPlugin",
-                .product(name: "LumiChatKit", package: "LumiChatKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),            ],
+            dependencies: ["ModelSelectorPlugin"],
             path: "Tests"
-        )
+        ),
     ]
 )

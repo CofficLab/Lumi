@@ -14,19 +14,19 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LLMKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),
-        .package(path: "../../Packages/LumiLLMProviderSupport")
+        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/HttpKit"),
+        .package(path: "../../Packages/LocalizationKit"),
     ],
     targets: [
         .target(
             name: "LLMProviderOpenAIPlugin",
             dependencies: [
-                .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LLMKit", package: "LLMKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
-                .product(name: "LumiLLMProviderSupport", package: "LumiLLMProviderSupport")
+                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "HttpKit", package: "HttpKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources",
             resources: [

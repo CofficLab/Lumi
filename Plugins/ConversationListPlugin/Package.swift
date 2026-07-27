@@ -14,8 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiChatKit"),
+        .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -23,8 +22,7 @@ let package = Package(
         .target(
             name: "ConversationListPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiChatKit", package: "LumiChatKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
@@ -32,14 +30,6 @@ let package = Package(
             resources: [
                 .process("../Resources/Localizable.xcstrings")
             ]
-        ),
-        .testTarget(
-            name: "ConversationListPluginTests",
-            dependencies: [
-                "ConversationListPlugin",
-                .product(name: "LumiChatKit", package: "LumiChatKit"),
-            ],
-            path: "Tests"
         )
     ]
 )

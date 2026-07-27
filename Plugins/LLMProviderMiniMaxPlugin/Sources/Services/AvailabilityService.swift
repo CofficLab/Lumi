@@ -1,9 +1,14 @@
 import Foundation
 import HttpKit
-import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiKernel
+import LumiKernel
+import LumiKernel
 
 // MARK: - AvailabilityService
+
+// Type alias to disambiguate (no access control for enum methods compatibility)
+typealias FailureDetail = LumiLLMFailureDetail
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderMiniMax")
@@ -43,7 +48,7 @@ enum AvailabilityService {
         )
     }
 
-    static func isUnsupportedModelFailure(_ failure: LumiLLMFailureDetail) -> Bool {
+    static func isUnsupportedModelFailure(_ failure: FailureDetail) -> Bool {
         if failure.reason == .unsupportedModel {
             return true
         }

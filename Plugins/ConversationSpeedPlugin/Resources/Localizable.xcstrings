@@ -1,0 +1,9 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Streaming speed: %@ tokens/second" : {
+
+    }
+  },
+  "version" : "1.0"
+}

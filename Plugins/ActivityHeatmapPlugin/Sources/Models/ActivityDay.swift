@@ -1,12 +1,16 @@
 import Foundation
 
-/// Single-day activity data point for the heatmap.
-struct ActivityDay: Identifiable, Hashable {
-    /// Stable per-day identity: the day's date. Using the date (instead of a
-    /// fresh `UUID`) lets SwiftUI diff cells across reloads and reuse views when
-    /// switching the time range, instead of rebuilding all 30/90/365 cells.
-    var id: Date { date }
-    let date: Date
-    /// Activity level: 0 = no activity, 1...4 = increasing activity.
-    let level: Int
+/// A single day's activity level for the heatmap.
+public struct ActivityDay: Identifiable, Sendable, Equatable {
+    public let id: UUID
+    /// Calendar date (start of day) for this activity entry.
+    public let date: Date
+    /// Intensity level 0–4, where 0 = no activity and 4 = highest activity.
+    public let level: Int
+
+    public init(id: UUID = UUID(), date: Date, level: Int) {
+        self.id = id
+        self.date = date
+        self.level = level
+    }
 }

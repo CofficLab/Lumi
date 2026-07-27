@@ -1,89 +1,68 @@
-import LumiChatKit
-import LumiCoreKit
-import LumiUI
+import LumiKernel
 import SwiftUI
 
-public enum ChatPanelPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: ChatPanelSection.id,
-        displayName: LumiPluginLocalization.string("Chat", bundle: .module),
-        description: LumiPluginLocalization.string("Chat surface with conversation rail", bundle: .module),
-        order: 78,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "bubble.left.and.bubble.right.fill",
-    )
+/// Chat Panel 插件
+///
+/// 注册 Chat 视图容器的 ActivityBar 图标。
+/// 当图标激活时，通过 `onContainerActivated` 调整工作区状态：
+/// 显示 Rail、不需要 main content 区域、显示 Chat。
+@MainActor
+public final class ChatPanelPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.chat-panel"
+    public let name = "Chat"
+    public let order = 278
+    public let policy: LumiPluginPolicy = .alwaysOn
 
-    @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard context.isChatSectionVisible,
-              let chatService = context.resolve(LumiChatServicing.self) as? ChatService
-        else {
-            return []
-        }
+    public init() {}
 
-        return [
-            LumiStatusBarItem(
-                id: "\(info.id).timeline",
-                title: "Conversation Timeline",
-                systemImage: "timeline.selection",
-                placement: .trailing,
-                statusBarView: {
-                    ChatTimelineStatusBarView(chatService: chatService)
-                }
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
+            ViewContainerItem(
+                id: id,
+                title: name,
+                systemImage: "bubble.left.and.bubble.right.fill",
+                isRailVisible: true,
+                isChatVisible: true,
+                isContentVisible: false,
+                isPanelVisible: false,
+                isPanelHeaderVisible: false
             ),
-            LumiStatusBarItem(
-                id: "\(info.id).tools",
-                title: "Available Tools",
-                systemImage: "wrench.and.screwdriver",
-                placement: .trailing,
-                statusBarView: {
-                    ChatAvailableToolsStatusBarView(chatService: chatService)
-                }
-            )
         ]
     }
 
-    @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName,
-                chatSection: .wide,
-                showsRail: true
-            ) {
-                ChatPanelEmptyView()
-            }
-        ]
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        []
     }
 
-    @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "bubble.left.and.bubble.right",
-                            title: LumiPluginLocalization.string("Conversations", bundle: .module),
-                            description: LumiPluginLocalization.string("Chat with local and cloud LLMs", bundle: .module)
-                        ),
-                        .init(
-                            icon: "rectangle.3.group",
-                            title: LumiPluginLocalization.string("Parallel sessions", bundle: .module),
-                            description: LumiPluginLocalization.string("Run multiple independent tasks side by side", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Pick Chat from the sidebar to start a new conversation.", bundle: .module)
-                )
-            )
-        ]
-    }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }
-

@@ -1,7 +1,7 @@
 import SwiftUI
 import SuperLogKit
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 import XcodeKit
 
 /// Xcode 项目状态栏视图

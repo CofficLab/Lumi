@@ -1,20 +1,26 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
+/// Minimal `ObservableObject` stub used for SwiftUI `#Preview` blocks.
+@MainActor
+private final class PreviewChatServiceStub: ObservableObject {}
+
+@MainActor
 final class PreviewLumiCoreStub: LumiCoreAccessing {
     let storage = StorageComponent(dataRootDirectory: URL(fileURLWithPath: "/tmp/preview"))
-    let logoComponent = LogoComponent()
     let projectComponent = ProjectComponent()
     let layoutComponent = LayoutComponent(state: LayoutState())
-    let chatService: any LumiChatServicing = PreviewChatServicing()
+    let chatService: any ObservableObject = PreviewChatServiceStub()
+    let agentToolComponent = AgentToolComponent()
     var editorService: (any AbstractEditorServicing)? { nil }
+
+    func registerService<T>(_ type: T.Type, _ instance: T) {}
+    func resolveService<T>(_ type: T.Type) -> T? { nil }
 
     func makePluginContext(
         activeSectionID: String,
         activeSectionTitle: String,
         chatSection: LumiChatSectionLayout,
-        showsRail: Bool,
-        showsPanelChrome: Bool,
         isChatSectionVisible: Bool?,
         additionalDependencies: (inout LumiPluginDependencies) -> Void
     ) -> LumiPluginContext {
@@ -24,8 +30,6 @@ final class PreviewLumiCoreStub: LumiCoreAccessing {
             activeSectionID: activeSectionID,
             activeSectionTitle: activeSectionTitle,
             chatSection: chatSection,
-            showsRail: showsRail,
-            showsPanelChrome: showsPanelChrome,
             isChatSectionVisible: isChatSectionVisible ?? chatSection.isVisible,
             dependencies: deps,
             lumiCore: self

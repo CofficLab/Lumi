@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 预览构建过程中的加载视图。
 ///

@@ -1,10 +1,3 @@
 # EditorLanguageRuntime
 
-Language-agnostic tree-sitter runtime for the Lumi editor.
-
-- `EditorLanguageDescriptor` / `EditorLanguageContext` — language metadata
-- `LanguageRegistry` — populated by language plugins at startup
-- `BundledGrammarProvider` — reusable grammar + `.scm` query loader
-- `LanguageDetection` — extension / shebang / modeline detection
-
-Syntax grammars and highlight queries live in **language plugins** under `Plugins/Editor*Plugin/`.
+EditorLanguageRuntime 是 Lumi 项目中负责编辑器语言运行时能力的 Package。

@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import Testing
 @testable import ProjectOverviewPlugin
 
@@ -19,7 +19,7 @@ struct PluginProjectOverviewTests {
     @Test("plugin registers one tool")
     func pluginRegistersTool() {
         let tools = ProjectOverviewPlugin.agentTools(
-            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
         )
 
         #expect(tools.count == 1)
@@ -49,7 +49,7 @@ struct PluginProjectOverviewTests {
     @Test("tool risk level is low")
     func toolRiskLevel() {
         let tool = ProjectOverviewTool()
-        #expect(tool.riskLevel(arguments: [:], context: nil) == .low)
+        #expect(tool.riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
     }
 
     @Test("ProjectTypeSection detects Swift project")

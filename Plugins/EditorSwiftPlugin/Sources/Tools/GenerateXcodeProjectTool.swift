@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 import XcodeProjectGen
 
@@ -69,15 +69,15 @@ public struct GenerateXcodeProjectTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         let baseRisk: LumiCommandRiskLevel = .high
 
-        guard let context, !context.allowedDirectories.isEmpty else {
+        guard let kernel, !kernel.allowedDirectories.isEmpty else {
             return baseRisk
         }
 
         let projectRoot = arguments["project_root"]?.stringValue
-        guard let projectRoot, context.isPathAllowed(projectRoot) else {
+        guard let projectRoot, kernel.isPathAllowed(projectRoot) else {
             return .high
         }
 
@@ -97,8 +97,8 @@ public struct GenerateXcodeProjectTool: LumiAgentTool, SuperLog {
         return "生成 Xcode 项目 \(name)（\(targetCount) 个 Target）"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
 
         guard let projectRoot = arguments["project_root"]?.stringValue, !projectRoot.isEmpty else {
             throw GenerateXcodeProjectToolError.missingArgument("project_root")
@@ -120,7 +120,7 @@ public struct GenerateXcodeProjectTool: LumiAgentTool, SuperLog {
             throw GenerateXcodeProjectToolError.missingArgument("targets")
         }
 
-        try context.checkCancellation()
+        try kernel.checkCancellation()
 
         let targets = try targetDicts.map { try parseTarget($0) }
 
@@ -151,7 +151,7 @@ public struct GenerateXcodeProjectTool: LumiAgentTool, SuperLog {
             schemes: schemes
         )
 
-        try context.checkCancellation()
+        try kernel.checkCancellation()
 
         let resultPath = try generator.generate(spec: spec, projectRoot: projectRoot)
 

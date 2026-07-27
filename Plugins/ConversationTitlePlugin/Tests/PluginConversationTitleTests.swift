@@ -1,77 +1,31 @@
 import Foundation
-import LumiChatKit
-import LumiCoreKit
+import LumiKernel
 import Testing
 @testable import ConversationTitlePlugin
 
+@MainActor
 @Test func packageLoads() async throws {
-    #expect(ConversationTitlePlugin.info.id == "com.coffic.lumi.plugin.conversation-title")
+    let plugin = ConversationTitlePlugin()
+    #expect(plugin.id == "com.coffic.lumi.plugin.conversation-title")
 }
 
+@MainActor
 @Test func pluginPolicyIsAlwaysOn() {
-    #expect(ConversationTitlePlugin.policy == .alwaysOn)
-    #expect(ConversationTitlePlugin.policy.isConfigurable == false)
+    let plugin = ConversationTitlePlugin()
+    #expect(plugin.policy == .alwaysOn)
+    #expect(plugin.policy.isConfigurable == false)
 }
 
 @MainActor
 @Test func pluginRegistersTitleHintMiddleware() {
-    let middlewares = ConversationTitlePlugin.sendMiddlewares(
-        context: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
-    )
+    let middlewares = ConversationTitlePlugin.sendMiddlewares(lumiCore: ())
 
     #expect(middlewares.count == 1)
 }
 
 @MainActor
-@Test func pluginRegistersTitleToolWhenChatServiceExists() {
-    let databaseDirectory = FileManager.default.temporaryDirectory
-        .appendingPathComponent("ConversationTitlePluginTests-\(UUID().uuidString)", isDirectory: true)
-    defer { try? FileManager.default.removeItem(at: databaseDirectory) }
-
-    let chatService = ChatService(
-        configuration: .coreDatabase(directory: databaseDirectory)
-    )
-    let context = LumiPluginContext(
-        activeSectionID: "chat",
-        activeSectionTitle: "Chat",
-        dependencies: LumiPluginDependencies { dependencies in
-            dependencies.register((any LumiChatServicing).self, chatService)
-        }
-    )
-    let tools = ConversationTitlePlugin.agentTools(context: context)
+@Test func pluginRegistersTitleTool() {
+    let tools = ConversationTitlePlugin.agentTools(lumiCore: ())
 
     #expect(tools.map(\.name).contains("update_conversation_title"))
-}
-
-@MainActor
-@Test func pluginContributesTitleHeaderWhenChatSectionVisible() {
-    let directory = FileManager.default.temporaryDirectory
-        .appendingPathComponent("ConversationTitlePluginTests-\(UUID().uuidString)", isDirectory: true)
-    defer { try? FileManager.default.removeItem(at: directory) }
-
-    let chatService = ChatService(configuration: .coreDatabase(directory: directory))
-    let coordinator = ChatSectionCoordinator(chatService: chatService)
-    let hidden = LumiPluginContext(
-        activeSectionID: "editor",
-        activeSectionTitle: "Editor",
-        chatSection: .wide,
-        isChatSectionVisible: false,
-        dependencies: LumiPluginDependencies {
-            $0.register(ChatSectionCoordinator.self, coordinator)
-        }
-    )
-    let visible = LumiPluginContext(
-        activeSectionID: "chat",
-        activeSectionTitle: "Chat",
-        chatSection: .wide,
-        isChatSectionVisible: true,
-        dependencies: LumiPluginDependencies {
-            $0.register(ChatSectionCoordinator.self, coordinator)
-        }
-    )
-
-    #expect(ConversationTitlePlugin.chatSectionItems(context: hidden).isEmpty)
-    #expect(ConversationTitlePlugin.chatSectionItems(context: visible).count == 1)
-    #expect(ConversationTitlePlugin.chatSectionItems(context: visible).first?.order == 81)
-    #expect(ConversationTitlePlugin.chatSectionItems(context: visible).first?.fillsRemainingHeight == false)
 }

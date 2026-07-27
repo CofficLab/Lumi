@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// 创建 Goal 工具
@@ -66,7 +66,7 @@ public struct CreateGoalTool: LumiAgentTool, SuperLog {
                             ]),
                             "executionContext": .object([
                                 "type": .string("string"),
-                                "description": .string("Technical context like file paths, API endpoints, dependencies (for your reference)")
+                                "description": .string("Technical kernel like file paths, API endpoints, dependencies (for your reference)")
                             ]),
                             "parallelGroup": .object([
                                 "type": .string("string"),
@@ -82,11 +82,11 @@ public struct CreateGoalTool: LumiAgentTool, SuperLog {
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "Create goal" }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
-        let conversationId = context.conversationID.uuidString
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
+        let conversationId = kernel.conversationID.uuidString
 
         guard let title = arguments["title"]?.anyValue as? String, !title.isEmpty else {
             return "Error: title is required"
@@ -119,7 +119,7 @@ public struct CreateGoalTool: LumiAgentTool, SuperLog {
             return "Error: no valid tasks found"
         }
 
-        guard let manager = await GoalTaskPlugin.currentManager() else {
+        guard let manager = GoalTaskPlugin.currentManager() else {
             return "Error: goal task manager is not initialized"
         }
 

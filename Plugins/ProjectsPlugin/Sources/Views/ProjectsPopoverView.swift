@@ -1,7 +1,6 @@
 import LumiUI
 import SwiftUI
 import UniformTypeIdentifiers
-import LumiCoreKit
 
 struct ProjectsPopoverView: View {
     @ObservedObject var viewModel: ProjectsViewModel

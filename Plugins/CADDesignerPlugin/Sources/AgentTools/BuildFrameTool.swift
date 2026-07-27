@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// AI 自然语言搭框架（文档 Phase 4.1）。
 ///
@@ -38,12 +38,12 @@ public struct BuildFrameTool: LumiAgentTool {
         return "Build frame \(w)×\(h)"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = CADToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = CADToolSupport.language(kernel)
 
         guard let width = CADToolSupport.optionalDouble(arguments, "width") else {
             return CADToolSupport.missingParameter("width", language: language)

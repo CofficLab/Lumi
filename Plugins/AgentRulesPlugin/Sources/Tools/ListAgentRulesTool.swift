@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 列出 Agent 规则文档工具
 ///
@@ -31,16 +31,20 @@ public struct ListAgentRulesTool: LumiAgentTool {
                     "maximum": .int(Self.maxLimit)
                 ])
             ]),
-            "required": .array([.string("project_path")])
+            "required": .array([])
         ])
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "列出规则" }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        guard let projectPath = arguments.string("project_path"), !projectPath.isEmpty else {
-            throw AgentRulesError.invalidFileFormat("project_path is required")
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        // 优先使用显式参数，fallback 到当前项目
+        let projectPath = arguments.string("project_path")?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? kernel.currentProjectPath
+
+        guard let projectPath, !projectPath.isEmpty else {
+            throw AgentRulesError.invalidFileFormat("project_path is required (no current project selected)")
         }
 
         let limitValue = Self.normalizedLimit(arguments["limit"]?.anyValue)

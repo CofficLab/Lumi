@@ -141,6 +141,7 @@
       }
     },
     "Anti-Sleep" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -311,6 +312,7 @@
       }
     },
     "Prevent system sleep with timer and manual control" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

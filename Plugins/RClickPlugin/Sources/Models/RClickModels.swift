@@ -1,5 +1,4 @@
 import Foundation
-import LumiCoreKit
 
 public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Sendable {
     case newFile = "newFile" // Acts as a submenu or category

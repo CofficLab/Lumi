@@ -1,8 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreKit
-import LumiLLMProviderSupport
+import LumiKernel
+import LumiKernel
+import LumiKernel
 
 /// 智谱 API（OpenAI 兼容协议）
 public final class ZhipuAPIProvider: LumiLLMProvider, @unchecked Sendable {
@@ -137,7 +138,7 @@ public final class ZhipuAPIProvider: LumiLLMProvider, @unchecked Sendable {
             return ZhipuRenderKind.apiKeyMissing
         }
         
-        if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error) {
+        if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: error) {
             return ZhipuRenderKind.http(statusCode)
         }
         

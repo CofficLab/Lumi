@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import Testing
 @testable import MemoryPlugin
 
@@ -17,7 +17,7 @@ struct PluginMemoryTests {
     @MainActor
     @Test("plugin registers four memory tools")
     func pluginRegistersTools() {
-        let tools = MemoryPlugin.agentTools(context: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat"))
+        let tools = MemoryPlugin.agentTools(lumiCore: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat"))
 
         #expect(tools.count == 4)
         let names = tools.map(\.name)
@@ -28,12 +28,6 @@ struct PluginMemoryTests {
     }
 
     @MainActor
-    @Test("plugin registers send middleware")
-    func pluginRegistersSendMiddleware() {
-        let context = LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat")
-        #expect(MemoryPlugin.sendMiddlewares(context: context).count == 1)
-    }
-
     @Test("save memory tool schema has required fields")
     func saveMemoryToolSchema() {
         let tool = SaveMemoryTool()
@@ -70,10 +64,10 @@ struct PluginMemoryTests {
 
     @Test("all tools have low risk level")
     func allToolsLowRisk() {
-        #expect(SaveMemoryTool().riskLevel(arguments: [:], context: nil) == .low)
-        #expect(RecallMemoryTool().riskLevel(arguments: [:], context: nil) == .low)
-        #expect(ListMemoriesTool().riskLevel(arguments: [:], context: nil) == .low)
-        #expect(DeleteMemoryTool().riskLevel(arguments: [:], context: nil) == .low)
+        #expect(SaveMemoryTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(RecallMemoryTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(ListMemoriesTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(DeleteMemoryTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
     }
 
     // MARK: - LumiJSONValue schema helpers

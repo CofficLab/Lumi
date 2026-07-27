@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 public struct ProcessNetworkListView: View {
     @ObservedObject var viewModel: NetworkManagerViewModel

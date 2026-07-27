@@ -24,14 +24,14 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.7.3"),
         .package(url: "https://github.com/lukilabs/beautiful-mermaid-swift", from: "1.0.0"),
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
     ],
     targets: [
         .target(
             name: "MarkdownKitCore",
             dependencies: [
                 .product(name: "Markdown", package: "swift-markdown"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: ".",
             exclude: [
@@ -52,7 +52,7 @@ let package = Package(
             dependencies: [
                 "MarkdownKitCore",
                 .product(name: "BeautifulMermaid", package: "beautiful-mermaid-swift"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: ".",
             exclude: [

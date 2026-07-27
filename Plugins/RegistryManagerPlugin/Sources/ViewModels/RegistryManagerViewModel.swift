@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import LumiCoreKit
 
 public protocol RegistryManagerServicing: Sendable {
     func getCurrentRegistry(for type: RegistryType) async throws -> String

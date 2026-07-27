@@ -1,7 +1,6 @@
 import SwiftUI
 import SuperLogKit
 import EditorService
-import LumiCoreKit
 import LumiUI
 
 /// 代码编辑器主视图。

@@ -1,3 +1,0 @@
-# AgentRAGPlugin
-
-Retrieval-Augmented Generation

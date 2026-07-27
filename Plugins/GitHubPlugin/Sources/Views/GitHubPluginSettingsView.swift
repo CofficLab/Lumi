@@ -1,7 +1,7 @@
 import LumiUI
 import SuperLogKit
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// GitHub 插件设置视图 - 配置 GitHub Token 和 API 选项
 public struct GitHubPluginSettingsView: View, SuperLog {

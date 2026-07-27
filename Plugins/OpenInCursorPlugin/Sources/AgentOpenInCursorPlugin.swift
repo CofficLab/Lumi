@@ -1,47 +1,46 @@
-import LumiCoreKit
-import LumiUI
 import AppKit
+import LumiKernel
+import LumiUI
 import SwiftUI
-import os
 
 /// 在 Cursor 中打开项目插件
-public enum AgentOpenInCursorPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.open-in-cursor")
+///
+/// 在状态栏添加图标，点击后在 Cursor 编辑器中打开当前项目。当前项目路径由内核的
+/// `ProjectProviding` 提供（响应式）。
+@MainActor
+public final class AgentOpenInCursorPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.open-in-cursor"
+    public let name = "Open in Cursor"
+    public let order = 60
+    public let category: LumiPluginCategory = .open
+    public let policy: LumiPluginPolicy = .optOut
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.open-in-cursor",
-        displayName: LumiPluginLocalization.string("Open in Cursor", bundle: .module),
-        description: LumiPluginLocalization.string("Open current project in Cursor editor", bundle: .module),
-        order: 82,
-        category: .general,
-        policy: .optOut,
-        stage: .beta,
-        iconName: "chevron.left.forwardslash.chevron.right",
-    )
+    public init() {}
 
-    @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        guard let lumiCore = context.lumiCore else { return [] }
+    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        guard let project = kernel.project else { return [] }
         return [
-            LumiStatusBarItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName,
+            StatusBarItem(
+                id: "\(id).status",
+                title: name,
+                systemImage: "chevron.left.forwardslash.chevron.right",
                 placement: .leading,
                 statusBarView: {
-                    OpenInCursorStatusBarView(lumiCore: lumiCore)
+                    OpenInCursorStatusBarView(project: project)
                 }
-            )
+            ),
         ]
     }
 
-        @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
+                Text(name)
                     .font(.title2.weight(.semibold))
-                Text(info.description)
+                Text("Open current project in Cursor editor")
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }
@@ -49,6 +48,35 @@ public enum AgentOpenInCursorPlugin: LumiPlugin {
         )
     }
 
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }
 
 private enum CursorOpener {
@@ -72,16 +100,20 @@ private enum CursorOpener {
 
 /// Cursor 打开状态栏视图
 public struct OpenInCursorStatusBarView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-    let lumiCore: LumiCoreAccessing
+    @LumiTheme private var theme: any LumiUITheme
+    @StateObject private var observer: ProjectPathObserver
 
-    public init(lumiCore: LumiCoreAccessing) {
-        self.lumiCore = lumiCore
+    public init(project: any ProjectProviding) {
+        self._observer = StateObject(wrappedValue: ProjectPathObserver(project: project))
+    }
+
+    private var currentProjectPath: String {
+        observer.path
     }
 
     public var body: some View {
         Group {
-            if (lumiCore.projectComponent.currentProject?.path ?? "").isEmpty {
+            if currentProjectPath.isEmpty {
                 emptyView
             } else {
                 hasProjectView
@@ -92,7 +124,7 @@ public struct OpenInCursorStatusBarView: View {
     /// 有项目时的视图
     private var hasProjectView: some View {
         StatusBarHoverContainer(
-            detailView: OpenInCursorDetailView(lumiCore: lumiCore),
+            detailView: OpenInCursorDetailView(path: currentProjectPath),
             id: "open-in-cursor-status"
         ) {
             Button(action: {
@@ -126,8 +158,8 @@ public struct OpenInCursorStatusBarView: View {
     }
 
     private func openInCursor() {
-        guard let path = lumiCore.projectComponent.currentProject?.path, !path.isEmpty else { return }
-        let url = URL(fileURLWithPath: lumiCore.projectComponent.currentProject?.path ?? "")
+        guard !currentProjectPath.isEmpty else { return }
+        let url = URL(fileURLWithPath: currentProjectPath)
         CursorOpener.open(url)
     }
 }
@@ -136,12 +168,8 @@ public struct OpenInCursorStatusBarView: View {
 
 /// Cursor 打开详情视图（在 popover 中显示）
 public struct OpenInCursorDetailView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-    let lumiCore: LumiCoreAccessing
-
-    public init(lumiCore: LumiCoreAccessing) {
-        self.lumiCore = lumiCore
-    }
+    @LumiTheme private var theme: any LumiUITheme
+    let path: String
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -149,6 +177,7 @@ public struct OpenInCursorDetailView: View {
             HStack(spacing: 8) {
                 Image(systemName: "chevron.left.forwardslash.chevron.right")
                     .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textPrimary)
 
                 Text(LumiPluginLocalization.string("Cursor", bundle: .module))
                     .font(.appBodyEmphasized)
@@ -177,7 +206,7 @@ public struct OpenInCursorDetailView: View {
                     .foregroundColor(theme.textSecondary)
                     .frame(width: 50, alignment: .leading)
 
-                Text(lumiCore.projectComponent.currentProject?.path ?? "")
+                Text(path)
                     .font(.appMonoCaption)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(2)
@@ -187,7 +216,7 @@ public struct OpenInCursorDetailView: View {
 
                 Button(action: {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(lumiCore.projectComponent.currentProject?.path ?? "", forType: .string)
+                    NSPasteboard.general.setString(path, forType: .string)
                 }) {
                     Image(systemName: "doc.on.doc")
                         .font(.appCaption)
@@ -201,8 +230,8 @@ public struct OpenInCursorDetailView: View {
     }
 
     private func openInCursor() {
-        guard let path = lumiCore.projectComponent.currentProject?.path, !path.isEmpty else { return }
-        let url = URL(fileURLWithPath: lumiCore.projectComponent.currentProject?.path ?? "")
+        guard !path.isEmpty else { return }
+        let url = URL(fileURLWithPath: path)
         CursorOpener.open(url)
     }
 }

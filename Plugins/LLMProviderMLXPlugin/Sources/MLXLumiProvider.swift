@@ -1,7 +1,10 @@
 import AgentToolKit
 import Foundation
-import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiKernel
+import LumiKernel
+import LumiKernel
+import LumiKernel
 
 // MARK: - Platform Detection
 
@@ -63,7 +66,8 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         guard isAppleSiliconMac else {
             return LumiLLMProviderStatus(
                 message: "MLX 仅支持 Apple Silicon Mac",
-                level: .error
+                level: .error,
+                isBlocking: false
             )
         }
         return nil
