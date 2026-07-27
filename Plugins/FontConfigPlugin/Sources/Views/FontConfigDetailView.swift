@@ -1,7 +1,7 @@
 import AppKit
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 字体配置详情视图（Popover 内容）
 ///

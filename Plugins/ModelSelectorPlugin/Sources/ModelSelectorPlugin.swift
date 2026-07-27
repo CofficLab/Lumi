@@ -1,100 +1,55 @@
-
-import LumiChatKit
-import LumiCoreKit
-import os
+import LumiKernel
+import LumiUI
 import SwiftUI
 
-public enum ModelSelectorPlugin: LumiPlugin {
-    public static let verbose: Bool = true
-    public nonisolated static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "plugin.model-selector")
+@MainActor
+public final class ModelSelectorPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.model-selector"
+    public let name = "Model Selector"
+    public let order = 82
+    public let policy: LumiPluginPolicy = .alwaysOn
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.model-selector",
-        displayName: LumiPluginLocalization.string("Model Selector", bundle: .module),
-        description: LumiPluginLocalization.string("Select LLM provider and model", bundle: .module),
-        order: 82,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "globe",
-    )
+    public init() {}
 
-    @MainActor
-    public static func chatSectionToolbarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarItem] {
-        guard context.showsChatSection,
-              let chatService = context.resolve(LumiChatServicing.self)
-        else {
-            return []
-        }
+    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: LumiKernel) async throws {}
 
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
         return [
-            LumiChatSectionToolbarItem(id: info.id, order: info.order, placement: .leading) {
-                ModelProviderPicker(chatService: chatService)
-            }
-        ]
-    }
-
-    @MainActor
-    public static func chatSectionToolbarBarItems(context: LumiPluginContext) -> [LumiChatSectionToolbarBarItem] {
-        guard context.showsChatSection,
-              let chatService = context.resolve(LumiChatServicing.self)
-        else {
-            return []
-        }
-
-        return [
-            LumiChatSectionToolbarBarItem(id: "\(info.id).tps", order: info.order + 1) {
-                CurrentModelTPSToolbarView(chatService: chatService)
-            }
-        ]
-    }
-
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) throws -> [any LumiAgentTool] {
-        // 工具要拿 `ChatService` 实例才能 `provider(forID:)`，所以这里强转。
-        // LumiCoreKit 里的 `LumiChatServicing` 协议还没暴露 provider 字典——
-        // 故意不暴露，避免其它子系统绕过 Provider 自己操作 Keychain。
-        guard let chatService = context.resolve(LumiChatServicing.self) as? ChatService else {
-            throw LumiPluginDependencyError.serviceUnavailable("ChatService")
-        }
-        return [
-            SwitchModelTool(chatService: chatService),
-            CheckModelAvailabilityTool(chatService: chatService),
-            ListAvailableModelsTool(chatService: chatService),
-        ]
-    }
-
-    @MainActor
-    public static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
-        guard let chatService = context.resolve(LumiChatServicing.self) as? ChatService else {
-            return []
-        }
-
-        let providerSettingsViews = context
-            .resolve((any LumiLLMProviderSettingsContributing).self)?
-            .llmProviderSettingsViews(context: context) ?? []
-
-        return [
-            LumiSettingsTabItem(
-                id: "\(info.id).local",
-                title: "本地供应商",
-                systemImage: "cpu"
-            ) {
-                LocalProviderSettingsPage(
-                    chatService: chatService,
-                    providerSettingsViews: providerSettingsViews
-                )
-            },
-            LumiSettingsTabItem(
-                id: "\(info.id).remote",
-                title: "云端供应商",
-                systemImage: "network"
-            ) {
-                RemoteProviderSettingsPage(
-                    chatService: chatService,
-                    providerSettingsViews: providerSettingsViews
-                )
+            ChatSectionActionBarItem(id: "\(id).action-bar-button", placement: .leading) {
+                ActionBarButton(kernel: kernel)
             },
         ]
     }
+
+    public func agentTools(kernel: LumiKernel) -> [LumiAgentTool] { [] }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

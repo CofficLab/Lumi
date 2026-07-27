@@ -1,76 +1,106 @@
-import DownloadKit
-import Foundation
-import LumiCoreKit
+import SwiftUI
+import LumiKernel
+import LumiUI
 import os
 import SuperLogKit
 
-/// Download Agent 插件
-///
-/// 提供一组下载相关的 Agent 工具，支持 HTTP/HTTPS 文件下载、
-/// 批量下载、断点续传、进度追踪和任务管理。
-public enum DownloadPlugin: LumiPlugin {
-
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.download-agent",
-        displayName: LumiPluginLocalization.string("Download Agent", bundle: .module),
-        description: LumiPluginLocalization.string("File download agent toolkit: supports HTTP/HTTPS downloads, resumable transfers, batch downloads, progress queries, and task management.", bundle: .module),
-        order: 92,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "arrow.down.circle",
+@MainActor
+public final class DownloadPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "📥"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.download"
     )
 
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.download-agent")
+    public let id = "com.coffic.lumi.plugin.download-agent"
+    public let name = "Download Agent"
+    public let order = 92
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Download files with progress tracking and batch support."
 
-    /// 全局下载管理器，懒加载
-    @MainActor public static var sharedManager: DownloadManager = {
-        let dir = defaultDownloadDirectory()
-        let config = DownloadManager.Configuration(
-            downloadDirectory: dir,
-            maxConcurrentDownloads: 3,
-            timeoutInterval: 3600,
-            enableResume: true
-        )
-        return DownloadManager(configuration: config)
-    }()
+    public init() {}
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        let manager = sharedManager
-        return [
-            DownloadFileTool(manager: manager),
-            DownloadBatchTool(manager: manager),
-            ListDownloadsTool(manager: manager),
-            DownloadProgressTool(manager: manager),
-            CancelDownloadTool(manager: manager),
-            RetryDownloadTool(manager: manager),
-        ]
-    }
-}
+    public func onBoot(kernel: LumiKernel) async throws {}
 
-// MARK: - Helpers
-
-extension DownloadPlugin {
-    /// 默认下载目录：用户的 ~/Downloads
-    ///
-    /// 直接复用用户下载目录，不再在其下创建二级子目录。仅计算目录 URL，不创建目录——
-    /// 避免仅访问 `sharedManager`（懒加载触发本方法）就副作用地建目录。真正发起下载时，
-    /// `DownloadManager.performDownload` 会为目标目录调用 `createDirectory`，按需创建。
-    static func defaultDownloadDirectory() -> URL {
-        let fileManager = FileManager.default
-        guard let downloads = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first else {
-            // 降级到临时目录
-            return fileManager.temporaryDirectory.appendingPathComponent("LumiDownloads", isDirectory: true)
+    public func onReady(kernel: LumiKernel) async throws {
+        if Self.verbose {
+            Self.logger.info("📥 Download 插件初始化完成")
         }
-        return downloads
     }
 
-    /// 从 URL 字符串提取文件名
-    static func extractFilename(from url: URL) -> String {
-        let name = url.lastPathComponent
-        // lastPathComponent 对 "/" 路径返回 "/"，对无路径的 URL 可能返回空
-        if name.isEmpty || name == "/" { return "download_\(UUID().uuidString.prefix(8))" }
-        return name
+    // MARK: - Helper Methods
+
+    /// 默认下载目录
+    public nonisolated static func defaultDownloadDirectory() -> URL {
+        let fileManager = FileManager.default
+        let downloadsURL = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first
+            ?? fileManager.temporaryDirectory
+        return downloadsURL
     }
+
+    /// 从 URL 提取文件名
+    public nonisolated static func extractFilename(from url: URL) -> String {
+        // 尝试从 URL 路径提取
+        let pathComponent = url.lastPathComponent
+        if !pathComponent.isEmpty, pathComponent != "/", !pathComponent.contains("?") {
+            return pathComponent
+        }
+
+        // 尝试从查询参数提取
+        if let query = url.query {
+            let pairs = query.components(separatedBy: "&")
+            for pair in pairs {
+                let keyValue = pair.components(separatedBy: "=")
+                if keyValue.count == 2 {
+                    let key = keyValue[0]
+                    let value = keyValue[1].removingPercentEncoding ?? keyValue[1]
+                    if key.lowercased() == "filename" || key.lowercased() == "file" {
+                        return value
+                    }
+                }
+            }
+        }
+
+        // 使用时间戳作为默认文件名
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd_HHmmss"
+        let timestamp = formatter.string(from: Date())
+        return "download_\(timestamp)"
+    }
+
+
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

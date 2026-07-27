@@ -1,6 +1,6 @@
 import Foundation
 import GitHubKit
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// GitHub Issue 列表工具
@@ -21,11 +21,11 @@ public struct GitHubIssueListTool: LumiAgentTool, SuperLog {
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {        "列出 Issue"    }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let owner = arguments["owner"]?.anyValue as? String,
               let repo = arguments["repo"]?.anyValue as? String else {
             throw NSError(

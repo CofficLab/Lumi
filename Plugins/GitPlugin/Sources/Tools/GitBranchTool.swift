@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// Git 分支管理工具
@@ -50,7 +50,7 @@ public struct GitBranchTool: LumiAgentTool, SuperLog {
         }
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         guard let action = arguments.string("action") else { return .low }
         switch action {
         case "list": return .low
@@ -59,7 +59,7 @@ public struct GitBranchTool: LumiAgentTool, SuperLog {
         }
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let path = arguments.string("path")
         let action = arguments.string("action") ?? "list"
         let name = arguments.string("name")
@@ -70,7 +70,7 @@ public struct GitBranchTool: LumiAgentTool, SuperLog {
         }
 
         // 验证路径是否在允许的范围内
-        let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+        let validatedPath = try GitService.validatePath(path, allowedDirectories: kernel.allowedDirectories)
 
         switch action {
         case "list":

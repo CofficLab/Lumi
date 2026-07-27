@@ -15,8 +15,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/GitHubKit"),
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/ShellKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -25,8 +25,8 @@ let package = Package(
             name: "GitHubPlugin",
             dependencies: [
                 .product(name: "GitHubKit", package: "GitHubKit"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

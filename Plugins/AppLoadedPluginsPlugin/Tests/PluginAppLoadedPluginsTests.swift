@@ -1,5 +1,5 @@
 import Testing
-import LumiCoreKit
+import LumiKernel
 @testable import AppLoadedPluginsPlugin
 
 @MainActor

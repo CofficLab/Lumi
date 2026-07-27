@@ -1,6 +1,7 @@
 import Combine
 import EditorService
-import LumiCoreKit
+import LumiKernel
+import SuperLogKit
 import SwiftUI
 import os
 
@@ -23,7 +24,9 @@ import os
 /// coordinator.configure(panelService: service, projectPath: ..., ...)
 /// ```
 @MainActor
-public final class EditorPanelCoordinator: ObservableObject {
+public final class EditorPanelCoordinator: ObservableObject, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lumi-editor.coordinator")
+    nonisolated static let verbose = false
 
     // MARK: - 属性
 
@@ -33,8 +36,8 @@ public final class EditorPanelCoordinator: ObservableObject {
     /// 编辑器服务门面
     private var service: EditorService?
 
-    /// 核心服务访问（weak 防止循环引用）
-    private weak var lumiCore: (any LumiCoreAccessing)?
+    /// 内核(weak 防止循环引用),用于读取当前项目路径。
+    private weak var kernel: LumiKernel?
 
     /// Combine 订阅令牌
     private var cancellables = Set<AnyCancellable>()
@@ -44,10 +47,12 @@ public final class EditorPanelCoordinator: ObservableObject {
     /// 配置协调器的依赖（在视图 onAppear 时调用）
     public func configure(
         panelService: EditorPanelService,
-        service: EditorService
+        service: EditorService,
+        kernel: LumiKernel
     ) {
         self.panelService = panelService
         self.service = service
+        self.kernel = kernel
     }
 
     // MARK: - 生命周期
@@ -55,10 +60,10 @@ public final class EditorPanelCoordinator: ObservableObject {
     /// 视图出现时的初始化逻辑
     public func handleAppear() {
         guard let panelService, let service else { return }
-        let projectPath = lumiCore?.projectComponent.currentProject?.path ?? ""
+        let projectPath = kernel?.project?.currentProject?.path ?? ""
 
-        if EditorPanelPlugin.verbose {
-            EditorPanelPlugin.logger.info(
+        if Self.verbose {
+            Self.logger.info(
                 "onAppear, currentProjectPath=\(projectPath, privacy: .public)"
             )
         }
@@ -96,8 +101,8 @@ public final class EditorPanelCoordinator: ObservableObject {
     public func handleProjectPathChange(oldPath: String, newPath: String) {
         guard let panelService, let service else { return }
 
-        if EditorPanelPlugin.verbose {
-            EditorPanelPlugin.logger.info(
+        if Self.verbose {
+            Self.logger.info(
                 "项目路径变化, oldPath=\(oldPath, privacy: .public), newPath=\(newPath, privacy: .public)"
             )
         }

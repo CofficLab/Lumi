@@ -36,6 +36,9 @@
         }
       }
     },
+    "Automation Level" : {
+
+    },
     "Autonomous Mode Description" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -526,6 +529,7 @@
       }
     },
     "Switch between Chat and Build modes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -630,6 +634,7 @@
       }
     },
     "自动化程度" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

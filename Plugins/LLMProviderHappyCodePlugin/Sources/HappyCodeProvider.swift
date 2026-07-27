@@ -1,8 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreKit
-import LumiLLMProviderSupport
+import LumiKernel
+import LumiKernel
+import LumiKernel
 
 public final class HappyCodeProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(

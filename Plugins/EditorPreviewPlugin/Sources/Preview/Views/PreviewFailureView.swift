@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 预览构建失败时显示的错误详情视图。
 ///

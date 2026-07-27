@@ -1,8 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreKit
-import LumiLLMProviderSupport
+import LumiKernel
+import LumiKernel
+import LumiKernel
 
 public final class AliyunProvider: LumiLLMProvider, @unchecked Sendable {
     public static let shortName = "Aliyun"

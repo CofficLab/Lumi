@@ -1679,7 +1679,7 @@ public final class EditorState: ObservableObject, SuperLog {
         showFoldingRibbon = snapshot.showFoldingRibbon
         autoSaveMode = snapshot.autoSaveMode
         autoSaveDelay = snapshot.autoSaveDelay
-        // 主题不在此恢复。编辑器主题由 ThemeStatusBarPlugin 通过
+        // 主题不在此恢复。编辑器主题由 ThemeManagerPlugin 通过
         // syncInitialThemeFromExternal() 和 .lumiThemeDidChange 通知统一驱动，
         // 避免旧持久化值（如 "xcode-dark"）覆盖已同步的正确主题。
     }
@@ -1754,11 +1754,11 @@ public final class EditorState: ObservableObject, SuperLog {
         }
     }
 
-    /// 由外层（ThemeStatusBarPlugin）在视图就绪后调用，确保编辑器使用正确的初始主题。
+    /// 由外层（ThemeManagerPlugin）在视图就绪后调用，确保编辑器使用正确的初始主题。
     ///
     /// AppThemeVM.init() 在 EditorState 之前创建，其发送的 .lumiThemeDidChange
     /// 通知在 EditorState 注册监听之前就已经发出，导致 EditorState 错过了初始通知。
-    /// 此方法由 ThemeStatusBarPlugin 在视图层主动调用，将 AppThemeVM 当前主题同步到 EditorState。
+    /// 此方法由 ThemeManagerPlugin 在视图层主动调用，将 AppThemeVM 当前主题同步到 EditorState。
     func syncInitialThemeFromExternal(_ editorThemeId: String) {
         let before = self.currentThemeId
         EditorSettingsLifecycle.registerEditorThemeContributors?(self.editorExtensions)

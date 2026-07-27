@@ -1,6 +1,7 @@
 import Foundation
-import LumiCoreKit
-import LumiLLMProviderSupport
+import LumiKernel
+import LumiKernel
+import LLMKit
 
 enum XiaomiErrorHandling {
     static func renderKind(for error: Error) -> String {

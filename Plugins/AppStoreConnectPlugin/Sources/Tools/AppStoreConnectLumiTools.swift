@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 private enum AppStoreConnectToolSupport {
     static func makeClient() -> (client: ConnectClient?, errorMessage: String?) {
@@ -59,7 +59,7 @@ struct ListAppStoreConnectAppsTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let search = arguments["search"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
         let rawLimit = AppStoreConnectToolSupport.parseInt(arguments["limit"])
         let limit = min(max(rawLimit ?? 20, 1), 100)
@@ -105,7 +105,7 @@ struct ListAppStoreConnectVersionsTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let appID = arguments["appID"]?.stringValue, !appID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return "Missing or empty appID. Pass a valid App Store Connect app identifier."
         }
@@ -163,11 +163,11 @@ struct CreateAppStoreConnectVersionTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .high
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let appID = arguments["appID"]?.stringValue, !appID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return "Missing or empty appID."
         }
@@ -226,7 +226,7 @@ struct ListAppStoreConnectLocalizationsTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let versionID = arguments["versionID"]?.stringValue, !versionID.isEmpty else {
             return "Missing or empty versionID."
         }
@@ -265,7 +265,7 @@ struct ListAppStoreConnectScreenshotSetsTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let localizationID = arguments["localizationID"]?.stringValue, !localizationID.isEmpty else {
             return "Missing or empty localizationID."
         }
@@ -305,7 +305,7 @@ struct ListAppStoreConnectScreenshotsTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let screenshotSetID = arguments["screenshotSetID"]?.stringValue, !screenshotSetID.isEmpty else {
             return "Missing or empty screenshotSetID."
         }
@@ -339,7 +339,7 @@ struct ListAppStoreConnectCiProductsTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
         do {
@@ -375,7 +375,7 @@ struct ListAppStoreConnectCiWorkflowsTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let productID = arguments["productID"]?.stringValue, !productID.isEmpty else {
             return "Missing or empty productID."
         }
@@ -414,7 +414,7 @@ struct ReadAppStoreConnectCiWorkflowTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let workflowID = arguments["workflowID"]?.stringValue, !workflowID.isEmpty else {
             return "Missing or empty workflowID."
         }
@@ -462,7 +462,7 @@ struct ListAppStoreConnectCiBuildRunsTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let workflowID = arguments["workflowID"]?.stringValue, !workflowID.isEmpty else {
             return "Missing or empty workflowID."
         }
@@ -509,11 +509,11 @@ struct UpdateAppStoreConnectLocalizationTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String : LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String : LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .high
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let localizationID = arguments["localizationID"]?.stringValue, !localizationID.isEmpty else {
             return "Missing or empty localizationID."
         }
@@ -558,11 +558,11 @@ struct CreateAppStoreConnectScreenshotSetTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String : LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String : LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .high
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let localizationID = arguments["localizationID"]?.stringValue, !localizationID.isEmpty else {
             return "Missing or empty localizationID."
         }
@@ -598,11 +598,11 @@ struct StartAppStoreConnectCiBuildRunTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String : LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String : LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .high
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let workflowID = arguments["workflowID"]?.stringValue, !workflowID.isEmpty else {
             return "Missing or empty workflowID."
         }
@@ -637,11 +637,11 @@ struct SetAppStoreConnectCiWorkflowEnabledTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String : LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String : LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .high
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let workflowID = arguments["workflowID"]?.stringValue, !workflowID.isEmpty else {
             return "Missing or empty workflowID."
         }

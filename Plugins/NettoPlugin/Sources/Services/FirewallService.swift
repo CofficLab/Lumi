@@ -5,7 +5,6 @@ import os
 import SuperLogKit
 import AppKit
 import SwiftUI
-import LumiCoreKit
 
 public enum FilterStatus: String, CaseIterable {
     case stopped = "Stopped"

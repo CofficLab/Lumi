@@ -74,7 +74,7 @@ struct ShowImagePreviewPanel: View {
                         VStack(spacing: 12) {
                             ProgressView()
                                 .controlSize(.regular)
-                            Text(PluginShowImageLocalization.string("加载中…"))
+                            Text(LumiPluginLocalization.string("加载中…", bundle: .module))
                                 .font(.system(size: 12, weight: .regular))
                                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         }
@@ -94,7 +94,7 @@ struct ShowImagePreviewPanel: View {
                                 )
                         }
                         .buttonStyle(.plain)
-                        .help(PluginShowImageLocalization.string("点击放大预览"))
+                        .help(LumiPluginLocalization.string("点击放大预览", bundle: .module))
                     } else if let errorText {
                         VStack(spacing: 8) {
                             Image(systemName: "photo.badge.exclamationmark")
@@ -166,7 +166,7 @@ struct ShowImagePreviewPanel: View {
                 guard let data = try? Data(contentsOf: fileURL),
                       let image = NSImage(data: data)
                 else {
-                    errorText = PluginShowImageLocalization.string("无法加载图片") + "：\(path.components(separatedBy: "/").last ?? path)"
+                    errorText = LumiPluginLocalization.string("无法加载图片", bundle: .module) + "：\(path.components(separatedBy: "/").last ?? path)"
                     isLoading = false
                     return
                 }
@@ -175,14 +175,14 @@ struct ShowImagePreviewPanel: View {
 
             case .remote(let urlString):
                 guard let url = URL(string: urlString) else {
-                    errorText = PluginShowImageLocalization.string("无效的 URL") + ": \(urlString)"
+                    errorText = LumiPluginLocalization.string("无效的 URL", bundle: .module) + ": \(urlString)"
                     isLoading = false
                     return
                 }
                 let (data, _) = try await URLSession.shared.data(from: url)
                 guard !Task.isCancelled else { return }
                 guard let image = NSImage(data: data) else {
-                    errorText = PluginShowImageLocalization.string("无法解析图片数据")
+                    errorText = LumiPluginLocalization.string("无法解析图片数据", bundle: .module)
                     isLoading = false
                     return
                 }
@@ -190,7 +190,7 @@ struct ShowImagePreviewPanel: View {
                 loadedImage = image
             }
         } catch {
-            errorText = PluginShowImageLocalization.string("加载失败") + "：\(error.localizedDescription)"
+            errorText = LumiPluginLocalization.string("加载失败", bundle: .module) + "：\(error.localizedDescription)"
         }
 
         isLoading = false
@@ -208,7 +208,7 @@ struct ShowImageFullscreenSheet: View {
         VStack(spacing: 0) {
             HStack {
                 Spacer()
-                Button(PluginShowImageLocalization.string("关闭")) { dismiss() }
+                Button(LumiPluginLocalization.string("关闭", bundle: .module)) { dismiss() }
                     .keyboardShortcut(.cancelAction)
             }
             .padding(.horizontal, 16)

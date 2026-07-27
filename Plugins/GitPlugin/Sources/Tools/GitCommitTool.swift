@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// Git 提交工具
@@ -46,11 +46,11 @@ public struct GitCommitTool: LumiAgentTool, SuperLog {
         "提交变更"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium // 提交会修改代码库，风险中等
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let path = arguments.string("path")
         guard let message = arguments.string("message") else {
             throw NSError(domain: "GitCommitTool", code: -1,
@@ -66,7 +66,7 @@ public struct GitCommitTool: LumiAgentTool, SuperLog {
 
         do {
             // 验证路径是否在允许的范围内
-            let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+            let validatedPath = try GitService.validatePath(path, allowedDirectories: kernel.allowedDirectories)
 
             let result = try await GitService.shared.commit(
                 path: validatedPath,

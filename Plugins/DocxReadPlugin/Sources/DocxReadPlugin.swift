@@ -1,30 +1,52 @@
-import Foundation
-import LumiCoreKit
-import os
 import SwiftUI
+import LumiKernel
+import LumiUI
 
-/// DocxRead 插件
-///
-/// 提供读取 DOCX 文件正文内容的工具，供 Agent 在对话中调用。
-public enum DocxReadPlugin: LumiPlugin {
+@MainActor
+public final class DocxReadPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.docx-read"
+    public let name = "Docx Read"
+    public let order = 90
+	public let policy: LumiPluginPolicy = .disabled
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.docx-read",
-        displayName: LumiPluginLocalization.string("Docx Read", bundle: .module),
-        description: LumiPluginLocalization.string("Read DOCX file content for Agent.", bundle: .module),
-        order: 90,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "doc.text",
-    )
+    public init() {}
 
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docx-read")
+    public func onBoot(kernel: LumiKernel) async throws {}
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [
-            DocxReadTool()
-        ]
+    public func onReady(kernel: LumiKernel) async throws {
+        // Register services here
     }
+
+
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

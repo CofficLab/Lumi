@@ -1,108 +1,109 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Contributes DeepSeek models to Lumi Chat.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes DeepSeek models to Lumi Chat."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Contributes DeepSeek models to Lumi Chat." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes DeepSeek models to Lumi Chat."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为 Lumi Chat 贡献 DeepSeek 模型。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为 Lumi Chat 贡献 DeepSeek 模型。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為 Lumi Chat 貢獻 DeepSeek 模型。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 Lumi Chat 貢獻 DeepSeek 模型。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為 Lumi Chat 貢獻 DeepSeek 模型。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 Lumi Chat 貢獻 DeepSeek 模型。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為 Lumi Chat 貢獻 DeepSeek 模型。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 Lumi Chat 貢獻 DeepSeek 模型。"
           }
         }
       }
     },
-    "DeepSeek": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DeepSeek"
+    "DeepSeek" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DeepSeek"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DeepSeek"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DeepSeek"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DeepSeek"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek"
           }
         }
       }
     },
-    "DeepSeek AI": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DeepSeek AI"
+    "DeepSeek AI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek AI"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DeepSeek AI"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek AI"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DeepSeek AI"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek AI"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DeepSeek AI"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek AI"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DeepSeek AI"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek AI"
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }

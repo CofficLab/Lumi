@@ -1,5 +1,5 @@
 import Foundation
-import LumiLocalizationKit
+import LocalizationKit
 
 /// Runtime localization for LLMProviderStepFunPlugin bundle.
 ///

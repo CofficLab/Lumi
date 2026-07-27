@@ -1,56 +1,73 @@
-import Foundation
-import LumiCoreKit
-import LumiUI
 import SwiftUI
+import LumiKernel
+import LumiUI
 import os
+import SuperLogKit
 
-/// Agent 临时文件存储插件。
-///
-/// 为 Agent 提供隔离的临时文件目录，支持写入、读取与列举；
-/// 超过保留期限（默认 7 天）的文件会自动清理。
-public enum AgentTempStoragePlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-temp-storage")
-
-    public static let info = LumiPluginInfo(
-        id: "AgentTempStorage",
-        displayName: PluginAgentTempStorageLocalization.string("Agent Temp Storage"),
-        description: PluginAgentTempStorageLocalization.string(
-            "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days."
-        ),
-        order: 18,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "doc.badge.clock",
+@MainActor
+public final class AgentTempStoragePlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🗃️"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.agent-temp-storage"
     )
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        bootstrapFromLumiCoreIfNeeded(context: context)
-        return [
-            WriteTempFileTool(),
-            ReadTempFileTool(),
-            ListTempFilesTool()
-        ]
+    public let id = "com.coffic.lumi.plugin.agent-temp-storage"
+    public let name = "Agent Temp Storage"
+    public let order = 80
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Temporary file storage for agent workflows."
+
+    public init() {}
+
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        // 设置插件数据目录
+        guard let storage = kernel.storage else {
+            Self.logger.error("🗃️ Storage service not available")
+            return
+        }
+        AgentTempStoragePluginRuntimeBridge.pluginDirectory = storage.pluginDataDirectory(for: "AgentTempStorage")
+
+        if Self.verbose {
+            Self.logger.info("🗃️ AgentTempStorage 插件初始化完成")
+        }
     }
 
-    @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
-    }
-}
 
-enum PluginAgentTempStorageLocalization {
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, table: "Localizable")
-    }
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

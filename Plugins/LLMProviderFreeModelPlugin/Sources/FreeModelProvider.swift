@@ -1,8 +1,10 @@
 import Foundation
+import HttpKit
 import LLMKit
+import LumiKernel
+import LumiKernel
+import LumiKernel
 import SuperLogKit
-import LumiCoreKit
-import LumiLLMProviderSupport
 
 public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Sendable {
     enum Endpoints {

@@ -1,5 +1,6 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 
 /// 测试编写子Agent
 ///

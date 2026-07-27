@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import Testing
 @testable import CaffeinatePlugin
 
@@ -20,7 +20,7 @@ struct PluginCaffeinateTests {
     @Test
     func pluginRegistersCaffeinateTools() {
         let tools = CaffeinatePlugin.agentTools(
-            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
         )
 
         #expect(tools.map(\.name) == [
@@ -30,7 +30,7 @@ struct PluginCaffeinateTests {
             "caffeinate_turn_off_display",
         ])
         #expect(CaffeinatePlugin.menuBarPopupItems(
-            context: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
+            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
         ).isEmpty == false)
     }
 
@@ -40,14 +40,14 @@ struct PluginCaffeinateTests {
         let activateProperties = Self.extractProperties(activate.inputSchema)
         #expect(activateProperties?["mode"] != nil)
         #expect(activateProperties?["duration"] != nil)
-        #expect(activate.riskLevel(arguments: [:], context: nil) == .low)
+        #expect(activate.riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
 
         let turnOffDisplayProperties = Self.extractProperties(CaffeinateTurnOffDisplayTool().inputSchema)
         #expect(turnOffDisplayProperties?["duration"] != nil)
 
-        #expect(CaffeinateDeactivateTool().riskLevel(arguments: [:], context: nil) == .low)
-        #expect(CaffeinateStatusTool().riskLevel(arguments: [:], context: nil) == .low)
-        #expect(CaffeinateTurnOffDisplayTool().riskLevel(arguments: [:], context: nil) == .low)
+        #expect(CaffeinateDeactivateTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(CaffeinateStatusTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(CaffeinateTurnOffDisplayTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
     }
 
     /// 从 LumiJSONValue schema 中提取 properties 对象。

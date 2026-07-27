@@ -1,26 +1,51 @@
-import LumiLLMProviderSupport
-import LumiCoreKit
-import os
+import LLMKit
+import LumiKernel
+import LumiUI
+import SwiftUI
 
-public enum OpenRouterPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider.openrouter")
+@MainActor
+public final class OpenRouterPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.openrouter"
+    public let name = "OpenRouter"
+    public let order = 101
+    public let policy: LumiPluginPolicy = .alwaysOn
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.openrouter",
-        displayName: LumiPluginLocalization.string("OpenRouter", bundle: .module),
-        description: LumiPluginLocalization.string("Contributes OpenRouter models to Lumi Chat.", bundle: .module),
-        order: 101,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+    public init() {}
 
-    @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderOpenRouterPlugin", directory: core.storage.pluginDataDirectory(for: "LLMProviderOpenRouterPlugin"))
-        }
-        return [OpenRouterProvider()]
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
+        [OpenRouterProvider()]
     }
+
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
 }

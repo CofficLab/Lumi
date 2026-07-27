@@ -1,8 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreKit
-import LumiLLMProviderSupport
+import LumiKernel
+import LumiKernel
+import LumiKernel
 import SuperLogKit
 import os
 
@@ -46,12 +47,12 @@ private struct SublyxMappedTool: LumiAgentTool {
     var toolDescription: String { wrapped.toolDescription }
     var inputSchema: LumiJSONValue { wrapped.inputSchema }
     
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try await wrapped.execute(arguments: arguments, context: context)
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try await wrapped.execute(arguments: arguments, kernel: kernel)
     }
     
-    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
-        wrapped.riskLevel(arguments: arguments, context: context)
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+        wrapped.riskLevel(arguments: arguments, kernel: kernel)
     }
     
     func displayDescription(arguments: [String: LumiJSONValue]) -> String {
@@ -165,7 +166,8 @@ public final class SublyxProvider: LumiLLMProvider, SuperLog, @unchecked Sendabl
             messages: request.messages,
             model: request.model,
             tools: mappedTools,
-            imageAttachments: request.imageAttachments
+            imageAttachments: request.imageAttachments,
+            fileAttachments: request.fileAttachments
         )
         
         // 日志：输出原始和适配后的工具名称

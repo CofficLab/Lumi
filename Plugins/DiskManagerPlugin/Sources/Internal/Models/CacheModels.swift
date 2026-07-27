@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 // MARK: - Cache Cleanup Models
 

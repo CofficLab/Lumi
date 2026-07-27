@@ -1,72 +1,53 @@
 import EditorService
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
 
-public enum EditorReferencesPanelPlugin: LumiPlugin {
+@MainActor
+public final class EditorReferencesPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.editor-bottom-references"
+    public let name = "Editor References"
+    public let order = 3
+	public let policy: LumiPluginPolicy = .disabled
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.editor-bottom-references",
-        displayName: LumiPluginLocalization.string("Editor References", bundle: .module),
-        description: LumiPluginLocalization.string("References panel in the editor rail and bottom area.", bundle: .module),
-        order: 3,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "doc.on.doc",
-    )
+    public init() {}
 
-    @MainActor
-    public static func panelBottomTabItems(context: LumiPluginContext) -> [LumiPanelBottomTabItem] {
-        guard context.showsPanelChrome,
-              let service = context.resolve(LumiEditorServicing.self)?.editorService
-        else {
-            return []
-        }
+    public func onBoot(kernel: LumiKernel) async throws {}
 
-        return [
-            LumiPanelBottomTabItem(
-                id: "editor-bottom-references",
-                order: info.order,
-                title: LumiPluginLocalization.string("References", bundle: .module),
-                systemImage: iconName
-            ) {
-                BottomEditorReferencesWorkspacePanelView(service: service, showsHeader: false)
-            }
-        ]
+    public func onReady(kernel: LumiKernel) async throws {
+        // Panel items are registered via panelBottomTabItems/panelRailTabItems
     }
 
-    @MainActor
-    public static func panelRailTabItems(context: LumiPluginContext) -> [LumiPanelRailTabItem] {
-        guard context.showsRail,
-              let service = context.resolve(LumiEditorServicing.self)?.editorService
-        else {
-            return []
-        }
 
-        return [
-            LumiPanelRailTabItem(
-                id: "references",
-                order: info.order,
-                title: LumiPluginLocalization.string("References", bundle: .module),
-                systemImage: iconName
-            ) {
-                BottomEditorReferencesWorkspacePanelView(service: service, showsHeader: false)
-            }
-        ]
-    }
+    // MARK: - LumiPlugin stubs
 
-    @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
-    }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

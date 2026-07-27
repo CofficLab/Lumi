@@ -12,6 +12,7 @@ xcuserdata/
 *.o
 *.a
 *.dylib
+!Plugins/ProjectRAGPlugin/Resources/vec0.dylib
 *.so
 *.exe
 

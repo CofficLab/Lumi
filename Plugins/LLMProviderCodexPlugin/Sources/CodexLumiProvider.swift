@@ -1,5 +1,7 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
+import LumiKernel
 
 public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(
@@ -41,7 +43,8 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
         guard cli.isAvailable else {
             return LumiLLMProviderStatus(
                 message: LumiPluginLocalization.string("Codex CLI not found", bundle: .module),
-                level: .warning
+                level: .warning,
+                isBlocking: false
             )
         }
         return nil

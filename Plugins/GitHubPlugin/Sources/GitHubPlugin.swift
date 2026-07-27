@@ -1,117 +1,79 @@
-import GitHubKit
-import LumiCoreKit
+import SwiftUI
+import LumiKernel
 import LumiUI
 import os
-import SwiftUI
+import SuperLogKit
 
-/// GitHub 插件：CLI 检测、生态洞察 + GitHub API 远程操作。
-public enum GitHubPlugin: LumiPlugin {
-
-    nonisolated static let logger = Logger(
+@MainActor
+public final class GitHubPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🐙"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "plugin.github"
     )
 
-    public static var verbose: Bool { false }
+    public let id = "com.coffic.lumi.plugin.github"
+    public let name = "GitHub"
+    public let order = 16
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "GitHub integration for issues, repos, and code search."
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.github",
-        displayName: GitHubPluginLocalization.string("GitHub"),
-        description: GitHubPluginLocalization.string("GitHub CLI detection, ecosystem insight, local knowledge base, and GitHub API tools."),
-        order: 16,
-        category: .development,
-        policy: .optOut,
-        stage: .beta,
-        iconName: "network",
-    )
+    public init() {}
 
-    // MARK: - Insight Features
+    public func onBoot(kernel: LumiKernel) async throws {}
 
-    @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        bootstrapIfNeeded()
-        return [GitHubKBChatMiddleware()]
+    public func onReady(kernel: LumiKernel) async throws {
+        // 设置插件数据目录
+        guard let storage = kernel.storage else {
+            Self.logger.error("🐙 Storage service not available")
+            return
+        }
+        GitHubInsightRuntimeBridge.rootDirectory = storage.pluginDataDirectory(for: "GitHubInsight")
+
+        // 设置 LocalStore 的数据库目录（预先计算 URL 以避免 Sendable 问题）
+        let pluginDataDir = storage.pluginDataDirectory(for: "GitHubPlugin")
+        GitHubPluginLocalStore.dbFolderURLProvider = {
+            pluginDataDir
+        }
+
+        if Self.verbose {
+            Self.logger.info("🐙 GitHub 插件初始化完成")
+        }
     }
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        bootstrapIfNeeded()
-        return [
-            // Insight tools
-            QueryEcoKBTool(),
-            GitHubCLICheckTool(),
-            // GitHub API tools
-            GitHubRepoInfoTool(),
-            GitHubSearchTool(),
-            GitHubFileContentTool(),
-            GitHubTrendingTool(),
-            GitHubIssueListTool(),
-            GitHubIssueDetailTool(),
-            GitHubCreateIssueTool(),
-            GitHubUpdateIssueTool(),
-            GitHubCloseIssueTool(),
-            GitHubReopenIssueTool(),
-            GitHubIssueCommentsTool(),
-            GitHubAddIssueCommentTool(),
-        ]
-    }
 
-    @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        bootstrapIfNeeded()
-        let projectPath = context.lumiCore?.projectComponent.currentProject?.path ?? ""
-        return [
-            LumiStatusBarItem(
-                id: "\(info.id).kb",
-                title: GitHubPluginLocalization.string("GitHub Ecosystem KB"),
-                systemImage: iconName,
-                placement: .trailing,
-                statusBarView: {
-                    GitHubKBStatusBarView(projectPath: projectPath)
-                }
-            )
-        ]
-    }
+    // MARK: - LumiPlugin stubs
 
-    @MainActor
-    public static func addSettingsTabs(context: LumiPluginContext) -> [LumiSettingsTabItem] {
-        bootstrapIfNeeded()
-        return [
-            LumiSettingsTabItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
-            ) {
-                GitHubPluginSettingsView()
-            }
-        ]
-    }
-
-    @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        bootstrapIfNeeded()
-        return AnyView(GitHubPluginAboutView())
-    }
-
-    // MARK: - Bootstrap
-
-    @MainActor
-    private static func bootstrapIfNeeded() {
-        guard !didBootstrap else { return }
-        let settingsStore = GitHubPluginLocalStore()
-        settingsStore.migrateLegacyValueIfMissing(forKey: "GitHubToken")
-        GitHubAPIService.shared.setTokenProvider(settingsStore)
-        didBootstrap = true
-    }
-}
-
-private nonisolated(unsafe) var didBootstrap = false
-
-enum GitHubPluginLocalization {
-    static let table = "Localizable"
-    static let bundle = Bundle.module
-
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
-    }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

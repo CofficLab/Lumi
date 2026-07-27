@@ -1,4 +1,4 @@
-import LumiAppKit
+import LumiFactory
 import SwiftUI
 
 @main
@@ -7,7 +7,7 @@ struct LumiApp: App {
 
     var body: some Scene {
         WindowGroup(AppBootstrap.appName, id: AppBootstrap.mainWindowID) {
-            WindowMain()
+            LumiFactory.makeMainWindow()
                 .environmentObject(appDelegate)
                 .onReceive(appDelegate.$pendingOpenPath.compactMap { $0 }) { path in
                     OpenProjectHandler.shared.requestOpen(path: path)
@@ -26,11 +26,11 @@ struct LumiApp: App {
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: AppBootstrap.defaultWindowSize.width, height: AppBootstrap.defaultWindowSize.height)
         .commands {
-            AppCommands()
+            LumiFactory.makeCommands()
         }
 
         Window("设置", id: AppBootstrap.settingsWindowID) {
-            WindowSettings()
+            LumiFactory.makeSettingsWindow()
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))

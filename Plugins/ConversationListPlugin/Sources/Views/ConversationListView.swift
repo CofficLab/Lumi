@@ -1,6 +1,6 @@
 import Combine
-import LumiChatKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 import LumiUI
 import SuperLogKit
 import SwiftUI
@@ -28,7 +28,9 @@ public struct ConversationListView: View, SuperLog {
 
     public init(context: ConversationListContext) {
         self.context = context
-        self.selectionStore = ConversationListLocalStore(databaseDirectory: context.databaseDirectory())
+        self.selectionStore = ConversationListLocalStore(
+            storageDirectory: ConversationListRuntimeBridge.shared.storageDirectory ?? ConversationListRuntimeBridge.defaultStorageDirectory
+        )
     }
 
     public var body: some View {
@@ -56,7 +58,10 @@ public struct ConversationListView: View, SuperLog {
             guard let change else { return }
             handleConversationChange(change)
         }
-        .onChange(of: context.statusVersion) { _, _ in }
+        .onChange(of: context.messageVersion) { _, _ in
+            refreshVisibleMessageCounts()
+        }
+        .onChange(of: context.statusVersion, handleStatusVersionChanged)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
@@ -90,9 +95,12 @@ extension ConversationListView {
                                 localSelectedConversationId = conversation.id
                             }
                         }
-                        .onAppear {
-                            handleRowAppear(conversation)
-                        }
+                    }
+
+                    // 固定在底部，hasMore 时始终渲染，触发下一页加载。
+                    // 不依赖最后一条出现（LazyVStack 惰性渲染会导致最后一条未创建）。
+                    if hasMore {
+                        loadingMoreTrigger
                     }
                 }
                 .padding(.horizontal, 8)
@@ -103,6 +111,27 @@ extension ConversationListView {
 
             if isLoadingPage {
                 loadingIndicator
+            }
+        }
+    }
+
+    /// 底部占位视图，始终渲染以触发 hasMore 时的下一页加载。
+    private var loadingMoreTrigger: some View {
+        Group {
+            if isLoadingPage {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                        .controlSize(.small)
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+            } else {
+                Color.clear
+                    .frame(height: 1)
+                    .onAppear {
+                        loadNextPageIfNeeded()
+                    }
             }
         }
     }
@@ -178,6 +207,17 @@ extension ConversationListView {
         reloadFromFirstPage()
     }
 
+    /// 对话管理后台数据追上来了（statusVersion 变化），但 view 首屏还没拿到数据时，重试首次加载。
+    ///
+    /// 场景：view 在 onAppear 时调用 performInitialLoadIfNeeded()，但此时 kernel.conversations.conversations
+    /// 还是 []（ConversationManager 启动时 + v4 迁移还没完成）。loadNextPageIfNeeded 拉出 0 条。
+    /// ConversationManager.loadConversations() 在迁移后异步加载 SwiftData 数据到 conversations，
+    /// 轮询会触发 statusVersion++；这里如果首屏列表仍空且没在加载中，就 reload。
+    private func handleStatusVersionChanged() {
+        guard didInitialLoad, conversations.isEmpty, !isLoadingPage else { return }
+        reloadFromFirstPage()
+    }
+
     private func reloadFromFirstPage() {
         conversations = []
         nextOffset = 0
@@ -185,30 +225,60 @@ extension ConversationListView {
         loadNextPageIfNeeded()
     }
 
-    private func handleRowAppear(_ conversation: ConversationListItem) {
-        guard conversation.id == conversations.last?.id else { return }
-        loadNextPageIfNeeded()
+    private func refreshVisibleMessageCounts() {
+        guard !conversations.isEmpty else { return }
+        let currentConversations = conversations
+        Task {
+            var updated: [ConversationListItem] = []
+            updated.reserveCapacity(currentConversations.count)
+            for conversation in currentConversations {
+                let updatedCount = await context.messageCount(for: conversation.id)
+                if conversation.messageCount == updatedCount {
+                    updated.append(conversation)
+                } else {
+                    updated.append(ConversationListItem(
+                        id: conversation.id,
+                        projectPath: conversation.projectPath,
+                        title: conversation.title,
+                        createdAt: conversation.createdAt,
+                        updatedAt: conversation.updatedAt,
+                        providerID: conversation.providerID,
+                        modelName: conversation.modelName,
+                        messageCount: updatedCount
+                    ))
+                }
+            }
+            conversations = updated
+        }
     }
+
 
     private func loadNextPageIfNeeded() {
         guard hasMore, !isLoadingPage else { return }
 
         isLoadingPage = true
-        let page = context.fetchConversationsPage(limit: pageSize, offset: nextOffset)
+        let offset = nextOffset
+        Task {
+            let page = await context.fetchConversationsPage(limit: pageSize, offset: offset)
 
-        if nextOffset == 0 {
-            conversations = page
-        } else {
-            let existingIds = Set(conversations.map(\.id))
-            conversations.append(contentsOf: page.filter { !existingIds.contains($0.id) })
+            if Self.verbose, ConversationListPlugin.verbose {
+                ConversationListPlugin.logger.info("\(self.t)📄 loadNextPage offset=\(offset) page.count=\(page.count) hasMore_before=\(hasMore)")
+            }
+
+            if offset == 0 {
+                conversations = page
+            } else {
+                let existingIds = Set(conversations.map(\.id))
+                conversations.append(contentsOf: page.filter { !existingIds.contains($0.id) })
+            }
+
+            nextOffset += page.count
+            hasMore = page.count == pageSize
+            isLoadingPage = false
+
+            await ensureSelectedConversationVisible()
+            syncSelectionFromContext()
         }
-
-        nextOffset += page.count
-        hasMore = page.count == pageSize
-        isLoadingPage = false
-
-        ensureSelectedConversationVisible()
-        syncSelectionFromContext()
     }
 
     private func restorePersistedSelectionIfNeeded() {
@@ -220,18 +290,20 @@ extension ConversationListView {
             return
         }
 
-        guard context.fetchConversation(id: restoredId) != nil else {
-            selectionStore.saveSelectedConversationId(nil)
-            return
-        }
+        Task {
+            guard await context.fetchConversation(id: restoredId) != nil else {
+                selectionStore.saveSelectedConversationId(nil)
+                return
+            }
 
-        context.selectConversation(restoredId, reason: "conversationListRestoreSelection")
+            context.selectConversation(restoredId, reason: "conversationListRestoreSelection")
+        }
     }
 
-    private func ensureSelectedConversationVisible() {
+    private func ensureSelectedConversationVisible() async {
         guard let selectedId = currentSelectedConversationId,
               conversations.contains(where: { $0.id == selectedId }) == false,
-              let selectedConversation = context.fetchConversation(id: selectedId) else {
+              let selectedConversation = await context.fetchConversation(id: selectedId) else {
             return
         }
 
@@ -250,25 +322,29 @@ extension ConversationListView {
     }
 
     private func handleConversationCreated(_ conversationId: UUID) {
-        guard let conversation = context.fetchConversation(id: conversationId) else { return }
         guard !conversations.contains(where: { $0.id == conversationId }) else { return }
 
-        conversations.insert(conversation, at: 0)
-        nextOffset += 1
-        syncSelectionFromContext()
+        Task {
+            guard let conversation = await context.fetchConversation(id: conversationId) else { return }
+            conversations.insert(conversation, at: 0)
+            nextOffset += 1
+            syncSelectionFromContext()
+        }
     }
 
     private func handleConversationUpdated(_ conversationId: UUID) {
-        guard let updatedConversation = context.fetchConversation(id: conversationId) else { return }
+        Task {
+            guard let updatedConversation = await context.fetchConversation(id: conversationId) else { return }
 
-        if let index = conversations.firstIndex(where: { $0.id == conversationId }) {
-            conversations[index] = updatedConversation
-        } else {
-            // 本地数组中还没有这个对话（可能错过了 .created 事件）
-            // 这种情况会在创建对话后标题立即更新时发生
-            conversations.insert(updatedConversation, at: 0)
-            nextOffset += 1
-            syncSelectionFromContext()
+            if let index = conversations.firstIndex(where: { $0.id == conversationId }) {
+                conversations[index] = updatedConversation
+            } else {
+                // 本地数组中还没有这个对话（可能错过了 .created 事件）
+                // 这种情况会在创建对话后标题立即更新时发生
+                conversations.insert(updatedConversation, at: 0)
+                nextOffset += 1
+                syncSelectionFromContext()
+            }
         }
     }
 
@@ -357,10 +433,12 @@ extension ConversationListView {
                 }
             }
 
-            ensureSelectedConversationVisible()
-            if conversations.first(where: { $0.id == conversationId }) != nil {
-                localSelectedConversationId = conversationId
-                lastReloadSelectionId = nil
+            Task {
+                await ensureSelectedConversationVisible()
+                if conversations.first(where: { $0.id == conversationId }) != nil {
+                    localSelectedConversationId = conversationId
+                    lastReloadSelectionId = nil
+                }
             }
         } else {
             localSelectedConversationId = nil

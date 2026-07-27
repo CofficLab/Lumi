@@ -276,6 +276,7 @@
       }
     },
     "Manage rule documents in .agent/rules directory" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

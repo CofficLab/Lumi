@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 
 public struct ActivityHeatStripView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme

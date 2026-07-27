@@ -1,10 +1,10 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// CAD AgentTool 共用辅助：语言、参数提取、错误本地化。
 enum CADToolSupport {
-    static func language(_ context: LumiToolExecutionContext) -> LumiLanguagePreference {
-        context.language
+    static func language(_ kernel: LumiKernel?) -> LumiLanguagePreference {
+        kernel.language
     }
 
     static func localized(_ language: LumiLanguagePreference, en: String, zh: String) -> String {

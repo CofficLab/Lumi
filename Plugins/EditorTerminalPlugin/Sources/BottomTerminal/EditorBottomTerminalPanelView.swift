@@ -1,12 +1,16 @@
-import LumiCoreKit
+import LumiKernel
 import LumiUI
 import SwiftUI
 import TerminalCoreKit
 
 @MainActor
 public enum EditorBottomTerminalBridge {
-    public static var currentProjectPathProvider: ((PluginContext) -> String?)?
+    nonisolated(unsafe) static var kernel: LumiKernel?
     public static var editorThemeIdProvider: (() -> String)?
+
+    public static var currentProjectPath: String? {
+        kernel?.project?.currentProject?.path
+    }
 }
 
 /// Terminal panel content for the editor bottom area.
@@ -17,7 +21,7 @@ public struct EditorBottomTerminalPanelView: View {
     public init() {}
 
     private var workingDirectory: String? {
-        EditorBottomTerminalBridge.currentProjectPathProvider?(PluginContext())
+        EditorBottomTerminalBridge.currentProjectPath
     }
 
     public var body: some View {

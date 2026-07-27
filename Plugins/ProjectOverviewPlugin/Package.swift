@@ -14,16 +14,16 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/ShellKit"),
     ],
     targets: [
         .target(
             name: "ProjectOverviewPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "ShellKit", package: "ShellKit"),
             ],
             path: "Sources",

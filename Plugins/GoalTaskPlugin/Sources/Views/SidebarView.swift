@@ -1,11 +1,12 @@
 import SwiftUI
 import SuperLogKit
-import LumiCoreKit
+import LumiKernel
 
 /// 右侧栏视图 - 展示当前会话的单一活跃 Goal 及其 Tasks
 public struct SidebarView: View {
     @StateObject private var viewModel = SidebarViewModel()
     @State private var isCollapsed = false
+    @State private var showDescriptionPopover = false
 
     /// 获取当前会话 ID 的闭包（内部统一为 String?）
     private let conversationIdProvider: () -> String?
@@ -14,6 +15,8 @@ public struct SidebarView: View {
     private let backgroundColorProvider: () -> Color
 
     private static let headerHeight: CGFloat = 44
+    private static let maxTaskListHeight: CGFloat = 160
+    fileprivate static let rowHeight: CGFloat = 30
 
     /// 是否有可见的 Goal
     private var hasVisibleGoal: Bool {
@@ -40,7 +43,8 @@ public struct SidebarView: View {
                         .controlSize(.small)
                         .padding(.vertical, 8)
                 } else {
-                    activeGoalView
+                    blockedReasonView
+                    taskListView
                 }
             }
         }
@@ -80,16 +84,43 @@ public struct SidebarView: View {
     // MARK: - Header
 
     private var headerView: some View {
-        HStack {
-            Label("Goal", systemImage: "target")
-                .font(.headline)
+        HStack(spacing: 6) {
+            if let goal = viewModel.activeGoal {
+                Image(systemName: goal.statusSystemImage)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(goal.statusColor)
+                    .frame(width: 16)
+
+                Text(goal.title)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            } else {
+                Label("Goal", systemImage: "target")
+                    .font(.headline)
+            }
 
             Spacer()
 
-            if let progress = viewModel.activeGoal {
+            if viewModel.activeGoal != nil {
                 Text(viewModel.progressText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            if let description = viewModel.activeGoal?.goalDescription,
+               !description.isEmpty {
+                Button {
+                    showDescriptionPopover.toggle()
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
+                .help("Goal description")
+                .popover(isPresented: $showDescriptionPopover, arrowEdge: .bottom) {
+                    GoalDescriptionPopoverContent(text: description)
+                }
             }
 
             Button {
@@ -116,17 +147,43 @@ public struct SidebarView: View {
         .frame(height: Self.headerHeight)
     }
 
-    // MARK: - Active Goal View
+    // MARK: - Blocked Reason
 
-    private var activeGoalView: some View {
-        ScrollView {
-            if let goal = viewModel.activeGoal {
-                GoalCardView(displayItem: goal, tasks: viewModel.activeTasks)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-            }
+    @ViewBuilder
+    private var blockedReasonView: some View {
+        if let goal = viewModel.activeGoal,
+           goal.status == .blocked,
+           let reason = goal.blockedReason {
+            Text("⚠️ \(reason)")
+                .font(.caption2)
+                .foregroundStyle(.orange)
+                .lineLimit(2)
+                .padding(.horizontal, 12)
+                .padding(.top, 4)
         }
-        .frame(maxHeight: 200)
+    }
+
+    // MARK: - Task List
+
+    private var taskListView: some View {
+        ScrollView {
+            VStack(spacing: 4) {
+                ForEach(viewModel.activeTasks) { task in
+                    TaskRowView(displayItem: task)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+        }
+        .frame(height: taskListHeight)
+    }
+
+    private var taskListHeight: CGFloat {
+        guard !viewModel.activeTasks.isEmpty else { return 0 }
+        let contentHeight = CGFloat(viewModel.activeTasks.count) * Self.rowHeight
+            + CGFloat(max(0, viewModel.activeTasks.count - 1)) * 4
+            + 8
+        return min(contentHeight, Self.maxTaskListHeight)
     }
 
     private var sidebarHeight: CGFloat {
@@ -137,92 +194,13 @@ public struct SidebarView: View {
         if viewModel.isLoading {
             return Self.headerHeight + 32
         }
-        return Self.headerHeight + 200
-    }
-}
-
-// MARK: - Goal Card
-
-private struct GoalCardView: View {
-    let displayItem: GoalDisplayItem
-    let tasks: [GoalTaskDisplayItem]
-
-    private var completedCount: Int {
-        tasks.filter { $0.status == .completed || $0.status == .skipped }.count
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Goal Header
-            HStack(spacing: 6) {
-                Image(systemName: statusIcon)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(statusColor)
-                    .frame(width: 14)
-
-                Text(displayItem.title)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                Spacer()
-
-                Text("\(completedCount)/\(tasks.count)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            // Blocked reason
-            if displayItem.status == .blocked, let reason = displayItem.blockedReason {
-                Text("⚠️ \(reason)")
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
-                    .lineLimit(2)
-            }
-
-            // Tasks
-            if !tasks.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(tasks.prefix(5)) { task in
-                        TaskRowView(displayItem: task)
-                    }
-                    if tasks.count > 5 {
-                        Text("... and \(tasks.count - 5) more")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
+        var height = Self.headerHeight + taskListHeight
+        // 阻塞原因最多占 2 行（caption2 ≈ 12pt，行高约 16pt）
+        if viewModel.activeGoal?.status == .blocked,
+           viewModel.activeGoal?.blockedReason != nil {
+            height += 36
         }
-        .padding(8)
-        .background(Color.orange.opacity(0.075))
-        .overlay {
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.orange.opacity(0.12), lineWidth: 1)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-    }
-
-    private var statusIcon: String {
-        switch displayItem.status {
-        case .pending: return "circle"
-        case .inProgress: return "arrow.triangle.2.circlepath"
-        case .completed: return "checkmark.circle.fill"
-        case .blocked: return "exclamationmark.triangle.fill"
-        case .failed: return "xmark.circle.fill"
-        case .skipped: return "forward.circle"
-        }
-    }
-
-    private var statusColor: Color {
-        switch displayItem.status {
-        case .pending: return .secondary
-        case .inProgress: return .blue
-        case .completed: return .green
-        case .blocked: return .orange
-        case .failed: return .red
-        case .skipped: return .gray
-        }
+        return height
     }
 }
 
@@ -233,44 +211,49 @@ private struct TaskRowView: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: statusIcon)
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(statusColor)
-                .frame(width: 10)
+            Image(systemName: displayItem.statusSystemImage)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(displayItem.statusColor)
+                .frame(width: 14)
 
             Text(displayItem.title)
-                .font(.caption)
+                .font(.subheadline)
                 .lineLimit(1)
                 .truncationMode(.tail)
 
             if let group = displayItem.parallelGroup {
                 Text("[\(group)]")
-                    .font(.system(size: 8))
+                    .font(.system(size: 9))
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
         }
-    }
-
-    private var statusIcon: String {
-        switch displayItem.status {
-        case .pending: return "circle"
-        case .inProgress: return "play.fill"
-        case .completed: return "checkmark"
-        case .failed: return "xmark"
-        case .skipped: return "forward"
+        .padding(.horizontal, 8)
+        .frame(height: SidebarView.rowHeight)
+        .background(Color.orange.opacity(0.075))
+        .overlay {
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.orange.opacity(0.12), lineWidth: 1)
         }
+        .clipShape(RoundedRectangle(cornerRadius: 6))
     }
+}
 
-    private var statusColor: Color {
-        switch displayItem.status {
-        case .pending: return .secondary
-        case .inProgress: return .blue
-        case .completed: return .green
-        case .failed: return .red
-        case .skipped: return .gray
+// MARK: - Goal Description Popover
+
+private struct GoalDescriptionPopoverContent: View {
+    let text: String
+
+    var body: some View {
+        ScrollView {
+            Text(text)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .padding(12)
         }
+        .frame(maxWidth: 280)
     }
 }
 
@@ -282,22 +265,44 @@ public struct GoalDisplayItem: Identifiable, Equatable {
     public let title: String
     public let status: Goal.GoalStatus
     public let blockedReason: String?
+    public let goalDescription: String?
 
     public init(from goal: Goal) {
         self.id = goal.id
         self.title = goal.title
         self.status = goal.status
         self.blockedReason = goal.blockedReason
+        self.goalDescription = goal.goalDescription
     }
 
-    /// 估算高度
-    public func estimatedHeight(taskCount: Int) -> CGFloat {
-        let baseHeight: CGFloat = 48
-        let blockedExtra: CGFloat = (status == .blocked && blockedReason != nil) ? 20 : 0
-        let visibleTasks = min(taskCount, 5)
-        let taskHeight: CGFloat = CGFloat(visibleTasks) * 22 + CGFloat(max(0, visibleTasks - 1)) * 4
-        let overflowExtra: CGFloat = taskCount > 5 ? 16 : 0
-        return baseHeight + blockedExtra + taskHeight + overflowExtra + 16
+    /// 是否为终态（completed / failed / skipped），非终态即视为「活跃」。
+    public var isTerminal: Bool {
+        switch status {
+        case .completed, .failed, .skipped: true
+        case .pending, .inProgress, .blocked: false
+        }
+    }
+
+    public var statusSystemImage: String {
+        switch status {
+        case .pending: "circle"
+        case .inProgress: "arrow.triangle.2.circlepath"
+        case .completed: "checkmark.circle.fill"
+        case .blocked: "exclamationmark.triangle.fill"
+        case .failed: "xmark.circle.fill"
+        case .skipped: "forward.circle"
+        }
+    }
+
+    public var statusColor: Color {
+        switch status {
+        case .pending: .secondary
+        case .inProgress: .blue
+        case .completed: .green
+        case .blocked: .orange
+        case .failed: .red
+        case .skipped: .gray
+        }
     }
 }
 
@@ -313,6 +318,26 @@ public struct GoalTaskDisplayItem: Identifiable, Equatable {
         self.title = task.title
         self.status = task.status
         self.parallelGroup = task.parallelGroup
+    }
+
+    public var statusSystemImage: String {
+        switch status {
+        case .pending: "circle"
+        case .inProgress: "arrow.triangle.2.circlepath"
+        case .completed: "checkmark.circle.fill"
+        case .failed: "xmark.circle.fill"
+        case .skipped: "forward.circle"
+        }
+    }
+
+    public var statusColor: Color {
+        switch status {
+        case .pending: .secondary
+        case .inProgress: .blue
+        case .completed: .green
+        case .failed: .red
+        case .skipped: .orange
+        }
     }
 }
 

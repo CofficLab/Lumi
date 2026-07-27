@@ -1,76 +1,52 @@
-import LumiCoreKit
-import LumiUI
-import os
 import SwiftUI
-import SuperLogKit
+import LumiKernel
+import LumiUI
 
-public enum DatabaseManagerPlugin: LumiPlugin {
-    public static let verbose: Bool = true
+@MainActor
+public final class DatabaseManagerPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.database-manager"
+    public let name = "Database"
+    public let order = 50
+	public let policy: LumiPluginPolicy = .disabled
 
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.database-manager")
+    public init() {}
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.database-manager",
-        displayName: LumiPluginLocalization.string("Database", bundle: .module),
-        description: LumiPluginLocalization.string("Manage SQLite, MySQL, PostgreSQL, and Redis", bundle: .module),
-        order: 50,
-        category: .general,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "server.rack",
-    )
+    public func onBoot(kernel: LumiKernel) async throws {}
 
-    @MainActor
-    public static func viewContainers(context: LumiPluginContext) -> [LumiViewContainerItem] {
-        [
-            LumiViewContainerItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName
-            ) {
-                DatabaseMainView()
-            }
-        ]
+    public func onReady(kernel: LumiKernel) async throws {
+        // Register services here
     }
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [
-            DatabaseListConnectionsTool(),
-            DatabaseDescribeSchemaTool(),
-            DatabaseReadonlyQueryTool(),
-            DatabaseSampleTableTool(),
-        ]
-    }
 
-    @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(DatabaseManagerAboutView())
-    }
+    // MARK: - LumiPlugin stubs
 
-    @MainActor
-    public static func onboardingPages(context: LumiPluginContext) -> [AnyView] {
-        [
-            AnyView(
-                PluginOnboardingPageView(
-                    icon: iconName,
-                    displayName: info.displayName,
-                    description: info.description,
-                    features: [
-                        .init(
-                            icon: "server.rack",
-                            title: LumiPluginLocalization.string("Multiple engines", bundle: .module),
-                            description: LumiPluginLocalization.string("SQLite, MySQL, PostgreSQL, and Redis", bundle: .module)
-                        ),
-                        .init(
-                            icon: "tablecells",
-                            title: LumiPluginLocalization.string("Browse data", bundle: .module),
-                            description: LumiPluginLocalization.string("Inspect schemas and run read-only queries", bundle: .module)
-                        ),
-                    ],
-                    tip: LumiPluginLocalization.string("Open Database from the sidebar to connect to a server.", bundle: .module)
-                )
-            )
-        ]
-    }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

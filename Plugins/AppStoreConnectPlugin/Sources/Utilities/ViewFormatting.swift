@@ -1,5 +1,5 @@
 import Foundation
-import LumiLocalizationKit
+import LocalizationKit
 
 enum ViewFormatting {
     static func formatDateTime(_ date: Date) -> String {

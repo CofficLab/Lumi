@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import LumiPreviewKit
 
 /// EditorPreview 插件专属存储根目录与相关预览构建路径。

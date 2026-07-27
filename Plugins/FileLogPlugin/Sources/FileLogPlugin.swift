@@ -1,50 +1,52 @@
-import LumiCoreKit
-import os
+import SwiftUI
+import LumiKernel
+import LumiUI
 
-/// Collects OSLog entries to rotating on-disk log files.
-public enum FileLogPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-log")
+@MainActor
+public final class FileLogPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.file-log"
+    public let name = "File Log"
+    public let order = 1
+	public var policy: LumiPluginPolicy { .disabled }
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.file-log",
-        displayName: LumiPluginLocalization.string("File Log", bundle: .module),
-        description: LumiPluginLocalization.string("Collect OSLog entries to disk files with auto-rotation and cleanup", bundle: .module),
-        order: 1,
-        category: .system,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "doc.text.below.ecg",
-    )
+    public init() {}
 
-    nonisolated(unsafe) public static var configuration: FileLogConfiguration = DefaultFileLogConfiguration()
+    public func onBoot(kernel: LumiKernel) async throws {}
 
-    public static func bootstrapIfNeeded() {
-        FileLogCoordinator.shared.start()
+    public func onReady(kernel: LumiKernel) async throws {
+        // Register services here
     }
 
-    // MARK: - LumiPlugin Lifecycle
 
-    /// 在应用启动生命周期事件中启动 OSLog 轮询。
-    ///
-    /// 同时响应 `.didRegister` 和 `.appDidLaunch` 作为防御性兜底：
-    /// 只要 `LumiPluginRegistry` 在任一阶段调用了 `lifecycle(...)`，
-    /// Coordinator 就会被启动。宿主无需感知本插件存在。
-    @MainActor
-    public static func lifecycle(_ event: LumiPluginLifecycle) {
-        switch event {
-        case .didRegister, .appDidLaunch:
-            // 从 LumiCore.current 注入 plugin 目录(替代旧的 nonisolated 镜像)。
-            // lifecycle 不带 context,但它在 @MainActor 上下文,LumiCore.current 可安全读取。
-            // 时序上 current 可能尚未设置(此时 Bridge 保持 nil,走 fallback,与旧镜像行为一致)。
-            if let core = LumiCore.current {
-                FileLogPluginRuntimeBridge.pluginSubdirectory = core.storage.pluginDataDirectory(for: FileLogPluginRuntimeBridge.pluginName)
-            }
-            bootstrapIfNeeded()
-        case .projectDidOpen, .projectDidClose:
-            break
-        case .willDisable:
-            // FileLogPlugin 是 alwaysOn，不会被禁用；此事件无需处理。
-            break
-        }
-    }
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

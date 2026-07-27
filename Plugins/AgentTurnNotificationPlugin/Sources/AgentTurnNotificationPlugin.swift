@@ -1,48 +1,52 @@
-import LumiCoreKit
-import LumiUI
-import os
 import SwiftUI
+import LumiKernel
+import LumiUI
 
-/// Sends a system notification when an agent turn completes.
-public enum AgentTurnNotificationPlugin: LumiPlugin {
+@MainActor
+public final class AgentTurnNotificationPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.turn-notification"
+    public let name = "Turn Notification"
+    public let order = 99
+	public let policy: LumiPluginPolicy = .disabled
 
-    public static let logger = Logger(
-        subsystem: "com.coffic.lumi",
-        category: "plugin.turn-notification"
-    )
+    public init() {}
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.turn-notification",
-        displayName: LumiPluginLocalization.string("Turn Notification", bundle: .module),
-        description: LumiPluginLocalization.string("Send a system notification when an Agent turn finishes.", bundle: .module),
-        order: 99,
-        category: .agent,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "bell.badge",
-    )
+    public func onBoot(kernel: LumiKernel) async throws {}
 
-    @MainActor
-    public static func rootOverlays(context: LumiPluginContext) -> [LumiRootOverlayItem] {
-        [
-            LumiRootOverlayItem(id: info.id, order: info.order) { content in
-                AgentTurnNotificationOverlay(content: content)
-            }
-        ]
+    public func onReady(kernel: LumiKernel) async throws {
+        // Register services here
     }
 
-        @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
-    }
 
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

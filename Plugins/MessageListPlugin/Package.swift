@@ -3,45 +3,32 @@ import PackageDescription
 
 let package = Package(
     name: "MessageListPlugin",
-    defaultLocalization: "en",
-    platforms: [
-        .macOS(.v14)
-    ],
+    platforms: [.macOS(.v14)],
     products: [
-        .library(
-            name: "MessageListPlugin",
-            targets: ["MessageListPlugin"]
-        )
+        .library(name: "MessageListPlugin", targets: ["MessageListPlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiChatKit"),
+        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/MarkdownKit"),
         .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/MarkdownKit")
     ],
     targets: [
         .target(
             name: "MessageListPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiChatKit", package: "LumiChatKit"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "MarkdownKit", package: "MarkdownKit")
             ],
-            path: "Sources",
-            resources: [
-                .process("../Resources/Localizable.xcstrings")
-            ]
+            path: "Sources"
         ),
         .testTarget(
             name: "MessageListPluginTests",
             dependencies: [
                 "MessageListPlugin",
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiChatKit", package: "LumiChatKit"),
-                .product(name: "MarkdownKitTesting", package: "MarkdownKit")
+                .product(name: "MarkdownKitTesting", package: "MarkdownKit"),
             ],
             path: "Tests"
-        )
+        ),
     ]
 )

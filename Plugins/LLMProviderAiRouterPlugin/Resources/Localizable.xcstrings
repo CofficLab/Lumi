@@ -1,108 +1,109 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "AiRouter": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AiRouter"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "AiRouter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AiRouter"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AiRouter"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AiRouter"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AiRouter"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AiRouter"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AiRouter"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AiRouter"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AiRouter"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AiRouter"
           }
         }
       }
     },
-    "Contributes AiRouter models to Lumi Chat.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes AiRouter models to Lumi Chat."
+    "Contributes AiRouter models to Lumi Chat." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes AiRouter models to Lumi Chat."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes AiRouter models to Lumi Chat."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes AiRouter models to Lumi Chat."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes AiRouter models to Lumi Chat."
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes AiRouter models to Lumi Chat."
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes AiRouter models to Lumi Chat."
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes AiRouter models to Lumi Chat."
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes AiRouter models to Lumi Chat."
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes AiRouter models to Lumi Chat."
           }
         }
       }
     },
-    "LLM Router by airouter.org": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LLM Router by airouter.org"
+    "LLM Router by airouter.org" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LLM Router by airouter.org"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "airouter.org 提供的 LLM 路由服务"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "airouter.org 提供的 LLM 路由服务"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "airouter.org 提供的 LLM 路由服務"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "airouter.org 提供的 LLM 路由服務"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "airouter.org 提供的 LLM 路由服務"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "airouter.org 提供的 LLM 路由服務"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "airouter.org 提供的 LLM 路由服務"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "airouter.org 提供的 LLM 路由服務"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

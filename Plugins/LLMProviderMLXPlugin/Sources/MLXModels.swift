@@ -1,6 +1,6 @@
 import Foundation
 import Darwin
-import LumiCoreKit
+import LumiKernel
 
 /// MLX 推荐模型列表
 ///

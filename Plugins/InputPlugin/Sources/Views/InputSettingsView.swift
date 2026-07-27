@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import LumiCoreKit
 
 /// 输入源插件设置视图
 public struct InputSettingsView: View {

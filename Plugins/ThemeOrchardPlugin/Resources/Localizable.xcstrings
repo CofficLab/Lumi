@@ -1,109 +1,110 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Orchard": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Orchard"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Orchard" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orchard"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果园"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果园"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果園"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果園"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果園"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果園"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果園"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果園"
           }
         }
       }
     },
-    "Orchard red app theme": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Orchard red app theme"
+    "Orchard red app theme" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orchard red app theme"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果园红色主题"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果园红色主题"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果園紅色主題"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果園紅色主題"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果園紅色主題"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果園紅色主題"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果園紅色主題"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果園紅色主題"
           }
         }
       }
     },
-    "Orchard Theme": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Orchard Theme"
+    "Orchard Theme" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orchard Theme"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果园 Theme"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果园 Theme"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果園 Theme"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果園 Theme"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果園 Theme"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果園 Theme"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "果園 Theme"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "果園 Theme"
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }

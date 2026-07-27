@@ -2,7 +2,6 @@ import EditorService
 import Foundation
 import os
 import SuperLogKit
-import LumiCoreKit
 
 /// 编辑器面板业务逻辑服务
 ///

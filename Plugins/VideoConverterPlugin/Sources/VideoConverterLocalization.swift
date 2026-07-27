@@ -1,5 +1,5 @@
 import Foundation
-import LumiLocalizationKit
+import LocalizationKit
 import SwiftUI
 
 enum VideoConverterLocalization {

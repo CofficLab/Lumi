@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 
 /// 请求日志详情视图 - 展示数据库原始数据
 public struct RequestLogDetailView: View {

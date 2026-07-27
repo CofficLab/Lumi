@@ -12,4 +12,14 @@ public enum AppPanelChromeMetrics {
     public static var breadcrumbBarHeight: CGFloat {
         breadcrumbContentHeight + breadcrumbVerticalPadding * 2
     }
+
+    // MARK: - Action Bar
+
+    public static let actionBarContentHeight: CGFloat = 32
+    public static let actionBarVerticalPadding: CGFloat = 6
+    public static let actionBarItemSpacing: CGFloat = 12
+
+    public static var actionBarHeight: CGFloat {
+        actionBarContentHeight + actionBarVerticalPadding * 2
+    }
 }

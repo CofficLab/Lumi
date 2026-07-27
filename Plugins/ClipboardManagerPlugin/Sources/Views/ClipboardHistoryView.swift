@@ -1,6 +1,5 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
 
 public struct ClipboardHistoryView: View {
     @StateObject private var viewModel = ClipboardManagerViewModel()

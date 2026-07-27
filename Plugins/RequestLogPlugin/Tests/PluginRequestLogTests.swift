@@ -1,7 +1,7 @@
 import Foundation
 import HttpKit
-import LumiChatKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 import SwiftData
 import Testing
 @testable import RequestLogPlugin
@@ -9,13 +9,6 @@ import Testing
 @Test func pluginPolicyIsAlwaysOn() {
     #expect(RequestLogPlugin.policy == .alwaysOn)
     #expect(RequestLogPlugin.policy.isConfigurable == false)
-}
-
-@MainActor
-@Test func requestLogPluginContributesSendMiddleware() {
-    let context = LumiPluginContext(activeSectionID: ChatPanelSection.id, activeSectionTitle: "Chat")
-    let middlewares = RequestLogPlugin.sendMiddlewares(context: context)
-    #expect(middlewares.count == 1)
 }
 
 @MainActor

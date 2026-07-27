@@ -1,23 +1,23 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 private enum CoverArtToolSupport {
     static let store = CoverArtDocumentStore()
 
-    static func resolveProjectPath(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) -> String? {
+    static func resolveProjectPath(arguments: [String: LumiJSONValue], kernel: LumiKernel?) -> String? {
         if let explicit = arguments["projectPath"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
            !explicit.isEmpty {
             return explicit
         }
-        if let current = context.currentProjectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
+        if let current = kernel.currentProjectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
            !current.isEmpty {
             return current
         }
         return nil
     }
 
-    static func validateAccess(projectPath: String, context: LumiToolExecutionContext) throws {
-        guard CoverArtDocumentStore.isPathAllowed(projectPath, allowedDirectories: context.allowedDirectories) else {
+    static func validateAccess(projectPath: String, kernel: LumiKernel?) throws {
+        guard CoverArtDocumentStore.isPathAllowed(projectPath, allowedDirectories: kernel.allowedDirectories) else {
             throw CoverArtStoreError.pathNotAllowed(projectPath)
         }
     }
@@ -81,16 +81,16 @@ struct ListAppStoreConnectCoverArtTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let appID = CoverArtToolSupport.requireAppID(arguments) else {
             return "Missing or empty appID."
         }
-        guard let projectPath = CoverArtToolSupport.resolveProjectPath(arguments: arguments, context: context) else {
+        guard let projectPath = CoverArtToolSupport.resolveProjectPath(arguments: arguments, kernel: kernel) else {
             return "Missing project path. Open a project or pass projectPath."
         }
 
         do {
-            try CoverArtToolSupport.validateAccess(projectPath: projectPath, context: context)
+            try CoverArtToolSupport.validateAccess(projectPath: projectPath, kernel: kernel)
             let manifests = try CoverArtToolSupport.store.list(projectPath: projectPath, appID: appID)
             if manifests.isEmpty {
                 return "No cover art documents found for appID=\(appID) in \(CoverArtDocumentStore.relativeRoot)/\(appID)."
@@ -125,15 +125,15 @@ struct ReadAppStoreConnectCoverArtTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let appID = CoverArtToolSupport.requireAppID(arguments) else { return "Missing appID." }
         guard let slug = CoverArtToolSupport.requireSlug(arguments) else { return "Missing slug." }
-        guard let projectPath = CoverArtToolSupport.resolveProjectPath(arguments: arguments, context: context) else {
+        guard let projectPath = CoverArtToolSupport.resolveProjectPath(arguments: arguments, kernel: kernel) else {
             return "Missing project path."
         }
 
         do {
-            try CoverArtToolSupport.validateAccess(projectPath: projectPath, context: context)
+            try CoverArtToolSupport.validateAccess(projectPath: projectPath, kernel: kernel)
             let document = try CoverArtToolSupport.store.read(projectPath: projectPath, appID: appID, slug: slug)
             return """
             Cover art document loaded.
@@ -175,25 +175,25 @@ struct CreateAppStoreConnectCoverArtTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let appID = CoverArtToolSupport.requireAppID(arguments) else { return "Missing appID." }
         guard let slug = CoverArtToolSupport.requireSlug(arguments) else { return "Missing slug." }
         guard let deviceFamilyRaw = arguments["deviceFamily"]?.stringValue,
               let deviceFamily = CoverArtToolSupport.parseDeviceFamily(deviceFamilyRaw) else {
             return "Missing or invalid deviceFamily. Use iphone, ipad, or mac."
         }
-        guard let projectPath = CoverArtToolSupport.resolveProjectPath(arguments: arguments, context: context) else {
+        guard let projectPath = CoverArtToolSupport.resolveProjectPath(arguments: arguments, kernel: kernel) else {
             return "Missing project path."
         }
 
         let title = arguments["title"]?.stringValue ?? slug
 
         do {
-            try CoverArtToolSupport.validateAccess(projectPath: projectPath, context: context)
+            try CoverArtToolSupport.validateAccess(projectPath: projectPath, kernel: kernel)
             let document = try CoverArtToolSupport.store.create(
                 projectPath: projectPath,
                 appID: appID,
@@ -232,20 +232,20 @@ struct UpdateAppStoreConnectCoverArtTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let appID = CoverArtToolSupport.requireAppID(arguments) else { return "Missing appID." }
         guard let slug = CoverArtToolSupport.requireSlug(arguments) else { return "Missing slug." }
         guard let html = arguments["html"]?.stringValue, !html.isEmpty else { return "Missing html." }
-        guard let projectPath = CoverArtToolSupport.resolveProjectPath(arguments: arguments, context: context) else {
+        guard let projectPath = CoverArtToolSupport.resolveProjectPath(arguments: arguments, kernel: kernel) else {
             return "Missing project path."
         }
 
         do {
-            try CoverArtToolSupport.validateAccess(projectPath: projectPath, context: context)
+            try CoverArtToolSupport.validateAccess(projectPath: projectPath, kernel: kernel)
             let document = try CoverArtToolSupport.store.writeHTML(
                 html,
                 projectPath: projectPath,
@@ -287,19 +287,19 @@ struct ExportAppStoreConnectCoverArtTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let appID = CoverArtToolSupport.requireAppID(arguments) else { return "Missing appID." }
         guard let slug = CoverArtToolSupport.requireSlug(arguments) else { return "Missing slug." }
-        guard let projectPath = CoverArtToolSupport.resolveProjectPath(arguments: arguments, context: context) else {
+        guard let projectPath = CoverArtToolSupport.resolveProjectPath(arguments: arguments, kernel: kernel) else {
             return "Missing project path."
         }
 
         do {
-            try CoverArtToolSupport.validateAccess(projectPath: projectPath, context: context)
+            try CoverArtToolSupport.validateAccess(projectPath: projectPath, kernel: kernel)
             let document = try CoverArtToolSupport.store.read(projectPath: projectPath, appID: appID, slug: slug)
             let previewSizes = document.manifest.previewSizes
             let displayType = arguments["displayType"]?.stringValue ?? previewSizes.first?.displayType

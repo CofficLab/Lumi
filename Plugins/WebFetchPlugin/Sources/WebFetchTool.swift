@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// 网页抓取工具。
@@ -49,25 +49,25 @@ public struct WebFetchTool: LumiAgentTool, SuperLog {
         "抓取网页内容"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
-        return try await executeFetch(arguments: arguments, context: context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
+        return try await executeFetch(arguments: arguments, kernel: kernel)
     }
 
-    private func executeFetch(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    private func executeFetch(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         guard let urlString = arguments.string("url") else {
             return "Error: Missing required 'url' parameter"
         }
 
         let prompt = arguments.string("prompt")
         let service = WebFetchService()
-        try context.checkCancellation()
+        try kernel.checkCancellation()
         let result = await service.fetch(urlString: urlString, prompt: prompt)
-        try context.checkCancellation()
+        try kernel.checkCancellation()
         return result
     }
 }

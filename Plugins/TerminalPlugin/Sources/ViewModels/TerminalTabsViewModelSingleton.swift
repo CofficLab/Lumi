@@ -1,4 +1,4 @@
-import LumiCoreKit
+import LumiKernel
 import TerminalCoreKit
 
 @MainActor

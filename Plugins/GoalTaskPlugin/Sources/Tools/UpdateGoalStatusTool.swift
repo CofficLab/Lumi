@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// 更新 Goal 状态工具
@@ -64,10 +64,10 @@ public struct UpdateGoalStatusTool: LumiAgentTool, SuperLog {
     }
     
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "Update goal status" }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
     
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        try context.checkCancellation()
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        try kernel.checkCancellation()
         
         guard let goalId = arguments["goal_id"]?.anyValue as? String else {
             return "Error: goal_id is required"
@@ -82,7 +82,7 @@ public struct UpdateGoalStatusTool: LumiAgentTool, SuperLog {
         let failureReason = arguments["failure_reason"]?.anyValue as? String
         let suggestedActions = arguments["suggested_actions"]?.anyValue as? [String]
         
-        guard let manager = await GoalTaskPlugin.currentManager() else {
+        guard let manager = GoalTaskPlugin.currentManager() else {
             return "Error: goal task manager is not initialized"
         }
         

@@ -1,4 +1,3 @@
-import LumiCoreKit
 import LumiUI
 import SwiftUI
 
@@ -66,7 +65,15 @@ struct AppManagerAboutView: View {
     }
 
     private func coreL(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
+        // Fallback for core localization keys
+        switch key {
+        case "about.section.howItWorks":
+            return LumiPluginLocalization.string("How It Works", bundle: .module, locale: locale)
+        case "about.section.tips":
+            return LumiPluginLocalization.string("Tips", bundle: .module, locale: locale)
+        default:
+            return key
+        }
     }
 }
 

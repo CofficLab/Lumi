@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 public protocol FileLogConfiguration: Sendable {
     func logsDirectory() -> URL

@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiCoreKit
+import LumiKernel
 
 /// 网络监控插件关于视图 - 展示插件的功能介绍和说明
 struct NetworkManagerAboutView: View {
@@ -77,7 +77,7 @@ struct NetworkManagerAboutView: View {
     }
 
     private func coreL(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: LumiCoreKitResources.bundle, locale: locale)
+        LumiPluginLocalization.string(key, bundle: LumiKernelResources.bundle, locale: locale)
     }
 }
 

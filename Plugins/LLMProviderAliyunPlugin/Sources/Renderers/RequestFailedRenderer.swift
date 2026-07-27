@@ -1,9 +1,14 @@
-import LumiCoreKit
+import LLMKit
+import LumiKernel
+import LumiKernel
+import SwiftUI
+
+private let rendererOrder = 305
 
 enum RequestFailedRenderer {
     static let item = LumiMessageRendererItem(
         id: "aliyun-request-failed",
-        order: AliyunPlugin.info.order + 200,
+        order: rendererOrder,
         canRender: { message in
             AliyunRenderKind.matches(renderKind: AliyunRenderKind.requestFailed, message: message)
         },

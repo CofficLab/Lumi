@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 @testable import HistoryDBStatusBarPlugin
-@testable import LumiCoreKit
+@testable import LumiKernel
 
 /// 用于测试的 Mock 实现
 @MainActor

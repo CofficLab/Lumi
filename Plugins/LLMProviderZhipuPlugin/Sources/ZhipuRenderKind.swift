@@ -1,4 +1,5 @@
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 
 enum ZhipuRenderKind {
     static let apiKeyMissing = "zhipu-api-key-missing"

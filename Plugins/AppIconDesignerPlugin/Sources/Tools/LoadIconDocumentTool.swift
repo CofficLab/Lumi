@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 public struct LoadIconDocumentTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -25,12 +25,12 @@ public struct LoadIconDocumentTool: LumiAgentTool {
         "Load icon document"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = IconToolSupport.language(kernel)
         guard let inputPath = IconToolSupport.string(arguments, "inputPath"), !inputPath.isEmpty else {
             return IconToolSupport.missingParameter("inputPath", language: language)
         }

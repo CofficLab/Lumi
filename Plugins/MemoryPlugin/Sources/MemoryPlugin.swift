@@ -1,46 +1,80 @@
-import Foundation
-import LumiCoreKit
+import SwiftUI
+import LumiKernel
+import LumiUI
+import os
+import SuperLogKit
 
-/// Memory Plugin：持久化记忆系统。
-public enum MemoryPlugin: LumiPlugin {
-    public static var verbose: Bool { false }
-
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.memory",
-        displayName: PluginMemoryLocalization.string("Memory"),
-        description: PluginMemoryLocalization.string("Persistent memory system for cross-session context"),
-        order: 15,
-        category: .agent,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "brain.head.profile",
+@MainActor
+public final class MemoryPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🧠"
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.memory"
     )
 
-    nonisolated(unsafe) public static var config: MemoryPluginConfig = .default
+    /// 插件配置（由 onReady 设置存储目录）
+    public nonisolated(unsafe) static var config: MemoryPluginConfig = .default
 
-    @MainActor
-    public static func sendMiddlewares(context: LumiPluginContext) -> [any LumiSendMiddleware] {
-        Self.bootstrapFromLumiCoreIfNeeded(context: context)
-        return [MemoryChatMiddleware()]
+    public let id = "com.coffic.lumi.plugin.memory"
+    public let name = "Memory"
+    public let order = 15
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .agent
+    public let stage: LumiPluginStage = .stable
+    public let pluginDescription = "Agent memory system for persistent context across conversations."
+
+    public init() {}
+
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        // 设置插件数据目录
+        guard let storage = kernel.storage else {
+            Self.logger.error("🧠 Storage service not available")
+            return
+        }
+
+        // 更新配置，使用 kernel 提供的存储目录
+        Self.config = MemoryPluginConfig(
+            memoryRootURL: storage.pluginDataDirectory(for: "Memory")
+        )
+
+        if Self.verbose {
+            Self.logger.info("🧠 Memory 插件初始化完成")
+        }
     }
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        Self.bootstrapFromLumiCoreIfNeeded(context: context)
-        return [
-            SaveMemoryTool(),
-            RecallMemoryTool(),
-            ListMemoriesTool(),
-            DeleteMemoryTool()
-        ]
-    }
-}
 
-enum PluginMemoryLocalization {
-    static let table = "Localizable"
-    static let bundle = Bundle.module
+    // MARK: - LumiPlugin stubs
 
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
-    }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

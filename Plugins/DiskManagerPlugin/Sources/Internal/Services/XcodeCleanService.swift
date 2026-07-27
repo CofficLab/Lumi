@@ -1,6 +1,6 @@
 import Foundation
 import os
-import LumiCoreKit
+import LumiKernel
 
 /// Xcode clean service - scans and cleans Xcode-related caches.
 public final class XcodeCleanService: @unchecked Sendable {

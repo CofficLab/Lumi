@@ -14,8 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", .upToNextMajor(from: "1.5.0")),
         .package(path: "../../Packages/TerminalCoreKit"),
@@ -24,8 +24,8 @@ let package = Package(
         .target(
             name: "TerminalPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "SwiftTerm", package: "SwiftTerm"),
                 .product(name: "TerminalCoreKit", package: "TerminalCoreKit"),

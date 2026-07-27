@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 public struct ApplyIconPresetTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -32,12 +32,12 @@ public struct ApplyIconPresetTool: LumiAgentTool {
         "Apply icon preset"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        let language = IconToolSupport.language(context)
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let language = IconToolSupport.language(kernel)
         guard let presetId = IconToolSupport.string(arguments, "presetId"), !presetId.isEmpty else {
             return IconToolSupport.missingParameter("presetId", language: language)
         }

@@ -1,1 +1,1 @@
-enum DesignTokens {}
+public enum DesignTokens {}

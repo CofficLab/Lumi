@@ -15,8 +15,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/EditorService"),
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.13.3"),
     ],
     targets: [
@@ -24,8 +24,8 @@ let package = Package(
             name: "EditorProblemsPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
             ],
             path: "Sources",

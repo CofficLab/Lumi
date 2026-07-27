@@ -1,74 +1,52 @@
-import LumiCoreKit
-import LumiUI
 import SwiftUI
-import os
+import LumiKernel
+import LumiUI
 
-public struct LoadedPluginInfo: Identifiable, Sendable {
-    public let id: String
-    public let displayName: String
-    public let description: String
-    public let order: Int
+@MainActor
+public final class AppLoadedPluginsPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.app-loaded-plugins"
+    public let name = "AppLoadeds"
+    public let order = 79
+	public var policy: LumiPluginPolicy { .disabled }
 
-    public init(id: String, displayName: String, description: String, order: Int) {
-        self.id = id
-        self.displayName = displayName
-        self.description = description
-        self.order = order
-    }
-}
+    public init() {}
 
-public enum AppLoadedPluginsPlugin: LumiPlugin {
-    public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.app-loaded-plugins")
+    public func onBoot(kernel: LumiKernel) async throws {}
 
-    nonisolated(unsafe) public static var pluginProvider: @MainActor () -> [LoadedPluginInfo] = { [] }
-
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.app-loaded-plugins",
-        displayName: PluginAppLoadedPluginsLocalization.string("App Plugins"),
-        description: PluginAppLoadedPluginsLocalization.string("Show loaded app plugins in status bar"),
-        order: 79,
-        category: .general,
-        policy: .disabled,
-        stage: .beta,
-        iconName: "puzzlepiece.extension",
-    )
-
-    @MainActor
-    public static func statusBarItems(context: LumiPluginContext) -> [LumiStatusBarItem] {
-        [
-            LumiStatusBarItem(
-                id: info.id,
-                title: info.displayName,
-                systemImage: iconName,
-                placement: .trailing,
-                statusBarView: {
-                    AppLoadedPluginsStatusBarView(pluginProvider: pluginProvider)
-                }
-            )
-        ]
+    public func onReady(kernel: LumiKernel) async throws {
+        // Register services here
     }
 
-        @MainActor
-    public static func pluginAboutView(context: LumiPluginContext) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(info.displayName)
-                    .font(.title2.weight(.semibold))
-                Text(info.description)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
-    }
 
-}
+    // MARK: - LumiPlugin stubs
 
-enum PluginAppLoadedPluginsLocalization {
-    static let table = "Localizable"
-    static let bundle = Bundle.module
-
-    static func string(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable")
-    }
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

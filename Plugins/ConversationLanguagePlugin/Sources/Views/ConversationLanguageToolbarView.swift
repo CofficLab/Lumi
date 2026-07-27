@@ -1,5 +1,5 @@
-import LumiChatKit
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
 import SwiftUI
 
 struct ConversationLanguageToolbarView: View {

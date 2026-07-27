@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import LocalizationKit
 
 /// 防休眠插件的菜单栏弹窗视图
 struct CaffeinateMenuBarPopupView: View {
@@ -14,11 +15,11 @@ struct CaffeinateMenuBarPopupView: View {
     }
 
     private let quickDurations: [(title: String, value: TimeInterval)] = [
-        (PluginCaffeinateLocalization.string("Indefinite"), 0),
-        (PluginCaffeinateLocalization.string("10 Min"), 600),
-        (PluginCaffeinateLocalization.string("1 Hour"), 3600),
-        (PluginCaffeinateLocalization.string("2 Hours"), 7200),
-        (PluginCaffeinateLocalization.string("5 Hours"), 18000),
+        (LumiPluginLocalization.string("Indefinite", bundle: .module), 0),
+        (LumiPluginLocalization.string("10 Min", bundle: .module), 600),
+        (LumiPluginLocalization.string("1 Hour", bundle: .module), 3600),
+        (LumiPluginLocalization.string("2 Hours", bundle: .module), 7200),
+        (LumiPluginLocalization.string("5 Hours", bundle: .module), 18000),
     ]
 
     /// 当前生效的快捷操作，由 manager 的真实状态推导，确保重新打开弹窗时对号仍然正确
@@ -73,7 +74,7 @@ struct CaffeinateMenuBarPopupView: View {
     private var quickActionsSection: some View {
         VStack(spacing: 0) {
             MenuBarActionRow(
-                title: PluginCaffeinateLocalization.string("Prevent sleep & Keep screen on"),
+                title: LumiPluginLocalization.string("Prevent sleep & Keep screen on", bundle: .module),
                 icon: "sun.max.fill",
                 color: Color(hex: "FF9F0A"),
                 isSelected: activeAction == .systemAndDisplay,
@@ -86,7 +87,7 @@ struct CaffeinateMenuBarPopupView: View {
                 .padding(.leading, 36)
 
             MenuBarActionRow(
-                title: PluginCaffeinateLocalization.string("Prevent sleep & Allow screen off"),
+                title: LumiPluginLocalization.string("Prevent sleep & Allow screen off", bundle: .module),
                 icon: "moon.fill",
                 color: Color(hex: "0A84FF"),
                 isSelected: activeAction == .systemOnly,
@@ -99,7 +100,7 @@ struct CaffeinateMenuBarPopupView: View {
                 .padding(.leading, 36)
 
             MenuBarActionRow(
-                title: PluginCaffeinateLocalization.string("Prevent sleep & Turn off screen"),
+                title: LumiPluginLocalization.string("Prevent sleep & Turn off screen", bundle: .module),
                 icon: "power",
                 color: Color(hex: "7C6FFF"),
                 showCheckmark: false, // 瞬时操作，不显示对号

@@ -16,16 +16,16 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/tuist/XcodeProj", from: "9.11.0"),
         .package(path: "../SuperLogKit"),
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
     ],
     targets: [
         .target(
             name: "XcodeKit",
             dependencies: [
                 .product(name: "XcodeProj", package: "XcodeProj"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources",
             resources: [

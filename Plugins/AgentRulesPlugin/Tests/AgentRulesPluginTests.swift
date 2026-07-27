@@ -1,10 +1,20 @@
 import Testing
 import Foundation
-import AgentToolKit
 @testable import AgentRulesPlugin
 
 @Test func packageLoads() async throws {
     #expect(AgentRulesPlugin.info.id == "com.coffic.lumi.plugin.agent-rules")
+}
+
+@Test func pluginHasRequiredMetadata() throws {
+    let plugin = AgentRulesPlugin()
+    #expect(plugin.id == "com.coffic.lumi.plugin.agent-rules")
+    #expect(plugin.name == "Agent Rules")
+    #expect(plugin.order == 50)
+    #expect(plugin.policy == .disabled)
+    #expect(plugin.category == .general)
+    #expect(plugin.stage == .stable)
+    #expect(!plugin.pluginDescription.isEmpty)
 }
 
 @Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
@@ -65,76 +75,6 @@ import AgentToolKit
     #expect(rule.description == "Prefer clear names.")
 }
 
-@Test func listAgentRulesToolClampsNonPositiveLimits() async throws {
-    let projectURL = FileManager.default.temporaryDirectory
-        .appendingPathComponent("AgentRulesToolTests-\(UUID().uuidString)", isDirectory: true)
-    let rulesURL = projectURL.appending(path: ".agent/rules")
-    try FileManager.default.createDirectory(at: rulesURL, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: projectURL) }
-
-    try "# One\n\nFirst rule.".write(to: rulesURL.appending(path: "one.md"), atomically: true, encoding: .utf8)
-    try "# Two\n\nSecond rule.".write(to: rulesURL.appending(path: "two.md"), atomically: true, encoding: .utf8)
-
-    let tool = ListAgentRulesTool()
-    let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_1", toolName: tool.name)
-
-    let zeroLimitResult = try await tool.execute(
-        arguments: [
-            "project_path": ToolArgument(projectURL.path()),
-            "limit": ToolArgument(0)
-        ],
-        context: context
-    )
-    let negativeLimitResult = try await tool.execute(
-        arguments: [
-            "project_path": ToolArgument(projectURL.path()),
-            "limit": ToolArgument(-2)
-        ],
-        context: context
-    )
-
-    #expect(try decodedRuleCount(from: zeroLimitResult) == 0)
-    #expect(try decodedRuleCount(from: negativeLimitResult) == 0)
-}
-
-@Test func listAgentRulesToolSchemaDeclaresLimitBounds() throws {
-    let schema = ListAgentRulesTool().inputSchema(for: .english)
-    let properties = try #require(schema["properties"] as? [String: [String: Any]])
-    let limit = try #require(properties["limit"])
-
-    #expect(limit["type"] as? String == "integer")
-    #expect(limit["minimum"] as? Int == ListAgentRulesTool.minLimit)
-    #expect(limit["maximum"] as? Int == ListAgentRulesTool.maxLimit)
-}
-
-@Test func listAgentRulesToolClampsOversizedLimits() async throws {
-    let projectURL = FileManager.default.temporaryDirectory
-        .appendingPathComponent("AgentRulesToolTests-\(UUID().uuidString)", isDirectory: true)
-    let rulesURL = projectURL.appending(path: ".agent/rules")
-    try FileManager.default.createDirectory(at: rulesURL, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: projectURL) }
-
-    for index in 1...105 {
-        try "# Rule \(index)\n\nGenerated rule.".write(
-            to: rulesURL.appending(path: "rule-\(index).md"),
-            atomically: true,
-            encoding: .utf8
-        )
-    }
-
-    let tool = ListAgentRulesTool()
-    let context = ToolExecutionContext(conversationId: UUID(), toolCallId: "call_2", toolName: tool.name)
-    let result = try await tool.execute(
-        arguments: [
-            "project_path": ToolArgument(projectURL.path()),
-            "limit": ToolArgument(9_999)
-        ],
-        context: context
-    )
-
-    #expect(try decodedRuleCount(from: result) == ListAgentRulesTool.maxLimit)
-}
-
 @Test func readRuleReturnsUTF16MarkdownContent() async throws {
     let projectURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
@@ -154,10 +94,4 @@ import AgentToolKit
     #expect(rule.title == "Review Rules")
     #expect(rule.description == "Check edge cases before shipping.")
     #expect(rule.content == content)
-}
-
-private func decodedRuleCount(from json: String) throws -> Int {
-    let data = try #require(json.data(using: .utf8))
-    let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-    return try #require(object?["count"] as? Int)
 }

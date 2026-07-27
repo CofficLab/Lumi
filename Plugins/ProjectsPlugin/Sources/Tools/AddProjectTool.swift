@@ -1,18 +1,19 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
+import LumiKernel
 import SuperLogKit
 
+/// Add Project Tool
 struct AddProjectTool: LumiAgentTool, SuperLog {
-    public nonisolated static let emoji = "➕"
-    public nonisolated static let verbose: Bool = true
+    nonisolated static let emoji = "➕"
+    nonisolated static let verbose = false
 
     static let info = LumiAgentToolInfo(
         id: "add_project",
-        displayName: LumiPluginLocalization.string("Add Project", bundle: .module),
-        description: LumiPluginLocalization.string("Add an existing local directory to the projects list without switching the current project.", bundle: .module)
+        displayName: "Add Project",
+        description: "Add an existing local directory to the projects list without switching the current project."
     )
-
-    init() {}
 
     var inputSchema: LumiJSONValue {
         .object([
@@ -20,79 +21,33 @@ struct AddProjectTool: LumiAgentTool, SuperLog {
             "properties": .object([
                 "path": .object([
                     "type": .string("string"),
-                    "description": .string("Absolute path to the project root directory.")
+                    "description": .string("The path to the project directory to add")
                 ])
             ]),
             "required": .array([.string("path")])
         ])
     }
 
-    func displayDescription(arguments: [String: LumiJSONValue]) -> String {
-        guard let path = arguments["path"]?.stringValue else {
-            return "添加项目"
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        guard let viewModel = await MainActor.run(body: { ProjectsToolRuntimeBridge.viewModel }) else {
+            return "Error: Projects view model is not available."
         }
 
-        return "添加 \(URL(fileURLWithPath: path).lastPathComponent)"
-    }
-
-    func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
-        .low
-    }
-
-    func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        if Self.verbose {
-            if ProjectsPlugin.verbose {
-                ProjectsPlugin.logger.info("\(Self.t)执行 add_project，参数 path=\(arguments["path"]?.stringValue ?? "<nil>")")
-            }
-        }
-
-        guard let path = arguments["path"]?.stringValue else {
-            if Self.verbose {
-                if ProjectsPlugin.verbose {
-                    ProjectsPlugin.logger.warning("\(Self.t)⚠️ add_project 缺少必需参数 path")
-                }
-            }
+        guard let path = arguments.string("path") else {
             return "Error: Missing required parameter `path`."
         }
 
         return await MainActor.run {
-            guard let viewModel = ProjectsPlugin.viewModel else {
-                if Self.verbose {
-                    if ProjectsPlugin.verbose {
-                        ProjectsPlugin.logger.error("\(Self.t)❌ add_project 失败：Projects view model is not available")
-                    }
-                }
-                return "Error: Projects view model is not available."
-            }
-
             do {
-                if Self.verbose {
-                    if ProjectsPlugin.verbose {
-                        ProjectsPlugin.logger.info("\(Self.t)尝试添加项目：\(path)")
-                    }
-                }
-
                 let project = try viewModel.add(path: path, select: false)
-
-                if Self.verbose {
-                    if ProjectsPlugin.verbose {
-                        ProjectsPlugin.logger.info("\(Self.t)✅ 项目添加成功：\(project.name) (\(project.path))")
-                    }
-                }
-
-                return Self.successMessage(project: project, projects: viewModel.projects)
+                return successMessage(project: project, projects: viewModel.projects)
             } catch {
-                if Self.verbose {
-                    if ProjectsPlugin.verbose {
-                        ProjectsPlugin.logger.error("\(Self.t)❌ add_project 失败：\(error.localizedDescription)")
-                    }
-                }
                 return "Error: \(error.localizedDescription)"
             }
         }
     }
 
-    private static func successMessage(project: ProjectEntry, projects: [ProjectEntry]) -> String {
+    private func successMessage(project: ProjectEntry, projects: [ProjectEntry]) -> String {
         var output = """
         Successfully added project.
 

@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// `LumiJSONValue` 字面量支持，使 AgentTool 的 `inputSchema` 可用字典字面量构造。
 ///

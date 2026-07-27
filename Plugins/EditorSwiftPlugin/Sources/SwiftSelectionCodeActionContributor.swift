@@ -1,6 +1,6 @@
 import Foundation
 import EditorService
-import LumiCoreKit
+import LumiKernel
 
 @MainActor
 public final class SwiftSelectionCodeActionContributor: SuperEditorCodeActionContributor {

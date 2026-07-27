@@ -14,14 +14,16 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
+        .package(path: "../SuperLogKit"),
     ],
 
     targets: [
         .target(
             name: "HttpKit",
             dependencies: [
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",
             resources: [

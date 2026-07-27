@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 创建 Agent 规则文档工具
 ///
@@ -34,16 +34,20 @@ public struct CreateAgentRuleTool: LumiAgentTool {
                     "description": .string("The content of the rule document in Markdown format. If empty, only the title heading will be created.")
                 ])
             ]),
-            "required": .array([.string("project_path"), .string("filename"), .string("title")])
+            "required": .array([.string("filename"), .string("title")])
         ])
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "创建规则" }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel { .medium }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .medium }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
-        guard let projectPath = arguments.string("project_path"), !projectPath.isEmpty else {
-            throw AgentRulesError.invalidFileFormat("project_path is required")
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        // 优先使用显式参数，fallback 到当前项目
+        let projectPath = arguments.string("project_path")?.trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? kernel.currentProjectPath
+
+        guard let projectPath, !projectPath.isEmpty else {
+            throw AgentRulesError.invalidFileFormat("project_path is required (no current project selected)")
         }
 
         guard let filename = arguments.string("filename"), !filename.isEmpty else {

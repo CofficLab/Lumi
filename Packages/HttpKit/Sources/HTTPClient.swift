@@ -1,7 +1,13 @@
 import Foundation
+import os
 import Security
+import SuperLogKit
 
-public final class HTTPClient: @unchecked Sendable {
+public final class HTTPClient: SuperLog, @unchecked Sendable {
+    public nonisolated static let emoji = "🌐"
+    public nonisolated static let verbose = true
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "http.client")
+
     private let session: URLSession
     private let tlsDelegate: TLSValidationDelegate
 
@@ -65,6 +71,11 @@ public final class HTTPClient: @unchecked Sendable {
 
         let jsonData = try Self.encodeJSONObject(body)
         mutableRequest.httpBody = jsonData
+        if Self.verbose {
+            let messageCount = (body["messages"] as? [[String: Any]])?.count ?? 0
+            let toolCount = (body["tools"] as? [[String: Any]])?.count ?? 0
+            Self.logger.info("\(Self.t)sendStreamingJSONRequest encoded urlHost=\(mutableRequest.url?.host ?? "nil") bodyBytes=\(jsonData.count) bodyMessages=\(messageCount) tools=\(toolCount) requestBodyPreviewIsFull=true")
+        }
 
         let metadata = HTTPRequestMetadata(
             requestId: UUID(),
@@ -91,6 +102,9 @@ public final class HTTPClient: @unchecked Sendable {
                 var errorData = Data()
                 for try await byte in bytes {
                     errorData.append(byte)
+                }
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)sendStreamingJSONRequest non2xx status=\(httpResponse.statusCode) errorBodyBytes=\(errorData.count)")
                 }
                 let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
                 throw HTTPClientError.httpError(
@@ -523,6 +537,9 @@ public final class HTTPClient: @unchecked Sendable {
                 lastBytes.removeAll(keepingCapacity: true)
 
                 guard !eventData.isEmpty else { continue }
+                if Self.verbose, eventData.count > 64 * 1024 {
+                    Self.logger.info("\(Self.t)large SSE event bytes=\(eventData.count)")
+                }
                 let shouldContinue = await onEvent(Data(eventData))
                 if !shouldContinue {
                     return

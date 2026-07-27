@@ -1,108 +1,109 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Contributes HyperAPI models to Lumi Chat.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes HyperAPI models to Lumi Chat."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Contributes HyperAPI models to Lumi Chat." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes HyperAPI models to Lumi Chat."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes HyperAPI models to Lumi Chat."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes HyperAPI models to Lumi Chat."
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes HyperAPI models to Lumi Chat."
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes HyperAPI models to Lumi Chat."
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes HyperAPI models to Lumi Chat."
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes HyperAPI models to Lumi Chat."
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes HyperAPI models to Lumi Chat."
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes HyperAPI models to Lumi Chat."
           }
         }
       }
     },
-    "HyperAPI": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HyperAPI"
+    "HyperAPI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HyperAPI"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HyperAPI"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HyperAPI"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HyperAPI"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HyperAPI"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HyperAPI"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HyperAPI"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HyperAPI"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HyperAPI"
           }
         }
       }
     },
-    "LLM Router by hyperapi.cc": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LLM Router by hyperapi.cc"
+    "LLM Router by hyperapi.cc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LLM Router by hyperapi.cc"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "hyperapi.cc 提供的 LLM 路由服务"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hyperapi.cc 提供的 LLM 路由服务"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "hyperapi.cc 提供的 LLM 路由服務"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hyperapi.cc 提供的 LLM 路由服務"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "hyperapi.cc 提供的 LLM 路由服務"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hyperapi.cc 提供的 LLM 路由服務"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "hyperapi.cc 提供的 LLM 路由服務"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hyperapi.cc 提供的 LLM 路由服務"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

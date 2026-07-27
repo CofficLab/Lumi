@@ -14,8 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiCoreKit"),
-        .package(path: "../../Packages/LumiLocalizationKit"),        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(url: "https://github.com/vapor/mysql-nio", from: "1.9.0"),
         .package(url: "https://github.com/vapor/postgres-nio", from: "1.30.1"),
@@ -26,8 +26,8 @@ let package = Package(
         .target(
             name: "DatabaseManagerPlugin",
             dependencies: [
-                .product(name: "LumiCoreKit", package: "LumiCoreKit"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "MySQLNIO", package: "mysql-nio"),
                 .product(name: "PostgresNIO", package: "postgres-nio"),

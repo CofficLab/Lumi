@@ -1,40 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Add an existing local directory to the projects list without switching the current project." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add an existing local directory to the projects list without switching the current project."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将现有本地目录添加到项目列表，而不切换当前项目。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
-          }
-        }
-      }
-    },
     "Add" : {
       "localizations" : {
         "en" : {
@@ -69,7 +35,42 @@
         }
       }
     },
+    "Add an existing local directory to the projects list without switching the current project." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add an existing local directory to the projects list without switching the current project."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将现有本地目录添加到项目列表，而不切换当前项目。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將現有本地目錄加入專案清單，而不切換目前專案。"
+          }
+        }
+      }
+    },
     "Add Project" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -104,6 +105,7 @@
       }
     },
     "Adds a project manager control to the title toolbar." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -137,7 +139,11 @@
         }
       }
     },
+    "Error" : {
+
+    },
     "Get Current Project" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -206,6 +212,7 @@
       }
     },
     "List Projects" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -307,6 +314,43 @@
         }
       }
     },
+    "OK" : {
+
+    },
+    "Open Directory" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Directory"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开目录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟目錄"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟目錄"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟目錄"
+          }
+        }
+      }
+    },
     "Open Folder..." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -372,6 +416,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "專案"
+          }
+        }
+      }
+    },
+    "Projects Error" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projects Error"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "项目错误"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專案錯誤"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專案錯誤"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專案錯誤"
           }
         }
       }

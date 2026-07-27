@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiCoreKit
+import LumiKernel
 
 /// 工具栏上的历史数据入口按钮
 ///

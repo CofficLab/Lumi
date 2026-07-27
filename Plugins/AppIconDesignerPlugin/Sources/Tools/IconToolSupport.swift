@@ -1,9 +1,9 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 enum IconToolSupport {
-    static func language(_ context: LumiToolExecutionContext) -> LumiLanguagePreference {
-        context.language
+    static func language(_ kernel: LumiKernel?) -> LumiLanguagePreference {
+        kernel?.language ?? .english
     }
 
     static func localized(_ language: LumiLanguagePreference, en: String, zh: String) -> String {

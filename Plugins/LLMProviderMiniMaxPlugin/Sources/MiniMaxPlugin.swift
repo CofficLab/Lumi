@@ -1,46 +1,63 @@
-import LumiLLMProviderSupport
-import LumiCoreKit
+import LLMKit
+import LumiKernel
+import LumiUI
+import SwiftUI
 
-public enum MiniMaxPlugin: LumiPlugin {
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.llm-provider.minimax",
-        displayName: LumiPluginLocalization.string("MiniMax", bundle: .module),
-        description: LumiPluginLocalization.string(
-            "Contributes MiniMax TokenPlan models, video generation tools, and MiniMax-specific chat error renderers.",
-            bundle: .module
-        ),
-        order: 104,
-        category: .llmProvider,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "sparkles",
-    )
+@MainActor
+public final class MiniMaxPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.llm-provider.minimax"
+    public let name = "MiniMax"
+    public let order = 104
+    public let policy: LumiPluginPolicy = .alwaysOn
 
-    @MainActor
-    public static func llmProviders(context: LumiPluginContext) -> [any LumiLLMProvider] {
-        if let core = context.lumiCore {
-            AvailabilityDiskCacheDirectoryResolver.set(pluginName: "LLMProviderMiniMax", directory: core.storage.pluginDataDirectory(for: "LLMProviderMiniMax"))
-        }
-        return [MiniMaxTokenPlanProvider()]
+    public init() {}
+
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
+        [MiniMaxTokenPlanProvider()]
     }
 
-    @MainActor
-    public static func agentTools(context: LumiPluginContext) -> [any LumiAgentTool] {
-        [MiniMaxVideoTool()]
-    }
-
-    @MainActor
-    public static func messageRenderers(context: LumiPluginContext) -> [LumiMessageRendererItem] {
-        ProviderRenderKindManager.shared.registerProviderPrefix(
-            "minimax-",
-            for: MiniMaxTokenPlanProvider.info.id
-        )
-        return [
-            ApiKeyMissingRenderer.item,
-            Http401Renderer.item,
-            Http403Renderer.item,
-            HttpErrorRenderer.item,
-            RequestFailedRenderer.item,
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        [
+            StatusBarItem(
+                id: "\(id).token-plan",
+                title: "MiniMax Token Plan",
+                systemImage: "chart.bar.fill",
+                placement: .trailing,
+                statusBarView: {
+                    MiniMaxStatusBarVisibilityView(kernel: kernel)
+                }
+            )
         ]
     }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
 }

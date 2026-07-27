@@ -1,8 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreKit
-import LumiLLMProviderSupport
+import LumiKernel
+import LumiKernel
+import LumiKernel
 
 public final class AliyunTokenPlanProvider: LumiLLMProvider, @unchecked Sendable {
     public static let shortName = "Aliyun"
@@ -159,7 +160,7 @@ public final class AliyunTokenPlanProvider: LumiLLMProvider, @unchecked Sendable
             return AliyunRenderKind.apiKeyMissing
         }
         
-        if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error) {
+        if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: error) {
             return AliyunRenderKind.http(statusCode)
         }
         

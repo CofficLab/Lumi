@@ -1,7 +1,7 @@
 import Foundation
 import SuperLogKit
 import HttpKit
-import LumiCoreKit
+import LumiKernel
 import SwiftData
 import os
 

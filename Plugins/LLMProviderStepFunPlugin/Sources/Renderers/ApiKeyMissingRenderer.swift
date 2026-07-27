@@ -1,12 +1,15 @@
-import LumiCoreKit
-import LumiLLMProviderSupport
+import LLMKit
+import LumiKernel
+import LumiKernel
 import LumiUI
 import SwiftUI
 
 enum ApiKeyMissingRenderer {
+    private static let pluginOrder = 93 // StepFunPlugin.order
+
     static let item = LumiMessageRendererItem(
         id: "stepfun-api-key-missing",
-        order: StepFunPlugin.info.order + 200,
+        order: pluginOrder + 200,
         canRender: { message in
             StepFunRenderKind.matchesApiKeyMissing(message)
         },

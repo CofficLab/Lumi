@@ -39,6 +39,7 @@
       }
     },
     "Contributes Sublyx GPT models to Lumi Chat." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

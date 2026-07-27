@@ -5,7 +5,9 @@ import Testing
     #expect(Bool(true))
 }
 
+@MainActor
 @Test func pluginPolicyIsOptOut() {
-    #expect(TerminalPlugin.policy == .optOut)
-    #expect(TerminalPlugin.isConfigurable == true)
+    let plugin = TerminalPlugin()
+    #expect(plugin.policy == .optOut)
+    #expect(plugin.policy.isConfigurable == true)
 }

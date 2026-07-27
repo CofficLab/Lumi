@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 import SuperLogKit
 
 /// Git 差异工具
@@ -40,11 +40,11 @@ public struct GitDiffTool: LumiAgentTool, SuperLog {
         "查看代码变更"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let path = arguments.string("path")
         let staged = arguments.bool("staged") ?? false
         let file = arguments.string("file")
@@ -55,7 +55,7 @@ public struct GitDiffTool: LumiAgentTool, SuperLog {
 
         do {
             // 验证路径是否在允许的范围内
-            let validatedPath = try GitService.validatePath(path, allowedDirectories: context.allowedDirectories)
+            let validatedPath = try GitService.validatePath(path, allowedDirectories: kernel.allowedDirectories)
 
             let diff = try await GitService.shared.getDiff(
                 path: validatedPath,

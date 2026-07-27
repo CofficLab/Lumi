@@ -2,8 +2,9 @@ import AgentToolKit
 import Foundation
 import HttpKit
 import LLMKit
-import LumiCoreKit
-import LumiLLMProviderSupport
+import LumiKernel
+import LumiKernel
+import LumiKernel
 import SuperLogKit
 import os
 
@@ -20,7 +21,7 @@ public final class CodexProvider: NSObject, SuperLLMProvider, SuperLocalLLMProvi
     public static let apiKeyStorageKey = ""
 
     public func lumiResolveAPIKey() throws -> String {
-        let key = LumiAPIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
+        let key = APIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: Self.apiKeyStorageKey) ?? ""
         if key.isEmpty {
             throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }

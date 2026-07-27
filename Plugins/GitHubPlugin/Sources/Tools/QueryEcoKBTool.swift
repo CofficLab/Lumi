@@ -1,5 +1,5 @@
 import Foundation
-import LumiCoreKit
+import LumiKernel
 
 /// 用于搜索本地 GitHub 生态知识库的 Agent 工具。
 ///
@@ -27,12 +27,12 @@ public struct QueryEcoKBTool: LumiAgentTool {
 
     /// 声明该工具为低风险，因为它只读取本地缓存数据。
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {        "查询生态知识库"    }
-    public func riskLevel(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext?) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
         .low
     }
 
     /// 对项目专属或全局缓存条目执行关键词搜索。
-    public func execute(arguments: [String: LumiJSONValue], context: LumiToolExecutionContext) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let query = (arguments["query"]?.anyValue as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
             return LumiPluginLocalization.string("Missing required parameter: query", bundle: .module)

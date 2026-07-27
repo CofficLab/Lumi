@@ -1,9 +1,12 @@
-import LumiCoreKit
+import LumiKernel
+import LumiKernel
+
+private let rendererOrder = 305
 
 enum ApiKeyMissingRenderer {
     static let item = LumiMessageRendererItem(
         id: "aliyun-api-key-missing",
-        order: AliyunPlugin.info.order + 200,
+        order: rendererOrder,
         canRender: { message in
             AliyunRenderKind.matchesApiKeyMissing(message)
         },

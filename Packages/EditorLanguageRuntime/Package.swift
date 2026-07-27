@@ -13,14 +13,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.9.0"),
-        .package(path: "../LumiLocalizationKit"),
+        .package(path: "../LocalizationKit"),
     ],
     targets: [
         .target(
             name: "EditorLanguageRuntime",
             dependencies: [
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
-                .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources",
             resources: [

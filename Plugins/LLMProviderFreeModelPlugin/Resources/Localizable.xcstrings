@@ -1,108 +1,109 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Contributes FreeModel models to Lumi Chat.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contributes FreeModel models to Lumi Chat."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Contributes FreeModel models to Lumi Chat." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contributes FreeModel models to Lumi Chat."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为 Lumi Chat 贡献 FreeModel 模型。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为 Lumi Chat 贡献 FreeModel 模型。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為 Lumi Chat 貢獻 FreeModel 模型。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 Lumi Chat 貢獻 FreeModel 模型。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為 Lumi Chat 貢獻 FreeModel 模型。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 Lumi Chat 貢獻 FreeModel 模型。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為 Lumi Chat 貢獻 FreeModel 模型。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為 Lumi Chat 貢獻 FreeModel 模型。"
           }
         }
       }
     },
-    "Free LLM Gateway by freemodel.dev": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Free LLM Gateway by freemodel.dev"
+    "Free LLM Gateway by freemodel.dev" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free LLM Gateway by freemodel.dev"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "freemodel.dev 提供的免费 LLM 网关服务"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "freemodel.dev 提供的免费 LLM 网关服务"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "freemodel.dev 提供的免費 LLM 網關服務"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "freemodel.dev 提供的免費 LLM 網關服務"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "freemodel.dev 提供的免費 LLM 網關服務"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "freemodel.dev 提供的免費 LLM 網關服務"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "freemodel.dev 提供的免費 LLM 網關服務"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "freemodel.dev 提供的免費 LLM 網關服務"
           }
         }
       }
     },
-    "FreeModel": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FreeModel"
+    "FreeModel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FreeModel"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FreeModel"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FreeModel"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FreeModel"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FreeModel"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FreeModel"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FreeModel"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FreeModel"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FreeModel"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

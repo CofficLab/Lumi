@@ -1,144 +1,145 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Nebula": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nebula"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Nebula" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nebula"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "星云粉"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "星云粉"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "星雲粉"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "星雲粉"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "星雲粉"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "星雲粉"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "星雲粉"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "星雲粉"
           }
         }
       }
     },
-    "Romantic nebula pink, soft and warm": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Romantic nebula pink, soft and warm"
+    "Romantic nebula pink, soft and warm" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Romantic nebula pink, soft and warm"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浪漫的星云粉，柔和而温暖"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浪漫的星云粉，柔和而温暖"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浪漫的星雲粉，柔和而溫暖"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浪漫的星雲粉，柔和而溫暖"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浪漫的星雲粉，柔和而溫暖"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浪漫的星雲粉，柔和而溫暖"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浪漫的星雲粉，柔和而溫暖"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浪漫的星雲粉，柔和而溫暖"
           }
         }
       }
     },
-    "星云粉 Theme": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nebula Pink Theme"
+    "星云粉 Theme" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nebula Pink Theme"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "星云粉 Theme"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "星云粉 Theme"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "星雲粉 Theme"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "星雲粉 Theme"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "星雲粉 Theme"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "星雲粉 Theme"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "星雲粉 Theme"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "星雲粉 Theme"
           }
         }
       }
     },
-    "浪漫的星云粉，柔和而温暖": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Romantic nebula pink, soft and warm"
+    "浪漫的星云粉，柔和而温暖" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Romantic nebula pink, soft and warm"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浪漫的星云粉，柔和而温暖"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浪漫的星云粉，柔和而温暖"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浪漫的星雲粉，柔和而溫暖"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浪漫的星雲粉，柔和而溫暖"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浪漫的星雲粉，柔和而溫暖"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浪漫的星雲粉，柔和而溫暖"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浪漫的星雲粉，柔和而溫暖"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浪漫的星雲粉，柔和而溫暖"
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }

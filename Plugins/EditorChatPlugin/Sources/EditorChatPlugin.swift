@@ -1,28 +1,52 @@
-import EditorService
-import LumiCoreKit
+import SwiftUI
+import LumiKernel
+import LumiUI
 
-/// Editor Chat 插件：在编辑器右键菜单提供「Add to Chat」，
-/// 把选中代码的文件路径与行范围（或光标所在行）追加到对话输入框。
-public enum EditorChatPlugin: LumiPlugin {
+@MainActor
+public final class EditorChatPlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.editor-chat"
+    public let name = "Editor Chat"
+    public let order = 6
+	public let policy: LumiPluginPolicy = .disabled
 
-    public static let info = LumiPluginInfo(
-        id: "com.coffic.lumi.plugin.editor-chat",
-        displayName: LumiPluginLocalization.string("Editor Chat", bundle: .module),
-        description: LumiPluginLocalization.string(
-            "Adds an \"Add to Chat\" command to the editor context menu to append the selected code's file reference to the chat composer.",
-            bundle: .module
-        ),
-        order: 6,
-        category: .development,
-        policy: .alwaysOn,
-        stage: .beta,
-        iconName: "plus.bubble"
-    )
+    public init() {}
 
-    /// 注册编辑器扩展（右键菜单命令贡献器）。
-    @MainActor
-    public static func registerEditorExtensions(into registry: AnyObject) async {
-        guard let registry = registry as? EditorExtensionRegistry else { return }
-        registry.registerCommandContributor(EditorChatSelectionCommandContributor())
+    public func onBoot(kernel: LumiKernel) async throws {}
+
+    public func onReady(kernel: LumiKernel) async throws {
+        // Register services here
     }
+
+
+    // MARK: - LumiPlugin stubs
+
+    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
+    public func configureEditorRuntime(kernel: LumiKernel) async {}
 }
