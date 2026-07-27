@@ -65,12 +65,6 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
-        let toolManager = kernel.toolManager
-        let groups = toolManager?.agentToolsGroupedByPlugin() ?? []
-        var pluginNames: [String: String] = [:]
-        for plugin in kernel.pluginManager.allPlugins {
-            pluginNames[plugin.id] = plugin.name
-        }
         return [
             SettingsTabItem(
                 id: "\(id).tools",
@@ -78,10 +72,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
                 systemImage: "wrench.and.screwdriver",
                 order: 50
             ) {
-                ToolManagerSettingsView(
-                    groups: groups,
-                    pluginDisplayNames: pluginNames
-                )
+                ToolManagerSettingsView(kernel: kernel)
             },
         ]
     }

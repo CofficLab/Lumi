@@ -378,7 +378,7 @@ jobs:
             if [ $EXIT_CODE -ne 0 ] || grep -q "status: Invalid" "$result_file"; then
                echo "❌ Notarization failed for $file. Retrieving logs..."
                # Extract ID from the output file
-               SUBMISSION_ID=$(grep "id:" "$result_file" | head -n 1 | awk '{print $2}' | tr -d ' ')
+               SUBMISSION_ID=$(grep "id:" "$result_file" | sed -n '1p' | awk '{print $2}' | tr -d ' ')
                if [ -n "$SUBMISSION_ID" ]; then
                   echo "Fetching log for Submission ID: $SUBMISSION_ID"
                   xcrun notarytool log "$SUBMISSION_ID" \
@@ -445,7 +445,7 @@ jobs:
               | grep -Ev '^- (ci|chore|build|style|test)(\(|:)' \
               | grep -Ev '^- 👷 CI:' \
               | sort -u \
-              | head -20)
+              | sed -n '1,20p')
             if [ -z "$CHANGES" ]; then
               CHANGES="- Maintenance and stability improvements"
             fi

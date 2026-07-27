@@ -57,11 +57,11 @@ struct AutomationLevelToolbarView: View {
     private var backgroundColor: Color {
         switch selectedLevel {
         case .chat:
-            Color.cyan.opacity(0.1)
+            Color.cyan.opacity(0.22)
         case .build:
-            Color.orange.opacity(0.12)
+            Color.orange.opacity(0.22)
         case .autonomous:
-            Color.green.opacity(0.12)
+            Color.green.opacity(0.22)
         }
     }
 }

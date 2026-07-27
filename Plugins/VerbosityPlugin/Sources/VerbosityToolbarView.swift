@@ -48,7 +48,7 @@ struct VerbosityToolbarView: View {
         case .brief:
             Color.cyan
         case .standard:
-            Color.secondary
+            Color.primary.opacity(0.75)
         case .detailed:
             .purple
         }
@@ -57,11 +57,11 @@ struct VerbosityToolbarView: View {
     private var backgroundColor: Color {
         switch selectedLevel {
         case .brief:
-            Color.cyan.opacity(0.1)
+            Color.cyan.opacity(0.22)
         case .standard:
-            Color.primary.opacity(0.06)
+            Color.primary.opacity(0.12)
         case .detailed:
-            Color.purple.opacity(0.12)
+            Color.purple.opacity(0.22)
         }
     }
 }

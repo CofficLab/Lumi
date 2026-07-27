@@ -4,11 +4,8 @@ import SwiftUI
 /// 内置插件管理器
 ///
 /// 负责管理所有插件的注册、启动、查询和排序。
-/// 同时充当多个 Provider 服务的实现：
-/// - ToolManaging: Agent Tool 收集
-/// - UIThemeProviding: Theme 贡献
 @MainActor
-public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThemeProviding {
+public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
     public private(set) var allPlugins: [LumiPlugin] = []
 
     private var plugins: [String: LumiPlugin] = [:]
@@ -20,9 +17,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
     // Message renderer registry
     private var messageRenderers: [String: LumiMessageRendererItem] = [:]
     private var messageRendererOrder: [String] = []
-
-    // Theme registry
-    private var themeRegistryStorage: [LumiUIThemeContribution] = []
 
     // 插件启用状态覆盖(用户在设置界面切换的值,持久化跨启动)
     private let stateStore = PluginEnabledStateStore()
@@ -277,13 +271,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                 pageItem.order = pluginOrder
                 kernel.onboarding?.registerOnboardingPage(pageItem)
             }
-
-            // Theme contributions
-            if let themeProvider = plugin as? any UIThemeProviding {
-                for theme in themeProvider.themeContributions() {
-                    themeRegistryStorage.append(theme)
-                }
-            }
         }
 
         // Sync layout active section with registered view containers.
@@ -369,21 +356,35 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
         }
     }
 
-    /// 全量重建所有插件贡献(UI + LLM Provider)。
+    /// 全量重建所有插件贡献(Agent Tools + UI + LLM Provider)。
     ///
     /// 在插件启用/禁用后由宿主(`LumiFactory.subscribeToPluginChanges`)调用,
     /// 使被禁用插件的贡献即时撤回、被启用插件的贡献即时加入。
     ///
+    /// - Agent Tools:先清空 ToolManager 再按有效启用状态重新注册。
     /// - UI 贡献:先 clear 各 Provider 再按有效启用状态重新注册。
     /// - LLM Provider:采用 diff 策略——注销已注册但不再属于有效集合的 provider,
     ///   再幂等注册有效集合,以保留用户当前选中的 provider/model(若仍可用)。
     public func rebuildAllContributions(in kernel: LumiKernel) {
         self.kernel = kernel
 
-        // 1. UI 贡献重建
+        // 1. Agent Tools 重建 — 必须在 UI 贡献重建之前,
+        //    确保 settingsTabItems 创建视图时能读取到已注册的工具列表。
+        if let toolManager = kernel.toolManager {
+            toolManager.removeAll()
+            for plugin in allPlugins {
+                guard effectiveEnabled(for: plugin) else { continue }
+                let tools = plugin.agentTools(kernel: kernel)
+                for tool in tools {
+                    toolManager.add(tool, pluginID: plugin.id)
+                }
+            }
+        }
+
+        // 2. UI 贡献重建
         registerPluginUIContributions(in: kernel)
 
-        // 2. LLM Provider 重建(diff)
+        // 3. LLM Provider 重建(diff)
         guard let manager = kernel.llmProvider else { return }
         let effectiveIDs = Set(
             allPlugins
@@ -423,13 +424,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
     public func clearInternalContributions() {
         messageRenderers.removeAll()
         messageRendererOrder.removeAll()
-        themeRegistryStorage.removeAll()
-    }
-
-    // MARK: - UIThemeProviding
-
-    public func themeContributions() -> [LumiUIThemeContribution] {
-        themeRegistryStorage
     }
 
     // MARK: - Plugin Management
