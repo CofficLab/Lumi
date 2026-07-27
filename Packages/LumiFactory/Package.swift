@@ -119,6 +119,7 @@ let package = Package(
         .package(path: "../../Plugins/QuickFileSearchPlugin"),
         .package(path: "../../Plugins/SkillPlugin"),
         .package(path: "../../Plugins/DocxReadPlugin"),
+        .package(path: "../../Plugins/NetworkManagerPlugin"),
         // Open-in external apps
         .package(path: "../../Plugins/OpenInFinderPlugin"),
         .package(path: "../../Plugins/OpenInXcodePlugin"),
@@ -256,6 +257,7 @@ let package = Package(
                 .product(name: "QuickFileSearchPlugin", package: "QuickFileSearchPlugin"),
                 .product(name: "SkillPlugin", package: "SkillPlugin"),
                 .product(name: "DocxReadPlugin", package: "DocxReadPlugin"),
+                .product(name: "NetworkManagerPlugin", package: "NetworkManagerPlugin"),
                 // Open-in external apps
                 .product(name: "OpenInFinderPlugin", package: "OpenInFinderPlugin"),
                 .product(name: "OpenInXcodePlugin", package: "OpenInXcodePlugin"),

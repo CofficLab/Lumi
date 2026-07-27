@@ -98,6 +98,7 @@ import ConversationLanguagePlugin
 import QuickFileSearchPlugin
 import SkillPlugin
 import DocxReadPlugin
+import NetworkManagerPlugin
 import VideoConverterPlugin
 import ProjectFileTreePlugin
 import OpenInFinderPlugin
@@ -239,6 +240,7 @@ public enum PluginService {
             QuickFileSearchPlugin(),
             SkillPlugin(),
             DocxReadPlugin(),
+            NetworkManagerPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),
