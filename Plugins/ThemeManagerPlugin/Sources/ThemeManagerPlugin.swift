@@ -22,6 +22,7 @@ public final class ThemeManagerPlugin: LumiPlugin {
         if let pluginProviding = kernel.pluginManager as? PluginRegistry {
             themeServiceInstance.setPluginService(pluginProviding)
         }
+        themeServiceInstance.setEventManager(kernel.eventManager)
     }
 
     public func onReady(kernel: LumiKernel) async throws {}
