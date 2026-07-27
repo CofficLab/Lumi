@@ -99,6 +99,7 @@ import QuickFileSearchPlugin
 import SkillPlugin
 import DocxReadPlugin
 import NetworkManagerPlugin
+import ProjectOverviewPlugin
 import VideoConverterPlugin
 import ProjectFileTreePlugin
 import OpenInFinderPlugin
@@ -241,6 +242,7 @@ public enum PluginService {
             SkillPlugin(),
             DocxReadPlugin(),
             NetworkManagerPlugin(),
+            ProjectOverviewPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

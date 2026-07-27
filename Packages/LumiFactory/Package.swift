@@ -120,6 +120,7 @@ let package = Package(
         .package(path: "../../Plugins/SkillPlugin"),
         .package(path: "../../Plugins/DocxReadPlugin"),
         .package(path: "../../Plugins/NetworkManagerPlugin"),
+        .package(path: "../../Plugins/ProjectOverviewPlugin"),
         // Open-in external apps
         .package(path: "../../Plugins/OpenInFinderPlugin"),
         .package(path: "../../Plugins/OpenInXcodePlugin"),
@@ -258,6 +259,7 @@ let package = Package(
                 .product(name: "SkillPlugin", package: "SkillPlugin"),
                 .product(name: "DocxReadPlugin", package: "DocxReadPlugin"),
                 .product(name: "NetworkManagerPlugin", package: "NetworkManagerPlugin"),
+                .product(name: "ProjectOverviewPlugin", package: "ProjectOverviewPlugin"),
                 // Open-in external apps
                 .product(name: "OpenInFinderPlugin", package: "OpenInFinderPlugin"),
                 .product(name: "OpenInXcodePlugin", package: "OpenInXcodePlugin"),

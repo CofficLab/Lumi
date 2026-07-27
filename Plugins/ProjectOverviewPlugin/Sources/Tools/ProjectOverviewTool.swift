@@ -38,7 +38,7 @@ public struct ProjectOverviewTool: LumiAgentTool, SuperLog {
     }
 
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
-        let path = arguments.string("path") ?? FileManager.default.currentDirectoryPath
+        let path = arguments["path"]?.stringValue ?? FileManager.default.currentDirectoryPath
         let root = URL(fileURLWithPath: path).standardizedFileURL
 
         if Self.verbose {
