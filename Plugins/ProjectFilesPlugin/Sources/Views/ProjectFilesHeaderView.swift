@@ -67,6 +67,11 @@ public struct ProjectFilesHeaderView: View {
                         },
                         onClose: {
                             project.closeFile(fileURL)
+                        },
+                        onCloseOthers: {
+                            for otherURL in visibleFileURLs where otherURL != fileURL {
+                                project.closeFile(otherURL)
+                            }
                         }
                     )
                 }

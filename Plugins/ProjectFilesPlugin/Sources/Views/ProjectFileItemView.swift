@@ -11,6 +11,7 @@ struct ProjectFileItemView: View {
     let theme: any LumiAppChromeTheme
     let onSelect: () -> Void
     let onClose: (() -> Void)?
+    let onCloseOthers: (() -> Void)?
 
     var body: some View {
         Button(action: onSelect) {
@@ -50,5 +51,13 @@ struct ProjectFileItemView: View {
         }
         .buttonStyle(.plain)
         .animation(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference), value: isCurrent)
+        .contextMenu {
+            if let onClose {
+                Button("Close") { onClose() }
+            }
+            if let onCloseOthers {
+                Button("Close Others") { onCloseOthers() }
+            }
+        }
     }
 }
