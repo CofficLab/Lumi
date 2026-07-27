@@ -10,6 +10,7 @@ struct ProjectFileItemView: View {
     let isCurrent: Bool
     let theme: any LumiAppChromeTheme
     let onSelect: () -> Void
+    let onClose: (() -> Void)?
 
     var body: some View {
         Button(action: onSelect) {
@@ -26,6 +27,17 @@ struct ProjectFileItemView: View {
                         isCurrent ? theme.workspaceTextColor() : theme.workspaceSecondaryTextColor()
                     )
                     .lineLimit(1)
+
+                if let onClose {
+                    Button(action: onClose) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(
+                                isCurrent ? theme.workspaceTextColor().opacity(0.6) : theme.workspaceSecondaryTextColor().opacity(0.6)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
