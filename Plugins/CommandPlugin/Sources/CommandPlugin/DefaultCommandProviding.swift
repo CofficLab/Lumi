@@ -9,7 +9,7 @@ import SwiftUI
 /// 负责管理所有插件的命令菜单注册、分组和查询。
 @MainActor
 public final class DefaultCommandProviding: CommandProviding {
-    public private(set) var allCommandGroups: [CommandMenuGroup] = []
+    @Published public private(set) var allCommandGroups: [CommandMenuGroup] = []
     private var commandGroups: [String: CommandMenuGroup] = [:]
     private var commandGroupOrder: [String] = []
 

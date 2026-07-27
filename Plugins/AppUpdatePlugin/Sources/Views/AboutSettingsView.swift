@@ -2,7 +2,7 @@ import LocalizationKit
 import LumiUI
 import SwiftUI
 
-/// "关于"设置页(原 LumiFactory 的 AboutPage)。
+/// "About" settings page (originally `LumiFactory`'s AboutPage).
 struct AboutSettingsView: View {
     private let bundleInfo = AppBundleInfo()
 
@@ -44,6 +44,29 @@ struct AboutSettingsView: View {
                             icon: "hammer"
                         ) {
                             EmptyView()
+                        }
+                    }
+                }
+
+                AppSettingSection(
+                    title: LumiLocalization.string("Updates", bundle: .module),
+                    titleAlignment: .leading
+                ) {
+                    AppSettingRow(
+                        title: LumiLocalization.string("Check for Updates", bundle: .module),
+                        description: LumiLocalization.string(
+                            "Check whether a newer version of Lumi is available.",
+                            bundle: .module
+                        ),
+                        icon: "arrow.down.circle"
+                    ) {
+                        AppButton(
+                            LumiLocalization.string("Check...", bundle: .module),
+                            systemImage: "arrow.triangle.2.circlepath",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            UpdateService.shared.checkForUpdates()
                         }
                     }
                 }

@@ -127,6 +127,6 @@ public enum LumiFactory: SuperLog {
 
     /// 创建应用命令菜单
     public static func makeCommands() -> some Commands {
-        AppCommands(kernel: mainKernel ?? LumiKernel())
+        AppCommands()
     }
 }

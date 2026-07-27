@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.1.1</title>
-            <pubDate>Mon, 27 Jul 2026 11:38:38 +0000</pubDate>
-            <sparkle:version>502</sparkle:version>
-            <sparkle:shortVersionString>5.1.1</sparkle:shortVersionString>
+            <title>4.19.0</title>
+            <pubDate>Fri, 17 Jul 2026 17:26:34 +0000</pubDate>
+            <sparkle:version>248</sparkle:version>
+            <sparkle:shortVersionString>4.19.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.1.1</h2>
-<h3>Changes since v5.1.0</h3>
+            <description><![CDATA[<h2>Release v4.19.0</h2>
+<h3>Changes since v4.18.0</h3>
 <ul>
-<li>feat(AgentTurnNotificationPlugin): add SuperLog, overlay view and enable alwaysOn policy</li>
-<li>feat(caffeinate): register menu bar popup view</li>
-<li>feat(conversation-list): show bound LLM provider/model on third line</li>
-<li>feat(conversation-speed): show popover explaining last message TPS</li>
-<li>feat(conversation-store): show message list below selected conversation detail</li>
-<li>feat(conversation): integrate ConversationLanguagePlugin and refine conversation APIs</li>
-<li>feat(conversation): support updating conversation title via ConversationManaging</li>
-<li>feat(docx-read): activate DocxReadPlugin with read_docx agent tool</li>
-<li>feat(editor-provider): implement replaceEditorPlugins for atomic extension replacement</li>
-<li>feat(editor-provider): render real editor via SourceEditor</li>
-<li>feat(editor-swift): adapt Swift highlighting plugin to kernel</li>
-<li>feat(kernel): add daily aggregate queries to MessageManaging</li>
-<li>feat(kernel): add EditorPlugin typed contribution point via LumiPlugin.editorPlugins</li>
-<li>feat(kernel): add highlight contributor injection point via EditorExtensionRegistrar</li>
-<li>feat(kernel): expose editor view via EditorProviding.makeEditorView</li>
-<li>feat(kernel): introduce EditorPlugin and EditorExtensionRegistrar protocols</li>
-<li>feat(kernel): register editor extensions via EditorPlugin contract</li>
-<li>feat(layout): replace HStack with nested HSplitView for resizable columns</li>
-<li>feat(memory): add settings view with memory list and detail</li>
-<li>feat(memory): register memory tools in plugin</li>
+<li>feat: add elegant macOS-style Loading page</li>
+<li>feat: refactor LLM provider base classes and fix Keychain service regression</li>
+<li>feat(core): extract KeychainKit as independent package</li>
+<li>feat(editor-chat): add EditorChatPlugin for sending code references to chat</li>
+<li>feat(goal-task): add chat toolbar button to display goals</li>
+<li>feat(goal-task): enforce single active goal policy</li>
+<li>feat(menu-bar): sort menu bar popup items by order</li>
+<li>feat(plugin): allow agentTools to throw and surface failures to UI</li>
+<li>fix(menu-bar): honor LumiMenuBarPopupItem.order when aggregating popup items</li>
+<li>refactor: move plugin-related types to Plugin directory</li>
+<li>refactor(agent-tool): extract tool service methods into AgentToolComponent</li>
+<li>refactor(app): simplify RootContainer and rename project types</li>
+<li>refactor(bootstrap): merge LumiCoreService into RootContainer</li>
+<li>refactor(core): introduce ProjectComponent to encapsulate ProjectState</li>
+<li>refactor(core): remove KeychainKit dependency from LumiLLMProvider protocol</li>
+<li>refactor(core): remove LumiCoreKit Security module, use KeychainKit directly</li>
+<li>refactor(goal-task): simplify sidebar to show single active goal</li>
+<li>refactor(layout): introduce LayoutComponent to encapsulate LumiLayoutState</li>
+<li>refactor(logo): rename LogoRegistry to LogoComponent, migrate to component pattern</li>
+<li>refactor(plugins): surface agentTools dependency failures instead of silent returns</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.1.1</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.1.1/Lumi_5.1.1_x86_64.dmg" length="38569968" type="application/octet-stream" sparkle:edSignature="+/GcBctCne8xy8OF91F1dFfVQFPWMocRYvX8PQKeIEp+Gw8NnCczbBGoai4bWh6U9xUllvGeE3Otgpk1BnTDAg=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.19.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.19.0/Lumi_4.19.0_x86_64.dmg" length="44944829" type="application/octet-stream" sparkle:edSignature="NibogWzVQg6oAvGcaVPNYQmzdhyPhmV6iJR1/GQ4lXg0KR8EwBT+5x0+DmhNTJMJ85O5wG6LEIoxHaQhW9A3AA=="/>
         </item>
     </channel>
 </rss>

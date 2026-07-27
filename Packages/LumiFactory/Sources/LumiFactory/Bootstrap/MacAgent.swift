@@ -23,8 +23,11 @@ public final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, 
     /// Feed detection was originally in RootContainer.init, but it's an "app-level
     /// one-shot" action, so it belongs in the app delegate lifecycle alongside
     /// applicationWillTerminate/resignActive.
+    ///
+    /// Update feed detection is now handled by `AppUpdatePlugin.onBoot()`,
+    /// keeping MacAgent decoupled from specific plugins.
     public func applicationDidFinishLaunching(_ notification: Notification) {
-        // Update feed detection will be called here when UpdateService is restored.
+        // Update feed detection is handled by AppUpdatePlugin.onBoot().
     }
 
     public func application(_ application: NSApplication, open urls: [URL]) {
