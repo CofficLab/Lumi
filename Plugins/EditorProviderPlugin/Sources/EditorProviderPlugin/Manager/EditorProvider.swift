@@ -26,6 +26,9 @@ public final class EditorProvider: EditorProviding, SuperLog {
     /// 降级用的本地缓存,仅在 EditorService 未注入时使用。
     private var stubCurrentFilePath: String?
 
+    /// 在 EditorService 注入前暂存的编辑器插件,注入后回放注册,确保注册不丢失。
+    private var pendingPlugins: [any EditorPlugin] = []
+
     public var allEditorThemes: [EditorThemeInfo] {
         Array(themes.values)
     }
@@ -33,6 +36,28 @@ public final class EditorProvider: EditorProviding, SuperLog {
     /// 注入具象 EditorService,启用文件操作转发。
     func attachEditorService(_ service: EditorService) {
         editorService = service
+        flushPendingPlugins()
+    }
+
+    /// 回放注入前暂存的编辑器插件注册。
+    private func flushPendingPlugins() {
+        guard let editorService else { return }
+        for plugin in pendingPlugins {
+            plugin.registerExtensions(into: editorService.editorExtensions)
+        }
+        pendingPlugins.removeAll()
+    }
+
+    // MARK: - Editor Plugin Registration
+
+    /// 注册一个编辑器插件。插件在 `registerExtensions(into:)` 中写入编辑器运行时扩展表。
+    /// 若 EditorService 尚未注入,则暂存并在注入后回放,保证注册不丢失。
+    public func registerEditorPlugin(_ plugin: any EditorPlugin) {
+        guard let editorService else {
+            pendingPlugins.append(plugin)
+            return
+        }
+        plugin.registerExtensions(into: editorService.editorExtensions)
     }
 
     public var currentFilePath: String? {

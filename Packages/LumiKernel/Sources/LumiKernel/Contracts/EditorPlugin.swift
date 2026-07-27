@@ -1,5 +1,4 @@
 import Foundation
-import EditorLanguageRuntime
 
 /// 编辑器插件协议。
 ///

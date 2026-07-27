@@ -37,4 +37,12 @@ public protocol EditorProviding: AnyObject {
     /// 注销编辑器主题
     /// - Parameter themeId: 主题唯一标识符
     func unregisterEditorTheme(themeId: String)
+
+    // MARK: - 插件注册
+
+    /// 注册一个编辑器插件（语言、语法、主题等扩展）。
+    ///
+    /// 插件在 `EditorPlugin.registerExtensions(into:)` 中通过 host 提供的注册器写入编辑器运行时。
+    /// - Parameter plugin: 实现 `EditorPlugin` 的编辑器插件实例。
+    func registerEditorPlugin(_ plugin: any EditorPlugin)
 }
