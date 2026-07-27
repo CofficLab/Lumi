@@ -14,7 +14,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
@@ -24,7 +23,6 @@ let package = Package(
         .target(
             name: "SkillPlugin",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

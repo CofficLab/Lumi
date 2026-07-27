@@ -117,6 +117,7 @@ let package = Package(
         .package(path: "../../Plugins/ChatModePlugin"),
         .package(path: "../../Plugins/ConversationLanguagePlugin"),
         .package(path: "../../Plugins/QuickFileSearchPlugin"),
+        .package(path: "../../Plugins/SkillPlugin"),
         // Open-in external apps
         .package(path: "../../Plugins/OpenInFinderPlugin"),
         .package(path: "../../Plugins/OpenInXcodePlugin"),
@@ -252,6 +253,7 @@ let package = Package(
                 .product(name: "ChatModePlugin", package: "ChatModePlugin"),
                 .product(name: "ConversationLanguagePlugin", package: "ConversationLanguagePlugin"),
                 .product(name: "QuickFileSearchPlugin", package: "QuickFileSearchPlugin"),
+                .product(name: "SkillPlugin", package: "SkillPlugin"),
                 // Open-in external apps
                 .product(name: "OpenInFinderPlugin", package: "OpenInFinderPlugin"),
                 .product(name: "OpenInXcodePlugin", package: "OpenInXcodePlugin"),
