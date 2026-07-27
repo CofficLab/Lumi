@@ -25,6 +25,9 @@ struct ComposerView: View {
             textColor: NSColor(theme.textPrimary),
             onSubmit: onSend,
             onEnter: onSend,
+            onFileDrop: { url in
+                inputState.addToConversation(fileURLs: [url], windowId: nil)
+            },
             isFocused: Binding(
                 get: { inputState.isInputFocused },
                 set: { inputState.isInputFocused = $0 }
