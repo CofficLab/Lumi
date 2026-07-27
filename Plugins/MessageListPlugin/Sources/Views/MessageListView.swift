@@ -17,6 +17,8 @@ struct MessageListView: View, SuperLog {
     @State private var hasEarlierMessages = false
     @State private var hasSelectedConversation = false
     @State private var showRawMessage = false
+    /// 当前会话的 verbosity，注入到消息视图环境，使已有消息的渲染（如 header 显隐）随详细程度即时变化。
+    @State private var verbosity: LumiResponseVerbosity = .standard
 
     private let messagePageSize = 10
     private static let bottomAnchorID = "message-list-bottom"
@@ -51,6 +53,16 @@ struct MessageListView: View, SuperLog {
         kernel.conversations?.selectedConversationID
     }
 
+    /// 当前会话应使用的 verbosity（取自会话管理器，缺失时回退默认级别）。
+    private var sourceVerbosity: LumiResponseVerbosity {
+        kernel.conversations?.verbosity(for: selectedConversationID) ?? .standard
+    }
+
+    /// 将当前会话的 verbosity 同步到本地状态，驱动消息视图环境重新注入。
+    private func syncVerbosity() {
+        verbosity = sourceVerbosity
+    }
+
     // MARK: - SuperLog
 
     nonisolated public static let emoji = "💬"
@@ -76,6 +88,7 @@ struct MessageListView: View, SuperLog {
                 Self.logger.info("\(Self.t)MessageListView appeared ➡️ selectedConversationID=\(selectedConversationID?.uuidString.prefix(8) ?? "nil"), isSending=\(isSending), localMessages=\(messages.count), displayMessages=\(displayMessages.count)")
             }
             loadMessages()
+            syncVerbosity()
         }
         .onChange(of: selectedConversationID) { _, newValue in
             if Self.verbose {
@@ -83,6 +96,7 @@ struct MessageListView: View, SuperLog {
             }
             paging.resetForConversationChange()
             loadMessages()
+            syncVerbosity()
         }
         .onChange(of: isSending) { _, newValue in
             if Self.verbose {
@@ -96,6 +110,16 @@ struct MessageListView: View, SuperLog {
             }
             loadMessages()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
+            // 会话元数据（含 verbosity）变化：重新注入 verbosity 环境并重新加载消息，
+            // 使工具消息的显隐与已有消息的渲染随详细程度即时更新。
+            if Self.verbose {
+                Self.logger.info("\(Self.t)Conversations changed notification received ➡️ selectedConversationID=\(selectedConversationID?.uuidString.prefix(8) ?? "nil"), verbosity=\(sourceVerbosity.rawValue)")
+            }
+            syncVerbosity()
+            loadMessages()
+        }
+        .environment(\.lumiResponseVerbosity, verbosity)
     }
 
     private var messageListView: some View {
