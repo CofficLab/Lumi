@@ -18,7 +18,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.conversation-input"
     public let name = "Conversation Input"
     public let order = 83
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     // MARK: - 内部状态
 
