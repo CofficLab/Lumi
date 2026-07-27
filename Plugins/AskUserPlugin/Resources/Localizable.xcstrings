@@ -35,6 +35,9 @@
         }
       }
     },
+    "Conversation: %@" : {
+
+    },
     "Provides ask_user tool, letting LLM ask the user questions and wait for responses." : {
       "localizations" : {
         "en" : {
@@ -68,6 +71,36 @@
           }
         }
       }
+    },
+    "ToolCall ID: %@" : {
+
+    },
+    "其他" : {
+
+    },
+    "否" : {
+
+    },
+    "已回答: %@" : {
+
+    },
+    "或者输入自定义回答：" : {
+
+    },
+    "无法解析问题内容" : {
+
+    },
+    "是" : {
+
+    },
+    "点击选项回答问题" : {
+
+    },
+    "输入回答..." : {
+
+    },
+    "选择预设选项或输入自定义回答" : {
+
     }
   },
   "version" : "1.0"

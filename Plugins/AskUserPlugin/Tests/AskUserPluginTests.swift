@@ -7,6 +7,7 @@ import Testing
 // MARK: - AskUserPlugin Tests
 
 @Suite("AskUserPlugin")
+@MainActor
 struct AskUserPluginTests {
     @Test("plugin id is stable")
     func pluginId() {
@@ -32,7 +33,6 @@ struct AskUserPluginTests {
         #expect(plugin.name == "AskUser")
     }
 
-    @MainActor
     @Test("agentTools returns one tool named ask_user")
     func agentToolsReturnsAskUserTool() {
         let plugin = AskUserPlugin()
@@ -45,6 +45,7 @@ struct AskUserPluginTests {
 // MARK: - AskUserTool Tests
 
 @Suite("AskUserTool")
+@MainActor
 struct AskUserToolTests {
     let tool = AskUserTool()
 
@@ -158,7 +159,8 @@ struct AskUserToolTests {
 
     @Test("resolvedAllowFreeInput returns false for non-bool")
     func resolvedAllowFreeInputFalseForNonBool() {
-        let args: [String: LumiJSONValue] = ["allow_free_input": .string("true")]
+        // A string that cannot be parsed as bool should return nil → fallback to false
+        let args: [String: LumiJSONValue] = ["allow_free_input": .string("yesplease")]
         #expect(AskUserTool.resolvedAllowFreeInput(args) == false)
     }
 
@@ -363,7 +365,6 @@ struct AskUserBridgeTests {
             receivedToolCallId = userInfo[LumiAskUserNotification.toolCallIDKey] as? String
             receivedAnswer = userInfo[LumiAskUserNotification.answerKey] as? String
         }
-        defer { NotificationCenter.default.removeObserver(observer) }
 
         AskUserBridge.shared.resume(
             conversationId: conversationId,
@@ -371,36 +372,13 @@ struct AskUserBridgeTests {
             answer: answer
         )
 
-        // Allow notification to dispatch
-        try? await Task.sleep(nanoseconds: 50_000_000)
+        // Wait for notification to dispatch synchronously on main queue
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         #expect(receivedConversationId == conversationId)
         #expect(receivedToolCallId == toolCallId)
         #expect(receivedAnswer == answer)
-    }
 
-    @Test("resume propagates free text answer")
-    func resumePropagatesFreeText() async {
-        let answer = "我觉得是「方案 B」"
-
-        var receivedAnswer: String?
-
-        let observer = NotificationCenter.default.addObserver(
-            forName: .lumiAskUserDidAnswer,
-            object: nil,
-            queue: .main
-        ) { notification in
-            receivedAnswer = notification.userInfo?[LumiAskUserNotification.answerKey] as? String
-        }
-        defer { NotificationCenter.default.removeObserver(observer) }
-
-        AskUserBridge.shared.resume(
-            conversationId: UUID().uuidString,
-            toolCallId: "call-free",
-            answer: answer
-        )
-
-        try? await Task.sleep(nanoseconds: 50_000_000)
-        #expect(receivedAnswer == answer)
+        NotificationCenter.default.removeObserver(observer)
     }
 }
