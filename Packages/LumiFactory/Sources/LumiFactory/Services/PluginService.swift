@@ -1,40 +1,55 @@
-import Foundation
-import LumiKernel
+import ActivityHeatmapPlugin
+import AgentRulesPlugin
+import AgentTempStoragePlugin
+import AgentTurnNotificationPlugin
 import AgentTurnRunnerPlugin
-import ToolManagerPlugin
+import AppIconDesignerPlugin
 import AppManagerPlugin
+import AppStoreConnectPlugin
+import AskUserPlugin
 import BrewManagerPlugin
+import BrowserPlugin
+import CADDesignerPlugin
+import CaffeinatePlugin
+import ChatAttachmentPreviewPlugin
+import ChatFileAttachmentPlugin
+import ChatModePlugin
 import ChatPanelPlugin
-import SharedUIPlugin
+import ChatScreenshotPlugin
 import ClipboardManagerPlugin
 import CommandPlugin
+import ConversationForkPlugin
+import ConversationInputPlugin
+import ConversationLanguagePlugin
 import ConversationListPlugin
+import ConversationMessageCountPlugin
 import ConversationNewPlugin
+import ConversationSpeedPlugin
 import ConversationStorePlugin
 import ConversationTitlePlugin
-import ConversationInputPlugin
-import ConversationMessageCountPlugin
-import ChatAttachmentPreviewPlugin
-import ChatScreenshotPlugin
-import ChatFileAttachmentPlugin
-import PluginManagerPlugin
-import HostSettingsPlugin
-import MessageStorePlugin
-import MessageSenderPlugin
+import DatabaseManagerPlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
 import DockerManagerPlugin
-import EditorProviderPlugin
+import DocxReadPlugin
+import DownloadPlugin
 import EditorKernelPlugin
 import EditorPanelPlugin
-import ProjectFilesPlugin
 import EditorPreviewPlugin
+import EditorProviderPlugin
 import EditorSwiftPlugin
-import TerminalPlugin
+import FileLogPlugin
+import Foundation
+import GitHubPlugin
+import GitPlugin
+import GoalTaskPlugin
+import HostSettingsPlugin
 import HostsManagerPlugin
+import IdleTimePlugin
 import InputPlugin
 import LayoutKernelPlugin
+import LegacyDataPlugin
 import LLMProviderAiRouterPlugin
 import LLMProviderAliyunPlugin
 import LLMProviderAnthropicPlugin
@@ -47,6 +62,7 @@ import LLMProviderHappyCodePlugin
 import LLMProviderHyperAPIPlugin
 import LLMProviderKimiCodePlugin
 import LLMProviderLPgptPlugin
+import LLMProviderManagerPlugin
 import LLMProviderMegaLLMPlugin
 import LLMProviderMiniMaxPlugin
 import LLMProviderMLXPlugin
@@ -57,29 +73,50 @@ import LLMProviderSublyxPlugin
 import LLMProviderXiaomiPlugin
 import LLMProviderXybbzPlugin
 import LLMProviderZhipuPlugin
-import LLMProviderManagerPlugin
-import LogoPlugin
 import LogoCofficPlugin
+import LogoPlugin
 import LogoSmartLightPlugin
+import LumiKernel
+import MemoryPlugin
 import MenuBarManagerPlugin
 import MessageListPlugin
 import MessageRendererPlugin
+import MessageSenderPlugin
+import MessageStorePlugin
 import ModelSelectorPlugin
 import NettoPlugin
+import NetworkManagerPlugin
+import OnboardingPlugin
+import OpenInAntigravityPlugin
+import OpenInCursorPlugin
+import OpenInFinderPlugin
+import OpenInGitHubDesktopPlugin
+import OpenInGitOKPlugin
+import OpenInXcodePlugin
+import OpenRemotePlugin
+import PluginManagerPlugin
 import PortManagerPlugin
+import ProjectFilesPlugin
+import ProjectFileTreePlugin
+import ProjectOverviewPlugin
+import ProjectRAGPlugin
 import ProjectsPlugin
+import QuickFileSearchPlugin
 import QuickLauncherPlugin
 import RClickPlugin
 import RegistryManagerPlugin
 import SettingsPlugin
+import SharedUIPlugin
+import ShowImagePlugin
+import SkillPlugin
 import StoragePlugin
-import LegacyDataPlugin
+import TerminalPlugin
 import ThemeAuroraPlugin
-import ThemeManagerPlugin
 import ThemeAutumnPlugin
 import ThemeDraculaPlugin
 import ThemeGithubPlugin
 import ThemeLumiPlugin
+import ThemeManagerPlugin
 import ThemeMidnightPlugin
 import ThemeMountainPlugin
 import ThemeNebulaPlugin
@@ -92,54 +129,17 @@ import ThemeSummerPlugin
 import ThemeVoidPlugin
 import ThemeVscodePlugin
 import ThemeWinterPlugin
+import ToolManagerPlugin
 import VerbosityPlugin
-import ConversationSpeedPlugin
-import ChatModePlugin
-import ConversationLanguagePlugin
-import QuickFileSearchPlugin
-import SkillPlugin
-import DocxReadPlugin
-import NetworkManagerPlugin
-import ProjectOverviewPlugin
 import VideoConverterPlugin
-import ProjectFileTreePlugin
-import OpenInFinderPlugin
-import OpenInXcodePlugin
-import OpenInCursorPlugin
-import OpenInAntigravityPlugin
-import OpenInGitHubDesktopPlugin
-import OpenInGitOKPlugin
-import OpenRemotePlugin
-import ProjectRAGPlugin
-import GitPlugin
-import AgentRulesPlugin
-import CaffeinatePlugin
-import AgentTempStoragePlugin
-import AppIconDesignerPlugin
 import WebFetchPlugin
 import WebSearchPlugin
-import MemoryPlugin
-import DownloadPlugin
-import BrowserPlugin
-import ShowImagePlugin
-import GitHubPlugin
-import GoalTaskPlugin
-import AppStoreConnectPlugin
-import CADDesignerPlugin
-import ActivityHeatmapPlugin
-import FileLogPlugin
-import OnboardingPlugin
-import DatabaseManagerPlugin
-import ConversationForkPlugin
-import AgentTurnNotificationPlugin
-import AskUserPlugin
 
 /// 插件服务
 ///
 /// 维护静态插件列表，包含所有内置插件。
 @MainActor
 public enum PluginService {
-
     // MARK: - Plugin List
 
     /// 所有插件列表（静态）
@@ -235,6 +235,7 @@ public enum PluginService {
             DockerManagerPlugin(),
             RClickPlugin(),
             InputPlugin(),
+            IdleTimePlugin(),
             MenuBarManagerPlugin(),
             CaffeinatePlugin(),
             AgentTempStoragePlugin(),
@@ -301,5 +302,4 @@ public enum PluginService {
 
         return list
     }()
-
 }

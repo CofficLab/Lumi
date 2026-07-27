@@ -7,14 +7,20 @@ public final class IdleTimePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.idle-time"
     public let name = "Idle Time"
     public let order = 96
-	public let policy: LumiPluginPolicy = .disabled
+	public let policy: LumiPluginPolicy = .optOut
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        // 与其他插件一致（参考 Projects 插件）：使用内核提供的插件数据目录，
+        // 而非退回临时目录。必须在首次记录事件前设置。
+        if let storage = kernel.storage {
+            IdleTimeRuntimeBridge.directoryURL = storage.pluginDataDirectory(for: "IdleTime")
+        }
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        // 服务在首次记录事件时懒加载，目录已在 onBoot 设置。
     }
 
 
@@ -29,7 +35,19 @@ public final class IdleTimePlugin: LumiPlugin {
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
-    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        [
+            // 右上角“打开”按钮:点击弹出 Idle Time 面板
+            StatusBarItem(
+                id: "\(id).status",
+                title: LumiPluginLocalization.string("Idle Time", bundle: .module),
+                systemImage: "moon.zzz",
+                placement: .trailing,
+                order: 210,
+                popover: { IdleTimeStatusBarPopover() }
+            )
+        ]
+    }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
@@ -37,12 +55,32 @@ public final class IdleTimePlugin: LumiPlugin {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        [
+            SettingsTabItem(
+                id: "\(id).settings",
+                title: LumiPluginLocalization.string("Idle Time", bundle: .module),
+                systemImage: "moon.zzz",
+                order: order
+            ) {
+                IdleTimeSettingsView(kernel: kernel)
+            }
+        ]
+    }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
-    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] {
+        [
+            LumiRootOverlayItem(id: "\(id).rootObserver") { content in
+                IdleTimeRootObserver(
+                    projectPathProvider: { kernel.project?.currentProject?.path ?? "" },
+                    content: content
+                )
+            }
+        ]
+    }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
