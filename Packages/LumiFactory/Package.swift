@@ -146,6 +146,7 @@ let package = Package(
         .package(path: "../../Plugins/AppStoreConnectPlugin"),
         .package(path: "../../Plugins/CADDesignerPlugin"),
         .package(path: "../../Plugins/ActivityHeatmapPlugin"),
+        .package(path: "../../Plugins/FileLogPlugin"),
     ],
     targets: [
         .target(
@@ -289,6 +290,7 @@ let package = Package(
                 .product(name: "AppStoreConnectPlugin", package: "AppStoreConnectPlugin"),
                 .product(name: "CADDesignerPlugin", package: "CADDesignerPlugin"),
                 .product(name: "ActivityHeatmapPlugin", package: "ActivityHeatmapPlugin"),
+                .product(name: "FileLogPlugin", package: "FileLogPlugin"),
             ],
             resources: [
                 .process("Resources")

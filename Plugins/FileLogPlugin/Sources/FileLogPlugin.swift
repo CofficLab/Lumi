@@ -1,22 +1,24 @@
-import SwiftUI
+import Foundation
 import LumiKernel
-import LumiUI
+import SwiftUI
 
 @MainActor
 public final class FileLogPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.file-log"
     public let name = "File Log"
     public let order = 1
-	public var policy: LumiPluginPolicy { .disabled }
+    public let policy: LumiPluginPolicy = .alwaysOn
+
+    /// Shared configuration for file log output directory.
+    public nonisolated static let configuration: FileLogConfiguration = DefaultFileLogConfiguration()
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
-
-    public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+    public func onBoot(kernel: LumiKernel) async throws {
+        FileLogPlugin.bootstrapFromLumiCoreIfNeeded(kernel: kernel)
     }
 
+    public func onReady(kernel: LumiKernel) async throws {}
 
     // MARK: - LumiPlugin stubs
 
