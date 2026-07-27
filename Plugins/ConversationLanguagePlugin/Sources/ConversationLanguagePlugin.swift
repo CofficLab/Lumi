@@ -7,14 +7,22 @@ public final class ConversationLanguagePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-language"
     public let name = "Language Selector"
     public let order = 83
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        // Services are registered via convenience methods
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    // MARK: - Chat Section Toolbar Bar
+
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] {
+        [
+            ChatSectionToolbarBarItem(id: id) {
+                ConversationLanguageToolbarView(kernel: kernel)
+            },
+        ]
     }
 
 
@@ -33,7 +41,6 @@ public final class ConversationLanguagePlugin: LumiPlugin {
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
-    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }

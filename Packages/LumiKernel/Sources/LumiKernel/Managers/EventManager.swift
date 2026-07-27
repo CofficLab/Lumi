@@ -9,7 +9,7 @@ import SuperLogKit
 @MainActor
 public final class EventManager: ObservableObject, SuperLog {
     nonisolated public static let emoji = "📣"
-    nonisolated(unsafe) public static var verbose = true
+    nonisolated(unsafe) public static var verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "kernel.event-manager")
 
     public init() {}

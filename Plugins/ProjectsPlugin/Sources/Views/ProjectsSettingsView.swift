@@ -1,0 +1,298 @@
+import AppKit
+import Foundation
+import LumiKernel
+import LumiUI
+import SwiftUI
+
+/// Projects 设置视图。
+///
+/// - 顶部右上角按钮可打开数据库目录（`store.settingsDirectory`）。
+/// - 下方左侧为项目列表，点击某个项目在右侧展示其详情信息。
+@MainActor
+public struct ProjectsSettingsView: View {
+    @ObservedObject private var viewModel: ProjectsViewModel
+    @LumiTheme private var theme
+
+    @State private var selectedProjectPath: String?
+    @State private var didSeedSelection = false
+
+    public init(viewModel: ProjectsViewModel) {
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
+    }
+
+    private var projects: [ProjectEntry] {
+        viewModel.projects.sorted { $0.lastUsed > $1.lastUsed }
+    }
+
+    private var projectPaths: [String] {
+        projects.map(\.path)
+    }
+
+    private var selectedProject: ProjectEntry? {
+        guard let selectedProjectPath else { return nil }
+        return projects.first { $0.path == selectedProjectPath }
+    }
+
+    public var body: some View {
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 14) {
+                header
+
+                HStack(spacing: 0) {
+                    sidebar
+                        .frame(width: 340)
+                        .frame(maxHeight: .infinity)
+
+                    AppDivider(.vertical)
+
+                    detailPane
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+                .frame(minHeight: 560, maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(theme.divider, lineWidth: 1)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .onAppear { seedSelectionIfNeeded() }
+        .onChange(of: projectPaths) { _, _ in syncSelectionAfterProjectChange() }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Label("\(projects.count) projects", systemImage: "folder")
+            if let selected = selectedProject {
+                Text("·")
+                Text(selected.name)
+            }
+            Spacer()
+            AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+                openDataDirectory()
+            }
+        }
+        .font(.appCaption)
+        .foregroundStyle(theme.textSecondary)
+    }
+
+    // MARK: - Sidebar（项目列表）
+
+    private var sidebar: some View {
+        VStack(spacing: 0) {
+            if projects.isEmpty {
+                AppEmptyState(
+                    icon: "folder",
+                    title: "No projects yet"
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(projects) { project in
+                            projectRow(project)
+                        }
+                    }
+                    .padding(8)
+                }
+                .frame(maxHeight: .infinity)
+            }
+        }
+        .appSurface(style: .panel, cornerRadius: 0)
+    }
+
+    private func projectRow(_ project: ProjectEntry) -> some View {
+        let isSelected = selectedProjectPath == project.path
+        let isCurrent = viewModel.currentProject?.path == project.path
+        return AppListRow(isSelected: isSelected, action: {
+            selectedProjectPath = project.path
+            didSeedSelection = true
+        }) {
+            HStack(spacing: 10) {
+                Image(systemName: "folder")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        Color.primary.opacity(0.06),
+                        in: RoundedRectangle(cornerRadius: 6)
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(project.name)
+                            .font(.system(size: 13, weight: .medium))
+                            .lineLimit(1)
+                        if isCurrent {
+                            Text("Current")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(Color.accentColor, in: Capsule())
+                        }
+                    }
+                    Text(project.path)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    // MARK: - Detail Pane（项目详情）
+
+    @ViewBuilder
+    private var detailPane: some View {
+        if let project = selectedProject {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    AppSettingsSection(title: "Overview") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(project.name)
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(theme.textPrimary)
+                                .lineLimit(2)
+
+                            Text(project.path)
+                                .font(.callout)
+                                .foregroundStyle(theme.textSecondary)
+                                .textSelection(.enabled)
+                        }
+                    }
+
+                    AppSettingsSection(title: "Basic Info") {
+                        VStack(spacing: 0) {
+                            detailRow(title: "Name", icon: "text.cursor", value: project.name)
+                            Divider().padding(.vertical, 8)
+                            detailRow(title: "Path", icon: "folder", value: project.path, monospace: true)
+                            Divider().padding(.vertical, 8)
+                            detailRow(title: "Language", icon: "character.book.closed", value: project.language?.capitalized ?? "Unknown")
+                            Divider().padding(.vertical, 8)
+                            detailRow(title: "Last Used", icon: "calendar", value: formattedDate(project.lastUsed))
+                            Divider().padding(.vertical, 8)
+                            detailRow(
+                                title: "Status",
+                                icon: "star",
+                                value: viewModel.currentProject?.path == project.path ? "Current Project" : "Not Selected"
+                            )
+                        }
+                    }
+
+                    openedFilesSection(for: project)
+                }
+                .padding(22)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .appSurface(style: .panel, cornerRadius: 0)
+        } else {
+            AppEmptyState(
+                icon: "folder",
+                title: projects.isEmpty ? "No projects yet" : "Select a project"
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .appSurface(style: .panel, cornerRadius: 0)
+        }
+    }
+
+    @ViewBuilder
+    private func openedFilesSection(for project: ProjectEntry) -> some View {
+        let key = ProjectsStore.normalizedPath(project.path)
+        let opened = viewModel.store.loadOpenedFiles()[key]
+        let urls = opened?.openFileURLs ?? []
+        let current = opened?.currentFileURL
+
+        AppSettingsSection(title: "Opened Files") {
+            if urls.isEmpty {
+                Text("No opened files recorded")
+                    .font(.callout)
+                    .foregroundStyle(theme.textSecondary)
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    if let current {
+                        HStack(spacing: 6) {
+                            Image(systemName: "doc.fill")
+                                .foregroundStyle(.secondary)
+                            Text(current.lastPathComponent)
+                                .font(.callout)
+                                .foregroundStyle(theme.textPrimary)
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                            Text("Active")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    ForEach(Array(urls.prefix(20).enumerated()), id: \.offset) { _, url in
+                        HStack(spacing: 6) {
+                            Image(systemName: "doc")
+                                .foregroundStyle(.secondary)
+                            Text(url.lastPathComponent)
+                                .font(.callout)
+                                .foregroundStyle(theme.textSecondary)
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                        }
+                    }
+                    if urls.count > 20 {
+                        Text("+\(urls.count - 20) more")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    private func detailRow(title: String, icon: String, value: String, monospace: Bool = false) -> some View {
+        AppSettingRow(title: title, icon: icon) {
+            Text(value)
+                .font(monospace ? .system(.callout, design: .monospaced) : .callout)
+                .foregroundStyle(theme.textSecondary)
+                .multilineTextAlignment(.trailing)
+                .lineLimit(3)
+                .textSelection(.enabled)
+        }
+    }
+
+    // MARK: - Selection Sync
+
+    private func seedSelectionIfNeeded() {
+        guard !didSeedSelection else { return }
+        didSeedSelection = true
+        selectedProjectPath = viewModel.currentProject?.path ?? projects.first?.path
+    }
+
+    private func syncSelectionAfterProjectChange() {
+        if !didSeedSelection {
+            seedSelectionIfNeeded()
+            return
+        }
+        guard let selectedProjectPath, projects.contains(where: { $0.path == selectedProjectPath }) else {
+            self.selectedProjectPath = projects.first?.path
+            return
+        }
+    }
+
+    // MARK: - Formatting
+
+    private func formattedDate(_ date: Date) -> String {
+        date.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    // MARK: - Actions
+
+    private func openDataDirectory() {
+        let url = viewModel.store.settingsDirectory
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        _ = NSWorkspace.shared.open(url)
+    }
+}

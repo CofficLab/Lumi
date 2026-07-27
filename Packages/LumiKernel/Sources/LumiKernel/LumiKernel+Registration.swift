@@ -29,8 +29,6 @@ extension LumiKernelContainer {
         registerService(UIManaging.self, sharedUI)
     }
 
-    /// Register send middleware service (removed: now handled via LumiPlugin.willSendToLLM hook)
-
     /// Register message send service
     public func registerMessageSend(_ messageSend: any MessageSending) {
         registerService(MessageSending.self, messageSend)

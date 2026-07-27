@@ -1748,6 +1748,12 @@ public final class EditorState: ObservableObject, SuperLog {
             }
             if self.currentThemeId == themeId {
                 self.currentTheme = self.resolveTheme(for: themeId)
+                self.documentHighlightCoordinator.handleThemeChange(
+                    textStorage: self.content,
+                    content: self.content?.string ?? "",
+                    fileURL: self.currentFileURL,
+                    language: self.highlightLanguageContext()
+                )
                 return
             }
             self.applyEditorTheme(id: themeId)

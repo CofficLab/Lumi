@@ -67,6 +67,9 @@ public struct ConversationItemView: View, SuperLog {
 
                 // 时间戳和项目信息
                 metadataSection
+
+                // 第三行：绑定的 LLM 供应商与模型（两者都存在时才显示）
+                providerModelLine
             }
 
             Spacer()
@@ -113,30 +116,11 @@ private struct RecentActivityIndicator: View {
 // MARK: - View
 
 extension ConversationItemView {
-    /// 元数据区域：显示模型信息、项目名称和相对时间
-    /// 当会话关联了模型时显示供应商/模型，关联了项目时显示项目名
+    /// 元数据区域：显示消息数、项目名称和相对时间
+    /// 绑定的 LLM 供应商/模型另起第三行展示（见 `providerModelLine`）
     @ViewBuilder
     private var metadataSection: some View {
         HStack {
-            // 模型信息
-            if let modelName = conversation.modelName, !modelName.isEmpty {
-                if let providerID = conversation.providerID, !providerID.isEmpty {
-                    Text("\(providerID)/\(modelName)")
-                        .font(.appMicro)
-                        .foregroundColor(theme.textSecondary)
-                        .lineLimit(1)
-                } else {
-                    Text(modelName)
-                        .font(.appMicro)
-                        .foregroundColor(theme.textSecondary)
-                        .lineLimit(1)
-                }
-
-                Text(verbatim: LumiPluginLocalization.string("•", bundle: .module))
-                    .font(.appMicro)
-                    .foregroundColor(theme.textTertiary)
-            }
-
             if let messageCount = conversation.messageCount {
                 Text(String(format: LumiPluginLocalization.string("%d messages", bundle: .module), messageCount))
                     .font(.appMicro)
@@ -164,6 +148,23 @@ extension ConversationItemView {
             Text(coarseRelativeTime(from: conversation.updatedAt))
                 .font(.appMicro)
                 .foregroundColor(theme.textSecondary)
+        }
+    }
+}
+
+// MARK: - Third line
+
+extension ConversationItemView {
+    /// 第三行：当对话同时绑定了 LLM 供应商与模型时，显示 `供应商/模型`
+    @ViewBuilder
+    private var providerModelLine: some View {
+        if let providerID = conversation.providerID, !providerID.isEmpty,
+           let modelName = conversation.modelName, !modelName.isEmpty {
+            Text("\(providerID)/\(modelName)")
+                .font(.appMicro)
+                .foregroundColor(theme.textTertiary)
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
     }
 }

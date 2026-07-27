@@ -64,6 +64,14 @@ public struct ProjectFilesHeaderView: View {
                         theme: themeVM.activeChromeTheme,
                         onSelect: {
                             project.updateCurrentFile(fileURL)
+                        },
+                        onClose: {
+                            project.closeFile(fileURL)
+                        },
+                        onCloseOthers: {
+                            for otherURL in visibleFileURLs where otherURL != fileURL {
+                                project.closeFile(otherURL)
+                            }
                         }
                     )
                 }

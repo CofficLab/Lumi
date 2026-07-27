@@ -163,6 +163,13 @@ public protocol LumiPlugin: AnyObject {
 
     /// 配置编辑器运行时上下文
     func configureEditorRuntime(kernel: LumiKernel) async
+
+    /// 提供编辑器运行时插件。
+    ///
+    /// 语言高亮、语法、语言描述等编辑器扩展应优先通过此 typed 贡献点接入。
+    /// 插件只需要依赖 `LumiKernel` 的 `EditorPlugin` / `EditorExtensionRegistrar`
+    /// 协议；具体编辑器宿主由 `EditorProviding` 在边界处桥接到运行时实现。
+    func editorPlugins(kernel: LumiKernel) -> [any EditorPlugin]
 }
 
 // MARK: - Default Implementations
@@ -192,4 +199,7 @@ public extension LumiPlugin {
 
     /// 默认不配置编辑器运行时。
     func configureEditorRuntime(kernel: LumiKernel) async {}
+
+    /// 默认不贡献编辑器运行时插件。
+    func editorPlugins(kernel: LumiKernel) -> [any EditorPlugin] { [] }
 }

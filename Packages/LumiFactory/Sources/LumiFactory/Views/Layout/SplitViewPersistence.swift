@@ -446,7 +446,9 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
             let label = access.labelForLog()
             let oldText = String(format: "%.1f", prevPosition ?? position)
             let newText = String(format: "%.1f", position)
-            Self.logger.info("\(self.t)拖拽结束: \(label) = \(newText) (旧值: \(oldText))")
+            if Self.verbose {
+                Self.logger.info("\(self.t)拖拽结束: \(label) = \(newText) (旧值: \(oldText))")
+            }
         }
     }
 

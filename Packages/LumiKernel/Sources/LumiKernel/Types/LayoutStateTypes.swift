@@ -399,7 +399,10 @@ public final class LayoutState: ObservableObject, SuperLog {
             middle.map { "middle=\(String(format: "%.1f", $0))" } ?? "middle=n/a",
             "chatDivider=[\(chatText)]",
         ]
-        Self.logger.info("\(Self.t)三栏宽度[\(viewContainerID)]: \(parts.joined(separator: ", "))")
+        
+        if Self.verbose {
+            Self.logger.info("\(Self.t)三栏宽度[\(viewContainerID)]: \(parts.joined(separator: ", "))")
+        }
     }
 
     public func presentRailTab(id: String) {

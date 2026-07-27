@@ -1,30 +1,59 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import os
+
+/// 插件元信息
+public struct PluginInfo {
+    public let displayName: String
+}
 
 @MainActor
 public final class NetworkManagerPlugin: LumiPlugin {
+    public nonisolated static let verbose = false
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.network-manager")
+    public static let info = PluginInfo(displayName: "Network Monitor")
+
     public let id = "com.coffic.lumi.plugin.network-manager"
     public let name = "Network Monitor"
     public let order = 30
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    // MARK: - Menu Bar
+
+    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] {
+        [
+            MenuBarContentItem(id: "\(id).speed", order: order) {
+                NetworkMenuBarContentView()
+            },
+        ]
     }
 
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] {
+        [
+            MenuBarPopupItem(id: "\(id).popup", order: order) {
+                NetworkMenuBarPopupView()
+            },
+        ]
+    }
+
+    // MARK: - About
+
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
+        AnyView(NetworkManagerAboutView())
+    }
 
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
-    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
-    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
@@ -39,7 +68,6 @@ public final class NetworkManagerPlugin: LumiPlugin {
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
-    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }

@@ -3,7 +3,7 @@ import LumiKernel
 
 /// CAD AgentTool 共用辅助：语言、参数提取、错误本地化。
 enum CADToolSupport {
-    static func language(_ kernel: LumiKernel?) -> LumiLanguagePreference {
+    static func language(_ kernel: LumiKernel) -> LumiLanguagePreference {
         kernel.language
     }
 

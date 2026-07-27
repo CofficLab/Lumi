@@ -16,7 +16,7 @@ public final class WebSearchPlugin: LumiPlugin, SuperLog {
     public let id = "WebSearch"
     public let name = "WebSearch"
     public let order = 101
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Search the web for information using search engines."

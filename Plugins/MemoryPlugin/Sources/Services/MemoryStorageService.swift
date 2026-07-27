@@ -60,6 +60,11 @@ public actor MemoryStorageService {
         await service.listMemories(scope: scope)
     }
 
+    /// 列出全局与全部项目下的所有记忆（用于设置视图）
+    public func listAllMemories() async -> [(MemoryItem, MemoryScope)] {
+        await service.listAllMemories()
+    }
+
     public func readIndex(scope: MemoryScope) async -> String {
         await service.readIndex(scope: scope)
     }

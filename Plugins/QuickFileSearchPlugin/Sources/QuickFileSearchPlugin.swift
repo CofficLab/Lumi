@@ -7,16 +7,59 @@ public final class QuickFileSearchPlugin: LumiPlugin {
     public let id = "QuickFileSearch"
     public let name = "Quick File Search"
     public let order = 50
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        // 注入文件选择回调：通过 EditorProviding 打开文件
+        QuickFileSearchBridge.selectFileHandler = { [weak kernel] path, _ in
+            Task { @MainActor in
+                try? await kernel?.editorProvider?.openFile(at: path)
+            }
+        }
+
+        // 注入窗口 ID 提供者（当前单窗口，返回 nil 即可）
+        QuickFileSearchBridge.activeWindowIdProvider = { nil }
+
+        // 启动快捷键监听
+        FileSearchHotkeyManager.shared.startMonitoring()
     }
 
+    // MARK: - Root Overlays
+
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] {
+        [
+            LumiRootOverlayItem(id: id, order: order) { content in
+                FileSearchOverlay(
+                    content: content,
+                    projectPathProvider: { [weak kernel] in
+                        kernel?.project?.currentProject?.path ?? ""
+                    },
+                    windowIdProvider: { nil }
+                )
+            },
+        ]
+    }
+
+    // MARK: - Settings
+
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        [
+            SettingsTabItem(
+                id: id,
+                title: "Quick File Search",
+                systemImage: "magnifyingglass",
+                order: order
+            ) {
+                QuickFileSearchSettingsView(
+                    projectPath: kernel.project?.currentProject?.path ?? ""
+                )
+            },
+        ]
+    }
 
     // MARK: - LumiPlugin stubs
 
@@ -37,12 +80,10 @@ public final class QuickFileSearchPlugin: LumiPlugin {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
-    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}

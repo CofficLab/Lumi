@@ -9,7 +9,7 @@ import SuperLogKit
 @MainActor
 public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     public nonisolated static let emoji = "💬"
-    public nonisolated(unsafe) static var verbose = true
+    public nonisolated(unsafe) static var verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
 
     private weak var kernel: LumiKernel?
@@ -292,6 +292,16 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
     public func lastMessage(in conversationID: UUID) -> LumiChatMessage? {
         messageCache[conversationID]?.last
+    }
+
+    public func fetchDailyMessageCounts(since: Date) async -> [Date: Int] {
+        guard let store else { return [:] }
+        return await store.fetchDailyMessageCounts(since: since)
+    }
+
+    public func fetchDailyTokenCounts(since: Date) async -> [Date: Int] {
+        guard let store else { return [:] }
+        return await store.fetchDailyTokenCounts(since: since)
     }
 
     // MARK: - Tool Call Result Update

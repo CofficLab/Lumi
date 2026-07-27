@@ -1,13 +1,15 @@
 import SwiftUI
 import LumiKernel
-import LumiUI
 
 @MainActor
 public final class EditorSwiftPlugin: LumiPlugin {
-    public let id = "EditorSwiftIntegration"
-    public let name = "Swift Integration"
-    public let order = 5
-	public let policy: LumiPluginPolicy = .disabled
+    public let id = "EditorSwift"
+    public let name = "Swift Editor"
+    public let order = 4
+    public let policy: LumiPluginPolicy = .optOut
+    public let category: LumiPluginCategory = .development
+    public let stage: LumiPluginStage = .beta
+    public let pluginDescription = "Provides Swift language support and tree-sitter highlighting."
 
     public init() {}
 
@@ -47,6 +49,7 @@ public final class EditorSwiftPlugin: LumiPlugin {
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
-    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
-    public func configureEditorRuntime(kernel: LumiKernel) async {}
+    public func editorPlugins(kernel: LumiKernel) -> [any EditorPlugin] {
+        [EditorSwiftEditorPlugin()]
+    }
 }

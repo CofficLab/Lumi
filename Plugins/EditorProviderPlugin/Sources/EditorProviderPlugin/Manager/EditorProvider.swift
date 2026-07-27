@@ -2,13 +2,14 @@ import Foundation
 import SwiftUI
 import LumiKernel
 import EditorService
+import LumiUI
 import SuperLogKit
 
 @MainActor
 public final class EditorProvider: EditorProviding, SuperLog {
     public static let emoji = "🍚"
     static let verbose: Bool = true
-    
+
     /// 注入的具象 EditorService(弱引用,避免循环)。
     /// 在 OnReady 阶段由 plugin 注入;在此之前文件操作走降级路径。
     private weak var editorService: EditorService?
@@ -26,6 +27,9 @@ public final class EditorProvider: EditorProviding, SuperLog {
     /// 降级用的本地缓存,仅在 EditorService 未注入时使用。
     private var stubCurrentFilePath: String?
 
+    /// 在 EditorService 注入前暂存的编辑器插件,注入后回放,确保注册不丢失。
+    private var pendingPlugins: [any EditorPlugin] = []
+
     public var allEditorThemes: [EditorThemeInfo] {
         Array(themes.values)
     }
@@ -33,6 +37,85 @@ public final class EditorProvider: EditorProviding, SuperLog {
     /// 注入具象 EditorService,启用文件操作转发。
     func attachEditorService(_ service: EditorService) {
         editorService = service
+        flushPendingPlugins()
+    }
+
+    // MARK: - View
+
+    /// 创建编辑器视图。
+    ///
+    /// 由 `EditorPanelPlugin` 通过内核调用。从注入的 `EditorService` 取出 `EditorState`，
+    /// 交给 `EditorSurfaceView` 组装真正的 `SourceEditor`。服务未就绪时返回降级占位。
+    public func makeEditorView() -> AnyView {
+        guard let editorService else {
+            return AnyView(
+                Text("Editor service unavailable")
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            )
+        }
+        return AnyView(EditorSurfaceView(state: editorService.state))
+    }
+
+    /// 回放注入前暂存的编辑器插件注册。
+    private func flushPendingPlugins() {
+        guard let editorService else { return }
+        replaceEditorPlugins(pendingPlugins)
+        pendingPlugins.removeAll()
+    }
+
+    // MARK: - Editor Plugin Registration
+
+    /// 注册一个编辑器插件。插件在 `registerExtensions(into:)` 中写入编辑器运行时扩展表。
+    /// 若 EditorService 尚未注入,则暂存并在注入后回放,保证注册不丢失。
+    public func registerEditorPlugin(_ plugin: any EditorPlugin) {
+        guard let editorService else {
+            pendingPlugins.append(plugin)
+            return
+        }
+        plugin.registerExtensions(into: editorService.editorExtensions)
+    }
+
+    /// 用当前有效启用的编辑器插件集合替换运行时扩展。
+    ///
+    /// `EditorExtensionRegistry.reset()` 会清空语言、语法、高亮、命令等编辑器扩展；
+    /// 这里保留已注册的主题 contributor，因为主题由 app 主题系统单独同步，不属于语言插件集合。
+    public func replaceEditorPlugins(_ plugins: [any EditorPlugin]) {
+        let sortedPlugins = plugins.sorted(by: sortEditorPlugins)
+        guard let editorService else {
+            pendingPlugins = sortedPlugins
+            return
+        }
+
+        let registry = editorService.editorExtensions
+        let themeContributors = registry.allThemes()
+        registry.reset()
+        for themeContributor in themeContributors {
+            registry.registerThemeContributor(themeContributor)
+        }
+
+        for plugin in sortedPlugins {
+            plugin.registerExtensions(into: registry)
+        }
+        registry.recordInstalledPlugins(
+            sortedPlugins.map {
+                EditorInstalledPluginRecord(
+                    id: $0.id,
+                    displayName: $0.name,
+                    description: "",
+                    order: $0.order,
+                    isConfigurable: false
+                )
+            }
+        )
+    }
+
+    private func sortEditorPlugins(_ lhs: any EditorPlugin, _ rhs: any EditorPlugin) -> Bool {
+        if lhs.order != rhs.order {
+            return lhs.order < rhs.order
+        }
+        return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
     }
 
     public var currentFilePath: String? {
@@ -88,6 +171,7 @@ public final class EditorProvider: EditorProviding, SuperLog {
     /// ThemeManager 不知道编辑器的存在,只广播事件;这里自行解析并应用。
     func bindThemeSync(kernel: LumiKernel) {
         self.kernel = kernel
+        configureEditorThemeContributorRegistration(kernel: kernel)
         applyThemeFromKernel()
 
         if let previous = themeObserver {
@@ -99,6 +183,19 @@ public final class EditorProvider: EditorProviding, SuperLog {
             queue: .main
         ) { [weak self] _ in
             self?.applyThemeFromKernel()
+        }
+    }
+
+    /// 将 Lumi app 主题贡献同步为 EditorService 可解析的语法主题 contributor。
+    ///
+    /// EditorState 只认识 EditorService 内部的 `SuperEditorThemeContributor`；
+    /// ThemeManagerPlugin 切换的是 LumiUI 的 app theme。这里在边界处注册 lifecycle 钩子，
+    /// 让每次编辑器主题通知到达时都能用最新 Lumi 主题目录重建 editor syntax 主题。
+    private func configureEditorThemeContributorRegistration(kernel: LumiKernel) {
+        EditorSettingsLifecycle.registerEditorThemeContributors = { [weak kernel] registry in
+            EditorBuiltinSyntaxThemes.registerFallbacks(into: registry)
+            guard let themes = kernel?.theme?.themes else { return }
+            EditorBuiltinSyntaxThemes.registerAppThemes(themes, into: registry)
         }
     }
 

@@ -1,4 +1,3 @@
-import EditorService
 import LumiKernel
 import LumiUI
 import os
@@ -7,9 +6,8 @@ import SuperLogKit
 
 /// 代码编辑器插件
 ///
-/// 在 ActivityBar 中贡献 "Code Editor" 视图容器,托管 EditorService 驱动的编辑器面板。
-/// policy 为 .alwaysOn(用户不可禁用);容器激活时由 BuiltinPluginManager 应用可见性
-/// (隐藏聊天区、显示 rail 与 panel)。
+/// 在 ActivityBar 中贡献 "Code Editor" 视图容器，显示当前文件的内容。
+/// 当前文件来自 `kernel.project?.currentFileURL`（由 `ProjectProviding` 提供）。
 @MainActor
 public final class EditorPanelPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
@@ -19,13 +17,13 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "LumiEditor"
-    public let name = LumiPluginLocalization.string("Code Editor", bundle: .module)
+    public let name = "Code Editor"
     public let order = 277
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .development
     public let stage: LumiPluginStage = .beta
     public var pluginDescription: String {
-        LumiPluginLocalization.string("Code editor with file tree, LSP, and workspace panels.", bundle: .module)
+        "Display the content of the current project file."
     }
 
     public init() {}

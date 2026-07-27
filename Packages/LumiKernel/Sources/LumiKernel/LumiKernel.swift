@@ -131,7 +131,12 @@ public final class LumiKernelContainer: ObservableObject {
         //    且各插件的 `llmProviders(kernel:)` 可以在完整内核上运行。
         try pluginManager.registerLLMProviders(in: self)
 
-        // 6. 同步当前激活容器的可见性状态
+        // 7. 收集所有插件贡献的编辑器运行时插件,并注册到 EditorProviding。
+        //    语言高亮、语法、语言描述等扩展通过 typed 的 `EditorPlugin` 协议接入,
+        //    由具体编辑器宿主在边界处桥接到运行时实现。
+        pluginManager.registerEditorPlugins(in: self)
+
+        // 8. 同步当前激活容器的可见性状态
         //    — 从 LayoutProviding 获取 activeViewContainerID,
         //    — 再从 LayoutProviding 获取该容器的 rail/chat/content/panel 可见性,
         //    — 最后更新到 LayoutProviding 的状态中。
@@ -145,10 +150,10 @@ public final class LumiKernelContainer: ObservableObject {
             )
         }
 
-        // 7. 将 UIManager 中已收集的菜单栏视图交给展示层
+        // 9. 将 UIManager 中已收集的菜单栏视图交给展示层
         refreshMenuBarPresentation()
 
-        // 8. 将内核主题服务持有的主题贡献同步到 LumiUI 的主题注册中心
+        // 10. 将内核主题服务持有的主题贡献同步到 LumiUI 的主题注册中心
         //    此时所有插件的 onReady 已执行完毕,主题贡献已注册到内核
         theme?.syncToLumiUI()
     }

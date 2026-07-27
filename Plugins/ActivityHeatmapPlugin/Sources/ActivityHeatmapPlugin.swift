@@ -4,13 +4,13 @@ import LumiUI
 import SwiftUI
 
 /// ActivityHeatmapPlugin displays a GitHub-style activity heatmap and token usage chart
-/// in the settings sidebar, powered by the existing HistoryQueryService in LumiKernel.
+/// in the settings sidebar, powered by MessageManaging in LumiKernel.
 public final class ActivityHeatmapPlugin: LumiPlugin {
     public let id = "com.coffic.activity-heatmap"
     public let name = "Activity Heatmap"
     public let order = 210
     public let policy: LumiPluginPolicy = .optOut
-    public let category: LumiPluginCategory = .conversation
+    public let category: LumiPluginCategory = .general
     public let pluginDescription = "Display daily message activity and token consumption charts."
 
     public init() {}
@@ -20,7 +20,7 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
-        let historyService = kernel.resolveService(HistoryQueryService.self)
+        let messageService = kernel.resolveService(MessageManaging.self)
         return [
             SettingsTabItem(
                 id: id,
@@ -28,7 +28,7 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
                 systemImage: "chart.bar.xaxis",
                 order: order
             ) {
-                ActivityHeatmapSettingsView(historyService: historyService)
+                ActivityHeatmapSettingsView(messageService: messageService)
             },
         ]
     }

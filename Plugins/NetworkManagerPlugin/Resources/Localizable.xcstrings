@@ -345,6 +345,7 @@
       }
     },
     "Keep an eye on traffic from the menu bar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -447,6 +448,7 @@
       }
     },
     "Live speed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -515,6 +517,7 @@
       }
     },
     "Menu bar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -651,6 +654,7 @@
       }
     },
     "Open Network Monitor from the sidebar or the menu bar." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -787,6 +791,7 @@
       }
     },
     "Real-time monitoring of network speed, traffic, and connection status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -821,6 +826,7 @@
       }
     },
     "Real-time upload and download rates" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
