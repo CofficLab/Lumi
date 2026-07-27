@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "·" : {
+
+    },
+    "%lld projects" : {
+
+    },
+    "+%lld more" : {
+
+    },
+    "Active" : {
+
+    },
     "Add" : {
       "localizations" : {
         "en" : {
@@ -138,6 +150,9 @@
           }
         }
       }
+    },
+    "Current" : {
+
     },
     "Error" : {
 
@@ -279,6 +294,9 @@
           }
         }
       }
+    },
+    "No opened files recorded" : {
+
     },
     "No Projects" : {
       "localizations" : {

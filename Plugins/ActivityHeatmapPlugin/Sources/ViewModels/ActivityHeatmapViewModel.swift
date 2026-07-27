@@ -26,7 +26,7 @@ public enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable, Sendable {
 ///
 /// Performance notes:
 /// - Both data fetches run off the main actor via `nonisolated` requirements
-///   on `HistoryQueryService`, so switching the time range never blocks the UI.
+///   on `MessageManaging`, so switching the time range never blocks the UI.
 /// - Sequential fetch avoids concurrent access issues with the shared service reference.
 /// - `loadGeneration` cancels stale loads: rapidly switching the period won't
 ///   let an older, slower response overwrite a newer one.
@@ -35,7 +35,7 @@ public enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable, Sendable {
 public final class ActivityHeatmapViewModel {
     // MARK: - Dependencies
 
-    private let historyService: (any HistoryQueryService)?
+    private let messageService: (any MessageManaging)?
 
     // MARK: - State
 
@@ -54,14 +54,14 @@ public final class ActivityHeatmapViewModel {
 
     // MARK: - Init
 
-    public init(historyService: (any HistoryQueryService)?) {
-        self.historyService = historyService
+    public init(messageService: (any MessageManaging)?) {
+        self.messageService = messageService
     }
 
     // MARK: - Load
 
     public func load() async {
-        guard let service = historyService else {
+        guard let service = messageService else {
             hasLoaded = true
             return
         }

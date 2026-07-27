@@ -40,6 +40,18 @@ final class MockConversationManaging: ObservableObject, ConversationManaging {
         }
     }
 
+    func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return false
+        }
+        let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        conversations[index].title = normalized.isEmpty ? nil : normalized
+        if conversationID == selectedConversationID {
+            objectWillChange.send()
+        }
+        return true
+    }
+
     func isSending(for conversationID: UUID?) -> Bool { false }
     func mockConversationIDs() -> [UUID] { [] }
     func providerID(for conversationID: UUID?) -> String? { nil }
@@ -49,6 +61,8 @@ final class MockConversationManaging: ObservableObject, ConversationManaging {
     func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
     func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { .chat }
     func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
+    func language(for conversationID: UUID?) -> LumiConversationLanguage { .chinese }
+    func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
 }
 
 @MainActor
@@ -90,6 +104,8 @@ final class MockMessageManaging: ObservableObject, MessageManaging {
     func lastMessage(in conversationID: UUID) -> LumiChatMessage? {
         messages(for: conversationID).last
     }
+    func fetchDailyMessageCounts(since: Date) async -> [Date: Int] { [:] }
+    func fetchDailyTokenCounts(since: Date) async -> [Date: Int] { [:] }
 }
 
 enum ConversationListPreviewSupport {
@@ -107,10 +123,10 @@ enum ConversationListPreviewSupport {
                 )
             }
         }
-        return ConversationListContext(
-            conversationManaging: mock,
-            messageManaging: messageMock
-        )
+        let kernel = LumiKernel()
+        kernel.registerService(ConversationManaging.self, mock)
+        kernel.registerService(MessageManaging.self, messageMock)
+        return ConversationListContext(kernel: kernel)
     }
 }
 #endif

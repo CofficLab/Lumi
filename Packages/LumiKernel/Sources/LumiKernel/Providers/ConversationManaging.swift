@@ -26,6 +26,14 @@ public protocol ConversationManaging: ObservableObject {
     /// 删除对话
     func deleteConversation(id: UUID)
 
+    /// 更新指定对话的标题
+    ///
+    /// - Parameters:
+    ///   - title: 新标题
+    ///   - conversationID: 目标对话 ID
+    /// - Returns: 更新成功返回 `true`，对话不存在返回 `false`
+    func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool
+
     /// 检查对话是否正在发送中
     func isSending(for conversationID: UUID?) -> Bool
 
@@ -58,4 +66,12 @@ public protocol ConversationManaging: ObservableObject {
 
     /// 设置指定对话的自动化程度
     func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?)
+
+    // MARK: - Language
+
+    /// 获取指定对话的回复语言
+    func language(for conversationID: UUID?) -> LumiConversationLanguage
+
+    /// 设置指定对话的回复语言
+    func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?)
 }

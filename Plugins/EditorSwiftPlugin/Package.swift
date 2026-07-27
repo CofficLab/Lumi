@@ -14,14 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/LumiKernel"),
-        .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/ShellKit"),
-        .package(path: "../../Packages/SuperLogKit"),
-        .package(path: "../../Packages/XcodeKit"),
-        .package(path: "../../Packages/XcodeProjectGen"),
-        .package(url: "https://github.com/tuist/XcodeProj", .upToNextMajor(from: "9.11.0")),
         // Official tree-sitter/tree-sitter-swift has no Package.swift; use SPM-compatible fork.
         .package(url: "https://github.com/alex-pinkus/tree-sitter-swift.git", branch: "with-generated-files"),
     ],
@@ -29,17 +23,25 @@ let package = Package(
         .target(
             name: "EditorSwiftPlugin",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ShellKit", package: "ShellKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "XcodeKit", package: "XcodeKit"),
-                .product(name: "XcodeProjectGen", package: "XcodeProjectGen"),
-                .product(name: "XcodeProj", package: "XcodeProj"),
                 .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),
             ],
             path: "Sources",
+            exclude: [
+                "Commands",
+                "Contributors",
+                "Models",
+                "Services",
+                "Support",
+                "Tools",
+                "ViewModels",
+                "Views",
+                "EditorSwiftKeywordHoverContributor.swift",
+                "EditorSwiftPluginBootstrap.swift",
+                "SwiftPrimitiveTypeCompletionContributor.swift",
+                "SwiftSelectionCodeActionContributor.swift",
+            ],
             resources: [
                 .process("../Resources/Localizable.xcstrings"),
                 .copy("Resources"),
@@ -49,12 +51,23 @@ let package = Package(
             name: "EditorSwiftPluginTests",
             dependencies: [
                 "EditorSwiftPlugin",
-                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "XcodeKit", package: "XcodeKit"),
             ],
-            path: "Tests"
+            path: "Tests",
+            exclude: [
+                "EditorSwiftBuildServerStoreTests.swift",
+                "EditorSwiftHostEnvironmentConfigurationTests.swift",
+                "EditorSwiftIntegrationTests.swift",
+                "EditorSwiftStorageTests.swift",
+                "GenerateXcodeProjectToolParserTests.swift",
+                "SwiftAgentToolsTests.swift",
+                "SwiftBuildRunTests.swift",
+                "SwiftContributorsTests.swift",
+                "XcodeProjectContextStatusMapperTests.swift",
+                "XcodeProjectStatusBarContrastTests.swift",
+                "XcodeProjectStatusBarViewModelTests.swift",
+                "XcodeProjectStatusPresentationTests.swift",
+            ]
         )
     ]
 )

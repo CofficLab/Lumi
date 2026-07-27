@@ -28,6 +28,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     private var selectionState = SelectionState()
     private var hoveredItemURL: URL?
     private var trackingArea: NSTrackingArea?
+    private var appearanceSyncObserver: NSObjectProtocol?
     private let theme: any LumiAppChromeTheme = LumiFallbackChromeTheme()
     var kernel: LumiKernel?
 
@@ -57,6 +58,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         setupDataSource()
         setupBindings()
         setupTrackingArea()
+        setupAppearanceSync()
         if Self.verbose {
             Self.logger.info("\(Self.t)视图加载完成")
         }
@@ -89,8 +91,12 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
 
         view.addSubview(scrollView)
 
-        // 启用拖放：支持文件 URL 拖出到其他目标，以及拖入目录 cell 移动文件
+        // 启用拖放：支持文件 URL 拖出到其他目标（如 Finder 复制），以及拖入目录 cell 移动文件
         collectionView.registerForDraggedTypes([.fileURL])
+        // 拖出到其他应用（Finder/桌面）时允许复制；应用内拖动（拖到目录 cell）允许移动。
+        // NSCollectionView 作为 dragging source，必须显式设置操作掩码，否则跨应用拖动不生效。
+        collectionView.setDraggingSourceOperationMask(.copy, forLocal: false)
+        collectionView.setDraggingSourceOperationMask(.move, forLocal: true)
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -115,12 +121,21 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
                 let isHovered = self.hoveredItemURL == fileItem.url
                 let gitStatus = self.gitStatus(for: fileItem.url)
 
+                // 用 AppThemeAppearanceResolver 而非 view.effectiveAppearance——后者在主题切换
+                // 过程中会多次变化（通知时 DarkAqua、viewDidChangeEffectiveAppearance 时又变 Aqua），
+                // 不可靠。AppThemeAppearanceResolver 基于 ActiveChromeTheme.current，由
+                // LumiUIThemeRegistry 在主题切换时同步更新，稳定可信。
+                let isDark = AppThemeAppearanceResolver.effectiveColorScheme == .dark
+                let appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)!
+                let appearanceID = isDark ? "dark" : "light"
                 cell.configure(
                     with: fileItem,
                     isSelected: isSelected,
                     isHovered: isHovered,
                     gitStatus: gitStatus,
-                    theme: self.theme
+                    theme: self.theme,
+                    appearance: appearance,
+                    appearanceID: appearanceID
                 )
 
                 return cell
@@ -255,6 +270,18 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         collectionView.reloadItems(at: Set(visibleItems))
     }
 
+    private func setupAppearanceSync() {
+        // 监听 Lumi 主题同步通知，触发时 ActiveChromeTheme.current 已是新外观，
+        // 立即 reload 重建 cell，让 hostingView.appearance 用正确外观渲染。
+        appearanceSyncObserver = NotificationCenter.default.addObserver(
+            forName: .lumiThemeDidSyncWindowAppearances,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.reloadVisibleItems()
+        }
+    }
+
     private func gitStatus(for url: URL) -> GitStatus? {
         guard !gitStatusSnapshot.isEmpty,
               !gitStatusSnapshot.repoRootPath.isEmpty else { return nil }
@@ -297,7 +324,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
 // MARK: - NSCollectionViewDelegate
 
 extension FileTreeCollectionViewController: NSCollectionViewDelegate {
-
+    
     func collectionView(
         _ collectionView: NSCollectionView,
         didSelectItemsAt indexPaths: Set<IndexPath>
@@ -306,14 +333,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
               let item = dataSource.itemIdentifier(for: indexPath) else {
             return
         }
-
+        
         guard case .file(let fileItem) = item else {
             collectionView.deselectItems(at: indexPaths)
             return
         }
-
+        
         let modifiers = ModifierFlags.currentClick
-
+        
         selectionState.handleTap(
             url: fileItem.url,
             isDirectory: fileItem.isDirectory,
@@ -328,11 +355,11 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             }
         )
         kernel?.project?.updateCurrentFile(fileItem.url)
-
+        
         // 刷新所有可见 cell 以同步选中状态（避免上一个选中项的高亮残留）
         reloadVisibleItems()
     }
-
+    
     func collectionView(
         _ collectionView: NSCollectionView,
         menuForItemsAt indexPaths: Set<IndexPath>
@@ -341,14 +368,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
               let item = dataSource.itemIdentifier(for: indexPath) else {
             return nil
         }
-
+        
         guard case .file(let fileItem) = item else {
             return nil
         }
-
+        
         return buildMenu(for: fileItem.url, isDirectory: fileItem.isDirectory)
     }
-
+    
     func menuForItem(atWindowLocation location: NSPoint) -> NSMenu? {
         let point = collectionView.convert(location, from: nil)
         for indexPath in collectionView.indexPathsForVisibleItems() {
@@ -365,11 +392,11 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         }
         return nil
     }
-
+    
     private func buildMenu(for url: URL, isDirectory: Bool) -> NSMenu {
         let menu = NSMenu()
         let conversationTargets = selectionState.actionTargets(for: url)
-
+        
         if isDirectory {
             menu.addItem(menuItem(
                 title: LumiPluginLocalization.string("New File", bundle: .module),
@@ -383,14 +410,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             ))
             menu.addItem(.separator())
         }
-
+        
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Rename", bundle: .module),
             action: #selector(renameItem(_:)),
             url: url
         ))
         menu.addItem(.separator())
-
+        
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Reveal in Finder", bundle: .module),
             action: #selector(revealInFinder(_:)),
@@ -417,25 +444,25 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             action: #selector(copyPath(_:)),
             url: url
         ))
-
+        
         menu.addItem(.separator())
-
+        
         menu.addItem(menuItem(
             title: LumiPluginLocalization.string("Move to Trash", bundle: .module),
             action: #selector(deleteItem(_:)),
             url: url
         ))
-
+        
         return menu
     }
-
+    
     private func menuItem(title: String, action: Selector, url: URL) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
         item.representedObject = url
         item.target = self
         return item
     }
-
+    
     private func menuItem(title: String, action: Selector, urls: [URL], enabled: Bool) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
         item.representedObject = urls
@@ -443,9 +470,9 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         item.isEnabled = enabled
         return item
     }
-
+    
     // MARK: - Menu Actions
-
+    
     @objc private func newFile(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         guard let name = FileTreeActions.presentNamePrompt(
@@ -454,7 +481,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             defaultName: "",
             confirmButton: LumiPluginLocalization.string("Create", bundle: .module)
         ) else { return }
-
+        
         guard let newURL = FileTreeFacade.createFile(in: url, name: name) else {
             alert_error(LumiPluginLocalization.string(
                 "Could not create the file. The name may be invalid or a file with that name already exists.",
@@ -470,7 +497,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         alert_success(LumiPluginLocalization.string("New File", bundle: .module),
                       subtitle: name)
     }
-
+    
     @objc private func newFolder(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         guard let name = FileTreeActions.presentNamePrompt(
@@ -479,7 +506,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             defaultName: "",
             confirmButton: LumiPluginLocalization.string("Create", bundle: .module)
         ) else { return }
-
+        
         guard let newURL = FileTreeFacade.createFolder(in: url, name: name) else {
             alert_error(LumiPluginLocalization.string(
                 "Could not create the folder. The name may be invalid or a folder with that name already exists.",
@@ -495,7 +522,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         alert_success(LumiPluginLocalization.string("New Folder", bundle: .module),
                       subtitle: name)
     }
-
+    
     @objc private func renameItem(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         guard let newName = FileTreeActions.presentNamePrompt(
@@ -504,9 +531,9 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             defaultName: url.lastPathComponent,
             confirmButton: LumiPluginLocalization.string("Rename", bundle: .module)
         ) else { return }
-
+        
         guard newName != url.lastPathComponent else { return }
-
+        
         guard let newURL = FileTreeFacade.renameItem(at: url, newName: newName) else {
             alert_error(LumiPluginLocalization.string(
                 "Could not rename the item. The name may be invalid or an item with that name already exists.",
@@ -521,11 +548,11 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         alert_success(LumiPluginLocalization.string("Rename", bundle: .module),
                       subtitle: "\(url.lastPathComponent) → \(newURL.lastPathComponent)")
     }
-
+    
     @objc private func deleteItem(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         guard FileTreeActions.presentDeleteConfirmation(url: url) else { return }
-
+        
         guard FileTreeFacade.trashItem(at: url) else {
             alert_error(LumiPluginLocalization.string(
                 "Could not move the item to the Trash.", bundle: .module
@@ -540,29 +567,29 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         alert_success(LumiPluginLocalization.string("Moved to Trash", bundle: .module),
                       subtitle: url.lastPathComponent)
     }
-
+    
     @objc private func revealInFinder(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         FileTreeFacade.openInFinder(url)
     }
-
+    
     @objc private func openInVSCode(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         FileTreeFacade.openInVSCode(url)
     }
-
+    
     @objc private func openInTerminal(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         FileTreeFacade.openInTerminal(url)
     }
-
+    
     @objc private func copyPath(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         FileTreeFacade.copyPath(url)
         alert_success(LumiPluginLocalization.string("Path copied to clipboard", bundle: .module),
                       subtitle: url.lastPathComponent)
     }
-
+    
     @objc private func sendToConversation(_ sender: NSMenuItem) {
         guard let urls = sender.representedObject as? [URL], !urls.isEmpty else { return }
         guard let conversationInput = kernel?.conversationInput else {
@@ -580,9 +607,9 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         alert_success(LumiPluginLocalization.string("Sent to Conversation", bundle: .module),
                       subtitle: subtitle)
     }
-
+    
     // MARK: - File Operation Helpers
-
+    
     private func ensureDirectoryExpanded(_ url: URL) {
         guard let item = fileTreeDataSource.items.first(where: {
             if case .file(let fileItem) = $0, fileItem.url == url { return true }
@@ -595,14 +622,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         )
         onExpansionChange?(relativePath, true)
     }
-
+    
     private func refreshAfterMutation(parentURL: URL) {
         onTreeMutation?()
         fileTreeDataSource.reloadDirectory(at: parentURL)
     }
-
+    
     // MARK: - Drag & Drop
-
+    
     func handleDropFiles(targetURL: URL, sourceURLs: [URL]) -> Bool {
         let result = FileTreeDropProcessor.process(
             enabled: ProjectFileTreePlugin.dragAndDropEnabled,
@@ -611,30 +638,66 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             isTargetDirectory: FileTreeFacade.isDirectory,
             moveItem: { FileTreeFacade.moveItem(from: $0, to: $1) }
         )
-
+        
         switch result {
         case .rejected:
             return false
         case .moved(let pairs, let affectedParents):
             onTreeMutation?()
-
+            
             for parent in affectedParents {
                 fileTreeDataSource.reloadDirectory(at: parent)
             }
-
+            
             ensureDirectoryExpanded(targetURL)
             return true
         }
     }
+}
 
-    // MARK: - Drag & Drop (Source)
+extension FileTreeCollectionViewController: NSDraggingSource {
+
+    /// 拖动源操作类型：支持复制到 Finder/桌面
+    func draggingSession(
+        _ session: NSDraggingSession,
+        sourceOperationMaskFor context: NSDraggingContext
+    ) -> NSDragOperation {
+        return .copy
+    }
+
+    /// 拖动开始时的回调（可选）
+    func draggingSession(
+        _ session: NSDraggingSession,
+        willBeginAt screenPoint: NSPoint
+    ) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)拖动会话开始 at \(String(describing: screenPoint))")
+        }
+    }
+
+    /// 拖动结束时的回调（可选）
+    func draggingSession(
+        _ session: NSDraggingSession,
+        endedAt screenPoint: NSPoint,
+        operation: NSDragOperation
+    ) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)拖动会话结束 at \(String(describing: screenPoint)), operation: \(operation.rawValue)")
+        }
+        // 可选：在拖动到 Finder 后刷新相关目录的 Git 状态
+        // 因为外部移动/复制文件后，Git 状态可能变化
+    }
+}
+
+// MARK: - Drag & Drop (Source)
+
+extension FileTreeCollectionViewController {
 
     func collectionView(
         _ collectionView: NSCollectionView,
-        pasteboardWriterForItemAt item: NSCollectionViewItem
+        pasteboardWriterForItemAt indexPath: IndexPath
     ) -> NSPasteboardWriting? {
-        guard let indexPath = collectionView.indexPath(for: item),
-              let collectionItem = dataSource.itemIdentifier(for: indexPath),
+        guard let collectionItem = dataSource.itemIdentifier(for: indexPath),
               case .file(let fileItem) = collectionItem else {
             return nil
         }

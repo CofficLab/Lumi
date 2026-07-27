@@ -16,7 +16,7 @@ public final class BrowserPlugin: LumiPlugin, SuperLog {
     public let id = "Browser"
     public let name = "Browser"
     public let order = 102
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Control web browser for viewing and interacting with web pages."

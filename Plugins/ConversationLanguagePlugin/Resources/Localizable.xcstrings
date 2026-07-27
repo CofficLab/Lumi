@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "AI response language in header" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

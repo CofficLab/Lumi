@@ -25,27 +25,14 @@ struct AppLayoutView: View {
                     .frame(maxHeight: .infinity)
                 AppDivider(.vertical)
 
-                if isRailVisible, kernel.layoutManager?.layoutState.activeViewContainerID != nil {
-                    RailView(kernel: kernel)
-                        .frame(maxWidth: 240, maxHeight: .infinity)
-                    AppDivider(.vertical)
+                Group {
+                    if kernel.layoutManager?.layoutState.activeViewContainerID != nil {
+                        splitLayout
+                    } else {
+                        WelcomeView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
                 }
-
-                if kernel.layoutManager?.layoutState.activeViewContainerID != nil {
-                    PanelView(kernel: kernel)
-                        .frame(maxWidth: .infinity)
-                } else {
-                    WelcomeView()
-                        .frame(maxWidth: .infinity)
-                }
-
-                if isChatVisible, kernel.layoutManager?.layoutState.activeViewContainerID != nil {
-                    AppDivider(.vertical)
-                    ChatView(kernel: kernel)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                
-                Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -66,6 +53,65 @@ struct AppLayoutView: View {
             isRailVisible = kernel.layoutManager?.isRailVisible ?? true
             isContentVisible = kernel.layoutManager?.isContentVisible ?? true
             isChatVisible = kernel.layoutManager?.isChatVisible ?? true
+        }
+    }
+
+    // MARK: - Split Layout
+
+    private var showRail: Bool {
+        isRailVisible && kernel.layoutManager?.layoutState.activeViewContainerID != nil
+    }
+
+    private var showChat: Bool {
+        isChatVisible && kernel.layoutManager?.layoutState.activeViewContainerID != nil
+    }
+
+    private var viewContainerID: String {
+        kernel.layoutManager?.layoutState.activeViewContainerID ?? ""
+    }
+
+    private var layoutState: LayoutState {
+        kernel.layoutManager?.layoutState ?? LayoutState()
+    }
+
+    @ViewBuilder
+    private var splitLayout: some View {
+        if showRail {
+            HSplitView {
+                RailView(kernel: kernel)
+                    .frame(minWidth: 180, idealWidth: 240, maxWidth: 400)
+                    .background(
+                        SplitViewDividerPersistence.rail(
+                            layoutState: layoutState,
+                            viewContainerID: viewContainerID
+                        )
+                    )
+                mainSplitContent
+            }
+        } else {
+            mainSplitContent
+        }
+    }
+
+    @ViewBuilder
+    private var mainSplitContent: some View {
+        if showChat {
+            HSplitView {
+                PanelView(kernel: kernel)
+                    .frame(minWidth: 280, maxWidth: .infinity)
+                ChatView(kernel: kernel)
+                    .frame(minWidth: 280, idealWidth: 320, maxWidth: .infinity)
+                    .background(
+                        SplitViewDividerPersistence.chatSection(
+                            layoutState: layoutState,
+                            viewContainerID: viewContainerID,
+                            layout: .narrow
+                        )
+                    )
+            }
+        } else {
+            PanelView(kernel: kernel)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

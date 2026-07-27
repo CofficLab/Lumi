@@ -19,10 +19,10 @@ enum FileLogPluginRuntimeBridge {
 
 @MainActor
 public extension FileLogPlugin {
-    static func bootstrapFromLumiCoreIfNeeded(context: any LumiCoreAccessing) {
+    static func bootstrapFromLumiCoreIfNeeded(kernel: LumiKernel) {
         guard !didBootstrapFromLumiCore else { return }
-        if let core = context.lumiCore {
-            FileLogPluginRuntimeBridge.pluginSubdirectory = core.storage.pluginDataDirectory(for: FileLogPluginRuntimeBridge.pluginName)
+        if let storage = kernel.storage {
+            FileLogPluginRuntimeBridge.pluginSubdirectory = storage.pluginDataDirectory(for: FileLogPluginRuntimeBridge.pluginName)
         }
         didBootstrapFromLumiCore = true
     }

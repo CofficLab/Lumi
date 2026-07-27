@@ -245,13 +245,9 @@ public struct OnboardingRootOverlay<Content: View>: View {
 
     private var pages: [OnboardingPageView] {
         guard !environmentPages.isEmpty else {
-            let fallback = OnboardingPlugin.onboardingPages(context: LumiPluginContext(
-                activeSectionID: "preview",
-                activeSectionTitle: "Preview"
-            ))
-            return fallback.enumerated().map { (index, view) in
-                OnboardingPageView(order: index, view: view)
-            }
+            return [
+                OnboardingPageView(order: 0, view: AnyView(OnboardingWelcomePage()))
+            ]
         }
         return environmentPages
     }

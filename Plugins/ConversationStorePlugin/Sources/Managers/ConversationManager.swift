@@ -162,6 +162,30 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
+    public func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return false
+        }
+        let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let storedTitle = normalized.isEmpty ? nil : normalized
+        conversations[index].title = storedTitle
+
+        if conversationID == selectedConversationID {
+            updateCurrentTitle()
+        }
+        notifyConversationsChanged()
+
+        // 持久化到数据库（异步）
+        Task {
+            await store?.updateTitle(id: conversationID, title: normalized)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)updateConversationTitle: conversation=\(conversationID.uuidString.prefix(8)), title=\(storedTitle ?? "nil")")
+        }
+        return true
+    }
+
     public func isSending(for conversationID: UUID?) -> Bool {
         // TODO: Implement based on actual sending state
         return false
@@ -225,6 +249,11 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             return
         }
         conversations[index].verbosity = verbosity
+        // 重新赋值触发 @Published，并广播变更通知，使依赖该会话 verbosity 的视图
+        // （消息列表、工具栏等）即时刷新：消息列表会据此重新加载（工具消息的显隐）
+        // 并注入新的 verbosity 环境值。
+        conversations = conversations
+        notifyConversationsChanged()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setVerbosity: conversation=\(conversationID.uuidString.prefix(8)), verbosity=\(verbosity.rawValue)")
@@ -251,6 +280,29 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setAutomationLevel: conversation=\(conversationID.uuidString.prefix(8)), level=\(automationLevel.rawValue)")
+        }
+    }
+
+    // MARK: - Language
+
+    public func language(for conversationID: UUID?) -> LumiConversationLanguage {
+        guard let conversationID else {
+            return .chinese
+        }
+        return conversations.first { $0.id == conversationID }?.language ?? .chinese
+    }
+
+    public func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].language = language
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setLanguage: conversation=\(conversationID.uuidString.prefix(8)), language=\(language.rawValue)")
         }
     }
 

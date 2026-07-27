@@ -1,22 +1,30 @@
+import os
 import SwiftUI
 import LumiKernel
-import LumiUI
+import SuperLogKit
 
 @MainActor
-public final class ProjectOverviewPlugin: LumiPlugin {
+public final class ProjectOverviewPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "📋"
+    public nonisolated static let verbose = false
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-overview")
+
     public let id = "ProjectOverview"
     public let name = "ProjectOverview"
     public let order = 14
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
-    }
+    public func onReady(kernel: LumiKernel) async throws {}
 
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [ProjectOverviewTool()]
+    }
 
     // MARK: - LumiPlugin stubs
 

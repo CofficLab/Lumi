@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "·" : {
+
+    },
+    "%lld memories" : {
+
+    },
     "Delete a memory from the persistent memory system." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -69,6 +75,9 @@
           }
         }
       }
+    },
+    "G" : {
+
     },
     "List all saved memories." : {
       "extractionState" : "stale",
@@ -172,6 +181,9 @@
           }
         }
       }
+    },
+    "P" : {
+
     },
     "Persistent memory system for cross-session context" : {
       "extractionState" : "stale",

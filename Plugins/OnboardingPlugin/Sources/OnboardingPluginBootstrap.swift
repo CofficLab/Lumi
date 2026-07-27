@@ -16,10 +16,10 @@ enum OnboardingPluginRuntimeBridge {
 
 @MainActor
 public extension OnboardingPlugin {
-    static func bootstrapFromLumiCoreIfNeeded(context: any LumiCoreAccessing) {
+    static func bootstrapFromLumiCoreIfNeeded(kernel: LumiKernel) {
         guard !didBootstrapFromLumiCore else { return }
-        if let core = context.lumiCore {
-            OnboardingPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory
+        if let storage = kernel.storage {
+            OnboardingPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
         }
         didBootstrapFromLumiCore = true
     }

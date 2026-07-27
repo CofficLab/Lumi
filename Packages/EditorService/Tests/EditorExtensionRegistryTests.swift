@@ -4,6 +4,7 @@ import EditorLanguageRuntime
 import EditorTextView
 import XCTest
 @testable import EditorService
+import LumiKernel
 
 @MainActor
 private final class MockHighlightProvider: HighlightProviding {
@@ -27,6 +28,9 @@ private final class MockHighlightProvider: HighlightProviding {
     }
 }
 
+/// 模拟高亮插件：其实体同时遵循内核标记协议与 `HighlightProviding`。
+extension MockHighlightProvider: EditorHighlightProvider {}
+
 @MainActor
 private final class MockHighlightContributor: SuperEditorHighlightProviderContributor {
     let id: String = "mock.highlight"
@@ -46,6 +50,18 @@ private final class MockHighlightContributor: SuperEditorHighlightProviderContri
 }
 
 @MainActor
+private final class MockKernelHighlightContributor: EditorHighlightContributor {
+    let id = "mock.kernel.highlight"
+
+    func supports(languageId: String) -> Bool { languageId == "markdown" }
+
+    /// 以内核可见的标记类型返回底层 `HighlightProviding` 实例。
+    func highlightProviders(for languageId: String) -> [any EditorHighlightProvider] {
+        [MockHighlightProvider()]
+    }
+}
+
+@MainActor
 final class EditorExtensionRegistryTests: XCTestCase {
     func testHighlightProvidersCachesResultsPerLanguage() {
         let registry = EditorExtensionRegistry()
@@ -61,6 +77,19 @@ final class EditorExtensionRegistryTests: XCTestCase {
         XCTAssertTrue(first[0] === second[0])
         XCTAssertEqual(contributor.supportsCallCount, 1)
         XCTAssertEqual(contributor.provideCallCount, 1)
+    }
+
+    /// 验证高亮插件仅面向内核（`EditorHighlightContributor`）注册时，
+    /// EditorService 能正确桥接并使其高亮 provider 生效。
+    func testRegisterHighlightContributorViaKernelBridge() {
+        let registry = EditorExtensionRegistry()
+        let contributor = MockKernelHighlightContributor()
+
+        registry.registerHighlightContributor(contributor)
+
+        let providers = registry.highlightProviders(for: "markdown")
+        XCTAssertEqual(providers.count, 1)
+        XCTAssertTrue(providers[0] is MockHighlightProvider)
     }
 }
 #endif

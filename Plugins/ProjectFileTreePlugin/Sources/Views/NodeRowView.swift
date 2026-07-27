@@ -11,6 +11,8 @@ struct NodeRowView: View {
     let isHovered: Bool
     let gitStatus: GitStatus?
     let theme: any LumiAppChromeTheme
+    /// 当前外观标识，变化时通过 .id 强制 SwiftUI 销毁重建视图树，绕过 diff 缓存
+    let appearanceID: String
 
     var body: some View {
         HStack(spacing: 4) {
@@ -52,6 +54,7 @@ struct NodeRowView: View {
         .padding(.leading, CGFloat(item.depth) * 16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(rowBackground())
+        .id(appearanceID)
     }
 
     private func fileIconView(_ item: FileTreeNodeItem) -> Image {
@@ -110,7 +113,8 @@ extension NodeRowView {
             ),
             isSelected: false, isHovered: false,
             gitStatus: nil,
-            theme: LumiFallbackChromeTheme()
+            theme: LumiFallbackChromeTheme(),
+            appearanceID: "placeholder"
         )
     }
 }

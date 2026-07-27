@@ -1,22 +1,40 @@
 import SwiftUI
 import LumiKernel
-import LumiUI
 
 @MainActor
 public final class OnboardingPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.onboarding"
     public let name = "Onboarding"
     public let order = 10
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
-
-    public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+    public func onBoot(kernel: LumiKernel) async throws {
+        OnboardingPlugin.bootstrapFromLumiCoreIfNeeded(kernel: kernel)
     }
 
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] {
+        [
+            OnboardingPageItem(id: "onboarding-welcome") {
+                OnboardingWelcomePage()
+            }
+        ]
+    }
+
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] {
+        [
+            LumiRootOverlayItem(
+                id: "onboarding-root-overlay",
+                order: 10,
+                wrap: { content in
+                    AnyView(OnboardingRootOverlay(content: content))
+                }
+            )
+        ]
+    }
 
     // MARK: - LumiPlugin stubs
 
@@ -42,8 +60,7 @@ public final class OnboardingPlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
-    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
-    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}

@@ -1,4 +1,5 @@
-import EditorService
+import Foundation
+import LumiKernel
 import ShellKit
 import TreeSitterSwift
 
@@ -16,12 +17,26 @@ enum EditorSwiftPluginDescriptor {
     )
 }
 
-final class EditorSwiftGrammarProvider: BundledGrammarProvider {
-    init() {
-        super.init(
-            grammarId: "swift",
-            bundle: .module,
-            languagePointer: { tree_sitter_swift() }
+final class EditorSwiftGrammarProvider: LanguageGrammarProviding {
+    let grammarId = "swift"
+
+    func treeSitterLanguage() -> OpaquePointer? {
+        tree_sitter_swift()
+    }
+
+    func highlightQueryURLs() -> [URL] {
+        resourceURL(named: "highlights", extension: "scm").map { [$0] } ?? []
+    }
+
+    func localsQueryURL() -> URL? {
+        resourceURL(named: "locals", extension: "scm")
+    }
+
+    private func resourceURL(named name: String, extension ext: String) -> URL? {
+        Bundle.module.url(
+            forResource: name,
+            withExtension: ext,
+            subdirectory: "Resources/tree-sitter-swift"
         )
     }
 }

@@ -10,7 +10,7 @@ import os
 public struct ProjectRAGOnReadyHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
     nonisolated public static let emoji = ProjectRAGPlugin.emoji
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public init() {}
 

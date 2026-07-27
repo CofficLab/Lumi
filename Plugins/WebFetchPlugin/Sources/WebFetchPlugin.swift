@@ -16,7 +16,7 @@ public final class WebFetchPlugin: LumiPlugin, SuperLog {
     public let id = "WebFetch"
     public let name = "WebFetch"
     public let order = 100
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Fetch and extract content from web pages."

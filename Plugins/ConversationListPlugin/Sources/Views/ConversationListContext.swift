@@ -16,6 +16,7 @@ public final class ConversationListContext: ObservableObject, SuperLog {
     @Published public private(set) var unreadCount: Int = 0
     @Published public private(set) var messageVersion: Int = 0
 
+    private let kernel: LumiKernel
     private let conversationManaging: any ConversationManaging
     private let messageManaging: (any MessageManaging)?
     private var conversationSnapshots: [UUID: Date] = [:]
@@ -24,17 +25,15 @@ public final class ConversationListContext: ObservableObject, SuperLog {
     private var previousSelectedID: UUID?
     private var syncTimer: AnyCancellable?
 
-    public init(
-        conversationManaging: any ConversationManaging,
-        messageManaging: (any MessageManaging)? = nil
-    ) {
-        self.conversationManaging = conversationManaging
-        self.messageManaging = messageManaging
-        self.previousConversations = conversationManaging.conversations
-        self.previousSelectedID = conversationManaging.selectedConversationID
+    public init(kernel: LumiKernel) {
+        self.kernel = kernel
+        self.conversationManaging = kernel.conversations!
+        self.messageManaging = kernel.messageManager
+        self.previousConversations = kernel.conversations!.conversations
+        self.previousSelectedID = kernel.conversations!.selectedConversationID
 
         conversationSnapshots = Dictionary(
-            uniqueKeysWithValues: conversationManaging.conversations.map { ($0.id, $0.updatedAt) }
+            uniqueKeysWithValues: kernel.conversations!.conversations.map { ($0.id, $0.updatedAt) }
         )
         bindConversationManaging()
         bindMessageManaging()
@@ -81,7 +80,7 @@ public final class ConversationListContext: ObservableObject, SuperLog {
         items.reserveCapacity(limit)
         for summary in sorted.dropFirst(offset).prefix(limit) {
             let count = await messageCount(for: summary.id)
-            items.append(ConversationListItem.from(summary, messageCount: count))
+            items.append(ConversationListItem.from(summary, messageCount: count, uiTitle: uiTitle(for: summary)))
         }
         if Self.verbose {
             let countedItems = items.filter { $0.messageCount != nil }.count
@@ -102,7 +101,12 @@ public final class ConversationListContext: ObservableObject, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)fetchConversation id=\(id.uuidString.prefix(8)) messageCount=\(count ?? -1)")
         }
-        return ConversationListItem.from(summary, messageCount: count)
+        return ConversationListItem.from(summary, messageCount: count, uiTitle: uiTitle(for: summary))
+    }
+
+    /// 委托给 LumiKernel 级 ``LumiKernelContainer/uiTitle(for:)`` 解析该对话的 UI 标题。
+    private func uiTitle(for summary: LumiConversationSummary) -> String {
+        kernel.uiTitle(for: summary.id)
     }
 
     public func isConversationProcessing(_ conversationID: UUID) -> Bool {

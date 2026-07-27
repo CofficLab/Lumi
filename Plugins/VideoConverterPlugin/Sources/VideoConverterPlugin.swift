@@ -1,9 +1,9 @@
 import Foundation
 import LumiKernel
 import LumiUI
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
 /// Video Converter Plugin
 ///
@@ -11,15 +11,15 @@ import os
 @MainActor
 public final class VideoConverterPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.video-converter")
-    nonisolated public static let emoji = "🎬"
-    nonisolated public static let verbose = false
+    public nonisolated static let emoji = "🎬"
+    public nonisolated static let verbose = false
 
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.video-converter"
     public let name = "Video Converter Plugin"
-    public let order = 70
-    public let policy: LumiPluginPolicy = .disabled
+    public let order = 870
+    public let policy: LumiPluginPolicy = .optOut
 
     // MARK: - Initialization
 
@@ -36,13 +36,16 @@ public final class VideoConverterPlugin: LumiPlugin, SuperLog {
             ViewContainerItem(
                 id: id,
                 title: VideoConverterLocalization.string("Video Converter"),
-                systemImage: "video"
+                systemImage: "video",
+                isRailVisible: false,
+                isChatVisible: false,
+                isPanelHeaderVisible: false,
+                isPanelBottomVisible: false
             ) {
                 VideoConverterMainView()
             },
         ]
     }
-
 
     // MARK: - LumiPlugin stubs
 

@@ -84,6 +84,52 @@ struct LumiKernelTests {
         #expect(kernel.project?.currentFileURL == fileURL.standardizedFileURL)
         #expect(kernel.project?.openFileURLs == [fileURL.standardizedFileURL])
     }
+
+    @Test("Plugin manager registers typed editor plugins through EditorProviding")
+    func testPluginManagerRegistersTypedEditorPlugins() async throws {
+        let kernel = LumiKernel()
+        let editor = MockEditorProvider()
+        kernel.registerEditor(editor)
+
+        let manager = BuiltinPluginManager()
+        let swiftLanguage = MockEditorRuntimePlugin(id: "swift", name: "Swift", order: 20)
+        let goLanguage = MockEditorRuntimePlugin(id: "go", name: "Go", order: 10)
+        try await manager.initializePlugins([
+            MockLumiPlugin(id: "swift-plugin", order: 20, editorRuntimePlugins: [swiftLanguage]),
+            MockLumiPlugin(id: "go-plugin", order: 10, editorRuntimePlugins: [goLanguage]),
+        ], kernel: kernel)
+
+        manager.registerEditorPlugins(in: kernel)
+
+        #expect(editor.replacedPluginIDs == ["go", "swift"])
+    }
+
+    @Test("Plugin manager withdraws disabled typed editor plugins on rebuild")
+    func testPluginManagerWithdrawsDisabledEditorPluginsOnRebuild() async throws {
+        let kernel = LumiKernel()
+        let editor = MockEditorProvider()
+        kernel.registerEditor(editor)
+
+        let manager = BuiltinPluginManager()
+        try await manager.initializePlugins([
+            MockLumiPlugin(
+                id: "enabled-language",
+                order: 10,
+                policy: .alwaysOn,
+                editorRuntimePlugins: [MockEditorRuntimePlugin(id: "swift", name: "Swift", order: 10)]
+            ),
+            MockLumiPlugin(
+                id: "disabled-language",
+                order: 20,
+                policy: .disabled,
+                editorRuntimePlugins: [MockEditorRuntimePlugin(id: "go", name: "Go", order: 20)]
+            ),
+        ], kernel: kernel)
+
+        manager.rebuildAllContributions(in: kernel)
+
+        #expect(editor.replacedPluginIDs == ["swift"])
+    }
 }
 
 // MARK: - Mock Services
@@ -186,4 +232,111 @@ private final class MockConversationInputService: ConversationInputProviding {
         }
         isInputFocused = true
     }
+}
+
+@MainActor
+private final class MockEditorProvider: EditorProviding {
+    var currentFilePath: String?
+    var currentThemeId: String = "default"
+    var allEditorThemes: [EditorThemeInfo] = []
+    var replacedPluginIDs: [String] = []
+
+    func openFile(at path: String) async throws {
+        currentFilePath = path
+    }
+
+    func closeFile(at path: String) async {
+        if currentFilePath == path {
+            currentFilePath = nil
+        }
+    }
+
+    func setCurrentTheme(_ themeId: String) throws {
+        currentThemeId = themeId
+    }
+
+    func registerEditorTheme(_ theme: EditorThemeInfo) {
+        allEditorThemes.append(theme)
+    }
+
+    func unregisterEditorTheme(themeId: String) {
+        allEditorThemes.removeAll { $0.id == themeId }
+    }
+
+    func registerEditorPlugin(_ plugin: any EditorPlugin) {
+        replacedPluginIDs.append(plugin.id)
+    }
+
+    func replaceEditorPlugins(_ plugins: [any EditorPlugin]) {
+        replacedPluginIDs = plugins.map(\.id)
+    }
+}
+
+@MainActor
+private final class MockEditorRuntimePlugin: EditorPlugin {
+    let id: String
+    let name: String
+    let order: Int
+
+    init(id: String, name: String, order: Int) {
+        self.id = id
+        self.name = name
+        self.order = order
+    }
+
+    func registerExtensions(into registrar: any EditorExtensionRegistrar) {}
+}
+
+@MainActor
+private final class MockLumiPlugin: LumiPlugin {
+    let id: String
+    let name: String
+    let order: Int
+    let policy: LumiPluginPolicy
+    private let editorRuntimePlugins: [any EditorPlugin]
+
+    init(
+        id: String,
+        name: String? = nil,
+        order: Int,
+        policy: LumiPluginPolicy = .alwaysOn,
+        editorRuntimePlugins: [any EditorPlugin]
+    ) {
+        self.id = id
+        self.name = name ?? id
+        self.order = order
+        self.policy = policy
+        self.editorRuntimePlugins = editorRuntimePlugins
+    }
+
+    func onBoot(kernel: LumiKernel) async throws {}
+    func onReady(kernel: LumiKernel) async throws {}
+    func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
+    func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
+    func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+    func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
+    func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
+    func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
+    func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
+    func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
+    func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
+    func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
+    func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    func editorPlugins(kernel: LumiKernel) -> [any EditorPlugin] { editorRuntimePlugins }
 }

@@ -1,10 +1,19 @@
 import LumiKernel
 import SwiftUI
+import LocalizationKit
 
 struct ConversationSpeedToolbarView: View {
     @ObservedObject var kernel: LumiKernel
     @State private var cachedTPS: Double?
     @State private var hasShownTPSAtLeastOnce = false
+    @State private var popoverShown = false
+
+    // Detail data shown inside the popover.
+    @State private var modelName: String?
+    @State private var outputTokens: Int?
+    @State private var streamingDurationMs: Double?
+    @State private var timeToFirstTokenMs: Double?
+    @State private var providerID: String?
 
     private var selectedConversationID: UUID? {
         kernel.conversations?.selectedConversationID
@@ -14,18 +23,34 @@ struct ConversationSpeedToolbarView: View {
         Group {
             // Only show if we've seen a valid TPS at least once AND still have a cached value
             if hasShownTPSAtLeastOnce, let tps = cachedTPS {
-                HStack(spacing: ToolbarMetrics.chipSpacing) {
-                    Image(systemName: "gauge.with.dots.needle.bottom.50percent")
-                        .font(.system(size: ToolbarMetrics.chipIconSize, weight: .medium))
-                    Text(String(format: "%.1f tok/s", tps))
-                        .font(.system(size: ToolbarMetrics.chipTextSize, weight: ToolbarMetrics.chipTextWeight))
-                        .contentTransition(.numericText())
+                Button {
+                    popoverShown.toggle()
+                } label: {
+                    HStack(spacing: ToolbarMetrics.chipSpacing) {
+                        Image(systemName: "gauge.with.dots.needle.bottom.50percent")
+                            .font(.system(size: ToolbarMetrics.chipIconSize, weight: .medium))
+                        Text(String(format: "%.1f tok/s", tps))
+                            .font(.system(size: ToolbarMetrics.chipTextSize, weight: ToolbarMetrics.chipTextWeight))
+                            .contentTransition(.numericText())
+                    }
+                    .foregroundColor(.orange)
+                    .padding(.horizontal, ToolbarMetrics.chipHorizontalPadding)
+                    .padding(.vertical, ToolbarMetrics.chipVerticalPadding)
+                    .background(Color.orange.opacity(0.22), in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
                 }
-                .foregroundColor(.orange)
-                .padding(.horizontal, ToolbarMetrics.chipHorizontalPadding)
-                .padding(.vertical, ToolbarMetrics.chipVerticalPadding)
-                .background(Color.orange.opacity(0.22), in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
-                .help("Streaming speed: \(String(format: "%.1f", tps)) tokens/second")
+                .buttonStyle(.plain)
+                .help(LumiPluginLocalization.string("Streaming speed help", bundle: .module))
+                .popover(isPresented: $popoverShown, arrowEdge: .bottom) {
+                    ConversationSpeedPopover(
+                        tps: tps,
+                        modelName: modelName,
+                        outputTokens: outputTokens,
+                        streamingDurationMs: streamingDurationMs,
+                        timeToFirstTokenMs: timeToFirstTokenMs,
+                        providerID: providerID
+                    )
+                    .frame(width: 300)
+                }
             } else {
                 EmptyView()
             }
@@ -52,6 +77,13 @@ struct ConversationSpeedToolbarView: View {
             }
             return
         }
+
+        // Capture detail data for the popover.
+        modelName = lastMessage.modelName
+        outputTokens = lastMessage.outputTokenCount
+        streamingDurationMs = lastMessage.streamingDurationMs
+        timeToFirstTokenMs = lastMessage.timeToFirstTokenMs
+        providerID = lastMessage.providerID
 
         // Try tokensPerSecond property first
         if let tps = lastMessage.tokensPerSecond {
@@ -89,6 +121,100 @@ struct ConversationSpeedToolbarView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Popover
+
+private struct ConversationSpeedPopover: View {
+    let tps: Double
+    let modelName: String?
+    let outputTokens: Int?
+    let streamingDurationMs: Double?
+    let timeToFirstTokenMs: Double?
+    let providerID: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "gauge.with.dots.needle.bottom.50percent")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.orange)
+                Text(LumiPluginLocalization.string("Streaming Speed", bundle: .module))
+                    .font(.headline)
+                Spacer()
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(String(format: "%.1f", tps))
+                    .font(.system(size: 34, weight: .semibold, design: .rounded))
+                Text(LumiPluginLocalization.string("tokens / second", bundle: .module))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(LumiPluginLocalization.string("Streaming speed description", bundle: .module))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                if let modelName, !modelName.isEmpty {
+                    detailRow(
+                        LumiPluginLocalization.string("Model", bundle: .module),
+                        value: modelName
+                    )
+                }
+                if let outputTokens {
+                    detailRow(
+                        LumiPluginLocalization.string("Output tokens", bundle: .module),
+                        value: "\(outputTokens)"
+                    )
+                }
+                if let streamingDurationMs {
+                    detailRow(
+                        LumiPluginLocalization.string("Streaming duration", bundle: .module),
+                        value: formatDuration(streamingDurationMs)
+                    )
+                }
+                if let timeToFirstTokenMs {
+                    detailRow(
+                        LumiPluginLocalization.string("Time to first token", bundle: .module),
+                        value: formatDuration(timeToFirstTokenMs)
+                    )
+                }
+                if let providerID, !providerID.isEmpty {
+                    detailRow(
+                        LumiPluginLocalization.string("Provider", bundle: .module),
+                        value: providerID
+                    )
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func detailRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .fontWeight(.medium)
+        }
+        .font(.subheadline)
+    }
+
+    private func formatDuration(_ ms: Double) -> String {
+        if ms >= 1000 {
+            return String(format: "%.2f s", ms / 1000.0)
+        }
+        return String(format: "%.0f ms", ms)
     }
 }
 

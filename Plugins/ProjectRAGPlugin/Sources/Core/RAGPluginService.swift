@@ -7,7 +7,7 @@ import os
 enum RAGPluginService: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
     nonisolated static let emoji = ProjectRAGPlugin.emoji
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private(set) static var service: RAGService = RAGService(
         databaseDirectoryProvider: {

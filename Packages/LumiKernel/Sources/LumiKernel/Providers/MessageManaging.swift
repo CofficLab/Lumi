@@ -59,4 +59,15 @@ public protocol MessageManaging: ObservableObject {
 
     /// 获取指定对话的最后一个消息
     func lastMessage(in conversationID: UUID) -> LumiChatMessage?
+
+    /// 获取自指定日期以来每日的消息数量（跨所有对话）
+    ///
+    /// 用于活动热力图等统计功能。返回的字典键为每日 00:00 的日期。
+    func fetchDailyMessageCounts(since: Date) async -> [Date: Int]
+
+    /// 获取自指定日期以来每日的 token 消耗总量（跨所有对话）
+    ///
+    /// 用于 token 用量图表。返回的字典键为每日 00:00 的日期。
+    /// Token 数量为 inputTokenCount + outputTokenCount 之和。
+    func fetchDailyTokenCounts(since: Date) async -> [Date: Int]
 }

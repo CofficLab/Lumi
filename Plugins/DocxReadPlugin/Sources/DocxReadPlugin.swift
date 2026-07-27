@@ -1,22 +1,27 @@
+import os
 import SwiftUI
 import LumiKernel
-import LumiUI
 
 @MainActor
 public final class DocxReadPlugin: LumiPlugin {
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docx-read")
+
     public let id = "com.coffic.lumi.plugin.docx-read"
     public let name = "Docx Read"
     public let order = 90
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
-    }
+    public func onReady(kernel: LumiKernel) async throws {}
 
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [DocxReadTool()]
+    }
 
     // MARK: - LumiPlugin stubs
 

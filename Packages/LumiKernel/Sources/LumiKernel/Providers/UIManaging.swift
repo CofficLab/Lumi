@@ -136,6 +136,17 @@ public protocol UIManaging: ObservableObject {
     /// 注销菜单栏弹出项
     func unregisterMenuBarPopup(id: String)
 
+    // MARK: - Root Overlays
+
+    /// 所有根覆盖层（按 order 排序）
+    var allRootOverlays: [LumiRootOverlayItem] { get }
+
+    /// 注册根覆盖层
+    func registerRootOverlayItem(_ item: LumiRootOverlayItem)
+
+    /// 注销根覆盖层
+    func unregisterRootOverlayItem(id: String)
+
     // MARK: - Clear
 
     /// 清空所有插件贡献(供全量重建使用)。默认 no-op。

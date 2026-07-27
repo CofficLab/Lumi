@@ -16,7 +16,7 @@ public final class CaffeinatePlugin: LumiPlugin, SuperLog {
     public let id = "Caffeinate"
     public let name = "Caffeinate"
     public let order = 1
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .system
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Prevent system sleep during long-running tasks."
@@ -36,7 +36,13 @@ public final class CaffeinatePlugin: LumiPlugin, SuperLog {
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
-    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
+    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] {
+        [
+            MenuBarPopupItem(id: "\(id).popup", order: order) {
+                CaffeinateMenuBarPopupView()
+            },
+        ]
+    }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }

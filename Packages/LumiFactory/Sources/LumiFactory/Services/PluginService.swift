@@ -30,6 +30,7 @@ import EditorKernelPlugin
 import EditorPanelPlugin
 import ProjectFilesPlugin
 import EditorPreviewPlugin
+import EditorSwiftPlugin
 import TerminalPlugin
 import HostsManagerPlugin
 import InputPlugin
@@ -94,6 +95,12 @@ import ThemeWinterPlugin
 import VerbosityPlugin
 import ConversationSpeedPlugin
 import ChatModePlugin
+import ConversationLanguagePlugin
+import QuickFileSearchPlugin
+import SkillPlugin
+import DocxReadPlugin
+import NetworkManagerPlugin
+import ProjectOverviewPlugin
 import VideoConverterPlugin
 import ProjectFileTreePlugin
 import OpenInFinderPlugin
@@ -117,7 +124,15 @@ import BrowserPlugin
 import ShowImagePlugin
 import GitHubPlugin
 import GoalTaskPlugin
-// import CADDesignerPlugin  // Not included in Xcode project
+import AppStoreConnectPlugin
+import CADDesignerPlugin
+import ActivityHeatmapPlugin
+import FileLogPlugin
+import OnboardingPlugin
+import DatabaseManagerPlugin
+import ConversationForkPlugin
+import AgentTurnNotificationPlugin
+import AskUserPlugin
 
 /// 插件服务
 ///
@@ -194,12 +209,12 @@ public enum PluginService {
             // Editor UI Shell — 贡献 "Code Editor" 视图容器,托管 EditorService。
             // 依赖 EditorKernelPlugin 在 OnBoot 注册的具象 EditorService。
             EditorPanelPlugin(),
+            EditorSwiftPlugin(),
             // Project files panel — 在 PanelHeader 显示项目已打开的文件。
             ProjectFilesPlugin(),
             // Editor 预览面板 — 在 PanelBottom 显示文件预览。
             EditorPreviewBottomPanelPlugin(),
             TerminalPlugin(),
-            // CADDesignerPlugin(),  // Not included in Xcode project
             DeviceInfoPlugin(),
             ProjectFileTreePlugin(),
             ClipboardManagerPlugin(),
@@ -209,6 +224,7 @@ public enum PluginService {
             VerbosityPlugin(),
             ConversationSpeedPlugin(),
             ChatModePlugin(),
+            ConversationLanguagePlugin(),
             VideoConverterPlugin(),
             NettoPlugin(),
             QuickLauncherPlugin(),
@@ -231,6 +247,21 @@ public enum PluginService {
             ShowImagePlugin(),
             GitHubPlugin(),
             GoalTaskPlugin(),
+            QuickFileSearchPlugin(),
+            SkillPlugin(),
+            DocxReadPlugin(),
+            NetworkManagerPlugin(),
+            ProjectOverviewPlugin(),
+            AppStoreConnectPlugin(),
+            CADDesignerPlugin(),
+            ActivityHeatmapPlugin(),
+            FileLogPlugin(),
+            OnboardingPlugin(),
+            DatabaseManagerPlugin(),
+            ConversationForkPlugin(),
+            AgentTurnNotificationPlugin(),
+            // User interaction
+            AskUserPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

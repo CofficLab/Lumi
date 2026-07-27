@@ -81,11 +81,20 @@ public final class ProjectService: ProjectProviding {
 
     public func closeFile(_ fileURL: URL) {
         let standardizedURL = fileURL.standardizedFileURL
+
+        // 记录被关闭文件在列表中的位置，用于选择下一个激活文件
+        let closedIndex = openFileURLs.firstIndex(of: standardizedURL)
         openFileURLs.removeAll { $0 == standardizedURL }
 
-        // 如果关闭的是当前文件，清空当前文件
+        // 如果关闭的是当前文件，激活相邻文件；否则保持不变
         if currentFileURL == standardizedURL {
-            currentFileURL = nil
+            if !openFileURLs.isEmpty, let closedIndex {
+                // 优先选同位置的；如果已越界则取最后一个
+                let nextIndex = min(closedIndex, openFileURLs.count - 1)
+                currentFileURL = openFileURLs[nextIndex]
+            } else {
+                currentFileURL = nil
+            }
         }
 
         persistCurrentProject()
