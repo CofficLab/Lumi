@@ -242,8 +242,11 @@ public actor MemoryFileStorage: SuperLog {
 
     /// 列出所有记忆
     public func listMemories(scope: MemoryScope) async -> [MemoryItem] {
-        let dir = directory(for: scope)
+        await listMemories(in: directory(for: scope))
+    }
 
+    /// 列出指定目录下的所有记忆文件（排除 MEMORY.md 索引）
+    private func listMemories(in dir: URL) async -> [MemoryItem] {
         // 读取目录中所有 .md 文件（排除 MEMORY.md）
         guard let contents = try? fileManager.contentsOfDirectory(atPath: dir.path) else {
             return []
@@ -267,6 +270,29 @@ public actor MemoryFileStorage: SuperLog {
 
         // 按更新时间降序
         return items.sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    /// 列出所有作用域下的记忆（全局 + 全部项目），用于设置视图展示。
+    ///
+    /// 直接枚举磁盘目录，避免通过 `MemoryScope.project` 重新 sanitize 路径导致目录不匹配。
+    public func listAllMemories() async -> [(MemoryItem, MemoryScope)] {
+        var result: [(MemoryItem, MemoryScope)] = []
+        result.append(contentsOf: await listMemories(in: globalDir).map { ($0, .global) })
+
+        if let dirs = try? fileManager.contentsOfDirectory(
+            at: projectsDir,
+            includingPropertiesForKeys: [.isDirectoryKey]
+        ) {
+            for dirURL in dirs {
+                let isDir = (try? dirURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+                guard isDir else { continue }
+                let dirName = dirURL.lastPathComponent
+                let items = await listMemories(in: dirURL)
+                result.append(contentsOf: items.map { ($0, .project(dirName)) })
+            }
+        }
+
+        return result.sorted { $0.0.updatedAt > $1.0.updatedAt }
     }
 
     // MARK: - 索引

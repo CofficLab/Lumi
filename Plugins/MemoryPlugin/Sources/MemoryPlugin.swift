@@ -19,7 +19,7 @@ public final class MemoryPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.memory"
     public let name = "Memory"
     public let order = 15
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Agent memory system for persistent context across conversations."
@@ -65,7 +65,18 @@ public final class MemoryPlugin: LumiPlugin, SuperLog {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        [
+            SettingsTabItem(
+                id: "\(id).settings",
+                title: "Memory",
+                systemImage: "brain",
+                order: order
+            ) {
+                MemorySettingsView()
+            },
+        ]
+    }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
