@@ -12,14 +12,8 @@ public struct AppCommands: Commands {
     }
 
     public var body: some Commands {
-        // Settings: Cmd+,
-        SettingsCommand()
-
-        // Window: Cmd+Shift+N new window
-        WindowCommand()
-
         // Plugin-registered commands placed in the app menu (after About)
-        // Note: Debug menu commands are now registered via CommandPlugin in onBoot
+        // Note: Settings, Window, Debug commands are registered via CommandPlugin in onBoot
         CommandGroup(after: .appInfo) {
             ForEach(kernel.command?.allCommandGroups.filter { $0.placement == .appMenu } ?? []) { group in
                 ForEach(group.items) { item in
