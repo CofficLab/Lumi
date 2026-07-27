@@ -1,5 +1,4 @@
 import AppKit
-import EditorChatInputKit
 import LumiKernel
 import LumiUI
 import SwiftUI

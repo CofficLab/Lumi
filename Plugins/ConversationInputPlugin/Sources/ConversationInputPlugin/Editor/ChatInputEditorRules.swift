@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 
+/// 输入编辑器规则集
 public enum ChatInputEditorRules {
     public static let imagePathExtensions: Set<String> = [
         "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "heic",

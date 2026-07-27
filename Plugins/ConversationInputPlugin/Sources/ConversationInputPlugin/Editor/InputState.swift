@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import EditorChatInputKit
 import LumiKernel
 
 /// 输入状态（插件内部共享）
