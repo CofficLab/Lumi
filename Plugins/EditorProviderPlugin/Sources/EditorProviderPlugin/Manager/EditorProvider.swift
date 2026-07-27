@@ -2,13 +2,14 @@ import Foundation
 import SwiftUI
 import LumiKernel
 import EditorService
+import LumiUI
 import SuperLogKit
 
 @MainActor
 public final class EditorProvider: EditorProviding, SuperLog {
     public static let emoji = "🍚"
     static let verbose: Bool = true
-    
+
     /// 注入的具象 EditorService(弱引用,避免循环)。
     /// 在 OnReady 阶段由 plugin 注入;在此之前文件操作走降级路径。
     private weak var editorService: EditorService?
@@ -26,7 +27,7 @@ public final class EditorProvider: EditorProviding, SuperLog {
     /// 降级用的本地缓存,仅在 EditorService 未注入时使用。
     private var stubCurrentFilePath: String?
 
-    /// 在 EditorService 注入前暂存的编辑器插件,注入后回放注册,确保注册不丢失。
+    /// 在 EditorService 注入前暂存的编辑器插件,注入后回放,确保注册不丢失。
     private var pendingPlugins: [any EditorPlugin] = []
 
     public var allEditorThemes: [EditorThemeInfo] {
@@ -37,6 +38,24 @@ public final class EditorProvider: EditorProviding, SuperLog {
     func attachEditorService(_ service: EditorService) {
         editorService = service
         flushPendingPlugins()
+    }
+
+    // MARK: - View
+
+    /// 创建编辑器视图。
+    ///
+    /// 由 `EditorPanelPlugin` 通过内核调用。从注入的 `EditorService` 取出 `EditorState`，
+    /// 交给 `EditorSurfaceView` 组装真正的 `SourceEditor`。服务未就绪时返回降级占位。
+    public func makeEditorView() -> AnyView {
+        guard let editorService else {
+            return AnyView(
+                Text("Editor service unavailable")
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            )
+        }
+        return AnyView(EditorSurfaceView(state: editorService.state))
     }
 
     /// 回放注入前暂存的编辑器插件注册。

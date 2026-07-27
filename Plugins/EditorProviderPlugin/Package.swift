@@ -11,6 +11,9 @@ let package = Package(
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/EditorService"),
+        .package(path: "../../Packages/EditorSource"),
+        .package(path: "../../Packages/EditorTextView"),
+        .package(path: "../../Packages/EditorLanguageRuntime"),
     ],
     targets: [
         .target(
@@ -19,6 +22,9 @@ let package = Package(
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "EditorService", package: "EditorService"),
+                .product(name: "EditorSource", package: "EditorSource"),
+                .product(name: "EditorTextView", package: "EditorTextView"),
+                .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
             ]
         ),
         .testTarget(
