@@ -134,6 +134,19 @@ public final class ConversationService: ConversationManaging {
         try? saveState()
     }
 
+    public func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return false
+        }
+        let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        conversations[index].title = normalized.isEmpty ? nil : normalized
+        if conversationID == selectedConversationID {
+            updateCurrentTitle()
+        }
+        try? saveConversations()
+        return true
+    }
+
     public func isSending(for conversationID: UUID?) -> Bool {
         // TODO: Implement based on actual sending state
         return false

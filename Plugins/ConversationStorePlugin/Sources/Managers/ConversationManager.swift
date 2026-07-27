@@ -162,6 +162,30 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
+    public func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return false
+        }
+        let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let storedTitle = normalized.isEmpty ? nil : normalized
+        conversations[index].title = storedTitle
+
+        if conversationID == selectedConversationID {
+            updateCurrentTitle()
+        }
+        notifyConversationsChanged()
+
+        // 持久化到数据库（异步）
+        Task {
+            await store?.updateTitle(id: conversationID, title: normalized)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)updateConversationTitle: conversation=\(conversationID.uuidString.prefix(8)), title=\(storedTitle ?? "nil")")
+        }
+        return true
+    }
+
     public func isSending(for conversationID: UUID?) -> Bool {
         // TODO: Implement based on actual sending state
         return false

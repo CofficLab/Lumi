@@ -59,16 +59,8 @@ public struct ConversationTitleUpdateTool: LumiAgentTool, @unchecked Sendable {
             """
         }
 
-        guard let chatService = conversations as? any LumiChatServicing else {
-            return """
-            ## Update Conversation Title ❌
-
-            **Status**: Conversation service does not support title updates.
-            """
-        }
-
         let updated = await MainActor.run {
-            chatService.updateConversationTitle(title, for: kernel.conversationID)
+            conversations.updateConversationTitle(title, for: kernel.conversationID)
         }
 
         guard updated else {

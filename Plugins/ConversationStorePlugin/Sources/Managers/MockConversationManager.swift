@@ -134,6 +134,18 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
         }
     }
 
+    public func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return false
+        }
+        let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        conversations[index].title = normalized.isEmpty ? nil : normalized
+        if conversationID == selectedConversationID {
+            updateCurrentTitle()
+        }
+        return true
+    }
+
     public func isSending(for conversationID: UUID?) -> Bool {
         return false
     }

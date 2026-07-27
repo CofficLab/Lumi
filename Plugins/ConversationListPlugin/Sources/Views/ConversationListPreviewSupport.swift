@@ -40,6 +40,18 @@ final class MockConversationManaging: ObservableObject, ConversationManaging {
         }
     }
 
+    func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return false
+        }
+        let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        conversations[index].title = normalized.isEmpty ? nil : normalized
+        if conversationID == selectedConversationID {
+            objectWillChange.send()
+        }
+        return true
+    }
+
     func isSending(for conversationID: UUID?) -> Bool { false }
     func mockConversationIDs() -> [UUID] { [] }
     func providerID(for conversationID: UUID?) -> String? { nil }

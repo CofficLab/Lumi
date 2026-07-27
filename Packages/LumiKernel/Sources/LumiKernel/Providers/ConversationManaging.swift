@@ -26,6 +26,14 @@ public protocol ConversationManaging: ObservableObject {
     /// 删除对话
     func deleteConversation(id: UUID)
 
+    /// 更新指定对话的标题
+    ///
+    /// - Parameters:
+    ///   - title: 新标题
+    ///   - conversationID: 目标对话 ID
+    /// - Returns: 更新成功返回 `true`，对话不存在返回 `false`
+    func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool
+
     /// 检查对话是否正在发送中
     func isSending(for conversationID: UUID?) -> Bool
 
