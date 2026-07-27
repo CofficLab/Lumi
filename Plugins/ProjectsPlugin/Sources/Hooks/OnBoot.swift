@@ -18,7 +18,13 @@ public struct ProjectsOnBootHook: SuperLog {
     /// 执行 boot
     public func execute(_ kernel: LumiKernel) async throws {
         // 1. 注册 ProjectService（内核服务）— 必须在 onReady 之前完成
-        let projectService = ProjectService()
+        let store: ProjectsStore?
+        if let storage = kernel.storage {
+            store = ProjectsStore(pluginDirectory: storage.pluginDataDirectory(for: "Projects"))
+        } else {
+            store = nil
+        }
+        let projectService = ProjectService(store: store)
         kernel.registerProject(projectService)
 
         if Self.verbose {
