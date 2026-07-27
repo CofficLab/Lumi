@@ -107,7 +107,17 @@ extension Color {
     public init(light: String, dark: String) {
         switch ActiveChromeTheme.current.appearanceKind {
         case .system:
-            self.init(hex: ResolvedSystemColorScheme.current == .dark ? dark : light)
+            // 用 NSColor 动态颜色让 AppKit/SwiftUI 在系统外观切换时自动重新解析，
+            // 避免返回静态 Color 导致已渲染视图（如 NSHostingView 承载的文件树 cell）
+            // 不随外观刷新、只能靠手动重建视图才更新颜色的问题。
+            let lightNSColor = NSColor(hex: light)
+            let darkNSColor = NSColor(hex: dark)
+            let dynamicNSColor = NSColor(name: nil) { appearance in
+                appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                    ? darkNSColor
+                    : lightNSColor
+            }
+            self.init(dynamicNSColor)
         case .dark:
             self.init(hex: dark)
         case .light:
@@ -152,5 +162,32 @@ extension Color {
         // ITU-R BT.601 感知亮度公式
         let luminance = 0.299 * r + 0.587 * g + 0.114 * b
         return luminance > 0.5
+    }
+}
+
+private extension NSColor {
+    convenience init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3:
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6:
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8:
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (1, 1, 1, 0)
+        }
+
+        self.init(
+            srgbRed: CGFloat(r) / 255,
+            green: CGFloat(g) / 255,
+            blue: CGFloat(b) / 255,
+            alpha: CGFloat(a) / 255
+        )
     }
 }
