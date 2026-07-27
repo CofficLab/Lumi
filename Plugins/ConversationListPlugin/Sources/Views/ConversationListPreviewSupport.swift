@@ -121,10 +121,10 @@ enum ConversationListPreviewSupport {
                 )
             }
         }
-        return ConversationListContext(
-            conversationManaging: mock,
-            messageManaging: messageMock
-        )
+        let kernel = LumiKernel()
+        kernel.registerService(ConversationManaging.self, mock)
+        kernel.registerService(MessageManaging.self, messageMock)
+        return ConversationListContext(kernel: kernel)
     }
 }
 #endif

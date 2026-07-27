@@ -25,11 +25,8 @@ struct RailView: View, SuperLog {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
-            if context == nil, let conversations = kernel.conversations {
-                context = ConversationListContext(
-                    conversationManaging: conversations,
-                    messageManaging: kernel.messageManager
-                )
+            if context == nil, kernel.conversations != nil {
+                context = ConversationListContext(kernel: kernel)
             }
         }
     }

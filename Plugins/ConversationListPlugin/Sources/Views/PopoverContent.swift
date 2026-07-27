@@ -9,15 +9,9 @@ struct PopoverContent: View {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
-        guard let conv = kernel.conversations else {
-            // conversations unavailable — crash early in debug.
-            fatalError("kernel.conversations is nil when creating ConversationListPopoverContent")
-        }
+        precondition(kernel.conversations != nil, "kernel.conversations is nil when creating ConversationListPopoverContent")
         _context = StateObject(
-            wrappedValue: ConversationListContext(
-                conversationManaging: conv,
-                messageManaging: kernel.messageManager
-            )
+            wrappedValue: ConversationListContext(kernel: kernel)
         )
     }
 

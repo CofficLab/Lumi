@@ -36,11 +36,15 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
         self.messageCount = messageCount
     }
 
-    static func from(_ summary: LumiConversationSummary, messageCount: Int? = nil) -> ConversationListItem {
+    static func from(
+        _ summary: LumiConversationSummary,
+        messageCount: Int? = nil,
+        uiTitle: String? = nil
+    ) -> ConversationListItem {
         ConversationListItem(
             id: summary.id,
             projectPath: summary.projectPath,
-            title: summary.displayTitle,
+            title: uiTitle ?? summary.displayTitle,
             createdAt: summary.createdAt,
             updatedAt: summary.updatedAt,
             providerID: summary.providerID,
