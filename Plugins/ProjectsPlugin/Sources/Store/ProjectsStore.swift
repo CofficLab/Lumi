@@ -2,6 +2,18 @@ import Foundation
 import os
 import SuperLogKit
 
+/// 单个项目打开过的文件记录（与 `ProjectProviding` 的 `openFileURLs` /
+/// `currentFileURL` 对应），可序列化到磁盘。
+public struct ProjectOpenedFiles: Codable, Equatable {
+    public var openFileURLs: [URL]
+    public var currentFileURL: URL?
+
+    public init(openFileURLs: [URL] = [], currentFileURL: URL? = nil) {
+        self.openFileURLs = openFileURLs
+        self.currentFileURL = currentFileURL
+    }
+}
+
 /// 纯数据存取层，专注于项目的持久化存储。
 /// 不包含任何状态管理逻辑，所有数据通过方法参数传入/返回。
 @MainActor
@@ -15,6 +27,7 @@ public final class ProjectsStore: SuperLog {
     private static let settingsDirectoryName = "settings"
     private static let projectsFileName = "projects.json"
     private static let currentProjectFileName = "current-project.json"
+    private static let openedFilesFileName = "project-opened-files.json"
     private static let maxProjectsCount = 500
 
     // MARK: - Properties
@@ -67,6 +80,30 @@ public final class ProjectsStore: SuperLog {
         )
         Self.write(projects, to: projectsFileURL)
         Self.write(currentProject?.path, to: currentProjectFileURL)
+    }
+
+    // MARK: - Opened Files (per project)
+
+    /// 加载所有项目打开过的文件记录，key 为标准化后的项目路径。
+    /// 文件不存在或解析失败时返回空字典（不抛错）。
+    public func loadOpenedFiles() -> [String: ProjectOpenedFiles] {
+        guard FileManager.default.fileExists(atPath: openedFilesFileURL.path),
+              let data = try? Data(contentsOf: openedFilesFileURL),
+              let openedFiles = try? JSONDecoder().decode([String: ProjectOpenedFiles].self, from: data)
+        else {
+            return [:]
+        }
+        return openedFiles
+    }
+
+    /// 保存所有项目打开过的文件记录。
+    public func saveOpenedFiles(_ openedFiles: [String: ProjectOpenedFiles]) {
+        try? FileManager.default.createDirectory(
+            at: settingsDirectory,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+        Self.write(openedFiles, to: openedFilesFileURL)
     }
 
     /// 添加项目到列表，返回更新后的列表
@@ -142,6 +179,10 @@ public final class ProjectsStore: SuperLog {
 
     private var currentProjectFileURL: URL {
         settingsDirectory.appendingPathComponent(Self.currentProjectFileName, isDirectory: false)
+    }
+
+    private var openedFilesFileURL: URL {
+        settingsDirectory.appendingPathComponent(Self.openedFilesFileName, isDirectory: false)
     }
 
     // MARK: - Static I/O
