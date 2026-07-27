@@ -1,20 +1,33 @@
 import LumiKernel
 import LumiUI
+import SuperLogKit
 import SwiftUI
+import os
 
 @MainActor
-public final class ConversationForkPlugin: LumiPlugin {
+public final class ConversationForkPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🔀"
+    public nonisolated static let verbose = false
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-fork", category: "ConversationForkPlugin")
+
     public let id = "com.coffic.lumi.plugin.conversation-fork"
     public let name = "Continue in New Chat"
     public let order = 61
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        // Services are registered via convenience methods
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] {
+        guard let chatService = kernel.resolveService(LumiChatServicing.self) else { return [] }
+        return [
+            ChatSectionToolbarItem(id: "conversation-fork-button", placement: .trailing) {
+                ConversationForkButton(chatService: chatService)
+            }
+        ]
     }
 
 
@@ -32,7 +45,6 @@ public final class ConversationForkPlugin: LumiPlugin {
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
-    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }

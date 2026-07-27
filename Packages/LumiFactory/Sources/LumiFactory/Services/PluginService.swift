@@ -130,6 +130,7 @@ import ActivityHeatmapPlugin
 import FileLogPlugin
 import OnboardingPlugin
 import DatabaseManagerPlugin
+import ConversationForkPlugin
 
 /// 插件服务
 ///
@@ -255,6 +256,7 @@ public enum PluginService {
             FileLogPlugin(),
             OnboardingPlugin(),
             DatabaseManagerPlugin(),
+            ConversationForkPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

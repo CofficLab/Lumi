@@ -149,6 +149,7 @@ let package = Package(
         .package(path: "../../Plugins/FileLogPlugin"),
         .package(path: "../../Plugins/OnboardingPlugin"),
         .package(path: "../../Plugins/DatabaseManagerPlugin"),
+        .package(path: "../../Plugins/ConversationForkPlugin"),
     ],
     targets: [
         .target(
@@ -295,6 +296,7 @@ let package = Package(
                 .product(name: "FileLogPlugin", package: "FileLogPlugin"),
                 .product(name: "OnboardingPlugin", package: "OnboardingPlugin"),
                 .product(name: "DatabaseManagerPlugin", package: "DatabaseManagerPlugin"),
+                .product(name: "ConversationForkPlugin", package: "ConversationForkPlugin"),
             ],
             resources: [
                 .process("Resources")
