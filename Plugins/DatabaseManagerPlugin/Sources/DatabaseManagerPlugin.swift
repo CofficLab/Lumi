@@ -12,7 +12,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.database-manager"
     public let name = "Database"
-    public let order = 50
+    public let order = 750
     public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
