@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.1.0</title>
-            <pubDate>Mon, 27 Jul 2026 03:07:01 +0000</pubDate>
-            <sparkle:version>501</sparkle:version>
-            <sparkle:shortVersionString>5.1.0</sparkle:shortVersionString>
+            <title>5.1.1</title>
+            <pubDate>Mon, 27 Jul 2026 11:38:34 +0000</pubDate>
+            <sparkle:version>502</sparkle:version>
+            <sparkle:shortVersionString>5.1.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.1.0</h2>
-<h3>Changes since v4.19.0</h3>
+            <description><![CDATA[<h2>Release v5.1.1</h2>
+<h3>Changes since v5.1.0</h3>
 <ul>
-<li>bugfix:  fix a bug</li>
-<li>docs: add AgentTool dynamic injection proposal</li>
-<li>docs: add comprehensive usage examples and tests</li>
-<li>docs: add plan for restoring provider management settings</li>
-<li>docs: restore documentation files</li>
-<li>docs: update legacy items status in agenttool proposal</li>
-<li>docs(LumiComponentAgentTool): add README and gitignore</li>
-<li>docs(LumiComponentLLMProvider): add README and gitignore</li>
-<li>docs(LumiComponentMenuBar): add README and gitignore</li>
-<li>docs(LumiComponentOverlay): add README and gitignore</li>
-<li>docs(LumiComponentPanelChrome): add README and gitignore</li>
-<li>docs(LumiComponentStorage): add README and gitignore</li>
-<li>docs(LumiComponentSubAgent): add README and gitignore</li>
-<li>docs(plugins): add README and update .gitignore for core plugins</li>
-<li>feat: add AgentToolPlugin implementing AgentToolProviding</li>
-<li>feat: Add AgentTurnRunnerPlugin for agent turn execution</li>
-<li>feat: add command registry for plugin menu injection</li>
-<li>feat: add ConversationSpeedPlugin to display streaming TPS in chat toolbar</li>
-<li>feat: add EditorFileTreeV2Plugin with simple file tree for RailView</li>
-<li>feat: add EditorKernelPlugin and ChatKernelPlugin</li>
+<li>feat(AgentTurnNotificationPlugin): add SuperLog, overlay view and enable alwaysOn policy</li>
+<li>feat(caffeinate): register menu bar popup view</li>
+<li>feat(conversation-list): show bound LLM provider/model on third line</li>
+<li>feat(conversation-speed): show popover explaining last message TPS</li>
+<li>feat(conversation-store): show message list below selected conversation detail</li>
+<li>feat(conversation): integrate ConversationLanguagePlugin and refine conversation APIs</li>
+<li>feat(conversation): support updating conversation title via ConversationManaging</li>
+<li>feat(docx-read): activate DocxReadPlugin with read_docx agent tool</li>
+<li>feat(editor-provider): implement replaceEditorPlugins for atomic extension replacement</li>
+<li>feat(editor-provider): render real editor via SourceEditor</li>
+<li>feat(editor-swift): adapt Swift highlighting plugin to kernel</li>
+<li>feat(kernel): add daily aggregate queries to MessageManaging</li>
+<li>feat(kernel): add EditorPlugin typed contribution point via LumiPlugin.editorPlugins</li>
+<li>feat(kernel): add highlight contributor injection point via EditorExtensionRegistrar</li>
+<li>feat(kernel): expose editor view via EditorProviding.makeEditorView</li>
+<li>feat(kernel): introduce EditorPlugin and EditorExtensionRegistrar protocols</li>
+<li>feat(kernel): register editor extensions via EditorPlugin contract</li>
+<li>feat(layout): replace HStack with nested HSplitView for resizable columns</li>
+<li>feat(memory): add settings view with memory list and detail</li>
+<li>feat(memory): register memory tools in plugin</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.1.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.1.1</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.1.0/Lumi_5.1.0_arm64.dmg" length="29157280" type="application/octet-stream" sparkle:edSignature="N2LOKMkrSXAfBi64cLqi5SS0COItjfR0D29m6BwqGy0Tink5swoMa9oK9r+yCMhDnLYJScyBzwDboORKLuJpCw=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.1.1/Lumi_5.1.1_arm64.dmg" length="35100210" type="application/octet-stream" sparkle:edSignature="St/gGqRVpkpcGT+etwwVaIKizWO1l8WPbszEm7NvaY5bolO3NjUsu3b5PBKXzv3F3yQVcJaKdjMAjr3UuDlSBw=="/>
         </item>
     </channel>
 </rss>
