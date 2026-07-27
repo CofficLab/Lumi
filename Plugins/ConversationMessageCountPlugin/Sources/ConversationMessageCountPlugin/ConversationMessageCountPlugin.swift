@@ -11,7 +11,7 @@ public final class ConversationMessageCountPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-message-count"
     public let name = "Conversation Message Count"
     public let order = 84
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
