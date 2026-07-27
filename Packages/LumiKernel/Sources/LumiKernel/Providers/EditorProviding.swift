@@ -54,6 +54,12 @@ public protocol EditorProviding: AnyObject {
     /// 插件在 `EditorPlugin.registerExtensions(into:)` 中通过 host 提供的注册器写入编辑器运行时。
     /// - Parameter plugin: 实现 `EditorPlugin` 的编辑器插件实例。
     func registerEditorPlugin(_ plugin: any EditorPlugin)
+
+    /// 用一组有效启用的编辑器插件替换当前插件扩展。
+    ///
+    /// 宿主应撤回不再启用的编辑器扩展，再按 `EditorPlugin.order` 回放传入插件。
+    /// 语言插件的启用/禁用、插件列表重建都应走此入口，避免贡献残留。
+    func replaceEditorPlugins(_ plugins: [any EditorPlugin])
 }
 
 // MARK: - 默认实现
@@ -69,5 +75,20 @@ public extension EditorProviding {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         )
+    }
+
+    /// 默认实现保持向后兼容：没有撤回能力的旧实现只按顺序注册。
+    /// 具备真实编辑器运行时的 Provider 应覆盖此方法并实现清空后回放。
+    func replaceEditorPlugins(_ plugins: [any EditorPlugin]) {
+        for plugin in plugins.sorted(by: editorPluginSort) {
+            registerEditorPlugin(plugin)
+        }
+    }
+
+    private func editorPluginSort(_ lhs: any EditorPlugin, _ rhs: any EditorPlugin) -> Bool {
+        if lhs.order != rhs.order {
+            return lhs.order < rhs.order
+        }
+        return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
     }
 }

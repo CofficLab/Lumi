@@ -363,7 +363,17 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
         }
     }
 
-    /// 全量重建所有插件贡献(Agent Tools + UI + LLM Provider)。
+    /// 收集所有插件贡献的编辑器运行时插件,并注册到内核的 `EditorProviding` 服务。
+    ///
+    /// 调用时机:在 `LumiKernel.startup()` 的 `onReady` 之后。每个语言/语法插件
+    /// 只需实现 `LumiPlugin.editorPlugins(kernel:)` 返回面向 `LumiKernel` 协议的
+    /// `EditorPlugin` 实例,无需直接依赖 `EditorService` 或接触具体注册表。
+    public func registerEditorPlugins(in kernel: LumiKernel) {
+        self.kernel = kernel
+        kernel.editorProvider?.replaceEditorPlugins(collectEditorPlugins(in: kernel))
+    }
+
+    /// 全量重建所有插件贡献(Agent Tools + UI + LLM Provider + Editor Plugins)。
     ///
     /// 在插件启用/禁用后由宿主(`LumiFactory.subscribeToPluginChanges`)调用,
     /// 使被禁用插件的贡献即时撤回、被启用插件的贡献即时加入。
@@ -391,7 +401,11 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
         // 2. UI 贡献重建
         registerPluginUIContributions(in: kernel)
 
-        // 3. LLM Provider 重建(diff)
+        // 3. Editor Plugins 重建
+        //    必须通过 replace 入口撤回已禁用插件的语言/语法/高亮贡献,再回放当前有效集合。
+        registerEditorPlugins(in: kernel)
+
+        // 4. LLM Provider 重建(diff)
         guard let manager = kernel.llmProvider else { return }
         let effectiveIDs = Set(
             allPlugins
@@ -408,6 +422,18 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
             .filter { effectiveEnabled(for: $0) }
             .flatMap { $0.llmProviders(kernel: kernel) }
         try? manager.registerLLMProviders(collected)
+    }
+
+    private func collectEditorPlugins(in kernel: LumiKernel) -> [any EditorPlugin] {
+        allPlugins
+            .filter { effectiveEnabled(for: $0) }
+            .flatMap { $0.editorPlugins(kernel: kernel) }
+            .sorted { lhs, rhs in
+                if lhs.order != rhs.order {
+                    return lhs.order < rhs.order
+                }
+                return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
+            }
     }
 
     private func updateSortedPlugins() {
