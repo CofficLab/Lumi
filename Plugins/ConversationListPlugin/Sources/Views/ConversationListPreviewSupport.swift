@@ -104,6 +104,8 @@ final class MockMessageManaging: ObservableObject, MessageManaging {
     func lastMessage(in conversationID: UUID) -> LumiChatMessage? {
         messages(for: conversationID).last
     }
+    func fetchDailyMessageCounts(since: Date) async -> [Date: Int] { [:] }
+    func fetchDailyTokenCounts(since: Date) async -> [Date: Int] { [:] }
 }
 
 enum ConversationListPreviewSupport {

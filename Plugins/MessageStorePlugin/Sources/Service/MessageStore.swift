@@ -404,6 +404,53 @@ public actor MessageStore: SuperLog {
 
         return (contentChars, metadataChars, reasoningChars, toolCallArgumentChars)
     }
+
+    // MARK: - Aggregate Queries
+
+    /// 获取自指定日期以来每日的消息数量
+    func fetchDailyMessageCounts(since: Date) -> [Date: Int] {
+        let context = ModelContext(container)
+        let sinceTimestamp = since.timeIntervalSince1970
+
+        let descriptor = FetchDescriptor<MessageModel>(
+            predicate: #Predicate<MessageModel> { $0.createdAt >= sinceTimestamp }
+        )
+
+        guard let models = try? context.fetch(descriptor) else { return [:] }
+
+        var counts: [Date: Int] = [:]
+        let calendar = Calendar.current
+        for model in models {
+            let date = Date(timeIntervalSince1970: model.createdAt)
+            let day = calendar.startOfDay(for: date)
+            counts[day, default: 0] += 1
+        }
+        return counts
+    }
+
+    /// 获取自指定日期以来每日的 token 消耗总量
+    func fetchDailyTokenCounts(since: Date) -> [Date: Int] {
+        let context = ModelContext(container)
+        let sinceTimestamp = since.timeIntervalSince1970
+
+        let descriptor = FetchDescriptor<MessageModel>(
+            predicate: #Predicate<MessageModel> { $0.createdAt >= sinceTimestamp }
+        )
+
+        guard let models = try? context.fetch(descriptor) else { return [:] }
+
+        var counts: [Date: Int] = [:]
+        let calendar = Calendar.current
+        for model in models {
+            let date = Date(timeIntervalSince1970: model.createdAt)
+            let day = calendar.startOfDay(for: date)
+            let tokens = (model.inputTokenCount ?? 0) + (model.outputTokenCount ?? 0)
+            if tokens > 0 {
+                counts[day, default: 0] += tokens
+            }
+        }
+        return counts
+    }
 }
 
 // MARK: - Database Root URL

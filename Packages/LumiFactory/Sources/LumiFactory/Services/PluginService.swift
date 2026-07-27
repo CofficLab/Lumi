@@ -126,6 +126,7 @@ import GitHubPlugin
 import GoalTaskPlugin
 import AppStoreConnectPlugin
 import CADDesignerPlugin
+import ActivityHeatmapPlugin
 
 /// 插件服务
 ///
@@ -247,6 +248,7 @@ public enum PluginService {
             ProjectOverviewPlugin(),
             AppStoreConnectPlugin(),
             CADDesignerPlugin(),
+            ActivityHeatmapPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

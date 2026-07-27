@@ -294,6 +294,16 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         messageCache[conversationID]?.last
     }
 
+    public func fetchDailyMessageCounts(since: Date) async -> [Date: Int] {
+        guard let store else { return [:] }
+        return await store.fetchDailyMessageCounts(since: since)
+    }
+
+    public func fetchDailyTokenCounts(since: Date) async -> [Date: Int] {
+        guard let store else { return [:] }
+        return await store.fetchDailyTokenCounts(since: since)
+    }
+
     // MARK: - Tool Call Result Update
 
     public func updateToolCallResult(
