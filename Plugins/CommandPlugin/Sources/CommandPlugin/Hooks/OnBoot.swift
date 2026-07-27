@@ -19,6 +19,9 @@ public struct CommandOnBootHook {
         let commandServiceInstance = DefaultCommandProviding()
         kernel.registerCommandService(commandServiceInstance)
 
+        // 2. 注册内置 Debug 菜单命令
+        DebugCommands().register(into: kernel)
+
         if Self.verbose {
             Self.logger.info("已注册 Command 插件到内核")
             Self.logger.info("Command 插件启动完成")
