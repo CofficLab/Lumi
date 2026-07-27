@@ -4,7 +4,7 @@ import SuperLogKit
 
 /// 单个项目打开过的文件记录（与 `ProjectProviding` 的 `openFileURLs` /
 /// `currentFileURL` 对应），可序列化到磁盘。
-public struct ProjectOpenedFiles: Codable, Equatable {
+public struct ProjectOpenedFiles: Codable, Equatable, Sendable {
     public var openFileURLs: [URL]
     public var currentFileURL: URL?
 
