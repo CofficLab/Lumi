@@ -32,6 +32,7 @@ let package = Package(
             dependencies: [
                 "EditorProviderPlugin",
                 .product(name: "EditorService", package: "EditorService"),
+                .product(name: "LumiUI", package: "LumiUI"),
             ]
         ),
     ]

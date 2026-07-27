@@ -171,6 +171,7 @@ public final class EditorProvider: EditorProviding, SuperLog {
     /// ThemeManager 不知道编辑器的存在,只广播事件;这里自行解析并应用。
     func bindThemeSync(kernel: LumiKernel) {
         self.kernel = kernel
+        configureEditorThemeContributorRegistration(kernel: kernel)
         applyThemeFromKernel()
 
         if let previous = themeObserver {
@@ -182,6 +183,19 @@ public final class EditorProvider: EditorProviding, SuperLog {
             queue: .main
         ) { [weak self] _ in
             self?.applyThemeFromKernel()
+        }
+    }
+
+    /// 将 Lumi app 主题贡献同步为 EditorService 可解析的语法主题 contributor。
+    ///
+    /// EditorState 只认识 EditorService 内部的 `SuperEditorThemeContributor`；
+    /// ThemeManagerPlugin 切换的是 LumiUI 的 app theme。这里在边界处注册 lifecycle 钩子，
+    /// 让每次编辑器主题通知到达时都能用最新 Lumi 主题目录重建 editor syntax 主题。
+    private func configureEditorThemeContributorRegistration(kernel: LumiKernel) {
+        EditorSettingsLifecycle.registerEditorThemeContributors = { [weak kernel] registry in
+            EditorBuiltinSyntaxThemes.registerFallbacks(into: registry)
+            guard let themes = kernel?.theme?.themes else { return }
+            EditorBuiltinSyntaxThemes.registerAppThemes(themes, into: registry)
         }
     }
 
