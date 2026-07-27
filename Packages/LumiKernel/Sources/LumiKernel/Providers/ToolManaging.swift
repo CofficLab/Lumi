@@ -53,4 +53,11 @@ public extension ToolManaging {
     func add(_ tool: any LumiAgentTool) {
         add(tool, pluginID: Self.builtInPluginID)
     }
+
+    /// Remove all registered tools. Used when rebuilding contributions (e.g. plugin enable/disable).
+    func removeAll() {
+        for tool in allAgentTools() {
+            remove(id: tool.name)
+        }
+    }
 }

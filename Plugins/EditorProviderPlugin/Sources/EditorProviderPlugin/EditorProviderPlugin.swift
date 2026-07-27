@@ -1,8 +1,8 @@
-import Foundation
 import Combine
+import EditorService
+import Foundation
 import LumiKernel
 import LumiUI
-import EditorService
 import os
 import SuperLogKit
 import SwiftUI
@@ -44,6 +44,11 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
 
     public func onReady(kernel: LumiKernel) async throws {
         try EditorProviderOnReadyHook().execute(kernel)
+
+        // Subscribe to theme-change events and apply the matching editor theme.
+        // ThemeManager never references the editor directly; it only broadcasts
+        // `.themeDidChange`, and we react here by resolving + applying the editor theme.
+        editorProvider?.bindThemeSync(kernel: kernel)
 
         // OnReady 阶段所有 OnBoot 服务已注册完毕,此时 EditorService 必然就绪。
         // 把具象 EditorService 注入 provider,使其文件操作转发到真正的编辑器子系统。
@@ -136,77 +141,5 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
         Task { @MainActor in
             try? await editorProvider.openFile(at: projectFilePath)
         }
-    }
-}
-
-// MARK: - EditorProvider
-
-@MainActor
-public final class EditorProvider: EditorProviding {
-    /// 注入的具象 EditorService(弱引用,避免循环)。
-    /// 在 OnReady 阶段由 plugin 注入;在此之前文件操作走降级路径。
-    private weak var editorService: EditorService?
-
-    public var currentThemeId: String = "default"
-
-    private var themes: [String: EditorThemeInfo] = [:]
-
-    /// 降级用的本地缓存,仅在 EditorService 未注入时使用。
-    private var stubCurrentFilePath: String?
-
-    public var allEditorThemes: [EditorThemeInfo] {
-        Array(themes.values)
-    }
-
-    /// 注入具象 EditorService,启用文件操作转发。
-    func attachEditorService(_ service: EditorService) {
-        editorService = service
-    }
-
-    public var currentFilePath: String? {
-        if let url = editorService?.files.currentFileURL {
-            return url.path
-        }
-        return stubCurrentFilePath
-    }
-
-    public func openFile(at path: String) async throws {
-        if let service = editorService {
-            let url = URL(fileURLWithPath: path)
-            service.sessions.open(at: url)
-            return
-        }
-        // 降级:EditorService 尚未注入时仅记录路径。
-        stubCurrentFilePath = path
-    }
-
-    public func closeFile(at path: String) async {
-        if let service = editorService {
-            let url = URL(fileURLWithPath: path)
-            // EditorService 目前没有按 URL 关闭单个 session 的公开 API;
-            // 这里以"切到 nil"近似:若关闭的是当前文件,则清空当前 URL。
-            if service.files.currentFileURL == url {
-                service.sessions.openFile(at: nil)
-            }
-            return
-        }
-        if stubCurrentFilePath == path {
-            stubCurrentFilePath = nil
-        }
-    }
-
-    public func setCurrentTheme(_ themeId: String) throws {
-        guard themes[themeId] != nil else {
-            throw LumiKernelError.serviceNotAvailable(service: "Editor theme '\(themeId)' not found")
-        }
-        currentThemeId = themeId
-    }
-
-    public func registerEditorTheme(_ theme: EditorThemeInfo) {
-        themes[theme.id] = theme
-    }
-
-    public func unregisterEditorTheme(themeId: String) {
-        themes.removeValue(forKey: themeId)
     }
 }

@@ -5,11 +5,12 @@ import os
 
 /// Default theme service implementation
 ///
-/// Implements LumiUI.LumiThemeServicing protocol.
-/// Responsible for managing theme contributions from plugins, persisting theme selection,
-/// and syncing with the editor syntax theme system.
+/// Implements LumiKernel.UIThemeProviding protocol.
+/// Responsible for managing theme contributions from plugins and persisting theme selection.
+/// Theme changes are broadcast via the kernel event dispatcher; subscribers (e.g. the editor
+/// service) react on their own without ThemeManager knowing about them.
 @MainActor
-public final class ThemeManager: LumiThemeServicing {
+public final class ThemeManager: UIThemeProviding {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.theme")
     nonisolated static let verbose = false
 
@@ -20,10 +21,14 @@ public final class ThemeManager: LumiThemeServicing {
     /// Reference to the plugin service for collecting theme contributions.
     private weak var pluginService: PluginRegistry?
 
-    /// Reference to the editor core service for syntax theme sync.
-    private weak var editorCoreService: EditorCoreServiceType?
+    /// Kernel event dispatcher, used to broadcast theme-change events.
+    private weak var eventManager: EventManager?
 
     public var themes: [LumiUIThemeContribution] {
+        themeRegistry.themes
+    }
+
+    public func themeContributions() -> [LumiUIThemeContribution] {
         themeRegistry.themes
     }
 
@@ -38,17 +43,16 @@ public final class ThemeManager: LumiThemeServicing {
     public func selectTheme(id: String) throws {
         try themeRegistry.select(themeId: id)
         themeSelectionStore.save(selectedThemeID: id)
+        postThemeDidChange()
     }
 
     public init(
         themeRegistry: LumiUIThemeRegistry = .shared,
-        pluginService: PluginRegistry? = nil,
-        editorCoreService: EditorCoreServiceType? = nil
+        pluginService: PluginRegistry? = nil
     ) {
         self.themeRegistry = themeRegistry
         self.themeSelectionStore = ThemeSelectionStore.shared
         self.pluginService = pluginService
-        self.editorCoreService = editorCoreService
 
         if Self.verbose {
             Self.logger.info("Initializing DefaultThemeProviding")
@@ -59,7 +63,7 @@ public final class ThemeManager: LumiThemeServicing {
 
         // Subscribe to system appearance changes
         themeRegistry.onSystemAppearanceDidChange = { [weak self] in
-            self?.syncEditorTheme()
+            self?.postThemeDidChange()
         }
 
         // Subscribe to plugin enable/disable changes: reload themes when plugins change
@@ -87,6 +91,11 @@ public final class ThemeManager: LumiThemeServicing {
         if Self.verbose {
             Self.logger.info("Plugin service injected")
         }
+    }
+
+    /// Inject the kernel event manager used to broadcast theme-change events.
+    public func setEventManager(_ eventManager: EventManager) {
+        self.eventManager = eventManager
     }
 
     /// Reload themes from all enabled plugins' theme contributions.
@@ -137,12 +146,7 @@ public final class ThemeManager: LumiThemeServicing {
 
         // After reloading, restore the previously saved theme selection if possible
         restoreSavedThemeSelection()
-    }
-
-    /// Connect to the editor core service for syntax theme synchronization.
-    public func connectEditorThemeSync(_ service: EditorCoreServiceType) {
-        self.editorCoreService = service
-        syncEditorTheme()
+        postThemeDidChange()
     }
 
     /// Register a theme contribution (compatibility with legacy API).
@@ -158,6 +162,15 @@ public final class ThemeManager: LumiThemeServicing {
         } else {
             try? themeRegistry.replaceAll(remaining)
         }
+    }
+
+    // MARK: - UIThemeProviding
+
+    /// 将内核持有的主题贡献同步到 LumiUI 的主题注册中心。
+    ///
+    /// 在 `LumiKernel.startup()` 末尾调用,确保所有插件的 `onReady` 已执行完毕。
+    public func syncToLumiUI() {
+        reloadThemes()
     }
 
     /// Replace all theme contributions (compatibility with legacy API).
@@ -197,14 +210,9 @@ public final class ThemeManager: LumiThemeServicing {
         }
     }
 
-    /// Sync the editor syntax theme to match the current UI theme.
-    private func syncEditorTheme() {
-        editorCoreService?.syncAppSyntaxThemes()
+    /// Broadcast a theme-change event so other services (e.g. the editor)
+    /// can react without ThemeManager knowing about them.
+    private func postThemeDidChange() {
+        eventManager?.post(.themeDidChange)
     }
-}
-
-/// Minimal protocol for editor core service dependency.
-/// Avoids importing the full EditorCoreService type into this module.
-public protocol EditorCoreServiceType: AnyObject {
-    func syncAppSyntaxThemes()
 }

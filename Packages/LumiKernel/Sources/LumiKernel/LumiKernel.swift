@@ -1,68 +1,7 @@
 import Combine
 import Foundation
-import os
 import LumiUI
-import SuperLogKit
 import SwiftUI
-
-/// Kernel event dispatcher.
-///
-/// 所有需要对外广播的内核事件，都通过这个对象发出。
-@MainActor
-public final class EventManager: ObservableObject, SuperLog {
-    nonisolated public static let emoji = "📣"
-    nonisolated(unsafe) public static var verbose = true
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "kernel.event-manager")
-
-    public init() {}
-
-    public func post(
-        _ event: LumiKernelEvent,
-        object: Any? = nil,
-        userInfo: [AnyHashable: Any]? = nil
-    ) {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)post event=\(event.rawValue) object=\(String(describing: object.map { type(of: $0) })) userInfoKeys=\(userInfo?.keys.map { String(describing: $0) }.sorted().joined(separator: ",") ?? "nil")")
-        }
-        NotificationCenter.default.post(name: event.notificationName, object: object, userInfo: userInfo)
-    }
-
-    public func postEnabledPluginsDidChange(object: Any? = nil) {
-        post(.enabledPluginsDidChange, object: object)
-    }
-
-    public func postMessagesDidChange(object: Any? = nil) {
-        post(.messagesDidChange, object: object)
-    }
-
-    public func postConversationsDidChange(object: Any? = nil) {
-        post(.conversationsDidChange, object: object)
-    }
-
-    public func postSelectedRemoteProviderIDDidChange(providerID: String?) {
-        post(.selectedRemoteProviderIDDidChange, userInfo: ["providerID": providerID as Any])
-    }
-
-    public func postSelectedLocalProviderIDDidChange(providerID: String?) {
-        post(.selectedLocalProviderIDDidChange, userInfo: ["providerID": providerID as Any])
-    }
-
-    public func postSelectedModelsDidChange(selectedModels: [String: String]) {
-        post(.selectedModelsDidChange, userInfo: ["selectedModels": selectedModels])
-    }
-
-    public func postRoutingModeDidChange(routingMode: LumiModelRoutingMode) {
-        post(.routingModeDidChange, userInfo: ["routingMode": routingMode])
-    }
-
-    public func postProviderAvailabilityDidChange(availabilityResults: [String: LumiModelAvailabilityResult]) {
-        post(.providerAvailabilityDidChange, userInfo: ["availabilityResults": availabilityResults])
-    }
-
-    public func postProviderStatusesDidChange(providerStatuses: [String: LumiLLMProviderStatus]) {
-        post(.providerStatusesDidChange, userInfo: ["providerStatuses": providerStatuses])
-    }
-}
 
 /// Lumi lightweight core
 ///
@@ -95,8 +34,6 @@ public final class LumiKernelContainer: ObservableObject {
         self.eventManager = EventManager()
         self.pluginManager = BuiltinPluginManager()
         self.pluginManager.kernel = self
-        // 注册其他服务
-        registerService(UIThemeProviding.self, pluginManager)
     }
 
     // MARK: - Generic Service Registry
@@ -179,18 +116,20 @@ public final class LumiKernelContainer: ObservableObject {
         // 3. 插件系统 On Ready — 阶段 2:依赖服务的异步初始化
         try await pluginManager.onReady(kernel: self)
 
-        // 4. 收集所有插件贡献的 UI 视图,并注册到内核的共享 UI 服务
+        // 4. 收集所有插件贡献的 Agent 工具,并注册到内核 ToolManaging
+        //    — 在 onReady 之后执行,确保 `kernel.toolManager` 服务可用,
+        //    且各插件的 `agentTools(kernel:)` 可以在完整内核上运行。
+        //    — 必须在 registerPluginUIContributions 之前执行,确保
+        //    settingsTabItems 等 UI 贡献在创建时能读取到已注册的工具列表。
+        try pluginManager.registerAgentTools(in: self)
+
+        // 5. 收集所有插件贡献的 UI 视图,并注册到内核的共享 UI 服务
         pluginManager.registerPluginUIContributions(in: self)
 
-        // 5. 收集所有插件贡献的 LLM Provider,并注册到内核 LLMProviderManaging
+        // 6. 收集所有插件贡献的 LLM Provider,并注册到内核 LLMProviderManaging
         //    — 在 onReady 之后执行,确保 `kernel.llmProvider` 服务可用,
         //    且各插件的 `llmProviders(kernel:)` 可以在完整内核上运行。
         try pluginManager.registerLLMProviders(in: self)
-
-        // 6. 收集所有插件贡献的 Agent 工具,并注册到内核 ToolManaging
-        //    — 在 onReady 之后执行,确保 `kernel.toolManager` 服务可用,
-        //    且各插件的 `agentTools(kernel:)` 可以在完整内核上运行。
-        try pluginManager.registerAgentTools(in: self)
 
         // 6. 同步当前激活容器的可见性状态
         //    — 从 LayoutProviding 获取 activeViewContainerID,
@@ -208,6 +147,10 @@ public final class LumiKernelContainer: ObservableObject {
 
         // 7. 将 UIManager 中已收集的菜单栏视图交给展示层
         refreshMenuBarPresentation()
+
+        // 8. 将内核主题服务持有的主题贡献同步到 LumiUI 的主题注册中心
+        //    此时所有插件的 onReady 已执行完毕,主题贡献已注册到内核
+        theme?.syncToLumiUI()
     }
 
     /// 让菜单栏展示层刷新为当前 UIManager 收集到的内容。

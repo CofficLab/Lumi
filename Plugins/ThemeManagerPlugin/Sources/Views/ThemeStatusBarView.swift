@@ -1,25 +1,30 @@
 import SwiftUI
+import LumiKernel
 import LumiUI
 
 struct ThemeStatusBarView: View {
-    private let themeService: any LumiThemeServicing
-    @ObservedObject private var registry: LumiUIThemeRegistry
+    private let kernel: LumiKernel
+    private var themeService: (any UIThemeProviding)? {
+        kernel.theme
+    }
 
-    init(themeService: any LumiThemeServicing) {
-        self.themeService = themeService
-        self.registry = themeService.themeRegistry
+    @State private var selectedContribution: LumiUIThemeContribution?
+
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        self._selectedContribution = State(initialValue: kernel.theme?.selectedContribution)
     }
 
     var body: some View {
         StatusBarHoverContainer(
-            detailView: ThemePickerDetailView(themeService: themeService),
+            detailView: ThemePickerDetailView(kernel: kernel),
             popoverWidth: 320,
             id: "lumi-theme-picker"
         ) {
             HStack(spacing: 4) {
                 Image(systemName: "paintbrush")
                     .font(.appMicroEmphasized)
-                if let contribution = registry.selectedContribution {
+                if let contribution = selectedContribution {
                     Text(contribution.displayName)
                         .font(.appMicro)
                         .lineLimit(1)
@@ -27,6 +32,9 @@ struct ThemeStatusBarView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiThemeDidChange)) { _ in
+            selectedContribution = themeService?.selectedContribution
         }
     }
 }
