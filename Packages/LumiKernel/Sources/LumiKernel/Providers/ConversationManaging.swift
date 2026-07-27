@@ -66,4 +66,12 @@ public protocol ConversationManaging: ObservableObject {
 
     /// 设置指定对话的自动化程度
     func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?)
+
+    // MARK: - Language
+
+    /// 获取指定对话的回复语言
+    func language(for conversationID: UUID?) -> LumiConversationLanguage
+
+    /// 设置指定对话的回复语言
+    func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?)
 }

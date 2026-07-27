@@ -224,6 +224,24 @@ public final class ConversationService: ConversationManaging {
         conversations[index].automationLevel = automationLevel
         try? saveConversations()
     }
+
+    public func language(for conversationID: UUID?) -> LumiConversationLanguage {
+        guard let conversationID else {
+            return .chinese
+        }
+        return conversations.first { $0.id == conversationID }?.language ?? .chinese
+    }
+
+    public func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].language = language
+        try? saveConversations()
+    }
 }
 
 // MARK: - State

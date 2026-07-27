@@ -115,6 +115,7 @@ let package = Package(
         .package(path: "../../Plugins/VerbosityPlugin"),
         .package(path: "../../Plugins/ConversationSpeedPlugin"),
         .package(path: "../../Plugins/ChatModePlugin"),
+        .package(path: "../../Plugins/ConversationLanguagePlugin"),
         // Open-in external apps
         .package(path: "../../Plugins/OpenInFinderPlugin"),
         .package(path: "../../Plugins/OpenInXcodePlugin"),
@@ -248,6 +249,7 @@ let package = Package(
                 .product(name: "VerbosityPlugin", package: "VerbosityPlugin"),
                 .product(name: "ConversationSpeedPlugin", package: "ConversationSpeedPlugin"),
                 .product(name: "ChatModePlugin", package: "ChatModePlugin"),
+                .product(name: "ConversationLanguagePlugin", package: "ConversationLanguagePlugin"),
                 // Open-in external apps
                 .product(name: "OpenInFinderPlugin", package: "OpenInFinderPlugin"),
                 .product(name: "OpenInXcodePlugin", package: "OpenInXcodePlugin"),

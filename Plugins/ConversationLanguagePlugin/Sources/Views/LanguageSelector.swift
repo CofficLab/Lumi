@@ -1,19 +1,22 @@
 import LumiKernel
-import LumiKernel
 import SwiftUI
 
 /// 语言切换按钮：每个对话保存独立语言偏好。
 struct LanguageToggleButton: View {
-    @ObservedObject var chatService: ChatService
+    @ObservedObject var kernel: LumiKernel
 
     @State private var isPopoverPresented = false
 
+    private var conversations: (any ConversationManaging)? {
+        kernel.conversations
+    }
+
     private var selectedConversationID: UUID? {
-        chatService.selectedConversationID
+        conversations?.selectedConversationID
     }
 
     private var currentLanguage: LumiConversationLanguage {
-        chatService.language(for: selectedConversationID)
+        conversations?.language(for: selectedConversationID) ?? .chinese
     }
 
     var body: some View {
@@ -36,7 +39,7 @@ struct LanguageToggleButton: View {
         .accessibilityLabel(LumiPluginLocalization.string("Language Selector", bundle: .module))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             LanguagePopover(selectedLanguage: currentLanguage) { language in
-                chatService.setLanguage(language, for: selectedConversationID)
+                conversations?.setLanguage(language, for: selectedConversationID)
                 isPopoverPresented = false
             }
         }

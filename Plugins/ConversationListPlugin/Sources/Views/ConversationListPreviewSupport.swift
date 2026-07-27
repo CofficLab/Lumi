@@ -61,6 +61,8 @@ final class MockConversationManaging: ObservableObject, ConversationManaging {
     func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
     func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { .chat }
     func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
+    func language(for conversationID: UUID?) -> LumiConversationLanguage { .chinese }
+    func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
 }
 
 @MainActor

@@ -94,6 +94,7 @@ import ThemeWinterPlugin
 import VerbosityPlugin
 import ConversationSpeedPlugin
 import ChatModePlugin
+import ConversationLanguagePlugin
 import VideoConverterPlugin
 import ProjectFileTreePlugin
 import OpenInFinderPlugin
@@ -209,6 +210,7 @@ public enum PluginService {
             VerbosityPlugin(),
             ConversationSpeedPlugin(),
             ChatModePlugin(),
+            ConversationLanguagePlugin(),
             VideoConverterPlugin(),
             NettoPlugin(),
             QuickLauncherPlugin(),

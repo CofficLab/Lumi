@@ -278,6 +278,29 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
+    // MARK: - Language
+
+    public func language(for conversationID: UUID?) -> LumiConversationLanguage {
+        guard let conversationID else {
+            return .chinese
+        }
+        return conversations.first { $0.id == conversationID }?.language ?? .chinese
+    }
+
+    public func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].language = language
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setLanguage: conversation=\(conversationID.uuidString.prefix(8)), language=\(language.rawValue)")
+        }
+    }
+
     // MARK: - Private
 
     private func updateCurrentTitle() {
