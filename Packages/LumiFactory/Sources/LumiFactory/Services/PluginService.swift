@@ -125,7 +125,7 @@ import ShowImagePlugin
 import GitHubPlugin
 import GoalTaskPlugin
 import AppStoreConnectPlugin
-// import CADDesignerPlugin  // Not included in Xcode project
+import CADDesignerPlugin
 
 /// 插件服务
 ///
@@ -208,7 +208,6 @@ public enum PluginService {
             // Editor 预览面板 — 在 PanelBottom 显示文件预览。
             EditorPreviewBottomPanelPlugin(),
             TerminalPlugin(),
-            // CADDesignerPlugin(),  // Not included in Xcode project
             DeviceInfoPlugin(),
             ProjectFileTreePlugin(),
             ClipboardManagerPlugin(),
@@ -247,6 +246,7 @@ public enum PluginService {
             NetworkManagerPlugin(),
             ProjectOverviewPlugin(),
             AppStoreConnectPlugin(),
+            CADDesignerPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

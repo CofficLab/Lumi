@@ -144,6 +144,7 @@ let package = Package(
         .package(path: "../../Plugins/GitHubPlugin"),
         .package(path: "../../Plugins/GoalTaskPlugin"),
         .package(path: "../../Plugins/AppStoreConnectPlugin"),
+        .package(path: "../../Plugins/CADDesignerPlugin"),
     ],
     targets: [
         .target(
@@ -285,6 +286,7 @@ let package = Package(
                 .product(name: "GitHubPlugin", package: "GitHubPlugin"),
                 .product(name: "GoalTaskPlugin", package: "GoalTaskPlugin"),
                 .product(name: "AppStoreConnectPlugin", package: "AppStoreConnectPlugin"),
+                .product(name: "CADDesignerPlugin", package: "CADDesignerPlugin"),
             ],
             resources: [
                 .process("Resources")
