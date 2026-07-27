@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>4.19.0</title>
-            <pubDate>Fri, 17 Jul 2026 17:26:34 +0000</pubDate>
-            <sparkle:version>248</sparkle:version>
-            <sparkle:shortVersionString>4.19.0</sparkle:shortVersionString>
+            <title>5.1.0</title>
+            <pubDate>Mon, 27 Jul 2026 03:07:02 +0000</pubDate>
+            <sparkle:version>501</sparkle:version>
+            <sparkle:shortVersionString>5.1.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v4.19.0</h2>
-<h3>Changes since v4.18.0</h3>
+            <description><![CDATA[<h2>Release v5.1.0</h2>
+<h3>Changes since v4.19.0</h3>
 <ul>
-<li>feat: add elegant macOS-style Loading page</li>
-<li>feat: refactor LLM provider base classes and fix Keychain service regression</li>
-<li>feat(core): extract KeychainKit as independent package</li>
-<li>feat(editor-chat): add EditorChatPlugin for sending code references to chat</li>
-<li>feat(goal-task): add chat toolbar button to display goals</li>
-<li>feat(goal-task): enforce single active goal policy</li>
-<li>feat(menu-bar): sort menu bar popup items by order</li>
-<li>feat(plugin): allow agentTools to throw and surface failures to UI</li>
-<li>fix(menu-bar): honor LumiMenuBarPopupItem.order when aggregating popup items</li>
-<li>refactor: move plugin-related types to Plugin directory</li>
-<li>refactor(agent-tool): extract tool service methods into AgentToolComponent</li>
-<li>refactor(app): simplify RootContainer and rename project types</li>
-<li>refactor(bootstrap): merge LumiCoreService into RootContainer</li>
-<li>refactor(core): introduce ProjectComponent to encapsulate ProjectState</li>
-<li>refactor(core): remove KeychainKit dependency from LumiLLMProvider protocol</li>
-<li>refactor(core): remove LumiCoreKit Security module, use KeychainKit directly</li>
-<li>refactor(goal-task): simplify sidebar to show single active goal</li>
-<li>refactor(layout): introduce LayoutComponent to encapsulate LumiLayoutState</li>
-<li>refactor(logo): rename LogoRegistry to LogoComponent, migrate to component pattern</li>
-<li>refactor(plugins): surface agentTools dependency failures instead of silent returns</li>
+<li>bugfix:  fix a bug</li>
+<li>docs: add AgentTool dynamic injection proposal</li>
+<li>docs: add comprehensive usage examples and tests</li>
+<li>docs: add plan for restoring provider management settings</li>
+<li>docs: restore documentation files</li>
+<li>docs: update legacy items status in agenttool proposal</li>
+<li>docs(LumiComponentAgentTool): add README and gitignore</li>
+<li>docs(LumiComponentLLMProvider): add README and gitignore</li>
+<li>docs(LumiComponentMenuBar): add README and gitignore</li>
+<li>docs(LumiComponentOverlay): add README and gitignore</li>
+<li>docs(LumiComponentPanelChrome): add README and gitignore</li>
+<li>docs(LumiComponentStorage): add README and gitignore</li>
+<li>docs(LumiComponentSubAgent): add README and gitignore</li>
+<li>docs(plugins): add README and update .gitignore for core plugins</li>
+<li>feat: add AgentToolPlugin implementing AgentToolProviding</li>
+<li>feat: Add AgentTurnRunnerPlugin for agent turn execution</li>
+<li>feat: add command registry for plugin menu injection</li>
+<li>feat: add ConversationSpeedPlugin to display streaming TPS in chat toolbar</li>
+<li>feat: add EditorFileTreeV2Plugin with simple file tree for RailView</li>
+<li>feat: add EditorKernelPlugin and ChatKernelPlugin</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v4.19.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v4.19.0/Lumi_4.19.0_x86_64.dmg" length="44944829" type="application/octet-stream" sparkle:edSignature="NibogWzVQg6oAvGcaVPNYQmzdhyPhmV6iJR1/GQ4lXg0KR8EwBT+5x0+DmhNTJMJ85O5wG6LEIoxHaQhW9A3AA=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.1.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.1.0/Lumi_5.1.0_x86_64.dmg" length="32651209" type="application/octet-stream" sparkle:edSignature="QHFrNXObaQSG7CftLebXwI6TJfwuWIvoAl0ykMk8GnsVwR54cGFbrrZXVMjDTqoCrnK0PFs5jqmy4CpliBKiAw=="/>
         </item>
     </channel>
 </rss>
