@@ -14,8 +14,7 @@ import os
 /// - `ensureUpdaterInitialized()` — lazy init of the Sparkle controller
 ///
 /// Cross-plugin communication uses `NotificationCenter` so callers (e.g.
-/// `MenuBarManagerPlugin`, `HostSettingsPlugin.AboutSettingsView`) do not need
-/// a hard dependency on `AppUpdatePlugin`.
+/// `MenuBarManagerPlugin`) do not need a hard dependency on `AppUpdatePlugin`.
 @MainActor
 public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.updater")

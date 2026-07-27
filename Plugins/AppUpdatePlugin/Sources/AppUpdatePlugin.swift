@@ -11,10 +11,10 @@ import SwiftUI
 /// - Trigger feed URL detection at app launch
 /// - Register "Check for Updates..." command via `kernel.command` with
 ///   `.appMenu` placement so it appears in the Lumi menu after "About"
+/// - Register the "About" settings tab displaying app info and update controls
 ///
 /// Other integration points use `NotificationCenter`:
 /// - `MenuBarManagerPlugin` calls `UpdateService.shared.checkForUpdates()`
-/// - `AboutSettingsView` calls `UpdateService.shared.checkForUpdates()`
 /// - `UpdateService` posts `.appUpdateReadyToInstall` → UI observes it
 ///
 /// `policy = .alwaysOn`: update checking is core infrastructure.
@@ -62,6 +62,20 @@ public final class AppUpdatePlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
+    // MARK: - Settings Contributions
+
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        [
+            SettingsTabItem(
+                id: "app-update.about",
+                title: LumiLocalization.string("About", bundle: .module),
+                systemImage: "info.circle"
+            ) {
+                AboutSettingsView()
+            },
+        ]
+    }
+
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
@@ -82,7 +96,6 @@ public final class AppUpdatePlugin: LumiPlugin {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
