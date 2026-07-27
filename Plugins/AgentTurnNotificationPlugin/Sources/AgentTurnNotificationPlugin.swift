@@ -1,20 +1,32 @@
 import SwiftUI
 import LumiKernel
 import LumiUI
+import SuperLogKit
+import os
 
 @MainActor
-public final class AgentTurnNotificationPlugin: LumiPlugin {
+public final class AgentTurnNotificationPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let emoji = "🔔"
+    public nonisolated static let verbose = false
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.turn-notification", category: "AgentTurnNotificationPlugin")
+
     public let id = "com.coffic.lumi.plugin.turn-notification"
     public let name = "Turn Notification"
     public let order = 99
-	public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+    public func onReady(kernel: LumiKernel) async throws {}
+
+    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] {
+        [
+            LumiRootOverlayItem(id: "agent-turn-notification-overlay", order: 99, wrap: { content in
+                AnyView(AgentTurnNotificationOverlay(content: content))
+            })
+        ]
     }
 
 
@@ -42,7 +54,6 @@ public final class AgentTurnNotificationPlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
-    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
