@@ -327,6 +327,21 @@ final class EditorTextView: NSTextView {
     var fileDropHandler: ((URL) -> Void)?
     private var pastePreviewPopover: NSPopover?
 
+    override init(frame frameRect: NSRect, textContainer container: NSTextContainer?) {
+        super.init(frame: frameRect, textContainer: container)
+        registerForDraggedTypes([.fileURL, .string])
+    }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        registerForDraggedTypes([.fileURL, .string])
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        registerForDraggedTypes([.fileURL, .string])
+    }
+
     override func paste(_ sender: Any?) {
         if pasteHandler?(NSPasteboard.general) == true {
             return
@@ -355,7 +370,7 @@ final class EditorTextView: NSTextView {
             return .copy
         }
         imageDragHoverHandler?(false)
-        return super.draggingEntered(sender)
+        return .copy
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
@@ -364,7 +379,7 @@ final class EditorTextView: NSTextView {
             return .copy
         }
         imageDragHoverHandler?(false)
-        return super.draggingUpdated(sender)
+        return .copy
     }
 
     override func draggingExited(_ sender: NSDraggingInfo?) {
