@@ -51,6 +51,13 @@ final class FileTreeNodeCell: NSCollectionViewItem {
         self.cachedGitStatus = gitStatus
         self.cachedTheme = theme
 
+        // [诊断] 记录 cell 重建时解析出的文字颜色与当前外观
+        let textColor = theme.workspaceTextColor()
+        let resolved = NSColor(textColor).usingColorSpace(.sRGB)
+        let windowBest = view.window?.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
+        let appBest = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
+        ProjectFileTreePlugin.logger.info("[FileTree][Appearance] configure: file=\(item.fileName), kind=\(String(describing: theme.appearanceKind)), windowBest=\(windowBest?.rawValue ?? "nil"), appBest=\(appBest?.rawValue ?? "nil"), textColorRGB=(r:\(resolved?.redComponent ?? -1), g:\(resolved?.greenComponent ?? -1), b:\(resolved?.blueComponent ?? -1))")
+
         hostingView?.rootView = NodeRowView(
             item: item,
             isSelected: isSelected,

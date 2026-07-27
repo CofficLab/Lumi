@@ -128,6 +128,7 @@ import AppStoreConnectPlugin
 import CADDesignerPlugin
 import ActivityHeatmapPlugin
 import FileLogPlugin
+import OnboardingPlugin
 
 /// 插件服务
 ///
@@ -251,6 +252,7 @@ public enum PluginService {
             CADDesignerPlugin(),
             ActivityHeatmapPlugin(),
             FileLogPlugin(),
+            OnboardingPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),
