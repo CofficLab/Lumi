@@ -1,81 +1,79 @@
 @testable import EditorSwiftPlugin
-@testable import EditorService
 import LumiKernel
 import Testing
 
-@Test func editorSwiftPluginInfo() {
-    #expect(EditorSwiftPlugin.info.id == "EditorSwift")
-    #expect(EditorSwiftPlugin.policy == .alwaysOn)
-    #expect(EditorSwiftPlugin.category == .development)
-    #expect(EditorSwiftPlugin.iconName == "swift")
+@MainActor
+@Test func editorSwiftPluginMetadata() {
+    let plugin = EditorSwiftPlugin()
+
+    #expect(plugin.id == "EditorSwift")
+    #expect(plugin.name == "Swift Editor")
+    #expect(plugin.order == 4)
+    #expect(plugin.policy == .optOut)
+    #expect(plugin.category == .development)
+    #expect(plugin.stage == .beta)
 }
 
 @MainActor
-@Test func editorSwiftEditorPluginMetadata() {
-    #expect(EditorSwiftEditorPlugin.id == "EditorSwift")
-    #expect(EditorSwiftEditorPlugin.order == 4)
-    #expect(EditorSwiftEditorPlugin.shared.providesEditorExtensions)
+@Test func editorSwiftPluginContributesKernelEditorPlugin() {
+    let plugin = EditorSwiftPlugin()
+    let kernel = LumiKernel()
+    let editorPlugins = plugin.editorPlugins(kernel: kernel)
+
+    #expect(editorPlugins.count == 1)
+    #expect(editorPlugins[0].id == "EditorSwift.language")
+    #expect(editorPlugins[0].name == "Swift Language Support")
+    #expect(editorPlugins[0].order == 4)
 }
 
 @MainActor
-@Test func titleToolbarItemsRequireEditorPanel() {
-    let hiddenContext = LumiPluginContext(activeSectionID: "Other", activeSectionTitle: "Other")
-    #expect(EditorSwiftPlugin.titleToolbarItems(lumiCore: hiddenContext).isEmpty)
+@Test func swiftEditorPluginRegistersLanguageAndGrammar() {
+    let registrar = RecordingEditorExtensionRegistrar()
+    EditorSwiftEditorPlugin().registerExtensions(into: registrar)
 
-    let visibleWithoutService = LumiPluginContext(activeSectionID: "LumiEditor", activeSectionTitle: "Editor")
-    #expect(EditorSwiftPlugin.titleToolbarItems(lumiCore: visibleWithoutService).isEmpty)
-
-    let core = EditorCore()
-    let visibleContext = LumiPluginContext(
-        activeSectionID: "LumiEditor",
-        activeSectionTitle: "Editor",
-        dependencies: LumiPluginDependencies { dependencies in
-            dependencies.register(LumiEditorServicing.self, core)
-        }
-    )
-    let items = EditorSwiftPlugin.titleToolbarItems(lumiCore: visibleContext)
-    #expect(items.count == 1)
-    #expect(items[0].id == "EditorSwift.xcode-scheme")
-    #expect(items[0].placement == .leading)
-}
-
-@MainActor
-@Test func panelBottomTabItemsRequireEditorPanel() {
-    let hiddenContext = LumiPluginContext(activeSectionID: "Other", activeSectionTitle: "Other", showsPanelChrome: true)
-    #expect(EditorSwiftPlugin.panelBottomTabItems(lumiCore: hiddenContext).isEmpty)
-
-    let withoutChrome = LumiPluginContext(activeSectionID: "LumiEditor", activeSectionTitle: "Editor")
-    #expect(EditorSwiftPlugin.panelBottomTabItems(lumiCore: withoutChrome).isEmpty)
-
-    let core = EditorCore()
-    let visibleContext = LumiPluginContext(
-        activeSectionID: "LumiEditor",
-        activeSectionTitle: "Editor",
-        showsPanelChrome: true,
-        dependencies: LumiPluginDependencies { dependencies in
-            dependencies.register(LumiEditorServicing.self, core)
-        }
-    )
-    let tabs = EditorSwiftPlugin.panelBottomTabItems(lumiCore: visibleContext)
-    #expect(tabs.count == 1)
-    #expect(tabs[0].id == SwiftBuildPanelIDs.bottomTab)
-    #expect(tabs[0].systemImage == "play.fill")
-}
-
-@MainActor
-@Test func agentToolsExposeSwiftXcodeTools() {
-    let tools = EditorSwiftPlugin.agentTools(lumiCore: PreviewEditorSwiftSupport.lumiCore)
-    #expect(tools.count == 3)
-    #expect(tools.map(\.name).sorted() == [
-        "add_xcode_package",
-        "generate_xcode_project",
-        "list_xcode_packages",
-    ].sorted())
+    #expect(registrar.languages == [EditorSwiftPluginDescriptor.swift])
+    #expect(registrar.grammarProviders.count == 1)
+    #expect(registrar.grammarProviders[0].grammarId == "swift")
 }
 
 @Test func swiftLanguageDescriptor() {
     let descriptor = EditorSwiftPluginDescriptor.swift
+
     #expect(descriptor.languageId == "swift")
+    #expect(descriptor.displayName == "Swift")
     #expect(descriptor.fileExtensions == ["swift"])
+    #expect(descriptor.shebangAliases == ["swift"])
     #expect(descriptor.lineComment == "//")
+    #expect(descriptor.rangeComment?.0 == "/*")
+    #expect(descriptor.rangeComment?.1 == "*/")
+    #expect(descriptor.highlightLanguageId == "swift")
+    #expect(descriptor.lspLanguageId == "swift")
+}
+
+@Test func swiftGrammarProviderExposesBundledQueries() {
+    let provider = EditorSwiftGrammarProvider()
+
+    #expect(provider.grammarId == "swift")
+    #expect(provider.treeSitterLanguage() != nil)
+    #expect(provider.highlightQueryURLs().contains { $0.lastPathComponent == "highlights.scm" })
+    #expect(provider.localsQueryURL()?.lastPathComponent == "locals.scm")
+}
+
+@MainActor
+private final class RecordingEditorExtensionRegistrar: EditorExtensionRegistrar {
+    var languages: [EditorLanguageDescriptor] = []
+    var grammarProviders: [any LanguageGrammarProviding] = []
+    var highlightContributors: [any EditorHighlightContributor] = []
+
+    func registerLanguage(_ descriptor: EditorLanguageDescriptor) {
+        languages.append(descriptor)
+    }
+
+    func registerGrammarProvider(_ provider: any LanguageGrammarProviding) {
+        grammarProviders.append(provider)
+    }
+
+    func registerHighlightContributor(_ contributor: any EditorHighlightContributor) {
+        highlightContributors.append(contributor)
+    }
 }
