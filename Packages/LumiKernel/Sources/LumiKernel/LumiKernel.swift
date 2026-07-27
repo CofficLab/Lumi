@@ -116,18 +116,20 @@ public final class LumiKernelContainer: ObservableObject {
         // 3. 插件系统 On Ready — 阶段 2:依赖服务的异步初始化
         try await pluginManager.onReady(kernel: self)
 
-        // 4. 收集所有插件贡献的 UI 视图,并注册到内核的共享 UI 服务
+        // 4. 收集所有插件贡献的 Agent 工具,并注册到内核 ToolManaging
+        //    — 在 onReady 之后执行,确保 `kernel.toolManager` 服务可用,
+        //    且各插件的 `agentTools(kernel:)` 可以在完整内核上运行。
+        //    — 必须在 registerPluginUIContributions 之前执行,确保
+        //    settingsTabItems 等 UI 贡献在创建时能读取到已注册的工具列表。
+        try pluginManager.registerAgentTools(in: self)
+
+        // 5. 收集所有插件贡献的 UI 视图,并注册到内核的共享 UI 服务
         pluginManager.registerPluginUIContributions(in: self)
 
-        // 5. 收集所有插件贡献的 LLM Provider,并注册到内核 LLMProviderManaging
+        // 6. 收集所有插件贡献的 LLM Provider,并注册到内核 LLMProviderManaging
         //    — 在 onReady 之后执行,确保 `kernel.llmProvider` 服务可用,
         //    且各插件的 `llmProviders(kernel:)` 可以在完整内核上运行。
         try pluginManager.registerLLMProviders(in: self)
-
-        // 6. 收集所有插件贡献的 Agent 工具,并注册到内核 ToolManaging
-        //    — 在 onReady 之后执行,确保 `kernel.toolManager` 服务可用,
-        //    且各插件的 `agentTools(kernel:)` 可以在完整内核上运行。
-        try pluginManager.registerAgentTools(in: self)
 
         // 6. 同步当前激活容器的可见性状态
         //    — 从 LayoutProviding 获取 activeViewContainerID,
