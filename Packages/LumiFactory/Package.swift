@@ -150,6 +150,9 @@ let package = Package(
         .package(path: "../../Plugins/OnboardingPlugin"),
         .package(path: "../../Plugins/DatabaseManagerPlugin"),
         .package(path: "../../Plugins/ConversationForkPlugin"),
+        .package(path: "../../Plugins/AgentTurnNotificationPlugin"),
+        // User interaction
+        .package(path: "../../Plugins/AskUserPlugin"),
     ],
     targets: [
         .target(
@@ -297,6 +300,8 @@ let package = Package(
                 .product(name: "OnboardingPlugin", package: "OnboardingPlugin"),
                 .product(name: "DatabaseManagerPlugin", package: "DatabaseManagerPlugin"),
                 .product(name: "ConversationForkPlugin", package: "ConversationForkPlugin"),
+                .product(name: "AgentTurnNotificationPlugin", package: "AgentTurnNotificationPlugin"),
+                .product(name: "AskUserPlugin", package: "AskUserPlugin"),
             ],
             resources: [
                 .process("Resources")

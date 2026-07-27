@@ -131,6 +131,8 @@ import FileLogPlugin
 import OnboardingPlugin
 import DatabaseManagerPlugin
 import ConversationForkPlugin
+import AgentTurnNotificationPlugin
+import AskUserPlugin
 
 /// 插件服务
 ///
@@ -257,6 +259,9 @@ public enum PluginService {
             OnboardingPlugin(),
             DatabaseManagerPlugin(),
             ConversationForkPlugin(),
+            AgentTurnNotificationPlugin(),
+            // User interaction
+            AskUserPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),
