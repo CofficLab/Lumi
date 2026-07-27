@@ -15,6 +15,7 @@ final class FileTreeNodeCell: NSCollectionViewItem {
     private var cachedIsSelected = false
     private var cachedGitStatus: GitStatus?
     private var cachedTheme: (any LumiAppChromeTheme)?
+    private var cachedAppearanceID: String = ""
 
     override func loadView() {
         view = NSView()
@@ -43,27 +44,34 @@ final class FileTreeNodeCell: NSCollectionViewItem {
         isSelected: Bool,
         isHovered: Bool,
         gitStatus: GitStatus?,
-        theme: any LumiAppChromeTheme
+        theme: any LumiAppChromeTheme,
+        appearance: NSAppearance,
+        appearanceID: String
     ) {
         self.isHovered = isHovered
         self.cachedItem = item
         self.cachedIsSelected = isSelected
         self.cachedGitStatus = gitStatus
         self.cachedTheme = theme
+        self.cachedAppearanceID = appearanceID
+        // 显式设置 hostingView.appearance，强制 NSHostingView 用正确外观渲染，
+        // 避免 NSHostingView 缓存旧 appearance 导致颜色不随主题切换刷新（需失焦才变）。
+        hostingView?.appearance = appearance
 
         // [诊断] 记录 cell 重建时解析出的文字颜色与当前外观
         let textColor = theme.workspaceTextColor()
         let resolved = NSColor(textColor).usingColorSpace(.sRGB)
         let windowBest = view.window?.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
         let appBest = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
-        ProjectFileTreePlugin.logger.info("[FileTree][Appearance] configure: file=\(item.fileName), kind=\(String(describing: theme.appearanceKind)), windowBest=\(windowBest?.rawValue ?? "nil"), appBest=\(appBest?.rawValue ?? "nil"), textColorRGB=(r:\(resolved?.redComponent ?? -1), g:\(resolved?.greenComponent ?? -1), b:\(resolved?.blueComponent ?? -1))")
+        ProjectFileTreePlugin.logger.info("[FileTree][Appearance] configure: file=\(item.fileName), kind=\(String(describing: theme.appearanceKind)), windowBest=\(windowBest?.rawValue ?? "nil"), appBest=\(appBest?.rawValue ?? "nil"), appearanceID=\(appearanceID), textColorRGB=(r:\(resolved?.redComponent ?? -1), g:\(resolved?.greenComponent ?? -1), b:\(resolved?.blueComponent ?? -1))")
 
         hostingView?.rootView = NodeRowView(
             item: item,
             isSelected: isSelected,
             isHovered: isHovered,
             gitStatus: gitStatus,
-            theme: theme
+            theme: theme,
+            appearanceID: appearanceID
         )
     }
 
@@ -79,7 +87,8 @@ final class FileTreeNodeCell: NSCollectionViewItem {
             isSelected: cachedIsSelected,
             isHovered: hovered,
             gitStatus: cachedGitStatus,
-            theme: theme
+            theme: theme,
+            appearanceID: cachedAppearanceID
         )
     }
 
@@ -91,6 +100,7 @@ final class FileTreeNodeCell: NSCollectionViewItem {
         cachedIsSelected = false
         cachedGitStatus = nil
         cachedTheme = nil
+        cachedAppearanceID = ""
     }
 }
 

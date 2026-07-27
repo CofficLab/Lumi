@@ -129,6 +129,7 @@ import CADDesignerPlugin
 import ActivityHeatmapPlugin
 import FileLogPlugin
 import OnboardingPlugin
+import DatabaseManagerPlugin
 
 /// 插件服务
 ///
@@ -253,6 +254,7 @@ public enum PluginService {
             ActivityHeatmapPlugin(),
             FileLogPlugin(),
             OnboardingPlugin(),
+            DatabaseManagerPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

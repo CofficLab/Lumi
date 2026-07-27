@@ -148,6 +148,7 @@ let package = Package(
         .package(path: "../../Plugins/ActivityHeatmapPlugin"),
         .package(path: "../../Plugins/FileLogPlugin"),
         .package(path: "../../Plugins/OnboardingPlugin"),
+        .package(path: "../../Plugins/DatabaseManagerPlugin"),
     ],
     targets: [
         .target(
@@ -293,6 +294,7 @@ let package = Package(
                 .product(name: "ActivityHeatmapPlugin", package: "ActivityHeatmapPlugin"),
                 .product(name: "FileLogPlugin", package: "FileLogPlugin"),
                 .product(name: "OnboardingPlugin", package: "OnboardingPlugin"),
+                .product(name: "DatabaseManagerPlugin", package: "DatabaseManagerPlugin"),
             ],
             resources: [
                 .process("Resources")
