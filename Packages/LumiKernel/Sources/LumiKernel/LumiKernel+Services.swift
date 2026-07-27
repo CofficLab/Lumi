@@ -103,8 +103,8 @@ extension LumiKernelContainer {
     }
 
     /// Theme service
-    public var theme: (any LumiThemeServicing)? {
-        resolveService(LumiThemeServicing.self)
+    public var theme: (any UIThemeProviding)? {
+        resolveService(UIThemeProviding.self)
     }
 
     /// Onboarding service

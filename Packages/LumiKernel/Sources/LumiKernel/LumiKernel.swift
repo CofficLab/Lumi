@@ -34,8 +34,6 @@ public final class LumiKernelContainer: ObservableObject {
         self.eventManager = EventManager()
         self.pluginManager = BuiltinPluginManager()
         self.pluginManager.kernel = self
-        // 注册其他服务
-        registerService(UIThemeProviding.self, pluginManager)
     }
 
     // MARK: - Generic Service Registry
@@ -147,6 +145,10 @@ public final class LumiKernelContainer: ObservableObject {
 
         // 7. 将 UIManager 中已收集的菜单栏视图交给展示层
         refreshMenuBarPresentation()
+
+        // 8. 将内核主题服务持有的主题贡献同步到 LumiUI 的主题注册中心
+        //    此时所有插件的 onReady 已执行完毕,主题贡献已注册到内核
+        theme?.syncToLumiUI()
     }
 
     /// 让菜单栏展示层刷新为当前 UIManager 收集到的内容。

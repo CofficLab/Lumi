@@ -4,11 +4,8 @@ import SwiftUI
 /// 内置插件管理器
 ///
 /// 负责管理所有插件的注册、启动、查询和排序。
-/// 同时充当多个 Provider 服务的实现：
-/// - ToolManaging: Agent Tool 收集
-/// - UIThemeProviding: Theme 贡献
 @MainActor
-public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThemeProviding {
+public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
     public private(set) var allPlugins: [LumiPlugin] = []
 
     private var plugins: [String: LumiPlugin] = [:]
@@ -20,9 +17,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
     // Message renderer registry
     private var messageRenderers: [String: LumiMessageRendererItem] = [:]
     private var messageRendererOrder: [String] = []
-
-    // Theme registry
-    private var themeRegistryStorage: [LumiUIThemeContribution] = []
 
     // 插件启用状态覆盖(用户在设置界面切换的值,持久化跨启动)
     private let stateStore = PluginEnabledStateStore()
@@ -277,13 +271,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
                 pageItem.order = pluginOrder
                 kernel.onboarding?.registerOnboardingPage(pageItem)
             }
-
-            // Theme contributions
-            if let themeProvider = plugin as? any UIThemeProviding {
-                for theme in themeProvider.themeContributions() {
-                    themeRegistryStorage.append(theme)
-                }
-            }
         }
 
         // Sync layout active section with registered view containers.
@@ -423,13 +410,6 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry, UIThe
     public func clearInternalContributions() {
         messageRenderers.removeAll()
         messageRendererOrder.removeAll()
-        themeRegistryStorage.removeAll()
-    }
-
-    // MARK: - UIThemeProviding
-
-    public func themeContributions() -> [LumiUIThemeContribution] {
-        themeRegistryStorage
     }
 
     // MARK: - Plugin Management

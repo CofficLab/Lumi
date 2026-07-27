@@ -21,14 +21,10 @@ public final class ThemeManagerPlugin: LumiPlugin {
 
         if let pluginProviding = kernel.pluginManager as? PluginRegistry {
             themeServiceInstance.setPluginService(pluginProviding)
-            themeServiceInstance.reloadThemes()
         }
     }
 
     public func onReady(kernel: LumiKernel) async throws {}
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -59,8 +55,6 @@ public final class ThemeManagerPlugin: LumiPlugin {
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 
-    // MARK: - Status Bar
-
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
         guard let themeService = kernel.theme else {
             return [
@@ -70,7 +64,7 @@ public final class ThemeManagerPlugin: LumiPlugin {
                     systemImage: "exclamationmark.triangle.fill",
                     placement: .trailing,
                     statusBarView: { ThemeStatusBarErrorView(pluginName: self.name) }
-                )
+                ),
             ]
         }
 
@@ -81,9 +75,9 @@ public final class ThemeManagerPlugin: LumiPlugin {
                 systemImage: "paintbrush",
                 placement: .trailing,
                 statusBarView: {
-                    ThemeStatusBarView(themeService: themeService)
+                    ThemeStatusBarView(kernel: kernel)
                 }
-            )
+            ),
         ]
     }
 }

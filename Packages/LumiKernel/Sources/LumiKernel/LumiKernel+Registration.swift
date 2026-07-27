@@ -98,8 +98,8 @@ extension LumiKernelContainer {
     }
 
     /// Register theme service
-    public func registerThemeService(_ theme: any LumiThemeServicing) {
-        registerService(LumiThemeServicing.self, theme)
+    public func registerThemeService(_ theme: any UIThemeProviding) {
+        registerService(UIThemeProviding.self, theme)
     }
 
     /// Register onboarding service

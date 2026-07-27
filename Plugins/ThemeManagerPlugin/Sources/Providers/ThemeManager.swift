@@ -5,11 +5,11 @@ import os
 
 /// Default theme service implementation
 ///
-/// Implements LumiUI.LumiThemeServicing protocol.
+/// Implements LumiKernel.UIThemeProviding protocol.
 /// Responsible for managing theme contributions from plugins, persisting theme selection,
 /// and syncing with the editor syntax theme system.
 @MainActor
-public final class ThemeManager: LumiThemeServicing {
+public final class ThemeManager: UIThemeProviding {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.theme")
     nonisolated static let verbose = false
 
@@ -24,6 +24,10 @@ public final class ThemeManager: LumiThemeServicing {
     private weak var editorCoreService: EditorCoreServiceType?
 
     public var themes: [LumiUIThemeContribution] {
+        themeRegistry.themes
+    }
+
+    public func themeContributions() -> [LumiUIThemeContribution] {
         themeRegistry.themes
     }
 
@@ -158,6 +162,15 @@ public final class ThemeManager: LumiThemeServicing {
         } else {
             try? themeRegistry.replaceAll(remaining)
         }
+    }
+
+    // MARK: - UIThemeProviding
+
+    /// 将内核持有的主题贡献同步到 LumiUI 的主题注册中心。
+    ///
+    /// 在 `LumiKernel.startup()` 末尾调用,确保所有插件的 `onReady` 已执行完毕。
+    public func syncToLumiUI() {
+        reloadThemes()
     }
 
     /// Replace all theme contributions (compatibility with legacy API).
