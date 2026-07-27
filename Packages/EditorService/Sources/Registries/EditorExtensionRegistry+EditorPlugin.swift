@@ -4,12 +4,12 @@ import EditorLanguageRuntime
 
 // MARK: - Kernel → EditorService 协议适配
 
-/// 将内核侧的 `LumiKernel.LanguageGrammarProviding` 适配为编辑器内部要求的
+/// 将内核侧的 `LanguageGrammarProviding` 适配为编辑器内部要求的
 /// `EditorLanguageRuntime.LanguageGrammarProviding`，桥接两个模块中同名的协议身份。
 private final class KernelGrammarProviderAdapter: EditorLanguageRuntime.LanguageGrammarProviding {
-    let base: any LumiKernel.LanguageGrammarProviding
+    let base: any KernelLanguageGrammarProviding
 
-    init(_ base: any LumiKernel.LanguageGrammarProviding) {
+    init(_ base: any KernelLanguageGrammarProviding) {
         self.base = base
     }
 
@@ -27,8 +27,8 @@ extension KernelGrammarProviderAdapter: SuperEditorLanguageGrammarProvider {}
 
 extension EditorExtensionRegistry: EditorExtensionRegistrar {
     /// 桥接内核侧的 `EditorLanguageDescriptor` 到编辑器内部使用的同名类型。
-    public func registerLanguage(_ descriptor: LumiKernel.EditorLanguageDescriptor) {
-        let converted = EditorLanguageDescriptor(
+    public func registerLanguage(_ descriptor: KernelEditorLanguageDescriptor) {
+        let converted = EditorLanguageRuntime.EditorLanguageDescriptor(
             languageId: descriptor.languageId,
             displayName: descriptor.displayName,
             fileExtensions: descriptor.fileExtensions,
@@ -46,7 +46,7 @@ extension EditorExtensionRegistry: EditorExtensionRegistrar {
     }
 
     /// 桥接内核侧的 `LanguageGrammarProviding` 到编辑器内部要求的具体贡献协议。
-    public func registerGrammarProvider(_ provider: any LumiKernel.LanguageGrammarProviding) {
+    public func registerGrammarProvider(_ provider: any KernelLanguageGrammarProviding) {
         registerGrammarProvider(KernelGrammarProviderAdapter(provider))
     }
 }

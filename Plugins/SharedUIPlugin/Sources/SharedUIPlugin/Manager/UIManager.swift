@@ -62,6 +62,13 @@ public final class UIManager: UIManaging {
     private var menuBarPopups: [String: MenuBarPopupItem] = [:]
     private var menuBarPopupOrder: [String] = []
 
+    // MARK: - Root Overlays
+
+    public private(set) var allRootOverlays: [LumiRootOverlayItem] = []
+
+    private var rootOverlays: [String: LumiRootOverlayItem] = [:]
+    private var rootOverlayOrder: [String] = []
+
     // MARK: - Initialization
 
     public init() {}
@@ -304,10 +311,31 @@ public final class UIManager: UIManaging {
             .sorted(by: { $0.order < $1.order })
     }
 
+    // MARK: - Root Overlays
+
+    public func registerRootOverlayItem(_ item: LumiRootOverlayItem) {
+        if rootOverlays[item.id] == nil {
+            rootOverlayOrder.append(item.id)
+        }
+        rootOverlays[item.id] = item
+        updateSortedRootOverlays()
+    }
+
+    public func unregisterRootOverlayItem(id: String) {
+        rootOverlays.removeValue(forKey: id)
+        rootOverlayOrder.removeAll { $0 == id }
+        updateSortedRootOverlays()
+    }
+
+    private func updateSortedRootOverlays() {
+        objectWillChange.send()
+        allRootOverlays = rootOverlayOrder.compactMap { rootOverlays[$0] }
+            .sorted(by: { $0.order < $1.order })
+    }
+
     // MARK: - Clear
 
     public func clearAllContributions() {
-        // Title Toolbar
         titleToolbarItems.removeAll()
         titleToolbarItemOrder.removeAll()
         updateSortedTitleToolbarItems()
@@ -351,6 +379,11 @@ public final class UIManager: UIManaging {
         menuBarPopups.removeAll()
         menuBarPopupOrder.removeAll()
         updateSortedMenuBarPopups()
+
+        // Root Overlays
+        rootOverlays.removeAll()
+        rootOverlayOrder.removeAll()
+        updateSortedRootOverlays()
     }
 
     // MARK: - Private

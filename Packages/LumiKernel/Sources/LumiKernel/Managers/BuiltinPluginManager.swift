@@ -243,6 +243,13 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
                 kernel.settings?.registerLLMProviderSettingsItem(item)
             }
 
+            // Root Overlays
+            for item in plugin.rootOverlays(kernel: kernel) {
+                var overlayItem = item
+                overlayItem.order = pluginOrder
+                kernel.uiManager?.registerRootOverlayItem(overlayItem)
+            }
+
             // Logo
             for item in plugin.logoItems(kernel: kernel) {
                 var logoItem: LogoItem

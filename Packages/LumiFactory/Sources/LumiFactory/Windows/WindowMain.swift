@@ -27,8 +27,11 @@ public struct WindowMain: View, SuperLog {
             } else if let error = initializationError {
                 CrashedView(error: error)
             } else if let kernel = kernel {
-                AppLayoutView(kernel: kernel)
-                    .frame(maxWidth: .infinity)
+                applyRootOverlays(
+                    AppLayoutView(kernel: kernel),
+                    kernel: kernel
+                )
+                .frame(maxWidth: .infinity)
             }
         }
         .task {
@@ -67,6 +70,21 @@ public struct WindowMain: View, SuperLog {
             self.initializationError = error
         }
         self.isInitializing = false
+    }
+
+    // MARK: - Root Overlays
+
+    /// 按 order 依次把 rootOverlays 包裹到内容视图外层
+    @ViewBuilder
+    private func applyRootOverlays<V: View>(_ content: V, kernel: LumiKernel) -> some View {
+        let overlays = kernel.uiManager?.allRootOverlays ?? []
+        if overlays.isEmpty {
+            content
+        } else {
+            overlays.reduce(AnyView(content)) { acc, item in
+                item.apply(to: acc)
+            }
+        }
     }
 
     // MARK: - Window Save Delegate

@@ -95,6 +95,7 @@ import VerbosityPlugin
 import ConversationSpeedPlugin
 import ChatModePlugin
 import ConversationLanguagePlugin
+import QuickFileSearchPlugin
 import VideoConverterPlugin
 import ProjectFileTreePlugin
 import OpenInFinderPlugin
@@ -233,6 +234,7 @@ public enum PluginService {
             ShowImagePlugin(),
             GitHubPlugin(),
             GoalTaskPlugin(),
+            QuickFileSearchPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

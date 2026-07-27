@@ -3,7 +3,7 @@ import SwiftUI
 @MainActor
 public struct LumiRootOverlayItem: Identifiable {
     public let id: String
-    public let order: Int
+    public var order: Int
     private let wrap: @MainActor (AnyView) -> AnyView
 
     public init(
