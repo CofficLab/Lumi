@@ -31,7 +31,7 @@ public protocol EditorPlugin: AnyObject {
 /// 这里只暴露**内核可见（不依赖 EditorService）**的扩展类型，
 /// 以避免 `LumiKernel` 与编辑器实现层之间产生依赖环。
 ///
-/// 当前仅覆盖语言与语法两类最基础的扩展；其余贡献点（高亮、补全、悬停等）
+/// 当前已覆盖语言、语法与高亮贡献三类扩展；其余贡献点（补全、悬停等）
 /// 后续可在本协议上按需扩展，或经由编辑器内部注册表直接桥接。
 @MainActor
 public protocol EditorExtensionRegistrar: AnyObject {
@@ -40,4 +40,10 @@ public protocol EditorExtensionRegistrar: AnyObject {
 
     /// 注册语法提供器（如 tree-sitter），用于产生高亮 token。
     func registerGrammarProvider(_ provider: any LanguageGrammarProviding)
+
+    /// 注册高亮贡献者，由实现代码高亮的插件调用。
+    ///
+    /// 编辑器宿主（`EditorService`）在边界处将内核版贡献者桥接为内部
+    /// `SuperEditorHighlightProviderContributor`，接入已有的插件高亮管线。
+    func registerHighlightContributor(_ contributor: any EditorHighlightContributor)
 }

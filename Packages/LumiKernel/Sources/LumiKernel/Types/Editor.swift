@@ -108,3 +108,36 @@ public extension LanguageGrammarProviding {
     func foldsQueryURL() -> URL? { nil }
 }
 
+// MARK: - 高亮 Provider 协议
+
+/// 高亮 provider 标记协议。
+///
+/// 内核只声明"存在一个高亮 provider"这一能力，而不关心其具体实现
+/// （具体实现依赖 `EditorSource.HighlightProviding`，操作 `TextView`，无法下沉到内核）。
+/// 实现代码高亮的插件应让其高亮 provider 实体同时遵循本协议与 `EditorSource.HighlightProviding`：
+/// 前者用于面向内核声明能力，后者承载实际的高亮逻辑。编辑器宿主（`EditorService`）
+/// 在桥接时将此标记协议向下转型还原为 `HighlightProviding`，接入既有高亮管线。
+public protocol EditorHighlightProvider: AnyObject {}
+
+/// 高亮贡献者协议，由实现代码高亮的插件遵循。
+///
+/// 插件仅面向内核实现本协议，并在 `EditorPlugin.registerExtensions(into:)` 中
+/// 调用 `EditorExtensionRegistrar.registerHighlightContributor(_:)` 完成注入。
+/// 具体的高亮 provider 通过 `highlightProviders(for:)` 以内核可见的标记类型
+/// `EditorHighlightProvider` 返回；其底层实现（`EditorSource.HighlightProviding`）
+/// 由插件让同一实体同时遵循这两个协议，并由 `EditorService` 在桥接时向下转型还原。
+///
+/// 例如：一个 Markdown 高亮插件可让其实体同时遵循 `EditorHighlightContributor`
+/// 与 `EditorSource.HighlightProviding`，从而既能被内核识别、又能在编辑器内生效。
+@MainActor
+public protocol EditorHighlightContributor: AnyObject {
+    /// 贡献者唯一标识。
+    var id: String { get }
+
+    /// 是否支持给定语言的高亮贡献。
+    func supports(languageId: String) -> Bool
+
+    /// 返回该语言对应的高亮 provider 列表（内核可见的标记类型）。
+    func highlightProviders(for languageId: String) -> [any EditorHighlightProvider]
+}
+
