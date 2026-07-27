@@ -48,11 +48,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     private var pendingProjectRoot: String?
 
     override func loadView() {
-        let observingView = AppearanceObservingView()
-        observingView.onAppearanceChange = { [weak self] in
-            self?.handleAppearanceChange()
-        }
-        view = observingView
+        view = NSView()
         view.wantsLayer = true
     }
 
@@ -62,7 +58,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         setupDataSource()
         setupBindings()
         setupTrackingArea()
-        setupAppearanceLogging()
+        setupAppearanceSync()
         if Self.verbose {
             Self.logger.info("\(Self.t)视图加载完成")
         }
@@ -266,36 +262,20 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
 
     private func reloadVisibleItems() {
         let visibleItems = collectionView.indexPathsForVisibleItems()
-        ProjectFileTreePlugin.logger.info("[FileTree][Appearance] reloadVisibleItems: visibleCount=\(visibleItems.count)")
         guard !visibleItems.isEmpty else { return }
         collectionView.reloadItems(at: Set(visibleItems))
     }
 
-    private func setupAppearanceLogging() {
-        // 监听 Lumi 主题同步通知。通知触发时 ActiveChromeTheme.current / view.effectiveAppearance
-        // 已是新外观（比 viewDidChangeEffectiveAppearance 更可靠，后者触发时 appearance 可能仍是旧值），
-        // 因此在这里立即 reload 重建 cell，让 hostingView.appearance 用正确外观渲染。
+    private func setupAppearanceSync() {
+        // 监听 Lumi 主题同步通知，触发时 ActiveChromeTheme.current 已是新外观，
+        // 立即 reload 重建 cell，让 hostingView.appearance 用正确外观渲染。
         appearanceSyncObserver = NotificationCenter.default.addObserver(
             forName: .lumiThemeDidSyncWindowAppearances,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            guard let self = self else { return }
-            let bestMatch = self.view.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
-            let isDark = AppThemeAppearanceResolver.effectiveColorScheme == .dark
-            ProjectFileTreePlugin.logger.info("[FileTree][Appearance] 收到 lumiThemeDidSyncWindowAppearances 通知: viewBestMatch=\(bestMatch?.rawValue ?? "nil"), resolvedIsDark=\(isDark), 立即 reload")
-            self.reloadVisibleItems()
+            self?.reloadVisibleItems()
         }
-    }
-
-    private func handleAppearanceChange() {
-        // viewDidChangeEffectiveAppearance 触发时 view.effectiveAppearance 可能仍是旧值
-        //（主题切换过程中 appearance 多次变化），此处 reload 会用错误外观。
-        // reload 改由 lumiThemeDidSyncWindowAppearances 通知负责（通知触发时 appearance 已正确）。
-        // 这里仅记录日志用于诊断。
-        let bestMatch = view.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
-        let isDark = AppThemeAppearanceResolver.effectiveColorScheme == .dark
-        ProjectFileTreePlugin.logger.info("[FileTree][Appearance] handleAppearanceChange(跳过reload): viewBestMatch=\(bestMatch?.rawValue ?? "nil"), resolvedIsDark=\(isDark)")
     }
 
     private func gitStatus(for url: URL) -> GitStatus? {
@@ -797,19 +777,5 @@ extension FileTreeCollectionViewController: NSCollectionViewDataSource {
         itemForRepresentedObjectAt indexPath: IndexPath
     ) -> NSCollectionViewItem {
         return dataSource.collectionView(collectionView, itemForRepresentedObjectAt: indexPath)
-    }
-}
-
-/// 监听 effective appearance 变化的 NSView 子类。
-///
-/// NSHostingView 承载的 SwiftUI 视图在窗口/系统外观切换时不会自动重新求值，
-/// 通过 `viewDidChangeEffectiveAppearance` 钩子主动通知 controller 重建可见 cell，
-/// 避免文件树文字颜色停留在旧外观（需 hover 才刷新）的问题。
-private final class AppearanceObservingView: NSView {
-    var onAppearanceChange: (() -> Void)?
-
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        onAppearanceChange?()
     }
 }
