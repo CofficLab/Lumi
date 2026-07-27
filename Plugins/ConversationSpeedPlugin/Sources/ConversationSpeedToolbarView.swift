@@ -24,7 +24,7 @@ struct ConversationSpeedToolbarView: View {
                 .foregroundColor(.orange)
                 .padding(.horizontal, ToolbarMetrics.chipHorizontalPadding)
                 .padding(.vertical, ToolbarMetrics.chipVerticalPadding)
-                .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
+                .background(Color.orange.opacity(0.22), in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
                 .help("Streaming speed: \(String(format: "%.1f", tps)) tokens/second")
             } else {
                 EmptyView()
