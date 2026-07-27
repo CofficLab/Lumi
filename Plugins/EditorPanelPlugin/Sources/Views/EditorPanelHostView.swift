@@ -5,7 +5,8 @@ import SwiftUI
 /// 编辑器面板宿主视图
 ///
 /// 由 `EditorPanelPlugin.viewContainers` 贡献的容器视图入口。
-/// 从 `kernel.project`（`ProjectProviding`）解析当前文件，并交给 `CurrentFileContentView` 展示。
+/// 通过内核解析 `EditorProviding`，调用其 `makeEditorView()` 展示真正的编辑器视图；
+/// 服务未就绪时显示降级占位。当前文件由编辑器实现内部跟踪，本视图不直接读取文件。
 public struct EditorPanelHostView: View {
     let kernel: LumiKernel
 
@@ -14,10 +15,10 @@ public struct EditorPanelHostView: View {
     }
 
     public var body: some View {
-        if let project = kernel.project {
-            CurrentFileContentView(project: project)
+        if let editorProvider = kernel.editorProvider {
+            editorProvider.makeEditorView()
         } else {
-            Text("Project service unavailable")
+            Text("Editor service unavailable")
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
