@@ -71,6 +71,7 @@ private final class ProjectService: ProjectProviding {
     func openProject(at path: String) async throws {}
     func updateOpenFiles(_ fileURLs: [URL]) {}
     func updateCurrentFile(_ fileURL: URL?) {}
+    func closeFile(_ fileURL: URL) {}
     func closeProject() async {}
     func refreshProjects() async throws {}
 }
