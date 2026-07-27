@@ -1,4 +1,5 @@
 import AppKit
+import AppUpdatePlugin
 import Combine
 import Foundation
 import LumiKernel
@@ -253,7 +254,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     }
 
     private func checkForUpdates() {
-        _ = NSApp.sendAction(Selector(("checkForUpdates:")), to: nil, from: nil)
+        UpdateService.shared.checkForUpdates()
     }
 
     private func quitApp() {
@@ -272,110 +273,6 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
             if $0.order == $1.order { return $0.id < $1.id }
             return $0.order < $1.order
         }
-    }
-}
-
-private final class MenuBarHostingView<Content: View>: NSHostingView<Content> {
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        nil
-    }
-}
-
-private struct MenuBarIconView: View {
-    let contentItems: [LumiMenuBarContentItem]
-
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(contentItems) { item in
-                item.makeView()
-                    .fixedSize()
-            }
-        }
-        .padding(.horizontal, 4)
-        .frame(height: 22)
-    }
-}
-
-private struct MenuBarLogoView: View {
-    let kernel: LumiKernel
-
-    private var logoItem: LogoItem? {
-        kernel.logo?.highestPriorityLogoItem
-    }
-
-    private var logoView: AnyView? {
-        logoItem?.makeView(.statusBar)
-    }
-
-    var body: some View {
-        Group {
-            if let view = logoView {
-                view
-            } else {
-                Image(nsImage: NSApp.applicationIconImage)
-                    .resizable()
-                    .renderingMode(.template)
-            }
-        }
-        .frame(width: 16, height: 16)
-    }
-}
-
-private struct MenuBarPopupView: View {
-    let popupItems: [LumiMenuBarPopupItem]
-    let onShowMainWindow: () -> Void
-    let onCheckForUpdates: () -> Void
-    let onQuit: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            if !popupItems.isEmpty {
-                VStack(spacing: 0) {
-                    ForEach(popupItems) { item in
-                        item.makeView()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-
-                        if item.id != popupItems.last?.id {
-                            Divider()
-                        }
-                    }
-                }
-
-                Divider()
-            }
-
-            MenuBarActionRow(title: "Open Lumi", systemImage: "macwindow", action: onShowMainWindow)
-            Divider().padding(.leading, 36)
-            MenuBarActionRow(title: "Check for Updates", systemImage: "arrow.down.circle", action: onCheckForUpdates)
-            Divider().padding(.leading, 36)
-            MenuBarActionRow(title: "Quit Lumi", systemImage: "power", action: onQuit)
-        }
-        .frame(width: 280)
-        .padding(.vertical, 6)
-    }
-}
-
-private struct MenuBarActionRow: View {
-    let title: String
-    let systemImage: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: systemImage)
-                    .frame(width: 16)
-                Text(title)
-                Spacer()
-            }
-            .contentShape(Rectangle())
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-        }
-        .buttonStyle(.plain)
     }
 }
 

@@ -2,24 +2,63 @@ import LocalizationKit
 import LumiKernel
 import SwiftUI
 
-/// Host Settings Plugin
+/// App Update Plugin
 ///
-/// 贡献三个"宿主基础设置"标签:General / Appearance / About。
-/// 这些页面过去是 `LumiFactory` 硬编码的内置标签;现在统一改为由插件贡献,
-/// 使设置界面的所有标签都走同一条 `settingsTabItems(kernel:)` 链路。
+/// Integrates the Sparkle framework to provide automatic update checking.
 ///
-/// `order = 1` 确保这三个标签排在侧边栏最前;`policy = .alwaysOn`
-/// 使其不可被用户在"插件管理"页禁用(它们是 app 基础设施)。
+/// Responsibilities:
+/// - Initialize `UpdateService.shared` on boot
+/// - Trigger feed URL detection at app launch
+/// - Register "Check for Updates..." command via `kernel.command` with
+///   `.appMenu` placement so it appears in the Lumi menu after "About"
+/// - Register the "About" settings tab displaying app info and update controls
+///
+/// Other integration points use `NotificationCenter`:
+/// - `MenuBarManagerPlugin` calls `UpdateService.shared.checkForUpdates()`
+/// - `UpdateService` posts `.appUpdateReadyToInstall` → UI observes it
+///
+/// `policy = .alwaysOn`: update checking is core infrastructure.
 @MainActor
-public final class HostSettingsPlugin: LumiPlugin {
-    public let id = "com.coffic.lumi.plugin.host-settings"
-    public let name = "Host Settings"
-    public let order = 1
+public final class AppUpdatePlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.app-update"
+    public let name = "App Update"
+    public let order = 50
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var pluginDescription: String {
+        "Integrates Sparkle to check for and install app updates automatically."
+    }
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        // Eagerly touch the singleton so the notification observers are registered.
+        // The actual Sparkle controller is lazily initialized on first use.
+        let updateService = UpdateService.shared
+
+        // Trigger feed URL detection at app launch.
+        // This is a one-shot app-level action handled here in the plugin's
+        // bootstrap lifecycle, keeping MacAgent decoupled from specific plugins.
+        updateService.setupFeedURLIfNeeded()
+
+        // Register "Check for Updates..." command in the app menu.
+        // `.appMenu` placement ensures it appears in the Lumi menu after "About",
+        // matching the conventional macOS location for this action.
+        kernel.command?.registerCommandGroup(
+            CommandMenuGroup(
+                id: "\(id).commands",
+                name: name,
+                items: [
+                    CommandItem(
+                        id: "\(id).checkForUpdates",
+                        title: String(localized: "Check for Updates...")
+                    ) {
+                        updateService.checkForUpdates()
+                    },
+                ],
+                placement: .appMenu
+            )
+        )
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 
@@ -28,21 +67,7 @@ public final class HostSettingsPlugin: LumiPlugin {
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
         [
             SettingsTabItem(
-                id: "host.general",
-                title: LumiLocalization.string("General", bundle: .module),
-                systemImage: "gearshape"
-            ) {
-                GeneralSettingsView()
-            },
-            SettingsTabItem(
-                id: "host.appearance",
-                title: LumiLocalization.string("Appearance", bundle: .module),
-                systemImage: "paintbrush"
-            ) {
-                AppearanceSettingsView(kernel: kernel)
-            },
-            SettingsTabItem(
-                id: "host.about",
+                id: "app-update.about",
                 title: LumiLocalization.string("About", bundle: .module),
                 systemImage: "info.circle"
             ) {
@@ -51,26 +76,11 @@ public final class HostSettingsPlugin: LumiPlugin {
         ]
     }
 
-    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 6) {
-                Text(LumiLocalization.string("Host Settings", bundle: .module))
-                    .font(.headline)
-                Text(LumiLocalization.string(
-                    "Provides the General, Appearance and About settings tabs.",
-                    bundle: .module
-                ))
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 4)
-        )
-    }
-
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
@@ -87,6 +97,18 @@ public final class HostSettingsPlugin: LumiPlugin {
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
+        AnyView(
+            VStack(alignment: .leading, spacing: 6) {
+                Text("App Update")
+                    .font(.headline)
+                Text(pluginDescription)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
+        )
+    }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
@@ -96,4 +118,5 @@ public final class HostSettingsPlugin: LumiPlugin {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
+    public func editorPlugins(kernel: LumiKernel) -> [any EditorPlugin] { [] }
 }

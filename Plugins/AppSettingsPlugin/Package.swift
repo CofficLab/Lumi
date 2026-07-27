@@ -2,31 +2,33 @@
 import PackageDescription
 
 let package = Package(
-    name: "HostSettingsPlugin",
+    name: "AppSettingsPlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "HostSettingsPlugin",
-            targets: ["HostSettingsPlugin"]
+            name: "AppSettingsPlugin",
+            targets: ["AppSettingsPlugin"]
         )
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
+        .package(path: "../AppUpdatePlugin"),
     ],
     targets: [
         .target(
-            name: "HostSettingsPlugin",
+            name: "AppSettingsPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "AppUpdatePlugin", package: "AppUpdatePlugin"),
             ],
-            path: "Sources/HostSettingsPlugin",
+            path: "Sources/AppSettingsPlugin",
             resources: [
                 .process("Localizable.xcstrings")
             ]
