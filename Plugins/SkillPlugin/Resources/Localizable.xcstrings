@@ -105,6 +105,7 @@
       }
     },
     "Load domain skills from .agent/skills/ directory" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
