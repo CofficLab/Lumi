@@ -152,6 +152,7 @@ let package = Package(
         .package(path: "../../Plugins/DatabaseManagerPlugin"),
         .package(path: "../../Plugins/ConversationForkPlugin"),
         .package(path: "../../Plugins/AgentTurnNotificationPlugin"),
+        .package(path: "../../Plugins/AppUpdatePlugin"),
         // User interaction
         .package(path: "../../Plugins/AskUserPlugin"),
     ],
@@ -303,6 +304,7 @@ let package = Package(
                 .product(name: "DatabaseManagerPlugin", package: "DatabaseManagerPlugin"),
                 .product(name: "ConversationForkPlugin", package: "ConversationForkPlugin"),
                 .product(name: "AgentTurnNotificationPlugin", package: "AgentTurnNotificationPlugin"),
+                .product(name: "AppUpdatePlugin", package: "AppUpdatePlugin"),
                 .product(name: "AskUserPlugin", package: "AskUserPlugin"),
             ],
             resources: [

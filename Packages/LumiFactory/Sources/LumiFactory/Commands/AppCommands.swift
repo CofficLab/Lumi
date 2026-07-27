@@ -27,12 +27,21 @@ public struct AppCommands: Commands {
         // Debug menu
         DebugCommand(kernel: kernel)
 
-        // Check for updates (stub until UpdateService is restored)
-        CheckForUpdatesCommand()
+        // Plugin-registered commands placed in the app menu (after About)
+        CommandGroup(after: .appInfo) {
+            ForEach(kernel.command?.allCommandGroups.filter { $0.placement == .appMenu } ?? []) { group in
+                ForEach(group.items) { item in
+                    Button(item.title) {
+                        item.action()
+                    }
+                    .keyboardShortcutIfAvailable(item.shortcut, modifiers: item.modifiers)
+                }
+            }
+        }
 
-        // Plugin-registered command groups
+        // Plugin-registered commands placed after the toolbar
         CommandGroup(after: .toolbar) {
-            ForEach(kernel.command?.allCommandGroups ?? []) { group in
+            ForEach(kernel.command?.allCommandGroups.filter { $0.placement == .toolbar } ?? []) { group in
                 ForEach(group.items) { item in
                     Button(item.title) {
                         item.action()
