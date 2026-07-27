@@ -45,6 +45,11 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
     public func onReady(kernel: LumiKernel) async throws {
         try EditorProviderOnReadyHook().execute(kernel)
 
+        // Subscribe to theme-change events and apply the matching editor theme.
+        // ThemeManager never references the editor directly; it only broadcasts
+        // `.themeDidChange`, and we react here by resolving + applying the editor theme.
+        editorProvider?.bindThemeSync(kernel: kernel)
+
         // OnReady 阶段所有 OnBoot 服务已注册完毕,此时 EditorService 必然就绪。
         // 把具象 EditorService 注入 provider,使其文件操作转发到真正的编辑器子系统。
         if let editorService = kernel.resolveService(EditorService.self) {
@@ -147,6 +152,12 @@ public final class EditorProvider: EditorProviding {
     /// 在 OnReady 阶段由 plugin 注入;在此之前文件操作走降级路径。
     private weak var editorService: EditorService?
 
+    /// 内核引用,用于在主题变更时解析当前编辑器主题。弱引用避免循环。
+    private weak var kernel: LumiKernel?
+
+    /// `.themeDidChange` 订阅令牌,重复绑定时会先移除旧令牌。
+    private var themeObserver: NSObjectProtocol?
+
     public var currentThemeId: String = "default"
 
     private var themes: [String: EditorThemeInfo] = [:]
@@ -208,5 +219,34 @@ public final class EditorProvider: EditorProviding {
 
     public func unregisterEditorTheme(themeId: String) {
         themes.removeValue(forKey: themeId)
+    }
+
+    // MARK: - Theme Sync
+
+    /// 订阅内核 `.themeDidChange` 事件,并在订阅时立即应用一次当前编辑器主题。
+    /// ThemeManager 不知道编辑器的存在,只广播事件;这里自行解析并应用。
+    func bindThemeSync(kernel: LumiKernel) {
+        self.kernel = kernel
+        applyThemeFromKernel()
+
+        if let previous = themeObserver {
+            NotificationCenter.default.removeObserver(previous)
+        }
+        themeObserver = NotificationCenter.default.addObserver(
+            forName: .lumiThemeDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.applyThemeFromKernel()
+        }
+    }
+
+    /// 从内核主题注册表解析当前应选用的编辑器主题并应用。
+    private func applyThemeFromKernel() {
+        guard let registry = kernel?.theme?.themeRegistry else { return }
+        guard let editorThemeId = registry.resolvedEditorThemeId(colorScheme: registry.systemColorScheme) else {
+            return
+        }
+        try? setCurrentTheme(editorThemeId)
     }
 }
