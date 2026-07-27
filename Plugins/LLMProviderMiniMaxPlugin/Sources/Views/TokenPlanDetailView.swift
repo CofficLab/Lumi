@@ -45,27 +45,42 @@ struct TokenPlanDetailView: View {
                                 .fontWeight(.medium)
                         }
                         
-                        // 配额进度条
+                        // 当前时段剩余百分比
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
-                                Text("剩余配额:")
+                                Text("当前时段剩余:")
                                     .foregroundColor(.secondary)
                                 Spacer()
-                                Text("\(data.remains) / \(data.totalCount)")
+                                Text("\(data.remainingPercent)%")
                                     .fontWeight(.medium)
                             }
                             
-                            ProgressView(value: Double(data.remains), total: Double(data.totalCount))
+                            ProgressView(value: Double(data.remainingPercent), total: 100)
                                 .progressViewStyle(.linear)
-                                .tint(data.remains > 0 ? .green : .red)
+                                .tint(data.remainingPercent > 20 ? .green : .red)
                         }
                         
-                        // 使用百分比
+                        // 本周剩余百分比
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("本周剩余:")
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text("\(data.weeklyRemainingPercent)%")
+                                    .fontWeight(.medium)
+                            }
+                            
+                            ProgressView(value: Double(data.weeklyRemainingPercent), total: 100)
+                                .progressViewStyle(.linear)
+                                .tint(data.weeklyRemainingPercent > 20 ? .green : .red)
+                        }
+                        
+                        // 当前时段调用次数
                         HStack {
-                            Text("使用率:")
+                            Text("调用次数:")
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Text(String(format: "%.1f%%", 100 - data.remainingPercentage))
+                            Text("\(data.intervalUsage) / \(data.intervalTotal)")
                                 .fontWeight(.medium)
                         }
                     }
