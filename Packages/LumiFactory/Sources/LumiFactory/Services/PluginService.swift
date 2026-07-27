@@ -45,7 +45,7 @@ import Foundation
 import GitHubPlugin
 import GitPlugin
 import GoalTaskPlugin
-import HostSettingsPlugin
+import AppSettingsPlugin
 import HostsManagerPlugin
 import IdleTimePlugin
 import InputPlugin
@@ -152,8 +152,8 @@ public enum PluginService {
             // 前者在 OnBoot 注册具象 EditorService,后者在 OnReady resolve 并转发文件操作。
             EditorKernelPlugin(),
             EditorProviderPlugin(),
-            // Host settings tabs (General/Appearance/About) — order 1, must lead the sidebar
-            HostSettingsPlugin(),
+            // App settings tabs (General/Appearance) — order 1, must lead the sidebar
+            AppSettingsPlugin(),
             // LLM Providers (order 91-110)
             AiRouterPlugin(),
             DeepSeekPlugin(),
