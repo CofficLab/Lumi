@@ -21,7 +21,9 @@ public final class NetworkManagerPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        kernel.registerService(NetworkProviding.self, NetworkProvider())
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 
