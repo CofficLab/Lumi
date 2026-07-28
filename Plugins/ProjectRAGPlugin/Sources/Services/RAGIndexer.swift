@@ -96,6 +96,7 @@ public struct RAGIndexer: SuperLog {
         var stats = RAGIndexStats()
 
         for filePath in files {
+            try Task.checkCancellation()
             stats.scannedFiles += 1
             guard let fileAttr = try? FileManager.default.attributesOfItem(atPath: filePath),
                   let modifiedDate = fileAttr[.modificationDate] as? Date else {
