@@ -16,6 +16,7 @@ protocol TestableFileManager {
 }
 
 /// Mock文件管理器，用于测试
+@MainActor
 final class MockFileManager: FileManager {
     var existingFiles: Set<String> = []
     var directories: Set<String> = []
@@ -68,6 +69,7 @@ final class MockFileManager: FileManager {
 /// 注意：早期实现使用单个共享静态目录（`testBaseDirectory`），但 Swift Testing 默认
 /// 并行执行用例，并发读写同一个目录会触发竞态。这里改为每次都创建唯一目录，
 /// 且不再提供全局清理（由调用方通过 defer 负责回收自己的目录）。
+@MainActor
 final class MLXTestHelper {
 
     /// 为单个用例创建唯一临时目录（取代旧的共享 testBaseDirectory）。
@@ -102,8 +104,8 @@ final class MLXTestHelper {
 // MARK: - Package Tests
 
 @Test func packageLoads() async throws {
-    #expect(MLXLumiPlugin.info.id == "com.coffic.lumi.plugin.llm-provider.mlx")
-    #expect(MLXLumiPlugin.info.displayName.isEmpty == false)
+    #expect(MLXLumiPlugin().id == "com.coffic.lumi.plugin.llm-provider.mlx")
+    #expect(MLXLumiPlugin().name.isEmpty == false)
 }
 
 // MARK: - MLXModels Tests
@@ -209,7 +211,6 @@ final class MLXTestHelper {
 
 // MARK: - MLXDownloadManager Tests
 
-@MainActor
 @Test func downloadProgressFractionStaysFiniteForUnknownTotals() {
     #expect(MLXDownloadManager.downloadProgressFraction(writtenBytes: 0, totalBytes: 0) == 0)
     #expect(MLXDownloadManager.downloadProgressFraction(writtenBytes: 100, totalBytes: 0) == 0)
@@ -223,7 +224,6 @@ final class MLXTestHelper {
     #expect(overComplete == 0.95)
 }
 
-@MainActor
 @Test func downloadProgressFractionHandlesEdgeCases() {
     // Test maximum fraction limit
     let maxFraction = MLXDownloadManager.downloadProgressFraction(
@@ -248,7 +248,6 @@ final class MLXTestHelper {
     #expect(negativeBoth == 0, "Negative values should return 0")
 }
 
-@MainActor
 @Test func downloadProgressStartsInIdleState() {
     let manager = MLXDownloadManager.shared
     #expect(manager.status == .idle, "Initial state should be idle")
@@ -478,7 +477,6 @@ final class MLXTestHelper {
     #expect(!FileManager.default.fileExists(atPath: modelDir.path))
 }
 
-@MainActor
 @Test func downloadProgressSimulation() {
     // Simulate a download progress scenario
     var progress = MLXDownloadProgress()
@@ -715,11 +713,11 @@ final class MLXTestHelper {
 
 @Test func MLXProviderStaticProperties() {
     // Test plugin static properties through MLXLumiPlugin
-    let pluginId = MLXLumiPlugin.info.id
+    let pluginId = MLXLumiPlugin().id
 
     // Test that plugin info is valid
     #expect(pluginId.contains("mlx"))
-    #expect(MLXLumiPlugin.info.displayName.isEmpty == false)
+    #expect(MLXLumiPlugin().name.isEmpty == false)
 
     // Test MLXModels static properties as proxy for provider properties
     #expect(MLXModels.recommended.isEmpty == false)
@@ -737,7 +735,7 @@ final class MLXTestHelper {
 
     // Test that models have valid display names
     for model in allModels.prefix(3) {
-        #expect(model.displayName.isEmpty == false)
+        #expect(model.name.isEmpty == false)
         #expect(model.id.isEmpty == false)
     }
 }
@@ -1026,7 +1024,6 @@ final class MLXTestHelper {
 
 // MARK: - Progress Calculation Tests
 
-@MainActor
 @Test func MLXProgressCalculationAccuracy() {
     // Test progress calculation accuracy
     let testCases: [(written: Int64, total: Int64, expectedRange: ClosedRange<Double>)] = [
@@ -1107,7 +1104,6 @@ final class MLXTestHelper {
 // 并发实例化 + 释放可能导致运行时崩溃（SIGSEGV/SIGABRT）。将这些用例串行化
 // （且固定在 MainActor）以保证稳定。测试目标已声明 macOS 14+，无需重复 @available。
 
-@MainActor
 @Suite(.serialized)
 enum MLXInferenceServiceTests {
     @Test
@@ -1222,7 +1218,6 @@ enum MLXInferenceServiceTests {
 
 // MARK: - MLXDownloadManager Advanced Tests
 
-@MainActor
 @Test func MLXDownloadManagerInitialState() {
     let manager = MLXDownloadManager.shared
 
@@ -1233,7 +1228,6 @@ enum MLXInferenceServiceTests {
     #expect(manager.currentFileSize == 0)
 }
 
-@MainActor
 @Test func MLXDownloadManagerProgressTracking() {
     let manager = MLXDownloadManager.shared
 
@@ -1245,7 +1239,6 @@ enum MLXInferenceServiceTests {
     #expect(progress.totalFiles >= 0)
 }
 
-@MainActor
 @Test func MLXDownloadManagerSpeedTracking() {
     let manager = MLXDownloadManager.shared
 
@@ -1284,7 +1277,6 @@ enum MLXInferenceServiceTests {
 
 // MARK: - Edge Cases and Boundary Tests
 
-@MainActor
 @Test func LargeNumberHandling() {
     // Test handling of very large numbers in progress calculation
     let hugeWritten = Int64.max
@@ -1300,7 +1292,6 @@ enum MLXInferenceServiceTests {
     #expect(result >= 0 && result <= 1.0)
 }
 
-@MainActor
 @Test func NegativeNumberHandling() {
     // Test handling of negative numbers
     let testCases: [(written: Int64, total: Int64)] = [
@@ -1321,7 +1312,6 @@ enum MLXInferenceServiceTests {
     }
 }
 
-@MainActor
 @Test func ZeroDivisionHandling() {
     // Test division by zero scenarios
     let testCases: [(written: Int64, total: Int64)] = [
@@ -1461,8 +1451,7 @@ enum MLXInferenceServiceTests {
     )
 
     #expect(modelInfo.id == "test/model")
-    #expect(modelInfo.displayName == "Test Model")
-    #expect(modelInfo.description == "A test model for unit testing")
+    #expect(modelInfo.name == "Test Model")
     #expect(modelInfo.size == "2GB")
     #expect(modelInfo.minRAM == 8)
     #expect(modelInfo.expectedBytes == 2_000_000_000)
@@ -1963,7 +1952,6 @@ enum MLXModelManagerRealFilesystemTests {
 // Swift Testing 默认并行执行用例，若并发改写同一个单例会触发竞态甚至崩溃，
 // 因此整体放入 `.serialized` Suite 串行执行，保证稳定可复现。
 
-@MainActor
 @Suite(.serialized)
 enum MLXDownloadManagerSharedStateTests {
     @Test
@@ -2173,7 +2161,6 @@ enum MLXDownloadManagerSharedStateTests {
 }
 
 // Progress 标签格式化是纯函数式，无需串行；保持在 MainActor 下与现有风格一致。
-@MainActor
 @Test func MLXDownloadProgressSpeedLabelFormatsAllUnits() {
     var p = MLXDownloadProgress()
     p.speed = 500  // < 1KB
@@ -2182,7 +2169,6 @@ enum MLXDownloadManagerSharedStateTests {
     #expect(p.speedLabel.contains("KB"))
 }
 
-@MainActor
 @Test func MLXDownloadProgressPercentLabelFloorsToInteger() {
     var p = MLXDownloadProgress()
     p.fractionCompleted = 0.9999
@@ -2303,7 +2289,6 @@ enum MLXDownloadManagerSharedStateTests {
 
 // MARK: - MLXLumiPlugin Renderer Registration Tests
 
-@MainActor
 @Test func mlxPluginRegistersModelNotDownloadedRenderer() {
     let context = LumiPluginContext(
         activeSectionID: "test",
@@ -2316,7 +2301,6 @@ enum MLXDownloadManagerSharedStateTests {
     #expect(renderer?.order == 310, "应高于核心错误渲染器 (300)")
 }
 
-@MainActor
 @Test func mlxRendererSelectsOnlyModelNotDownloadedErrors() {
     let context = LumiPluginContext(
         activeSectionID: "test",

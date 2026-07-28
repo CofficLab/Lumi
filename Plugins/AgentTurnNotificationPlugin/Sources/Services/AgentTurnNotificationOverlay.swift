@@ -33,7 +33,6 @@ public final class AgentTurnNotificationHandler: NSObject, ObservableObject, Sup
     /// 注册为通知中心代理
     public func bind() {
         center.delegate = self
-        AgentTurnNotificationPlugin.logger.debug("\(Self.t)Notification center delegate configured")
     }
 
     // MARK: - Notification Posting

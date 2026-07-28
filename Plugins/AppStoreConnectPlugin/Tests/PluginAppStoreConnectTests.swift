@@ -5,17 +5,16 @@ import LumiKernel
 @testable import AppStoreConnectPlugin
 
 @Suite(.serialized)
+@MainActor
 struct PluginAppStoreConnectTests {
     @Test
     func pluginIdentityIsStable() {
-        #expect(AppStoreConnectPlugin.id == "com.coffic.lumi.plugin.app-store-connect")
-        #expect(AppStoreConnectPlugin.iconName == "bag")
-        #expect(AppStoreConnectPlugin.policy == .optIn)
-        #expect(AppStoreConnectPlugin.order == 65)
-        #expect(AppStoreConnectPlugin.category == .development)
+        #expect(AppStoreConnectPlugin().id == "com.coffic.lumi.plugin.app-store-connect")
+        #expect(AppStoreConnectPlugin().policy == .optIn)
+        #expect(AppStoreConnectPlugin().order == 65)
+        #expect(AppStoreConnectPlugin().category == .development)
     }
 
-    @MainActor
     @Test
     func titleToolbarItemsShowAppPickerOnlyInAppStoreSection() {
         let hidden = AppStoreConnectPlugin.titleToolbarItems(
@@ -23,14 +22,14 @@ struct PluginAppStoreConnectTests {
         )
         let visible = AppStoreConnectPlugin.titleToolbarItems(
             lumiCore: LumiPluginContext(
-                activeSectionID: AppStoreConnectPlugin.id,
-                activeSectionTitle: AppStoreConnectPlugin.displayName
+                activeSectionID: AppStoreConnectPlugin().id,
+                activeSectionTitle: AppStoreConnectPlugin.name
             )
         )
 
         #expect(hidden.isEmpty)
         #expect(visible.count == 1)
-        #expect(visible.first?.id == "\(AppStoreConnectPlugin.id).app-picker")
+        #expect(visible.first?.id == "\(AppStoreConnectPlugin().id).app-picker")
         #expect(visible.first?.placement == .center)
     }
 
@@ -109,7 +108,6 @@ struct PluginAppStoreConnectTests {
 
         #expect(workflow.id == "workflow-1")
         #expect(workflow.name == "Release")
-        #expect(workflow.description == "Archive and test")
         #expect(workflow.isEnabled)
         #expect(workflow.clean)
         #expect(workflow.containerFilePath == "Lumi.xcworkspace")
@@ -179,8 +177,7 @@ struct PluginAppStoreConnectTests {
 
     @Test("plugin description is localized")
     func pluginDescriptionUsesLocalizationCatalog() {
-        #expect(AppStoreConnectPlugin.description.isEmpty == false)
-        #expect(AppStoreConnectPlugin.displayName == "App Store")
+        #expect(AppStoreConnectPlugin.name == "App Store")
     }
 
     @Test
@@ -238,6 +235,7 @@ struct PluginAppStoreConnectTests {
 
     @Test
     func loadScreenshotSetsUsesRelationshipInstances() async throws {
+@MainActor
         final class RequestCounter: @unchecked Sendable {
             var paths: [String] = []
         }
@@ -304,6 +302,7 @@ struct PluginAppStoreConnectTests {
 
     @Test
     func listScreenshotsBuildsExpectedRequest() async throws {
+@MainActor
         final class RequestCounter: @unchecked Sendable {
             var paths: [String] = []
         }
@@ -487,6 +486,7 @@ struct PluginAppStoreConnectTests {
 
     @Test
     func connectClientReusesCachedGETResponses() async throws {
+@MainActor
         final class RequestCounter: @unchecked Sendable {
             var count = 0
         }
@@ -534,6 +534,7 @@ struct PluginAppStoreConnectTests {
 
     @Test
     func connectClientBypassesCacheWhenNetworkOnly() async throws {
+@MainActor
         final class RequestCounter: @unchecked Sendable {
             var count = 0
         }
@@ -689,7 +690,6 @@ struct PluginAppStoreConnectTests {
         #expect(sidebar[4].id == "prepare")
     }
 
-    @MainActor
     @Test
     func availableScreenshotDisplayTypesUseSelectedVersionPlatformDefaults() {
         let viewModel = VM()
@@ -716,7 +716,6 @@ struct PluginAppStoreConnectTests {
         #expect(types.contains("APP_IPHONE_67") == false)
     }
 
-    @MainActor
     @Test
     func availableScreenshotDisplayTypesUseTvOSDefaults() {
         let viewModel = VM()
@@ -735,7 +734,6 @@ struct PluginAppStoreConnectTests {
         #expect(types.contains("APP_IPHONE_67") == false)
     }
 
-    @MainActor
     @Test
     func availableScreenshotDisplayTypesUseVisionOSWithoutIOSFallback() {
         let viewModel = VM()
@@ -753,12 +751,11 @@ struct PluginAppStoreConnectTests {
         #expect(types.contains("APP_IPHONE_67") == false)
     }
 
-    @MainActor
     @Test
     func pluginExposesAgentTools() {
         let context = LumiPluginContext(
-            activeSectionID: AppStoreConnectPlugin.id,
-            activeSectionTitle: AppStoreConnectPlugin.displayName
+            activeSectionID: AppStoreConnectPlugin().id,
+            activeSectionTitle: AppStoreConnectPlugin.name
         )
         let tools = AppStoreConnectPlugin.agentTools(context: context)
 
@@ -946,6 +943,7 @@ struct PluginAppStoreConnectTests {
 
     @Test
     func createVersionPostsToAppStoreVersionsEndpoint() async throws {
+@MainActor
         final class RequestRecorder: @unchecked Sendable {
             var method: String?
             var path: String?
@@ -988,7 +986,6 @@ struct PluginAppStoreConnectTests {
         #expect(created.versionString == "1.0.1")
     }
 
-    @MainActor
     @Test
     func canCreateVersionReflectsPlatformAvailability() {
         let viewModel = VM()

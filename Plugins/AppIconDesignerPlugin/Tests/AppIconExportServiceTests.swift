@@ -3,6 +3,7 @@ import Testing
 import Foundation
 @testable import AppIconDesignerPlugin
 
+@MainActor
 @Suite("PluginAppIconDesigner")
 struct AppIconExportServiceTests {
     @Test("exports macOS appiconset")

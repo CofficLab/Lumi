@@ -1,8 +1,8 @@
 import Foundation
-import SwiftUI
 import LumiKernel
 import os
 import SuperLogKit
+import SwiftUI
 
 /// Agent Turn Runner Plugin
 ///
@@ -15,22 +15,16 @@ public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "🤖"
     nonisolated static let verbose = false
 
-    // MARK: - LumiPlugin
-
     public let id = "com.coffic.lumi.plugin.agent-turn-runner"
     public let name = "Agent Turn Runner"
-    public let order = 64  // After MessageSendManagerPlugin (63)
-	public let policy: LumiPluginPolicy = .alwaysOn
-
-    // MARK: - Initialization
+    public let order = 64 // After MessageSendManagerPlugin (63)
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {
         if Self.verbose {
             Self.logger.info("\(Self.t)\(Self.onInit)AgentTurnRunnerPlugin")
         }
     }
-
-    // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {
         try await AgentTurnRunnerOnBootHook().execute(kernel)
@@ -39,9 +33,6 @@ public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
     public func onReady(kernel: LumiKernel) async throws {
         try AgentTurnRunnerOnReadyHook().execute(kernel)
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -60,7 +51,19 @@ public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        [
+            SettingsTabItem(
+                id: "\(id).settings",
+                title: "Sent Requests",
+                systemImage: "paperplane",
+                order: order
+            ) {
+                AgentTurnRunnerSettingsView(kernel: kernel)
+            },
+        ]
+    }
+
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }

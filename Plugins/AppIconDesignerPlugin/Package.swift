@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/AgentToolKit"),
     ],
     targets: [
         .target(
@@ -33,7 +34,10 @@ let package = Package(
         ),
         .testTarget(
             name: "AppIconDesignerPluginTests",
-            dependencies: ["AppIconDesignerPlugin"],
+            dependencies: [
+                "AppIconDesignerPlugin",
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
+            ],
             path: "Tests"
         )
     ]

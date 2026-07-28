@@ -9,6 +9,7 @@ public final class StepFunPlugin: LumiPlugin {
     public let name = "StepFun StepPlan"
     public let order = 93
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

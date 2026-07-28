@@ -3,19 +3,18 @@ import Testing
 import LumiKernel
 @testable import FileLogPlugin
 
+@MainActor
 struct PluginFileLogTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(FileLogPlugin.id == "FileLog")
+        #expect(FileLogPlugin().id == "FileLog")
         #expect(FileLogPlugin.navigationId == nil)
-        #expect(FileLogPlugin.displayName == "File Log")
-        #expect(FileLogPlugin.description.isEmpty == false)
-        #expect(FileLogPlugin.iconName == "doc.text.below.ecg")
+        #expect(FileLogPlugin.name == "File Log")
         #expect(FileLogPlugin.isConfigurable == false)
-        #expect(FileLogPlugin.category == .system)
-        #expect(FileLogPlugin.order == 1)
-        #expect(FileLogPlugin.policy == .alwaysOn)
-        #expect(FileLogPlugin.shared.instanceLabel == FileLogPlugin.id)
+        #expect(FileLogPlugin().category == .system)
+        #expect(FileLogPlugin().order == 1)
+        #expect(FileLogPlugin().policy == .alwaysOn)
+        #expect(FileLogPlugin.shared.instanceLabel == FileLogPlugin().id)
     }
 
     @Test

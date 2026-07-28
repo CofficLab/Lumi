@@ -9,6 +9,7 @@ public final class MiniMaxPlugin: LumiPlugin {
     public let name = "MiniMax"
     public let order = 104
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

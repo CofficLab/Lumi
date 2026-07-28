@@ -10,6 +10,7 @@ public final class FeifeimiaoPlugin: LumiPlugin {
     public let name = "Feifeimiao"
     public let order = 104
 	public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

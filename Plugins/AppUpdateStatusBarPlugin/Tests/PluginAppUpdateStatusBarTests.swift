@@ -7,13 +7,11 @@ import Testing
 struct PluginAppUpdateStatusBarTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(AppUpdateStatusBarPlugin.info.id == "com.coffic.lumi.plugin.app-update-status-bar")
-        #expect(AppUpdateStatusBarPlugin.info.displayName.isEmpty == false)
-        #expect(AppUpdateStatusBarPlugin.info.description.isEmpty == false)
-        #expect(AppUpdateStatusBarPlugin.iconName == "arrow.down.circle")
-        #expect(AppUpdateStatusBarPlugin.category == .general)
-        #expect(AppUpdateStatusBarPlugin.info.order == 8)
-        #expect(AppUpdateStatusBarPlugin.policy == .alwaysOn)
+        #expect(AppUpdateStatusBarPlugin().id == "com.coffic.lumi.plugin.app-update-status-bar")
+        #expect(AppUpdateStatusBarPlugin().name.isEmpty == false)
+        #expect(AppUpdateStatusBarPlugin().category == .general)
+        #expect(AppUpdateStatusBarPlugin().order == 8)
+        #expect(AppUpdateStatusBarPlugin().policy == .alwaysOn)
     }
 
     @Test

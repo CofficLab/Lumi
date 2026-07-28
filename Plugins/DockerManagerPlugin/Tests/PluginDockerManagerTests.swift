@@ -6,23 +6,20 @@ import LumiKernel
 struct PluginDockerManagerTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(DockerManagerPlugin.id == "DockerManager")
+        #expect(DockerManagerPlugin().id == "DockerManager")
         #expect(DockerManagerPlugin.navigationId == "docker_manager")
-        #expect(DockerManagerPlugin.displayName.isEmpty == false)
-        #expect(DockerManagerPlugin.description.isEmpty == false)
-        #expect(DockerManagerPlugin.iconName == "shippingbox")
-        #expect(DockerManagerPlugin.category == .developerTool)
-        #expect(DockerManagerPlugin.order == 50)
-        #expect(DockerManagerPlugin.policy == .disabled)
-        #expect(DockerManagerPlugin.shared.instanceLabel == DockerManagerPlugin.id)
+        #expect(DockerManagerPlugin.name.isEmpty == false)
+        #expect(DockerManagerPlugin().category == .developerTool)
+        #expect(DockerManagerPlugin().order == 50)
+        #expect(DockerManagerPlugin().policy == .disabled)
+        #expect(DockerManagerPlugin.shared.instanceLabel == DockerManagerPlugin().id)
     }
 
     @Test
     func viewContainerContributionIsAvailable() {
         let item = DockerManagerPlugin.shared.addViewContainer()
-        #expect(item?.id == DockerManagerPlugin.id)
-        #expect(item?.title == DockerManagerPlugin.displayName)
-        #expect(item?.icon == DockerManagerPlugin.iconName)
+        #expect(item?.id == DockerManagerPlugin().id)
+        #expect(item?.title == DockerManagerPlugin.name)
     }
 
     @Test

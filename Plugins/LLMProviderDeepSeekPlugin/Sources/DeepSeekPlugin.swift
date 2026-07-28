@@ -10,6 +10,7 @@ public final class DeepSeekPlugin: LumiPlugin {
     public let name = "DeepSeek"
     public let order = 92
 	public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

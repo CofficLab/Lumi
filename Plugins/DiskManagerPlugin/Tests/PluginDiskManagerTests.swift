@@ -7,13 +7,11 @@ import LumiKernel
 struct PluginDiskManagerTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(DiskManagerPlugin.info.id == "com.coffic.lumi.plugin.disk-manager")
-        #expect(DiskManagerPlugin.info.displayName.isEmpty == false)
-        #expect(DiskManagerPlugin.info.description.isEmpty == false)
-        #expect(DiskManagerPlugin.iconName == "internaldrive")
-        #expect(DiskManagerPlugin.category == .system)
-        #expect(DiskManagerPlugin.info.order == 44)
-        #expect(DiskManagerPlugin.policy == .optIn)
+        #expect(DiskManagerPlugin().id == "com.coffic.lumi.plugin.disk-manager")
+        #expect(DiskManagerPlugin().name.isEmpty == false)
+        #expect(DiskManagerPlugin().category == .system)
+        #expect(DiskManagerPlugin().order == 44)
+        #expect(DiskManagerPlugin().policy == .optIn)
     }
 
     @Test
@@ -22,8 +20,8 @@ struct PluginDiskManagerTests {
             lumiCore: LumiPluginContext(activeSectionID: "workspace", activeSectionTitle: "Workspace")
         )
         let item = try #require(items.first)
-        #expect(item.id == DiskManagerPlugin.info.id)
-        #expect(item.title == DiskManagerPlugin.info.displayName)
+        #expect(item.id == DiskManagerPlugin().id)
+        #expect(item.title == DiskManagerPlugin().name)
     }
 
     @Test

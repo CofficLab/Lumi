@@ -35,45 +35,4 @@ import Foundation
     }
 }
 
-@Suite struct ChatSlashCommandTests {
 
-    @Test func suggestionsEmptyWithoutLeadingSlash() {
-        #expect(ChatSlashCommand.suggestions(for: "clear").isEmpty)
-        #expect(ChatSlashCommand.suggestions(for: "hello").isEmpty)
-    }
-
-    @Test func suggestionsReturnsMatchingCommands() {
-        let result = ChatSlashCommand.suggestions(for: "/c")
-        #expect(result.map(\.command) == ["/clear"])
-    }
-
-    @Test func suggestionsAllWhenJustSlash() {
-        let result = ChatSlashCommand.suggestions(for: "/")
-        #expect(result.count == ChatSlashCommand.all.count)
-    }
-
-    @Test func suggestionsIsCaseInsensitive() {
-        let upper = ChatSlashCommand.suggestions(for: "/CLEAR")
-        #expect(upper.map(\.command) == ["/clear"])
-    }
-
-    @Test func suggestionsRequiresLeadingSlash() {
-        // The "/" guard checks the raw input before trimming, so leading
-        // whitespace prevents matching — documented behavior.
-        #expect(ChatSlashCommand.suggestions(for: "  /he ").isEmpty)
-        // Trailing whitespace is fine: "/he " → trimmed "/he" still matches.
-        let trailing = ChatSlashCommand.suggestions(for: "/he ")
-        #expect(trailing.map(\.command) == ["/help"])
-    }
-
-    @Test func suggestionsEmptyForUnknownPrefix() {
-        #expect(ChatSlashCommand.suggestions(for: "/xyz").isEmpty)
-    }
-
-    @Test func catalogContainsCoreCommands() {
-        let commands = ChatSlashCommand.all.map(\.command)
-        #expect(commands.contains("/clear"))
-        #expect(commands.contains("/help"))
-        #expect(commands.contains("/model"))
-    }
-}

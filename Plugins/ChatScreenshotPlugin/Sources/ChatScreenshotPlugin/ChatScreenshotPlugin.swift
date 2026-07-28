@@ -14,7 +14,7 @@ import SwiftUI
 /// 5. 用户松手 → `onComplete(Data?)` 拿到 JPEG 字节
 /// 6. 经 `ScreenCaptureImageProcessor.makeAttachment` 包装成 `LumiImageAttachment`
 /// 7. `kernel.messageSend.addAttachment(attachment)` 注入附件挂起池
-/// 8. `ChatAttachmentPreviewPlugin` 立即渲染缩略图
+/// 8. `ConversationAttachmentPlugin` 立即渲染缩略图
 @MainActor
 public final class ChatScreenshotPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "📸"

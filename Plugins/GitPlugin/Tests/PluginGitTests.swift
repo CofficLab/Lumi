@@ -1,14 +1,15 @@
 import Testing
 @testable import GitPlugin
 
+@MainActor
 @Test func packageLoads() async throws {
-    #expect(GitPlugin.id == "GitPlugin")
-    #expect(GitPlugin.displayName.isEmpty == false)
-    #expect(GitPlugin.iconName == "arrow.triangle.branch")
-    #expect(GitPlugin.order == 11)
-    #expect(GitPlugin.category == .development)
+    #expect(GitPlugin().id == "GitPlugin")
+    #expect(GitPlugin.name.isEmpty == false)
+    #expect(GitPlugin().order == 11)
+    #expect(GitPlugin().category == .development)
 }
 
+@MainActor
 @Test func gitLogToolNormalizesCount() throws {
     #expect(GitLogTool.normalizedCount(nil) == 10)
     #expect(GitLogTool.normalizedCount(-5) == 1)
@@ -43,6 +44,7 @@ import Testing
     }
 }
 
+@MainActor
 @Test func validatePathRequiresAllowedDirectoryBoundary() throws {
     let allowed = "/tmp/Lumi"
 
@@ -53,12 +55,14 @@ import Testing
     }
 }
 
+@MainActor
 @Test func validateBranchNameAcceptsCommonGitNames() throws {
     try GitBranchService.validateBranchName("feature/editor-refresh")
     try GitBranchService.validateBranchName("bugfix/issue-123")
     try GitBranchService.validateBranchName("release_2026.06")
 }
 
+@MainActor
 @Test func validateBranchNameRejectsInvalidGitNames() {
     let invalidNames = [
         "",
@@ -89,12 +93,14 @@ import Testing
     }
 }
 
+@MainActor
 @Test func remoteDisplayNamePreservesSpacesInLocalRemotePath() {
     let remote = GitCommitDetailService.parseRemoteDisplayName(from: "origin\t/tmp/My Repo.git (fetch)\norigin\t/tmp/My Repo.git (push)")
 
     #expect(remote == "/tmp/My Repo")
 }
 
+@MainActor
 @Test func remoteDisplayNameKeepsSshRepositoryPath() {
     let remote = GitCommitDetailService.parseRemoteDisplayName(from: "origin\tgit@github.com:CofficLab/Lumi.git (fetch)")
 

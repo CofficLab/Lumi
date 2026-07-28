@@ -9,6 +9,7 @@ public final class KimiCodePlugin: LumiPlugin {
     public let name = "Kimi Code"
     public let order = 103
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

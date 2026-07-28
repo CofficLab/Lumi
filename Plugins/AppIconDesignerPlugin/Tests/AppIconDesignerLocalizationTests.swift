@@ -2,6 +2,7 @@ import Foundation
 import Testing
 @testable import AppIconDesignerPlugin
 
+@MainActor
 @Suite("App icon designer localization")
 struct AppIconDesignerLocalizationTests {
     @Test("loads UI strings from the string catalog")

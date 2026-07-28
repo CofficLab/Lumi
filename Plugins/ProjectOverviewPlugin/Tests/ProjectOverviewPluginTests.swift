@@ -4,18 +4,17 @@ import Testing
 @testable import ProjectOverviewPlugin
 
 @Suite("PluginProjectOverview")
+@MainActor
 struct PluginProjectOverviewTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
-        #expect(ProjectOverviewPlugin.id == "ProjectOverview")
-        #expect(ProjectOverviewPlugin.displayName == "Project Overview")
-        #expect(ProjectOverviewPlugin.iconName == "doc.text.magnifyingglass")
-        #expect(ProjectOverviewPlugin.category == .general)
-        #expect(ProjectOverviewPlugin.order == 14)
+        #expect(ProjectOverviewPlugin().id == "ProjectOverview")
+        #expect(ProjectOverviewPlugin.name == "Project Overview")
+        #expect(ProjectOverviewPlugin().category == .general)
+        #expect(ProjectOverviewPlugin().order == 14)
         #expect(ProjectOverviewPlugin.isConfigurable == false)
     }
 
-    @MainActor
     @Test("plugin registers one tool")
     func pluginRegistersTool() {
         let tools = ProjectOverviewPlugin.agentTools(

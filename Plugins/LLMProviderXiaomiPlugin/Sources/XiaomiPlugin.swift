@@ -9,6 +9,7 @@ public final class XiaomiPlugin: LumiPlugin {
     public let name = "Xiaomi"
     public let order = 102
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

@@ -8,6 +8,7 @@ public final class AppUpdateStatusBarPlugin: LumiPlugin {
     public let name = "AppUpdateStatusBar"
     public let order = 8
 	public let policy: LumiPluginPolicy = .disabled
+    public var category: LumiPluginCategory { .general }
 
     public init() {}
 

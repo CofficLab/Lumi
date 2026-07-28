@@ -104,18 +104,20 @@ struct LSPViewportSchedulerTests {
         var diagnosticsExecuted = false
         var codeActionsExecuted = false
 
-        // Schedule tasks
+        // Schedule tasks. Use cancelLowerPriority: false for the high priority
+        // task so it does not auto-cancel the lower priority tasks — we want to
+        // verify cancelBelow's own behavior in isolation.
         scheduler.schedule(.inlayHints, debounceMs: 100) {
             inlayHintsExecuted = true
         }
         scheduler.schedule(.diagnostics, debounceMs: 100) {
             diagnosticsExecuted = true
         }
-        scheduler.schedule(.codeActions, debounceMs: 100) {
+        scheduler.schedule(.codeActions, debounceMs: 100, cancelLowerPriority: false) {
             codeActionsExecuted = true
         }
 
-        // Cancel below medium priority (should cancel low priority)
+        // Cancel below medium priority (should cancel low priority only)
         scheduler.cancelBelow(.medium)
 
         // Wait for tasks to potentially execute

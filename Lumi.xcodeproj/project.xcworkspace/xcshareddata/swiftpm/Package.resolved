@@ -1,5 +1,5 @@
 {
-  "originHash" : "5fc99b37e55013190913a29e32c5081afa53e66f4d60d967a3b70de018945855",
+  "originHash" : "084d66e09e40bf58379ba972cac55271a7a5432274ba96364506969b1376b73b",
   "pins" : [
     {
       "identity" : "beautiful-mermaid-swift",
@@ -70,7 +70,7 @@
       "location" : "https://github.com/nookery/LibGit2Swift",
       "state" : {
         "branch" : "main",
-        "revision" : "07fe29a7ec9417750b694423a1b3d0c7de39bf7e"
+        "revision" : "5beda751bb32d6f0228ab592d7e1dd3e02190b02"
       }
     },
     {

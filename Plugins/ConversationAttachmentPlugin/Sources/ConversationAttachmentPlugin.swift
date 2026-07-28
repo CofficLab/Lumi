@@ -10,9 +10,9 @@ import SwiftUI
 /// - 策略:`.alwaysOn`,与 ConversationInput 同等地位
 /// - 不持有任何本地状态,完全由 `MessageSending.pendingAttachments` 驱动
 @MainActor
-public final class ChatAttachmentPreviewPlugin: LumiPlugin {
+public final class ConversationAttachmentPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.chat-attachment-preview"
-    public let name = "Chat Attachment Preview"
+    public let name = "Conversation Attachment"
     public let order = 81
     public let policy: LumiPluginPolicy = .alwaysOn
 

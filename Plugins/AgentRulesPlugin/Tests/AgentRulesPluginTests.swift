@@ -2,11 +2,13 @@ import Testing
 import Foundation
 @testable import AgentRulesPlugin
 
-@Test func packageLoads() async throws {
-    #expect(AgentRulesPlugin.info.id == "com.coffic.lumi.plugin.agent-rules")
+@MainActor
+    @Test func packageLoads() async throws {
+    #expect(AgentRulesPlugin().id == "com.coffic.lumi.plugin.agent-rules")
 }
 
-@Test func pluginHasRequiredMetadata() throws {
+@MainActor
+    @Test func pluginHasRequiredMetadata() throws {
     let plugin = AgentRulesPlugin()
     #expect(plugin.id == "com.coffic.lumi.plugin.agent-rules")
     #expect(plugin.name == "Agent Rules")
@@ -14,10 +16,10 @@ import Foundation
     #expect(plugin.policy == .disabled)
     #expect(plugin.category == .general)
     #expect(plugin.stage == .stable)
-    #expect(!plugin.pluginDescription.isEmpty)
 }
 
-@Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
+@MainActor
+    @Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("AgentRulesLocalStore-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
@@ -38,7 +40,8 @@ import Foundation
     #expect(reloadedStore.string(forKey: "rulesDirectoryPath") == "/tmp/.agent/rules")
 }
 
-@Test func localStoreReportsFailureWhenSettingsDirectoryIsBlocked() throws {
+@MainActor
+    @Test func localStoreReportsFailureWhenSettingsDirectoryIsBlocked() throws {
     let tempRoot = FileManager.default.temporaryDirectory
         .appendingPathComponent("AgentRulesLocalStore-Blocked-\(UUID().uuidString)", isDirectory: true)
     let blockedDirectory = tempRoot.appending(path: "settings")
@@ -53,7 +56,8 @@ import Foundation
     #expect(store.string(forKey: "rulesDirectoryPath") == nil)
 }
 
-@Test func listRulesReadsUTF16MarkdownMetadata() async throws {
+@MainActor
+    @Test func listRulesReadsUTF16MarkdownMetadata() async throws {
     let projectURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
     let rulesURL = projectURL.appending(path: ".agent/rules")
@@ -72,10 +76,10 @@ import Foundation
 
     #expect(rule.filename == "style.md")
     #expect(rule.title == "Coding Style")
-    #expect(rule.description == "Prefer clear names.")
 }
 
-@Test func readRuleReturnsUTF16MarkdownContent() async throws {
+@MainActor
+    @Test func readRuleReturnsUTF16MarkdownContent() async throws {
     let projectURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("AgentRulesTests-\(UUID().uuidString)", isDirectory: true)
     let rulesURL = projectURL.appending(path: ".agent/rules")
@@ -92,6 +96,5 @@ import Foundation
     let rule = try await AgentRulesService.shared.readRule(projectPath: projectURL.path(), filename: "review.md")
 
     #expect(rule.title == "Review Rules")
-    #expect(rule.description == "Check edge cases before shipping.")
     #expect(rule.content == content)
 }

@@ -7,24 +7,23 @@ import Testing
 @testable import LLMProviderXiaomiPlugin
 
 @Suite(.serialized)
+@MainActor
 struct PluginLLMProviderXiaomiTests {
     @Test func pluginMetadata() {
-        #expect(XiaomiPlugin.info.id.isEmpty == false)
-        #expect(XiaomiPlugin.info.displayName.isEmpty == false)
-        #expect(XiaomiPlugin.info.description.isEmpty == false)
-        #expect(XiaomiPlugin.iconName.isEmpty == false)
-        #expect(XiaomiPlugin.category == .llmProvider)
+        #expect(XiaomiPlugin().id.isEmpty == false)
+        #expect(XiaomiPlugin().name.isEmpty == false)
+        #expect(XiaomiPlugin().category == .llmProvider)
     }
 
     @Test func providerMetadata() {
         #expect(XiaomiProvider.info.id == "xiaomi")
-        #expect(XiaomiProvider.info.displayName.isEmpty == false)
+        #expect(XiaomiProvider.info.name.isEmpty == false)
         #expect(XiaomiProvider.info.defaultModel.isEmpty == false)
     }
 
     @Test func apiProviderMetadata() {
         #expect(XiaomiAPIProvider.info.id == "xiaomi-api")
-        #expect(XiaomiAPIProvider.info.displayName.isEmpty == false)
+        #expect(XiaomiAPIProvider.info.name.isEmpty == false)
         #expect(XiaomiAPIProvider.info.defaultModel.isEmpty == false)
     }
 

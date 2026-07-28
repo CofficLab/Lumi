@@ -36,17 +36,7 @@ public final class IdleTimePlugin: LumiPlugin {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
-        [
-            // 右上角“打开”按钮:点击弹出 Idle Time 面板
-            StatusBarItem(
-                id: "\(id).status",
-                title: LumiPluginLocalization.string("Idle Time", bundle: .module),
-                systemImage: "moon.zzz",
-                placement: .trailing,
-                order: 210,
-                popover: { IdleTimeStatusBarPopover() }
-            )
-        ]
+        []
     }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }

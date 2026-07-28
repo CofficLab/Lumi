@@ -2,10 +2,12 @@ import Testing
 import Foundation
 @testable import RClickPlugin
 
+@MainActor
 @Test func packageLoads() async throws {
-    #expect(RClickPlugin.id == "RClick")
+    #expect(RClickPlugin().id == "RClick")
 }
 
+@MainActor
 @Test func appGroupConfigURLUsesSharedJSONFilename() {
     let containerURL = URL(fileURLWithPath: "/tmp/lumi-group", isDirectory: true)
 
@@ -112,6 +114,7 @@ import Foundation
     #expect((try? JSONDecoder().decode(RClickConfig.self, from: Data(contentsOf: appGroupConfigURL)))?.fileTemplates == manager.config.fileTemplates)
 }
 
+@MainActor
 @Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("RClickLocalStore-\(UUID().uuidString)", isDirectory: true)
@@ -133,6 +136,7 @@ import Foundation
     #expect(reloadedStore.string(forKey: "name") == "Context Menu")
 }
 
+@MainActor
 @Test func localStoreReportsFailureWhenPluginDirectoryIsBlocked() throws {
     let tempRoot = FileManager.default.temporaryDirectory
         .appendingPathComponent("RClickLocalStore-Blocked-\(UUID().uuidString)", isDirectory: true)

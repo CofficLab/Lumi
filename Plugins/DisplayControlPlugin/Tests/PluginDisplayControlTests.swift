@@ -5,10 +5,9 @@ import LumiKernel
 @MainActor
 @Test("Plugin info is valid")
 func pluginInfoIsValid() {
-    let info = DisplayControlPlugin.info
+    let info = DisplayControlPlugin()
     #expect(!info.id.isEmpty)
-    #expect(!info.displayName.isEmpty)
-    #expect(!info.description.isEmpty)
+    #expect(!info.name.isEmpty)
     #expect(info.id == "com.coffic.lumi.plugin.display-control")
 }
 

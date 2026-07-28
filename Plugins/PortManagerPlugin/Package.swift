@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../../Packages/SuperLogKit")
     ],
     targets: [
-        .target(
+.target(
             name: "PortManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
@@ -30,6 +30,11 @@ let package = Package(
             resources: [
                 .process("../Resources/Localizable.xcstrings")
             ]
+        ),
+        .testTarget(
+            name: "PortManagerPluginTests",
+            dependencies: [.target(name: "PortManagerPlugin")],
+            path: "Tests"
         )
     ]
 )

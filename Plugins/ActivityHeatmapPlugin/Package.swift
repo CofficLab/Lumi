@@ -28,6 +28,13 @@ let package = Package(
             resources: [
                 .process("../Resources/Localizable.xcstrings")
             ]
+        ),
+        .testTarget(
+            name: "ActivityHeatmapPluginTests",
+            dependencies: [
+                .target(name: "ActivityHeatmapPlugin"),
+            ],
+            path: "Tests"
         )
     ]
 )

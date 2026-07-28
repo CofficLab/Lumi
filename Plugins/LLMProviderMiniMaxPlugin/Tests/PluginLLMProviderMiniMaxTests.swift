@@ -7,6 +7,7 @@ import Testing
 @testable import LLMProviderMiniMaxPlugin
 
 @Suite(.serialized)
+@MainActor
 struct PluginLLMProviderMiniMaxTests {
     private func makeMessage(for error: Error, conversationID: UUID = UUID()) -> LumiChatMessage {
         let provider = MiniMaxTokenPlanProvider()
@@ -29,17 +30,15 @@ struct PluginLLMProviderMiniMaxTests {
     }
 
     @Test func pluginMetadata() {
-        #expect(MiniMaxPlugin.info.id.isEmpty == false)
-        #expect(MiniMaxPlugin.info.displayName.isEmpty == false)
-        #expect(MiniMaxPlugin.info.description.isEmpty == false)
-        #expect(MiniMaxPlugin.iconName.isEmpty == false)
-        #expect(MiniMaxPlugin.category == .llmProvider)
-        #expect(MiniMaxPlugin.policy == .alwaysOn)
+        #expect(MiniMaxPlugin().id.isEmpty == false)
+        #expect(MiniMaxPlugin().name.isEmpty == false)
+        #expect(MiniMaxPlugin().category == .llmProvider)
+        #expect(MiniMaxPlugin().policy == .alwaysOn)
     }
 
     @Test func providerMetadata() {
         #expect(MiniMaxTokenPlanProvider.info.id == "minimax-tokenplan")
-        #expect(MiniMaxTokenPlanProvider.info.displayName.isEmpty == false)
+        #expect(MiniMaxTokenPlanProvider.info.name.isEmpty == false)
         #expect(MiniMaxTokenPlanProvider.info.defaultModel == "MiniMax-M2.7")
         #expect(MiniMaxTokenPlanProvider.apiKeyHelpURL != nil)
         #expect(MiniMaxTokenPlanProvider.info.availableModels.contains("MiniMax-M3"))
@@ -48,7 +47,6 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(MiniMaxTokenPlanProvider.info.availableModels.contains("MiniMax-M2.5"))
     }
 
-    @MainActor
     @Test func renderersMatchRenderKind() {
         let conversationID = UUID()
         let apiKeyMessage = LumiChatMessage(
@@ -107,7 +105,6 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
     }
 
-    @MainActor
     @Test func httpErrorRendererMatchesOtherStatusCodes() {
         let conversationID = UUID()
         let rateLimited = LumiChatMessage(
@@ -133,7 +130,7 @@ struct PluginLLMProviderMiniMaxTests {
 
     @Test func errorMessageMapsMissingAPIKey() {
         let message = makeMessage(
-            for: LumiLLMProviderSupportError.missingAPIKey(MiniMaxTokenPlanProvider.info.displayName)
+            for: LumiLLMProviderSupportError.missingAPIKey(MiniMaxTokenPlanProvider.info.name)
         )
 
         #expect(message.renderKind == MiniMaxRenderKind.apiKeyMissing)

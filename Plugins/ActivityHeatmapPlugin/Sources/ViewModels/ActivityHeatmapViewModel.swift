@@ -24,18 +24,23 @@ public enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable, Sendable {
 /// View model that fetches per-day message counts and builds a daily heatmap,
 /// plus per-day token counts for a line chart.
 ///
+/// Uses disk cache for historical data (before today) for fast loading.
+/// Today's data is always fetched in real-time from MessageManaging.
+///
 /// Performance notes:
 /// - Both data fetches run off the main actor via `nonisolated` requirements
 ///   on `MessageManaging`, so switching the time range never blocks the UI.
 /// - Sequential fetch avoids concurrent access issues with the shared service reference.
 /// - `loadGeneration` cancels stale loads: rapidly switching the period won't
 ///   let an older, slower response overwrite a newer one.
+/// - Historical data (before today) is cached on disk for fast subsequent loads.
 @MainActor
 @Observable
 public final class ActivityHeatmapViewModel {
     // MARK: - Dependencies
 
     private let messageService: (any MessageManaging)?
+    private let cache: ActivityHeatmapCache
 
     // MARK: - State
 
@@ -54,8 +59,12 @@ public final class ActivityHeatmapViewModel {
 
     // MARK: - Init
 
-    public init(messageService: (any MessageManaging)?) {
+    public init(messageService: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil, pluginID: String = "com.coffic.activity-heatmap") {
         self.messageService = messageService
+        self.cache = cache ?? ActivityHeatmapCache(
+            storage: nil,
+            pluginID: pluginID
+        )
     }
 
     // MARK: - Load
@@ -85,14 +94,74 @@ public final class ActivityHeatmapViewModel {
             return
         }
 
-        // Off-main-actor sequential fetch: message counts then token counts.
-        let counts = await service.fetchDailyMessageCounts(since: oldestDay)
-        let tokenCounts = await service.fetchDailyTokenCounts(since: oldestDay)
+        // Generate full date range for the period
+        let dateRange = (0..<days).compactMap { cal.date(byAdding: .day, value: $0, to: oldestDay) }
+
+        // Split into historical (before today) and today
+        let historicalDates = dateRange.filter { $0 < today }
+        let todayDate = today
+
+        // Step 1: Load cached data for historical dates
+        let cachedHeatmapCounts = cache.loadHeatmapCounts(for: historicalDates)
+        let cachedTokenCounts = cache.loadTokenCounts(for: historicalDates)
+
+        // Step 2: Find missing dates that need to be fetched
+        let missingHeatmapDates = historicalDates.filter { cachedHeatmapCounts[$0] == nil }
+        let missingTokenDates = historicalDates.filter { cachedTokenCounts[$0] == nil }
+
+        // Step 3: Fetch missing data from MessageManaging
+        var freshHeatmapCounts: [Date: Int] = [:]
+        var freshTokenCounts: [Date: Int] = [:]
+
+        if let firstMissing = missingHeatmapDates.first {
+            freshHeatmapCounts = await service.fetchDailyMessageCounts(since: firstMissing)
+        }
+        if let firstMissing = missingTokenDates.first {
+            freshTokenCounts = await service.fetchDailyTokenCounts(since: firstMissing)
+        }
+
         guard isCurrent(generation) else { return }
 
-        // Shape data on the main thread.
-        heatmapData = Self.buildHeatmapData(counts: counts, oldestDay: oldestDay, days: days)
-        tokenData = Self.buildTokenData(tokenCounts: tokenCounts, oldestDay: oldestDay, days: days)
+        // Step 4: Save fresh data to cache (only historical, not today)
+        for date in missingHeatmapDates {
+            if let count = freshHeatmapCounts[date] {
+                cache.saveHeatmapCount(count, for: date)
+            }
+        }
+        for date in missingTokenDates {
+            if let count = freshTokenCounts[date] {
+                cache.saveTokenCount(count, for: date)
+            }
+        }
+
+        // Step 5: Merge cached and fresh data
+        var allHeatmapCounts: [Date: Int] = cachedHeatmapCounts
+        for (date, count) in freshHeatmapCounts {
+            allHeatmapCounts[date] = count
+        }
+
+        var allTokenCounts: [Date: Int] = cachedTokenCounts
+        for (date, count) in freshTokenCounts {
+            allTokenCounts[date] = count
+        }
+
+        // Step 6: Fetch today's data in real-time
+        let todayHeatmapCounts = await service.fetchDailyMessageCounts(since: todayDate)
+        let todayTokenCounts = await service.fetchDailyTokenCounts(since: todayDate)
+
+        guard isCurrent(generation) else { return }
+
+        // Merge today's data
+        for (date, count) in todayHeatmapCounts {
+            allHeatmapCounts[date] = count
+        }
+        for (date, count) in todayTokenCounts {
+            allTokenCounts[date] = count
+        }
+
+        // Step 7: Build final display data
+        heatmapData = Self.buildHeatmapData(counts: allHeatmapCounts, oldestDay: oldestDay, days: days)
+        tokenData = Self.buildTokenData(tokenCounts: allTokenCounts, oldestDay: oldestDay, days: days)
     }
 
     private func isCurrent(_ generation: Int) -> Bool {

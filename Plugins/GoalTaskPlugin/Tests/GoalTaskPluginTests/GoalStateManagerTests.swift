@@ -2,6 +2,7 @@ import Testing
 import Foundation
 @testable import GoalTaskPlugin
 
+@MainActor
 @Suite("Goal State Manager Tests")
 struct GoalStateManagerTests {
     
