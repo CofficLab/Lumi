@@ -8,6 +8,7 @@ public final class FileLogPlugin: LumiPlugin {
     public let name = "File Log"
     public let order = 1
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .system }
 
     /// Shared configuration for file log output directory.
     public nonisolated static let configuration: FileLogConfiguration = DefaultFileLogConfiguration()
