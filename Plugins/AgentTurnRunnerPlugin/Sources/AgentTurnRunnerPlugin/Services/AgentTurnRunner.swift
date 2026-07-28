@@ -204,6 +204,14 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                 fileAttachments: pendingFiles
             )
 
+            // 记录本次发出的请求到磁盘(SwiftData),用于设置界面回看。
+            let providerID = type(of: targetProvider).info.id
+            await AgentTurnRunnerRecordStoreBridge.shared.store?.record(
+                request: request,
+                conversationID: conversationID,
+                providerID: providerID
+            )
+
             // Call LLM
             let assistantMessage: LumiChatMessage
             do {
