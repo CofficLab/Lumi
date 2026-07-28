@@ -62,6 +62,11 @@ public protocol LumiPlugin: AnyObject {
     /// 提供 Agent 工具
     func agentTools(kernel: LumiKernel) -> [any LumiAgentTool]
 
+    /// LLM 发送前钩子。
+    ///
+    /// 插件可在 AgentTurnRunner 构造请求前修改消息列表,例如注入 system prompt。
+    func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage]
+
     /// 提供消息渲染器
     func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem]
 
