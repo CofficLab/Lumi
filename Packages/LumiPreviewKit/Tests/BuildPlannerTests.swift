@@ -3,6 +3,7 @@ import Testing
 @testable import LumiPreviewKit
 
 @Suite("BuildPlanner")
+@MainActor
 struct BuildPlannerTests {
 
     // MARK: - 基本检测
@@ -771,6 +772,7 @@ struct BuildPlannerTests {
         import SwiftUI
 
         #if DEBUG
+@MainActor
         struct DisabledWithReasonPreviews: View {
             var body: some View {
                 Text("Hello")
@@ -1020,7 +1022,7 @@ struct BuildPlannerTests {
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: coreDirectory, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: pluginsDirectory, withIntermediateDirectories: true)
-        try "import Foundation\nstruct AppController { let icon = EditorPlugin.iconName }\n"
+        try "import Foundation\nstruct AppController { let icon = EditorPlugin().iconName }\n"
             .write(to: appControllerFile, atomically: true, encoding: .utf8)
         try "import Foundation\nstruct EditorPlugin { static let iconName = \"editor\" }\n"
             .write(to: editorPluginFile, atomically: true, encoding: .utf8)
