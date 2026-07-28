@@ -1,3 +1,4 @@
+import AppKit
 import LumiFactory
 import LumiKernel
 import SwiftUI
@@ -9,7 +10,9 @@ import SwiftUI
 /// Uses `@CommandsBuilder` with a delayed command source that waits for the kernel
 /// to be initialized before returning the actual commands.
 public struct AppCommands: Commands {
-    public init() {}
+    public init() {
+        CommandMenuInstaller.shared.start()
+    }
 
     public var body: some Commands {
         // Plugin-registered commands placed in the app menu (after About).
@@ -41,13 +44,21 @@ private struct PluginCommandContent: View {
         // `CommandGroup`.
         VStack(alignment: .leading, spacing: 0) {
             ForEach(observer.groups(for: placement)) { group in
-                ForEach(group.items) { item in
-                    Button(item.title) {
-                        item.action()
-                    }
-                    .keyboardShortcutIfAvailable(item.shortcut, modifiers: item.modifiers)
-                }
+                PluginCommandItems(group: group)
             }
+        }
+    }
+}
+
+private struct PluginCommandItems: View {
+    let group: CommandMenuGroup
+
+    var body: some View {
+        ForEach(group.items) { item in
+            Button(item.title) {
+                item.action()
+            }
+            .keyboardShortcutIfAvailable(item.shortcut, modifiers: item.modifiers)
         }
     }
 }
@@ -70,6 +81,7 @@ private final class CommandServiceObserver: ObservableObject {
 
     func groups(for placement: CommandMenuPlacement) -> [CommandMenuGroup] {
         switch placement {
+        case .topLevelMenu: return []
         case .appMenu: return appMenuGroups
         case .toolbar: return toolbarGroups
         }
@@ -94,6 +106,88 @@ private final class CommandServiceObserver: ObservableObject {
         }
         appMenuGroups = command.allCommandGroups.filter { $0.placement == .appMenu }
         toolbarGroups = command.allCommandGroups.filter { $0.placement == .toolbar }
+    }
+}
+
+/// Installs plugin-defined top-level menus in the application's main menu.
+/// SwiftUI's `CommandsBuilder` cannot create a dynamic number of `CommandMenu`
+/// values, so the factory bridges this one dynamic placement to AppKit.
+@MainActor
+private final class CommandMenuInstaller {
+    static let shared = CommandMenuInstaller()
+
+    private var startTask: Task<Void, Never>?
+    private var installedMenus: [String: NSMenuItem] = [:]
+    private var actionTargets: [String: CommandActionTarget] = [:]
+
+    func start() {
+        guard startTask == nil else { return }
+
+        startTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                guard let self,
+                      let kernel = LumiFactory.mainKernel,
+                      let command = kernel.command,
+                      let mainMenu = NSApplication.shared.mainMenu else {
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    continue
+                }
+
+                self.rebuild(in: mainMenu, groups: command.allCommandGroups)
+                try? await Task.sleep(nanoseconds: 250_000_000)
+            }
+        }
+    }
+
+    private func rebuild(in mainMenu: NSMenu, groups: [CommandMenuGroup]) {
+        let topLevelGroups = groups.filter { $0.placement == .topLevelMenu }
+        let activeIDs = Set(topLevelGroups.map(\.id))
+
+        let removedIDs = installedMenus.keys.filter { !activeIDs.contains($0) }
+        for id in removedIDs {
+            guard let menuItem = installedMenus[id] else { continue }
+            mainMenu.removeItem(menuItem)
+            installedMenus.removeValue(forKey: id)
+            actionTargets.removeValue(forKey: id)
+        }
+
+        for group in topLevelGroups {
+            let menuItem = installedMenus[group.id] ?? NSMenuItem()
+            menuItem.title = group.name
+            let submenu = NSMenu(title: group.name)
+            actionTargets = actionTargets.filter { !$0.key.hasPrefix("\(group.id).") }
+
+            for item in group.items {
+                let target = CommandActionTarget(action: item.action)
+                let menuItem = NSMenuItem(
+                    title: item.title,
+                    action: #selector(CommandActionTarget.perform(_:)),
+                    keyEquivalent: ""
+                )
+                menuItem.target = target
+                submenu.addItem(menuItem)
+                actionTargets["\(group.id).\(item.id)"] = target
+            }
+
+            menuItem.submenu = submenu
+            if installedMenus[group.id] == nil {
+                mainMenu.addItem(menuItem)
+                installedMenus[group.id] = menuItem
+            }
+        }
+    }
+}
+
+@MainActor
+private final class CommandActionTarget: NSObject {
+    private let action: @MainActor @Sendable () -> Void
+
+    init(action: @escaping @MainActor @Sendable () -> Void) {
+        self.action = action
+    }
+
+    @objc func perform(_ sender: Any?) {
+        action()
     }
 }
 

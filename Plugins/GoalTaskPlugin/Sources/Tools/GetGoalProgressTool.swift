@@ -7,7 +7,7 @@ import SuperLogKit
 /// 用于查询指定 Goal 的当前进度和详细信息。
 public struct GetGoalProgressTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📊"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let info = LumiAgentToolInfo(
         id: "get_goal_progress",

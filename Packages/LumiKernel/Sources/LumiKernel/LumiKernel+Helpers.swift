@@ -13,7 +13,7 @@ extension LumiKernelContainer {
     /// 解析优先级：
     /// 1. 已持久化的真实标题（`hasCustomTitle` 为真）；
     /// 2. 用户发送的第一条非空消息（仅 UI 展示，不持久化，超长截断为单行）；
-    /// 3. 以上皆无时返回空字符串 `""`，由调用方决定占位文案（如 "Untitled"）。
+    /// 3. 以上皆无时返回按数据库顺序生成的默认标题。
     ///
     /// 实现直接调用 kernel 的对话能力（`conversations`）与消息能力（`messageManager`）。
     public func uiTitle(for conversationID: UUID) -> String {
@@ -28,12 +28,29 @@ extension LumiKernelContainer {
             return fallback
         }
 
-        return ""
+        return Self.defaultConversationTitle(for: conversationID, in: conversations.conversations)
     }
 
     // MARK: - 内部辅助
 
     private static let uiTitleMaxLength = 40
+
+    private static func defaultConversationTitle(
+        for conversationID: UUID,
+        in conversations: [LumiConversationSummary]
+    ) -> String {
+        let databaseOrder = conversations
+            .sorted {
+                if $0.createdAt == $1.createdAt {
+                    return $0.id.uuidString < $1.id.uuidString
+                }
+                return $0.createdAt < $1.createdAt
+            }
+            .firstIndex(where: { $0.id == conversationID })
+            .map { $0 + 1 } ?? conversations.count + 1
+
+        return "新对话\(databaseOrder)"
+    }
 
     private static func firstUserMessageTitle(
         in conversationID: UUID,

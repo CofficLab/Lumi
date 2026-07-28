@@ -143,6 +143,7 @@ public final class ConversationService: ConversationManaging {
         }
         let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
         conversations[index].title = normalized.isEmpty ? nil : normalized
+        conversations[index].updatedAt = Date()
         if conversationID == selectedConversationID {
             updateCurrentTitle()
         }

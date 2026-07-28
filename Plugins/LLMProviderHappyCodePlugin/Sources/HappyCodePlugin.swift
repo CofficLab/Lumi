@@ -20,7 +20,7 @@ public final class HappyCodePlugin: LumiPlugin {
 
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [HappyCodeProvider()]
+        [HappyCodeProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
 

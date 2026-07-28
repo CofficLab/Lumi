@@ -15,7 +15,11 @@ public final class MLXLumiPlugin: LumiPlugin {
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: LumiKernel) async throws {
+        if let network = kernel.network {
+            MLXDownloadManager.shared.configure(network: network)
+        }
+    }
 
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {

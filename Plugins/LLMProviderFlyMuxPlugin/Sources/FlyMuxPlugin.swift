@@ -20,7 +20,7 @@ public final class FlyMuxPlugin: LumiPlugin {
 
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [FlyMuxProvider()]
+        [FlyMuxProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
 

@@ -38,7 +38,6 @@ let package = Package(
                 "ViewModels",
                 "Views",
                 "EditorSwiftKeywordHoverContributor.swift",
-                "EditorSwiftPluginBootstrap.swift",
                 "SwiftPrimitiveTypeCompletionContributor.swift",
                 "SwiftSelectionCodeActionContributor.swift",
             ],

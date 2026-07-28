@@ -56,6 +56,11 @@ public final class MiniMaxTokenPlanProvider: LumiLLMProvider, @unchecked Sendabl
         self.adapter = AnthropicCompatibleProviderAdapter(configuration: config)
         self.apiService = apiService
     }
+
+    // MARK: - Internal Access for AvailabilityService
+
+    var internalAdapter: AnthropicCompatibleProviderAdapter { adapter }
+    var internalApiService: LLMAPIService { apiService }
     
     // MARK: - LumiLLMProvider Protocol
     

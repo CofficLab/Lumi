@@ -9,8 +9,9 @@ import ShellKit
 @MainActor
 public class NetworkService: SuperLog, ObservableObject {
     public nonisolated static let emoji = "📡"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public static let shared = NetworkService()
+    private var exchangeStore: HTTPExchangeStore?
 
     // Published properties for subscribers
     @Published var downloadSpeed: Double = 0
@@ -45,6 +46,10 @@ public class NetworkService: SuperLog, ObservableObject {
         lastBytesIn = In
         lastBytesOut = Out
         lastCheckTime = Date().timeIntervalSince1970
+    }
+
+    public func configureHTTPExchangeStore(_ store: HTTPExchangeStore?) {
+        exchangeStore = store
     }
     
     public func startMonitoring() {
@@ -244,7 +249,17 @@ public class NetworkService: SuperLog, ObservableObject {
             do {
                 var request = URLRequest(url: url)
                 request.httpMethod = "GET"
-                let data = try await client.sendRequest(request: request)
+                let startedAt = Date()
+                let record = exchangeStore?.begin(request: request, startedAt: startedAt)
+                let data: Data
+                do {
+                    let result = try await client.sendRequestWithResponse(request: request)
+                    data = result.0
+                    exchangeStore?.finish(record, response: result.1, body: data)
+                } catch {
+                    exchangeStore?.finish(record, error: error)
+                    throw error
+                }
 
                 let ip = parseIP(from: String(data: data, encoding: .utf8) ?? "")
 

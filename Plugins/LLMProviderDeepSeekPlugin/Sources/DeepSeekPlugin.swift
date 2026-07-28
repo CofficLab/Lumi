@@ -20,7 +20,7 @@ public final class DeepSeekPlugin: LumiPlugin {
 
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [DeepSeekProvider()]
+        [DeepSeekProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
 

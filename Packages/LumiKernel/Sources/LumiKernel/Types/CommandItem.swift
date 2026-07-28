@@ -28,9 +28,12 @@ public struct CommandItem: Identifiable, Sendable {
 
 /// 命令菜单在 macOS 菜单栏中的放置位置
 ///
-/// 控制由 `CommandMenuGroup` 注册的命令出现在哪个 SwiftUI `CommandGroup` 中。
-/// 新增值时，`AppCommands` 需同步增加对应的 `CommandGroup` 渲染分支。
+/// 控制由 `CommandMenuGroup` 注册的命令出现在哪个 SwiftUI 命令菜单中。
+/// 新增值时，`AppCommands` 需同步增加对应的渲染分支。
 public enum CommandMenuPlacement: String, Sendable, CaseIterable {
+    /// 顶层菜单，使用命令组名称创建独立的 macOS 菜单栏菜单。
+    case topLevelMenu
+
     /// 应用菜单（macOS 上的 Lumi 菜单），渲染在 `.appInfo` 系统组之后
     /// （紧跟 "About" 项）。
     case appMenu

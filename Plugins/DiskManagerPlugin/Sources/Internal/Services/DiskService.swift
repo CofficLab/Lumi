@@ -6,7 +6,7 @@ import SuperLogKit
 /// Disk service - performs scanning and cleaning operations in the background.
 public final class DiskService: SuperLog, @unchecked Sendable {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "disk")
-    nonisolated(unsafe) static var verbose: Bool = true
+    nonisolated(unsafe) static var verbose: Bool = false
     public static let shared = DiskService()
 
     private let coordinator = ScanCoordinator()

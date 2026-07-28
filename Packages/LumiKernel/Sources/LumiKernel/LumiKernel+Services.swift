@@ -122,4 +122,12 @@ extension LumiKernelContainer {
     public var legacyData: (any LegacyDataProviding)? {
         resolveService(LegacyDataProviding.self)
     }
+
+    /// Network service (HTTP requests)
+    ///
+    /// 可选服务:未注册时返回 nil。
+    /// 消费插件应 `guard let network = kernel.network else { return }` 处理网络功能不可用的情况。
+    public var network: (any NetworkProviding)? {
+        resolveService(NetworkProviding.self)
+    }
 }

@@ -5,34 +5,27 @@ import SwiftUI
 
 /// MiniMax Token Plan 详情视图
 struct TokenPlanDetailView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
+
     let status: TokenPlanStatus
     let onRefresh: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // 标题栏
-            HStack {
-                Image(systemName: "chart.bar.fill")
-                    .foregroundColor(.blue)
-                Text("MiniMax Token Plan")
-                    .font(.headline)
-                Spacer()
-                Button(action: onRefresh) {
-                    Image(systemName: "arrow.clockwise")
-                        .foregroundColor(.accentColor)
-                }
-                .buttonStyle(.plain)
+        StatusBarPopoverScaffold(
+            title: "MiniMax Token Plan",
+            systemImage: "chart.bar.fill"
+        ) {
+            AppIconButton(systemImage: "arrow.clockwise") {
+                onRefresh()
             }
-            
-            // 内容
-            Group {
+        } content: {
                 switch status {
                 case .loading:
                     HStack {
                         ProgressView()
                             .scaleEffect(0.8)
                         Text("加载中...")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(theme.textSecondary)
                     }
                     
                 case .success(let data):
@@ -40,7 +33,7 @@ struct TokenPlanDetailView: View {
                         // 模型名称
                         HStack {
                             Text("模型:")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(theme.textSecondary)
                             Text(data.modelName)
                                 .fontWeight(.medium)
                         }
@@ -49,7 +42,7 @@ struct TokenPlanDetailView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text("当前时段剩余:")
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(theme.textSecondary)
                                 Spacer()
                                 Text("\(data.remainingPercent)%")
                                     .fontWeight(.medium)
@@ -57,14 +50,14 @@ struct TokenPlanDetailView: View {
                             
                             ProgressView(value: Double(data.remainingPercent), total: 100)
                                 .progressViewStyle(.linear)
-                                .tint(data.remainingPercent > 20 ? .green : .red)
+                                .tint(data.remainingPercent > 20 ? theme.success : theme.error)
                         }
                         
                         // 本周剩余百分比
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text("本周剩余:")
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(theme.textSecondary)
                                 Spacer()
                                 Text("\(data.weeklyRemainingPercent)%")
                                     .fontWeight(.medium)
@@ -72,13 +65,13 @@ struct TokenPlanDetailView: View {
                             
                             ProgressView(value: Double(data.weeklyRemainingPercent), total: 100)
                                 .progressViewStyle(.linear)
-                                .tint(data.weeklyRemainingPercent > 20 ? .green : .red)
+                                .tint(data.weeklyRemainingPercent > 20 ? theme.success : theme.error)
                         }
                         
                         // 当前时段调用次数
                         HStack {
                             Text("调用次数:")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(theme.textSecondary)
                             Spacer()
                             Text("\(data.intervalUsage) / \(data.intervalTotal)")
                                 .fontWeight(.medium)
@@ -88,22 +81,19 @@ struct TokenPlanDetailView: View {
                 case .authError:
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(.red)
+                            .foregroundColor(theme.error)
                         Text("认证失败，请检查 API Key")
-                            .foregroundColor(.red)
+                            .foregroundColor(theme.error)
                     }
                     
                 case .unavailable:
                     HStack {
                         Image(systemName: "xmark.octagon.fill")
-                            .foregroundColor(.orange)
+                            .foregroundColor(theme.warning)
                         Text("无法获取配额信息")
-                            .foregroundColor(.orange)
+                            .foregroundColor(theme.warning)
                     }
                 }
-            }
         }
-        .padding(12)
-        .frame(width: 280)
     }
 }

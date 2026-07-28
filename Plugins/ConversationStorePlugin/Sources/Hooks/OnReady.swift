@@ -44,7 +44,12 @@ public struct ConversationStoreOnReadyHook {
             // 注:`LegacyDataProviding` 是 @MainActor,读 v4 库在主线程;
             // `store` 是 actor,写库会 hop 到 actor,不阻塞主线程。
             let progress = ConversationMigrationProgressStore.shared
-            let migration = ConversationLegacyMigration(kernel: kernel, store: store, progress: progress)
+            let migration = ConversationLegacyMigration(
+                kernel: kernel,
+                store: store,
+                progress: progress,
+                destinationRootURL: databaseRootURL
+            )
             let itemID = "com.coffic.lumi.plugin.conversation-store.migration.status"
             Task { @MainActor in
                 await migration.run()

@@ -36,6 +36,7 @@ public struct MiniMaxVideoGeneratedAsset: Equatable, Sendable {
 /// - 失败时抛语义化 `MiniMaxVideoError`。
 public final class MiniMaxVideoClient: MiniMaxVideoClientProtocol, @unchecked Sendable {
     private let httpClient: HTTPClient
+    private let network: (any NetworkProviding)?
     private let apiKeyProvider: @Sendable () -> String?
 
     public init(
@@ -46,6 +47,14 @@ public final class MiniMaxVideoClient: MiniMaxVideoClientProtocol, @unchecked Se
         apiKeyProvider: @Sendable @escaping () -> String?
     ) {
         self.httpClient = httpClient
+        self.network = nil
+        self.apiKeyProvider = apiKeyProvider
+    }
+
+    @MainActor
+    public init(network: any NetworkProviding, apiKeyProvider: @Sendable @escaping () -> String?) {
+        self.httpClient = HTTPClient(timeoutIntervalForRequest: 60, timeoutIntervalForResource: 300)
+        self.network = network
         self.apiKeyProvider = apiKeyProvider
     }
 
@@ -127,11 +136,7 @@ public final class MiniMaxVideoClient: MiniMaxVideoClientProtocol, @unchecked Se
 
         let response: MiniMaxVideoTaskCreateResponse
         do {
-            response = try await httpClient.sendEncodableDecodableRequest(
-                request: request,
-                body: body,
-                as: MiniMaxVideoTaskCreateResponse.self
-            )
+            response = try await sendJSON(request: request, body: body, as: MiniMaxVideoTaskCreateResponse.self)
         } catch let error as HTTPClientError {
             throw mapHTTPClientError(error)
         }
@@ -179,10 +184,7 @@ public final class MiniMaxVideoClient: MiniMaxVideoClientProtocol, @unchecked Se
 
             let response: MiniMaxVideoTaskQueryResponse
             do {
-                response = try await httpClient.sendDecodableRequest(
-                    request: request,
-                    as: MiniMaxVideoTaskQueryResponse.self
-                )
+                response = try await sendJSON(request: request, as: MiniMaxVideoTaskQueryResponse.self)
             } catch let error as HTTPClientError {
                 throw mapHTTPClientError(error)
             }
@@ -231,10 +233,7 @@ public final class MiniMaxVideoClient: MiniMaxVideoClientProtocol, @unchecked Se
 
         let response: MiniMaxFileRetrieveResponse
         do {
-            response = try await httpClient.sendDecodableRequest(
-                request: request,
-                as: MiniMaxFileRetrieveResponse.self
-            )
+            response = try await sendJSON(request: request, as: MiniMaxFileRetrieveResponse.self)
         } catch let error as HTTPClientError {
             throw mapHTTPClientError(error)
         }
@@ -269,7 +268,7 @@ public final class MiniMaxVideoClient: MiniMaxVideoClientProtocol, @unchecked Se
 
         let data: Data
         do {
-            data = try await httpClient.sendRequest(request: request)
+            data = try await sendData(request: request)
         } catch let error as HTTPClientError {
             throw mapHTTPClientError(error)
         }
@@ -283,6 +282,38 @@ public final class MiniMaxVideoClient: MiniMaxVideoClientProtocol, @unchecked Se
     }
 
     // MARK: - Helpers
+
+    private func sendJSON<Body: Encodable, Response: Decodable>(
+        request: URLRequest,
+        body: Body,
+        as: Response.Type
+    ) async throws -> Response {
+        var request = request
+        request.httpBody = try JSONEncoder().encode(body)
+        return try await sendJSON(request: request, as: Response.self)
+    }
+
+    private func sendJSON<Response: Decodable>(request: URLRequest, as: Response.Type) async throws -> Response {
+        let data = try await sendData(request: request)
+        do {
+            return try JSONDecoder().decode(Response.self, from: data)
+        } catch {
+            throw HTTPClientError.decodingFailed(underlying: error)
+        }
+    }
+
+    private func sendData(request: URLRequest) async throws -> Data {
+        guard let url = request.url else { throw HTTPClientError.invalidResponse }
+        guard let network else { return try await httpClient.sendRequest(request: request) }
+        let response = try await network.request(HTTPRequest(
+            url: url,
+            method: HTTPMethod(rawValue: request.httpMethod ?? "GET") ?? .get,
+            headers: request.allHTTPHeaderFields ?? [:],
+            body: request.httpBody,
+            timeout: request.timeoutInterval
+        ))
+        return response.body
+    }
 
     private struct RetrievedFile {
         let downloadURL: URL

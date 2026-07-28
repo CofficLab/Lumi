@@ -13,6 +13,7 @@ public final class NetworkManagerPlugin: LumiPlugin {
     public nonisolated static let verbose = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.network-manager")
     public static let info = PluginInfo(displayName: "Network Monitor")
+    private var httpExchangeStore: HTTPExchangeStore?
 
     public let id = "com.coffic.lumi.plugin.network-manager"
     public let name = "Network Monitor"
@@ -21,7 +22,14 @@ public final class NetworkManagerPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        let exchangeStore = kernel.storage.map {
+            HTTPExchangeStore(directory: $0.pluginDataDirectory(for: "NetworkManager"))
+        }
+        httpExchangeStore = exchangeStore
+        NetworkService.shared.configureHTTPExchangeStore(exchangeStore)
+        kernel.registerService(NetworkProviding.self, NetworkProvider(exchangeStore: exchangeStore))
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 
@@ -66,7 +74,19 @@ public final class NetworkManagerPlugin: LumiPlugin {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        guard let httpExchangeStore else { return [] }
+        return [
+            SettingsTabItem(
+                id: "\(id).settings",
+                title: "HTTP Logs",
+                systemImage: "arrow.up.arrow.down.circle",
+                order: order
+            ) {
+                HTTPExchangeSettingsView(store: httpExchangeStore)
+            },
+        ]
+    }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }

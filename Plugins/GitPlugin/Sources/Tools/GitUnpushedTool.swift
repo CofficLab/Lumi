@@ -5,7 +5,7 @@ import SuperLogKit
 /// Git 未推送 Commit 查询工具
 public struct GitUnpushedTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📤"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public static let info = LumiAgentToolInfo(
         id: "git_unpushed",

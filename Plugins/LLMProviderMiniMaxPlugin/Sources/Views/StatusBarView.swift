@@ -5,6 +5,7 @@ import SwiftUI
 
 /// MiniMax Token Plan 状态栏视图
 struct StatusBarView: View {
+    let network: (any NetworkProviding)?
     @State private var tokenPlanStatus: TokenPlanStatus = .loading
     @State private var lastUpdateTime: Date?
     @State private var refreshTimer: Timer?
@@ -121,7 +122,7 @@ struct StatusBarView: View {
     
     private func refreshTokenPlan() {
         Task {
-            let status = await TokenPlanService.fetchTokenPlan()
+            let status = await TokenPlanService.fetchTokenPlan(network: network)
             await MainActor.run {
                 tokenPlanStatus = status
                 lastUpdateTime = Date()

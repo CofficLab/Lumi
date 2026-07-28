@@ -10,6 +10,10 @@ public enum LumiKernelError: Error, LocalizedError {
     case llmProviderUnavailable
     case invalidProviderOrModel
     case llmProviderRegistrationFailed(providerType: String, reason: String)
+    case networkRequestFailed(url: String, reason: String)
+    case networkInvalidResponse(url: String)
+    case networkTimeout(url: String, timeout: TimeInterval)
+    case networkHTTPError(url: String, statusCode: Int)
 
     public var errorDescription: String? {
         switch self {
@@ -29,6 +33,14 @@ public enum LumiKernelError: Error, LocalizedError {
             return "No valid LLM provider or model selected"
         case .llmProviderRegistrationFailed(let providerType, let reason):
             return "Failed to register LLM provider '\(providerType)': \(reason)"
+        case .networkRequestFailed(let url, let reason):
+            return "Network request to '\(url)' failed: \(reason)"
+        case .networkInvalidResponse(let url):
+            return "Invalid response from '\(url)'"
+        case .networkTimeout(let url, let timeout):
+            return "Request to '\(url)' timed out after \(String(format: "%.1f", timeout))s"
+        case .networkHTTPError(let url, let statusCode):
+            return "HTTP error \(statusCode) for '\(url)'"
         }
     }
 }

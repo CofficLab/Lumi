@@ -20,7 +20,7 @@ public final class AiRouterPlugin: LumiPlugin {
 
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [AiRouterProvider()]
+        [AiRouterProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
 

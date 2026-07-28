@@ -5,7 +5,7 @@ import os
 /// Service that wraps FFmpeg CLI for video conversion.
 actor VideoConverterService: SuperLog {
     nonisolated static let emoji = "🎬"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.video-converter")
     private var currentProcess: Process?
 

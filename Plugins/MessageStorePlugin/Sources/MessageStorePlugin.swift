@@ -41,8 +41,8 @@ public final class MessageStorePlugin: LumiPlugin {
                 title: "Message Migration",
                 systemImage: "arrow.triangle.2.circlepath",
                 placement: .trailing,
-                popover: {
-                    MessageMigrationPopoverView()
+                statusBarView: {
+                    MessageMigrationStatusBarView()
                 }
             ),
         ]

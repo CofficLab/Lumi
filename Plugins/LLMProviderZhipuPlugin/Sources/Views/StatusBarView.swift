@@ -8,6 +8,7 @@ import LumiKernel
 /// 显示/隐藏由 ``ZhipuStatusBarVisibilityView`` 根据内核当前选择的供应商控制，
 /// 此视图被创建时即可假定当前选择的供应商为智谱。
 struct StatusBarView: View {
+    let network: (any NetworkProviding)?
     @State private var quotaStatus: QuotaStatus = .loading
     @State private var lastUpdateTime: Date?
     @State private var timer: Timer?
@@ -123,7 +124,7 @@ struct StatusBarView: View {
 
     private func refreshQuota() {
         Task {
-            let status = await QuotaService.fetchQuota()
+            let status = await QuotaService.fetchQuota(network: network)
             await MainActor.run {
                 quotaStatus = status
                 lastUpdateTime = Date()

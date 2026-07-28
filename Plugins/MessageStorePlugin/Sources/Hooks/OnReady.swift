@@ -39,7 +39,12 @@ public struct MessageStoreOnReadyHook {
             // 故真正的写库 IO 已经在后台 actor 上,只有"读 legacy + 调度"在主线程,
             // 主线程负担可接受(读 SwiftData fetch 很快,慢的是写)。
             let progress = MessageMigrationProgressStore.shared
-            let migration = MessageLegacyMigration(kernel: kernel, store: store, progress: progress)
+            let migration = MessageLegacyMigration(
+                kernel: kernel,
+                store: store,
+                progress: progress,
+                databaseRootURL: databaseRootURL
+            )
             let itemID = "com.coffic.lumi.plugin.message-store.migration.status"
             Task { @MainActor in
                 await migration.run()

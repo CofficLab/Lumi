@@ -80,21 +80,23 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
     private let claudeT0Backend: FreeModelClaudeBackend
     private let claudeT1Backend: FreeModelClaudeBackend
 
-    public init() {
-        openAIBackend = FreeModelOpenAIBackend()
+    public init(apiService: LLMAPIService = LLMAPIService()) {
+        openAIBackend = FreeModelOpenAIBackend(apiService: apiService)
         claudeT0Backend = FreeModelClaudeBackend(
             nodeLabel: "claude-t0",
             configuration: AnthropicCompatibleProviderConfiguration(
                 baseURL: Endpoints.claudeT0,
                 fallbackBaseURLs: [Endpoints.claudeT1]
-            )
+            ),
+            apiService: apiService
         )
         claudeT1Backend = FreeModelClaudeBackend(
             nodeLabel: "claude-t1",
             configuration: AnthropicCompatibleProviderConfiguration(
                 baseURL: Endpoints.claudeT1,
                 fallbackBaseURLs: [Endpoints.claudeT0]
-            )
+            ),
+            apiService: apiService
         )
     }
 

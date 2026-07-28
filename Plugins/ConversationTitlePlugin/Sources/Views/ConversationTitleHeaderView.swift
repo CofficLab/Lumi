@@ -32,8 +32,7 @@ struct ConversationTitleHeaderView: View {
         }
     }
 
-    /// 标题显示逻辑（委托给 LumiKernel 级 ``LumiKernelContainer/uiTitle(for:)``）：
-    /// 1. 持久化真实标题；2. 否则回退到用户首条消息（UI-only，截断）；3. 否则占位 "Untitled"。
+    /// 标题显示逻辑统一委托给 LumiKernel 级 ``LumiKernelContainer/uiTitle(for:)``。
     private var displayTitle: String {
         _ = messageVersion
 
@@ -41,8 +40,7 @@ struct ConversationTitleHeaderView: View {
               let conversationID = conversations.selectedConversationID else {
             return "No conversation"
         }
-        let title = kernel.uiTitle(for: conversationID)
-        return title.isEmpty ? "Untitled" : title
+        return kernel.uiTitle(for: conversationID)
     }
 
     private var isSending: Bool {

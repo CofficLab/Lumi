@@ -39,6 +39,7 @@ public enum RAGFileScanner: SuperLog {
     /// 同一项目短时间内重复回退搜索时，缓存可避免每次都重新遍历整棵目录树。
     /// 缓存键为 projectPath，按时间戳过期，线程安全。
     private static let cacheTTL: TimeInterval = 300
+    fileprivate static let cacheMaxEntries = 32
     private static let cache = DiscoverFilesCache()
 
     /// 带缓存的 `discoverFiles`：命中且未过期时直接返回缓存结果，否则重新扫描并写入缓存。
@@ -142,12 +143,20 @@ private final class DiscoverFilesCache: @unchecked Sendable {
 
     func get(projectPath: String, now: Date) -> [String]? {
         lock.lock(); defer { lock.unlock() }
-        guard let entry = entries[projectPath], entry.expiresAt > now else { return nil }
+        entries = entries.filter { $0.value.expiresAt > now }
+        guard let entry = entries[projectPath] else { return nil }
         return entry.files
     }
 
     func set(projectPath: String, files: [String], expiresAt: Date) {
         lock.lock(); defer { lock.unlock() }
+        let now = Date()
+        entries = entries.filter { $0.value.expiresAt > now }
+        if entries.count >= RAGFileScanner.cacheMaxEntries,
+           entries[projectPath] == nil,
+           let oldest = entries.min(by: { $0.value.expiresAt < $1.value.expiresAt })?.key {
+            entries.removeValue(forKey: oldest)
+        }
         entries[projectPath] = (files, expiresAt)
     }
 }

@@ -4,10 +4,10 @@ import FileSystemKit
 /// 文件树本地存储
 ///
 /// 负责持久化文件树的展开状态和最近项目路径。
-/// 存储位置：<dataRoot>/ProjectFileTree/settings.plist
+/// 存储位置：<storage.pluginDataDirectory(for: "ProjectFileTree")>/settings.plist
 ///
 /// 作为 FileTreeKit.FileTreeStore 的单例包装器，
-/// 通过 currentLumiCore 注入存储目录。
+/// 通过 Storage service 注入存储目录。
 public final class FileTreeSettings: @unchecked Sendable {
 
     // MARK: - Singleton
@@ -21,9 +21,9 @@ public final class FileTreeSettings: @unchecked Sendable {
     // MARK: - Initialization
 
     private init() {
-        let root = (ProjectFileTreePluginRuntimeBridge.dataRootDirectory
-            ?? ProjectFileTreePluginRuntimeBridge.fallbackRootDirectory)
-            .appendingPathComponent("ProjectFileTree", isDirectory: true)
+        let root = ProjectFileTreePluginRuntimeBridge.pluginDirectory
+            ?? ProjectFileTreePluginRuntimeBridge.fallbackRootDirectory
+                .appendingPathComponent("ProjectFileTree", isDirectory: true)
         self.store = FileTreeStore(directory: root)
     }
 

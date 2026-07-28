@@ -23,7 +23,7 @@ public final class AliyunPlugin: LumiPlugin {
 
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [AliyunProvider()]
+        [AliyunProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
 

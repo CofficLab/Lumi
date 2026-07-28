@@ -10,7 +10,7 @@ struct MiniMaxStatusBarVisibilityView: View {
 
     var body: some View {
         if selectedProviderID == MiniMaxTokenPlanProvider.info.id {
-            StatusBarView()
+            StatusBarView(network: kernel.network)
         } else {
             EmptyView()
         }

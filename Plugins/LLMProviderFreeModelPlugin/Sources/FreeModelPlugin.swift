@@ -20,7 +20,7 @@ public final class FreeModelPlugin: LumiPlugin {
 
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [FreeModelProvider()]
+        [FreeModelProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
 

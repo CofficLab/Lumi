@@ -92,6 +92,7 @@ private struct StatusBarItems {
 
 private struct StatusBarPluginButton: View {
     let item: StatusBarItem
+    @LumiTheme private var theme
     @State private var isPresented = false
 
     var body: some View {
@@ -102,6 +103,7 @@ private struct StatusBarPluginButton: View {
             AppIconButton(
                 systemImage: item.systemImage,
                 label: item.title,
+                tint: theme.statusBarItemForeground,
                 isActive: isPresented
             ) {
                 NSApp.keyWindow?.makeFirstResponder(nil)
