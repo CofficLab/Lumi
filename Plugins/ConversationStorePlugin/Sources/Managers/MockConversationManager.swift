@@ -84,12 +84,12 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
         currentTitle = newTitle
     }
 
-    public func createConversation(title: String?, projectPath: String?) throws -> UUID {
+    public func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID {
         let now = Date()
         let id = UUID()
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)Creating conversation: \(title ?? "nil"), project: \(projectPath ?? "nil")")
+            Self.logger.info("\(Self.t)Creating conversation: \(title ?? "nil"), project: \(projectPath ?? "nil"), provider: \(providerID ?? "nil"), model: \(modelName ?? "nil")")
         }
 
         let normalizedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -101,6 +101,8 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
             preview: "",
             createdAt: now,
             updatedAt: now,
+            providerID: providerID,
+            modelName: modelName,
             projectPath: projectPath
         )
 
