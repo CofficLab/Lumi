@@ -241,8 +241,6 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
         let durationSec = durationMs / 1000
         if durationSec > 5 {
             ProjectRAGPlugin.logger.error("\(Self.t)search_code keyword 搜索耗时过长：\(String(format: "%.2f", durationMs))ms, 结果数：\(count), 模式：\(mode)")
-        } else {
-            ProjectRAGPlugin.logger.info("\(Self.t)search_code keyword 搜索耗时：\(String(format: "%.2f", durationMs))ms, 结果数：\(count), 模式：\(mode)")
         }
     }
 
@@ -329,6 +327,11 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
 
         let deadline = Date().addingTimeInterval(timeout)
         while process.isRunning && Date() < deadline {
+            if Task.isCancelled {
+                process.terminate()
+                try? stdoutHandle.close()
+                return nil
+            }
             RunLoop.current.run(until: Date().addingTimeInterval(0.05))
         }
         if process.isRunning {
