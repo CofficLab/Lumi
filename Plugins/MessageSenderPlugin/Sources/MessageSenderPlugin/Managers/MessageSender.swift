@@ -182,7 +182,7 @@ public final class MessageSender: MessageSending, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建新对话")
             }
-            guard let newID = try? kernel?.conversations?.createConversation(title: nil, projectPath: nil) else {
+            guard let newID = try? kernel?.conversations?.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil) else {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 创建对话失败")
                 }

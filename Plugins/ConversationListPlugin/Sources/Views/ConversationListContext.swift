@@ -138,7 +138,7 @@ public final class ConversationListContext: ObservableObject, SuperLog {
 
     @discardableResult
     public func createConversation() -> UUID {
-        try! conversationManaging.createConversation(title: nil, projectPath: nil)
+        try! conversationManaging.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil)
     }
 
     public func switchProject(projectPath: String, reason: String) {

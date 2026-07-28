@@ -11,7 +11,7 @@
         var currentTitle: String { "" }
         var dataDirectory: URL { URL(fileURLWithPath: NSTemporaryDirectory()) }
 
-        func createConversation(title: String?, projectPath: String?) throws -> UUID {
+        func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID {
             let id = UUID()
             let normalizedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
             let storedTitle = normalizedTitle?.isEmpty == true ? nil : normalizedTitle
@@ -21,8 +21,8 @@
                 preview: "",
                 createdAt: Date(),
                 updatedAt: Date(),
-                providerID: nil,
-                modelName: nil,
+                providerID: providerID,
+                modelName: modelName,
                 projectPath: projectPath
             )
             conversations.insert(conv, at: 0)
@@ -117,7 +117,7 @@
             let mock = MockConversationManaging()
             let messageMock = MockMessageManaging()
             for i in 0 ..< 5 {
-                let conversationID = try! mock.createConversation(title: i == 0 ? nil : "Sample Conversation \(i + 1)", projectPath: nil)
+                let conversationID = try! mock.createConversation(title: i == 0 ? nil : "Sample Conversation \(i + 1)", projectPath: nil, providerID: nil, modelName: nil)
                 messageMock.messagesByConversationID[conversationID] = (0 ..< (i + 1)).map { index in
                     LumiChatMessage(
                         conversationID: conversationID,

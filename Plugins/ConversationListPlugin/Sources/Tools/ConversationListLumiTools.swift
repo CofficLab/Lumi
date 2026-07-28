@@ -44,7 +44,7 @@ struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
             guard let svc = ConversationListToolRuntimeBridge.conversations else { return nil }
             do {
                 // projectPath 传 nil，由 ConversationManager 自动使用当前项目
-                return try svc.createConversation(title: customTitle, projectPath: nil)
+                return try svc.createConversation(title: customTitle, projectPath: nil, providerID: nil, modelName: nil)
             } catch {
                 return nil
             }
