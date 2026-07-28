@@ -180,7 +180,6 @@ public struct OpenInGitOKStatusBarView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .foregroundColor(theme.textSecondary.opacity(0.5))
         .help(LumiPluginLocalization.string("无项目", bundle: .module))
     }
 
