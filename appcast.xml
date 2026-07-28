@@ -3,30 +3,33 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.1.2</title>
-            <pubDate>Mon, 27 Jul 2026 16:16:44 +0000</pubDate>
-            <sparkle:version>503</sparkle:version>
-            <sparkle:shortVersionString>5.1.2</sparkle:shortVersionString>
+            <title>5.1.3</title>
+            <pubDate>Tue, 28 Jul 2026 07:15:12 +0000</pubDate>
+            <sparkle:version>504</sparkle:version>
+            <sparkle:shortVersionString>5.1.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.1.2</h2>
-<h3>Changes since v5.1.1</h3>
+            <description><![CDATA[<h2>Release v5.1.3</h2>
+<h3>Changes since v5.1.2</h3>
 <ul>
-<li>feat(AppUpdatePlugin): add plugin with Sparkle-based update checking</li>
-<li>feat(HostSettingsPlugin): integrate AppUpdatePlugin for check updates in About view</li>
-<li>feat(IdleTimePlugin): add open data directory button and fix build</li>
-<li>feat(LumiKernel): add CommandMenuPlacement for per-group menu positioning</li>
-<li>feat(MenuBarManagerPlugin): use UpdateService directly and extract view files</li>
-<li>feat(settings): create AppSettingsPlugin for General and Appearance tabs</li>
-<li>feat(settings): move About page from HostSettingsPlugin to AppUpdatePlugin</li>
-<li>refactor: move AppCommands.swift to Bootstrap directory</li>
-<li>refactor: move DebugCommand from LumiFactory to CommandPlugin</li>
-<li>refactor(LumiFactory): move update checking to AppUpdatePlugin</li>
-<li>refactor(LumiFactory): render plugin commands as Views inside CommandGroup</li>
-<li>refactor(settings): update PluginService to use AppSettingsPlugin</li>
+<li>feat(ActivityHeatmapPlugin): add caching support for activity heatmap data</li>
+<li>feat(AgentTurnRunnerPlugin): persist outgoing requests to disk (SwiftData) and add settings view</li>
+<li>feat(ClipboardManagerPlugin): enhance clipboard functionality</li>
+<li>feat(DockerManagerPlugin): add container health check support</li>
+<li>feat(GoalTaskPlugin): enhance goal task tracking functionality</li>
+<li>feat(LLMProvider): add plugin category for all LLM providers</li>
+<li>feat(LumiPlugin): add willSendToLLM hook for pre-request message modification</li>
+<li>fix: move testTarget to proper position in Plugin Package.swift files</li>
+<li>fix(ChatScreenshotPlugin): minor improvement</li>
+<li>fix(LumiFactory): update plugin service dependencies</li>
+<li>fix(MessageSenderPlugin): improve message sending logic</li>
+<li>refactor: change DockerManagerPlugin category from developerTool to development</li>
+<li>refactor: rename ChatAttachmentPreviewPlugin → ConversationAttachmentPlugin</li>
+<li>refactor: update plugin ordering and remove dead code</li>
+<li>refactor(IdleTimePlugin): remove status bar item and improve ActivityHeatStrip view</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.1.2</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.1.3</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.1.2/Lumi_5.1.2_arm64.dmg" length="36287189" type="application/octet-stream" sparkle:edSignature="edb47sPtPjeW6sRos1TFnT20baAwrJS1RcIzDzp4B4FHzIfEF05s3umKsWv8HxtC3SlFHO2rVawFpooUg4R6AQ=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.1.3/Lumi_5.1.3_arm64.dmg" length="38451658" type="application/octet-stream" sparkle:edSignature="ltZYwcM7FsoYFlW2dEFwyB2aHTRwTqU6z2uIERP32Wa1QPO1GbQhFB/slZ86eJm7QyF771gkAjoyL+wF1RrNAQ=="/>
         </item>
     </channel>
 </rss>
