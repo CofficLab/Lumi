@@ -21,7 +21,7 @@ import os
 public final class LegacyDataService: LegacyDataProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.legacy-data")
     nonisolated public static let emoji = "🗂️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// v4 数据根目录(原件)
     private let sourceRootDirectory: URL?

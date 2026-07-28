@@ -23,7 +23,7 @@ public struct InspectStringCatalogTool: LumiAgentTool, SuperLog {
         category: "plugin.editor-preview.inspect-string-catalog"
     )
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     public init() {}
 

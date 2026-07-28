@@ -7,7 +7,7 @@ import SuperLogKit
 /// 释放 IOKit 电源断言，恢复系统正常的休眠策略。
 struct CaffeinateDeactivateTool: LumiAgentTool, SuperLog {
     nonisolated static let emoji = "😴"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     static let info = LumiAgentToolInfo(
         id: "caffeinate_deactivate",
