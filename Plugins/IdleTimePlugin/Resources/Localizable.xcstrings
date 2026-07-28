@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "00" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -36,6 +37,7 @@
       }
     },
     "06" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -70,6 +72,7 @@
       }
     },
     "12" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -104,6 +107,7 @@
       }
     },
     "18" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -138,6 +142,7 @@
       }
     },
     "24" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
