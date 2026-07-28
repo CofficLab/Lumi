@@ -8,7 +8,12 @@ let package = Package(
     products: [
         .library(
             name: "ClipboardManagerPlugin",
-            targets: ["ClipboardManagerPlugin"]
+            targets: ["ClipboardManagerPlugin",
+        .testTarget(
+            name: "ClipboardManagerPluginTests",
+            dependencies: [.target(name: "ClipboardManagerPlugin")],
+            path: "Tests"
+        ),]
         )
     ],
     dependencies: [

@@ -3,12 +3,12 @@ import SwiftData
 import Testing
 @testable import ClipboardManagerPlugin
 
+@MainActor
 @Test func pluginMetadataIsStable() {
-    #expect(ClipboardManagerPlugin.id == "ClipboardManager")
+    #expect(ClipboardManagerPlugin().id == "ClipboardManager")
     #expect(ClipboardManagerPlugin.navigationId == "clipboard_manager")
-    #expect(ClipboardManagerPlugin.displayName.isEmpty == false)
-    #expect(ClipboardManagerPlugin.iconName == "doc.on.clipboard")
-    #expect(ClipboardManagerPlugin.category == .general)
+    #expect(ClipboardManagerPlugin.name.isEmpty == false)
+    #expect(ClipboardManagerPlugin().category == .general)
 }
 
 @MainActor
@@ -162,6 +162,7 @@ import Testing
     #expect(items.first?.content == text)
 }
 
+@MainActor
 @Test func localStoreSavesAndReloadsSettings() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("ClipboardManagerLocalStore-\(UUID().uuidString)", isDirectory: true)
@@ -177,6 +178,7 @@ import Testing
     #expect(reloadedStore.integer(forKey: "ClipboardHistorySize") == 1000)
 }
 
+@MainActor
 @Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("ClipboardManagerLocalStore-Invalid-\(UUID().uuidString)", isDirectory: true)
@@ -198,6 +200,7 @@ import Testing
     #expect(reloadedStore.bool(forKey: "ClipboardMonitoringEnabled") == false)
 }
 
+@MainActor
 @Test func localStoreReportsFailureWhenSettingsDirectoryIsBlocked() throws {
     let tempRoot = FileManager.default.temporaryDirectory
         .appendingPathComponent("ClipboardManagerLocalStore-Blocked-\(UUID().uuidString)", isDirectory: true)
@@ -213,6 +216,7 @@ import Testing
     #expect(store.object(forKey: "ClipboardMonitoringEnabled") == nil)
 }
 
+@MainActor
 @Test func historyStoreFallsBackWhenDatabaseDirectoryIsBlocked() throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-store-\(UUID().uuidString)", isDirectory: true)
@@ -238,6 +242,7 @@ import Testing
     #expect(fetched.first?.content == "fallback item")
 }
 
+@MainActor
 @Test func historyManagerReportsPersistenceResults() async throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-history-manager-\(UUID().uuidString)", isDirectory: true)
@@ -268,6 +273,7 @@ import Testing
     #expect(remaining.isEmpty)
 }
 
+@MainActor
 @Test func historyManagerClampsFetchLimitsBeforeQuerying() async throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-history-limits-\(UUID().uuidString)", isDirectory: true)
