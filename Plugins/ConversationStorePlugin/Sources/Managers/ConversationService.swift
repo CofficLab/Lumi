@@ -79,7 +79,7 @@ public final class ConversationService: ConversationManaging {
 
     // MARK: - ConversationManaging
 
-    public func createConversation(title: String?) throws -> UUID {
+    public func createConversation(title: String?, projectPath: String?) throws -> UUID {
         let now = Date()
         let id = UUID()
         let normalizedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -90,7 +90,8 @@ public final class ConversationService: ConversationManaging {
             title: storedTitle,
             preview: "",
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            projectPath: projectPath
         )
 
         conversations.insert(conversation, at: 0)

@@ -100,7 +100,7 @@ public actor ConversationStore: SuperLog {
 
     /// Create a new conversation with specific ID
     @discardableResult
-    func createConversation(id: UUID, title: String?, preview: String = "", createdAt: Date = Date()) throws -> ConversationModel {
+    func createConversation(id: UUID, title: String?, preview: String = "", createdAt: Date = Date(), projectPath: String? = nil) throws -> ConversationModel {
         let context = ModelContext(container)
         let now = createdAt.timeIntervalSince1970
         let model = ConversationModel(
@@ -108,13 +108,14 @@ public actor ConversationStore: SuperLog {
             title: title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
             preview: preview,
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            projectPath: projectPath
         )
         context.insert(model)
         try context.save()
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)创建对话：\(title ?? "nil")")
+            Self.logger.info("\(Self.t)创建对话：\(title ?? "nil"), 项目：\(projectPath ?? "nil")")
         }
 
         return model

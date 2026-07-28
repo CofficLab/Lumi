@@ -48,7 +48,7 @@ public struct NewChatButton: View {
     func createConversation() {
         guard let conv = kernel.conversations else { return }
         do {
-            _ = try conv.createConversation(title: nil)
+            _ = try conv.createConversation(title: nil, projectPath: nil)
         } catch {
             errorMessage = error.localizedDescription
         }

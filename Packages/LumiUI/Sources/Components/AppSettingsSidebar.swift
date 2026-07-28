@@ -127,19 +127,10 @@ public struct AppSettingsSidebarHeader<Icon: View>: View {
 
 /// Selectable sidebar row for settings navigation.
 public struct AppSettingsSidebarItem: View {
-    private let label: Label<Text, Image>
+    private let title: String
+    private let systemImage: String
     private let isSelected: Bool
     private let action: () -> Void
-
-    public init(
-        label: Label<Text, Image>,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) {
-        self.label = label
-        self.isSelected = isSelected
-        self.action = action
-    }
 
     public init(
         title: String,
@@ -147,7 +138,8 @@ public struct AppSettingsSidebarItem: View {
         isSelected: Bool,
         action: @escaping () -> Void
     ) {
-        self.label = Label(title, systemImage: systemImage)
+        self.title = title
+        self.systemImage = systemImage
         self.isSelected = isSelected
         self.action = action
     }
@@ -155,7 +147,9 @@ public struct AppSettingsSidebarItem: View {
     public var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                label
+                Image(systemName: systemImage)
+                    .frame(width: 18, alignment: .center)
+                Text(title)
                 Spacer()
             }
             .padding(.horizontal, 10)
