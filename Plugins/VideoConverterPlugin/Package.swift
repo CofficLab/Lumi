@@ -31,5 +31,11 @@ let package = Package(
                 .process("../Resources/Localizable.xcstrings")
             ]
         )
+        ),
+        .testTarget(
+            name: "VideoConverterPluginTests",
+            dependencies: [.target(name: "VideoConverterPlugin")],
+            path: "Tests"
+        )
     ]
 )

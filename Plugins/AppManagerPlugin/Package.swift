@@ -8,7 +8,12 @@ let package = Package(
     products: [
         .library(
             name: "AppManagerPlugin",
-            targets: ["AppManagerPlugin"]
+            targets: ["AppManagerPlugin",
+        .testTarget(
+            name: "AppManagerPluginTests",
+            dependencies: [.target(name: "AppManagerPlugin")],
+            path: "Tests"
+        ),]
         )
     ],
     dependencies: [

@@ -31,5 +31,11 @@ let package = Package(
                 .process("../Resources/Localizable.xcstrings")
             ]
         )
+        ),
+        .testTarget(
+            name: "PortManagerPluginTests",
+            dependencies: [.target(name: "PortManagerPlugin")],
+            path: "Tests"
+        )
     ]
 )

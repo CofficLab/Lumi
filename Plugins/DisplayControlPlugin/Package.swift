@@ -8,7 +8,12 @@ let package = Package(
     products: [
         .library(
             name: "DisplayControlPlugin",
-            targets: ["DisplayControlPlugin"]
+            targets: ["DisplayControlPlugin",
+        .testTarget(
+            name: "DisplayControlPluginTests",
+            dependencies: [.target(name: "DisplayControlPlugin")],
+            path: "Tests"
+        ),]
         )
     ],
     dependencies: [

@@ -31,5 +31,11 @@ let package = Package(
                 .process("../Resources/Localizable.xcstrings")
             ]
         )
+        ),
+        .testTarget(
+            name: "NettoPluginTests",
+            dependencies: [.target(name: "NettoPlugin")],
+            path: "Tests"
+        )
     ]
 )

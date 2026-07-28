@@ -26,5 +26,11 @@ let package = Package(
             path: "Sources",
             resources: [.process("../Resources/Localizable.xcstrings")]
         )
+        ),
+        .testTarget(
+            name: "MenuBarManagerPluginTests",
+            dependencies: [.target(name: "MenuBarManagerPlugin")],
+            path: "Tests"
+        )
     ]
 )

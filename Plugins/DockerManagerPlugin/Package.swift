@@ -6,7 +6,12 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "DockerManagerPlugin", targets: ["DockerManagerPlugin"])
+        .library(name: "DockerManagerPlugin", targets: ["DockerManagerPlugin",
+        .testTarget(
+            name: "DockerManagerPluginTests",
+            dependencies: [.target(name: "DockerManagerPlugin")],
+            path: "Tests"
+        ),])
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),

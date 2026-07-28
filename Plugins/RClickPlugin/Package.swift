@@ -24,5 +24,11 @@ let package = Package(
             path: "Sources",
             resources: [.process("../Resources/Localizable.xcstrings")]
         )
+        ),
+        .testTarget(
+            name: "RClickPluginTests",
+            dependencies: [.target(name: "RClickPlugin")],
+            path: "Tests"
+        )
     ]
 )
