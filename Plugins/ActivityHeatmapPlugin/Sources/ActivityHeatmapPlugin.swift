@@ -13,9 +13,16 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
     public let category: LumiPluginCategory = .general
     public let pluginDescription = "Display daily message activity and token consumption charts."
 
+    /// Shared cache instance for the plugin
+    private var cache: ActivityHeatmapCache?
+
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        // Initialize cache with storage service from kernel
+        let storage = kernel.resolveService(StorageProviding.self)
+        cache = ActivityHeatmapCache(storage: storage, pluginID: id)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 
@@ -28,7 +35,7 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
                 systemImage: "chart.bar.xaxis",
                 order: order
             ) {
-                ActivityHeatmapSettingsView(messageService: messageService)
+                ActivityHeatmapSettingsView(messageService: messageService, cache: self.cache)
             },
         ]
     }
