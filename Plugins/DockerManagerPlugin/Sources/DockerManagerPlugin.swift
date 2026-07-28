@@ -16,7 +16,7 @@ public final class DockerManagerPlugin: LumiPlugin {
     public let name = "Docker"
     public let order = 50
 	public let policy: LumiPluginPolicy = .disabled
-    public var category: LumiPluginCategory { .developerTool }
+    public var category: LumiPluginCategory = .development
 
     public init() {}
 
