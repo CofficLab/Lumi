@@ -77,8 +77,33 @@ public final class Plugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
-    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
-    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] {
+        [
+            ChatSectionItem(
+                id: "\(id).active-goal",
+                placement: .stack,
+                fillsRemainingHeight: false,
+                showsTrailingDivider: false
+            ) {
+                SidebarView(
+                    conversationIdProvider: {
+                        kernel.conversations?.selectedConversationID
+                    },
+                    backgroundColorProvider: {
+                        Color(nsColor: .controlBackgroundColor)
+                    }
+                )
+            }
+        ]
+    }
+
+    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] {
+        [
+            ChatSectionToolbarItem(id: "\(id).toolbar-button", placement: .trailing) {
+                GoalToolbarButton(kernel: kernel)
+            }
+        ]
+    }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }

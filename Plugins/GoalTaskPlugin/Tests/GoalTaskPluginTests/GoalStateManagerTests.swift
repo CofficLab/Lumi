@@ -10,7 +10,7 @@ struct GoalStateManagerTests {
     func testCreateGoal() async throws {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
-        let manager = GoalStateManager(databaseRootURL: tempDir)
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
         
         let result = try await manager.createGoal(
             conversationId: "test-conv-1",
@@ -35,7 +35,7 @@ struct GoalStateManagerTests {
     func testUpdateTaskStatusDerivesGoalStatus() async throws {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
-        let manager = GoalStateManager(databaseRootURL: tempDir)
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
         
         let result = try await manager.createGoal(
             conversationId: "test-conv-2",
@@ -62,7 +62,7 @@ struct GoalStateManagerTests {
     func testUpdateGoalStatusBlocked() async throws {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
-        let manager = GoalStateManager(databaseRootURL: tempDir)
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
         
         let result = try await manager.createGoal(
             conversationId: "test-conv-3",
@@ -88,7 +88,7 @@ struct GoalStateManagerTests {
     func testFetchGoals() async throws {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
-        let manager = GoalStateManager(databaseRootURL: tempDir)
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
         
         _ = try await manager.createGoal(
             conversationId: "test-conv-4",
@@ -117,7 +117,7 @@ struct GoalStateManagerTests {
     func testCreateThenFetchImmediately() async throws {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
-        let manager = GoalStateManager(databaseRootURL: tempDir)
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
 
         let cid = "577967FE-1812-4278-8752-D0E72ED9B567"
         _ = try await manager.createGoal(
@@ -140,7 +140,7 @@ struct GoalStateManagerTests {
     func testSidebarHidesWhenAllDone() async throws {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
-        let manager = GoalStateManager(databaseRootURL: tempDir)
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
         let cid = "conv-done"
 
         // 一个 Goal，其唯一 Task 先建为 in_progress
@@ -172,7 +172,7 @@ struct GoalStateManagerTests {
     func testSidebarVisibleWhenInProgress() async throws {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
-        let manager = GoalStateManager(databaseRootURL: tempDir)
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
         let cid = "conv-active"
 
         let created = try await manager.createGoal(

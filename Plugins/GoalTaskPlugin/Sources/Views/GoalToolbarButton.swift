@@ -13,8 +13,8 @@ struct GoalToolbarButton: View {
         viewModel.goals.count
     }
 
-    init(chatService: any LumiChatServicing) {
-        _viewModel = StateObject(wrappedValue: GoalToolbarViewModel(chatService: chatService))
+    init(kernel: LumiKernel) {
+        _viewModel = StateObject(wrappedValue: GoalToolbarViewModel(kernel: kernel))
     }
 
     var body: some View {
@@ -43,7 +43,7 @@ final class GoalToolbarViewModel: ObservableObject {
     @Published public var goals: [GoalListItem] = []
     @Published public var isLoading: Bool = false
 
-    private let chatService: (any LumiChatServicing)
+    private let kernel: LumiKernel
 
     private var manager: GoalStateManager? {
         GoalTaskPlugin.currentManager()
@@ -54,14 +54,15 @@ final class GoalToolbarViewModel: ObservableObject {
         goals.contains { (item: GoalListItem) in item.goal.isTerminal == false }
     }
 
-    init(chatService: any LumiChatServicing) {
-        self.chatService = chatService
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
     }
 
     func refresh() async {
         guard let manager else { return }
 
-        guard let conversationID = chatService.selectedConversationID ?? chatService.conversations.first?.id else {
+        guard let conversations = kernel.conversations,
+              let conversationID = conversations.selectedConversationID ?? conversations.conversations.first?.id else {
             goals = []
             return
         }
