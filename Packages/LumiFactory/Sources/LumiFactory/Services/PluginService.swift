@@ -29,6 +29,7 @@ import ConversationSpeedPlugin
 import ConversationStorePlugin
 import ConversationTitlePlugin
 import DatabaseManagerPlugin
+import DebugBadgePlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
@@ -263,6 +264,7 @@ public enum PluginService {
             ConversationForkPlugin(),
             AgentTurnNotificationPlugin(),
             AppUpdatePlugin(),
+            DebugBadgePlugin(),
             // User interaction
             AskUserPlugin(),
             // Themes
