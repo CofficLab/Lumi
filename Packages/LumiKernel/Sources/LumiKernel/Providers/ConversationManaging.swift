@@ -22,8 +22,10 @@ public protocol ConversationManaging: ObservableObject {
     /// - Parameters:
     ///   - title: 对话标题（可选）
     ///   - projectPath: 关联项目路径（可选，传 nil 则自动使用当前项目）
+    ///   - providerID: 供应商 ID（可选，传 nil 则自动使用当前选中的供应商）
+    ///   - modelName: 模型名称（可选，传 nil 则自动使用当前选中的模型）
     /// - Returns: 新对话 ID
-    func createConversation(title: String?, projectPath: String?) throws -> UUID
+    func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID
 
     /// 选择对话
     func selectConversation(id: UUID)
