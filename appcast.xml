@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.2.0</title>
-            <pubDate>Tue, 28 Jul 2026 11:23:07 +0000</pubDate>
-            <sparkle:version>504</sparkle:version>
-            <sparkle:shortVersionString>5.2.0</sparkle:shortVersionString>
+            <title>5.2.1</title>
+            <pubDate>Tue, 28 Jul 2026 15:35:02 +0000</pubDate>
+            <sparkle:version>505</sparkle:version>
+            <sparkle:shortVersionString>5.2.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.2.0</h2>
-<h3>Changes since v5.1.3</h3>
+            <description><![CDATA[<h2>Release v5.2.1</h2>
+<h3>Changes since v5.2.0</h3>
 <ul>
-<li>feat: add DebugBadgePlugin to show debug indicator in toolbar</li>
-<li>feat: add projectPath parameter to createConversation</li>
-<li>feat(AgentTurnRunnerPlugin): add multi-language support (en, zh-Hans, zh-Hant)</li>
-<li>feat(agentturnrunnerplugin): persist outgoing requests to disk (SwiftData) and add settings view</li>
-<li>feat(AgentTurnRunnerPlugin)() persist outgoing requests to disk (SwiftData) and add settings view</li>
-<li>feat(conversationspeedplugin): add average speed display in popover</li>
-<li>feat(conversationspeedplugin): add conversation speed trend line chart</li>
-<li>feat(goaltaskplugin): integrate sidebar view and toolbar button into chat section</li>
-<li>feat(GoalTaskPlugin): integrate sidebar view and toolbar button into chat section</li>
-<li>feat(idletimeplugin): refactor ActivityHeatStripView layout with proportional time axis labels</li>
-<li>feat(LLMKit): add cache tokens support for prompt caching</li>
-<li>feat(LumiKernel): add cache token metadata keys</li>
-<li>feat(lumiplugin): add willSendToLLM hook for pre-request message modification</li>
-<li>feat(LumiPlugin)() add willSendToLLM hook for pre-request message modification</li>
-<li>feat(MessageRenderer): display cache hit rate in message metadata</li>
-<li>feat(messagerenderer/messagesender): add kernel-based resendMessage API</li>
-<li>fix(ProjectsPlugin): ensure syncToKernel called on MainActor</li>
-<li>refactor: add providerID and modelName to ConversationStore</li>
-<li>refactor: add providerID and modelName to createConversation protocol</li>
-<li>refactor: auto-associate current provider and model on conversation creation</li>
+<li>feat(AppCommands): support top-level menus via AppKit bridge</li>
+<li>feat(CommandPlugin): register Debug Commands in top-level menu</li>
+<li>feat(ConversationStorePlugin, MessageStorePlugin): add status bar hover container for migration progress</li>
+<li>feat(ConversationTitle): unify conversation title display via kernel.uiTitle</li>
+<li>feat(LLMProviderMiniMaxPlugin): migrate HTTPClient to NetworkProviding</li>
+<li>feat(LumiKernel): add NetworkProviding protocol for HTTP requests</li>
+<li>feat(LumiKernel): generate default title when no custom title exists</li>
+<li>feat(network): add streaming support to NetworkProviding and LLMAPIService</li>
+<li>feat(NetworkManagerPlugin): add streaming support and HTTP exchange recording</li>
+<li>feat(NetworkManagerPlugin): implement NetworkProviding for kernel</li>
+<li>feat(NetworkManagerPlugin): split HTTP exchange detail into Request/Response tabs</li>
+<li>feat(RAGPlugin): add lifecycle task tracking for background indexing</li>
+<li>feat(ToolManagerPlugin): add streaming file reader and comprehensive tests</li>
+<li>fix(ConversationStorePlugin): update updatedAt when conversation title changes</li>
+<li>perf(RAGPlugin): add Task.checkCancellation() at key operation points</li>
+<li>perf(RAGPlugin): cap candidate limits and cache entries to reduce memory usage</li>
+<li>refactor(ConversationStorePlugin): store migration state in database directory instead of UserDefaults</li>
+<li>refactor(EditorSwiftPlugin): migrate to pluginDataDirectory from Storage service</li>
+<li>refactor(LLMProvider): pass kernel-based apiService to all providers</li>
+<li>refactor(MessageStorePlugin): store migration state in database directory instead of UserDefaults</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.2.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.2.1</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.2.0/Lumi_5.2.0_arm64.dmg" length="36451305" type="application/octet-stream" sparkle:edSignature="sGFgwrsoQx6UQDb1ezlKR03rLI2jtXxTlCObPfYtaR0HSAD8ItHYnAUpDOdfgU8kuzKgquKsassOHyIdmeaLBA=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.2.1/Lumi_5.2.1_arm64.dmg" length="37419601" type="application/octet-stream" sparkle:edSignature="I1U5T+8yNGSxpGLlCy6eSDBzV3YDVn1XkE0sQSiAQDyD7LSgeVe1me9P3qDw0sw9/faQrBPtGKhAcc+fmc0YAA=="/>
         </item>
     </channel>
 </rss>
