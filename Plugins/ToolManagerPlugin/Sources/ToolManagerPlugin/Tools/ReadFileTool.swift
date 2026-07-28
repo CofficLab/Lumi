@@ -9,6 +9,8 @@ import os
 ///
 /// 允许 AI 助手按行读取指定路径的 UTF-8 文本文件，默认每次最多 250 行。
 public struct ReadFileTool: LumiAgentTool, SuperLog {
+    private static let maxWholeFileBytes: Int64 = 10 * 1024 * 1024
+    private static let maxImageBytes: Int64 = 10 * 1024 * 1024
     public static let info = LumiAgentToolInfo(
         id: "read_file",
         displayName: LumiPluginLocalization.string("Read File", bundle: .module),
@@ -42,7 +44,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
                 "limit": .object([
                     "type": .string("integer"),
                     "description": .string(
-                        "Maximum number of lines to return. Defaults to 250 and is capped at 250 per request."
+                        "Maximum number of lines to return. Defaults to 250 and is capped at 250 per request. Output is also capped by bytes."
                     )
                 ])
             ]),
@@ -91,10 +93,19 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
 
         do {
             let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-            let data = try Data(contentsOf: url)
+            let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+            let fileSize = (attributes[.size] as? NSNumber)?.int64Value ?? 0
+
+            // Images are handled separately below and must not be allowed to
+            // create an unbounded Data + NSImage + Base64 allocation chain.
+            if Self.imageMimeType(forPathExtension: url.pathExtension) != nil,
+               fileSize > Self.maxImageBytes {
+                throw ReadFileLineReader.ReadError.fileTooLarge(fileSize, Self.maxImageBytes)
+            }
 
             // 图片文件：读取并以图片形式回传给 LLM（而非报 UTF-8 错误）。
             if let mimeType = Self.imageMimeType(forPathExtension: url.pathExtension),
+               let data = try? Data(contentsOf: url),
                let imageMessage = Self.readAsImage(data: data, url: url, mimeType: mimeType, kernel: kernel) {
                 if Self.verbose {
                     Self.logger.info("\(self.t)识别为图片文件：\(path)，mimeType=\(mimeType)，大小=\(ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file))")
@@ -102,25 +113,18 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
                 return imageMessage
             }
 
-            guard let content = String(data: data, encoding: .utf8) else {
-                if Self.verbose {
-                    Self.logger.warning("\(self.t)文件不是有效 UTF-8 文本：\(path)")
-                }
-                return "Error: File content is not valid UTF-8 text."
-            }
-
             let request = ReadFileLineReader.Request(
                 offset: intArgument(arguments["offset"]),
                 limit: intArgument(arguments["limit"])
             )
-            let result = ReadFileLineReader.read(content: content, request: request)
+            let result = try await ReadFileLineReader.read(
+                fileURL: url,
+                request: request,
+                maxWholeFileBytes: Self.maxWholeFileBytes
+            )
 
             if Self.verbose {
                 Self.logger.info("\(self.t)读取完成：\(path)，总行数=\(result.totalLines)，返回行数=\(result.formattedContent.split(separator: "\n").count)")
-            }
-
-            if result.totalLines == 0 {
-                return ""
             }
 
             return result.formattedContent
