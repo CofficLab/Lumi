@@ -89,8 +89,6 @@ public final class MessageSender: MessageSending, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)clearAttachments ➡️ cleared \(count) items")
         }
-        // DEBUG: Confirm clearAttachments is called
-        Self.logger.info("🗑️ clearAttachments called, cleared \(count) items, remaining: \(self.pendingAttachments.count)")
     }
 
     // MARK: - 文件附件挂起池

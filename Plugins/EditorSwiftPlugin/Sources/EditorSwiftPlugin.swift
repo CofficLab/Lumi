@@ -7,7 +7,6 @@ public final class EditorSwiftPlugin: LumiPlugin {
     public let name = "Swift Editor"
     public let order = 4
     public let policy: LumiPluginPolicy = .optOut
-    public var category: LumiPluginCategory { .development }
     public let category: LumiPluginCategory = .development
     public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Provides Swift language support and tree-sitter highlighting."
@@ -17,7 +16,7 @@ public final class EditorSwiftPlugin: LumiPlugin {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+ 
     }
 
 

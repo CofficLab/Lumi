@@ -8,7 +8,6 @@ public final class AgentRulesPlugin: LumiPlugin {
     public let name = "Agent Rules"
     public let order = 50
     public let policy: LumiPluginPolicy = .disabled
-    public var category: LumiPluginCategory { .general }
     public let category: LumiPluginCategory = .general
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Manage rule documents in .agent/rules directory."
