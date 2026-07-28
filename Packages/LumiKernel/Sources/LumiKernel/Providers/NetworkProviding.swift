@@ -15,6 +15,15 @@ public protocol NetworkProviding: AnyObject {
     /// - Throws: 网络错误或 HTTP 错误状态码
     func request(_ request: HTTPRequest) async throws -> HTTPResponse
 
+    /// 发起流式请求。回调收到的是底层原始字节，协议层（例如 SSE）由调用方解析。
+    /// `onResponse` 会在收到响应头后、收到第一个 body chunk 前调用。
+    /// 返回 false 会停止读取 body。
+    func stream(
+        _ request: HTTPRequest,
+        onResponse: @Sendable @escaping (HTTPResponseMetadata) async -> Void,
+        onChunk: @Sendable @escaping (Data) async -> Bool
+    ) async throws
+
     /// 发起 GET 请求
     ///
     /// - Parameters:

@@ -58,3 +58,59 @@ public struct HTTPResponse: Sendable {
         self.url = url
     }
 }
+
+/// Response metadata delivered before a streaming response body.
+public struct HTTPResponseMetadata: Sendable {
+    public let statusCode: Int
+    public let headers: [String: String]
+    public let url: URL
+    public let mimeType: String?
+    public let expectedContentLength: Int64
+    public let textEncodingName: String?
+
+    public init(
+        statusCode: Int,
+        headers: [String: String],
+        url: URL,
+        mimeType: String? = nil,
+        expectedContentLength: Int64 = -1,
+        textEncodingName: String? = nil
+    ) {
+        self.statusCode = statusCode
+        self.headers = headers
+        self.url = url
+        self.mimeType = mimeType
+        self.expectedContentLength = expectedContentLength
+        self.textEncodingName = textEncodingName
+    }
+}
+
+/// Structured transport failure retaining the server response whenever one exists.
+public struct HTTPNetworkError: Error, LocalizedError, Sendable {
+    public let url: URL
+    public let statusCode: Int?
+    public let headers: [String: String]
+    public let body: Data?
+    public let underlyingDescription: String?
+
+    public init(
+        url: URL,
+        statusCode: Int? = nil,
+        headers: [String: String] = [:],
+        body: Data? = nil,
+        underlyingDescription: String? = nil
+    ) {
+        self.url = url
+        self.statusCode = statusCode
+        self.headers = headers
+        self.body = body
+        self.underlyingDescription = underlyingDescription
+    }
+
+    public var errorDescription: String? {
+        if let statusCode {
+            return "HTTP error \(statusCode) for '\(url.absoluteString)'"
+        }
+        return "Network request to '\(url.absoluteString)' failed: \(underlyingDescription ?? "unknown error")"
+    }
+}
