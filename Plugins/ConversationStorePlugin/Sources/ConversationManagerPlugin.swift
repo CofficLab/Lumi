@@ -45,8 +45,8 @@ public final class ConversationStorePlugin: LumiPlugin, SuperLog {
                 title: "Conversation Migration",
                 systemImage: "bubble.left.and.bubble.right",
                 placement: .trailing,
-                popover: {
-                    ConversationMigrationPopoverView()
+                statusBarView: {
+                    ConversationMigrationStatusBarView()
                 }
             ),
         ]

@@ -1,6 +1,25 @@
 import SwiftUI
 import LumiUI
 
+/// 仅在会话迁移运行时显示状态栏入口。
+struct ConversationMigrationStatusBarView: View {
+    @ObservedObject private var progress = ConversationMigrationProgressStore.shared
+
+    var body: some View {
+        if progress.isActive {
+            StatusBarHoverContainer(
+                detailView: ConversationMigrationPopoverView(),
+                id: "conversation-migration-status"
+            ) {
+                Image(systemName: "bubble.left.and.bubble.right")
+                    .font(.appMicroEmphasized)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+            }
+        }
+    }
+}
+
 /// 会话迁移 popover 详情视图
 ///
 /// 点击状态栏的迁移图标后弹出,展示会话迁移的详情:阶段、读取/导入的会话数、耗时。
