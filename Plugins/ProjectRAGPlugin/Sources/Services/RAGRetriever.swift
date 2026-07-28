@@ -6,6 +6,10 @@ public struct RAGRetriever: SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rag.retriever")
+    // Keep the total number of materialized chunks bounded. Each row also
+    // materializes its text and embedding, so this is an important memory cap.
+    static let lexicalCandidateLimit = 1_000
+    static let fallbackCandidateLimit = 2_500
 
     private let store: any RAGStore
     private let cache: RAGCache
@@ -21,6 +25,7 @@ public struct RAGRetriever: SuperLog {
         projectPath: String?,
         topK: Int
     ) throws -> [RAGSearchResult] {
+        try Task.checkCancellation()
         // 检查缓存
         let cacheKey = cache.buildKey(query: query, projectPath: projectPath, topK: topK)
         if let cached = cache.get(key: cacheKey) {
@@ -36,6 +41,7 @@ public struct RAGRetriever: SuperLog {
         // ANN 检索
         let annStart = CFAbsoluteTimeGetCurrent()
         let annCandidates = try loadANNCandidates(queryEmbedding: queryEmbedding, projectPath: projectPath, topK: topK)
+        try Task.checkCancellation()
         let annDuration = (CFAbsoluteTimeGetCurrent() - annStart) * 1000
 
         let candidates: [RAGStoredChunk]
@@ -46,11 +52,11 @@ public struct RAGRetriever: SuperLog {
             // 候选过多会导致 search_code 超时。此时把 fallback 上限压到 1500，避免大量计算。
             // sqlite-vec 可用时仍放宽到 7000，保证召回质量。
             let usingSwiftCosine = (store as? RAGSQLiteStore)?.runtimeInfo.vectorBackend != .sqliteVec
-            let fallbackLimit = usingSwiftCosine ? 1500 : 7000
+            let fallbackLimit = usingSwiftCosine ? 1_000 : Self.fallbackCandidateLimit
             candidates = try store.loadCandidateChunks(
                 projectPath: projectPath,
                 queryTerms: queryTerms,
-                lexicalLimit: 2500,
+                lexicalLimit: Self.lexicalCandidateLimit,
                 fallbackLimit: fallbackLimit
             )
             let lexicalDuration = (CFAbsoluteTimeGetCurrent() - lexicalStart) * 1000
@@ -81,6 +87,9 @@ public struct RAGRetriever: SuperLog {
         scored.reserveCapacity(candidates.count)
 
         for chunk in candidates {
+            if scored.count.isMultiple(of: 64) {
+                try Task.checkCancellation()
+            }
             guard chunk.embedding.count == queryEmbedding.count else { continue }
             let semantic = RAGMathUtils.cosineSimilarity(queryEmbedding, chunk.embedding)
             let lexical = RAGTextUtils.lexicalBoost(query: query, content: chunk.content)
