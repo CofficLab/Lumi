@@ -23,7 +23,7 @@ enum EditorSwiftBuildServerStore {
     }
 
     private static func migrateLegacyStorageIfNeeded(to pluginDirectory: URL) {
-        let dataRoot = EditorSwiftPluginRuntimeBridge.dataRootDirectory ?? EditorSwiftPluginRuntimeBridge.fallbackRootDirectory
+        let dataRoot = pluginDirectory.deletingLastPathComponent()
         let appDirectory = dataRoot.deletingLastPathComponent()
         let legacyCandidates = [
             appDirectory.appendingPathComponent(legacyPluginDirectoryName, isDirectory: true),

@@ -1,11 +1,9 @@
 import Foundation
 import LumiKernel
 
-/// EditorSwiftPlugin 的运行时桥接:持有 LumiCore 数据根目录 + plugin 专属子目录,
-/// 供 `EditorSwiftBuildServerStore` 读取(替代旧的 nonisolated 镜像变量)。
+/// EditorSwiftPlugin 的运行时桥接:持有 Storage service 解析出的插件目录,
+/// 供 `EditorSwiftBuildServerStore` 读取。
 enum EditorSwiftPluginRuntimeBridge {
-    nonisolated(unsafe) static var dataRootDirectory: URL?
-
     nonisolated(unsafe) static var pluginSubdirectory: URL?
 
     static let pluginName = "EditorSwiftPlugin"
@@ -20,11 +18,11 @@ enum EditorSwiftPluginRuntimeBridge {
 
 @MainActor
 public extension EditorSwiftPlugin {
-    static func bootstrapFromLumiCoreIfNeeded(context: any LumiCoreAccessing) {
+    static func bootstrapFromLumiCoreIfNeeded(kernel: LumiKernel) {
         guard !didBootstrapFromLumiCore else { return }
-        if let core = context.lumiCore {
-            EditorSwiftPluginRuntimeBridge.dataRootDirectory = core.storage.dataRootDirectory
-            EditorSwiftPluginRuntimeBridge.pluginSubdirectory = core.storage.pluginDataDirectory(for: EditorSwiftPluginRuntimeBridge.pluginName)
+        if let storage = kernel.storage {
+            EditorSwiftPluginRuntimeBridge.pluginSubdirectory =
+                storage.pluginDataDirectory(for: EditorSwiftPluginRuntimeBridge.pluginName)
         }
         didBootstrapFromLumiCore = true
     }
