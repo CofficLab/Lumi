@@ -64,7 +64,31 @@ enum MessageViewHelpers {
         if let modelName = message.modelName, !modelName.isEmpty {
             items.append(formatModelName(modelName))
         }
+        if let cacheHitRate = cacheHitRateItem(for: message) {
+            items.append(cacheHitRate)
+        }
         return items
+    }
+
+    static func cacheHitRateItem(for message: LumiChatMessage) -> String? {
+        guard let cached = intMetadata(message, LumiMessageTokenMetadata.cachedInputKey),
+              cached > 0
+        else {
+            return nil
+        }
+
+        let total = intMetadata(message, LumiMessageTokenMetadata.cacheTotalInputKey)
+            ?? intMetadata(message, LumiMessageTokenMetadata.inputKey)
+            ?? 0
+        guard total > 0 else { return nil }
+
+        let percentage = min(100.0, max(0.0, (Double(cached) / Double(total)) * 100.0))
+        return "cache \(String(format: "%.0f", percentage))%"
+    }
+
+    private static func intMetadata(_ message: LumiChatMessage, _ key: String) -> Int? {
+        guard let raw = message.metadata[key] else { return nil }
+        return Int(raw)
     }
 
     static func userDisplayName() -> String {
