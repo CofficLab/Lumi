@@ -6,12 +6,7 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "DockerManagerPlugin", targets: ["DockerManagerPlugin",
-        .testTarget(
-            name: "DockerManagerPluginTests",
-            dependencies: [.target(name: "DockerManagerPlugin")],
-            path: "Tests"
-        ),])
+        .library(name: "DockerManagerPlugin", targets: ["DockerManagerPlugin"])
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
@@ -21,7 +16,7 @@ let package = Package(
         .package(path: "../../Packages/SuperLogKit")
     ],
     targets: [
-        .target(
+.target(
             name: "DockerManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
@@ -32,6 +27,11 @@ let package = Package(
             ],
             path: "Sources",
             resources: [.process("../Resources/Localizable.xcstrings")]
+        ),
+        .testTarget(
+            name: "DockerManagerPluginTests",
+            dependencies: [.target(name: "DockerManagerPlugin")],
+            path: "Tests"
         )
     ]
 )

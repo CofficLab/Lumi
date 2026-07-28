@@ -13,7 +13,7 @@ let package = Package(
         .package(path: "../../Packages/SuperLogKit")
     ],
     targets: [
-        .target(
+.target(
             name: "RClickPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
@@ -23,7 +23,6 @@ let package = Package(
             ],
             path: "Sources",
             resources: [.process("../Resources/Localizable.xcstrings")]
-        )
         ),
         .testTarget(
             name: "RClickPluginTests",

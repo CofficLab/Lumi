@@ -8,12 +8,7 @@ let package = Package(
     products: [
         .library(
             name: "ClipboardManagerPlugin",
-            targets: ["ClipboardManagerPlugin",
-        .testTarget(
-            name: "ClipboardManagerPluginTests",
-            dependencies: [.target(name: "ClipboardManagerPlugin")],
-            path: "Tests"
-        ),]
+            targets: ["ClipboardManagerPlugin"]
         )
     ],
     dependencies: [
@@ -23,7 +18,7 @@ let package = Package(
         .package(path: "../../Packages/SuperLogKit")
     ],
     targets: [
-        .target(
+.target(
             name: "ClipboardManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
@@ -35,6 +30,11 @@ let package = Package(
             resources: [
                 .process("../Resources/Localizable.xcstrings")
             ]
+        ),
+        .testTarget(
+            name: "ClipboardManagerPluginTests",
+            dependencies: [.target(name: "ClipboardManagerPlugin")],
+            path: "Tests"
         )
     ]
 )
