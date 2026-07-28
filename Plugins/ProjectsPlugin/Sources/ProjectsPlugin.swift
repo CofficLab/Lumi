@@ -48,6 +48,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         // 3. 初始化同步协调器
         let coordinator = ProjectsSyncCoordinator(viewModel: viewModel)
         coordinator.kernel = kernel
+        ProjectsToolRuntimeBridge.syncCoordinator = coordinator
 
         if Self.verbose {
             Self.logger.info("📂 Initialized ProjectsSyncCoordinator")

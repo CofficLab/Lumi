@@ -230,6 +230,124 @@ final class WorkspaceFileKitTests: XCTestCase {
         }
     }
 
+    func testEditSwiftFunctionSignatureDoesNotDuplicateAdjacentCode() throws {
+        let path = temporaryDirectory.appendingPathComponent("ConversationStore.swift").path
+        let original = """
+        public final class ConversationStore {
+            public func createConversation(title: String?, projectPath: String?) throws -> UUID {
+                let now = Date()
+                let conversation = Conversation(title: title, projectPath: projectPath, createdAt: now)
+                conversations.append(conversation)
+                return conversation.id
+            }
+
+            public func selectConversation(id: UUID) {
+                selectedConversationID = id
+            }
+        }
+        """
+        try original.write(toFile: path, atomically: true, encoding: .utf8)
+
+        let expected = """
+        public final class ConversationStore {
+            public func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID {
+                let now = Date()
+                let conversation = Conversation(title: title, projectPath: projectPath, createdAt: now)
+                conversations.append(conversation)
+                return conversation.id
+            }
+
+            public func selectConversation(id: UUID) {
+                selectedConversationID = id
+            }
+        }
+        """
+
+        _ = try WorkspaceFileEditor().edit(
+            filePath: path,
+            oldString: "public func createConversation(title: String?, projectPath: String?) throws -> UUID {",
+            newString: "public func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID {"
+        )
+
+        let updated = try String(contentsOfFile: path, encoding: .utf8)
+        XCTAssertEqual(updated, expected)
+        XCTAssertEqual(updated.components(separatedBy: "public func createConversation").count - 1, 1)
+        XCTAssertEqual(updated.components(separatedBy: "public func selectConversation").count - 1, 1)
+    }
+
+    func testEditMultilineSwiftFunctionBlockDoesNotDuplicateAdjacentCode() throws {
+        let path = temporaryDirectory.appendingPathComponent("ConversationStoreBlock.swift").path
+        let original = """
+        public final class ConversationStore {
+            public func createConversation(title: String?, projectPath: String?) throws -> UUID {
+                let now = Date()
+                let conversation = Conversation(title: title, projectPath: projectPath, createdAt: now)
+                conversations.append(conversation)
+                return conversation.id
+            }
+
+            public func selectConversation(id: UUID) {
+                selectedConversationID = id
+            }
+        }
+        """
+        try original.write(toFile: path, atomically: true, encoding: .utf8)
+
+        let oldString = """
+            public func createConversation(title: String?, projectPath: String?) throws -> UUID {
+                let now = Date()
+                let conversation = Conversation(title: title, projectPath: projectPath, createdAt: now)
+                conversations.append(conversation)
+                return conversation.id
+            }
+        """
+        let newString = """
+            public func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID {
+                let now = Date()
+                let conversation = Conversation(
+                    title: title,
+                    projectPath: projectPath,
+                    providerID: providerID,
+                    modelName: modelName,
+                    createdAt: now
+                )
+                conversations.append(conversation)
+                return conversation.id
+            }
+        """
+        let expected = """
+        public final class ConversationStore {
+            public func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID {
+                let now = Date()
+                let conversation = Conversation(
+                    title: title,
+                    projectPath: projectPath,
+                    providerID: providerID,
+                    modelName: modelName,
+                    createdAt: now
+                )
+                conversations.append(conversation)
+                return conversation.id
+            }
+
+            public func selectConversation(id: UUID) {
+                selectedConversationID = id
+            }
+        }
+        """
+
+        _ = try WorkspaceFileEditor().edit(
+            filePath: path,
+            oldString: oldString,
+            newString: newString
+        )
+
+        let updated = try String(contentsOfFile: path, encoding: .utf8)
+        XCTAssertEqual(updated, expected)
+        XCTAssertEqual(updated.components(separatedBy: "public func createConversation").count - 1, 1)
+        XCTAssertEqual(updated.components(separatedBy: "public func selectConversation").count - 1, 1)
+    }
+
     // MARK: - 1GB 大小保护
 
     func testEditRejectsOversizedFile() throws {

@@ -61,21 +61,24 @@ public struct AgentTurnRunnerSettingsView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Label("\(records.count) sent requests", systemImage: "paperplane")
+            Label(
+                AgentTurnRunnerLocalization.format("Sent Requests", records.count),
+                systemImage: "paperplane"
+            )
             if let selected = selectedRecord {
-                Text("Selected: \(selected.conversationID.prefix(8))…")
+                Text(AgentTurnRunnerLocalization.format("Selected: %@", String(selected.conversationID.prefix(8))))
             }
             Spacer()
-            AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
+            AppButton(AgentTurnRunnerLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
                 Task { await reload() }
             }
-            AppButton("Clear All", systemImage: "trash", style: .destructive, size: .small) {
+            AppButton(AgentTurnRunnerLocalization.string("Clear All"), systemImage: "trash", style: .destructive, size: .small) {
                 Task {
                     await AgentTurnRunnerRecordStoreBridge.shared.store?.deleteAll()
                     await reload()
                 }
             }
-            AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+            AppButton(AgentTurnRunnerLocalization.string("Open Data Directory"), systemImage: "folder", size: .small) {
                 openDataDirectory()
             }
         }
@@ -90,7 +93,7 @@ public struct AgentTurnRunnerSettingsView: View {
             if records.isEmpty {
                 AppEmptyState(
                     icon: "paperplane",
-                    title: "No sent requests"
+                    title: AgentTurnRunnerLocalization.string("No sent requests")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -116,7 +119,9 @@ public struct AgentTurnRunnerSettingsView: View {
         }) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(record.model.isEmpty ? "Unknown model" : record.model)
+                    Text(record.model.isEmpty
+                        ? AgentTurnRunnerLocalization.string("Unknown model")
+                        : record.model)
                         .font(.appCaptionEmphasized)
                         .foregroundStyle(theme.textPrimary)
                         .lineLimit(1)
@@ -129,7 +134,7 @@ public struct AgentTurnRunnerSettingsView: View {
                         .lineLimit(1)
                 }
 
-                Text("\(record.conversationID.prefix(8))… · \(record.messagesCount) messages · \(record.toolsCount) tools")
+                Text(AgentTurnRunnerLocalization.format("%d messages · %d tools", record.messagesCount, record.toolsCount))
                     .font(.appMicro)
                     .foregroundStyle(theme.textSecondary)
                     .lineLimit(1)
@@ -151,35 +156,8 @@ public struct AgentTurnRunnerSettingsView: View {
         if let record = selectedRecord {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    AppSettingsSection(title: "Overview", subtitle: "Read-only summary of the sent request") {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(record.model.isEmpty ? "Unknown model" : record.model)
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(theme.textPrimary)
-                                .lineLimit(2)
-
-                            Text("Sent at \(formattedDate(record.createdAt))")
-                                .font(.callout)
-                                .foregroundStyle(theme.textSecondary)
-                        }
-                    }
-
-                    AppSettingsSection(title: "Request Info", subtitle: "Core fields captured for this request") {
-                        VStack(spacing: 0) {
-                            detailRow(title: "Conversation ID", icon: "number", value: record.conversationID, monospace: true)
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: "Provider", icon: "cloud", value: record.providerID?.isEmpty == false ? record.providerID! : "Unknown", monospace: true)
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: "Model", icon: "cpu", value: record.model.isEmpty ? "Unknown" : record.model, monospace: true)
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: "Sent At", icon: "calendar.badge.clock", value: formattedDate(record.createdAt))
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: "Image Attachments", icon: "photo", value: "\(record.imageAttachmentsCount)")
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: "File Attachments", icon: "doc", value: "\(record.fileAttachmentsCount)")
-                        }
-                    }
-
+                    overviewSection(record)
+                    requestInfoSection(record)
                     systemPromptSection(record)
                     messagesSection(record)
                     toolsSection(record)
@@ -192,7 +170,9 @@ public struct AgentTurnRunnerSettingsView: View {
         } else {
             AppEmptyState(
                 icon: "paperplane",
-                title: records.isEmpty ? "No sent requests" : "Select a request"
+                title: records.isEmpty
+                    ? AgentTurnRunnerLocalization.string("No sent requests")
+                    : AgentTurnRunnerLocalization.string("Select a request")
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .appSurface(style: .panel, cornerRadius: 0)
@@ -210,13 +190,90 @@ public struct AgentTurnRunnerSettingsView: View {
         }
     }
 
+    // MARK: - Overview Section
+
+    @ViewBuilder
+    private func overviewSection(_ record: AgentTurnRecordDTO) -> some View {
+        AppSettingsSection(
+            title: AgentTurnRunnerLocalization.string("Overview"),
+            subtitle: AgentTurnRunnerLocalization.string("Read-only summary of the sent request")
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(record.model.isEmpty
+                    ? AgentTurnRunnerLocalization.string("Unknown model")
+                    : record.model)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(theme.textPrimary)
+                    .lineLimit(2)
+
+                Text(AgentTurnRunnerLocalization.format("Sent at %@", formattedDate(record.createdAt)))
+                    .font(.callout)
+                    .foregroundStyle(theme.textSecondary)
+            }
+        }
+    }
+
+    // MARK: - Request Info Section
+
+    @ViewBuilder
+    private func requestInfoSection(_ record: AgentTurnRecordDTO) -> some View {
+        AppSettingsSection(
+            title: AgentTurnRunnerLocalization.string("Request Info"),
+            subtitle: AgentTurnRunnerLocalization.string("Core fields captured for this request")
+        ) {
+            VStack(spacing: 0) {
+                detailRow(
+                    title: AgentTurnRunnerLocalization.string("Conversation ID"),
+                    icon: "number",
+                    value: record.conversationID,
+                    monospace: true
+                )
+                Divider().padding(.vertical, 8)
+                detailRow(
+                    title: AgentTurnRunnerLocalization.string("Provider"),
+                    icon: "cloud",
+                    value: record.providerID?.isEmpty == false ? record.providerID! : AgentTurnRunnerLocalization.string("Unknown"),
+                    monospace: true
+                )
+                Divider().padding(.vertical, 8)
+                detailRow(
+                    title: AgentTurnRunnerLocalization.string("Model"),
+                    icon: "cpu",
+                    value: record.model.isEmpty ? AgentTurnRunnerLocalization.string("Unknown") : record.model,
+                    monospace: true
+                )
+                Divider().padding(.vertical, 8)
+                detailRow(
+                    title: AgentTurnRunnerLocalization.string("Sent At"),
+                    icon: "calendar.badge.clock",
+                    value: formattedDate(record.createdAt)
+                )
+                Divider().padding(.vertical, 8)
+                detailRow(
+                    title: AgentTurnRunnerLocalization.string("Image Attachments"),
+                    icon: "photo",
+                    value: "\(record.imageAttachmentsCount)"
+                )
+                Divider().padding(.vertical, 8)
+                detailRow(
+                    title: AgentTurnRunnerLocalization.string("File Attachments"),
+                    icon: "doc",
+                    value: "\(record.fileAttachmentsCount)"
+                )
+            }
+        }
+    }
+
     // MARK: - System Prompt
 
     @ViewBuilder
     private func systemPromptSection(_ record: AgentTurnRecordDTO) -> some View {
-        AppSettingsSection(title: "System Prompt", subtitle: "Merged system message (role = system)") {
+        AppSettingsSection(
+            title: AgentTurnRunnerLocalization.string("System Prompt"),
+            subtitle: AgentTurnRunnerLocalization.string("Merged system message (role = system)")
+        ) {
             if record.systemPrompt.isEmpty {
-                Text("No system prompt in this request")
+                Text(AgentTurnRunnerLocalization.string("No system prompt in this request"))
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
             } else {
@@ -237,9 +294,12 @@ public struct AgentTurnRunnerSettingsView: View {
     @ViewBuilder
     private func messagesSection(_ record: AgentTurnRecordDTO) -> some View {
         let messages = decodeMessages(record.messagesJSON)
-        AppSettingsSection(title: "Messages", subtitle: "All \(messages.count) messages (read-only)") {
+        AppSettingsSection(
+            title: AgentTurnRunnerLocalization.string("Messages"),
+            subtitle: AgentTurnRunnerLocalization.format("All %d messages (read-only)", messages.count)
+        ) {
             if messages.isEmpty {
-                Text("No messages in this request")
+                Text(AgentTurnRunnerLocalization.string("No messages in this request"))
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
             } else {
@@ -262,7 +322,7 @@ public struct AgentTurnRunnerSettingsView: View {
                     .foregroundStyle(theme.textSecondary)
             }
 
-            Text(message.content.isEmpty ? "(empty)" : message.content)
+            Text(message.content.isEmpty ? AgentTurnRunnerLocalization.string("(empty)") : message.content)
                 .font(.callout)
                 .foregroundStyle(message.isError ? Color.red : theme.textSecondary)
                 .textSelection(.enabled)
@@ -299,9 +359,12 @@ public struct AgentTurnRunnerSettingsView: View {
     @ViewBuilder
     private func toolsSection(_ record: AgentTurnRecordDTO) -> some View {
         let tools = decodeTools(record.toolsJSON)
-        AppSettingsSection(title: "Tools", subtitle: "\(tools.count) tools available to the model") {
+        AppSettingsSection(
+            title: AgentTurnRunnerLocalization.string("Tools"),
+            subtitle: AgentTurnRunnerLocalization.format("%d tools available to the model", tools.count)
+        ) {
             if tools.isEmpty {
-                Text("No tools in this request")
+                Text(AgentTurnRunnerLocalization.string("No tools in this request"))
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
             } else {
@@ -310,7 +373,7 @@ public struct AgentTurnRunnerSettingsView: View {
                         let tool = tools[index]
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Text(tool["name"] ?? "unknown")
+                                Text(tool["name"] ?? AgentTurnRunnerLocalization.string("unknown"))
                                     .font(.appCaptionEmphasized)
                                     .foregroundStyle(theme.textPrimary)
                                 Spacer(minLength: 0)

@@ -15,7 +15,7 @@ struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
 
         The new conversation will automatically:
         - Be selected and become the active conversation
-        - Associate with the current project (if one is selected and ConversationManaging supports it)
+        - Associate with the current project (if one is selected)
         """
     )
 
@@ -43,8 +43,8 @@ struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
         let conversationID = await MainActor.run { () -> UUID? in
             guard let svc = ConversationListToolRuntimeBridge.conversations else { return nil }
             do {
-                // ConversationManaging.createConversation 仅支持 title; projectPath 后续扩展。
-                return try svc.createConversation(title: customTitle)
+                // projectPath 传 nil，由 ConversationManager 自动使用当前项目
+                return try svc.createConversation(title: customTitle, projectPath: nil, providerID: nil, modelName: nil)
             } catch {
                 return nil
             }

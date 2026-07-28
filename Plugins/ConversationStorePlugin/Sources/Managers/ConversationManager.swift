@@ -10,7 +10,7 @@ import os
 public final class ConversationManager: ObservableObject, ConversationManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
     nonisolated public static let emoji = "💬"
-    public static let verbose = false
+    public static let verbose = true
 
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID?
@@ -84,14 +84,21 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
     // MARK: - ConversationManaging
 
-    public func createConversation(title: String?) throws -> UUID {
+    public func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID {
         let now = Date()
         let id = UUID()
         let conversationTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedTitle = conversationTitle?.isEmpty == true ? nil : conversationTitle
 
+        // 如果未指定 projectPath，则自动使用当前项目
+        let effectiveProjectPath = projectPath ?? kernel?.project?.currentProject?.path
+        // 如果未指定 providerID，则自动使用当前选中的供应商
+        let effectiveProviderID = providerID ?? kernel?.llmProvider?.selectedProviderID
+        // 如果未指定 modelName，则自动使用当前选中的模型
+        let effectiveModelName = modelName ?? kernel?.llmProvider?.selectedModel
+
         if Self.verbose {
-            Self.logger.info("\(Self.t)Creating conversation: \(normalizedTitle ?? "nil")")
+            Self.logger.info("\(Self.t)创建对话：\(normalizedTitle ?? "nil"), 项目：\(effectiveProjectPath ?? "nil"), 供应商：\(effectiveProviderID ?? "nil"), 模型：\(effectiveModelName ?? "nil")")
         }
 
         let conversation = LumiConversationSummary(
@@ -99,7 +106,10 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             title: normalizedTitle,
             preview: "",
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            providerID: effectiveProviderID,
+            modelName: effectiveModelName,
+            projectPath: effectiveProjectPath
         )
 
         // Add to in-memory list immediately
@@ -112,7 +122,15 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         // Persist to database async
         Task {
             do {
-                try await store?.createConversation(id: id, title: normalizedTitle, preview: "", createdAt: now)
+                try await store?.createConversation(
+                    id: id,
+                    title: normalizedTitle,
+                    preview: "",
+                    createdAt: now,
+                    providerID: effectiveProviderID,
+                    modelName: effectiveModelName,
+                    projectPath: effectiveProjectPath
+                )
             } catch {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)Failed to persist conversation: \(error)")
@@ -337,6 +355,11 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try? data.write(to: stateFileURL, options: .atomic)
     }
+
+    private var stateFileURL: URL {
+        dataDirectory
+            .appendingPathComponent("state.json", isDirectory: false)
+    }
 }
 
 // MARK: - Runtime Bridge
@@ -353,11 +376,4 @@ final class ConversationManagerRuntimeBridge: @unchecked Sendable {
     var dataDirectory: URL?
 
     private init() {}
-}
-
-private extension ConversationManager {
-    var stateFileURL: URL {
-        dataDirectory
-            .appendingPathComponent("state.json", isDirectory: false)
-    }
 }

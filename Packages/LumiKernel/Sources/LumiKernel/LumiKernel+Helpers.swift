@@ -3,6 +3,11 @@ import Foundation
 // MARK: - UI 展示用便捷函数
 
 extension LumiKernelContainer {
+    /// 重新发送一条已保存的用户消息。
+    public func resendMessage(id: UUID, in conversationID: UUID) async {
+        await messageSender?.resendMessage(id: id, in: conversationID)
+    }
+
     /// UI 展示用对话标题。
     ///
     /// 解析优先级：

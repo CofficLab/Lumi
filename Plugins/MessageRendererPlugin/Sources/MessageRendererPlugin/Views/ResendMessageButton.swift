@@ -1,12 +1,11 @@
 import LumiKernel
-import LumiKernel
-import LumiKernel
 import LumiUI
 import SwiftUI
 
 struct ResendMessageButton: View {
     @LumiTheme private var theme
 
+    let kernel: LumiKernel
     let message: LumiChatMessage
 
     var body: some View {
@@ -21,13 +20,8 @@ struct ResendMessageButton: View {
     }
 
     private func resend() {
-        NotificationCenter.default.post(
-            name: .lumiResendMessage,
-            object: nil,
-            userInfo: [
-                LumiMessageSavedNotification.messageIDKey: message.id,
-                LumiMessageSavedNotification.conversationIDKey: message.conversationID,
-            ]
-        )
+        Task {
+            await kernel.resendMessage(id: message.id, in: message.conversationID)
+        }
     }
 }

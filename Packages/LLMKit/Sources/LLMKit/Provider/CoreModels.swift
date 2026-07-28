@@ -123,6 +123,9 @@ public struct StreamChunk: Sendable, Equatable {
     public let rawStreamPayload: String?
     public let inputTokens: Int?
     public let outputTokens: Int?
+    public let cachedInputTokens: Int?
+    public let cacheWriteInputTokens: Int?
+    public let cacheTotalInputTokens: Int?
     public let stopReason: String?
 
     public init(
@@ -136,6 +139,9 @@ public struct StreamChunk: Sendable, Equatable {
         rawStreamPayload: String? = nil,
         inputTokens: Int? = nil,
         outputTokens: Int? = nil,
+        cachedInputTokens: Int? = nil,
+        cacheWriteInputTokens: Int? = nil,
+        cacheTotalInputTokens: Int? = nil,
         stopReason: String? = nil
     ) {
         self.content = content
@@ -148,6 +154,9 @@ public struct StreamChunk: Sendable, Equatable {
         self.rawStreamPayload = rawStreamPayload
         self.inputTokens = inputTokens
         self.outputTokens = outputTokens
+        self.cachedInputTokens = cachedInputTokens
+        self.cacheWriteInputTokens = cacheWriteInputTokens
+        self.cacheTotalInputTokens = cacheTotalInputTokens
         self.stopReason = stopReason
     }
 
@@ -163,6 +172,9 @@ public struct StreamChunk: Sendable, Equatable {
             rawStreamPayload: raw,
             inputTokens: inputTokens,
             outputTokens: outputTokens,
+            cachedInputTokens: cachedInputTokens,
+            cacheWriteInputTokens: cacheWriteInputTokens,
+            cacheTotalInputTokens: cacheTotalInputTokens,
             stopReason: stopReason
         )
     }

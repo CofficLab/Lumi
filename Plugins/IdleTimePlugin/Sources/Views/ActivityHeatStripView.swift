@@ -10,15 +10,16 @@ public struct ActivityHeatStripView: View {
     private let bucketCount = RestWindowInferencer.bucketsPerDay // 48
     private let cellWidth: CGFloat = 7
     private let cellSpacing: CGFloat = 2
-
-    /// 每个格子的步进（宽度 + 间距）
-    private var cellStep: CGFloat {
-        cellWidth + cellSpacing
-    }
+    private let cellHeight: CGFloat = 24
+    private let labelInset: CGFloat = 8
 
     /// 总宽度
     private var totalWidth: CGFloat {
         CGFloat(bucketCount) * cellWidth + CGFloat(bucketCount - 1) * cellSpacing
+    }
+
+    private var axisWidth: CGFloat {
+        totalWidth + labelInset * 2
     }
 
     public init(scores: [Double]) {
@@ -37,14 +38,11 @@ public struct ActivityHeatStripView: View {
 
     /// 格子网格和时间轴标签
     private var heatmapWithLabels: some View {
-        ZStack(alignment: .topLeading) {
-            // 格子层
+        VStack(alignment: .leading, spacing: 4) {
             gridCells
-
-            // 标签层
             gridLabels
         }
-        .frame(width: totalWidth)
+        .frame(width: axisWidth, alignment: .leading)
     }
 
     /// 格子网格
@@ -53,45 +51,28 @@ public struct ActivityHeatStripView: View {
             ForEach(0..<bucketCount, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 2)
                     .fill(color(for: normalizedScore(at: index)))
-                    .frame(width: cellWidth, height: 24)
+                    .frame(width: cellWidth, height: cellHeight)
             }
         }
+        .padding(.horizontal, labelInset)
     }
 
-    /// 时间轴标签 - 使用绝对偏移定位
+    /// 时间轴标签 - 与整条 24 小时轴按比例对齐
     private var gridLabels: some View {
         ZStack(alignment: .topLeading) {
-            // 00 - 第一个格子中心
-            Text("00")
-                .font(.appMicro)
-                .foregroundColor(theme.textSecondary)
-                .offset(x: cellWidth / 2)
-
-            // 06 - 12个格子后
-            Text("06")
-                .font(.appMicro)
-                .foregroundColor(theme.textSecondary)
-                .offset(x: CGFloat(12) * cellStep + cellWidth / 2)
-
-            // 12 - 24个格子后
-            Text("12")
-                .font(.appMicro)
-                .foregroundColor(theme.textSecondary)
-                .offset(x: CGFloat(24) * cellStep + cellWidth / 2)
-
-            // 18 - 36个格子后
-            Text("18")
-                .font(.appMicro)
-                .foregroundColor(theme.textSecondary)
-                .offset(x: CGFloat(36) * cellStep + cellWidth / 2)
-
-            // 24 - 最后一个格子中心
-            Text("24")
-                .font(.appMicro)
-                .foregroundColor(theme.textSecondary)
-                .offset(x: CGFloat(bucketCount - 1) * cellStep + cellWidth / 2)
+            ForEach([0, 6, 12, 18, 24], id: \.self) { hour in
+                Text(String(format: "%02d", hour))
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+                    .monospacedDigit()
+                    .position(x: tickX(forHour: hour), y: 7)
+            }
         }
-        .frame(width: totalWidth)
+        .frame(width: axisWidth, height: 14)
+    }
+
+    private func tickX(forHour hour: Int) -> CGFloat {
+        labelInset + totalWidth * CGFloat(hour) / 24
     }
 
     private func normalizedScore(at index: Int) -> Double {

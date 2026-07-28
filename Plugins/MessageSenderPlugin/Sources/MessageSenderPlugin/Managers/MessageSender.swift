@@ -42,11 +42,19 @@ public final class MessageSender: MessageSending, SuperLog {
     @Published public private(set) var pendingFileAttachments: [LumiFileAttachment] = []
 
     private weak var kernel: LumiKernel?
+    private var resendObserver: NotificationObserverToken?
 
     public init(kernel: LumiKernel) {
         self.kernel = kernel
+        installResendObserver()
         if Self.verbose {
             Self.logger.info("\(Self.t)MessageSendManager (kernel=\(String(describing: ObjectIdentifier(kernel))))")
+        }
+    }
+
+    deinit {
+        if let resendObserver {
+            NotificationCenter.default.removeObserver(resendObserver.value)
         }
     }
 
@@ -174,7 +182,7 @@ public final class MessageSender: MessageSending, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建新对话")
             }
-            guard let newID = try? kernel?.conversations?.createConversation(title: nil) else {
+            guard let newID = try? kernel?.conversations?.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil) else {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 创建对话失败")
                 }
@@ -282,11 +290,110 @@ public final class MessageSender: MessageSending, SuperLog {
         }
     }
 
+    public func resendMessage(id: UUID, in conversationID: UUID) async {
+        guard !isSending(for: conversationID) else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)resendMessage ignored because conversation is sending ➡️ conversation=\(conversationID.uuidString.prefix(8))…")
+            }
+            return
+        }
+        guard let original = kernel?.messageManager?.message(id: id, in: conversationID),
+              original.role == .user else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)resendMessage could not find user message ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(id.uuidString.prefix(8))…")
+            }
+            return
+        }
+
+        let trimmed = original.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)resendMessage ignored empty user message ➡️ message=\(id.uuidString.prefix(8))…")
+            }
+            return
+        }
+
+        beginSending(in: conversationID)
+        let resent = LumiChatMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: trimmed,
+            metadata: original.metadata
+        )
+        kernel?.messageManager?.insertMessage(resent, to: conversationID)
+
+        defer {
+            endSending(in: conversationID)
+        }
+
+        await runAgentTurn(in: conversationID)
+    }
+
+    private func installResendObserver() {
+        let observer = NotificationCenter.default.addObserver(
+            forName: .lumiResendMessage,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let messageID = Self.uuidValue(
+                notification.userInfo?[LumiMessageSavedNotification.messageIDKey]
+            ),
+            let conversationID = Self.uuidValue(
+                notification.userInfo?[LumiMessageSavedNotification.conversationIDKey]
+            ) else {
+                return
+            }
+
+            Task { @MainActor [weak self] in
+                await self?.resendMessage(id: messageID, in: conversationID)
+            }
+        }
+        resendObserver = NotificationObserverToken(value: observer)
+    }
+
+    nonisolated private static func uuidValue(_ value: Any?) -> UUID? {
+        if let uuid = value as? UUID {
+            return uuid
+        }
+        if let string = value as? String {
+            return UUID(uuidString: string)
+        }
+        return nil
+    }
+
+    private func runAgentTurn(in conversationID: UUID) async {
+        guard let kernelInstance = kernel else {
+            return
+        }
+
+        do {
+            try await kernelInstance.agentTurnRunner?.runTurn(in: conversationID)
+        } catch {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)runAgentTurn 抛出 error target=\(conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")
+            }
+            let errorMessage = LumiChatMessage(
+                conversationID: conversationID,
+                role: .error,
+                content: error.localizedDescription
+            )
+            kernelInstance.messageManager?.insertMessage(errorMessage, to: conversationID)
+        }
+    }
+
     private func beginSending(in conversationID: UUID) {
         sendingConversationIDs.insert(conversationID)
     }
 
     private func endSending(in conversationID: UUID) {
         sendingConversationIDs.remove(conversationID)
+    }
+}
+
+private final class NotificationObserverToken: @unchecked Sendable {
+    let value: NSObjectProtocol
+
+    init(value: NSObjectProtocol) {
+        self.value = value
     }
 }

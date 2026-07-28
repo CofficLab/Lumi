@@ -89,9 +89,13 @@ import LumiKernel
 
 @Suite struct MessageViewHelpersMetadataItemsTests {
 
-    private func message(provider: String? = nil, model: String? = nil) -> LumiChatMessage {
+    private func message(
+        provider: String? = nil,
+        model: String? = nil,
+        metadata: [String: String] = [:]
+    ) -> LumiChatMessage {
         LumiChatMessage(conversationID: UUID(), role: .assistant, content: "hi",
-                        providerID: provider, modelName: model)
+                        providerID: provider, modelName: model, metadata: metadata)
     }
 
     @Test func emptyWhenNoProviderOrModel() {
@@ -110,6 +114,35 @@ import LumiKernel
 
     @Test func providerOnly() {
         #expect(MessageViewHelpers.metadataItems(for: message(provider: "openai")) == ["openai"])
+    }
+
+    @Test func includesCacheHitRateWhenCachedInputTokensExist() {
+        let items = MessageViewHelpers.metadataItems(
+            for: message(
+                provider: "openai",
+                model: "gpt-5",
+                metadata: [
+                    LumiMessageTokenMetadata.cachedInputKey: "45",
+                    LumiMessageTokenMetadata.cacheTotalInputKey: "90",
+                ]
+            )
+        )
+
+        #expect(items == ["openai", "gpt-5", "cache 50%"])
+    }
+
+    @Test func omitsCacheHitRateWithoutCacheHit() {
+        let items = MessageViewHelpers.metadataItems(
+            for: message(
+                provider: "anthropic",
+                metadata: [
+                    LumiMessageTokenMetadata.cachedInputKey: "0",
+                    LumiMessageTokenMetadata.cacheTotalInputKey: "90",
+                ]
+            )
+        )
+
+        #expect(items == ["anthropic"])
     }
 }
 

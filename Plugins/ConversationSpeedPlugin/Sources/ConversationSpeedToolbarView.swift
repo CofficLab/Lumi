@@ -7,6 +7,7 @@ struct ConversationSpeedToolbarView: View {
     @State private var cachedTPS: Double?
     @State private var hasShownTPSAtLeastOnce = false
     @State private var popoverShown = false
+    @State private var speedHistory: [ConversationSpeedSample] = []
 
     // Detail data shown inside the popover.
     @State private var modelName: String?
@@ -47,9 +48,10 @@ struct ConversationSpeedToolbarView: View {
                         outputTokens: outputTokens,
                         streamingDurationMs: streamingDurationMs,
                         timeToFirstTokenMs: timeToFirstTokenMs,
-                        providerID: providerID
+                        providerID: providerID,
+                        speedHistory: speedHistory
                     )
-                    .frame(width: 300)
+                    .frame(width: 360)
                 }
             } else {
                 EmptyView()
@@ -71,22 +73,31 @@ struct ConversationSpeedToolbarView: View {
             return
         }
 
-        guard let lastMessage = kernel.messageManager?.lastMessage(in: conversationID) else {
+        guard let messageManager = kernel.messageManager else {
+            return
+        }
+
+        let messages = messageManager.messages(for: conversationID)
+        let history = ConversationSpeedSample.samples(from: messages)
+        speedHistory = history
+
+        guard let lastMessage = messages.last ?? messageManager.lastMessage(in: conversationID) else {
             if ConversationSpeedPlugin.verbose {
                 ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)No last message for conversation \(conversationID.uuidString.prefix(8))")
             }
             return
         }
+        let latestSpeedMessage = history.last?.message ?? lastMessage
 
         // Capture detail data for the popover.
-        modelName = lastMessage.modelName
-        outputTokens = lastMessage.outputTokenCount
-        streamingDurationMs = lastMessage.streamingDurationMs
-        timeToFirstTokenMs = lastMessage.timeToFirstTokenMs
-        providerID = lastMessage.providerID
+        modelName = latestSpeedMessage.modelName
+        outputTokens = latestSpeedMessage.outputTokenCount ?? Int(latestSpeedMessage.metadata["outputTokens"] ?? "")
+        streamingDurationMs = latestSpeedMessage.streamingDurationMs ?? Double(latestSpeedMessage.metadata["streamingDurationMs"] ?? "")
+        timeToFirstTokenMs = latestSpeedMessage.timeToFirstTokenMs ?? Double(latestSpeedMessage.metadata["timeToFirstTokenMs"] ?? "")
+        providerID = latestSpeedMessage.providerID
 
         // Try tokensPerSecond property first
-        if let tps = lastMessage.tokensPerSecond {
+        if let tps = history.last?.tokensPerSecond ?? lastMessage.conversationSpeedTokensPerSecond {
             if ConversationSpeedPlugin.verbose {
                 ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)tokensPerSecond from property: \(tps)")
             }
@@ -95,32 +106,68 @@ struct ConversationSpeedToolbarView: View {
             return
         }
 
-        // Fallback: calculate from metadata
-        if let outputTokensStr = lastMessage.metadata["outputTokens"],
-           let streamingDurationStr = lastMessage.metadata["streamingDurationMs"],
-           let outputTokens = Int(outputTokensStr),
-           let streamingDurationMs = Double(streamingDurationStr),
-           streamingDurationMs > 0 {
-            let tps = Double(outputTokens) / (streamingDurationMs / 1000.0)
+        // Don't clear cachedTPS if we've already shown it once.
+        // This handles cases where subsequent messages (like tool results) don't have TPS data.
+        if !hasShownTPSAtLeastOnce {
             if ConversationSpeedPlugin.verbose {
-                ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)Calculated TPS from metadata: \(tps) (outputTokens=\(outputTokens), duration=\(streamingDurationMs)ms)")
+                ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)Cannot calculate TPS (no cached value)")
             }
-            cachedTPS = tps
-            hasShownTPSAtLeastOnce = true
+            cachedTPS = nil
         } else {
-            // Don't clear cachedTPS if we've already shown it once
-            // This handles cases where subsequent messages (like tool results) don't have TPS data
-            if !hasShownTPSAtLeastOnce {
-                if ConversationSpeedPlugin.verbose {
-                    ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)Cannot calculate TPS (no cached value)")
-                }
-                cachedTPS = nil
-            } else {
-                if ConversationSpeedPlugin.verbose {
-                    ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)Keeping cached TPS=\(cachedTPS ?? 0)")
-                }
+            if ConversationSpeedPlugin.verbose {
+                ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)Keeping cached TPS=\(cachedTPS ?? 0)")
             }
         }
+    }
+}
+
+struct ConversationSpeedSample: Identifiable, Equatable {
+    let id: UUID
+    let index: Int
+    let createdAt: Date
+    let tokensPerSecond: Double
+    let message: LumiChatMessage
+
+    static func samples(from messages: [LumiChatMessage]) -> [ConversationSpeedSample] {
+        messages
+            .sorted { $0.createdAt < $1.createdAt }
+            .compactMap { message -> (Date, Double, LumiChatMessage)? in
+                guard let tps = message.conversationSpeedTokensPerSecond else { return nil }
+                return (message.createdAt, tps, message)
+            }
+            .enumerated()
+            .map { offset, sample in
+                ConversationSpeedSample(
+                    id: sample.2.id,
+                    index: offset,
+                    createdAt: sample.0,
+                    tokensPerSecond: sample.1,
+                    message: sample.2
+                )
+            }
+    }
+
+    static func averageTokensPerSecond(from samples: [ConversationSpeedSample]) -> Double? {
+        guard !samples.isEmpty else { return nil }
+        let total = samples.reduce(0) { $0 + $1.tokensPerSecond }
+        return total / Double(samples.count)
+    }
+}
+
+private extension LumiChatMessage {
+    var conversationSpeedTokensPerSecond: Double? {
+        if let tokensPerSecond {
+            return tokensPerSecond
+        }
+
+        guard let outputTokensString = metadata["outputTokens"],
+              let streamingDurationString = metadata["streamingDurationMs"],
+              let outputTokens = Int(outputTokensString),
+              let streamingDurationMs = Double(streamingDurationString),
+              streamingDurationMs > 0 else {
+            return nil
+        }
+        return Double(outputTokens) / (streamingDurationMs / 1000.0)
     }
 }
 
@@ -133,6 +180,7 @@ private struct ConversationSpeedPopover: View {
     let streamingDurationMs: Double?
     let timeToFirstTokenMs: Double?
     let providerID: String?
+    let speedHistory: [ConversationSpeedSample]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -152,6 +200,8 @@ private struct ConversationSpeedPopover: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
+
+            averageSpeedBlock
 
             Text(LumiPluginLocalization.string("Streaming speed description", bundle: .module))
                 .font(.callout)
@@ -193,6 +243,8 @@ private struct ConversationSpeedPopover: View {
                 }
             }
 
+            speedHistorySection
+
             Spacer(minLength: 0)
         }
         .padding()
@@ -215,6 +267,157 @@ private struct ConversationSpeedPopover: View {
             return String(format: "%.2f s", ms / 1000.0)
         }
         return String(format: "%.0f ms", ms)
+    }
+}
+
+private extension ConversationSpeedPopover {
+    @ViewBuilder
+    var averageSpeedBlock: some View {
+        if let averageTPS = ConversationSpeedSample.averageTokensPerSecond(from: speedHistory) {
+            HStack(spacing: 10) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.orange)
+                    .frame(width: 22)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(LumiPluginLocalization.string("Average speed", bundle: .module))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(String(format: "%.1f", averageTPS))
+                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        Text(LumiPluginLocalization.string("tokens / second", bundle: .module))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color.orange.opacity(0.09), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.orange.opacity(0.18), lineWidth: 1)
+            )
+        }
+    }
+
+    @ViewBuilder
+    var speedHistorySection: some View {
+        if !speedHistory.isEmpty {
+            Divider()
+
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text(LumiPluginLocalization.string("Conversation speed trend", bundle: .module))
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text(String(format: LumiPluginLocalization.string("%d messages", bundle: .module), speedHistory.count))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                ConversationSpeedLineChart(samples: speedHistory)
+                    .frame(height: 118)
+
+                HStack {
+                    Text(String(format: LumiPluginLocalization.string("Min %.1f", bundle: .module), speedHistory.map(\.tokensPerSecond).min() ?? 0))
+                    Spacer()
+                    Text(String(format: LumiPluginLocalization.string("Max %.1f", bundle: .module), speedHistory.map(\.tokensPerSecond).max() ?? 0))
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct ConversationSpeedLineChart: View {
+    let samples: [ConversationSpeedSample]
+
+    var body: some View {
+        Canvas { context, size in
+            guard !samples.isEmpty, size.width > 0, size.height > 0 else { return }
+
+            let values = samples.map(\.tokensPerSecond)
+            let minValue = values.min() ?? 0
+            let maxValue = values.max() ?? 0
+            let range = max(maxValue - minValue, 1)
+            let inset = EdgeInsets(top: 10, leading: 10, bottom: 16, trailing: 10)
+            let plotWidth = max(size.width - inset.leading - inset.trailing, 1)
+            let plotHeight = max(size.height - inset.top - inset.bottom, 1)
+
+            let points = samples.enumerated().map { offset, sample in
+                let xRatio = samples.count == 1 ? 0.5 : Double(offset) / Double(samples.count - 1)
+                let yRatio = (sample.tokensPerSecond - minValue) / range
+                return CGPoint(
+                    x: inset.leading + plotWidth * xRatio,
+                    y: inset.top + plotHeight * (1 - yRatio)
+                )
+            }
+
+            var grid = Path()
+            for step in 0...2 {
+                let y = inset.top + plotHeight * Double(step) / 2
+                grid.move(to: CGPoint(x: inset.leading, y: y))
+                grid.addLine(to: CGPoint(x: inset.leading + plotWidth, y: y))
+            }
+            context.stroke(grid, with: .color(.secondary.opacity(0.16)), lineWidth: 1)
+
+            var fill = smoothedPath(points: points)
+            fill.addLine(to: CGPoint(x: points.last?.x ?? inset.leading, y: inset.top + plotHeight))
+            fill.addLine(to: CGPoint(x: points.first?.x ?? inset.leading, y: inset.top + plotHeight))
+            fill.closeSubpath()
+            context.fill(fill, with: .linearGradient(
+                Gradient(colors: [.orange.opacity(0.22), .orange.opacity(0.02)]),
+                startPoint: CGPoint(x: size.width / 2, y: inset.top),
+                endPoint: CGPoint(x: size.width / 2, y: inset.top + plotHeight)
+            ))
+
+            context.stroke(smoothedPath(points: points), with: .color(.orange), lineWidth: 2.4)
+
+            if let last = points.last {
+                context.fill(Path(ellipseIn: CGRect(x: last.x - 3.5, y: last.y - 3.5, width: 7, height: 7)), with: .color(.orange))
+                context.stroke(Path(ellipseIn: CGRect(x: last.x - 5.5, y: last.y - 5.5, width: 11, height: 11)), with: .color(.orange.opacity(0.32)), lineWidth: 2)
+            }
+        }
+        .background(Color.orange.opacity(0.07), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.orange.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    private func smoothedPath(points: [CGPoint]) -> Path {
+        var path = Path()
+        guard let first = points.first else { return path }
+        path.move(to: first)
+
+        guard points.count > 1 else {
+            path.addLine(to: first)
+            return path
+        }
+
+        for index in 0..<(points.count - 1) {
+            let current = points[index]
+            let next = points[index + 1]
+            let previous = index > 0 ? points[index - 1] : current
+            let afterNext = index + 2 < points.count ? points[index + 2] : next
+            let control1 = CGPoint(
+                x: current.x + (next.x - previous.x) / 6,
+                y: current.y + (next.y - previous.y) / 6
+            )
+            let control2 = CGPoint(
+                x: next.x - (afterNext.x - current.x) / 6,
+                y: next.y - (afterNext.y - current.y) / 6
+            )
+            path.addCurve(to: next, control1: control1, control2: control2)
+        }
+
+        return path
     }
 }
 

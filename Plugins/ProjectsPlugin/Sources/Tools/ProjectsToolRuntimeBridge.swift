@@ -6,4 +6,5 @@ import SwiftUI
 /// 用于在 Agent 工具中访问 ProjectsViewModel。
 enum ProjectsToolRuntimeBridge {
     nonisolated(unsafe) static var viewModel: ProjectsViewModel?
+    nonisolated(unsafe) static var syncCoordinator: ProjectsSyncCoordinator?
 }
