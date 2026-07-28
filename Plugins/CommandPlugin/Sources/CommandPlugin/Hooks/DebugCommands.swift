@@ -46,7 +46,7 @@ public struct DebugCommands {
                     Self.openDatabaseDirectory(kernel: kernel)
                 },
             ],
-            placement: .appMenu
+            placement: .topLevelMenu
         )
 
         kernel.command?.registerCommandGroup(group)
