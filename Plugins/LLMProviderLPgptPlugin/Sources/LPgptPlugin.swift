@@ -9,6 +9,7 @@ public final class LPgptPlugin: LumiPlugin {
     public let name = "LPgpt"
     public let order = 98
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

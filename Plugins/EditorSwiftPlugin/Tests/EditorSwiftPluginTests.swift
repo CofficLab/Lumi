@@ -2,7 +2,6 @@
 import LumiKernel
 import Testing
 
-@MainActor
 @Test func editorSwiftPluginMetadata() {
     let plugin = EditorSwiftPlugin()
 
@@ -14,7 +13,6 @@ import Testing
     #expect(plugin.stage == .beta)
 }
 
-@MainActor
 @Test func editorSwiftPluginContributesKernelEditorPlugin() {
     let plugin = EditorSwiftPlugin()
     let kernel = LumiKernel()
@@ -26,7 +24,6 @@ import Testing
     #expect(editorPlugins[0].order == 4)
 }
 
-@MainActor
 @Test func swiftEditorPluginRegistersLanguageAndGrammar() {
     let registrar = RecordingEditorExtensionRegistrar()
     EditorSwiftEditorPlugin().registerExtensions(into: registrar)
@@ -40,7 +37,7 @@ import Testing
     let descriptor = EditorSwiftPluginDescriptor.swift
 
     #expect(descriptor.languageId == "swift")
-    #expect(descriptor.displayName == "Swift")
+    #expect(descriptor.name == "Swift")
     #expect(descriptor.fileExtensions == ["swift"])
     #expect(descriptor.shebangAliases == ["swift"])
     #expect(descriptor.lineComment == "//")
@@ -59,7 +56,6 @@ import Testing
     #expect(provider.localsQueryURL()?.lastPathComponent == "locals.scm")
 }
 
-@MainActor
 private final class RecordingEditorExtensionRegistrar: EditorExtensionRegistrar {
     var languages: [EditorLanguageDescriptor] = []
     var grammarProviders: [any LanguageGrammarProviding] = []

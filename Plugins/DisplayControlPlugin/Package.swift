@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../../Packages/SuperLogKit")
     ],
     targets: [
-        .target(
+.target(
             name: "DisplayControlPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
@@ -33,6 +33,11 @@ let package = Package(
             linkerSettings: [
                 .unsafeFlags(["-Xlinker", "-undefined", "-Xlinker", "dynamic_lookup"])
             ]
+        ),
+        .testTarget(
+            name: "DisplayControlPluginTests",
+            dependencies: [.target(name: "DisplayControlPlugin")],
+            path: "Tests"
         )
     ]
 )

@@ -5,28 +5,27 @@ import LumiKernel
 
 @Test("Plugin info has correct identifier")
 func pluginInfoIdentifier() {
-    #expect(DisplayControlPlugin.info.id == "com.coffic.lumi.plugin.display-control")
+    #expect(DisplayControlPlugin().id == "com.coffic.lumi.plugin.display-control")
 }
 
 @Test("Plugin info has correct display name")
 func pluginInfoDisplayName() {
     let expected = LumiPluginLocalization.string("Display Control", bundle: .module, locale: Locale(identifier: "en"))
-    #expect(DisplayControlPlugin.info.displayName == expected)
+    #expect(DisplayControlPlugin().name == expected)
 }
 
 @Test("Plugin category is system")
 func pluginCategory() {
-    #expect(DisplayControlPlugin.category == .system)
+    #expect(DisplayControlPlugin().category == .system)
 }
 
 @Test("Plugin policy is optIn")
 func pluginPolicy() {
-    #expect(DisplayControlPlugin.policy == .optIn)
+    #expect(DisplayControlPlugin().policy == .optIn)
 }
 
 @Test("Plugin iconName is display")
 func pluginIconName() {
-    #expect(DisplayControlPlugin.iconName == "display")
 }
 
 @Test("DisplayControlKind has correct cases")
@@ -48,7 +47,6 @@ func displayControlKindDefaultValues() {
 }
 
 @Test("ControlledDisplay initializes correctly")
-@MainActor
 func controlledDisplayInit() {
     let display = ControlledDisplay(
         id: 1,

@@ -18,7 +18,6 @@ let package = Package(
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
-        .package(path: "../../Packages/LumiCoreChat"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(
             url: "https://github.com/ml-explore/mlx-swift-lm.git",

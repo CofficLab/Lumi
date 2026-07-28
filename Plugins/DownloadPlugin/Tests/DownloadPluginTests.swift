@@ -1,17 +1,18 @@
 import XCTest
 @testable import DownloadPlugin
 
+@MainActor
 final class DownloadPluginTests: XCTestCase {
 
     // MARK: - Plugin Info
 
     func testPluginInfo() {
-        XCTAssertEqual(DownloadPlugin.info.id, "com.coffic.lumi.plugin.download-agent")
-        XCTAssertEqual(DownloadPlugin.info.displayName, "Download Agent")
-        XCTAssertEqual(DownloadPlugin.policy, .alwaysOn)
+        XCTAssertEqual(DownloadPlugin().id, "com.coffic.lumi.plugin.download-agent")
+        XCTAssertEqual(DownloadPlugin().name, "Download Agent")
+        XCTAssertEqual(DownloadPlugin().policy, .alwaysOn)
         XCTAssertEqual(DownloadPlugin.stage, .beta)
-        XCTAssertEqual(DownloadPlugin.category, .agent)
-        XCTAssertEqual(DownloadPlugin.iconName, "arrow.down.circle")
+        XCTAssertEqual(DownloadPlugin().category, .agent)
+        XCTAssertEqual(DownloadPlugin().iconName, "arrow.down.circle")
     }
 
     // MARK: - Download Directory

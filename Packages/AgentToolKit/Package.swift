@@ -17,7 +17,6 @@ let package = Package(
         .package(path: "../SuperLogKit"),
         .package(path: "../LocalizationKit"),
         .package(path: "../LumiKernel"),
-        .package(path: "../LumiCoreMessage"),
     ],
     targets: [
         .target(

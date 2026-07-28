@@ -13,7 +13,7 @@ let package = Package(
         .package(path: "../../Packages/SuperLogKit")
     ],
     targets: [
-        .target(
+.target(
             name: "InputPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
@@ -23,6 +23,11 @@ let package = Package(
             ],
             path: "Sources",
             resources: [.process("../Resources/Localizable.xcstrings")]
+        ),
+        .testTarget(
+            name: "InputPluginTests",
+            dependencies: [.target(name: "InputPlugin")],
+            path: "Tests"
         )
     ]
 )

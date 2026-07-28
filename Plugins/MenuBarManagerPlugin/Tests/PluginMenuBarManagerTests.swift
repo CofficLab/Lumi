@@ -2,10 +2,12 @@ import Testing
 import Foundation
 @testable import MenuBarManagerPlugin
 
+@MainActor
 @Test func packageLoads() async throws {
-    #expect(MenuBarManagerPlugin.id == "MenuBarManager")
+    #expect(MenuBarManagerPlugin().id == "MenuBarManager")
 }
 
+@MainActor
 @Test func localStoreReportsSaveResultAndReloadsHiddenItems() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("MenuBarManagerLocalStore-\(UUID().uuidString)", isDirectory: true)
@@ -19,6 +21,7 @@ import Foundation
     #expect(reloadedStore.array(forKey: "MenuBarManager_HiddenItems") as? [String] == ["wifi", "clock"])
 }
 
+@MainActor
 @Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("MenuBarManagerLocalStore-Invalid-\(UUID().uuidString)", isDirectory: true)
@@ -40,6 +43,7 @@ import Foundation
     #expect(reloadedStore.array(forKey: "MenuBarManager_HiddenItems") as? [String] == ["wifi"])
 }
 
+@MainActor
 @Test func localStoreReportsFailureWhenSettingsDirectoryIsBlocked() throws {
     let tempRoot = FileManager.default.temporaryDirectory
         .appendingPathComponent("MenuBarManagerLocalStore-Blocked-\(UUID().uuidString)", isDirectory: true)

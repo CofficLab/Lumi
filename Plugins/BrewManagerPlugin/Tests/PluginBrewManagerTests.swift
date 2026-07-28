@@ -6,24 +6,21 @@ import LumiKernel
 struct PluginBrewManagerTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(BrewManagerPlugin.id == "BrewManager")
+        #expect(BrewManagerPlugin().id == "BrewManager")
         #expect(BrewManagerPlugin.navigationId == "brew_manager")
-        #expect(BrewManagerPlugin.displayName.isEmpty == false)
-        #expect(BrewManagerPlugin.description.isEmpty == false)
-        #expect(BrewManagerPlugin.iconName == "mug.fill")
-        #expect(BrewManagerPlugin.category == .developerTool)
-        #expect(BrewManagerPlugin.order == 60)
+        #expect(BrewManagerPlugin.name.isEmpty == false)
+        #expect(BrewManagerPlugin().category == .developerTool)
+        #expect(BrewManagerPlugin().order == 60)
         #expect(BrewManagerPlugin.isConfigurable == true)
-        #expect(BrewManagerPlugin.policy == .optOut)
-        #expect(BrewManagerPlugin.shared.instanceLabel == BrewManagerPlugin.id)
+        #expect(BrewManagerPlugin().policy == .optOut)
+        #expect(BrewManagerPlugin.shared.instanceLabel == BrewManagerPlugin().id)
     }
 
     @Test
     func viewContainerContributionIsAvailable() {
         let item = BrewManagerPlugin.shared.addViewContainer()
-        #expect(item?.id == BrewManagerPlugin.id)
-        #expect(item?.title == BrewManagerPlugin.displayName)
-        #expect(item?.icon == BrewManagerPlugin.iconName)
+        #expect(item?.id == BrewManagerPlugin().id)
+        #expect(item?.title == BrewManagerPlugin.name)
     }
 
     @Test

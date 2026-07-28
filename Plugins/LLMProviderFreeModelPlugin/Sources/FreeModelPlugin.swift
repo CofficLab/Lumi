@@ -10,6 +10,7 @@ public final class FreeModelPlugin: LumiPlugin {
     public let name = "FreeModel"
     public let order = 95
 	public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

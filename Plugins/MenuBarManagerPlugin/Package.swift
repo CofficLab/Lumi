@@ -14,7 +14,7 @@ let package = Package(
         .package(path: "../AppUpdatePlugin")
     ],
     targets: [
-        .target(
+.target(
             name: "MenuBarManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
@@ -25,6 +25,11 @@ let package = Package(
             ],
             path: "Sources",
             resources: [.process("../Resources/Localizable.xcstrings")]
+        ),
+        .testTarget(
+            name: "MenuBarManagerPluginTests",
+            dependencies: [.target(name: "MenuBarManagerPlugin")],
+            path: "Tests"
         )
     ]
 )

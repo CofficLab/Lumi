@@ -4,12 +4,11 @@ import Testing
 @testable import OnboardingPlugin
 
 @Test func packageLoads() async throws {
-    #expect(OnboardingPlugin.info.id == "com.coffic.lumi.plugin.onboarding")
-    #expect(OnboardingPlugin.policy == .alwaysOn)
-    #expect(OnboardingPlugin.policy.shouldRegister)
+    #expect(OnboardingPlugin().id == "com.coffic.lumi.plugin.onboarding")
+    #expect(OnboardingPlugin().policy == .alwaysOn)
+    #expect(OnboardingPlugin().policy.shouldRegister)
 }
 
-@MainActor
 @Test func onboardingPluginProvidesPages() throws {
     let context = LumiPluginContext(
         activeSectionID: "test",
@@ -20,7 +19,6 @@ import Testing
     #expect(pages.count == 2)
 }
 
-@MainActor
 @Test func onboardingPageMakesContent() throws {
     let context = LumiPluginContext(
         activeSectionID: "test",
@@ -34,8 +32,8 @@ import Testing
     }
 }
 
-@MainActor
 @Test func defaultOnboardingPagesReturnsEmpty() throws {
+@MainActor
     struct DummyPlugin: LumiPlugin {
         static let info = LumiPluginInfo(
             id: "test.dummy",
@@ -112,7 +110,6 @@ import Testing
     #expect(OnboardingPageIndexing.clampedIndex(7, pageCount: 0) == 0)
 }
 
-@MainActor
 @Test func onboardingViewModelKeepsOnboardingVisibleWhenCompletionCannotBeSaved() throws {
     let tempRoot = FileManager.default.temporaryDirectory
         .appendingPathComponent("OnboardingViewModel-Blocked-\(UUID().uuidString)", isDirectory: true)
@@ -130,7 +127,6 @@ import Testing
     #expect(viewModel.persistenceErrorMessage?.isEmpty == false)
 }
 
-@MainActor
 @Test func onboardingViewModelIgnoresRepeatedNextStepDuringTransition() async throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("OnboardingViewModel-RepeatedNext-\(UUID().uuidString)", isDirectory: true)

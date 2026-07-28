@@ -10,6 +10,7 @@ public final class HappyCodePlugin: LumiPlugin {
     public let name = "HappyCode"
     public let order = 96
 	public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

@@ -8,8 +8,8 @@ public struct ActivityHeatmapSettingsView: View {
     @State private var viewModel: ActivityHeatmapViewModel
     @State private var period: ActivityHeatmapPeriod = .year
 
-    public init(messageService: (any MessageManaging)?) {
-        _viewModel = State(initialValue: ActivityHeatmapViewModel(messageService: messageService))
+    public init(messageService: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil) {
+        _viewModel = State(initialValue: ActivityHeatmapViewModel(messageService: messageService, cache: cache))
     }
 
     public var body: some View {
@@ -156,6 +156,6 @@ public struct ActivityHeatmapSettingsView: View {
 }
 
 #Preview {
-    ActivityHeatmapSettingsView(messageService: nil)
+    ActivityHeatmapSettingsView(messageService: nil, cache: nil)
         .frame(width: 480, height: 600)
 }

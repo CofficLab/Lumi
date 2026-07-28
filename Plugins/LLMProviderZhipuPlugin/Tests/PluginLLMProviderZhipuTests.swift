@@ -7,24 +7,22 @@ import Testing
 @testable import LLMProviderZhipuPlugin
 
 @Suite(.serialized)
+@MainActor
 struct PluginLLMProviderZhipuTests {
     @Test func pluginMetadata() {
-        #expect(ZhipuPlugin.info.id.isEmpty == false)
-        #expect(ZhipuPlugin.info.displayName.isEmpty == false)
-        #expect(ZhipuPlugin.info.description.isEmpty == false)
-        #expect(ZhipuPlugin.iconName.isEmpty == false)
-        #expect(ZhipuPlugin.category == .llmProvider)
-        #expect(ZhipuPlugin.policy == .alwaysOn)
+        #expect(ZhipuPlugin().id.isEmpty == false)
+        #expect(ZhipuPlugin().name.isEmpty == false)
+        #expect(ZhipuPlugin().category == .llmProvider)
+        #expect(ZhipuPlugin().policy == .alwaysOn)
     }
 
     @Test func providerMetadata() {
         #expect(ZhipuProvider.info.id == "zhipu")
-        #expect(ZhipuProvider.info.displayName.isEmpty == false)
+        #expect(ZhipuProvider.info.name.isEmpty == false)
         #expect(ZhipuProvider.info.defaultModel.isEmpty == false)
         #expect(ZhipuProvider.apiKeyHelpURL != nil)
     }
 
-    @MainActor
     @Test func renderersMatchRenderKind() {
         let conversationID = UUID()
         let apiKeyMessage = LumiChatMessage(
@@ -60,7 +58,6 @@ struct PluginLLMProviderZhipuTests {
         #expect(Http403Renderer.item.order > 160)
     }
 
-    @MainActor
     @Test func httpErrorRendererMatchesOtherStatusCodes() {
         let conversationID = UUID()
         let rateLimited = LumiChatMessage(
@@ -84,7 +81,6 @@ struct PluginLLMProviderZhipuTests {
         #expect(!HttpErrorRenderer.item.canRender(forbidden))
     }
 
-    @MainActor
     @Test func requestFailedRendererMatchesRenderKind() {
         let message = LumiChatMessage(
             conversationID: UUID(),

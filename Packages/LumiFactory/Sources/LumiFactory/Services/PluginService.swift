@@ -12,7 +12,7 @@ import BrewManagerPlugin
 import BrowserPlugin
 import CADDesignerPlugin
 import CaffeinatePlugin
-import ChatAttachmentPreviewPlugin
+import ConversationAttachmentPlugin
 import ChatFileAttachmentPlugin
 import ChatModePlugin
 import ChatPanelPlugin
@@ -198,7 +198,7 @@ public enum PluginService {
             ModelSelectorPlugin(),
             MessageListPlugin(),
             ConversationInputPlugin(),
-            ChatAttachmentPreviewPlugin(),
+            ConversationAttachmentPlugin(),
             ChatScreenshotPlugin(),
             ChatFileAttachmentPlugin(),
             PluginManagerPlugin(),

@@ -10,6 +10,7 @@ public final class AnthropicPlugin: LumiPlugin {
     public let name = "Anthropic"
     public let order = 104
 	public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

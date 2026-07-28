@@ -6,17 +6,16 @@ import LumiKernel
 // MARK: - Plugin registration
 
 @Test func pluginPolicyIsAlwaysOn() {
-    #expect(ConversationForkPlugin.policy == .alwaysOn)
-    #expect(ConversationForkPlugin.policy.isConfigurable == false)
+    #expect(ConversationForkPlugin().policy == .alwaysOn)
+    #expect(ConversationForkPlugin().policy.isConfigurable == false)
 }
 
 @Test func pluginOrderFollowsConversationNew() {
     // 紧跟 ConversationNewPlugin (order 60)，确保按钮相邻。
-    #expect(ConversationForkPlugin.info.order == 61)
-    #expect(ConversationForkPlugin.info.id == "com.coffic.lumi.plugin.conversation-fork")
+    #expect(ConversationForkPlugin().order == 61)
+    #expect(ConversationForkPlugin().id == "com.coffic.lumi.plugin.conversation-fork")
 }
 
-@MainActor
 @Test func toolbarItemsRequireChatSectionAndService() {
     let hiddenChatContext = LumiPluginContext(
         activeSectionID: "editor",
@@ -64,7 +63,6 @@ import LumiKernel
 
 // MARK: - ConversationSummarizer
 
-@MainActor
 @Test func summarizeUsesModelWhenProviderAvailable() async {
     let id = UUID()
     let chatService = MockChatService()
@@ -90,7 +88,6 @@ import LumiKernel
     #expect(chatService.lastEphemeralMessages?.first?.role == .system)
 }
 
-@MainActor
 @Test func summarizeFallsBackWhenProviderMissing() async {
     let id = UUID()
     let chatService = MockChatService()
@@ -106,7 +103,6 @@ import LumiKernel
     #expect(chatService.ephemeralCallCount == 0)
 }
 
-@MainActor
 @Test func summarizeFallsBackWhenModelThrows() async {
     let id = UUID()
     let chatService = MockChatService()
@@ -116,6 +112,7 @@ import LumiKernel
     ]
     chatService.providerIDs[id] = "openai"
     chatService.modelNames[id] = "gpt-4o"
+@MainActor
     struct Boom: Error {}
     chatService.ephemeralError = Boom()
 
@@ -127,7 +124,6 @@ import LumiKernel
     #expect(outcome.summary.contains("did part"))
 }
 
-@MainActor
 @Test func summarizeFallsBackWhenModelReturnsEmpty() async {
     let id = UUID()
     let chatService = MockChatService()
@@ -148,7 +144,6 @@ import LumiKernel
     #expect(outcome.summary.contains("ask"))
 }
 
-@MainActor
 @Test func summarizeIgnoresToolAndStatusMessages() async {
     let id = UUID()
     let chatService = MockChatService()
@@ -172,7 +167,6 @@ import LumiKernel
 
 // MARK: - MockChatService
 
-@MainActor
 private final class MockChatService: LumiChatServicing {
     var conversations: [LumiConversationSummary] = []
     var selectedConversationID: UUID?
@@ -230,7 +224,7 @@ private final class MockChatService: LumiChatServicing {
     func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
     func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .standard }
     func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
-    func registerToolService(_ toolService: (any LumiToolServicing)?) {}
+    func registerToolService(_ toolService: (any ToolManaging)?) {}
     func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? { nil }
     func messages(for conversationID: UUID) -> [LumiChatMessage] {
         messagesByID[conversationID] ?? []

@@ -5,17 +5,16 @@ import Testing
 @testable import BrowserPlugin
 
 @Suite("PluginBrowser")
+@MainActor
 struct PluginBrowserTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
-        #expect(BrowserPlugin.id == "Browser")
-        #expect(BrowserPlugin.displayName == "Browser")
-        #expect(BrowserPlugin.iconName == "safari")
-        #expect(BrowserPlugin.category == .general)
-        #expect(BrowserPlugin.order == 102)
+        #expect(BrowserPlugin().id == "Browser")
+        #expect(BrowserPlugin.name == "Browser")
+        #expect(BrowserPlugin().category == .general)
+        #expect(BrowserPlugin().order == 102)
     }
 
-    @MainActor
     @Test("plugin registers browser tools")
     func pluginRegistersTools() {
         let tools = BrowserPlugin.agentTools(

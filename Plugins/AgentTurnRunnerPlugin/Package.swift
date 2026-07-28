@@ -10,6 +10,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
@@ -17,6 +18,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources/AgentTurnRunnerPlugin"
         ),

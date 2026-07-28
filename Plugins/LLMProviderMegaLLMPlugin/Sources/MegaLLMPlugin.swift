@@ -9,6 +9,7 @@ public final class MegaLLMPlugin: LumiPlugin {
     public let name = "MegaLLM"
     public let order = 99
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

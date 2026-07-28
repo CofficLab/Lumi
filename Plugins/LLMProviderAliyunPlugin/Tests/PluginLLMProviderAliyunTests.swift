@@ -7,6 +7,7 @@ import Testing
 @testable import LLMProviderAliyunPlugin
 
 @Suite(.serialized)
+@MainActor
 struct PluginLLMProviderAliyunTests {
     private func makeMessage(for error: Error, conversationID: UUID = UUID()) -> LumiChatMessage {
         let provider = AliyunProvider()
@@ -29,22 +30,19 @@ struct PluginLLMProviderAliyunTests {
     }
 
     @Test func pluginMetadata() {
-        #expect(AliyunPlugin.info.id.isEmpty == false)
-        #expect(AliyunPlugin.info.displayName.isEmpty == false)
-        #expect(AliyunPlugin.info.description.isEmpty == false)
-        #expect(AliyunPlugin.iconName.isEmpty == false)
-        #expect(AliyunPlugin.category == .llmProvider)
-        #expect(AliyunPlugin.policy == .alwaysOn)
+        #expect(AliyunPlugin().id.isEmpty == false)
+        #expect(AliyunPlugin().name.isEmpty == false)
+        #expect(AliyunPlugin().category == .llmProvider)
+        #expect(AliyunPlugin().policy == .alwaysOn)
     }
 
     @Test func providerMetadata() {
         #expect(AliyunProvider.info.id == "aliyun")
-        #expect(AliyunProvider.info.displayName.isEmpty == false)
+        #expect(AliyunProvider.info.name.isEmpty == false)
         #expect(AliyunProvider.info.defaultModel.isEmpty == false)
         #expect(AliyunProvider.apiKeyHelpURL != nil)
     }
 
-    @MainActor
     @Test func renderersMatchRenderKind() {
         let conversationID = UUID()
         let apiKeyMessage = LumiChatMessage(
@@ -103,7 +101,6 @@ struct PluginLLMProviderAliyunTests {
         #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
     }
 
-    @MainActor
     @Test func httpErrorRendererMatchesOtherStatusCodes() {
         let conversationID = UUID()
         let rateLimited = LumiChatMessage(
@@ -129,7 +126,7 @@ struct PluginLLMProviderAliyunTests {
 
     @Test func errorMessageMapsMissingAPIKey() {
         let message = makeMessage(
-            for: LumiLLMProviderSupportError.missingAPIKey(AliyunProvider.info.displayName)
+            for: LumiLLMProviderSupportError.missingAPIKey(AliyunProvider.info.name)
         )
 
         #expect(message.renderKind == AliyunRenderKind.apiKeyMissing)

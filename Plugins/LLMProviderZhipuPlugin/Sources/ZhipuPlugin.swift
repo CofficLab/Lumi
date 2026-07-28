@@ -9,6 +9,7 @@ public final class ZhipuPlugin: LumiPlugin {
     public let name = "智谱 Coding Plan"
     public let order = 110
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

@@ -11,9 +11,63 @@ public enum EditorLSPActionPolicy {
         case findingImplementation
     }
 
+    /// Built-in LSP language id mapping (file extension -> LSP language id).
+    ///
+    /// Used as a fallback when the global `LanguageRegistry` has not (yet)
+    /// registered a given extension, keeping the policy self-contained and
+    /// testable without external language plugins. Lookups are case-insensitive.
+    private static let builtInLanguageIds: [String: String] = [
+        "swift": "swift",
+        "ts": "typescript",
+        "tsx": "typescript",
+        "js": "javascript",
+        "jsx": "javascript",
+        "mjs": "javascript",
+        "cjs": "javascript",
+        "py": "python",
+        "rb": "ruby",
+        "go": "go",
+        "rs": "rust",
+        "kt": "kotlin",
+        "java": "java",
+        "c": "c",
+        "cpp": "cpp",
+        "cc": "cpp",
+        "h": "c",
+        "hpp": "cpp",
+        "m": "objectivec",
+        "mm": "objectivecpp",
+        "cs": "csharp",
+        "php": "php",
+        "html": "html",
+        "htm": "html",
+        "css": "css",
+        "scss": "scss",
+        "less": "less",
+        "json": "json",
+        "yaml": "yaml",
+        "yml": "yaml",
+        "toml": "toml",
+        "md": "markdown",
+        "sh": "shellscript",
+        "bash": "shellscript",
+        "zsh": "shellscript",
+        "sql": "sql",
+        "xml": "xml",
+        "lua": "lua",
+        "dart": "dart",
+        "scala": "scala",
+        "pl": "perl",
+        "r": "r",
+        "groovy": "groovy",
+    ]
+
     @MainActor
     public static func languageID(forFileExtension ext: String) -> String? {
-        LanguageRegistry.shared.lspLanguageId(forExtension: ext)
+        if let id = LanguageRegistry.shared.lspLanguageId(forExtension: ext) {
+            return id
+        }
+        return builtInLanguageIds[ext.lowercased()]
     }
 
     public static func statusMessageKey(for kind: EditorLSPActionJumpKind) -> StatusMessageKey {
