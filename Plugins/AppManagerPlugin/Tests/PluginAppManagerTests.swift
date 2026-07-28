@@ -8,23 +8,20 @@ import SwiftData
 struct PluginAppManagerTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(AppManagerPlugin.id == "AppManager")
+        #expect(AppManagerPlugin().id == "AppManager")
         #expect(AppManagerPlugin.navigationId == "app_manager")
-        #expect(AppManagerPlugin.displayName.isEmpty == false)
-        #expect(AppManagerPlugin.description.isEmpty == false)
-        #expect(AppManagerPlugin.iconName == "apps.ipad")
-        #expect(AppManagerPlugin.category == .system)
-        #expect(AppManagerPlugin.order == 40)
-        #expect(AppManagerPlugin.policy == .disabled)
-        #expect(AppManagerPlugin.shared.instanceLabel == AppManagerPlugin.id)
+        #expect(AppManagerPlugin.name.isEmpty == false)
+        #expect(AppManagerPlugin().category == .system)
+        #expect(AppManagerPlugin().order == 40)
+        #expect(AppManagerPlugin().policy == .disabled)
+        #expect(AppManagerPlugin.shared.instanceLabel == AppManagerPlugin().id)
     }
 
     @Test
     func viewContainerContributionIsAvailable() {
         let item = AppManagerPlugin.shared.addViewContainer()
-        #expect(item?.id == AppManagerPlugin.id)
-        #expect(item?.title == AppManagerPlugin.displayName)
-        #expect(item?.icon == AppManagerPlugin.iconName)
+        #expect(item?.id == AppManagerPlugin().id)
+        #expect(item?.title == AppManagerPlugin.name)
     }
 
     @Test
@@ -147,7 +144,7 @@ struct PluginAppManagerTests {
         await secondScan.value
 
         #expect(viewModel.isLoading == false)
-        #expect(viewModel.installedApps.map(\.displayName) == ["Fresh"])
+        #expect(viewModel.installedApps.map(\.name) == ["Fresh"])
     }
 
     private static func app(path: String, name: String, size: Int64) -> AppModel {
@@ -194,6 +191,6 @@ private final class FakeAppManagerService: AppManagerServicing, @unchecked Senda
     func openApp(_ app: AppModel) {}
 
     func getAppInfo(_ app: AppModel) -> String {
-        app.displayName
+        app.name
     }
 }

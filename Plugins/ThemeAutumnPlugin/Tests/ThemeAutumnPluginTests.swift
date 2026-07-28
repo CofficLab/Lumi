@@ -8,9 +8,9 @@ import LumiUI
 @MainActor
 struct ThemeAutumnPluginTests {
     @Test func metadata() {
-        #expect(ThemeAutumnPlugin.info.id == "com.coffic.lumi.plugin.theme.autumn")
-        #expect(ThemeAutumnPlugin.info.displayName.isEmpty == false)
-        #expect(ThemeAutumnPlugin.info.order == 126)
+        #expect(ThemeAutumnPlugin().id == "com.coffic.lumi.plugin.theme.autumn")
+        #expect(ThemeAutumnPlugin().name.isEmpty == false)
+        #expect(ThemeAutumnPlugin().order == 126)
     }
 
     @Test func contributesTheme() {
@@ -23,7 +23,7 @@ struct ThemeAutumnPluginTests {
     @Test func conformsToPluginAndThemeProvider() {
         let plugin = ThemeAutumnPlugin.self as any LumiPlugin.Type
         let provider = plugin as? any LumiUIThemeProviding.Type
-        #expect(plugin.info.id == ThemeAutumnPlugin.info.id)
+        #expect(plugin.id == ThemeAutumnPlugin().id)
         #expect(provider?.themeContributions().count == 1)
     }
 

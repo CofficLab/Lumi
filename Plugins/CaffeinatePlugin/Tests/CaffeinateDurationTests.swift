@@ -7,21 +7,25 @@ import Foundation
 @MainActor
 @Suite struct CaffeinateDurationOptionTests {
 
+    @MainActor
     @Test func indefiniteTimeIntervalIsZero() {
         #expect(CaffeinateManager.DurationOption.indefinite.timeInterval == 0)
     }
 
+    @MainActor
     @Test func minutesConvertToSeconds() {
         #expect(CaffeinateManager.DurationOption.minutes(10).timeInterval == 600)
         #expect(CaffeinateManager.DurationOption.minutes(30).timeInterval == 1800)
         #expect(CaffeinateManager.DurationOption.minutes(1).timeInterval == 60)
     }
 
+    @MainActor
     @Test func hoursConvertToSeconds() {
         #expect(CaffeinateManager.DurationOption.hours(1).timeInterval == 3600)
         #expect(CaffeinateManager.DurationOption.hours(2).timeInterval == 7200)
     }
 
+    @MainActor
     @Test func displayNameIsNonEmpty() {
         for option in CaffeinateManager.commonDurations {
             #expect(!option.displayName.isEmpty)
@@ -29,6 +33,7 @@ import Foundation
         #expect(!CaffeinateManager.DurationOption.indefinite.displayName.isEmpty)
     }
 
+    @MainActor
     @Test func commonDurationsIsStable() {
         // Lock the preset list so UI/menu ordering doesn't drift unnoticed.
         #expect(CaffeinateManager.commonDurations.count >= 5)
@@ -37,6 +42,7 @@ import Foundation
         #expect(CaffeinateManager.commonDurations.contains(.hours(1)))
     }
 
+    @MainActor
     @Test func durationOptionEquatable() {
         #expect(CaffeinateManager.DurationOption.minutes(10) == .minutes(10))
         #expect(CaffeinateManager.DurationOption.minutes(10) != .minutes(30))
@@ -47,16 +53,19 @@ import Foundation
 @MainActor
 @Suite struct CaffeinateSleepModeTests {
 
+    @MainActor
     @Test func allCasesCovered() {
         #expect(CaffeinateManager.SleepMode.allCases.count == 2)
     }
 
+    @MainActor
     @Test func displayNameIsNonEmpty() {
         for mode in CaffeinateManager.SleepMode.allCases {
             #expect(!mode.displayName.isEmpty)
         }
     }
 
+    @MainActor
     @Test func displayNameDistinguishesModes() {
         let system = CaffeinateManager.SleepMode.systemOnly.displayName
         let both = CaffeinateManager.SleepMode.systemAndDisplay.displayName

@@ -5,18 +5,17 @@ import Testing
 @testable import WebSearchPlugin
 
 @Suite("PluginWebSearch")
+@MainActor
 struct PluginWebSearchTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
-        #expect(WebSearchPlugin.id == "WebSearch")
-        #expect(WebSearchPlugin.displayName == "Web Search")
-        #expect(WebSearchPlugin.iconName == "magnifyingglass")
-        #expect(WebSearchPlugin.category == .general)
-        #expect(WebSearchPlugin.order == 101)
-        #expect(WebSearchPlugin.policy == .optIn)
+        #expect(WebSearchPlugin().id == "WebSearch")
+        #expect(WebSearchPlugin.name == "Web Search")
+        #expect(WebSearchPlugin().category == .general)
+        #expect(WebSearchPlugin().order == 101)
+        #expect(WebSearchPlugin().policy == .optIn)
     }
 
-    @MainActor
     @Test("plugin registers one web search tool")
     func pluginRegistersTool() {
         let tools = WebSearchPlugin.agentTools(

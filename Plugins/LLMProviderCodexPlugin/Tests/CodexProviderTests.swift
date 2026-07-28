@@ -4,21 +4,21 @@ import Testing
 @testable import LLMProviderCodexPlugin
 
 @Suite("PluginLLMProviderCodex")
+@MainActor
 struct CodexProviderTests {
     @Test("plugin metadata registers codex provider")
     func pluginMetadata() {
-        #expect(CodexPlugin.id == "LLMProviderCodex")
-        #expect(CodexPlugin.displayName == "Codex CLI")
-        #expect(CodexPlugin.iconName == "terminal")
-        #expect(CodexPlugin.category == .llmProvider)
-        #expect(CodexPlugin.order == 11)
+        #expect(CodexPlugin().id == "LLMProviderCodex")
+        #expect(CodexPlugin.name == "Codex CLI")
+        #expect(CodexPlugin().category == .llmProvider)
+        #expect(CodexPlugin().order == 11)
         #expect(CodexPlugin.shared.llmProviderType()?.id == "codex")
     }
 
     @Test("provider metadata is stable")
     func providerMetadata() {
         #expect(CodexProvider.id == "codex")
-        #expect(CodexProvider.displayName == "Codex")
+        #expect(CodexProvider.name == "Codex")
         #expect(CodexProvider.shortName == "CX")
         #expect(CodexProvider.apiKeyStorageKey == "")
         #expect(CodexProvider.defaultModel == "gpt-5.5")

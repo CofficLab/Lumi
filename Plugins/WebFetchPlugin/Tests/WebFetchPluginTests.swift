@@ -3,18 +3,17 @@ import Testing
 @testable import WebFetchPlugin
 
 @Suite("PluginWebFetch")
+@MainActor
 struct PluginWebFetchTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
-        #expect(WebFetchPlugin.id == "WebFetch")
-        #expect(WebFetchPlugin.displayName == "Web Fetch")
-        #expect(WebFetchPlugin.iconName == "globe")
-        #expect(WebFetchPlugin.category == .general)
-        #expect(WebFetchPlugin.order == 100)
-        #expect(WebFetchPlugin.policy == .optIn)
+        #expect(WebFetchPlugin().id == "WebFetch")
+        #expect(WebFetchPlugin.name == "Web Fetch")
+        #expect(WebFetchPlugin().category == .general)
+        #expect(WebFetchPlugin().order == 100)
+        #expect(WebFetchPlugin().policy == .optIn)
     }
 
-    @MainActor
     @Test("plugin registers one web fetch tool")
     func pluginRegistersTool() {
         let tools = WebFetchPlugin.agentTools(

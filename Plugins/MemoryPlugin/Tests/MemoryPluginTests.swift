@@ -4,17 +4,16 @@ import Testing
 @testable import MemoryPlugin
 
 @Suite("PluginMemory")
+@MainActor
 struct PluginMemoryTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
-        #expect(MemoryPlugin.info.id == "com.coffic.lumi.plugin.memory")
-        #expect(MemoryPlugin.info.displayName == PluginMemoryLocalization.string("Memory"))
-        #expect(MemoryPlugin.iconName == "brain.head.profile")
-        #expect(MemoryPlugin.category == .agent)
-        #expect(MemoryPlugin.info.order == 15)
+        #expect(MemoryPlugin().id == "com.coffic.lumi.plugin.memory")
+        #expect(MemoryPlugin().name == PluginMemoryLocalization.string("Memory"))
+        #expect(MemoryPlugin().category == .agent)
+        #expect(MemoryPlugin().order == 15)
     }
 
-    @MainActor
     @Test("plugin registers four memory tools")
     func pluginRegistersTools() {
         let tools = MemoryPlugin.agentTools(lumiCore: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat"))
@@ -27,7 +26,6 @@ struct PluginMemoryTests {
         #expect(names.contains("delete_memory"))
     }
 
-    @MainActor
     @Test("save memory tool schema has required fields")
     func saveMemoryToolSchema() {
         let tool = SaveMemoryTool()

@@ -10,9 +10,9 @@ struct ThemeVscodePluginTests {
     // MARK: - Plugin Metadata
 
     @Test func metadata() {
-        #expect(ThemeVscodePlugin.info.id == "com.coffic.lumi.plugin.theme.vscode")
-        #expect(ThemeVscodePlugin.info.displayName.isEmpty == false)
-        #expect(ThemeVscodePlugin.info.order == 129)
+        #expect(ThemeVscodePlugin().id == "com.coffic.lumi.plugin.theme.vscode")
+        #expect(ThemeVscodePlugin().name.isEmpty == false)
+        #expect(ThemeVscodePlugin().order == 129)
     }
 
     @Test func contributesThreeThemes() {
@@ -47,7 +47,7 @@ struct ThemeVscodePluginTests {
     @Test func conformsToPluginAndThemeProvider() {
         let plugin = ThemeVscodePlugin.self as any LumiPlugin.Type
         let provider = plugin as? any LumiUIThemeProviding.Type
-        #expect(plugin.info.id == ThemeVscodePlugin.info.id)
+        #expect(plugin.id == ThemeVscodePlugin().id)
         #expect(provider?.themeContributions().count == 3)
     }
 

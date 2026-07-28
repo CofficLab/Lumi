@@ -10,10 +10,12 @@ import Testing
 /// `.borderlessButton` 的 label 内 SF Symbol 常退回系统 `Color.primary`（单测测不到渲染，只能测色值策略）。
 @MainActor
 struct BreadcrumbNavIconContrastTests {
+    @MainActor
     @Test func breadcrumbSegmentAvoidsBorderlessMenuLabel() {
         #expect(!BreadcrumbNavIconStyle.usesBorderlessMenuLabel)
     }
 
+    @MainActor
     @Test func systemPrimaryIconFailsContrastOnDarkBreadcrumbChromeUnderLightSystem() {
         let chrome = ForcedDarkBreadcrumbChromeFixture()
         let ui = ChromeToUIThemeAdapter(chrome: chrome)
@@ -31,6 +33,7 @@ struct BreadcrumbNavIconContrastTests {
         )
     }
 
+    @MainActor
     @Test func declaredFolderIconColorPassesContrastOnDarkBreadcrumbChrome() {
         assertDeclaredIconPassesContrast(
             item: BreadcrumbItem(
@@ -42,6 +45,7 @@ struct BreadcrumbNavIconContrastTests {
         )
     }
 
+    @MainActor
     @Test func declaredSwiftIconColorPassesContrastOnDarkBreadcrumbChrome() {
         assertDeclaredIconPassesContrast(
             item: BreadcrumbItem(
@@ -53,6 +57,7 @@ struct BreadcrumbNavIconContrastTests {
         )
     }
 
+    @MainActor
     @Test func declaredGenericFileIconColorPassesContrastOnDarkBreadcrumbChrome() {
         assertDeclaredIconPassesContrast(
             item: BreadcrumbItem(

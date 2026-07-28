@@ -4,17 +4,16 @@ import Testing
 @testable import ShowImagePlugin
 
 @Suite("PluginShowImage", .serialized)
+@MainActor
 struct PluginShowImageTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
-        #expect(ShowImagePlugin.id == "ShowImage")
-        #expect(ShowImagePlugin.displayName == "Show Image")
-        #expect(ShowImagePlugin.iconName == "photo.on.rectangle")
-        #expect(ShowImagePlugin.category == .general)
-        #expect(ShowImagePlugin.order == 97)
+        #expect(ShowImagePlugin().id == "ShowImage")
+        #expect(ShowImagePlugin.name == "Show Image")
+        #expect(ShowImagePlugin().category == .general)
+        #expect(ShowImagePlugin().order == 97)
     }
 
-    @MainActor
     @Test("plugin registers one show image tool")
     func pluginRegistersTool() {
         let tools = ShowImagePlugin.agentTools(
@@ -85,7 +84,6 @@ struct PluginShowImageTests {
         #expect(ShowImageTool.normalizedMaxWidth("not-a-number") == ShowImageTool.defaultMaxWidth)
     }
 
-    @MainActor
     @Test("tool trims copied remote source whitespace")
     func toolTrimsCopiedRemoteSourceWhitespace() async throws {
         ShowImageState.shared.clear()
@@ -118,7 +116,6 @@ struct PluginShowImageTests {
         }
     }
 
-    @MainActor
     @Test("tool accepts uppercase HTTPS remote source")
     func toolAcceptsUppercaseHTTPSRemoteSource() async throws {
         ShowImageState.shared.clear()
@@ -138,7 +135,6 @@ struct PluginShowImageTests {
         ShowImageState.shared.clear()
     }
 
-    @MainActor
     @Test("tool reports unsupported remote URL scheme")
     func toolReportsUnsupportedRemoteURLScheme() async throws {
         ShowImageState.shared.clear()
@@ -157,7 +153,6 @@ struct PluginShowImageTests {
         #expect(ShowImageState.shared.displayItem == nil)
     }
 
-    @MainActor
     @Test("tool clamps displayed remote max width")
     func toolClampsDisplayedRemoteMaxWidth() async throws {
         ShowImageState.shared.clear()
@@ -179,7 +174,6 @@ struct PluginShowImageTests {
         ShowImageState.shared.clear()
     }
 
-    @MainActor
     @Test("tool accepts JSON-style max width values")
     func toolAcceptsJSONStyleMaxWidthValues() async throws {
         ShowImageState.shared.clear()

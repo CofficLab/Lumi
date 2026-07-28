@@ -30,7 +30,6 @@ import Testing
     #expect(true)
 }
 
-@MainActor
 @Test func pluginExposesCodeSearchAgentTool() {
     let tools = ProjectRAGPlugin().agentTools(kernel: LumiKernel())
     #expect(tools.map(\.name).contains(RAGCodeSearchTool.info.id))
@@ -109,6 +108,7 @@ import Testing
         withIntermediateDirectories: true
     )
     try """
+@MainActor
     struct UTF16Searchable {
         let marker = "needle utf16 keyword target"
     }
@@ -145,6 +145,7 @@ import Testing
     for index in 1...25 {
         let fileURL = sourcesURL.appendingPathComponent("Match\(index).swift")
         try """
+@MainActor
         struct Match\(index) {
             let marker = "bounded topk target"
         }

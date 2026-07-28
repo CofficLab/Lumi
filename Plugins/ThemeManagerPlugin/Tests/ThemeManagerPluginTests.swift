@@ -5,8 +5,8 @@ import LumiKernel
 @MainActor
 struct ThemeManagerPluginTests {
     @Test func metadata() {
-        #expect(ThemeManagerPlugin.info.id == "com.coffic.lumi.plugin.theme-manager")
-        #expect(ThemeManagerPlugin.info.order == 22)
+        #expect(ThemeManagerPlugin().id == "com.coffic.lumi.plugin.theme-manager")
+        #expect(ThemeManagerPlugin().order == 22)
     }
 
     @Test func hidesStatusItemWithoutThemeService() {

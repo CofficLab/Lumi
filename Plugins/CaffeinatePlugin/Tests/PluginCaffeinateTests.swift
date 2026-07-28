@@ -6,15 +6,13 @@ import Testing
 struct PluginCaffeinateTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(CaffeinatePlugin.id == "Caffeinate")
+        #expect(CaffeinatePlugin().id == "Caffeinate")
         #expect(CaffeinatePlugin.navigationId == "caffeinate_settings")
-        #expect(CaffeinatePlugin.displayName.isEmpty == false)
-        #expect(CaffeinatePlugin.description.isEmpty == false)
-        #expect(CaffeinatePlugin.iconName == "bolt")
+        #expect(CaffeinatePlugin.name.isEmpty == false)
         #expect(CaffeinatePlugin.isConfigurable == true)
-        #expect(CaffeinatePlugin.category == .system)
-        #expect(CaffeinatePlugin.order == 7)
-        #expect(CaffeinatePlugin.policy == .optOut)
+        #expect(CaffeinatePlugin().category == .system)
+        #expect(CaffeinatePlugin().order == 7)
+        #expect(CaffeinatePlugin().policy == .optOut)
     }
 
     @Test

@@ -1,13 +1,12 @@
 import Testing
 @testable import LLMProviderKimiCodePlugin
 
+@MainActor
 struct PluginLLMProviderKimiCodeTests {
     @Test func pluginMetadata() {
-        #expect(KimiCodePlugin.id.isEmpty == false)
-        #expect(KimiCodePlugin.displayName.isEmpty == false)
-        #expect(KimiCodePlugin.description.isEmpty == false)
-        #expect(KimiCodePlugin.iconName.isEmpty == false)
-        #expect(KimiCodePlugin.category == .llmProvider)
+        #expect(KimiCodePlugin().id.isEmpty == false)
+        #expect(KimiCodePlugin.name.isEmpty == false)
+        #expect(KimiCodePlugin().category == .llmProvider)
     }
 
     @Test func openAIProviderMetadata() {

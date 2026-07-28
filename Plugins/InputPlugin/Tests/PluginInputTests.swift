@@ -2,10 +2,12 @@ import Testing
 import Foundation
 @testable import InputPlugin
 
+@MainActor
 @Test func packageLoads() async throws {
-    #expect(InputPlugin.id == "InputManager")
+    #expect(InputPlugin().id == "InputManager")
 }
 
+@MainActor
 @Test func localStoreReportsSaveResultAndReloadsData() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("InputPluginLocalStore-\(UUID().uuidString)", isDirectory: true)
@@ -20,6 +22,7 @@ import Foundation
     #expect(reloadedStore.data(forKey: "InputPluginConfig") == data)
 }
 
+@MainActor
 @Test func localStoreQuarantinesInvalidSettingsFileAndRecovers() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("InputPluginLocalStore-Invalid-\(UUID().uuidString)", isDirectory: true)
@@ -42,6 +45,7 @@ import Foundation
     #expect(reloadedStore.data(forKey: "InputPluginConfig") == newData)
 }
 
+@MainActor
 @Test func localStoreReportsFailureWhenSettingsDirectoryIsBlocked() throws {
     let tempRoot = FileManager.default.temporaryDirectory
         .appendingPathComponent("InputPluginLocalStore-Blocked-\(UUID().uuidString)", isDirectory: true)

@@ -1,11 +1,11 @@
 // NOTE: This test file is currently NOT executable under `swift test` because
 // `PluginLLMProviderStepFunTests.swift` in the same target references
-// `StepFunPlugin.id` / `StepFunPlugin.displayName` etc. as static members,
+// `StepFunPlugin().id` / `StepFunPlugin.name` etc. as static members,
 // but `StepFunPlugin` (and the `LumiPlugin` protocol) only exposes `info`.
 // That's a pre-existing SPM compilation issue, unrelated to this commit.
 //
 // Once that's fixed (either by adding `id`/`displayName`/... extensions to
-// `LumiPlugin` or by switching the existing test to `StepFunPlugin.info.id`),
+// `LumiPlugin` or by switching the existing test to `StepFunPlugin().id`),
 // the tests below will run and protect the gate contract end-to-end.
 //
 // In the meantime, the same gate semantics are covered by:
@@ -26,6 +26,7 @@ import LumiKernel
 /// - Provider 不可用（status nil 不阻塞 OR 全是 .info）→ 返回全部 5 个 sub-agent
 /// - Provider 可用性告警（.warning / .error）→ 返回空数组（主 LLM 看不到工具）
 /// - chatService 缺失 / provider 找不到 → 返回空数组
+@MainActor
 @Suite struct StepFunSubAgentsGateTests {
 
     // MARK: - Mock 基础设施
@@ -137,7 +138,6 @@ import LumiKernel
 
     // MARK: - 测试用例
 
-    @MainActor
     @Test func subAgents_registered_whenProviderHealthy() {
         // Provider 健康（status == nil）
         let provider = MockStepFunProvider(statusToReturn: nil)
@@ -152,7 +152,6 @@ import LumiKernel
         ])
     }
 
-    @MainActor
     @Test func subAgents_registered_whenProviderStatusIsInfo() {
         // status 为 .info —— 通常是通知，不应阻塞
         let status = LumiLLMProviderStatus(message: "release notes", level: .info)
@@ -164,7 +163,6 @@ import LumiKernel
         #expect(subAgents.count == 5, ".info 视为可用，应注册全部 sub-agent")
     }
 
-    @MainActor
     @Test func subAgents_gated_whenApiKeyMissing() {
         // 模拟真实场景：API Key 未配置（StepFunProvider 的 .missingAPIKeyStatus 走 .warning）
         let status = LumiLLMProviderStatusSupport.missingAPIKeyStatus(providerName: "StepFun")
@@ -177,7 +175,6 @@ import LumiKernel
                 "API Key 缺失（.warning）时必须 gate，否则每个 delegate_* 调用都会失败")
     }
 
-    @MainActor
     @Test func subAgents_gated_whenProviderError() {
         // .error 级别（类似 MLX 在 Intel Mac 的「完全不可用」）
         let status = LumiLLMProviderStatus(message: "platform unsupported", level: .error)
@@ -189,7 +186,6 @@ import LumiKernel
         #expect(subAgents.isEmpty, ".error 必须 gate")
     }
 
-    @MainActor
     @Test func subAgents_gated_whenProviderInstanceMissing() {
         // ChatService 找不到 provider 实例（plugin 加载时序异常场景）
         let chat = GateMockChatService(providerToReturn: nil)
@@ -199,7 +195,6 @@ import LumiKernel
         #expect(subAgents.isEmpty, "Provider 实例缺失时应 gate")
     }
 
-    @MainActor
     @Test func subAgents_gated_whenChatServiceMissing() {
         // context 中完全不注入 ChatService（极早期阶段，例如 plugin registry 启动前）
         let context = LumiPluginContext(

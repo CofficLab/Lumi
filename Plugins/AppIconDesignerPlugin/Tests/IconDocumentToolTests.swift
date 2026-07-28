@@ -3,6 +3,7 @@ import Foundation
 import Testing
 @testable import AppIconDesignerPlugin
 
+@MainActor
 @Suite("Icon document tools", .serialized)
 struct IconDocumentToolTests {
     @MainActor
