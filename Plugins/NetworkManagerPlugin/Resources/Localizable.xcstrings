@@ -1,7 +1,20 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$lld)"
+          }
+        }
+      }
+    },
     "%lld" : {
+
+    },
+    "%lld HTTP exchanges" : {
 
     },
     "0" : {
@@ -856,6 +869,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "即時上傳和下載速率"
+          }
+        }
+      }
+    },
+    "Selected: %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Selected: %1$@ %2$@"
           }
         }
       }

@@ -81,10 +81,15 @@ public class NetworkHistoryService: ObservableObject, SuperLog {
 
     init(storageURL: URL?, autoStartRecording: Bool) {
         self.storageURL = storageURL
-        // 历史数据加载移到后台，UI 先展示空态再回填
-        let url = storageURL
-        Task.detached(priority: .utility) { [weak self] in
-            await self?.loadHistoryInBackground(url: url)
+        // 生产单例使用后台加载，避免启动时阻塞 UI；显式存储模式保持同步，
+        // 让测试和需要立即读取持久化状态的调用方在初始化完成后即可观察结果。
+        if autoStartRecording {
+            let url = storageURL
+            Task.detached(priority: .utility) { [weak self] in
+                await self?.loadHistoryInBackground(url: url)
+            }
+        } else {
+            loadHistory()
         }
         if autoStartRecording {
             startRecording()
