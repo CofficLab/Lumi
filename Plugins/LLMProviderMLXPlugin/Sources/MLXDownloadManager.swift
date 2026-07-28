@@ -2,6 +2,8 @@ import Foundation
 import SuperLogKit
 import Combine
 import DownloadKit
+import LumiKernel
+import HttpKit
 import os
 
 // Forward reference to MLXModels
@@ -71,6 +73,7 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
     private let fileManager = FileManager.default
     private let downloadManager: DownloadManager
+    private var network: (any NetworkProviding)? = nil
 
     /// 下载限速设置的 UserDefaults key（字节/秒，0 表示不限速）。
     ///
@@ -121,6 +124,11 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         if Self.verbose {
             Self.logger.info("\(self.t)MLXDownloadManager 已初始化，限速：\(String(describing: self.downloadSpeedLimit))")
         }
+    }
+
+    /// 由宿主在插件就绪时注入，确保 Hugging Face 元数据请求也进入统一日志链路。
+    public func configure(network: any NetworkProviding) {
+        self.network = network
     }
 
     deinit {
@@ -600,18 +608,13 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
             throw MLXDownloadError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 30
-
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            if let httpResponse = response as? HTTPURLResponse {
-                Self.logger.info("\(self.t)文件列表 HTTP 状态码：\(httpResponse.statusCode)")
-                if httpResponse.statusCode != 200 {
-                    throw MLXDownloadError.httpError(httpResponse.statusCode)
-                }
+            let response = try await requestData(url: url, timeout: 30)
+            Self.logger.info("\(self.t)文件列表 HTTP 状态码：\(response.statusCode)")
+            if response.statusCode != 200 {
+                throw MLXDownloadError.httpError(response.statusCode)
             }
+            let data = response.body
 
             Self.logger.info("\(self.t)文件列表响应大小：\(data.count) 字节")
 
@@ -643,6 +646,9 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
                 throw MLXDownloadError.invalidResponse
             }
 
+        } catch let error as HTTPNetworkError {
+            Self.logger.error("\(self.t)❌ 网络错误：\(error.localizedDescription)")
+            throw MLXDownloadError.downloadFailed("网络错误：\(error.localizedDescription)")
         } catch let urlError as URLError {
             Self.logger.error("\(self.t)❌ 网络错误：\(urlError.localizedDescription)\n错误码：\(urlError.code.rawValue)")
             throw MLXDownloadError.downloadFailed("网络错误：\(urlError.localizedDescription)")
@@ -653,15 +659,12 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         let urlString = "https://huggingface.co/api/models/\(modelId)/tree/main/\(path)"
         guard let url = URL(string: urlString) else { return [] }
 
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 30
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        let response = try await requestData(url: url, timeout: 30)
+        guard response.statusCode == 200 else {
             return []
         }
 
-        let entries = try JSONDecoder().decode([HFFileEntry].self, from: data)
+        let entries = try JSONDecoder().decode([HFFileEntry].self, from: response.body)
         var files = entries.filter { $0.type == "file" }
 
         for subdir in entries.filter({ $0.type == "directory" }) {
@@ -670,6 +673,19 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
         }
 
         return files
+    }
+
+    private func requestData(url: URL, timeout: TimeInterval) async throws -> HTTPResponse {
+        if let network {
+            return try await network.request(HTTPRequest(url: url, method: .get, timeout: timeout))
+        }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = timeout
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let response = response as? HTTPURLResponse else { throw HTTPClientError.invalidResponse }
+        return HTTPResponse(statusCode: response.statusCode, headers: response.allHeaderFields.reduce(into: [:]) { result, item in
+            result[String(describing: item.key)] = String(describing: item.value)
+        }, body: data, url: url)
     }
 
     /// 过滤 HuggingFace 文件列表，保留模型所需的文件

@@ -11,7 +11,7 @@ struct ZhipuStatusBarVisibilityView: View {
 
     var body: some View {
         if selectedProviderID == ZhipuProvider.info.id {
-            StatusBarView()
+            StatusBarView(network: kernel.network)
         } else {
             EmptyView()
         }

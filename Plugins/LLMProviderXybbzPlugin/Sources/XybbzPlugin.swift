@@ -18,7 +18,7 @@ public final class XybbzPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [XybbzProvider()]
+        [XybbzProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

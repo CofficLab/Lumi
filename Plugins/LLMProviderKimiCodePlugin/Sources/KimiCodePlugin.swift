@@ -18,7 +18,10 @@ public final class KimiCodePlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [KimiCodeOpenAIProvider(), KimiCodeAnthropicProvider()]
+        [
+            KimiCodeOpenAIProvider(apiService: LLMAPIService(kernel: kernel)),
+            KimiCodeAnthropicProvider(apiService: LLMAPIService(kernel: kernel)),
+        ]
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

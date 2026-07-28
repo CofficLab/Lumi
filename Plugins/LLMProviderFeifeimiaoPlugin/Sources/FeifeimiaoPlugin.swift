@@ -20,7 +20,7 @@ public final class FeifeimiaoPlugin: LumiPlugin {
 
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [FeifeimiaoProvider()]
+        [FeifeimiaoProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
 

@@ -4,12 +4,13 @@ import LLMKit
 import LumiKernel
 
 /// 智谱配额查询辅助工具
+@MainActor
 enum QuotaService {
     /// 请求超时时间（秒）
     private static let timeout: TimeInterval = 5.0
 
     /// 获取配额信息
-    static func fetchQuota() async -> QuotaStatus {
+    static func fetchQuota(network: (any NetworkProviding)? = nil) async -> QuotaStatus {
         // 获取 API Key
         let apiKey = LumiAPIKeyTools.get(storageKey: ZhipuProvider.info._apiKeyStorageKey)
         guard !apiKey.isEmpty else {
@@ -28,10 +29,19 @@ enum QuotaService {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = timeout
 
-        let client = HTTPClient(timeoutIntervalForRequest: timeout, timeoutIntervalForResource: timeout)
-
         do {
-            let data = try await client.sendRequest(request: request)
+            let data: Data
+            if let network {
+                data = try await network.request(HTTPRequest(
+                    url: url,
+                    method: .get,
+                    headers: request.allHTTPHeaderFields ?? [:],
+                    timeout: timeout
+                )).body
+            } else {
+                let client = HTTPClient(timeoutIntervalForRequest: timeout, timeoutIntervalForResource: timeout)
+                data = try await client.sendRequest(request: request)
+            }
 
             // 解析 JSON
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
