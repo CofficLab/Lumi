@@ -146,6 +146,12 @@ struct ConversationSpeedSample: Identifiable, Equatable {
                 )
             }
     }
+
+    static func averageTokensPerSecond(from samples: [ConversationSpeedSample]) -> Double? {
+        guard !samples.isEmpty else { return nil }
+        let total = samples.reduce(0) { $0 + $1.tokensPerSecond }
+        return total / Double(samples.count)
+    }
 }
 
 private extension LumiChatMessage {
@@ -194,6 +200,8 @@ private struct ConversationSpeedPopover: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
+
+            averageSpeedBlock
 
             Text(LumiPluginLocalization.string("Streaming speed description", bundle: .module))
                 .font(.callout)
@@ -263,6 +271,40 @@ private struct ConversationSpeedPopover: View {
 }
 
 private extension ConversationSpeedPopover {
+    @ViewBuilder
+    var averageSpeedBlock: some View {
+        if let averageTPS = ConversationSpeedSample.averageTokensPerSecond(from: speedHistory) {
+            HStack(spacing: 10) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.orange)
+                    .frame(width: 22)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(LumiPluginLocalization.string("Average speed", bundle: .module))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(String(format: "%.1f", averageTPS))
+                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        Text(LumiPluginLocalization.string("tokens / second", bundle: .module))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color.orange.opacity(0.09), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.orange.opacity(0.18), lineWidth: 1)
+            )
+        }
+    }
+
     @ViewBuilder
     var speedHistorySection: some View {
         if !speedHistory.isEmpty {

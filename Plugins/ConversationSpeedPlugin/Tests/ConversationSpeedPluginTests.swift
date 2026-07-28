@@ -41,5 +41,7 @@ final class ConversationSpeedPluginTests: XCTestCase {
         XCTAssertEqual(samples.map(\.index), [0, 1])
         XCTAssertEqual(samples.map(\.message.content), ["earlier", "later"])
         XCTAssertEqual(samples.map(\.tokensPerSecond), [30, 20])
+        XCTAssertEqual(ConversationSpeedSample.averageTokensPerSecond(from: samples), 25)
+        XCTAssertNil(ConversationSpeedSample.averageTokensPerSecond(from: []))
     }
 }

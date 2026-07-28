@@ -17,6 +17,22 @@
         }
       }
     },
+    "Average speed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average speed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均速度"
+          }
+        }
+      }
+    },
     "Conversation speed trend" : {
       "localizations" : {
         "en" : {
