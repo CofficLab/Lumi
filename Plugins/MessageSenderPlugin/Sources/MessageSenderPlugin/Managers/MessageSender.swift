@@ -89,6 +89,8 @@ public final class MessageSender: MessageSending, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)clearAttachments ➡️ cleared \(count) items")
         }
+        // DEBUG: Confirm clearAttachments is called
+        Self.logger.info("🗑️ clearAttachments called, cleared \(count) items, remaining: \(self.pendingAttachments.count)")
     }
 
     // MARK: - 文件附件挂起池
@@ -152,7 +154,7 @@ public final class MessageSender: MessageSending, SuperLog {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             if Self.verbose {
-                Self.logger.info("\(Self.t)sendMessage ➡️ content 空白，直接返回")
+                Self.logger.info("\(Self.t)sendMessage ➡️ content 空白,直接返回")
             }
             return
         }
@@ -172,7 +174,7 @@ public final class MessageSender: MessageSending, SuperLog {
         } else {
             // No conversation selected - auto-create one
             if Self.verbose {
-                Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话，自动创建新对话")
+                Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建新对话")
             }
             guard let newID = try? kernel?.conversations?.createConversation(title: nil) else {
                 if Self.verbose {
