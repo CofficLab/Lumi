@@ -38,7 +38,10 @@ public final class ProjectsSyncCoordinator: SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)执行初始同步, 项目数量: \(self.viewModel.projects.count)")
         }
-        syncToKernel()
+        // 在 @MainActor 上下文中调用
+        Task { @MainActor in
+            await self.syncToKernel()
+        }
     }
 
     // MARK: - ViewModel → Kernel
@@ -47,19 +50,27 @@ public final class ProjectsSyncCoordinator: SuperLog {
         viewModel.$projects
             .dropFirst()
             .sink { [weak self] _ in
-                self?.syncToKernel()
+                guard let self else { return }
+                // 在 @MainActor 上下文中调用
+                Task { @MainActor in
+                    await self.syncToKernel()
+                }
             }
             .store(in: &cancellables)
 
         viewModel.$currentProject
             .dropFirst()
             .sink { [weak self] _ in
-                self?.syncToKernel()
+                guard let self else { return }
+                // 在 @MainActor 上下文中调用
+                Task { @MainActor in
+                    await self.syncToKernel()
+                }
             }
             .store(in: &cancellables)
     }
 
-    private func syncToKernel() {
+    private func syncToKernel() async {
         guard let project = kernel?.project else { return }
 
         isSyncingFromCoordinator = true
@@ -67,9 +78,7 @@ public final class ProjectsSyncCoordinator: SuperLog {
 
         // 同步当前项目路径到 kernel
         if let current = viewModel.currentProject {
-            Task {
-                try? await project.openProject(at: current.path)
-            }
+            try? await project.openProject(at: current.path)
         }
     }
 }
