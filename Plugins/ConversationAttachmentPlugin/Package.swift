@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "ChatAttachmentPreviewPlugin",
+    name: "ConversationAttachmentPlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "ChatAttachmentPreviewPlugin",
-            targets: ["ChatAttachmentPreviewPlugin"]
+            name: "ConversationAttachmentPlugin",
+            targets: ["ConversationAttachmentPlugin"]
         )
     ],
     dependencies: [
@@ -19,7 +19,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "ChatAttachmentPreviewPlugin",
+            name: "ConversationAttachmentPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
