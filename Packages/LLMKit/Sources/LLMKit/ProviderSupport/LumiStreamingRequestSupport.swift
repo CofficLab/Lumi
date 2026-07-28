@@ -10,7 +10,7 @@ import SuperLogKit
 public enum LumiStreamingRequestSupport: SuperLog {
     public static let emoji = "🌊"
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.streaming-request")
-    static let verbose = true
+    static let verbose = false
     
     // MARK: - OpenAI Compatible Streaming
     
@@ -388,7 +388,10 @@ public enum LumiStreamingRequestSupport: SuperLog {
         let startTime = await state.startTime
         var metadata = LumiMessageTokenMetadata.metadata(
             inputTokens: await state.inputTokens,
-            outputTokens: await state.outputTokens
+            outputTokens: await state.outputTokens,
+            cachedInputTokens: await state.cachedInputTokens,
+            cacheWriteInputTokens: await state.cacheWriteInputTokens,
+            cacheTotalInputTokens: await state.cacheTotalInputTokens
         )
         metadata.merge(
             LumiMessagePerformanceMetadata.metadata(
@@ -448,8 +451,18 @@ public enum LumiStreamingRequestSupport: SuperLog {
                 await state.setError(error)
             }
             
-            if parsed.inputTokens != nil || parsed.outputTokens != nil {
-                await state.updateTokens(input: parsed.inputTokens, output: parsed.outputTokens)
+            if parsed.inputTokens != nil ||
+                parsed.outputTokens != nil ||
+                parsed.cachedInputTokens != nil ||
+                parsed.cacheWriteInputTokens != nil ||
+                parsed.cacheTotalInputTokens != nil {
+                await state.updateTokens(
+                    input: parsed.inputTokens,
+                    output: parsed.outputTokens,
+                    cachedInput: parsed.cachedInputTokens,
+                    cacheWriteInput: parsed.cacheWriteInputTokens,
+                    cacheTotalInput: parsed.cacheTotalInputTokens
+                )
             }
             
             if parsed.isDone {

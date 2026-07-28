@@ -30,6 +30,9 @@ public actor StreamingState {
     public var inputTokens: Int?
     public var outputTokens: Int?
     public var totalTokens: Int?
+    public var cachedInputTokens: Int?
+    public var cacheWriteInputTokens: Int?
+    public var cacheTotalInputTokens: Int?
     public var stopReason: String?
     public var timeToFirstToken: Double?
     public var firstTokenTime: CFAbsoluteTime?
@@ -120,9 +123,18 @@ public actor StreamingState {
         streamError = error
     }
 
-    public func updateTokens(input: Int?, output: Int?) {
+    public func updateTokens(
+        input: Int?,
+        output: Int?,
+        cachedInput: Int? = nil,
+        cacheWriteInput: Int? = nil,
+        cacheTotalInput: Int? = nil
+    ) {
         if let input = input { inputTokens = input }
         if let output = output { outputTokens = output }
+        if let cachedInput = cachedInput { cachedInputTokens = cachedInput }
+        if let cacheWriteInput = cacheWriteInput { cacheWriteInputTokens = cacheWriteInput }
+        if let cacheTotalInput = cacheTotalInput { cacheTotalInputTokens = cacheTotalInput }
         // 自动计算 totalTokens
         if let input = inputTokens, let output = outputTokens {
             totalTokens = input + output

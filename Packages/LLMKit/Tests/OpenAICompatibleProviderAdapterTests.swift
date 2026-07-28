@@ -289,10 +289,18 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
 
     func testParseStreamUsage() throws {
         let chunk = try makeAdapter().parseStreamChunk(
-            data: Data(#"data: {"usage":{"prompt_tokens":7,"completion_tokens":11}}"#.utf8)
+            data: Data(#"data: {"usage":{"prompt_tokens":7,"completion_tokens":11,"prompt_tokens_details":{"cached_tokens":3}}}"#.utf8)
         )
 
-        XCTAssertEqual(chunk, StreamChunk(inputTokens: 7, outputTokens: 11))
+        XCTAssertEqual(
+            chunk,
+            StreamChunk(
+                inputTokens: 7,
+                outputTokens: 11,
+                cachedInputTokens: 3,
+                cacheTotalInputTokens: 7
+            )
+        )
     }
 
     func testParseStreamToolCallStart() throws {

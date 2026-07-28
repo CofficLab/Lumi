@@ -255,6 +255,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             let usage = json["usage"] as? [String: Any]
             let inputTokens = usage?["prompt_tokens"] as? Int
             let outputTokens = usage?["completion_tokens"] as? Int
+            let cachedInputTokens = Self.cachedInputTokens(from: usage)
             let stopReason = delta["stop_reason"] as? String
 
             // 优先解析 reasoning_content（思考过程）
@@ -266,6 +267,8 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                     eventType: .thinkingDelta,
                     inputTokens: inputTokens,
                     outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheTotalInputTokens: inputTokens,
                     stopReason: stopReason
                 )
             }
@@ -277,6 +280,8 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                     eventType: .textDelta,
                     inputTokens: inputTokens,
                     outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheTotalInputTokens: inputTokens,
                     stopReason: stopReason
                 )
             }
@@ -296,9 +301,12 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         // 只有当没有 content/reasoning/toolCalls 时，才单独返回 usage
         // 某些供应商（如 StepFun）每个 chunk 都带 usage，但不能因此跳过内容
         if let usage = json["usage"] as? [String: Any] {
+            let inputTokens = usage["prompt_tokens"] as? Int
             return StreamChunk(
-                inputTokens: usage["prompt_tokens"] as? Int,
-                outputTokens: usage["completion_tokens"] as? Int
+                inputTokens: inputTokens,
+                outputTokens: usage["completion_tokens"] as? Int,
+                cachedInputTokens: Self.cachedInputTokens(from: usage),
+                cacheTotalInputTokens: inputTokens
             )
         }
 
@@ -335,6 +343,13 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         }
 
         return dataLines.joined(separator: "\n")
+    }
+
+    private static func cachedInputTokens(from usage: [String: Any]?) -> Int? {
+        guard let details = usage?["prompt_tokens_details"] as? [String: Any] else {
+            return nil
+        }
+        return details["cached_tokens"] as? Int
     }
 
     private func parseToolCallDelta(_ toolCalls: [[String: Any]], stopReason: String?) -> StreamChunk? {

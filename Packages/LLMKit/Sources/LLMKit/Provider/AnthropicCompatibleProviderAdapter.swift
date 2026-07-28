@@ -235,11 +235,26 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             // 处理消息开始
             if effectiveEventType == "message_start" {
                 var inputTokens: Int?
+                var cachedInputTokens: Int?
+                var cacheWriteInputTokens: Int?
                 if let message = json["message"] as? [String: Any],
                    let usage = message["usage"] as? [String: Any] {
                     inputTokens = usage["input_tokens"] as? Int
+                    cachedInputTokens = usage["cache_read_input_tokens"] as? Int
+                    cacheWriteInputTokens = usage["cache_creation_input_tokens"] as? Int
                 }
-                return StreamChunk(eventType: .messageStart, rawEvent: text, inputTokens: inputTokens)
+                return StreamChunk(
+                    eventType: .messageStart,
+                    rawEvent: text,
+                    inputTokens: inputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: Self.cacheTotalInputTokens(
+                        inputTokens: inputTokens,
+                        cachedInputTokens: cachedInputTokens,
+                        cacheWriteInputTokens: cacheWriteInputTokens
+                    )
+                )
             }
 
             // 处理消息增量
@@ -248,15 +263,26 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                     ?? json["stop_reason"] as? String
                 var inputTokens: Int?
                 var outputTokens: Int?
+                var cachedInputTokens: Int?
+                var cacheWriteInputTokens: Int?
                 if let usage = json["usage"] as? [String: Any] {
                     inputTokens = usage["input_tokens"] as? Int
                     outputTokens = usage["output_tokens"] as? Int
+                    cachedInputTokens = usage["cache_read_input_tokens"] as? Int
+                    cacheWriteInputTokens = usage["cache_creation_input_tokens"] as? Int
                 }
                 return StreamChunk(
                     eventType: .messageDelta,
                     rawEvent: text,
                     inputTokens: inputTokens,
                     outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: Self.cacheTotalInputTokens(
+                        inputTokens: inputTokens,
+                        cachedInputTokens: cachedInputTokens,
+                        cacheWriteInputTokens: cacheWriteInputTokens
+                    ),
                     stopReason: stopReason
                 )
             }
@@ -333,6 +359,16 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                 rawEvent: text
             )
         }
+    }
+
+    private static func cacheTotalInputTokens(
+        inputTokens: Int?,
+        cachedInputTokens: Int?,
+        cacheWriteInputTokens: Int?
+    ) -> Int? {
+        let values = [inputTokens, cachedInputTokens, cacheWriteInputTokens].compactMap { $0 }
+        guard !values.isEmpty else { return nil }
+        return values.reduce(0, +)
     }
 
     // MARK: - 消息转换
