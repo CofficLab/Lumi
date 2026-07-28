@@ -873,6 +873,12 @@
         }
       }
     },
+    "Request" : {
+
+    },
+    "Response" : {
+
+    },
     "Selected: %@ %@" : {
       "localizations" : {
         "en" : {

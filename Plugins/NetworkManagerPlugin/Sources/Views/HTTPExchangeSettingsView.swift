@@ -10,6 +10,12 @@ public struct HTTPExchangeSettingsView: View {
 
     @State private var records: [HTTPExchangeRecord] = []
     @State private var selectedRecordID: UUID?
+    @State private var selectedDetailTab: DetailTab = .request
+
+    private enum DetailTab: Hashable {
+        case request
+        case response
+    }
 
     public init(store: HTTPExchangeStore) {
         self.store = store
@@ -124,76 +130,14 @@ public struct HTTPExchangeSettingsView: View {
     @ViewBuilder
     private var detailPane: some View {
         if let selectedRecord {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    AppSettingsSection(title: "Overview", subtitle: "Complete locally stored HTTP exchange") {
-                        VStack(spacing: 0) {
-                            detailRow(title: "Method", icon: "arrow.left.arrow.right", value: selectedRecord.requestMethod)
-                            AppSettingsDivider()
-                            detailRow(title: "URL", icon: "link", value: selectedRecord.requestURL, monospace: true)
-                            AppSettingsDivider()
-                            detailRow(title: "Status", icon: "number", value: statusText(for: selectedRecord))
-                            AppSettingsDivider()
-                            detailRow(title: "Started At", icon: "calendar", value: formattedDate(selectedRecord.startedAt))
-                            if let duration = selectedRecord.duration {
-                                AppSettingsDivider()
-                                detailRow(title: "Duration", icon: "clock", value: String(format: "%.3f s", duration))
-                            }
-                        }
-                    }
+            TabView(selection: $selectedDetailTab) {
+                requestTab(for: selectedRecord)
+                    .tabItem { Label("Request", systemImage: "arrow.up.right") }
+                    .tag(DetailTab.request)
 
-                    payloadSection(
-                        title: "Request Headers",
-                        subtitle: "Raw header fields sent with the request",
-                        data: selectedRecord.requestHeadersJSON,
-                        fallback: "{}"
-                    )
-                    payloadSection(
-                        title: "Request Body",
-                        subtitle: "Original request body bytes (\(byteCount(selectedRecord.requestBody)))",
-                        data: selectedRecord.requestBody,
-                        fallback: "<empty>"
-                    )
-                    payloadSection(
-                        title: "Request Options",
-                        subtitle: "URLRequest transport options captured at send time",
-                        data: selectedRecord.requestDetailsJSON,
-                        fallback: "{}"
-                    )
-                    payloadSection(
-                        title: "Response Headers",
-                        subtitle: "Raw header fields received from the server",
-                        data: selectedRecord.responseHeadersJSON,
-                        fallback: "<no response headers>"
-                    )
-                    payloadSection(
-                        title: "Response Body",
-                        subtitle: "Original response body bytes (\(byteCount(selectedRecord.responseBody)))",
-                        data: selectedRecord.responseBody,
-                        fallback: "<empty>"
-                    )
-
-                    if selectedRecord.errorDescription != nil {
-                        AppSettingsSection(title: "Error", subtitle: "Transport or HTTP failure details") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                if let errorDescription = selectedRecord.errorDescription {
-                                    Text(errorDescription)
-                                        .foregroundStyle(theme.textPrimary)
-                                }
-                                if let domain = selectedRecord.errorDomain,
-                                   let code = selectedRecord.errorCode {
-                                    Text("\(domain) (\(code))")
-                                        .font(.appCaption)
-                                        .foregroundStyle(theme.textSecondary)
-                                }
-                                if let details = selectedRecord.errorDetailsJSON {
-                                    codeBlock(prettyJSON(details))
-                                }
-                            }
-                        }
-                    }
-                }
-                .padding(20)
+                responseTab(for: selectedRecord)
+                    .tabItem { Label("Response", systemImage: "arrow.down.left") }
+                    .tag(DetailTab.response)
             }
         } else {
             AppEmptyState(
@@ -201,6 +145,85 @@ public struct HTTPExchangeSettingsView: View {
                 title: "Select an HTTP exchange"
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private func requestTab(for record: HTTPExchangeRecord) -> some View {
+        detailScroll {
+            AppSettingsSection(title: "Request", subtitle: "HTTP request sent by the client") {
+                VStack(spacing: 0) {
+                    detailRow(title: "Method", icon: "arrow.left.arrow.right", value: record.requestMethod)
+                    AppSettingsDivider()
+                    detailRow(title: "URL", icon: "link", value: record.requestURL, monospace: true)
+                    AppSettingsDivider()
+                    detailRow(title: "Started At", icon: "calendar", value: formattedDate(record.startedAt))
+                    if let duration = record.duration {
+                        AppSettingsDivider()
+                        detailRow(title: "Duration", icon: "clock", value: String(format: "%.3f s", duration))
+                    }
+                }
+            }
+
+            payloadSection(title: "Request Headers", subtitle: "Raw header fields sent with the request", data: record.requestHeadersJSON, fallback: "{}")
+            payloadSection(title: "Request Body", subtitle: "Original request body bytes (\(byteCount(record.requestBody)))", data: record.requestBody, fallback: "<empty>")
+            payloadSection(title: "Request Options", subtitle: "URLRequest transport options captured at send time", data: record.requestDetailsJSON, fallback: "{}")
+        }
+    }
+
+    private func responseTab(for record: HTTPExchangeRecord) -> some View {
+        detailScroll {
+            AppSettingsSection(title: "Response", subtitle: "HTTP response received from the server") {
+                VStack(spacing: 0) {
+                    detailRow(title: "Status", icon: "number", value: statusText(for: record))
+                    if let responseURL = record.responseURL {
+                        AppSettingsDivider()
+                        detailRow(title: "URL", icon: "link", value: responseURL, monospace: true)
+                    }
+                    if let version = record.responseHTTPVersion {
+                        AppSettingsDivider()
+                        detailRow(title: "HTTP Version", icon: "globe", value: version)
+                    }
+                    if let mimeType = record.responseMIMEType {
+                        AppSettingsDivider()
+                        detailRow(title: "MIME Type", icon: "doc.text", value: mimeType)
+                    }
+                }
+            }
+
+            payloadSection(title: "Response Headers", subtitle: "Raw header fields received from the server", data: record.responseHeadersJSON, fallback: "<no response headers>")
+            payloadSection(title: "Response Body", subtitle: "Original response body bytes (\(byteCount(record.responseBody)))", data: record.responseBody, fallback: "<empty>")
+            errorSection(for: record)
+        }
+    }
+
+    @ViewBuilder
+    private func errorSection(for record: HTTPExchangeRecord) -> some View {
+        if record.errorDescription != nil {
+            AppSettingsSection(title: "Error", subtitle: "Transport or HTTP failure details") {
+                VStack(alignment: .leading, spacing: 8) {
+                    if let errorDescription = record.errorDescription {
+                        Text(errorDescription)
+                            .foregroundStyle(theme.textPrimary)
+                    }
+                    if let domain = record.errorDomain, let code = record.errorCode {
+                        Text("\(domain) (\(code))")
+                            .font(.appCaption)
+                            .foregroundStyle(theme.textSecondary)
+                    }
+                    if let details = record.errorDetailsJSON {
+                        codeBlock(prettyJSON(details))
+                    }
+                }
+            }
+        }
+    }
+
+    private func detailScroll<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                content()
+            }
+            .padding(20)
         }
     }
 
