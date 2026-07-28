@@ -13,6 +13,7 @@ public final class AliyunPlugin: LumiPlugin {
     public let name = "阿里云 CodingPlan"
     public let order = 105
 	public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

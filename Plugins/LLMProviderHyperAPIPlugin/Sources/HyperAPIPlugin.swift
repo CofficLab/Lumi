@@ -9,6 +9,7 @@ public final class HyperAPIPlugin: LumiPlugin {
     public let name = "HyperAPI"
     public let order = 97
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

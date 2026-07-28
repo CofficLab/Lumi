@@ -9,6 +9,7 @@ public final class OpenRouterPlugin: LumiPlugin {
     public let name = "OpenRouter"
     public let order = 101
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

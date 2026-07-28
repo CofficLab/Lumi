@@ -10,6 +10,7 @@ public final class FlyMuxPlugin: LumiPlugin {
     public let name = "FlyMux"
     public let order = 94
 	public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 

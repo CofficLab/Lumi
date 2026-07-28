@@ -9,6 +9,7 @@ public final class OpenAIPlugin: LumiPlugin {
     public let name = "OpenAI"
     public let order = 100
     public let policy: LumiPluginPolicy = .alwaysOn
+    public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
 
