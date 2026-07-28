@@ -95,6 +95,12 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
 
     /// 取消当前正在进行的发送任务
     func cancelCurrentRequest()
+
+    /// 重新发送已保存的用户消息。
+    ///
+    /// 实现应复用原消息的正文和附件 metadata,并在同一对话中触发新的 agent turn。
+    /// 找不到消息、消息不是 user role、或该对话正在发送时应 no-op。
+    func resendMessage(id: UUID, in conversationID: UUID) async
 }
 
 // MARK: - 默认实现
@@ -116,4 +122,6 @@ public extension MessageSending {
             conversationID: conversationID
         )
     }
+
+    func resendMessage(id: UUID, in conversationID: UUID) async {}
 }

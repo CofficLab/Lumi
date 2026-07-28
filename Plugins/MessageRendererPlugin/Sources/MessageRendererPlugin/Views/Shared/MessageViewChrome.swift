@@ -1,11 +1,11 @@
 import LumiKernel
-import LumiKernel
 import LumiUI
 import SwiftUI
 
 struct MessageViewChrome<Content: View>: View {
     @LumiTheme private var theme
 
+    var kernel: LumiKernel? = nil
     let message: LumiChatMessage
     @Binding var showRawMessage: Bool
     var showsResendButton = false
@@ -47,8 +47,8 @@ struct MessageViewChrome<Content: View>: View {
                             showFeedback: $didCopy
                         )
 
-                        if showsResendButton, !message.content.isEmpty {
-                            ResendMessageButton(message: message)
+                        if showsResendButton, let kernel, !message.content.isEmpty {
+                            ResendMessageButton(kernel: kernel, message: message)
                         }
 
                         if hasThinkingContent {

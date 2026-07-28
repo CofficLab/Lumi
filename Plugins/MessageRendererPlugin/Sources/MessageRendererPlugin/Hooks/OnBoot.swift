@@ -96,7 +96,7 @@ public struct MessageRendererOnBootHook {
                     message.role == .user
                 },
                 render: { message, showRawMessage in
-                    UserMessageView(message: message, showRawMessage: showRawMessage)
+                    UserMessageView(kernel: kernel, message: message, showRawMessage: showRawMessage)
                 }
             )
         )
