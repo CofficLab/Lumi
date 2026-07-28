@@ -139,7 +139,10 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)没有可用的 LLM Provider")
                 }
-                appendErrorMessage(conversationID: conversationID, content: "No LLM provider available")
+                appendErrorMessage(
+                    conversationID: conversationID,
+                    content: String(localized: "No LLM provider available", defaultValue: "No LLM provider available")
+                )
                 return
             }
 

@@ -1,5 +1,6 @@
 import Foundation
 import LumiKernel
+import LocalizationKit
 import os
 import SuperLogKit
 import SwiftUI
@@ -16,7 +17,7 @@ public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.agent-turn-runner"
-    public let name = "Agent Turn Runner"
+    public let name = LumiLocalization.string("Agent Turn Runner", bundle: .module, table: "Localizable")
     public let order = 64 // After MessageSendManagerPlugin (63)
     public let policy: LumiPluginPolicy = .alwaysOn
 
@@ -55,7 +56,7 @@ public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
         [
             SettingsTabItem(
                 id: "\(id).settings",
-                title: "Sent Requests",
+                title: LumiLocalization.string("Sent Requests", bundle: .module, table: "Localizable"),
                 systemImage: "paperplane",
                 order: order
             ) {
