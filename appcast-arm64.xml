@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.2.1</title>
-            <pubDate>Tue, 28 Jul 2026 15:35:02 +0000</pubDate>
-            <sparkle:version>505</sparkle:version>
-            <sparkle:shortVersionString>5.2.1</sparkle:shortVersionString>
+            <title>5.3.0</title>
+            <pubDate>Wed, 29 Jul 2026 11:27:46 +0000</pubDate>
+            <sparkle:version>506</sparkle:version>
+            <sparkle:shortVersionString>5.3.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.2.1</h2>
-<h3>Changes since v5.2.0</h3>
+            <description><![CDATA[<h2>Release v5.3.0</h2>
+<h3>Changes since v5.2.1</h3>
 <ul>
-<li>feat(AppCommands): support top-level menus via AppKit bridge</li>
-<li>feat(CommandPlugin): register Debug Commands in top-level menu</li>
-<li>feat(ConversationStorePlugin, MessageStorePlugin): add status bar hover container for migration progress</li>
-<li>feat(ConversationTitle): unify conversation title display via kernel.uiTitle</li>
-<li>feat(LLMProviderMiniMaxPlugin): migrate HTTPClient to NetworkProviding</li>
-<li>feat(LumiKernel): add NetworkProviding protocol for HTTP requests</li>
-<li>feat(LumiKernel): generate default title when no custom title exists</li>
-<li>feat(network): add streaming support to NetworkProviding and LLMAPIService</li>
-<li>feat(NetworkManagerPlugin): add streaming support and HTTP exchange recording</li>
-<li>feat(NetworkManagerPlugin): implement NetworkProviding for kernel</li>
-<li>feat(NetworkManagerPlugin): split HTTP exchange detail into Request/Response tabs</li>
-<li>feat(RAGPlugin): add lifecycle task tracking for background indexing</li>
-<li>feat(ToolManagerPlugin): add streaming file reader and comprehensive tests</li>
-<li>fix(ConversationStorePlugin): update updatedAt when conversation title changes</li>
-<li>perf(RAGPlugin): add Task.checkCancellation() at key operation points</li>
-<li>perf(RAGPlugin): cap candidate limits and cache entries to reduce memory usage</li>
-<li>refactor(ConversationStorePlugin): store migration state in database directory instead of UserDefaults</li>
-<li>refactor(EditorSwiftPlugin): migrate to pluginDataDirectory from Storage service</li>
-<li>refactor(LLMProvider): pass kernel-based apiService to all providers</li>
-<li>refactor(MessageStorePlugin): store migration state in database directory instead of UserDefaults</li>
+<li>feat: add brief verbosity mode support for message renderer plugin</li>
+<li>feat: add pin/unpin support for conversation list</li>
+<li>feat: register ConversationContextSizePlugin in LumiFactory</li>
+<li>feat(activity-heatmap): add detailed activity statistics</li>
+<li>feat(activity-heatmap): batch cache save, token versioning, and skeleton loading animations</li>
+<li>feat(ActivityHeatmapPlugin): add "Open Data Directory" button to settings view</li>
+<li>feat(AgentTempStoragePlugin): register 3 temp file tools to the system</li>
+<li>feat(AgentTurn): add structured tool control results</li>
+<li>feat(AgentTurn): resume parents after child work</li>
+<li>feat(AskUser): resume suspended turns through the manager</li>
+<li>feat(conversation-list): prevent redundant publishes and add pin/unpin localization</li>
+<li>feat(conversation-store): make order optional for lightweight migration and add setConversationOrder</li>
+<li>feat(ConversationContextSizePlugin): add context size display to chat toolbar</li>
+<li>feat(ConversationReasoningPlugin): add conversation reasoning effort control</li>
+<li>feat(DeviceInfoPlugin): add Lumi app's own memory usage monitor</li>
+<li>feat(DeviceInfoPlugin): add memory monitor settings page</li>
+<li>feat(LLMProviderManager): add daily token usage series and settings UI</li>
+<li>feat(LLMProviderManager): add providerInfo method to protocol</li>
+<li>feat(LLMProviderStepFunPlugin): generalize build agent to support multiple project types</li>
+<li>feat(Localization): localize plugin settings and exchange UI</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.2.1</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.3.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.2.1/Lumi_5.2.1_arm64.dmg" length="37419601" type="application/octet-stream" sparkle:edSignature="I1U5T+8yNGSxpGLlCy6eSDBzV3YDVn1XkE0sQSiAQDyD7LSgeVe1me9P3qDw0sw9/faQrBPtGKhAcc+fmc0YAA=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.3.0/Lumi_5.3.0_arm64.dmg" length="38307050" type="application/octet-stream" sparkle:edSignature="b/vXFXWyV10+1ofF1kBJtg2APGiNRfim1wVyiHESP5o2Aja0OebBZ7JrIS0nB4M6XQ5ZtgZgRfCY5XEVABurCg=="/>
         </item>
     </channel>
 </rss>
