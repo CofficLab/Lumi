@@ -16,6 +16,11 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
     /// Shared cache instance for the plugin
     private var cache: ActivityHeatmapCache?
 
+    /// Cache directory for the plugin data (exposed for settings view to open in Finder)
+    package var cacheDirectory: URL? {
+        cache?.directory
+    }
+
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {

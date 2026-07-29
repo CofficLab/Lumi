@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import LumiKernel
 import LumiUI
@@ -7,9 +8,13 @@ import LumiUI
 public struct ActivityHeatmapSettingsView: View {
     @State private var viewModel: ActivityHeatmapViewModel
     @State private var period: ActivityHeatmapPeriod = .year
+    @LumiTheme private var theme
+
+    private let cacheDirectory: URL?
 
     public init(messageService: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil) {
         _viewModel = State(initialValue: ActivityHeatmapViewModel(messageService: messageService, cache: cache))
+        self.cacheDirectory = cache?.directory
     }
 
     public var body: some View {
@@ -18,6 +23,8 @@ public struct ActivityHeatmapSettingsView: View {
             subtitle: LumiPluginLocalization.string("Conversation activity over time", bundle: .module),
             showHeader: false
         ) {
+            header
+
             // Period selector
             periodSelector
 
@@ -36,6 +43,21 @@ public struct ActivityHeatmapSettingsView: View {
             viewModel.period = period
             await viewModel.load()
         }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Spacer()
+            if cacheDirectory != nil {
+                AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+                    openDataDirectory()
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
     }
 
     // MARK: - Period Selector
@@ -152,6 +174,14 @@ public struct ActivityHeatmapSettingsView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(32)
+    }
+
+    // MARK: - Actions
+
+    private func openDataDirectory() {
+        guard let url = cacheDirectory else { return }
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        _ = NSWorkspace.shared.open(url)
     }
 }
 

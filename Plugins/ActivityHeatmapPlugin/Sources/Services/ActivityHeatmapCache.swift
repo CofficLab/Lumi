@@ -23,6 +23,9 @@ public final class ActivityHeatmapCache: SuperLog {
 
     private let cacheDirectory: URL
 
+    /// Exposed for plugin settings view to open the directory in Finder
+    package var directory: URL { cacheDirectory }
+
     // MARK: - Init
 
     public init(storage: (any StorageProviding)?, pluginID: String) {
