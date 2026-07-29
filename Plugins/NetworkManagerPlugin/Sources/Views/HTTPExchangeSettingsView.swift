@@ -9,6 +9,7 @@ public struct HTTPExchangeSettingsView: View {
     @LumiTheme private var theme
 
     @State private var records: [HTTPExchangeRecord] = []
+    @State private var isLoading = true
     @State private var selectedRecordID: UUID?
     @State private var selectedDetailTab: DetailTab = .request
 
@@ -50,11 +51,11 @@ public struct HTTPExchangeSettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .onAppear {
-            reload()
+        .task {
+            await reloadAsync()
         }
         .onReceive(NotificationCenter.default.publisher(for: HTTPExchangeStore.didChangeNotification)) { _ in
-            reload()
+            Task { await reloadAsync() }
         }
     }
 
@@ -67,7 +68,7 @@ public struct HTTPExchangeSettingsView: View {
             }
             Spacer()
             AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
-                reload()
+                Task { await reloadAsync() }
             }
             AppButton("Open Data Directory", systemImage: "folder", size: .small) {
                 NSWorkspace.shared.open(store.directory)
@@ -79,7 +80,16 @@ public struct HTTPExchangeSettingsView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            if records.isEmpty {
+            if isLoading {
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Loading...")
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if records.isEmpty {
                 AppEmptyState(
                     icon: "arrow.up.arrow.down.circle",
                     title: "No HTTP exchanges"
@@ -259,10 +269,18 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
-    private func reload() {
-        records = store.fetchAll()
-        if selectedRecordID == nil || !records.contains(where: { $0.id == selectedRecordID }) {
-            selectedRecordID = records.first?.id
+    private func reloadAsync() async {
+        // Use withCheckedContinuation to "yield" control back to SwiftUI,
+        // allowing the view to render the loading state first.
+        await withCheckedContinuation { continuation in
+            // The synchronous fetchAll() will run after SwiftUI renders
+            let loadedRecords = store.fetchAll()
+            records = loadedRecords
+            if selectedRecordID == nil || !records.contains(where: { $0.id == selectedRecordID }) {
+                selectedRecordID = records.first?.id
+            }
+            isLoading = false
+            continuation.resume()
         }
     }
 
