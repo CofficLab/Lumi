@@ -16,6 +16,13 @@ public final class VerbosityPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
+    public func willSendToLLM(
+        kernel: LumiKernel,
+        messages: [LumiChatMessage]
+    ) async -> [LumiChatMessage] {
+        await VerbosityWillSendToLLMHook().execute(kernel: kernel, messages: messages)
+    }
+
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
