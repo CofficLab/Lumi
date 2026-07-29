@@ -11,8 +11,7 @@ public struct SettingsTabItem: Identifiable, Sendable {
     public let systemImage: String
 
     /// 排序权重,数值越小越靠前。
-    /// 由 `BuiltinPluginManager` 在注册时统一赋为贡献该标签的插件 `order`,
-    /// 宿主侧边栏据此对全部标签(无论来自哪个插件)做全局稳定排序。
+    /// 由插件在 `settingsTabItems(kernel:)` 中自行声明。
     public var order: Int
 
     private let contentBuilder: @MainActor @Sendable () -> AnyView
