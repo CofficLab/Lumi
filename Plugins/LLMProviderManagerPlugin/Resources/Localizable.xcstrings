@@ -8,10 +8,68 @@
             "state" : "new",
             "value" : "%1$@ · %2$@ tokens (in %3$@ / out %4$@)"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ 令牌（入 %3$@ / 出 %4$@）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ 令牌（入 %3$@ / 出 %4$@）"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ 令牌（入 %3$@ / 出 %4$@）"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ 令牌（入 %3$@ / 出 %4$@）"
+          }
         }
       }
     },
     "%@ API Key required" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ API Key required"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 需要 API 密钥"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 需要 API 密鑰"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 需要 API 密鑰"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 需要 API 金鑰"
+          }
+        }
+      }
+    },
+    "%@ tokens" : {
 
     },
     "%@, total %@ tokens, peak %@" : {
@@ -20,6 +78,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@, total %2$@ tokens, peak %3$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@，共 %2$@ 个令牌，峰值 %3$@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@，共 %2$@ 個令牌，峯值 %3$@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@，共 %2$@ 個令牌，峯值 %3$@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@，共 %2$@ 個令牌，峰值 %3$@"
           }
         }
       }
@@ -46,6 +128,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個雲端供應商"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld 個雲端供應商"
@@ -79,6 +167,12 @@
             "state" : "translated",
             "value" : "%lld 個本地供應商"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個本地供應商"
+          }
         }
       }
     },
@@ -104,6 +198,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 個模型"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld 個模型"
@@ -567,7 +667,38 @@
       }
     },
     "Details" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳情"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳情"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳情"
+          }
+        }
+      }
     },
     "Detect available LLM providers and models via health checks" : {
       "extractionState" : "stale",
@@ -630,14 +761,82 @@
             "state" : "translated",
             "value" : "啟用自動路由"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用自動路由"
+          }
         }
       }
     },
     "Enter an API Key here, then resend your message." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter an API Key here, then resend your message."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在此输入 API 密钥，然后重新发送消息。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在此輸入 API 密鑰，然後重新發送消息。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在此輸入 API 密鑰，然後重新發送消息。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在此輸入 API 金鑰，然後重新發送訊息。"
+          }
+        }
+      }
     },
     "Enter API Key" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter API Key"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入 API 密钥"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入 API 密鑰"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入 API 密鑰"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入 API 金鑰"
+          }
+        }
+      }
     },
     "Fast" : {
       "extractionState" : "stale",
@@ -735,11 +934,48 @@
             "state" : "translated",
             "value" : "常用模型"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用模型"
+          }
         }
       }
     },
     "Hide API Key" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide API Key"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏 API 密钥"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏 API 密鑰"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏 API 密鑰"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏 API 金鑰"
+          }
+        }
+      }
     },
     "Idle" : {
       "extractionState" : "stale",
@@ -802,6 +1038,12 @@
             "state" : "translated",
             "value" : "圖像"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "影像"
+          }
         }
       }
     },
@@ -841,7 +1083,38 @@
       }
     },
     "Last %lld days" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last %lld days"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 %lld 天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 %lld 天"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 %lld 天"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 %lld 天"
+          }
+        }
+      }
     },
     "LLM Availability" : {
       "extractionState" : "stale",
@@ -1079,6 +1352,12 @@
             "state" : "translated",
             "value" : "無匹配模型"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無匹配模型"
+          }
         }
       }
     },
@@ -1108,6 +1387,12 @@
             "state" : "translated",
             "value" : "未選擇供應商"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇供應商"
+          }
         }
       }
     },
@@ -1133,6 +1418,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無供應商"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "無供應商"
@@ -1176,7 +1467,38 @@
       }
     },
     "No Usage Data" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Usage Data"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无使用数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無使用數據"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無使用數據"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無使用資料"
+          }
+        }
+      }
     },
     "No Usage History" : {
       "extractionState" : "manual",
@@ -1200,6 +1522,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無使用記錄"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "無使用記錄"
@@ -1233,14 +1561,82 @@
             "state" : "translated",
             "value" : "打開供應商頁面"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟供應商頁面"
+          }
         }
       }
     },
     "Open provider website" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open provider website"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开提供商网站"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開提供商網站"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開提供商網站"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟提供商網站"
+          }
+        }
+      }
     },
     "peak %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "peak %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "峰值 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "峯值 %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "峯值 %@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "峰值 %@"
+          }
+        }
+      }
     },
     "Please add LLM providers in Settings to enable AI features." : {
       "extractionState" : "stale",
@@ -1348,7 +1744,38 @@
       }
     },
     "Provider is not registered yet. Open Settings to configure this key." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provider is not registered yet. Open Settings to configure this key."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供商尚未注册。请打开设置配置此密钥。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供商尚未註冊。請打開設置配置此密鑰。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供商尚未註冊。請打開設置配置此密鑰。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提供商尚未註冊。請開啟設定配置此金鑰。"
+          }
+        }
+      }
     },
     "Providers" : {
       "extractionState" : "stale",
@@ -1407,6 +1834,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新檢查可用性"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新檢查可用性"
@@ -1475,6 +1908,12 @@
             "state" : "translated",
             "value" : "重新配置"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新配置"
+          }
         }
       }
     },
@@ -1500,6 +1939,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新配置 API Key"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新配置 API Key"
@@ -1543,7 +1988,38 @@
       }
     },
     "Saved" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已保存"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已保存"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已保存"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已儲存"
+          }
+        }
+      }
     },
     "Search providers" : {
       "extractionState" : "manual",
@@ -1567,6 +2043,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋供應商"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜尋供應商"
@@ -1610,7 +2092,38 @@
       }
     },
     "Show API Key" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show API Key"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示 API 密钥"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 API 密鑰"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 API 密鑰"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 API 金鑰"
+          }
+        }
+      }
     },
     "Switch Model" : {
       "extractionState" : "stale",
@@ -1673,6 +2186,12 @@
             "state" : "translated",
             "value" : "文字"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文本"
+          }
         }
       }
     },
@@ -1698,6 +2217,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "工具"
@@ -1766,6 +2291,12 @@
             "state" : "translated",
             "value" : "語音"
           }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語音"
+          }
         }
       }
     },
@@ -1791,6 +2322,12 @@
           }
         },
         "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不可用"
+          }
+        },
+        "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "不可用"
@@ -1832,6 +2369,12 @@
           }
         }
       }
+    },
+    "最近 14 天暂无 token 记录" : {
+
+    },
+    "正在加载用量" : {
+
     }
   },
   "version" : "1.1"
