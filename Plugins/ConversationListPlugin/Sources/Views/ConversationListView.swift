@@ -87,7 +87,10 @@ extension ConversationListView {
     private var conversationListContent: some View {
         VStack(spacing: 0) {
             ScrollView {
-                LazyVStack(spacing: 4) {
+                // The page is capped at 40 conversations. Use a regular stack
+                // so title/message-count refreshes cannot leave a stale
+                // virtual-row placeholder between conversations.
+                VStack(spacing: 4) {
                     ForEach(conversations, id: \.id) { conversation in
                         // 用 onTapGesture 触发选中，绕过 AppListRow 内置 Button 对右键的吞吃，
                         // 让 ConversationItemView 上的 .contextMenu 在 macOS 上能正常弹出。
