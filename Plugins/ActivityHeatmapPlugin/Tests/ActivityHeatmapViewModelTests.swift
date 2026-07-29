@@ -168,6 +168,36 @@ struct ActivityHeatmapViewModelTests {
         let token = ActivityDayToken(date: date, totalTokens: 1000)
         #expect(token.id == date)
     }
+
+    @Test("Statistics summarize activity, streaks, tokens, and weekdays")
+    func statisticsSummary() {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: Date())
+        let activity = (0..<5).map { offset in
+            ActivityDay(
+                date: calendar.date(byAdding: .day, value: offset, to: start)!,
+                level: offset == 0 ? 1 : 4,
+                messageCount: [2, 4, 0, 8, 3][offset]
+            )
+        }
+        let tokens = activity.map {
+            ActivityDayToken(date: $0.date, totalTokens: $0.messageCount * 100)
+        }
+
+        let stats = ActivityHeatmapStatistics(activity: activity, tokens: tokens)
+
+        #expect(stats.totalMessages == 17)
+        #expect(stats.activeDays == 4)
+        #expect(stats.averageMessagesPerDay == 3.4)
+        #expect(stats.averageMessagesPerActiveDay == 4.25)
+        #expect(stats.currentStreak == 2)
+        #expect(stats.longestStreak == 2)
+        #expect(stats.longestIdleStreak == 1)
+        #expect(stats.totalTokens == 1700)
+        #expect(stats.averageTokensPerMessage == 100)
+        #expect(stats.peakMessageDay?.messageCount == 8)
+        #expect(stats.peakTokenDay?.totalTokens == 800)
+    }
 }
 
 @Suite("ActivityHeatmapViewModel load()", .serialized)
@@ -200,12 +230,14 @@ struct ActivityHeatmapViewModelLoadTests {
 
 @Suite("ActivityHeatmapCache")
 @MainActor
-struct ActivityHeatmapCacheTests {
+final class ActivityHeatmapCacheTests {
     private var tempDir: URL!
     private var cache: ActivityHeatmapCache!
 
     init() {
-        let tempPath = FileManager.default.temporaryDirectory.appendingPathComponent("ActivityHeatmapCacheTests")
+        let tempPath = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ActivityHeatmapCacheTests")
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try? FileManager.default.createDirectory(at: tempPath, withIntermediateDirectories: true)
         tempDir = tempPath
     }
@@ -215,7 +247,8 @@ struct ActivityHeatmapCacheTests {
     }
 
     private func createCache() -> ActivityHeatmapCache {
-        ActivityHeatmapCache(storageDirectory: nil, pluginID: "com.coffic.test")
+        let directory = tempDir.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        return ActivityHeatmapCache(storageDirectory: directory, pluginID: "com.coffic.test")
     }
 
     // MARK: - Heatmap Cache Tests

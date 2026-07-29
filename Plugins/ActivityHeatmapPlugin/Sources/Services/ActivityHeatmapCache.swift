@@ -232,6 +232,10 @@ public actor ActivityHeatmapCache: SuperLog {
             }
 
             try context.save()
+            if tokenCount != nil {
+                try Self.tokenCacheVersion.write(to: tokenCacheVersionURL, atomically: true, encoding: .utf8)
+                tokenCacheNeedsRefresh = false
+            }
         } catch {
             Self.logger.error("\(Self.t)保存缓存失败: \(error.localizedDescription)")
         }

@@ -25,6 +25,8 @@ public struct ActivityHeatmapSettingsView: View {
         ) {
             header
 
+            statisticsOverview
+
             // Heatmap card
             heatmapCard
 
@@ -75,6 +77,100 @@ public struct ActivityHeatmapSettingsView: View {
 
     // MARK: - Heatmap Card
 
+    private var statisticsOverview: some View {
+        let stats = viewModel.statistics
+        return VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                statisticCard("Messages", value: format(stats.totalMessages), detail: "Total")
+                statisticCard("Active days", value: "\(stats.activeDays)/\(period.rawValue)", detail: percent(stats.activeDays, of: period.rawValue))
+                statisticCard("Daily average", value: format(stats.averageMessagesPerDay), detail: "Messages")
+                statisticCard("Current streak", value: "\(stats.currentStreak)d", detail: "Days")
+            }
+
+            HStack(alignment: .top, spacing: 12) {
+                insightCard(title: "Records", rows: [
+                    ("Most active day", peakMessageText(stats.peakMessageDay)),
+                    ("Best streak", "\(stats.longestStreak) days"),
+                    ("Longest idle", "\(stats.longestIdleStreak) days"),
+                    ("Avg. active day", format(stats.averageMessagesPerActiveDay) + " messages")
+                ])
+                insightCard(title: "Token usage", rows: [
+                    ("Total tokens", format(stats.totalTokens)),
+                    ("Daily average", format(stats.averageTokensPerDay)),
+                    ("Peak day", peakTokenText(stats.peakTokenDay)),
+                    ("Per message", format(stats.averageTokensPerMessage))
+                ])
+            }
+
+            weekdayDistribution(stats.weekdayTotals)
+        }
+        .padding(.horizontal, 16)
+    }
+
+    private func statisticCard(_ title: String, value: String, detail: String) -> some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(LumiPluginLocalization.string(title, bundle: .module))
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+                Text(value)
+                    .font(.title3.weight(.semibold))
+                    .lineLimit(1)
+                Text(LumiPluginLocalization.string(detail, bundle: .module))
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+        }
+    }
+
+    private func insightCard(title: String, rows: [(String, String)]) -> some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: 9) {
+                Text(LumiPluginLocalization.string(title, bundle: .module))
+                    .font(.appBody.weight(.semibold))
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                    HStack {
+                        Text(LumiPluginLocalization.string(row.0, bundle: .module))
+                            .font(.appCaption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(row.1)
+                            .font(.appCaption.weight(.medium))
+                    }
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func weekdayDistribution(_ totals: [Int]) -> some View {
+        let labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        let maxValue = max(totals.max() ?? 0, 1)
+        return AppCard {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(LumiPluginLocalization.string("Activity by weekday", bundle: .module))
+                    .font(.appBody.weight(.semibold))
+                HStack(alignment: .bottom, spacing: 8) {
+                    ForEach(0..<7, id: \.self) { index in
+                        VStack(spacing: 5) {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(theme.primary)
+                                .frame(height: max(4, CGFloat(totals[index]) / CGFloat(maxValue) * 54))
+                            Text(LumiPluginLocalization.string(labels[index], bundle: .module))
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+            }
+            .padding(14)
+        }
+    }
+
     private var heatmapCard: some View {
         AppCard {
             if viewModel.hasLoaded && viewModel.heatmapData.isEmpty && !viewModel.isLoading {
@@ -119,7 +215,7 @@ public struct ActivityHeatmapSettingsView: View {
             guard let date = calendar.date(byAdding: .day, value: offset, to: oldestDay) else {
                 return nil
             }
-            return ActivityDay(date: date, level: 0)
+            return ActivityDay(date: date, level: 0, messageCount: 0)
         }
     }
 
@@ -171,6 +267,29 @@ public struct ActivityHeatmapSettingsView: View {
         guard let url = cacheDirectory else { return }
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         _ = NSWorkspace.shared.open(url)
+    }
+
+    private func format(_ value: Int) -> String {
+        value.formatted(.number.notation(.compactName))
+    }
+
+    private func format(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(0...1)))
+    }
+
+    private func percent(_ value: Int, of total: Int) -> String {
+        guard total > 0 else { return "0%" }
+        return "\(Int((Double(value) / Double(total) * 100).rounded()))%"
+    }
+
+    private func peakMessageText(_ day: ActivityDay?) -> String {
+        guard let day else { return "—" }
+        return "\(day.messageCount) · \(day.date.formatted(.dateTime.month(.abbreviated).day()))"
+    }
+
+    private func peakTokenText(_ day: ActivityDayToken?) -> String {
+        guard let day else { return "—" }
+        return "\(format(day.totalTokens)) · \(day.date.formatted(.dateTime.month(.abbreviated).day()))"
     }
 }
 
