@@ -3,34 +3,37 @@ import LumiKernel
 
 /// AskUser 插件桥接器
 ///
-/// 用户做出选择后，直接委托给内核的 AgentTurnManager 恢复 Turn。
+/// 用户做出选择后，通过 MessageSending 恢复 Turn。
+///
+/// MessageSending 同时维护发送中的 UI 状态，因此恢复流程和普通消息发送
+/// 使用同一套生命周期，消息列表会显示临时的“正在发送”状态。
 ///
 /// 数据流：
 /// ```
 /// 渲染器用户点击 → AskUserBridge.resume(...)
 ///         ↓
-/// AgentTurnManager.resumeTurn(...)
+/// MessageSending.resumeTurn(...)
 /// ```
 @MainActor
 public final class AskUserBridge: Sendable {
     public static let shared = AskUserBridge()
 
-    private weak var manager: (any AgentTurnManaging)?
+    private weak var messageSender: (any MessageSending)?
 
     private init() {}
 
     public func start(kernel: LumiKernel) {
-        manager = kernel.agentTurnManager
+        messageSender = kernel.messageSender
     }
 
-    /// 用户做出选择后调用，直接触发内核恢复。
+    /// 用户做出选择后调用，触发恢复并保持发送状态。
     public func resume(conversationId: String, toolCallId: String, answer: String) {
         guard let conversationID = UUID(uuidString: conversationId),
-              let manager
+              let messageSender
         else { return }
 
         Task { @MainActor in
-            _ = try? await manager.resumeTurn(
+            _ = try? await messageSender.resumeTurn(
                 in: conversationID,
                 request: AgentTurnResumeRequest(
                     suspensionID: toolCallId,

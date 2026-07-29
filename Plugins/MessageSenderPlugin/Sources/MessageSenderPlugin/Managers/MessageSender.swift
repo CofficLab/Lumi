@@ -277,6 +277,19 @@ public final class MessageSender: MessageSending, SuperLog {
         }
     }
 
+    public func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentTurnOutcome {
+        beginSending(in: conversationID)
+        defer { endSending(in: conversationID) }
+
+        guard let manager = kernel?.agentTurnManager else {
+            throw AgentTurnManagingError.resumeNotSupported
+        }
+        return try await manager.resumeTurn(in: conversationID, request: request)
+    }
+
     public func cancelCurrentRequest() {
         if let conversationID = kernel?.conversations?.selectedConversationID, isSending(for: conversationID) {
             endSending(in: conversationID)

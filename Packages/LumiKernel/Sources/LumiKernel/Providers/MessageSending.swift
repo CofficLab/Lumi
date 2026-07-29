@@ -93,6 +93,16 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
         conversationID: UUID?
     ) async throws
 
+    /// Resume a suspended agent turn while preserving the sender lifecycle.
+    ///
+    /// Implementations that expose agent-turn resumption should keep the target
+    /// conversation in the sending state for the duration of the resumed turn,
+    /// so UI consumers observe the same transient status as a normal send.
+    func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentTurnOutcome
+
     /// 取消当前正在进行的发送任务
     func cancelCurrentRequest()
 
@@ -106,6 +116,13 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
 // MARK: - 默认实现
 
 public extension MessageSending {
+    func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentTurnOutcome {
+        throw AgentTurnManagingError.resumeNotSupported
+    }
+
     func isSending(for conversationID: UUID?) -> Bool {
         guard conversationID != nil else { return isSending }
         return isSending
