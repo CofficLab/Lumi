@@ -118,6 +118,21 @@ struct GoalStateManagerTests {
         #expect(fetchedTasks.count == 2)
         #expect(fetchedTasks.contains { $0.title == "Pending task" && $0.status == .pending })
     }
+
+    @Test("Task progress resets the automatic continuation budget")
+    func testContinuationBudgetReset() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+
+        for _ in 0..<GoalStateManager.maxAutomaticContinuations {
+            #expect(await manager.incrementContinuationCount(conversationId: "budget") != nil)
+        }
+        #expect(await manager.incrementContinuationCount(conversationId: "budget") == nil)
+
+        await manager.resetContinuationCount(conversationId: "budget")
+        #expect(await manager.incrementContinuationCount(conversationId: "budget") == 1)
+    }
     
     @Test("Fetch goals by conversation")
     func testFetchGoals() async throws {

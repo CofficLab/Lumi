@@ -28,6 +28,7 @@ public final class MessageSender: MessageSending, SuperLog {
     nonisolated static let verbose = false
 
     @Published private var sendingConversationIDs: Set<UUID> = []
+    private var pendingContinuationConversationIDs: Set<UUID> = []
 
     public var isSending: Bool {
         !sendingConversationIDs.isEmpty
@@ -290,8 +291,18 @@ public final class MessageSender: MessageSending, SuperLog {
         return try await manager.resumeTurn(in: conversationID, request: request)
     }
 
+    public func continueTurn(in conversationID: UUID) {
+        guard !isSending(for: conversationID) else {
+            pendingContinuationConversationIDs.insert(conversationID)
+            return
+        }
+
+        startContinuation(in: conversationID)
+    }
+
     public func cancelCurrentRequest() {
         if let conversationID = kernel?.conversations?.selectedConversationID, isSending(for: conversationID) {
+            pendingContinuationConversationIDs.remove(conversationID)
             endSending(in: conversationID)
             // Cancel the agent turn if one is running
             kernel?.agentTurnManager?.cancelTurn(in: conversationID)
@@ -400,6 +411,17 @@ public final class MessageSender: MessageSending, SuperLog {
 
     private func endSending(in conversationID: UUID) {
         sendingConversationIDs.remove(conversationID)
+        guard pendingContinuationConversationIDs.remove(conversationID) != nil else { return }
+        startContinuation(in: conversationID)
+    }
+
+    private func startContinuation(in conversationID: UUID) {
+        beginSending(in: conversationID)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { endSending(in: conversationID) }
+            await runAgentTurn(in: conversationID)
+        }
     }
 }
 

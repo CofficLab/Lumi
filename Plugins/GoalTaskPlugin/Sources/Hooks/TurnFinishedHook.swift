@@ -13,16 +13,16 @@ enum TurnFinishedHook {
         // 仅响应成功完成的 turn
         guard reason == .completed else { return }
 
-        guard let chatService = lumiCore.resolveService((any LumiChatServicing).self) else {
+        guard let messageSender = lumiCore.messageSender else {
             return
         }
 
-        await checkAndContinue(conversationID: conversationID, chatService: chatService)
+        await checkAndContinue(conversationID: conversationID, messageSender: messageSender)
     }
 
     private static func checkAndContinue(
         conversationID: UUID,
-        chatService: any LumiChatServicing
+        messageSender: any MessageSending
     ) async {
         guard let manager = GoalTaskPlugin.currentManager() else {
             return
@@ -33,14 +33,19 @@ enum TurnFinishedHook {
         // 获取当前会话的所有 Goals
         let goals = await manager.fetchGoals(conversationId: conversationIdStr)
 
-        // 过滤出活跃的 Goals（非 completed、skipped）
+        // 只有 pending / in_progress 的 Goal 才允许系统自动推进。
+        // blocked / failed 必须保留现场，等待用户或显式流程处理。
         let activeGoals = goals.filter { goal in
-            goal.status != .completed && goal.status != .skipped
+            goal.status == .pending || goal.status == .inProgress
         }
 
         guard !activeGoals.isEmpty else {
-            // 所有目标都已完成或跳过，清理数据
-            await cleanupCompletedGoals(manager: manager, conversationId: conversationIdStr)
+            // 只有全部目标都是 completed / skipped 时才清理历史数据。
+            // failed / blocked Goal 必须继续保留。
+            if !goals.isEmpty,
+               goals.allSatisfy({ $0.status == .completed || $0.status == .skipped }) {
+                await cleanupCompletedGoals(manager: manager, conversationId: conversationIdStr)
+            }
             return
         }
 
@@ -58,8 +63,7 @@ enum TurnFinishedHook {
         }
 
         guard hasActiveTasks else {
-            // 没有活跃任务，清理已完成的目标
-            await cleanupCompletedGoals(manager: manager, conversationId: conversationIdStr)
+            // 没有可推进的 Task 时保留 Goal，避免把异常现场当成完成结果删除。
             return
         }
 
@@ -74,7 +78,7 @@ enum TurnFinishedHook {
         await manager.markContinuation(conversationId: conversationIdStr)
 
         // 不写入任何用户消息，直接重启一轮 agent turn
-        chatService.continueTurn(in: conversationID)
+        messageSender.continueTurn(in: conversationID)
     }
 
     private static func cleanupCompletedGoals(manager: GoalStateManager, conversationId: String) async {

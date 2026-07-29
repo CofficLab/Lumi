@@ -103,6 +103,13 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
         request: AgentTurnResumeRequest
     ) async throws -> AgentTurnOutcome
 
+    /// Continue an existing conversation without inserting a user message.
+    ///
+    /// This is used by system-owned workflows such as Goal continuation. The
+    /// implementation must keep the conversation in the sending state while
+    /// the resumed turn is running.
+    func continueTurn(in conversationID: UUID)
+
     /// 取消当前正在进行的发送任务
     func cancelCurrentRequest()
 
@@ -122,6 +129,8 @@ public extension MessageSending {
     ) async throws -> AgentTurnOutcome {
         throw AgentTurnManagingError.resumeNotSupported
     }
+
+    func continueTurn(in conversationID: UUID) {}
 
     func isSending(for conversationID: UUID?) -> Bool {
         guard conversationID != nil else { return isSending }

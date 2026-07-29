@@ -86,6 +86,9 @@ public struct UpdateTaskStatusTool: LumiAgentTool, SuperLog {
         } catch {
             return "Error: failed to update task: \(error.localizedDescription)"
         }
+
+        // Real task progress breaks the consecutive empty-continuation guard.
+        await manager.resetContinuationCount(conversationId: updateResult.goal.conversationId)
         
         // 通知 UI 刷新
         NotificationCenter.default.post(
