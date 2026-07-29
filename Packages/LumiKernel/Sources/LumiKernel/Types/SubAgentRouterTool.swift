@@ -217,7 +217,7 @@ public struct SubAgentRouterTool: LumiAgentTool, @unchecked Sendable {
             (["test", "coverage", "unit", "integration"], ["test"], 10),
             (["doc", "docs", "documentation", "readme"], ["doc", "writer"], 10),
             (["commit", "message", "changelog"], ["commit"], 10),
-            (["build", "compile", "xcode", "verify"], ["build", "xcode"], 10),
+            (["build", "compile", "xcode", "verify", "rust", "cargo", "go", "golang", "maven", "gradle", "npm", "yarn", "pnpm", "cmake", "make", "dotnet", "elixir", "swiftpm", "swift package"], ["build", "xcode"], 10),
         ]
 
         var score = 0
