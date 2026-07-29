@@ -359,6 +359,7 @@ private extension ConversationSpeedPopover {
 
 private struct ConversationSpeedLineChart: View {
     let samples: [ConversationSpeedSample]
+    @State private var hoveredIndex: Int?
 
     var body: some View {
         Canvas { context, size in
@@ -405,6 +406,79 @@ private struct ConversationSpeedLineChart: View {
                 context.fill(Path(ellipseIn: CGRect(x: last.x - 3.5, y: last.y - 3.5, width: 7, height: 7)), with: .color(.orange))
                 context.stroke(Path(ellipseIn: CGRect(x: last.x - 5.5, y: last.y - 5.5, width: 11, height: 11)), with: .color(.orange.opacity(0.32)), lineWidth: 2)
             }
+
+            if let hoveredIndex,
+               points.indices.contains(hoveredIndex) {
+                let point = points[hoveredIndex]
+                context.stroke(
+                    Path { path in
+                        path.move(to: CGPoint(x: point.x, y: inset.top))
+                        path.addLine(to: CGPoint(x: point.x, y: inset.top + plotHeight))
+                    },
+                    with: .color(.orange.opacity(0.45)),
+                    style: StrokeStyle(lineWidth: 1, dash: [4, 4])
+                )
+            }
+        }
+        .overlay {
+            GeometryReader { proxy in
+                let inset = EdgeInsets(top: 10, leading: 10, bottom: 16, trailing: 10)
+                let plotWidth = max(proxy.size.width - inset.leading - inset.trailing, 1)
+                let values = samples.map(\.tokensPerSecond)
+                let minValue = values.min() ?? 0
+                let maxValue = values.max() ?? 0
+                let range = max(maxValue - minValue, 1)
+                let plotHeight = max(proxy.size.height - inset.top - inset.bottom, 1)
+
+                ZStack {
+                    if let hoveredIndex,
+                       samples.indices.contains(hoveredIndex) {
+                        let sample = samples[hoveredIndex]
+                        let xRatio = samples.count == 1 ? 0.5 : Double(hoveredIndex) / Double(samples.count - 1)
+                        let x = inset.leading + plotWidth * xRatio
+                        let yRatio = (sample.tokensPerSecond - minValue) / range
+                        let y = inset.top + plotHeight * (1 - yRatio)
+
+                        Circle()
+                            .fill(.orange)
+                            .frame(width: 9, height: 9)
+                            .overlay(Circle().stroke(.white, lineWidth: 2))
+                            .position(x: x, y: y)
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(Self.tooltipDateFormatter.string(from: sample.createdAt))
+                                .font(.system(size: 10, weight: .medium))
+                            Text("X: \(Self.tooltipDateFormatter.string(from: sample.createdAt))")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                            Text(String(format: "Y: %.1f tokens/s", sample.tokensPerSecond))
+                                .font(.system(size: 11, weight: .semibold))
+                                .monospacedDigit()
+                        }
+                        .padding(8)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .stroke(.secondary.opacity(0.25), lineWidth: 0.5)
+                        }
+                        .shadow(radius: 3, y: 1)
+                        .fixedSize()
+                        .position(x: min(max(x, 82), max(proxy.size.width - 82, 82)), y: 34)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onContinuousHover { phase in
+                    switch phase {
+                    case let .active(location):
+                        guard !samples.isEmpty else { return }
+                        let ratio = (location.x - inset.leading) / plotWidth
+                        let rawIndex = Int((ratio * CGFloat(samples.count - 1)).rounded())
+                        hoveredIndex = min(max(rawIndex, 0), samples.count - 1)
+                    case .ended:
+                        hoveredIndex = nil
+                    }
+                }
+            }
         }
         .background(Color.orange.opacity(0.07), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(
@@ -412,6 +486,13 @@ private struct ConversationSpeedLineChart: View {
                 .stroke(Color.orange.opacity(0.18), lineWidth: 1)
         )
     }
+
+    private static let tooltipDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
 
     private func smoothedPath(points: [CGPoint]) -> Path {
         var path = Path()
