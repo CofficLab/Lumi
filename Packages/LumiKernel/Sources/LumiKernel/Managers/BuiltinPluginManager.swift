@@ -352,11 +352,35 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
             throw LumiKernelError.serviceNotAvailable(service: "AgentTool")
         }
 
+        manager.removeAll()
+        manager.removeAllSubAgents()
+
+        // Build the ordinary tool set first. Delegates receive this snapshot so they
+        // can use project tools without seeing other delegate_* tools.
         for plugin in allPlugins {
             guard effectiveEnabled(for: plugin) else { continue }
             let tools = plugin.agentTools(kernel: kernel)
             for tool in tools {
                 manager.add(tool, pluginID: plugin.id)
+            }
+        }
+
+        let availableTools = manager.allAgentTools()
+        let providerResolver: @MainActor @Sendable (String) -> (any LumiLLMProvider)? = { [weak kernel] id in
+            kernel?.llmProvider?.llmProvider(id: id)
+        }
+
+        for plugin in allPlugins {
+            guard effectiveEnabled(for: plugin) else { continue }
+            for definition in plugin.subAgents(kernel: kernel) {
+                manager.addSubAgent(definition)
+                let delegate = SubAgentDelegateTool(
+                    definition: definition,
+                    providerResolver: providerResolver,
+                    availableTools: availableTools,
+                    executionToolService: manager
+                )
+                manager.add(delegate, pluginID: plugin.id)
             }
         }
     }
@@ -387,11 +411,31 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
         //    确保 settingsTabItems 创建视图时能读取到已注册的工具列表。
         if let toolManager = kernel.toolManager {
             toolManager.removeAll()
+            toolManager.removeAllSubAgents()
             for plugin in allPlugins {
                 guard effectiveEnabled(for: plugin) else { continue }
                 let tools = plugin.agentTools(kernel: kernel)
                 for tool in tools {
                     toolManager.add(tool, pluginID: plugin.id)
+                }
+            }
+            let availableTools = toolManager.allAgentTools()
+            let providerResolver: @MainActor @Sendable (String) -> (any LumiLLMProvider)? = { [weak kernel] id in
+                kernel?.llmProvider?.llmProvider(id: id)
+            }
+            for plugin in allPlugins {
+                guard effectiveEnabled(for: plugin) else { continue }
+                for definition in plugin.subAgents(kernel: kernel) {
+                    toolManager.addSubAgent(definition)
+                    toolManager.add(
+                        SubAgentDelegateTool(
+                            definition: definition,
+                            providerResolver: providerResolver,
+                            availableTools: availableTools,
+                            executionToolService: toolManager
+                        ),
+                        pluginID: plugin.id
+                    )
                 }
             }
         }

@@ -47,8 +47,24 @@ public final class ToolService: ToolManaging {
         tools.isEmpty ? [] : [("Built-in", tools)]
     }
 
-    public func allSubAgents() -> [LumiSubAgentDefinition] { [] }
-    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {}
+    private var subAgentsByID: [String: LumiSubAgentDefinition] = [:]
+    private var subAgentOrder: [String] = []
+
+    public func allSubAgents() -> [LumiSubAgentDefinition] {
+        subAgentOrder.compactMap { subAgentsByID[$0] }
+    }
+
+    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {
+        if subAgentsByID[subAgent.id] == nil {
+            subAgentOrder.append(subAgent.id)
+        }
+        subAgentsByID[subAgent.id] = subAgent
+    }
+
+    public func removeAllSubAgents() {
+        subAgentsByID.removeAll()
+        subAgentOrder.removeAll()
+    }
 
     // MARK: - Lookup
 

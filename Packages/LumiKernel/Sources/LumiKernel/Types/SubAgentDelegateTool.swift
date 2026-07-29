@@ -77,7 +77,9 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
 
     @MainActor
     private func resolveTools() -> [any LumiAgentTool] {
-        let allTools = availableTools
+        // Delegates are intentionally unavailable inside a sub-agent. Besides avoiding
+        // infinite recursion, this keeps the sub-agent's tool contract explicit.
+        let allTools = availableTools.filter { !$0.name.hasPrefix("delegate_") }
         if definition.requiredTags.contains(.all) { return allTools }
         var filtered = allTools
         if !definition.requiredTags.isEmpty {

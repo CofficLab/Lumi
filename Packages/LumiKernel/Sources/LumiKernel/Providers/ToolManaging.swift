@@ -32,6 +32,9 @@ public protocol ToolManaging: AnyObject {
     /// Add a sub-agent definition
     func addSubAgent(_ subAgent: LumiSubAgentDefinition)
 
+    /// Remove all registered sub-agent definitions during contribution rebuilds.
+    func removeAllSubAgents()
+
     // MARK: - Execution (agent loop calls these)
 
     /// Find a tool by name
