@@ -115,6 +115,9 @@ public protocol LumiPlugin: AnyObject {
     /// 聊天分区动作栏项
     func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem]
 
+    /// 模型选择弹窗左侧配置项
+    func modelSelectorSidebarItems(kernel: LumiKernel) -> [ModelSelectorSidebarItem]
+
     /// 聊天分区根视图包装器
     func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView
 
@@ -189,6 +192,9 @@ public extension LumiPlugin {
 
     /// Agent 工具的默认实现:不贡献任何工具。
     func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] { [] }
+
+    /// 默认不贡献模型选择弹窗左侧配置项。
+    func modelSelectorSidebarItems(kernel: LumiKernel) -> [ModelSelectorSidebarItem] { [] }
 
     /// 默认分类:通用。
     var category: LumiPluginCategory { .general }

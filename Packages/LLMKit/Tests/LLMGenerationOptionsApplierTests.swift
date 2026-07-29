@@ -23,6 +23,37 @@ struct LLMGenerationOptionsApplierTests {
         #expect(body["max_tokens"] == nil)
     }
 
+    @Test("OpenAI applier maps reasoning effort")
+    func openAIReasoningEffort() {
+        var body: [String: Any] = [:]
+        let config = LLMConfig(model: "gpt-5", providerId: "openai", reasoningEffort: "high")
+        OpenAICompatibleGenerationOptionsApplier.apply(config: config, model: "gpt-5", to: &body)
+        #expect(body["reasoning_effort"] as? String == "high")
+    }
+
+    @Test("OpenAI applier ignores automatic reasoning effort")
+    func openAIIgnoresAutomaticReasoningEffort() {
+        var body: [String: Any] = [:]
+        let config = LLMConfig(model: "gpt-5", providerId: "openai", reasoningEffort: "auto")
+        OpenAICompatibleGenerationOptionsApplier.apply(config: config, model: "gpt-5", to: &body)
+        #expect(body["reasoning_effort"] == nil)
+    }
+
+    @Test("Anthropic applier maps reasoning effort to thinking budget")
+    func anthropicThinkingBudget() {
+        var body: [String: Any] = ["max_tokens": 8192]
+        let config = LLMConfig(model: "claude-sonnet-4", providerId: "anthropic", reasoningEffort: "medium")
+        AnthropicCompatibleGenerationOptionsApplier.apply(
+            config: config,
+            model: "claude-sonnet-4",
+            defaultMaxTokens: 8192,
+            to: &body
+        )
+        let thinking = body["thinking"] as? [String: Any]
+        #expect(thinking?["type"] as? String == "enabled")
+        #expect(thinking?["budget_tokens"] as? Int == 4096)
+    }
+
     @Test("Message preparer keeps system and drops status")
     func messagePreparer() {
         let messages = [

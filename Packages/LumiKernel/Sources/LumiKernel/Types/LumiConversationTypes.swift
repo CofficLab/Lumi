@@ -95,6 +95,7 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
     public var createdAt: Date
     public var updatedAt: Date
     public var verbosity: LumiResponseVerbosity?
+    public var reasoningEffort: LumiReasoningEffort?
     public var language: LumiConversationLanguage?
     public var automationLevel: LumiAutomationLevel?
     public var providerID: String?
@@ -108,6 +109,7 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         verbosity: LumiResponseVerbosity? = nil,
+        reasoningEffort: LumiReasoningEffort? = nil,
         language: LumiConversationLanguage? = nil,
         automationLevel: LumiAutomationLevel? = nil,
         providerID: String? = nil,
@@ -120,6 +122,7 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.verbosity = verbosity
+        self.reasoningEffort = reasoningEffort
         self.language = language
         self.automationLevel = automationLevel
         self.providerID = providerID

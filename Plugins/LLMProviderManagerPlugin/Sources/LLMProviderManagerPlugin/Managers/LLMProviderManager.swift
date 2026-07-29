@@ -180,7 +180,8 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             model: model,
             tools: request.tools,
             imageAttachments: request.imageAttachments,
-            fileAttachments: request.fileAttachments
+            fileAttachments: request.fileAttachments,
+            generationOptions: request.generationOptions
         )
         return try await provider.send(selectedRequest)
     }

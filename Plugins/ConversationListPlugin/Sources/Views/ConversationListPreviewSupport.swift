@@ -59,6 +59,8 @@
         func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
         func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .standard }
         func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
+        func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { .automatic }
+        func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
         func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { .chat }
         func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
         func language(for conversationID: UUID?) -> LumiConversationLanguage { .chinese }

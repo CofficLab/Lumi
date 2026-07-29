@@ -106,6 +106,7 @@ import ProjectsPlugin
 import QuickFileSearchPlugin
 import QuickLauncherPlugin
 import RClickPlugin
+import ConversationReasoningPlugin
 import RegistryManagerPlugin
 import SettingsPlugin
 import SharedUIPlugin
@@ -223,6 +224,7 @@ public enum PluginService {
             BrewManagerPlugin(),
             DiskManagerPlugin(),
             HostsManagerPlugin(),
+            ConversationReasoningPlugin(),
             VerbosityPlugin(),
             ConversationSpeedPlugin(),
             ChatModePlugin(),

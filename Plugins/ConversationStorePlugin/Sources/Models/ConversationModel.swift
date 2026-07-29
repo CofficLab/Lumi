@@ -25,6 +25,9 @@ final public class ConversationModel: @unchecked Sendable {
     /// Verbosity level
     public var verbosityRaw: String?
 
+    /// Reasoning effort level
+    public var reasoningEffortRaw: String?
+
     /// Language preference
     public var languageRaw: String?
 
@@ -47,6 +50,7 @@ final public class ConversationModel: @unchecked Sendable {
         createdAt: TimeInterval = Date().timeIntervalSince1970,
         updatedAt: TimeInterval = Date().timeIntervalSince1970,
         verbosityRaw: String? = nil,
+        reasoningEffortRaw: String? = nil,
         languageRaw: String? = nil,
         automationLevelRaw: String? = nil,
         providerId: String? = nil,
@@ -59,6 +63,7 @@ final public class ConversationModel: @unchecked Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.verbosityRaw = verbosityRaw
+        self.reasoningEffortRaw = reasoningEffortRaw
         self.languageRaw = languageRaw
         self.automationLevelRaw = automationLevelRaw
         self.providerId = providerId
@@ -80,6 +85,7 @@ public extension ConversationModel {
             createdAt: summary.createdAt.timeIntervalSince1970,
             updatedAt: summary.updatedAt.timeIntervalSince1970,
             verbosityRaw: summary.verbosity?.rawValue,
+            reasoningEffortRaw: summary.reasoningEffort?.rawValue,
             languageRaw: summary.language?.rawValue,
             automationLevelRaw: summary.automationLevel?.rawValue,
             providerId: summary.providerID,
@@ -98,6 +104,9 @@ public extension ConversationModel {
         let language: LumiConversationLanguage? = languageRaw.flatMap {
             LumiConversationLanguage(rawValue: $0)
         }
+        let reasoningEffort: LumiReasoningEffort? = reasoningEffortRaw.flatMap {
+            LumiReasoningEffort(rawValue: $0)
+        }
         let automationLevel: LumiAutomationLevel? = automationLevelRaw.flatMap {
             LumiAutomationLevel(rawValue: $0)
         }
@@ -109,6 +118,7 @@ public extension ConversationModel {
             createdAt: Date(timeIntervalSince1970: createdAt),
             updatedAt: Date(timeIntervalSince1970: updatedAt),
             verbosity: verbosity,
+            reasoningEffort: reasoningEffort,
             language: language,
             automationLevel: automationLevel,
             providerID: providerId,

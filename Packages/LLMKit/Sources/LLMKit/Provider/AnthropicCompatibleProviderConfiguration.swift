@@ -20,17 +20,22 @@ public struct AnthropicCompatibleProviderConfiguration: Sendable, Equatable {
     /// 默认最大输出 token 数
     public let defaultMaxTokens: Int
 
+    /// 是否支持 Anthropic extended thinking 参数
+    public let supportsThinkingBudget: Bool
+
     public init(
         baseURL: String,
         fallbackBaseURLs: [String] = [],
         additionalHeaders: [String: String] = [:],
         apiVersion: String = "2023-06-01",
-        defaultMaxTokens: Int = 8192
+        defaultMaxTokens: Int = 8192,
+        supportsThinkingBudget: Bool = false
     ) {
         self.baseURL = baseURL
         self.fallbackBaseURLs = fallbackBaseURLs
         self.additionalHeaders = additionalHeaders
         self.apiVersion = apiVersion
         self.defaultMaxTokens = defaultMaxTokens
+        self.supportsThinkingBudget = supportsThinkingBudget
     }
 }

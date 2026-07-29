@@ -47,7 +47,8 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
                 additionalHeaders: [:],
                 includeUsageInStreamOptions: true,
                 returnsEmptyChunkWhenNoDelta: false,
-                acceptsFunctionScopedToolCallID: false
+                acceptsFunctionScopedToolCallID: false,
+                supportsReasoningEffort: true
             )
         )
     ) {

@@ -11,6 +11,7 @@ struct ProviderListView: View {
     @LumiTheme private var theme
     let kernel: LumiKernel
     @Binding var selectedProviderID: String?
+    let sidebarItems: [ModelSelectorSidebarItem]
     var onClose: (() -> Void)? = nil
 
     @State private var searchText = ""
@@ -67,6 +68,12 @@ struct ProviderListView: View {
             .background(theme.surface.opacity(0.5))
 
             Divider()
+
+            ModelSelectorSidebarItemsView(items: sidebarItems)
+
+            if !sidebarItems.isEmpty {
+                Divider()
+            }
 
             // Provider items
             if let llmProvider {

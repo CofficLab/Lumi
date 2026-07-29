@@ -203,6 +203,23 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
         conversations[index].verbosity = verbosity
     }
 
+    public func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort {
+        guard let conversationID else {
+            return .defaultEffort
+        }
+        return conversations.first { $0.id == conversationID }?.reasoningEffort ?? .defaultEffort
+    }
+
+    public func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].reasoningEffort = reasoningEffort
+    }
+
     // MARK: - Automation Level
 
     public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {

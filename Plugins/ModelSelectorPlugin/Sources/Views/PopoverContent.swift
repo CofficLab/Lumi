@@ -31,12 +31,19 @@ struct PopoverContent: View {
     @State private var selectedProviderID: String?
     @State private var searchText = ""
 
+    private var sidebarItems: [ModelSelectorSidebarItem] {
+        kernel.pluginManager.allPlugins
+            .filter { $0.policy.shouldRegister }
+            .flatMap { $0.modelSelectorSidebarItems(kernel: kernel) }
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             // Left: Provider List
             ProviderListView(
                 kernel: kernel,
                 selectedProviderID: $selectedProviderID,
+                sidebarItems: sidebarItems,
                 onClose: { isPresented = false }
             )
             .frame(width: 260)

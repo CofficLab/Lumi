@@ -273,6 +273,33 @@ public actor ConversationStore: SuperLog {
         return save(context, operation: "更新供应商")
     }
 
+    /// Update conversation response preferences
+    func updateConversationPreferences(
+        id: UUID,
+        verbosity: LumiResponseVerbosity? = nil,
+        reasoningEffort: LumiReasoningEffort? = nil
+    ) -> Bool {
+        let context = ModelContext(container)
+        let idString = id.uuidString
+
+        let descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { $0.id == idString }
+        )
+
+        guard let model = try? context.fetch(descriptor).first else {
+            return false
+        }
+
+        if let verbosity {
+            model.verbosityRaw = verbosity.rawValue
+        }
+        if let reasoningEffort {
+            model.reasoningEffortRaw = reasoningEffort.rawValue
+        }
+        model.updatedAt = Date().timeIntervalSince1970
+        return save(context, operation: "更新对话偏好")
+    }
+
     // MARK: - Delete
 
     /// Delete a conversation by ID
