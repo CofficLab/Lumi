@@ -33,6 +33,16 @@ public protocol LLMProviderManaging: AnyObject {
     /// 按 ID 查询
     func llmProvider(id: String) -> (any LumiLLMProvider)?
 
+    /// 按 ID 查询 Provider 信息
+    ///
+    /// 返回 `LumiLLMProviderInfo` 值类型副本，可直接访问
+    /// `availableModels`、`contextWindowSizes`、`modelCapabilities` 等元数据，
+    /// 无需通过 existential 实例访问 `static info`。
+    ///
+    /// - Parameter id: Provider 唯一标识
+    /// - Returns: Provider 信息；未找到时返回 `nil`
+    func providerInfo(id: String) -> LumiLLMProviderInfo?
+
     /// 当前选中的 Provider ID
     var selectedProviderID: String? { get }
 
@@ -65,6 +75,10 @@ public protocol LLMProviderManaging: AnyObject {
 }
 
 public extension LLMProviderManaging {
+    /// 默认实现:返回 `nil`。
+    /// 具体实现应覆盖此方法以返回实际的 Provider 信息。
+    func providerInfo(id: String) -> LumiLLMProviderInfo? { nil }
+
     /// 默认实现:按数组顺序逐个调用 `registerLLMProvider(_:)`。
     /// 已有实现可以重写此方法以获得更好的性能(例如单次日志输出、原子更新等)。
     func registerLLMProviders(_ providers: [any LumiLLMProvider]) throws {
