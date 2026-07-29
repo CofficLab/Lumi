@@ -247,6 +247,33 @@ public actor ConversationStore: SuperLog {
         }
     }
 
+    /// Build a recent daily conversation-count series with bounded count queries.
+    func fetchDailyCountSeries(days: Int = 14, endingAt date: Date = Date()) -> ConversationDailyCountSeries {
+        guard days > 0 else { return ConversationDailyCountSeries(points: []) }
+
+        let context = ModelContext(container)
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: date)
+        let firstDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) ?? today
+        let points = (0..<days).compactMap { offset -> ConversationDailyCountPoint? in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: firstDay),
+                  let nextDay = calendar.date(byAdding: .day, value: 1, to: day) else {
+                return nil
+            }
+
+            let startTimestamp = day.timeIntervalSince1970
+            let endTimestamp = nextDay.timeIntervalSince1970
+            let descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.createdAt >= startTimestamp && $0.createdAt < endTimestamp
+                }
+            )
+            let count = (try? context.fetchCount(descriptor)) ?? 0
+            return ConversationDailyCountPoint(day: day, count: count)
+        }
+        return ConversationDailyCountSeries(points: points)
+    }
+
     /// Fetch a single conversation by ID
     func fetchConversation(id: UUID) -> LumiConversationSummary? {
         let context = ModelContext(container)

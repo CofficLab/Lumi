@@ -17,6 +17,7 @@ public struct ConversationStoreSettingsView: View {
     @State private var isLoadingConversations = true
     @State private var isLoadingMoreConversations = false
     @State private var hasMoreConversations = true
+    @State private var dailyCountSeries = ConversationDailyCountSeries(points: [])
     @State private var messageCounts: [UUID: Int] = [:]
     @State private var messagesForSelected: [LumiChatMessage] = []
     @State private var isLoadingMessages = false
@@ -61,6 +62,8 @@ public struct ConversationStoreSettingsView: View {
                     }
                 }
 
+                conversationActivity
+
                 HStack(spacing: 0) {
                     sidebar
                         .frame(width: 340)
@@ -71,13 +74,14 @@ public struct ConversationStoreSettingsView: View {
                     detailPane
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(minHeight: 560, maxHeight: .infinity)
+                .frame(maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .strokeBorder(theme.divider, lineWidth: 1)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .task {
             await loadInitialConversations()
@@ -90,6 +94,36 @@ public struct ConversationStoreSettingsView: View {
         }
         .onChange(of: conversationIDs) { _, _ in
             syncSelectionAfterConversationChange()
+        }
+    }
+
+    private var conversationActivity: some View {
+        AppSettingsSection(
+            title: "Conversation Activity",
+            subtitle: "Conversations created per day over the last 14 days",
+            spacing: 12
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Label("Daily conversations", systemImage: "chart.xyaxis.line")
+                        .font(.appCaptionEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                    Spacer(minLength: 0)
+                    Text("Peak (\(dailyCountSeries.peakCount))")
+                        .font(.appMicro)
+                        .monospacedDigit()
+                        .foregroundStyle(theme.textSecondary)
+                }
+                ConversationDailyCountChart(series: dailyCountSeries)
+                    .frame(height: 132)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(theme.divider, lineWidth: 0.5)
+            }
         }
     }
 
@@ -425,9 +459,11 @@ public struct ConversationStoreSettingsView: View {
         isLoadingConversations = true
         async let page = conversationManager.fetchConversationPage(limit: conversationPageSize)
         async let count = conversationManager.conversationCount()
-        let (loaded, total) = await (page, count)
+        async let series = conversationManager.fetchDailyCountSeries()
+        let (loaded, total, dailySeries) = await (page, count, series)
         conversations = loaded
         totalConversationCount = total
+        dailyCountSeries = dailySeries
         hasMoreConversations = loaded.count == conversationPageSize
         isLoadingConversations = false
         syncSelectionAfterConversationChange()

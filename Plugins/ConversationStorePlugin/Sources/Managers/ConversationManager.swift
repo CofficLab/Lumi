@@ -99,6 +99,11 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         await store?.conversationCount() ?? 0
     }
 
+    /// Fetch daily conversation counts without loading conversation summaries.
+    func fetchDailyCountSeries() async -> ConversationDailyCountSeries {
+        await store?.fetchDailyCountSeries() ?? ConversationDailyCountSeries(points: [])
+    }
+
     /// Notify observers that conversations changed
     private func notifyConversationsChanged() {
         kernel?.eventManager.postConversationsDidChange(object: self)
