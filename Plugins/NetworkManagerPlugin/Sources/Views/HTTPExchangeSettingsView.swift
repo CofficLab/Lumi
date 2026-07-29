@@ -89,10 +89,6 @@ public struct HTTPExchangeSettingsView: View {
     private var sidebarHeader: some View {
         HStack(spacing: 10) {
             Label("\(records.count) " + LumiPluginLocalization.string("HTTP exchanges", bundle: .module), systemImage: "arrow.up.arrow.down.circle")
-            if let selectedRecord {
-                Text(LumiPluginLocalization.string("Selected:", bundle: .module) + " \(selectedRecord.requestMethod) \(selectedRecord.requestURL)")
-                    .lineLimit(1)
-            }
             Spacer()
             AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
                 Task { await reloadAsync() }
