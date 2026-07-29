@@ -29,6 +29,28 @@ struct MessageViewChrome<Content: View>: View {
         thinkingContent != nil
     }
 
+    private var tokenDisplayText: String? {
+        guard let input = message.inputTokenCount,
+              let output = message.outputTokenCount else {
+            return nil
+        }
+        let inputFormatted = formatTokenCount(input)
+        let outputFormatted = formatTokenCount(output)
+        return "\(inputFormatted)/\(outputFormatted) tokens"
+    }
+
+    private func formatTokenCount(_ count: Int) -> String {
+        if count >= 1000 {
+            let k = Double(count) / 1000.0
+            if k >= 10 {
+                return String(format: "%.0fk", k)
+            } else {
+                return String(format: "%.1fk", k)
+            }
+        }
+        return "\(count)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             if showsHeader {
@@ -70,6 +92,13 @@ struct MessageViewChrome<Content: View>: View {
                             title: MessageViewHelpers.formatTimestamp(message.createdAt),
                             titleColor: theme.textSecondary
                         )
+
+                        if let tokenInfo = tokenDisplayText {
+                            AppIdentityRow(
+                                title: tokenInfo,
+                                titleColor: theme.textSecondary
+                            )
+                        }
 
                         if let errorTransportDetails, errorTransportDetails.hasTransportDetails {
                             ErrorTransportDetailsButton(details: errorTransportDetails)
