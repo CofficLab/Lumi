@@ -372,6 +372,29 @@ struct ToolManagerPluginTests {
         #expect(result.imageAttachments.first?.fileName == "test.png")
     }
 
+    @Test("service preserves structured turn suspension control")
+    func servicePreservesTurnSuspension() async {
+        let service = ToolManagerService()
+        let conversationID = UUID()
+        let suspension = AgentTurnSuspension(
+            suspensionID: "suspension-1",
+            conversationID: conversationID,
+            toolCallID: "call-1",
+            kind: "userInput",
+            payload: "{}"
+        )
+        service.add(SuspendingTool(suspension: suspension), pluginID: "tests")
+        let kernel = LumiKernel()
+        service.kernel = kernel
+
+        let result = await service.execute(
+            LumiToolCall(id: "call-1", name: "suspend", arguments: "{}"),
+            conversationID: conversationID
+        )
+
+        #expect(result.turnControl == .suspend(suspension))
+    }
+
     @Test("service keeps provider-local sub-agent ids distinct")
     func serviceKeepsProviderLocalSubAgents() {
         let service = ToolManagerService()
@@ -499,5 +522,24 @@ private struct TestTool: LumiAgentTool {
             )
         }
         return "echoed"
+    }
+}
+
+private struct SuspendingTool: LumiAgentTool {
+    let suspension: AgentTurnSuspension
+
+    static let info = LumiAgentToolInfo(id: "suspend", displayName: "Suspend", description: "Suspends a turn")
+
+    var inputSchema: LumiJSONValue { .object(["type": .string("object")]) }
+
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        "suspended"
+    }
+
+    func executeResult(
+        arguments: [String: LumiJSONValue],
+        kernel: LumiKernel
+    ) async throws -> LumiToolExecutionResult {
+        LumiToolExecutionResult(content: "suspended", turnControl: .suspend(suspension))
     }
 }
