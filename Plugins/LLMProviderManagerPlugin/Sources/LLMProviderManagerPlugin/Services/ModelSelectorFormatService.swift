@@ -39,4 +39,25 @@ public enum ModelSelectorFormatService {
         }
         return "\(tokens)"
     }
+
+    /// Compact token count for dense UI such as usage cards and chart headers.
+    /// The exact comma-separated value should be provided as a tooltip beside it.
+    public static func compactTokenCount(_ tokens: Int) -> String {
+        let value = Double(tokens)
+        let (scaled, suffix): (Double, String) = {
+            switch abs(value) {
+            case 1_000_000_000...:
+                return (value / 1_000_000_000, "B")
+            case 1_000_000...:
+                return (value / 1_000_000, "M")
+            case 1_000...:
+                return (value / 1_000, "K")
+            default:
+                return (value, "")
+            }
+        }()
+
+        guard !suffix.isEmpty else { return tokenCount(tokens) }
+        return String(format: "%.2f%@", scaled, suffix)
+    }
 }

@@ -46,10 +46,11 @@ struct ProviderDailyTokenUsageCard: View {
                     .controlSize(.small)
                     .scaleEffect(0.72)
             } else {
-                Text("\(ModelSelectorFormatService.tokenCount(currentSeries.totalTokens)) tokens")
+                Text("\(ModelSelectorFormatService.compactTokenCount(currentSeries.totalTokens)) tokens")
                     .font(.appCaptionEmphasized)
                     .monospacedDigit()
                     .foregroundStyle(theme.textPrimary)
+                    .help("\(ModelSelectorFormatService.tokenCount(currentSeries.totalTokens)) tokens")
             }
         }
     }
@@ -90,9 +91,10 @@ struct ProviderDailyTokenUsageCard: View {
         HStack(spacing: 4) {
             Text(title)
                 .foregroundStyle(theme.textTertiary)
-            Text(ModelSelectorFormatService.tokenCount(value))
+            Text(ModelSelectorFormatService.compactTokenCount(value))
                 .monospacedDigit()
                 .foregroundStyle(theme.textSecondary)
+                .help(ModelSelectorFormatService.tokenCount(value))
         }
         .font(.appMicro)
     }
@@ -170,6 +172,16 @@ private struct ProviderDailyTokenLineChart: View {
                 .padding(.trailing, 10)
                 .padding(.bottom, 4)
         }
+        .overlay {
+            HStack(spacing: 0) {
+                ForEach(points) { point in
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .help(tooltip(for: point))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        }
     }
 
     private func drawGrid(
@@ -192,6 +204,10 @@ private struct ProviderDailyTokenLineChart: View {
             .font(.system(size: 9, weight: .regular))
             .foregroundStyle(theme.textTertiary)
             .monospacedDigit()
+    }
+
+    private func tooltip(for point: ProviderDailyTokenUsagePoint) -> String {
+        "\(Self.tooltipDateFormatter.string(from: point.day)) · total \(ModelSelectorFormatService.tokenCount(point.totalTokens)) tokens (in \(ModelSelectorFormatService.tokenCount(point.inputTokens)) / out \(ModelSelectorFormatService.tokenCount(point.outputTokens)))"
     }
 
     private func smoothedPath(points: [CGPoint]) -> Path {
@@ -226,6 +242,13 @@ private struct ProviderDailyTokenLineChart: View {
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "M/d"
+        return formatter
+    }()
+
+    private static let tooltipDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
         return formatter
     }()
 }
