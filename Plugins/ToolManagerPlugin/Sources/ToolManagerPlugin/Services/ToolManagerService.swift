@@ -76,10 +76,11 @@ public final class ToolManagerService: ToolManaging {
     }
 
     public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {
-        if registeredSubAgents[subAgent.id] == nil {
-            subAgentOrder.append(subAgent.id)
+        let key = subAgent.routingID
+        if registeredSubAgents[key] == nil {
+            subAgentOrder.append(key)
         }
-        registeredSubAgents[subAgent.id] = subAgent
+        registeredSubAgents[key] = subAgent
     }
 
     public func removeAllSubAgents() {

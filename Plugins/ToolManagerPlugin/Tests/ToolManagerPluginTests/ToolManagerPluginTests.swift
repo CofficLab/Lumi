@@ -355,6 +355,19 @@ struct ToolManagerPluginTests {
         #expect(result.imageAttachments.first?.fileName == "test.png")
     }
 
+    @Test("service keeps provider-local sub-agent ids distinct")
+    func serviceKeepsProviderLocalSubAgents() {
+        let service = ToolManagerService()
+        let stepfunExplore = makeSubAgent(id: "explore", providerID: "stepfun")
+        let openAIExplore = makeSubAgent(id: "explore", providerID: "openai")
+
+        service.addSubAgent(stepfunExplore)
+        service.addSubAgent(openAIExplore)
+        service.addSubAgent(stepfunExplore)
+
+        #expect(service.allSubAgents().map(\.routingID) == ["stepfun:explore", "openai:explore"])
+    }
+
     @Test("plugin exposes core tools and registers its service")
     func pluginContributions() async throws {
         let plugin = ToolManagerPlugin()
@@ -417,6 +430,17 @@ struct ToolManagerPluginTests {
         let fileURL = directory.appendingPathComponent(name)
         try contents.write(to: fileURL)
         return fileURL
+    }
+
+    private func makeSubAgent(id: String, providerID: String) -> LumiSubAgentDefinition {
+        LumiSubAgentDefinition(
+            id: id,
+            displayName: id,
+            description: "test",
+            providerID: providerID,
+            modelID: "test",
+            systemPrompt: "test"
+        )
     }
 
     private func makeLines(count: Int, width: Int) -> Data {

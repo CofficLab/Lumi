@@ -23,6 +23,13 @@ public final class PluginManagerPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
+    public func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
+        await PluginManagerWillSendToLLMHook(pluginID: id).execute(
+            kernel: kernel,
+            messages: messages
+        )
+    }
+
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
         [
             SettingsTabItem(

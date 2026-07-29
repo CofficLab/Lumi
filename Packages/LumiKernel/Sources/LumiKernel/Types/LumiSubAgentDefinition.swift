@@ -14,6 +14,10 @@ public struct LumiSubAgentDefinition: Sendable, Identifiable {
     public let maxTurns: Int
     public let iconName: String?
 
+    /// Stable internal routing key. Sub-agent ids are provider-local, so two
+    /// providers may both register an agent named "explore" without colliding.
+    public var routingID: String { "\(providerID):\(id)" }
+
     public init(
         id: String,
         displayName: String,

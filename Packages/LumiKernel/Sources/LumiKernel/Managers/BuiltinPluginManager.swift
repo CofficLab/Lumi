@@ -355,8 +355,8 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
         manager.removeAll()
         manager.removeAllSubAgents()
 
-        // Build the ordinary tool set first. Delegates receive this snapshot so they
-        // can use project tools without seeing other delegate_* tools.
+        // Build the ordinary tool set first. Sub-agents receive this snapshot so they
+        // can use project tools without seeing the unified delegate tool.
         for plugin in allPlugins {
             guard effectiveEnabled(for: plugin) else { continue }
             let tools = plugin.agentTools(kernel: kernel)
@@ -374,14 +374,19 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
             guard effectiveEnabled(for: plugin) else { continue }
             for definition in plugin.subAgents(kernel: kernel) {
                 manager.addSubAgent(definition)
-                let delegate = SubAgentDelegateTool(
-                    definition: definition,
+            }
+        }
+        let subAgents = manager.allSubAgents()
+        if !subAgents.isEmpty {
+            manager.add(
+                SubAgentRouterTool(
+                    definitions: subAgents,
                     providerResolver: providerResolver,
                     availableTools: availableTools,
                     executionToolService: manager
-                )
-                manager.add(delegate, pluginID: plugin.id)
-            }
+                ),
+                pluginID: "Sub Agents"
+            )
         }
     }
 
@@ -427,16 +432,19 @@ public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
                 guard effectiveEnabled(for: plugin) else { continue }
                 for definition in plugin.subAgents(kernel: kernel) {
                     toolManager.addSubAgent(definition)
-                    toolManager.add(
-                        SubAgentDelegateTool(
-                            definition: definition,
-                            providerResolver: providerResolver,
-                            availableTools: availableTools,
-                            executionToolService: toolManager
-                        ),
-                        pluginID: plugin.id
-                    )
                 }
+            }
+            let subAgents = toolManager.allSubAgents()
+            if !subAgents.isEmpty {
+                toolManager.add(
+                    SubAgentRouterTool(
+                        definitions: subAgents,
+                        providerResolver: providerResolver,
+                        availableTools: availableTools,
+                        executionToolService: toolManager
+                    ),
+                    pluginID: "Sub Agents"
+                )
             }
         }
 
