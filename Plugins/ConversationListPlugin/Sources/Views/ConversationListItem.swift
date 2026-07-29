@@ -12,7 +12,7 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
     public let messageCount: Int?
     public let order: Int
 
-    public var isPinned: Bool { order > 0 }
+    public var isPinned: Bool { order == 0 }
 
     public var displayTitle: String {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -28,7 +28,7 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
         providerID: String? = nil,
         modelName: String? = nil,
         messageCount: Int? = nil,
-        order: Int = 0
+        order: Int = LumiConversationSummary.defaultOrder
     ) {
         self.id = id
         self.projectPath = projectPath

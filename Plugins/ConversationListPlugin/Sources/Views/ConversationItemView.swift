@@ -309,7 +309,7 @@ extension ConversationListItem {
         providerID: String? = "anthropic",
         modelName: String? = "claude-sonnet-4-20250514",
         messageCount: Int? = 14,
-        order: Int = 0
+        order: Int = LumiConversationSummary.defaultOrder
     ) -> ConversationListItem {
         ConversationListItem(
             id: UUID(),

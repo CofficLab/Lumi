@@ -116,10 +116,6 @@ extension ConversationListView {
             }
             .scrollContentBackground(.hidden)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            if isLoadingPage {
-                loadingIndicator
-            }
         }
     }
 
@@ -142,16 +138,6 @@ extension ConversationListView {
                     }
             }
         }
-    }
-
-    private var loadingIndicator: some View {
-        HStack {
-            Spacer()
-            ProgressView()
-                .controlSize(.small)
-            Spacer()
-        }
-        .padding(.vertical, 8)
     }
 }
 
@@ -384,8 +370,8 @@ extension ConversationListView {
     }
 
     private func pinConversation(_ conversation: ConversationListItem) {
-        // Toggle pin state: if currently pinned (order > 0), unpin it; otherwise pin it with order 1
-        let newOrder = conversation.isPinned ? 0 : 1
+        // Pinning is represented by order 0; non-pinned conversations use the default large order.
+        let newOrder = conversation.isPinned ? LumiConversationSummary.defaultOrder : 0
         context.setConversationOrder(newOrder, for: conversation.id)
     }
 }

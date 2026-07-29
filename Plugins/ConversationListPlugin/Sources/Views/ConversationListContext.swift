@@ -84,7 +84,7 @@ public final class ConversationListContext: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)fetchConversationsPage start limit=\(limit) offset=\(offset) totalConversations=\(self.conversationManaging.conversations.count)")
         }
         let sorted = conversationManaging.conversations.sorted { lhs, rhs in
-            // Pinned conversations first (order > 0), sorted by order ascending
+            // Pinned conversations first (order == 0), followed by non-pinned conversations.
             if lhs.order != rhs.order {
                 return lhs.order < rhs.order
             }
