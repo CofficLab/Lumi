@@ -23,6 +23,7 @@ public final class StepFunPlugin: LumiPlugin {
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] {
         [
+            ExploreAgent.definition,
             XcodeBuildAgent.definition,
             BugFixerAgent.definition,
             CodeReviewAgent.definition,
