@@ -21,6 +21,10 @@ public final class ToolManagerService: ToolManaging {
     /// 插件首次出现顺序，决定分组在 UI 中的排列。
     private var pluginOrder: [String] = []
 
+    /// 已注册的子 Agent 定义，独立于可执行的 delegate 工具保存，供 UI 和调试查询。
+    private var registeredSubAgents: [String: LumiSubAgentDefinition] = [:]
+    private var subAgentOrder: [String] = []
+
     public init() {}
 
     // MARK: - ToolManaging
@@ -68,10 +72,20 @@ public final class ToolManagerService: ToolManaging {
     }
 
     public func allSubAgents() -> [LumiSubAgentDefinition] {
-        []
+        subAgentOrder.compactMap { registeredSubAgents[$0] }
     }
 
-    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {}
+    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {
+        if registeredSubAgents[subAgent.id] == nil {
+            subAgentOrder.append(subAgent.id)
+        }
+        registeredSubAgents[subAgent.id] = subAgent
+    }
+
+    public func removeAllSubAgents() {
+        registeredSubAgents.removeAll()
+        subAgentOrder.removeAll()
+    }
 
     public func collectTools() async throws -> [any LumiAgentTool] {
         allAgentTools()
