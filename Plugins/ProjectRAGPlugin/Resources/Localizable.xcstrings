@@ -1,6 +1,5 @@
 {
   "sourceLanguage" : "en",
-  "version" : "1.0",
   "strings" : {
     "%lld" : {
       "localizations" : {
@@ -140,6 +139,9 @@
           }
         }
       }
+    },
+    "%lld projects" : {
+
     },
     "%lld/%lld" : {
       "extractionState" : "stale",
@@ -1434,6 +1436,9 @@
         }
       }
     },
+    "Projects" : {
+
+    },
     "RAG" : {
       "localizations" : {
         "en" : {
@@ -1464,6 +1469,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "RAG"
+          }
+        }
+      }
+    },
+    "RAG database error: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG database error: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 数据库错误：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 數據庫錯誤：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 數據庫錯誤：%@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 資料庫錯誤：%@"
           }
         }
       }
@@ -1534,40 +1573,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "RAG 索引狀態"
-          }
-        }
-      }
-    },
-    "RAG database error: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG database error: %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG 数据库错误：%@"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG 數據庫錯誤：%@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG 數據庫錯誤：%@"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG 資料庫錯誤：%@"
           }
         }
       }
@@ -2272,6 +2277,41 @@
         }
       }
     },
+    "sqlite-vec extension did not load; semantic search falls back to slower in-memory scoring." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sqlite-vec extension did not load; semantic search falls back to slower in-memory scoring."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sqlite-vec 扩展未加载；语义搜索将回退到较慢的内存评分。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sqlite-vec 擴展未加載；語義搜索將回退到較慢的內存評分。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sqlite-vec 擴展未載入；語義搜尋將回退到較慢的記憶體評分。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sqlite-vec 擴充功能未載入；語義搜尋將退回至較慢的記憶體評分。"
+          }
+        }
+      }
+    },
     "Status" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2338,6 +2378,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最新"
+          }
+        }
+      }
+    },
+    "Vector acceleration unavailable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vector acceleration unavailable"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向量加速不可用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向量加速不可用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向量加速不可用"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向量加速無法使用"
           }
         }
       }
@@ -2411,76 +2486,7 @@
           }
         }
       }
-    },
-    "Vector acceleration unavailable" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vector acceleration unavailable"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量加速不可用"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量加速不可用"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量加速不可用"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量加速無法使用"
-          }
-        }
-      }
-    },
-    "sqlite-vec extension did not load; semantic search falls back to slower in-memory scoring." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sqlite-vec extension did not load; semantic search falls back to slower in-memory scoring."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sqlite-vec 扩展未加载；语义搜索将回退到较慢的内存评分。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sqlite-vec 擴展未加載；語義搜索將回退到較慢的內存評分。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sqlite-vec 擴展未載入；語義搜尋將回退到較慢的記憶體評分。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sqlite-vec 擴充功能未載入；語義搜尋將退回至較慢的記憶體評分。"
-          }
-        }
-      }
     }
-  }
+  },
+  "version" : "1.0"
 }

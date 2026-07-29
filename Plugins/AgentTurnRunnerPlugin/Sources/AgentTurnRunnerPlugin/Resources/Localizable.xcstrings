@@ -342,6 +342,9 @@
         }
       }
     },
+    "Daily sent request count chart" : {
+
+    },
     "File Attachments" : {
       "localizations" : {
         "en" : {
@@ -750,6 +753,9 @@
         }
       }
     },
+    "Peak (%lld)" : {
+
+    },
     "Provider" : {
       "localizations" : {
         "en" : {
@@ -921,6 +927,7 @@
       }
     },
     "Selected: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1090,6 +1097,40 @@
         }
       }
     },
+    "unknown" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "unknown"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知"
+          }
+        }
+      }
+    },
     "Unknown" : {
       "localizations" : {
         "en" : {
@@ -1154,40 +1195,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未知模型"
-          }
-        }
-      }
-    },
-    "unknown" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "unknown"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未知"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未知"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未知"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未知"
           }
         }
       }

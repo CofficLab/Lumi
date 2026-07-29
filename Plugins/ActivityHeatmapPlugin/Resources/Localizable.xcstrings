@@ -35,6 +35,9 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "Activity" : {
       "extractionState" : "stale",
       "localizations" : {
