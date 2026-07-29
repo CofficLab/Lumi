@@ -62,6 +62,13 @@ public struct ConversationListView: View, SuperLog {
             refreshVisibleMessageCounts()
         }
         .onChange(of: context.statusVersion, handleStatusVersionChanged)
+        // 订阅发送状态版本号:版本号变化时,列表项的 `isProcessing`
+        // 会重新读取 `context.isConversationProcessing(_:)`,从而让 PulseRipple 等动画生效。
+        .onChange(of: context.sendingVersion) { _, _ in
+            // 不需要做事;依赖 `isProcessing` 的视图节点会因为它读取的 SwiftUI
+            // 依赖(这里就是 context.sendingVersion)变化而自动重渲染。
+            // 这里保留 handler 只是为了明确"我们关注这个信号"。
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
@@ -80,7 +87,10 @@ extension ConversationListView {
     private var conversationListContent: some View {
         VStack(spacing: 0) {
             ScrollView {
-                LazyVStack(spacing: 4) {
+                // The page is capped at 40 conversations. Use a regular stack
+                // so title/message-count refreshes cannot leave a stale
+                // virtual-row placeholder between conversations.
+                VStack(spacing: 4) {
                     ForEach(conversations, id: \.id) { conversation in
                         // 用 onTapGesture 触发选中，绕过 AppListRow 内置 Button 对右键的吞吃，
                         // 让 ConversationItemView 上的 .contextMenu 在 macOS 上能正常弹出。
@@ -88,6 +98,7 @@ extension ConversationListView {
                             ConversationItemView(
                                 conversation: conversation,
                                 onDelete: { handleDelete(conversation) },
+                                onPin: { pinConversation(conversation) },
                                 isProcessing: context.isConversationProcessing(conversation.id)
                             )
                             .contentShape(Rectangle())
@@ -108,10 +119,6 @@ extension ConversationListView {
             }
             .scrollContentBackground(.hidden)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            if isLoadingPage {
-                loadingIndicator
-            }
         }
     }
 
@@ -134,16 +141,6 @@ extension ConversationListView {
                     }
             }
         }
-    }
-
-    private var loadingIndicator: some View {
-        HStack {
-            Spacer()
-            ProgressView()
-                .controlSize(.small)
-            Spacer()
-        }
-        .padding(.vertical, 8)
     }
 }
 
@@ -233,20 +230,20 @@ extension ConversationListView {
             updated.reserveCapacity(currentConversations.count)
             for conversation in currentConversations {
                 let updatedCount = await context.messageCount(for: conversation.id)
-                if conversation.messageCount == updatedCount {
-                    updated.append(conversation)
-                } else {
-                    updated.append(ConversationListItem(
-                        id: conversation.id,
-                        projectPath: conversation.projectPath,
-                        title: conversation.title,
-                        createdAt: conversation.createdAt,
-                        updatedAt: conversation.updatedAt,
-                        providerID: conversation.providerID,
-                        modelName: conversation.modelName,
-                        messageCount: updatedCount
-                    ))
-                }
+                // The Kernel title can be derived from the first user message
+                // even when the message count did not change. Always resolve
+                // it here so the list cannot retain a stale fallback title.
+                updated.append(ConversationListItem(
+                    id: conversation.id,
+                    projectPath: conversation.projectPath,
+                    title: context.resolvedTitle(for: conversation.id),
+                    createdAt: conversation.createdAt,
+                    updatedAt: conversation.updatedAt,
+                    providerID: conversation.providerID,
+                    modelName: conversation.modelName,
+                    messageCount: updatedCount,
+                    order: conversation.order
+                ))
             }
             conversations = updated
         }
@@ -373,6 +370,12 @@ extension ConversationListView {
         }
 
         context.switchProject(projectPath: projectPath, reason: "conversationListSelect")
+    }
+
+    private func pinConversation(_ conversation: ConversationListItem) {
+        // Pinning is represented by order 0; non-pinned conversations use the default large order.
+        let newOrder = conversation.isPinned ? LumiConversationSummary.defaultOrder : 0
+        context.setConversationOrder(newOrder, for: conversation.id)
     }
 }
 

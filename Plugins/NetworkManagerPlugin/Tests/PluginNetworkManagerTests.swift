@@ -103,6 +103,25 @@ import Foundation
     #expect(reloadedService.longTermHistory.first?.uploadSpeed == point.uploadSpeed)
 }
 
+@Test func dailyHTTPExchangeCountSeriesIncludesEmptyDaysAndIgnoresOlderRecords() {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+    let now = calendar.date(from: DateComponents(year: 2026, month: 7, day: 29, hour: 12))!
+    let records = [
+        HTTPExchangeRecord(startedAt: calendar.date(byAdding: .day, value: -1, to: now)!, requestMethod: "GET", requestURL: "https://example.com/1", requestHeadersJSON: Data("{}".utf8), requestBody: nil, requestDetailsJSON: Data("{}".utf8)),
+        HTTPExchangeRecord(startedAt: calendar.date(byAdding: .day, value: -1, to: now)!, requestMethod: "POST", requestURL: "https://example.com/2", requestHeadersJSON: Data("{}".utf8), requestBody: nil, requestDetailsJSON: Data("{}".utf8)),
+        HTTPExchangeRecord(startedAt: calendar.date(byAdding: .day, value: -14, to: now)!, requestMethod: "GET", requestURL: "https://example.com/old", requestHeadersJSON: Data("{}".utf8), requestBody: nil, requestDetailsJSON: Data("{}".utf8)),
+    ]
+
+    let series = HTTPExchangeDailyCountSeries.build(records: records, calendar: calendar, days: 14, endingAt: now)
+
+    #expect(series.points.count == 14)
+    #expect(series.totalCount == 2)
+    #expect(series.peakCount == 2)
+    #expect(series.points.dropLast().contains { $0.count == 0 })
+    #expect(series.points.last?.count == 0)
+}
+
 private actor PublicIPFetcherStub {
     private(set) var count = 0
     private let values: [String]

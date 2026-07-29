@@ -62,7 +62,7 @@ public final class ConversationStorePlugin: LumiPlugin, SuperLog {
         [
             SettingsTabItem(
                 id: "\(id).settings",
-                title: "Conversations",
+                title: LumiPluginLocalization.string("Conversations", bundle: .module),
                 systemImage: "bubble.left.and.bubble.right",
                 order: order
             ) {

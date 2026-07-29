@@ -20,7 +20,13 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        // Configure storage directory for MemoryHistoryService
+        if let storage = kernel.storage {
+            let pluginStorageDir = storage.pluginDataDirectory(for: id)
+            MemoryHistoryService.configure(storageDirectory: pluginStorageDir)
+        }
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
         if Self.verbose {
@@ -78,7 +84,18 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        [
+            SettingsTabItem(
+                id: id,
+                title: LumiPluginLocalization.string("Device Info", bundle: .module),
+                systemImage: "memorychip",
+                order: order
+            ) {
+                MemorySettingsView()
+            },
+        ]
+    }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }

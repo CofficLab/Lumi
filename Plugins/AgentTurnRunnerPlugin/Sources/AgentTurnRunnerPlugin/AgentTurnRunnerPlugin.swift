@@ -7,7 +7,7 @@ import SwiftUI
 
 /// Agent Turn Runner Plugin
 ///
-/// Registers an `AgentTurnRunning` implementation with the kernel.
+/// Registers an `AgentTurnManaging` implementation with the kernel.
 /// The implementation lives in `Services/AgentTurnRunnerService.swift`
 /// and executes the full agent loop: LLM call → tool execution → repeat.
 @MainActor

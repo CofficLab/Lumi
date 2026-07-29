@@ -50,7 +50,7 @@ public final class ProjectRAGPlugin: LumiPlugin, SuperLog {
         return [
             SettingsTabItem(
                 id: "\(id).index-status",
-                title: "Project RAG",
+                title: LumiPluginLocalization.string("Project RAG", bundle: .module),
                 systemImage: "doc.text.magnifyingglass",
                 order: 200
             ) {

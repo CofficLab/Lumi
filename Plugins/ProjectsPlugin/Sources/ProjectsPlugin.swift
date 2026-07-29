@@ -116,7 +116,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         return [
             SettingsTabItem(
                 id: "\(id).settings",
-                title: "Projects",
+                title: LumiPluginLocalization.string("Projects", bundle: .module),
                 systemImage: "folder",
                 order: order
             ) {

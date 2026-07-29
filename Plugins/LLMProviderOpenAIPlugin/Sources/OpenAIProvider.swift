@@ -12,6 +12,8 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("GPT by OpenAI", bundle: .module),
         defaultModel: "gpt-4o",
         availableModels: [
+            "gpt-5",
+            "gpt-5-mini",
             "gpt-4o",
             "gpt-4o-mini",
             "gpt-4-turbo",
@@ -19,6 +21,8 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-3.5-turbo"
         ],
         contextWindowSizes: [
+            "gpt-5": 400_000,
+            "gpt-5-mini": 400_000,
             "gpt-4o": 128_000,
             "gpt-4o-mini": 128_000,
             "gpt-4-turbo": 128_000,
@@ -26,6 +30,8 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-3.5-turbo": 16_385
         ],
         modelCapabilities: [
+            "gpt-5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "gpt-5-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
             "gpt-4o": .init(supportsVision: true, supportsTools: true),
             "gpt-4o-mini": .init(supportsVision: true, supportsTools: true),
             "gpt-4-turbo": .init(supportsVision: true, supportsTools: true),
@@ -47,7 +53,8 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
                 additionalHeaders: [:],
                 includeUsageInStreamOptions: true,
                 returnsEmptyChunkWhenNoDelta: false,
-                acceptsFunctionScopedToolCallID: false
+                acceptsFunctionScopedToolCallID: false,
+                supportsReasoningEffort: true
             )
         )
     ) {

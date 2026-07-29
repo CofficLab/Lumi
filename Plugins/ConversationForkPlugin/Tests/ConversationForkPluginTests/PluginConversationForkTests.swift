@@ -224,6 +224,8 @@ private final class MockChatService: LumiChatServicing {
     func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
     func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .standard }
     func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
+    func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { .automatic }
+    func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
     func registerToolService(_ toolService: (any ToolManaging)?) {}
     func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? { nil }
     func messages(for conversationID: UUID) -> [LumiChatMessage] {

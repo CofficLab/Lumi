@@ -5,6 +5,14 @@ import SuperLogKit
 import SwiftUI
 import os
 
+private struct MessageListBottomAnchorPositionKey: PreferenceKey {
+    static let defaultValue: CGFloat = .greatestFiniteMagnitude
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 /// Message List View
 ///
 /// Displays the chat message list for the selected conversation.
@@ -17,11 +25,16 @@ struct MessageListView: View, SuperLog {
     @State private var hasEarlierMessages = false
     @State private var hasSelectedConversation = false
     @State private var showRawMessage = false
+    @State private var isAtBottom = true
+    /// Keeps the current user/assistant turn pinned to the bottom while List
+    /// is relaying transient status rows and recomputing its geometry.
+    @State private var followsActiveTurn = false
     /// 当前会话的 verbosity，注入到消息视图环境，使已有消息的渲染（如 header 显隐）随详细程度即时变化。
     @State private var verbosity: LumiResponseVerbosity = .standard
 
     private let messagePageSize = 10
     private static let bottomAnchorID = "message-list-bottom"
+    private static let transientStatusMessageID = UUID()
 
     private var isEmpty: Bool {
         messages.isEmpty && !isSending
@@ -39,6 +52,7 @@ struct MessageListView: View, SuperLog {
         }
         if isSending {
             let statusMessage = LumiChatMessage(
+                id: Self.transientStatusMessageID,
                 conversationID: conversationID,
                 role: .status,
                 content: "正在发送消息…",
@@ -66,6 +80,7 @@ struct MessageListView: View, SuperLog {
     // MARK: - SuperLog
 
     nonisolated public static let emoji = "💬"
+    // Temporarily enabled while diagnosing message-list scroll timing.
     nonisolated(unsafe) public static var verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message-list.view")
 
@@ -83,20 +98,19 @@ struct MessageListView: View, SuperLog {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
-        .onAppear {
+        // 将加载绑定到视图生命周期,而不是手动管理 Task;
+        // task 会在视图消失时被自动取消,在 selectedConversationID 变化时重启。
+        .task(id: selectedConversationID) {
             if Self.verbose {
-                Self.logger.info("\(Self.t)MessageListView appeared ➡️ selectedConversationID=\(selectedConversationID?.uuidString.prefix(8) ?? "nil"), isSending=\(isSending), localMessages=\(messages.count), displayMessages=\(displayMessages.count)")
+                Self.logger.info("\(Self.t)MessageListView task start ➡️ selectedConversationID=\(selectedConversationID?.uuidString.prefix(8) ?? "nil"), isSending=\(isSending), localMessages=\(messages.count)")
             }
-            loadMessages()
             syncVerbosity()
-        }
-        .onChange(of: selectedConversationID) { _, newValue in
-            if Self.verbose {
-                Self.logger.info("\(Self.t)Conversation changed ➡️ new=\(newValue?.uuidString.prefix(8) ?? "nil"), isSending=\(isSending), localMessages=\(messages.count)")
-            }
             paging.resetForConversationChange()
-            loadMessages()
-            syncVerbosity()
+            followsActiveTurn = false
+            await loadMessagesAsync()
+            if Self.verbose {
+                Self.logger.info("\(Self.t)MessageListView task finished ➡️ localMessages=\(messages.count), displayMessages=\(displayMessages.count)")
+            }
         }
         .onChange(of: isSending) { _, newValue in
             if Self.verbose {
@@ -104,7 +118,19 @@ struct MessageListView: View, SuperLog {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { _ in
-            guard paging.shouldAutoRefreshLatestOnMessageChange else { return }
+            // A user message must be loaded even if the user was reading older
+            // history; sending is an explicit request to reveal the new turn.
+            let latestRole = selectedConversationID.flatMap { conversationID in
+                kernel.messageManager?.displayMessages(for: conversationID).last?.role
+            }
+            let shouldRevealUserMessage = isSending || latestRole == .user
+            if Self.verbose {
+                Self.logger.info("\(Self.t)messagesDidChange ➡️ conversation=\(selectedConversationID?.uuidString.prefix(8) ?? "nil"), latestRole=\(latestRole?.rawValue ?? "nil"), isSending=\(isSending), isAtBottom=\(isAtBottom), followsLatest=\(paging.shouldAutoRefreshLatestOnMessageChange), shouldRevealUserMessage=\(shouldRevealUserMessage)")
+            }
+            guard paging.shouldAutoRefreshLatestOnMessageChange || shouldRevealUserMessage else { return }
+            if shouldRevealUserMessage {
+                paging.resumeFollowingLatest()
+            }
             if Self.verbose {
                 Self.logger.info("\(Self.t)Messages changed notification received ➡️ selectedConversationID=\(selectedConversationID?.uuidString.prefix(8) ?? "nil"), isSending=\(isSending), localMessages=\(messages.count), displayMessages=\(displayMessages.count), followsLatest=\(paging.shouldAutoRefreshLatestOnMessageChange)")
             }
@@ -124,7 +150,8 @@ struct MessageListView: View, SuperLog {
 
     private var messageListView: some View {
         ScrollViewReader { proxy in
-            List {
+            GeometryReader { viewport in
+                List {
                 if hasEarlierMessages {
                     Button(action: loadEarlierMessages) {
                         Text("Load earlier messages")
@@ -152,27 +179,111 @@ struct MessageListView: View, SuperLog {
                 }
 
                 bottomAnchor
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .environment(\.preferOuterScroll, ChatMessageListLayout.prefersOuterScrollForMarkdown)
+                .onPreferenceChange(MessageListBottomAnchorPositionKey.self) { bottomMaxY in
+                    let wasAtBottom = isAtBottom
+                    isAtBottom = bottomMaxY <= viewport.frame(in: .global).maxY + 24
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)bottomAnchor geometry ➡️ bottomMaxY=\(bottomMaxY), viewportMaxY=\(viewport.frame(in: .global).maxY), isAtBottom=\(isAtBottom), changed=\(wasAtBottom != isAtBottom)")
+                    }
+                }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .environment(\.preferOuterScroll, ChatMessageListLayout.prefersOuterScrollForMarkdown)
-            .onAppear {
-                // 视图首次出现时（进入会话 / 从空状态切到有消息）定位到最底部，
-                // 让用户直接看到最新消息。
+            // 切换会话后,等消息加载完成再滚到底部;
+            // 在滚动之前给 List 一帧的渲染时间,避免 scrollTo 抢在布局前执行。
+            .task(id: selectedConversationID) {
+                await waitForMessagesReady()
                 if Self.verbose {
-                    Self.logger.info("\(Self.t)messageListView appeared, scroll to bottom")
+                    Self.logger.info("\(Self.t)messageListView task finished, scroll to bottom ➡️ messages=\(messages.count), displayMessages=\(displayMessages.count)")
                 }
                 scrollToBottom(proxy: proxy, animated: false)
             }
-            .onChange(of: displayMessages.last?.id) { _, _ in
-                // 用户刚刚发送消息时，消息列表末尾为 `.user` 角色的消息；
-                // 此时强制滚动到最底部，确保用户立即看到自己刚发出的内容。
-                guard let last = messages.last, last.role == .user else { return }
+            // 兜底:消息从空变成非空(初次进入 / 异步加载完成)时,确保滚动到底部。
+            // 这是上面 .task 在 messages 尚未加载时早退的安全网。
+            .onChange(of: messages.count) { oldCount, newCount in
                 if Self.verbose {
-                    Self.logger.info("\(Self.t)user message detected, scroll to bottom")
+                    Self.logger.info("\(Self.t)messages.count changed ➡️ \(oldCount) -> \(newCount), lastMessage=\(messages.last?.id.uuidString.prefix(8) ?? "nil"), lastRole=\(messages.last?.role.rawValue ?? "nil"), isAtBottom=\(isAtBottom)")
                 }
-                scrollToBottom(proxy: proxy, animated: true)
+                guard oldCount == 0, newCount > 0 else { return }
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)messages loaded from empty, scroll to bottom ➡️ oldCount=\(oldCount), newCount=\(newCount)")
+                }
+                scheduleScrollToBottom(proxy: proxy, animated: false)
             }
+            .onChange(of: messages.last?.id) { oldID, newID in
+                guard oldID != newID else { return }
+                let lastRole = messages.last?.role
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)real message appended ➡️ old=\(oldID?.uuidString.prefix(8) ?? "nil"), new=\(newID?.uuidString.prefix(8) ?? "nil"), role=\(lastRole?.rawValue ?? "nil"), isSending=\(isSending), isAtBottom=\(isAtBottom), displayLastRole=\(displayMessages.last?.role.rawValue ?? "nil")")
+                }
+                // While sending, the transient status row is the visual last
+                // row, so observe the real message list for this event.
+                if lastRole == .user {
+                    followsActiveTurn = true
+                    scheduleScrollToBottom(proxy: proxy, animated: true)
+                } else if lastRole == .assistant && (isSending || shouldFollowIncomingMessages) {
+                    scheduleScrollToBottom(proxy: proxy, animated: false)
+                }
+            }
+            .onChange(of: messages.last?.content) { _, _ in
+                let lastRole = messages.last?.role
+                guard lastRole == .assistant,
+                      isSending || shouldFollowIncomingMessages else { return }
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)real assistant content changed ➡️ message=\(messages.last?.id.uuidString.prefix(8) ?? "nil"), contentChars=\(messages.last?.content.count ?? 0), isSending=\(isSending), isAtBottom=\(isAtBottom), displayLastRole=\(displayMessages.last?.role.rawValue ?? "nil")")
+                }
+                // Streaming updates mutate the existing assistant message ID.
+                // Scroll to the transient status row while the turn is active,
+                // or to the assistant row after sending finishes.
+                scrollToBottom(proxy: proxy, animated: false)
+            }
+            .onChange(of: displayMessages.last?.id) { oldID, newID in
+                // 1) 用户刚刚发送消息时(末尾是 `.user`) → 强制滚动到底部;
+                // 2) 流式追加 assistant token 时,如果用户仍在"跟随最新"状态,也滚到底部,
+                //    但仅在末尾消息从无到有时触发,避免每 token 一次抖动。
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)displayMessages.last.id changed ➡️ old=\(oldID?.uuidString.prefix(8) ?? "nil"), new=\(newID?.uuidString.prefix(8) ?? "nil"), count=\(displayMessages.count), isAtBottom=\(isAtBottom), followsLatest=\(paging.shouldAutoRefreshLatestOnMessageChange)")
+                }
+                guard oldID != newID, let last = displayMessages.last else { return }
+                if last.role == .user {
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)user message detected, scroll to bottom")
+                    }
+                    scheduleScrollToBottom(proxy: proxy, animated: true)
+                } else if shouldFollowIncomingMessages, last.role == .assistant {
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)assistant message appended, scroll to bottom")
+                    }
+                    scrollToBottom(proxy: proxy, animated: false)
+                }
+            }
+            .onChange(of: displayMessages.last?.content) { _, _ in
+                // Assistant responses may stream by changing the existing
+                // message rather than appending a new message ID.
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)displayMessages.last.content changed ➡️ last=\(displayMessages.last?.id.uuidString.prefix(8) ?? "nil"), role=\(displayMessages.last?.role.rawValue ?? "nil"), contentChars=\(displayMessages.last?.content.count ?? 0), isAtBottom=\(isAtBottom), shouldFollow=\(shouldFollowIncomingMessages)")
+                }
+                guard shouldFollowIncomingMessages,
+                      displayMessages.last?.role == .assistant else { return }
+                scrollToBottom(proxy: proxy, animated: false)
+            }
+        }
+    }
+
+    private var shouldFollowIncomingMessages: Bool {
+        followsActiveTurn || (isAtBottom && paging.shouldAutoRefreshLatestOnMessageChange)
+    }
+
+    /// 等待本地消息列表从空变成非空(或超时)。
+    ///
+    /// 解决"视图出现时 messages 还没加载好,导致 scrollToBottom 被 guard 挡掉"的竞态。
+    /// 给到 1s 上限,足以覆盖正常的 store 读取;超时后 scrollToBottom 内的 guard 仍然会生效,只是不强求滚动。
+    private func waitForMessagesReady() async {
+        let deadline = Date().addingTimeInterval(1.0)
+        while messages.isEmpty, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 30_000_000) // 30ms
         }
     }
 
@@ -182,7 +293,10 @@ struct MessageListView: View, SuperLog {
     /// - Parameter animated: 是否使用动画。首次定位建议关闭动画以避免初次闪烁；
     ///   用户发送消息触发的滚动开启动画，过渡更自然。
     private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
-        guard !displayMessages.isEmpty else { return }
+        guard let lastMessageID = displayMessages.last?.id else { return }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)scrollToBottom ➡️ messageTarget=\(lastMessageID.uuidString.prefix(8)), bottomTarget=\(Self.bottomAnchorID), role=\(displayMessages.last?.role.rawValue ?? "nil"), count=\(displayMessages.count), animated=\(animated), isAtBottomBefore=\(isAtBottom)")
+        }
         if animated {
             withAnimation(.easeOut(duration: 0.2)) {
                 proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
@@ -192,8 +306,34 @@ struct MessageListView: View, SuperLog {
         }
     }
 
+    private func scheduleScrollToBottom(proxy: ScrollViewProxy, animated: Bool) {
+        Task { @MainActor in
+            // The row is inserted before List has measured its final height.
+            // Retry after the insertion and after the next layout pass so the
+            // last message, rather than a stale trailing spacer, is the target.
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            guard !Task.isCancelled else { return }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)scheduleScrollToBottom first retry ➡️ target=\(displayMessages.last?.id.uuidString.prefix(8) ?? "nil"), isAtBottom=\(isAtBottom)")
+            }
+            scrollToBottom(proxy: proxy, animated: animated)
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            guard !Task.isCancelled else { return }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)scheduleScrollToBottom second retry ➡️ target=\(displayMessages.last?.id.uuidString.prefix(8) ?? "nil"), isAtBottom=\(isAtBottom)")
+            }
+            scrollToBottom(proxy: proxy, animated: false)
+        }
+    }
+
     private var bottomAnchor: some View {
-        Color.clear
+        GeometryReader { geometry in
+            Color.clear
+                .preference(
+                    key: MessageListBottomAnchorPositionKey.self,
+                    value: geometry.frame(in: .global).maxY
+                )
+        }
             .frame(height: 1)
             .id(Self.bottomAnchorID)
             .listRowInsets(EdgeInsets())

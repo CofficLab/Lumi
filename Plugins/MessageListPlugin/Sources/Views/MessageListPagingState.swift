@@ -18,6 +18,12 @@ struct MessageListPagingState {
         followsLatestMessages = true
     }
 
+    /// Resume following the latest page after an action that must reveal the
+    /// newest message (for example, sending a message while reading history).
+    mutating func resumeFollowingLatest() {
+        followsLatestMessages = true
+    }
+
     mutating func didLoadEarlierPage(firstMessageID: UUID?) {
         oldestVisibleMessageID = firstMessageID
         followsLatestMessages = false

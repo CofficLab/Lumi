@@ -5,6 +5,9 @@ import LumiUI
 /// Line chart view displaying daily token consumption over time.
 public struct TokenLineChartView: View {
     public let data: [ActivityDayToken]
+    public let isLoading: Bool
+
+    @State private var shimmerPhase: CGFloat = -1.2
 
     private let lineColor = Color(hex: "6db0f0")
     private let areaGradient = LinearGradient(
@@ -16,8 +19,9 @@ public struct TokenLineChartView: View {
         endPoint: .bottom
     )
 
-    public init(data: [ActivityDayToken]) {
+    public init(data: [ActivityDayToken], isLoading: Bool = false) {
         self.data = data
+        self.isLoading = isLoading
     }
 
     public var body: some View {
@@ -38,6 +42,12 @@ public struct TokenLineChartView: View {
             // Chart
             chartContent
                 .frame(height: 150)
+        }
+        .onAppear {
+            updateShimmerState()
+        }
+        .onChange(of: isLoading) { _, _ in
+            updateShimmerState()
         }
     }
 
@@ -67,6 +77,59 @@ public struct TokenLineChartView: View {
                 AxisMarks(position: .leading)
             }
             .chartYScale(domain: 0...maxYValue)
+            .overlay {
+                if isLoading {
+                    loadingOverlay
+                }
+            }
+        }
+    }
+
+    private var loadingOverlay: some View {
+        GeometryReader { proxy in
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.ultraThinMaterial.opacity(0.82))
+
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        lineColor.opacity(0.08),
+                        Color.white.opacity(0.22),
+                        lineColor.opacity(0.08),
+                        .clear,
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(width: proxy.size.width * 0.7)
+                .rotationEffect(.degrees(12))
+                .offset(x: shimmerPhase * proxy.size.width)
+                .blur(radius: 8)
+
+                VStack(spacing: 7) {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(lineColor)
+                    Text(LumiPluginLocalization.string("Loading token data…", bundle: .module))
+                        .font(.appCaption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func updateShimmerState() {
+        guard isLoading else {
+            shimmerPhase = -1.2
+            return
+        }
+
+        shimmerPhase = -1.2
+        withAnimation(.linear(duration: 1.8).repeatForever(autoreverses: false)) {
+            shimmerPhase = 1.2
         }
     }
 

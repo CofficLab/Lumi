@@ -3,33 +3,43 @@ import LumiKernel
 
 /// AskUser 插件桥接器
 ///
-/// 用户做出选择后，通过 NotificationCenter 发送通知，
-/// AskUserResumeObserver 监听通知并恢复 Agent 循环。
+/// 用户做出选择后，通过 MessageSending 恢复 Turn。
+///
+/// MessageSending 同时维护发送中的 UI 状态，因此恢复流程和普通消息发送
+/// 使用同一套生命周期，消息列表会显示临时的“正在发送”状态。
 ///
 /// 数据流：
 /// ```
 /// 渲染器用户点击 → AskUserBridge.resume(...)
 ///         ↓
-/// 发送 lumiAskUserDidAnswer 通知
-///         ↓
-/// AskUserResumeObserver 收到通知 → 更新 toolCall result → runTurn 恢复
+/// MessageSending.resumeTurn(...)
 /// ```
 @MainActor
 public final class AskUserBridge: Sendable {
     public static let shared = AskUserBridge()
 
+    private weak var messageSender: (any MessageSending)?
+
     private init() {}
 
-    /// 用户做出选择后调用，发送通知触发恢复。
+    public func start(kernel: LumiKernel) {
+        messageSender = kernel.messageSender
+    }
+
+    /// 用户做出选择后调用，触发恢复并保持发送状态。
     public func resume(conversationId: String, toolCallId: String, answer: String) {
-        NotificationCenter.default.post(
-            name: .lumiAskUserDidAnswer,
-            object: nil,
-            userInfo: [
-                LumiAskUserNotification.conversationIDKey: conversationId,
-                LumiAskUserNotification.toolCallIDKey: toolCallId,
-                LumiAskUserNotification.answerKey: answer,
-            ]
-        )
+        guard let conversationID = UUID(uuidString: conversationId),
+              let messageSender
+        else { return }
+
+        Task { @MainActor in
+            _ = try? await messageSender.resumeTurn(
+                in: conversationID,
+                request: AgentTurnResumeRequest(
+                    suspensionID: toolCallId,
+                    answer: answer
+                )
+            )
+        }
     }
 }

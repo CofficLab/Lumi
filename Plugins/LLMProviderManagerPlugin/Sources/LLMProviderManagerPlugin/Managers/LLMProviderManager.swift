@@ -106,6 +106,16 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
         return llmProviders[id]
     }
 
+    public func providerInfo(id: String) -> LumiLLMProviderInfo? {
+        guard let provider = llmProviders[id] else {
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)providerInfo(id:) ➡️ 未找到 provider id=\(id)")
+            }
+            return nil
+        }
+        return type(of: provider).info
+    }
+
     // MARK: - Provider Selection
 
     public var selectedProviderID: String? { _selectedProviderID }
@@ -180,7 +190,8 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             model: model,
             tools: request.tools,
             imageAttachments: request.imageAttachments,
-            fileAttachments: request.fileAttachments
+            fileAttachments: request.fileAttachments,
+            generationOptions: request.generationOptions
         )
         return try await provider.send(selectedRequest)
     }

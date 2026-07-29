@@ -1,5 +1,22 @@
 import Foundation
 
+public struct MessageTokenUsage: Sendable, Equatable {
+    /// 已用当前日历归一化到当天 00:00 的日期。
+    public let day: Date
+    public let inputTokens: Int
+    public let outputTokens: Int
+
+    public init(day: Date, inputTokens: Int, outputTokens: Int) {
+        self.day = day
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+    }
+
+    public var totalTokens: Int {
+        inputTokens + outputTokens
+    }
+}
+
 /// 消息管理能力协议
 ///
 /// 定义消息的获取、删除、插入等管理功能。
@@ -70,4 +87,19 @@ public protocol MessageManaging: ObservableObject {
     /// 用于 token 用量图表。返回的字典键为每日 00:00 的日期。
     /// Token 数量为 inputTokenCount + outputTokenCount 之和。
     func fetchDailyTokenCounts(since: Date) async -> [Date: Int]
+
+    /// 获取某一天的 token 消耗量（跨所有对话）。
+    ///
+    /// - Parameters:
+    ///   - day: 需要查询的日期，会按当前日历归一化到当天 00:00。
+    ///   - providerID: 可选供应商 ID 过滤。
+    ///   - modelName: 可选模型名称过滤。
+    /// - Returns: input/output token 拆分及总量。
+    func fetchTokenUsage(on day: Date, providerID: String?, modelName: String?) async -> MessageTokenUsage
+}
+
+public extension MessageManaging {
+    func fetchTokenUsage(on day: Date) async -> MessageTokenUsage {
+        await fetchTokenUsage(on: day, providerID: nil, modelName: nil)
+    }
 }

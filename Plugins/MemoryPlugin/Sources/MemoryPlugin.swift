@@ -1,11 +1,10 @@
-import SwiftUI
 import LumiKernel
 import LumiUI
 import os
-import SuperLogKit
+import SwiftUI
 
 @MainActor
-public final class MemoryPlugin: LumiPlugin, SuperLog {
+public final class MemoryPlugin: LumiPlugin {
     public nonisolated static let emoji = "🧠"
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(
@@ -29,24 +28,15 @@ public final class MemoryPlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // 设置插件数据目录
-        guard let storage = kernel.storage else {
-            Self.logger.error("🧠 Storage service not available")
-            return
-        }
-
-        // 更新配置，使用 kernel 提供的存储目录
-        Self.config = MemoryPluginConfig(
-            memoryRootURL: storage.pluginDataDirectory(for: "Memory")
-        )
-
-        if Self.verbose {
-            Self.logger.info("🧠 Memory 插件初始化完成")
-        }
+        try await MemoryOnReadyHook().execute(kernel)
     }
 
-
-    // MARK: - LumiPlugin stubs
+    public func willSendToLLM(
+        kernel: LumiKernel,
+        messages: [LumiChatMessage]
+    ) async -> [LumiChatMessage] {
+        await MemoryWillSendToLLMHook().execute(kernel: kernel, messages: messages)
+    }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -77,7 +67,7 @@ public final class MemoryPlugin: LumiPlugin, SuperLog {
         [
             SettingsTabItem(
                 id: "\(id).settings",
-                title: "Memory",
+                title: LumiPluginLocalization.string("Memory", bundle: .module),
                 systemImage: "brain",
                 order: order
             ) {
@@ -92,7 +82,13 @@ public final class MemoryPlugin: LumiPlugin, SuperLog {
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
-    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {
+        await MemoryTurnFinishedHook().execute(
+            kernel: kernel,
+            conversationID: conversationID,
+            reason: reason
+        )
+    }
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}

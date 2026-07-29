@@ -4,12 +4,20 @@ import LumiUI
 import SwiftUI
 
 struct StatusMessageView: View {
+    @Environment(\.lumiResponseVerbosity) private var verbosity
     @LumiTheme private var theme
 
     let message: LumiChatMessage
 
     var body: some View {
-        CompactMessageHeaderView {
+        if verbosity == .brief {
+            Text(message.content)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+                .lineLimit(2)
+                .textSelection(.enabled)
+        } else {
+            CompactMessageHeaderView {
             HStack(alignment: .center, spacing: 8) {
                 ChatAvatarView(kind: .status)
                     .overlay(alignment: .center) {
@@ -32,6 +40,7 @@ struct StatusMessageView: View {
                 )
 
                 MessageInfoButton(message: message)
+            }
             }
         }
     }

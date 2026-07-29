@@ -25,6 +25,8 @@ public final class MemoryPluginLocalStore: SuperLog, @unchecked Sendable {
         case halfLifeDays           // 时效衰减半衰期（天）
         case injectGlobalIndex      // 是否注入全局索引
         case injectProjectIndex     // 是否注入项目索引
+        case autoRecall             // 每轮发送前自动检索
+        case autoSave               // 每轮结束后自动保存高置信度记忆
         case autoSaveOnContextSwitch // 项目切换时自动保存上下文记忆
     }
 
@@ -114,6 +116,14 @@ public final class MemoryPluginLocalStore: SuperLog, @unchecked Sendable {
 
     public var shouldInjectProjectIndex: Bool {
         bool(forKey: .injectProjectIndex, defaultValue: true)
+    }
+
+    public var shouldAutoRecall: Bool {
+        bool(forKey: .autoRecall, defaultValue: true)
+    }
+
+    public var shouldAutoSave: Bool {
+        bool(forKey: .autoSave, defaultValue: true)
     }
 
     public var autoSaveOnContextSwitch: Bool {

@@ -85,9 +85,9 @@ extension LumiKernelContainer {
         resolveService(LLMProviderManaging.self)
     }
 
-    /// Agent turn runner service (executes LLM loop including tool calls)
-    public var agentTurnRunner: (any AgentTurnRunning)? {
-        resolveService(AgentTurnRunning.self)
+    /// Agent turn manager service (executes and manages the LLM loop including tool calls)
+    public var agentTurnManager: (any AgentTurnManaging)? {
+        resolveService(AgentTurnManaging.self)
     }
 
     /// Settings service

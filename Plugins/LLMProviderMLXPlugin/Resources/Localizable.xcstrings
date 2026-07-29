@@ -2,7 +2,38 @@
   "sourceLanguage" : "en",
   "strings" : {
     "" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ""
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ""
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ""
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ""
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ""
+          }
+        }
+      }
     },
     "%@ / %@" : {
       "localizations" : {
@@ -412,40 +443,6 @@
         }
       }
     },
-    "DeepSeek R1 Distill 7B" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DeepSeek R1 Distill 7B"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DeepSeek R1 Distill 7B"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DeepSeek R1 Distill 7B"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DeepSeek R1 Distill 7B"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DeepSeek R1 Distill 7B"
-          }
-        }
-      }
-    },
     "DeepSeek R1 Distill 14B" : {
       "localizations" : {
         "en" : {
@@ -476,6 +473,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DeepSeek R1 Distill 14B"
+          }
+        }
+      }
+    },
+    "DeepSeek R1 Distill 7B" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 7B"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 7B"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 7B"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 7B"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 7B"
           }
         }
       }
@@ -1400,40 +1431,6 @@
         }
       }
     },
-    "Mistral Nemo 12B" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mistral Nemo 12B"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mistral Nemo 12B"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mistral Nemo 12B"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mistral Nemo 12B"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mistral Nemo 12B"
-          }
-        }
-      }
-    },
     "MLX" : {
       "localizations" : {
         "en" : {
@@ -1464,6 +1461,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "MLX"
+          }
+        }
+      }
+    },
+    "Mistral Nemo 12B" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mistral Nemo 12B"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mistral Nemo 12B"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mistral Nemo 12B"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mistral Nemo 12B"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mistral Nemo 12B"
           }
         }
       }
@@ -1570,6 +1601,41 @@
         }
       }
     },
+    "Qwen 3.5 14B" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 14B"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 14B"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 14B"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 14B"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 14B"
+          }
+        }
+      }
+    },
     "Qwen 3.5 4B OptiQ" : {
       "localizations" : {
         "en" : {
@@ -1634,41 +1700,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qwen 3.5 9B"
-          }
-        }
-      }
-    },
-    "Qwen 3.5 14B" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qwen 3.5 14B"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qwen 3.5 14B"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qwen 3.5 14B"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qwen 3.5 14B"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qwen 3.5 14B"
           }
         }
       }
@@ -2183,40 +2214,6 @@
         }
       }
     },
-    "最强开源模型，需要高配置" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最强开源模型，需要高配置"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最强开源模型，需要高配置"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最强开源模型，需要高配置"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最强开源模型，需要高配置"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最强开源模型，需要高配置"
-          }
-        }
-      }
-    },
     "准备下载..." : {
       "localizations" : {
         "en" : {
@@ -2660,6 +2657,40 @@
         }
       }
     },
+    "最强开源模型，需要高配置" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最强开源模型，需要高配置"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最强开源模型，需要高配置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最强开源模型，需要高配置"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最强开源模型，需要高配置"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最强开源模型，需要高配置"
+          }
+        }
+      }
+    },
     "极小体积，适合入门与低内存设备" : {
       "localizations" : {
         "en" : {
@@ -2864,40 +2895,6 @@
         }
       }
     },
-    "超轻量，适合低配置设备" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "超轻量，适合低配置设备"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "超轻量，适合低配置设备"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "超轻量，适合低配置设备"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "超轻量，适合低配置设备"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "超轻量，适合低配置设备"
-          }
-        }
-      }
-    },
     "超轻量推理模型，适合入门体验思维链" : {
       "localizations" : {
         "en" : {
@@ -2928,6 +2925,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "超轻量推理模型，适合入门体验思维链"
+          }
+        }
+      }
+    },
+    "超轻量，适合低配置设备" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量，适合低配置设备"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量，适合低配置设备"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量，适合低配置设备"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量，适合低配置设备"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量，适合低配置设备"
           }
         }
       }

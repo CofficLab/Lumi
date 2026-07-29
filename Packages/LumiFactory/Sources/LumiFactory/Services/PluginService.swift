@@ -24,6 +24,7 @@ import ConversationInputPlugin
 import ConversationLanguagePlugin
 import ConversationListPlugin
 import ConversationMessageCountPlugin
+import ConversationContextSizePlugin
 import ConversationNewPlugin
 import ConversationSpeedPlugin
 import ConversationStorePlugin
@@ -106,6 +107,7 @@ import ProjectsPlugin
 import QuickFileSearchPlugin
 import QuickLauncherPlugin
 import RClickPlugin
+import ConversationReasoningPlugin
 import RegistryManagerPlugin
 import SettingsPlugin
 import SharedUIPlugin
@@ -204,6 +206,7 @@ public enum PluginService {
             ChatFileAttachmentPlugin(),
             PluginManagerPlugin(),
             ConversationMessageCountPlugin(),
+            ConversationContextSizePlugin(),
             SettingsPlugin(),
             LogoPlugin(),
             LogoCofficPlugin(),
@@ -223,6 +226,7 @@ public enum PluginService {
             BrewManagerPlugin(),
             DiskManagerPlugin(),
             HostsManagerPlugin(),
+            ConversationReasoningPlugin(),
             VerbosityPlugin(),
             ConversationSpeedPlugin(),
             ChatModePlugin(),

@@ -24,12 +24,21 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
     private let fileManager = FileManager.default
     private let storageFileURLOverride: URL?
 
+    /// Storage directory for this plugin. Configured via `configure()`.
+    private static var pluginStorageDirectory: URL?
+
+    /// Configure the storage directory. Should be called from `onBoot`.
+    public static func configure(storageDirectory: URL) {
+        pluginStorageDirectory = storageDirectory
+    }
+
     /// Storage file URL. Configurable for testing.
     public var storageFileURL: URL? {
         if let storageFileURLOverride { return storageFileURLOverride }
-        return fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("com.coffic.lumi/MemoryHistory")
-            .appendingPathComponent(storageFileName)
+        if let pluginDir = Self.pluginStorageDirectory {
+            return pluginDir.appendingPathComponent(storageFileName)
+        }
+        return nil
     }
 
     var corruptStorageFileURL: URL? {

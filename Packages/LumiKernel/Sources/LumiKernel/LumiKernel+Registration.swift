@@ -80,9 +80,9 @@ extension LumiKernelContainer {
         registerService(LLMProviderManaging.self, llmProvider)
     }
 
-    /// Register agent turn runner service
-    public func registerAgentTurnRunnerService(_ agentTurnRunner: any AgentTurnRunning) {
-        registerService(AgentTurnRunning.self, agentTurnRunner)
+    /// Register the agent turn manager service.
+    public func registerAgentTurnManagerService(_ agentTurnManager: any AgentTurnManaging) {
+        registerService(AgentTurnManaging.self, agentTurnManager)
     }
 
     /// Register settings service

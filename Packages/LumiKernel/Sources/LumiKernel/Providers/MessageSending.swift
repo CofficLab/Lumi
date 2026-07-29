@@ -83,7 +83,7 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
     ///    `kernel.messageManager?.insertMessage(_:to:)` 落库;若 `imageAttachments`
     ///    非空,应编码为 JSON 写入 `metadata["imageAttachments"]`;此外,实现通常会把
     ///    当前 `pendingFileAttachments` 也编码进 `metadata["fileAttachments"]`(文件链路);
-    /// 4. 触发 `kernel.agentTurnRunner?.runTurn(in:)` 执行完整 agent loop。
+    /// 4. 触发 `kernel.agentTurnManager?.runTurn(in:)` 执行完整 agent loop。
     /// - Parameter content: 用户输入文本(由实现 trim)
     /// - Parameter imageAttachments: 本次随文本一起送出的图片附件;为 `[]` 时等同纯文本
     /// - Parameter conversationID: 同上
@@ -92,6 +92,23 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
         imageAttachments: [LumiImageAttachment],
         conversationID: UUID?
     ) async throws
+
+    /// Resume a suspended agent turn while preserving the sender lifecycle.
+    ///
+    /// Implementations that expose agent-turn resumption should keep the target
+    /// conversation in the sending state for the duration of the resumed turn,
+    /// so UI consumers observe the same transient status as a normal send.
+    func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentTurnOutcome
+
+    /// Continue an existing conversation without inserting a user message.
+    ///
+    /// This is used by system-owned workflows such as Goal continuation. The
+    /// implementation must keep the conversation in the sending state while
+    /// the resumed turn is running.
+    func continueTurn(in conversationID: UUID)
 
     /// 取消当前正在进行的发送任务
     func cancelCurrentRequest()
@@ -106,6 +123,15 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
 // MARK: - 默认实现
 
 public extension MessageSending {
+    func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentTurnOutcome {
+        throw AgentTurnManagingError.resumeNotSupported
+    }
+
+    func continueTurn(in conversationID: UUID) {}
+
     func isSending(for conversationID: UUID?) -> Bool {
         guard conversationID != nil else { return isSending }
         return isSending

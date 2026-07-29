@@ -1,4 +1,5 @@
 import Foundation
+import LumiKernel
 
 public struct CodexCLI: Sendable {
     public let executablePath: String
@@ -11,16 +12,25 @@ public struct CodexCLI: Sendable {
         FileManager.default.isExecutableFile(atPath: executablePath)
     }
 
-    public func arguments(prompt: String, model: String) -> [String] {
-        [
+    public func arguments(prompt: String, model: String, reasoningEffort: LumiReasoningEffort? = nil) -> [String] {
+        var arguments = [
             "-a", "never",
             "exec",
             "--json",
             "-m", model,
             "-s", "workspace-write",
             "--skip-git-repo-check",
-            prompt
         ]
+
+        if let reasoningEffort, reasoningEffort != .automatic {
+            arguments.append(contentsOf: [
+                "-c",
+                "model_reasoning_effort=\"\(reasoningEffort.rawValue)\""
+            ])
+        }
+
+        arguments.append(prompt)
+        return arguments
     }
 
     public static func defaultExecutablePath(environment: [String: String] = ProcessInfo.processInfo.environment) -> String {

@@ -273,8 +273,41 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         conversations = conversations
         notifyConversationsChanged()
 
+        Task {
+            await store?.updateConversationPreferences(id: conversationID, verbosity: verbosity)
+        }
+
         if Self.verbose {
             Self.logger.info("\(Self.t)setVerbosity: conversation=\(conversationID.uuidString.prefix(8)), verbosity=\(verbosity.rawValue)")
+        }
+    }
+
+    // MARK: - Reasoning Effort
+
+    public func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort {
+        guard let conversationID else {
+            return .defaultEffort
+        }
+        return conversations.first { $0.id == conversationID }?.reasoningEffort ?? .defaultEffort
+    }
+
+    public func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].reasoningEffort = reasoningEffort
+        conversations = conversations
+        notifyConversationsChanged()
+
+        Task {
+            await store?.updateConversationPreferences(id: conversationID, reasoningEffort: reasoningEffort)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setReasoningEffort: conversation=\(conversationID.uuidString.prefix(8)), effort=\(reasoningEffort.rawValue)")
         }
     }
 
@@ -321,6 +354,25 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setLanguage: conversation=\(conversationID.uuidString.prefix(8)), language=\(language.rawValue)")
+        }
+    }
+
+    // MARK: - Conversation Order
+
+    public func setConversationOrder(_ order: Int, for conversationID: UUID) {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].order = order
+        conversations = conversations
+        notifyConversationsChanged()
+
+        Task {
+            await store?.updateOrder(id: conversationID, order: order)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setConversationOrder: conversation=\(conversationID.uuidString.prefix(8)), order=\(order)")
         }
     }
 

@@ -50,7 +50,7 @@ public final class QuickFileSearchPlugin: LumiPlugin {
         [
             SettingsTabItem(
                 id: id,
-                title: "Quick File Search",
+                title: LumiPluginLocalization.string("Quick File Search", bundle: .module),
                 systemImage: "magnifyingglass",
                 order: order
             ) {

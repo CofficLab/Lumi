@@ -55,7 +55,7 @@ public struct DeleteMemoryTool: LumiAgentTool {
         )
         let scope: MemoryScope
         if scopeRaw == "project" {
-            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.anyValue) else {
+            guard let projectPath = MemoryToolInput.projectPath(arguments["project_path"]?.anyValue, kernel: kernel) else {
                 throw MemoryToolError.missingArgument("project_path is required when scope=project")
             }
             scope = .project(projectPath)

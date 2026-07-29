@@ -30,8 +30,8 @@ public final class AnthropicProvider: LumiLLMProvider, @unchecked Sendable {
             "claude-3-haiku-20240307": 200_000
         ],
         modelCapabilities: [
-            "claude-sonnet-4-20250514": .init(supportsVision: true, supportsTools: true),
-            "claude-opus-4-20250514": .init(supportsVision: true, supportsTools: true),
+            "claude-sonnet-4-20250514": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "claude-opus-4-20250514": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
             "claude-3-5-sonnet-20241022": .init(supportsVision: true, supportsTools: true),
             "claude-3-5-sonnet-20240620": .init(supportsVision: true, supportsTools: true),
             "claude-3-opus-20240229": .init(supportsVision: true, supportsTools: true),
@@ -55,7 +55,8 @@ public final class AnthropicProvider: LumiLLMProvider, @unchecked Sendable {
         apiService: LLMAPIService = LLMAPIService()
     ) {
         let config = configuration ?? AnthropicCompatibleProviderConfiguration(
-            baseURL: "https://api.anthropic.com/v1/messages"
+            baseURL: "https://api.anthropic.com/v1/messages",
+            supportsThinkingBudget: true
         )
         self.adapter = AnthropicCompatibleProviderAdapter(configuration: config)
         self.apiService = apiService

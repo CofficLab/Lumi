@@ -16,6 +16,12 @@
             "value" : "%lld"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -40,6 +46,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld天前"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld天前"
@@ -74,6 +86,12 @@
             "value" : "%lld小时前"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld小時前"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -103,6 +121,12 @@
             "value" : "%lld分钟前"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld分鐘前"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -127,6 +151,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$lld/%2$lld"
@@ -161,6 +191,12 @@
             "value" : "操作"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -188,6 +224,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全部项目索引更新完成。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部項目索引更新完成。"
           }
         },
         "zh-HK" : {
@@ -219,6 +261,12 @@
             "value" : "正在检查索引状态..."
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在檢查索引狀態..."
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -248,6 +296,12 @@
             "value" : "片段数"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片段數"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -272,6 +326,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片段"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "片段"
@@ -306,6 +366,12 @@
             "value" : "内容"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "內容"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -333,6 +399,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "当前文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前文件"
           }
         },
         "zh-HK" : {
@@ -364,6 +436,12 @@
             "value" : "文档块"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文檔塊"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -388,6 +466,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "嵌入"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "嵌入"
@@ -422,6 +506,12 @@
             "value" : "嵌入模型"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "嵌入模型"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -449,6 +539,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "获取索引状态失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "獲取索引狀態失敗"
           }
         },
         "zh-HK" : {
@@ -480,6 +576,12 @@
             "value" : "获取状态失败"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "獲取狀態失敗"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -507,6 +609,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "读取索引状态失败：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讀取索引狀態失敗：%@"
           }
         },
         "zh-HK" : {
@@ -538,6 +646,12 @@
             "value" : "重建索引失败：%@"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重建索引失敗：%@"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -567,6 +681,12 @@
             "value" : "文件数"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件數"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -591,6 +711,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "文件"
@@ -625,6 +751,12 @@
             "value" : "索引已过期，建议重新索引"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "索引已過期，建議重新索引"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -649,6 +781,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "索引更新完成：%@"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "索引更新完成：%@"
@@ -683,6 +821,12 @@
             "value" : "已索引"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已索引"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -707,6 +851,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在索引"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在索引"
@@ -741,6 +891,12 @@
             "value" : "正在索引..."
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在索引..."
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -767,6 +923,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无效的项目路径"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的項目路徑"
           }
         },
         "zh-HK" : {
@@ -798,6 +960,12 @@
             "value" : "刚刚"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剛剛"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -825,6 +993,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最后索引"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最後索引"
           }
         },
         "zh-HK" : {
@@ -856,6 +1030,12 @@
             "value" : "读取中…"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讀取中…"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -883,6 +1063,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "管理已跟踪项目的语义索引。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理已跟蹤項目的語義索引。"
           }
         },
         "zh-HK" : {
@@ -914,6 +1100,12 @@
             "value" : "暂无项目"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無項目"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -938,6 +1130,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未索引"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "未索引"
@@ -972,6 +1170,12 @@
             "value" : "尚未建立索引"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未建立索引"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -999,6 +1203,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已过期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已過期"
           }
         },
         "zh-HK" : {
@@ -1030,6 +1240,12 @@
             "value" : "路径"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "路徑"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1057,6 +1273,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "请先选择或添加项目，RAG 才能建立与展示索引。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先選擇或添加項目，RAG 才能建立與展示索引。"
           }
         },
         "zh-HK" : {
@@ -1088,6 +1310,12 @@
             "value" : "进度"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進度"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1115,6 +1343,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "进度：%lld/%lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進度：%lld/%lld"
           }
         },
         "zh-HK" : {
@@ -1146,6 +1380,12 @@
             "value" : "项目"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1156,6 +1396,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "專案"
+          }
+        }
+      }
+    },
+    "Project RAG" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Project RAG"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "项目 RAG"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目 RAG"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "項目 RAG"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專案 RAG"
           }
         }
       }
@@ -1174,6 +1448,12 @@
             "value" : "RAG"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1184,34 +1464,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "RAG"
-          }
-        }
-      }
-    },
-    "RAG database error: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG database error: %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG 数据库错误：%@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG 數據庫錯誤：%@"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "RAG 資料庫錯誤：%@"
           }
         }
       }
@@ -1226,6 +1478,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 索引未初始化"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "RAG 索引未初始化"
@@ -1260,6 +1518,12 @@
             "value" : "RAG 索引状态"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 索引狀態"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1270,6 +1534,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "RAG 索引狀態"
+          }
+        }
+      }
+    },
+    "RAG database error: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG database error: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 数据库错误：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 數據庫錯誤：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 數據庫錯誤：%@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 資料庫錯誤：%@"
           }
         }
       }
@@ -1287,6 +1585,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "RAG 内部状态异常"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 內部狀態異常"
           }
         },
         "zh-HK" : {
@@ -1318,6 +1622,12 @@
             "value" : "RAG 服务未初始化"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 服務未初始化"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1347,6 +1657,12 @@
             "value" : "RAG 服务将在插件启用时自动初始化"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RAG 服務將在插件啓用時自動初始化"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1371,6 +1687,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重建"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "重建"
@@ -1405,6 +1727,12 @@
             "value" : "重建全部"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重建全部"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1429,6 +1757,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重建全部索引"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "重建全部索引"
@@ -1463,6 +1797,12 @@
             "value" : "重建失败：%@"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重建失敗：%@"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1487,6 +1827,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在重建全部索引..."
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在重建全部索引..."
@@ -1521,6 +1867,12 @@
             "value" : "已重建：%@"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已重建：%@"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1545,6 +1897,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "刷新"
@@ -1579,6 +1937,12 @@
             "value" : "刷新全部"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新全部"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1606,6 +1970,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刷新全部状态"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新全部狀態"
           }
         },
         "zh-HK" : {
@@ -1637,6 +2007,12 @@
             "value" : "刷新失败：%@"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新失敗：%@"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1661,6 +2037,12 @@
           }
         },
         "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已刷新：%@"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "已刷新：%@"
@@ -1695,6 +2077,12 @@
             "value" : "检索增强生成"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檢索增強生成"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1722,6 +2110,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "运行时"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "運行時"
           }
         },
         "zh-HK" : {
@@ -1753,6 +2147,12 @@
             "value" : "已扫描"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已掃描"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1780,6 +2180,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜索代码"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索代碼"
           }
         },
         "zh-HK" : {
@@ -1811,6 +2217,12 @@
             "value" : "在当前项目中搜索代码片段。"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在當前項目中搜索代碼片段。"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1840,6 +2252,12 @@
             "value" : "已跳过"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已跳過"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1850,35 +2268,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已跳過"
-          }
-        }
-      }
-    },
-    "sqlite-vec extension did not load; semantic search falls back to slower in-memory scoring." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sqlite-vec extension did not load; semantic search falls back to slower in-memory scoring."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sqlite-vec 扩展未加载；语义搜索将回退到较慢的内存评分。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sqlite-vec 擴展未載入；語義搜尋將回退到較慢的記憶體評分。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sqlite-vec 擴充功能未載入；語義搜尋將退回至較慢的記憶體評分。"
           }
         }
       }
@@ -1896,6 +2285,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "状态"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "狀態"
           }
         },
         "zh-HK" : {
@@ -1927,6 +2322,12 @@
             "value" : "最新"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最新"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1937,35 +2338,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最新"
-          }
-        }
-      }
-    },
-    "Vector acceleration unavailable" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vector acceleration unavailable"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量加速不可用"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量加速不可用"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量加速無法使用"
           }
         }
       }
@@ -1983,6 +2355,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "向量后端"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向量後端"
           }
         },
         "zh-HK" : {
@@ -2014,6 +2392,12 @@
             "value" : "向量维度"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向量維度"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2024,6 +2408,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "向量維度"
+          }
+        }
+      }
+    },
+    "Vector acceleration unavailable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vector acceleration unavailable"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向量加速不可用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向量加速不可用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向量加速不可用"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向量加速無法使用"
+          }
+        }
+      }
+    },
+    "sqlite-vec extension did not load; semantic search falls back to slower in-memory scoring." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sqlite-vec extension did not load; semantic search falls back to slower in-memory scoring."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sqlite-vec 扩展未加载；语义搜索将回退到较慢的内存评分。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sqlite-vec 擴展未加載；語義搜索將回退到較慢的內存評分。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sqlite-vec 擴展未載入；語義搜尋將回退到較慢的記憶體評分。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sqlite-vec 擴充功能未載入；語義搜尋將退回至較慢的記憶體評分。"
           }
         }
       }

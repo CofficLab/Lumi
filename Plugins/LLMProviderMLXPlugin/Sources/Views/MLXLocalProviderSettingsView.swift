@@ -28,6 +28,12 @@ public struct MLXLocalProviderSettingsView: View, SuperLog {
             machineInfoCard
             modelListCard
         }
+        .task {
+            if selectedSeriesId == nil {
+                let allSeries = modelManager.modelsBySeries()
+                selectedSeriesId = allSeries.first?.id
+            }
+        }
     }
 
     private var machineInfoCard: some View {
@@ -127,11 +133,6 @@ public struct MLXLocalProviderSettingsView: View, SuperLog {
                         .foregroundColor(theme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 20)
-                }
-            }
-            .onAppear {
-                if selectedSeriesId == nil, let firstSeries = allSeries.first {
-                    selectedSeriesId = firstSeries.id
                 }
             }
             .onChange(of: allSeries) { oldSeries, newSeries in

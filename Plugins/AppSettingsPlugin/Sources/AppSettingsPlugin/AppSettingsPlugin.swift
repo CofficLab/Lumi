@@ -30,14 +30,16 @@ public final class AppSettingsPlugin: LumiPlugin {
             SettingsTabItem(
                 id: "app.general",
                 title: LumiLocalization.string("General", bundle: .module),
-                systemImage: "gearshape"
+                systemImage: "gearshape",
+                order: 0
             ) {
                 GeneralSettingsView()
             },
             SettingsTabItem(
                 id: "app.appearance",
                 title: LumiLocalization.string("Appearance", bundle: .module),
-                systemImage: "paintbrush"
+                systemImage: "paintbrush",
+                order: 1
             ) {
                 AppearanceSettingsView(kernel: kernel)
             },

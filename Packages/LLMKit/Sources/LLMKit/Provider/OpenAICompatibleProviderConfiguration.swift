@@ -8,6 +8,7 @@ public struct OpenAICompatibleProviderConfiguration: Sendable, Equatable {
     public let returnsEmptyChunkWhenNoDelta: Bool
     public let acceptsFunctionScopedToolCallID: Bool
     public let includesReasoningContentInMessages: Bool
+    public let supportsReasoningEffort: Bool
 
     public init(
         baseURL: String,
@@ -16,7 +17,8 @@ public struct OpenAICompatibleProviderConfiguration: Sendable, Equatable {
         includeUsageInStreamOptions: Bool = false,
         returnsEmptyChunkWhenNoDelta: Bool = false,
         acceptsFunctionScopedToolCallID: Bool = false,
-        includesReasoningContentInMessages: Bool = false
+        includesReasoningContentInMessages: Bool = false,
+        supportsReasoningEffort: Bool = false
     ) {
         self.baseURL = baseURL
         self.fallbackBaseURLs = fallbackBaseURLs
@@ -25,5 +27,6 @@ public struct OpenAICompatibleProviderConfiguration: Sendable, Equatable {
         self.returnsEmptyChunkWhenNoDelta = returnsEmptyChunkWhenNoDelta
         self.acceptsFunctionScopedToolCallID = acceptsFunctionScopedToolCallID
         self.includesReasoningContentInMessages = includesReasoningContentInMessages
+        self.supportsReasoningEffort = supportsReasoningEffort
     }
 }

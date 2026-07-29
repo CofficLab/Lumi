@@ -59,10 +59,13 @@
         func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
         func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .standard }
         func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
+        func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { .automatic }
+        func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
         func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { .chat }
         func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
         func language(for conversationID: UUID?) -> LumiConversationLanguage { .chinese }
         func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
+        func setConversationOrder(_ order: Int, for conversationID: UUID) {}
     }
 
     @MainActor
@@ -109,6 +112,9 @@
 
         func fetchDailyMessageCounts(since: Date) async -> [Date: Int] { [:] }
         func fetchDailyTokenCounts(since: Date) async -> [Date: Int] { [:] }
+        func fetchTokenUsage(on day: Date, providerID: String?, modelName: String?) async -> MessageTokenUsage {
+            MessageTokenUsage(day: Calendar.current.startOfDay(for: day), inputTokens: 0, outputTokens: 0)
+        }
     }
 
     enum ConversationListPreviewSupport {

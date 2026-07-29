@@ -252,6 +252,23 @@ struct ToolManagerPluginTests {
         #expect(missing.contains("Directory does not exist"))
     }
 
+    @Test("glob finds files under the current search root")
+    func globTool() async throws {
+        let directoryURL = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+        let nested = directoryURL.appendingPathComponent("Sources/Nested", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        try Data("swift".utf8).write(to: nested.appendingPathComponent("Feature.swift"))
+        try Data("text".utf8).write(to: nested.appendingPathComponent("Feature.txt"))
+
+        let result = try await GlobTool().execute(
+            arguments: ["path": .string(directoryURL.path), "pattern": .string("**/*.swift")],
+            kernel: LumiKernel()
+        )
+        #expect(result.contains("Sources/Nested/Feature.swift"))
+        #expect(!result.contains("Feature.txt"))
+    }
+
     @Test("shell tool returns command output and validates arguments")
     func shellTool() async throws {
         let tool = ShellTool()
@@ -355,13 +372,49 @@ struct ToolManagerPluginTests {
         #expect(result.imageAttachments.first?.fileName == "test.png")
     }
 
+    @Test("service preserves structured turn suspension control")
+    func servicePreservesTurnSuspension() async {
+        let service = ToolManagerService()
+        let conversationID = UUID()
+        let suspension = AgentTurnSuspension(
+            suspensionID: "suspension-1",
+            conversationID: conversationID,
+            toolCallID: "call-1",
+            kind: "userInput",
+            payload: "{}"
+        )
+        service.add(SuspendingTool(suspension: suspension), pluginID: "tests")
+        let kernel = LumiKernel()
+        service.kernel = kernel
+
+        let result = await service.execute(
+            LumiToolCall(id: "call-1", name: "suspend", arguments: "{}"),
+            conversationID: conversationID
+        )
+
+        #expect(result.turnControl == .suspend(suspension))
+    }
+
+    @Test("service keeps provider-local sub-agent ids distinct")
+    func serviceKeepsProviderLocalSubAgents() {
+        let service = ToolManagerService()
+        let stepfunExplore = makeSubAgent(id: "explore", providerID: "stepfun")
+        let openAIExplore = makeSubAgent(id: "explore", providerID: "openai")
+
+        service.addSubAgent(stepfunExplore)
+        service.addSubAgent(openAIExplore)
+        service.addSubAgent(stepfunExplore)
+
+        #expect(service.allSubAgents().map(\.routingID) == ["stepfun:explore", "openai:explore"])
+    }
+
     @Test("plugin exposes core tools and registers its service")
     func pluginContributions() async throws {
         let plugin = ToolManagerPlugin()
         let kernel = LumiKernel()
         #expect(plugin.id == "com.coffic.lumi.plugin.tool-manager")
         #expect(plugin.policy == .alwaysOn)
-        #expect(plugin.agentTools(kernel: kernel).map(\.name) == ["ls", "read_file", "write_file", "edit_file", "run_command"])
+        #expect(plugin.agentTools(kernel: kernel).map(\.name) == ["ls", "glob", "read_file", "write_file", "edit_file", "run_command"])
         #expect(plugin.llmProviders(kernel: kernel).isEmpty)
         #expect(plugin.subAgents(kernel: kernel).isEmpty)
         #expect(plugin.messageRenderers(kernel: kernel).isEmpty)
@@ -419,6 +472,17 @@ struct ToolManagerPluginTests {
         return fileURL
     }
 
+    private func makeSubAgent(id: String, providerID: String) -> LumiSubAgentDefinition {
+        LumiSubAgentDefinition(
+            id: id,
+            displayName: id,
+            description: "test",
+            providerID: providerID,
+            modelID: "test",
+            systemPrompt: "test"
+        )
+    }
+
     private func makeLines(count: Int, width: Int) -> Data {
         let line = String(repeating: "x", count: width) + "\n"
         var data = Data(capacity: count * (width + 1))
@@ -458,5 +522,24 @@ private struct TestTool: LumiAgentTool {
             )
         }
         return "echoed"
+    }
+}
+
+private struct SuspendingTool: LumiAgentTool {
+    let suspension: AgentTurnSuspension
+
+    static let info = LumiAgentToolInfo(id: "suspend", displayName: "Suspend", description: "Suspends a turn")
+
+    var inputSchema: LumiJSONValue { .object(["type": .string("object")]) }
+
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        "suspended"
+    }
+
+    func executeResult(
+        arguments: [String: LumiJSONValue],
+        kernel: LumiKernel
+    ) async throws -> LumiToolExecutionResult {
+        LumiToolExecutionResult(content: "suspended", turnControl: .suspend(suspension))
     }
 }

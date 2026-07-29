@@ -18,8 +18,8 @@ public final class ThemeManager: UIThemeProviding {
     private var themeSelectionStore: ThemeSelectionStore
     private var pluginsChangedObserver: NSObjectProtocol?
 
-    /// Reference to the plugin service for collecting theme contributions.
-    private weak var pluginService: PluginRegistry?
+    /// Reference to the plugin manager for collecting theme contributions.
+    private weak var pluginManager: BuiltinPluginManager?
 
     /// Kernel event dispatcher, used to broadcast theme-change events.
     private weak var eventManager: EventManager?
@@ -48,11 +48,11 @@ public final class ThemeManager: UIThemeProviding {
 
     public init(
         themeRegistry: LumiUIThemeRegistry = .shared,
-        pluginService: PluginRegistry? = nil
+        pluginManager: BuiltinPluginManager? = nil
     ) {
         self.themeRegistry = themeRegistry
         self.themeSelectionStore = ThemeSelectionStore.shared
-        self.pluginService = pluginService
+        self.pluginManager = pluginManager
 
         if Self.verbose {
             Self.logger.info("Initializing DefaultThemeProviding")
@@ -80,16 +80,15 @@ public final class ThemeManager: UIThemeProviding {
         }
     }
 
-    /// Inject the plugin service after `LumiKernel.plugin` becomes available.
+    /// Inject the plugin manager after `LumiKernel.pluginManager` becomes available.
     ///
-    /// `DefaultThemeProviding.init` runs during `ThemeManagerPlugin.register(kernel:)`,
-    /// but `kernel.plugin` is `nil` at that point (PluginManagementPlugin hasn't been
-    /// registered yet). The plugin service is wired up in `boot(kernel:)` and the
-    /// themes are reloaded then.
-    public func setPluginService(_ service: PluginRegistry) {
-        self.pluginService = service
+    /// `ThemeManager.init` runs during `ThemeManagerPlugin.onBoot(kernel:)`,
+    /// but the plugin manager may not be fully initialized at that point.
+    /// The plugin manager is wired up here and themes are reloaded.
+    public func setPluginManager(_ manager: BuiltinPluginManager) {
+        self.pluginManager = manager
         if Self.verbose {
-            Self.logger.info("Plugin service injected")
+            Self.logger.info("Plugin manager injected")
         }
     }
 
@@ -100,10 +99,10 @@ public final class ThemeManager: UIThemeProviding {
 
     /// Reload themes from all enabled plugins' theme contributions.
     public func reloadThemes() {
-        guard let pluginService else {
+        guard let pluginManager else {
             // Fallback: use built-in theme only
             if Self.verbose {
-                Self.logger.info("No plugin service available; using built-in theme")
+                Self.logger.info("No plugin manager available; using built-in theme")
             }
             return
         }
@@ -112,7 +111,7 @@ public final class ThemeManager: UIThemeProviding {
         // Note: Theme plugins register themes via kernel.registerTheme() which adds
         // directly to themeRegistry. Those themes are preserved here.
         var contributions: [LumiUIThemeContribution] = []
-        for plugin in pluginService.allPlugins {
+        for plugin in pluginManager.allPlugins {
             if let themeProvider = plugin as? any UIThemeProviding {
                 contributions.append(contentsOf: themeProvider.themeContributions())
             }

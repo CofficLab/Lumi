@@ -1,7 +1,7 @@
 import Foundation
 import LocalizationKit
 
-/// Runtime localization for ProjectsPlugin bundle.
+/// Runtime localization for ToolManagerPlugin bundle.
 ///
 /// Provides localization lookup scoped to this plugin by delegating to LumiLocalization.
 enum LumiPluginLocalization {
