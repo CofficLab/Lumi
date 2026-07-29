@@ -77,7 +77,6 @@ public struct ConversationItemView: View, SuperLog {
 
             Spacer()
         }
-        .background(processingRowBackground)
         .contextMenu {
             Button {
                 onPin()
@@ -136,15 +135,6 @@ public struct ConversationItemView: View, SuperLog {
         }
     }
 
-    /// 正在发送时,整行背景叠加一层微弱的主题色,让活动状态在密集列表里也一眼可见。
-    @ViewBuilder
-    private var processingRowBackground: some View {
-        if isProcessing {
-            theme.primary.opacity(0.06)
-        } else {
-            Color.clear
-        }
-    }
 }
 
 // MARK: - Activity Indicators
