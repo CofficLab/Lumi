@@ -106,7 +106,7 @@ enum BuildAgent {
 
             ### 3. If build fails, extract error lines (shell)
             ```
-            <build command> 2>&1 | grep -E 'error:|error\[|Error|ERROR|undefined reference|fatal error|cannot find|does not exist' | head -20
+            <build command> 2>&1 | grep -E 'error:|error\\[|Error|ERROR|undefined reference|fatal error|cannot find|does not exist' | head -20
             ```
             Normalize each error into `File:Line — message` when the toolchain provides a location.
 

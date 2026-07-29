@@ -43,6 +43,18 @@ struct CodexProviderTests {
         #expect(args.contains("--skip-git-repo-check"))
     }
 
+    @Test("exec arguments include reasoning effort when selected")
+    func execArgumentsIncludeReasoningEffortWhenSelected() {
+        let cli = CodexCLI(executablePath: "/tmp/codex")
+        let automaticArgs = cli.arguments(prompt: "hello", model: "gpt-5.5", reasoningEffort: .automatic)
+        let highArgs = cli.arguments(prompt: "hello", model: "gpt-5.5", reasoningEffort: .high)
+
+        #expect(!automaticArgs.contains("-c"))
+        #expect(highArgs.contains("-c"))
+        #expect(highArgs.contains("model_reasoning_effort=\"high\""))
+        #expect(highArgs.last == "hello")
+    }
+
     @Test("path candidates include common Homebrew locations and PATH")
     func pathCandidatesIncludeCommonLocationsAndPath() {
         let candidates = CodexCLI.pathCandidates(environment: ["PATH": "/custom/bin:/opt/homebrew/bin"])

@@ -21,7 +21,8 @@ final class FreeModelOpenAIBackend: LumiLLMProvider, @unchecked Sendable {
             additionalHeaders: [:],
             includeUsageInStreamOptions: true,
             returnsEmptyChunkWhenNoDelta: false,
-            acceptsFunctionScopedToolCallID: false
+            acceptsFunctionScopedToolCallID: false,
+            supportsReasoningEffort: true
         )
         self.adapter = OpenAICompatibleProviderAdapter(configuration: config)
         self.apiService = apiService
