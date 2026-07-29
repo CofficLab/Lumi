@@ -205,6 +205,7 @@ public enum PluginService {
             ChatFileAttachmentPlugin(),
             PluginManagerPlugin(),
             ConversationMessageCountPlugin(),
+            ConversationContextSizePlugin(),
             SettingsPlugin(),
             LogoPlugin(),
             LogoCofficPlugin(),
