@@ -78,9 +78,6 @@ public struct ConversationStoreSettingsView: View {
     private var sidebarHeader: some View {
         HStack(spacing: 10) {
             Label("\(conversations.count) conversations", systemImage: "bubble.left.and.bubble.right")
-            if let selectedConversation {
-                Text("Selected: \(displayTitle(for: selectedConversation))")
-            }
             Spacer()
             AppButton("Open Data Directory", systemImage: "folder", size: .small) {
                 openDataDirectory()
