@@ -14,7 +14,7 @@ public struct ActivityHeatmapSettingsView: View {
 
     public init(messageService: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil) {
         _viewModel = State(initialValue: ActivityHeatmapViewModel(messageService: messageService, cache: cache))
-        self.cacheDirectory = cache?.directory
+        self.cacheDirectory = cache?.databaseDirectoryURL
     }
 
     public var body: some View {

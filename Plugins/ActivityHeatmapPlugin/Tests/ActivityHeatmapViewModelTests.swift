@@ -226,8 +226,8 @@ struct ActivityHeatmapCacheTests {
         let testDate = Calendar.current.startOfDay(for: Date())
         let testCount = 42
 
-        cache.saveHeatmapCount(testCount, for: testDate)
-        let loaded = cache.loadHeatmapCount(for: testDate)
+        await cache.saveHeatmapCount(testCount, for: testDate)
+        let loaded = await cache.loadHeatmapCount(for: testDate)
         #expect(loaded == testCount)
     }
 
@@ -236,7 +236,7 @@ struct ActivityHeatmapCacheTests {
         let cache = createCache()
         let testDate = Calendar.current.startOfDay(for: Date())
 
-        let loaded = cache.loadHeatmapCount(for: testDate)
+        let loaded = await cache.loadHeatmapCount(for: testDate)
         #expect(loaded == nil)
     }
 
@@ -249,10 +249,10 @@ struct ActivityHeatmapCacheTests {
         let date1 = cal.date(byAdding: .day, value: -1, to: today)!
         let date2 = cal.date(byAdding: .day, value: -2, to: today)!
 
-        cache.saveHeatmapCount(10, for: date1)
-        cache.saveHeatmapCount(20, for: date2)
+        await cache.saveHeatmapCount(10, for: date1)
+        await cache.saveHeatmapCount(20, for: date2)
 
-        let loaded = cache.loadHeatmapCounts(for: [date1, date2, today])
+        let loaded = await cache.loadHeatmapCounts(for: [date1, date2, today])
 
         #expect(loaded[date1] == 10)
         #expect(loaded[date2] == 20)
@@ -267,8 +267,8 @@ struct ActivityHeatmapCacheTests {
         let testDate = Calendar.current.startOfDay(for: Date())
         let testCount = 12345
 
-        cache.saveTokenCount(testCount, for: testDate)
-        let loaded = cache.loadTokenCount(for: testDate)
+        await cache.saveTokenCount(testCount, for: testDate)
+        let loaded = await cache.loadTokenCount(for: testDate)
         #expect(loaded == testCount)
     }
 
@@ -281,10 +281,10 @@ struct ActivityHeatmapCacheTests {
         let date1 = cal.date(byAdding: .day, value: -1, to: today)!
         let date2 = cal.date(byAdding: .day, value: -3, to: today)!
 
-        cache.saveTokenCount(5000, for: date1)
-        cache.saveTokenCount(8000, for: date2)
+        await cache.saveTokenCount(5000, for: date1)
+        await cache.saveTokenCount(8000, for: date2)
 
-        let loaded = cache.loadTokenCounts(for: [date1, date2])
+        let loaded = await cache.loadTokenCounts(for: [date1, date2])
 
         #expect(loaded[date1] == 5000)
         #expect(loaded[date2] == 8000)
@@ -295,13 +295,13 @@ struct ActivityHeatmapCacheTests {
     @Test("Cache size increases after saving")
     func cacheSizeIncreases() async {
         let cache = createCache()
-        let initialSize = cache.cacheSize()
+        let initialSize = await cache.cacheSize()
 
         let testDate = Calendar.current.startOfDay(for: Date())
-        cache.saveHeatmapCount(100, for: testDate)
-        cache.saveTokenCount(200, for: testDate)
+        await cache.saveHeatmapCount(100, for: testDate)
+        await cache.saveTokenCount(200, for: testDate)
 
-        let newSize = cache.cacheSize()
+        let newSize = await cache.cacheSize()
         #expect(newSize > initialSize)
     }
 }

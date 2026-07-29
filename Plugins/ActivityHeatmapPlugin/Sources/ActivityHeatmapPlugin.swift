@@ -18,7 +18,7 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
 
     /// Cache directory for the plugin data (exposed for settings view to open in Finder)
     package var cacheDirectory: URL? {
-        cache?.directory
+        cache?.databaseDirectoryURL
     }
 
     public init() {}

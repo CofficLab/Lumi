@@ -102,8 +102,8 @@ public final class ActivityHeatmapViewModel {
         let todayDate = today
 
         // Step 1: Load cached data for historical dates
-        let cachedHeatmapCounts = cache.loadHeatmapCounts(for: historicalDates)
-        let cachedTokenCounts = cache.loadTokenCounts(for: historicalDates)
+        let cachedHeatmapCounts = await cache.loadHeatmapCounts(for: historicalDates)
+        let cachedTokenCounts = await cache.loadTokenCounts(for: historicalDates)
 
         // Step 2: Find missing dates that need to be fetched
         let missingHeatmapDates = historicalDates.filter { cachedHeatmapCounts[$0] == nil }
@@ -125,12 +125,12 @@ public final class ActivityHeatmapViewModel {
         // Step 4: Save fresh data to cache (only historical, not today)
         for date in missingHeatmapDates {
             if let count = freshHeatmapCounts[date] {
-                cache.saveHeatmapCount(count, for: date)
+                await cache.saveHeatmapCount(count, for: date)
             }
         }
         for date in missingTokenDates {
             if let count = freshTokenCounts[date] {
-                cache.saveTokenCount(count, for: date)
+                await cache.saveTokenCount(count, for: date)
             }
         }
 
