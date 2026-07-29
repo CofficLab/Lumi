@@ -8,6 +8,7 @@ public struct TokenLineChartView: View {
     public let isLoading: Bool
 
     @State private var shimmerPhase: CGFloat = -1.2
+    @State private var hoveredPoint: ActivityDayToken?
 
     private let lineColor = Color(hex: "6db0f0")
     private let areaGradient = LinearGradient(
@@ -77,6 +78,67 @@ public struct TokenLineChartView: View {
                 AxisMarks(position: .leading)
             }
             .chartYScale(domain: 0...maxYValue)
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    ZStack(alignment: .topLeading) {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onContinuousHover { phase in
+                                switch phase {
+                                case let .active(location):
+                                    guard let plotFrameAnchor = proxy.plotFrame else {
+                                        hoveredPoint = nil
+                                        return
+                                    }
+                                    let plotFrame = geometry[plotFrameAnchor]
+                                    let plotX = location.x - plotFrame.origin.x
+                                    guard plotX >= 0, plotX <= plotFrame.width,
+                                          let date: Date = proxy.value(atX: plotX) else {
+                                        hoveredPoint = nil
+                                        return
+                                    }
+                                    hoveredPoint = data.min {
+                                        abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date))
+                                    }
+                                case .ended:
+                                    hoveredPoint = nil
+                                }
+                            }
+
+                        if let hoveredPoint,
+                           let x = proxy.position(forX: hoveredPoint.date),
+                           let y = proxy.position(forY: hoveredPoint.totalTokens),
+                           let plotFrameAnchor = proxy.plotFrame {
+                            let plotFrame = geometry[plotFrameAnchor]
+                            Path { path in
+                                path.move(to: CGPoint(x: x, y: plotFrame.minY))
+                                path.addLine(to: CGPoint(x: x, y: plotFrame.maxY))
+                            }
+                            .stroke(lineColor.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+
+                            Circle()
+                                .fill(lineColor)
+                                .frame(width: 9, height: 9)
+                                .position(x: x, y: y)
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(Self.tooltipDateFormatter.string(from: hoveredPoint.date))
+                                    .font(.system(size: 10, weight: .medium))
+                                Text("X: \(Self.tooltipDateFormatter.string(from: hoveredPoint.date))")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                                Text("Y: \(formatNumber(hoveredPoint.totalTokens)) tokens")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .monospacedDigit()
+                            }
+                            .padding(8)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .fixedSize()
+                            .position(x: min(max(x, 78), max(geometry.size.width - 78, 78)), y: 38)
+                        }
+                    }
+                }
+            }
             .overlay {
                 if isLoading {
                     loadingOverlay
@@ -159,6 +221,13 @@ public struct TokenLineChartView: View {
             return String(value)
         }
     }
+
+    private static let tooltipDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
 }
 
 #Preview("With Data") {
