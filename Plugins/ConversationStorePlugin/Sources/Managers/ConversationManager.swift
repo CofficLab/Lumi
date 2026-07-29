@@ -357,6 +357,25 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
+    // MARK: - Conversation Order
+
+    public func setConversationOrder(_ order: Int, for conversationID: UUID) {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].order = order
+        conversations = conversations
+        notifyConversationsChanged()
+
+        Task {
+            await store?.updateOrder(id: conversationID, order: order)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setConversationOrder: conversation=\(conversationID.uuidString.prefix(8)), order=\(order)")
+        }
+    }
+
     // MARK: - Private
 
     private func updateCurrentTitle() {

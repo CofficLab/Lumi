@@ -21,6 +21,8 @@ public struct ConversationItemView: View, SuperLog {
     public let conversation: ConversationListItem
     /// 删除回调：用户确认删除后调用
     public let onDelete: () -> Void
+    /// 置顶回调：用户点击置顶/取消置顶后调用
+    public let onPin: () -> Void
 
     /// 对话是否正在处理消息（由 ConversationListContext 驱动）
     public var isProcessing: Bool = false
@@ -38,43 +40,54 @@ public struct ConversationItemView: View, SuperLog {
 
     public var body: some View {
         HStack(spacing: 8) {
-            // 对话图标（活跃状态有不同表现）
+            // 对话图标(活跃状态有不同表现)
             ZStack(alignment: .topTrailing) {
-                Image(systemName: "bubble.left.and.bubble.right")
-                    .font(.appMicro)
-                    .foregroundColor(isProcessing ? theme.primary : theme.textTertiary)
-                    .padding(3)
-                    .overlay {
-                        if isProcessing {
-                            PulseRipple(color: theme.primary)
-                        }
-                    }
+                processingIcon
 
                 if !isProcessing, isRecentlyActive {
-                    // 近期活跃：小圆点
+                    // 近期活跃:小圆点
                     RecentActivityIndicator(color: theme.primary)
                 }
             }
 
             // 标题和元信息
             VStack(alignment: .leading, spacing: 4) {
-                // 标题
-                Text(conversation.displayTitle)
-                    .font(.appMicroEmphasized)
-                    .foregroundColor(isProcessing ? theme.primary : theme.textPrimary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+                HStack(spacing: 4) {
+                    // 置顶图标
+                    if conversation.isPinned {
+                        Image(systemName: "pin.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(theme.primary)
+                    }
+
+                    // 标题
+                    Text(conversation.displayTitle)
+                        .font(.appMicroEmphasized)
+                        .foregroundColor(isProcessing ? theme.primary : theme.textPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
 
                 // 时间戳和项目信息
                 metadataSection
 
-                // 第三行：绑定的 LLM 供应商与模型（两者都存在时才显示）
+                // 第三行:绑定的 LLM 供应商与模型(两者都存在时才显示)
                 providerModelLine
             }
 
             Spacer()
         }
+        .background(processingRowBackground)
         .contextMenu {
+            Button {
+                onPin()
+            } label: {
+                Label(
+                    conversation.isPinned ? "Unpin Conversation" : "Pin Conversation",
+                    systemImage: conversation.isPinned ? "pin.slash" : "pin"
+                )
+            }
+            
             Button(role: .destructive) {
                 if Self.verbose, ConversationListPlugin.verbose {
                     ConversationListPlugin.logger.info("\(Self.t)🖱️ 右键菜单唤起：用户点击 Delete - \(conversation.displayTitle)")
@@ -95,6 +108,41 @@ public struct ConversationItemView: View, SuperLog {
         } message: {
             let format = LumiPluginLocalization.string("Are you sure you want to delete \"%@\"? This will permanently remove all messages and cannot be undone.", bundle: .module)
             Text(String(format: format, conversation.displayTitle))
+        }
+    }
+
+    // MARK: - 正在发送视觉子视图
+
+    /// 正在发送中的图标。
+    /// - 使用 SF Symbol 的 `ellipsis.message` 配 `.symbolEffect(.variableColor.iterative.reversing)`,
+    ///   让气泡里的三个点像在"打字中"那样循环变色。
+    /// - 同时叠加 `PulseRipple`,在不支持 symbolEffect 的旧系统上仍能保留视觉提示。
+    @ViewBuilder
+    private var processingIcon: some View {
+        if isProcessing {
+            Image(systemName: "ellipsis.message")
+                .font(.appMicro)
+                .foregroundStyle(theme.primary)
+                .symbolEffect(.variableColor.iterative.reversing, options: .repeating)
+                .padding(3)
+                .overlay {
+                    PulseRipple(color: theme.primary)
+                }
+        } else {
+            Image(systemName: "bubble.left.and.bubble.right")
+                .font(.appMicro)
+                .foregroundColor(theme.textTertiary)
+                .padding(3)
+        }
+    }
+
+    /// 正在发送时,整行背景叠加一层微弱的主题色,让活动状态在密集列表里也一眼可见。
+    @ViewBuilder
+    private var processingRowBackground: some View {
+        if isProcessing {
+            theme.primary.opacity(0.06)
+        } else {
+            Color.clear
         }
     }
 }
@@ -212,7 +260,8 @@ extension ConversationItemView {
 #Preview("会话项 - 默认状态") {
     ConversationItemView(
         conversation: ConversationListItem.example(),
-        onDelete: {}
+        onDelete: {},
+        onPin: {}
     )
     .frame(width: 200)
     .padding()
@@ -222,6 +271,7 @@ extension ConversationItemView {
     ConversationItemView(
         conversation: ConversationListItem.example(),
         onDelete: {},
+        onPin: {},
         isProcessing: true
     )
     .frame(width: 200)
@@ -231,7 +281,18 @@ extension ConversationItemView {
 #Preview("会话项 - 近期活跃") {
     ConversationItemView(
         conversation: ConversationListItem.example(minutesAgo: 2),
-        onDelete: {}
+        onDelete: {},
+        onPin: {}
+    )
+    .frame(width: 200)
+    .padding()
+}
+
+#Preview("会话项 - 置顶") {
+    ConversationItemView(
+        conversation: ConversationListItem.example(order: 1),
+        onDelete: {},
+        onPin: {}
     )
     .frame(width: 200)
     .padding()
@@ -240,7 +301,8 @@ extension ConversationItemView {
 #Preview("会话项 - 无模型信息") {
     ConversationItemView(
         conversation: ConversationListItem.example(providerID: nil, modelName: nil),
-        onDelete: {}
+        onDelete: {},
+        onPin: {}
     )
     .frame(width: 200)
     .padding()
@@ -256,7 +318,8 @@ extension ConversationListItem {
         minutesAgo: Int = 30,
         providerID: String? = "anthropic",
         modelName: String? = "claude-sonnet-4-20250514",
-        messageCount: Int? = 14
+        messageCount: Int? = 14,
+        order: Int = 0
     ) -> ConversationListItem {
         ConversationListItem(
             id: UUID(),
@@ -266,7 +329,8 @@ extension ConversationListItem {
             updatedAt: Date().addingTimeInterval(-Double(minutesAgo) * 60),
             providerID: providerID,
             modelName: modelName,
-            messageCount: messageCount
+            messageCount: messageCount,
+            order: order
         )
     }
 }

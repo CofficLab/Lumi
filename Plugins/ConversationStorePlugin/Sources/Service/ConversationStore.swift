@@ -300,6 +300,44 @@ public actor ConversationStore: SuperLog {
         return save(context, operation: "更新对话偏好")
     }
 
+    /// Update conversation order
+    func updateOrder(id: UUID, order: Int) -> Bool {
+        let context = ModelContext(container)
+        let idString = id.uuidString
+
+        let descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { $0.id == idString }
+        )
+
+        guard let model = try? context.fetch(descriptor).first else {
+            return false
+        }
+
+        model.order = order
+        model.updatedAt = Date().timeIntervalSince1970
+        return save(context, operation: "更新排序")
+    }
+
+    /// Fetch conversations that have a pinned/ordered value, returning their IDs sorted by order
+    func fetchPinnedConversationIDs() -> [(UUID, Int)] {
+        let context = ModelContext(container)
+
+        var descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { $0.order > 0 },
+            sortBy: [SortDescriptor(\.order)]
+        )
+
+        do {
+            let models = try context.fetch(descriptor)
+            return models.compactMap { model in
+                guard let uuid = UUID(uuidString: model.id) else { return nil }
+                return (uuid, model.order)
+            }
+        } catch {
+            return []
+        }
+    }
+
     // MARK: - Delete
 
     /// Delete a conversation by ID

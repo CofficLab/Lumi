@@ -62,6 +62,13 @@ public struct ConversationListView: View, SuperLog {
             refreshVisibleMessageCounts()
         }
         .onChange(of: context.statusVersion, handleStatusVersionChanged)
+        // 订阅发送状态版本号:版本号变化时,列表项的 `isProcessing`
+        // 会重新读取 `context.isConversationProcessing(_:)`,从而让 PulseRipple 等动画生效。
+        .onChange(of: context.sendingVersion) { _, _ in
+            // 不需要做事;依赖 `isProcessing` 的视图节点会因为它读取的 SwiftUI
+            // 依赖(这里就是 context.sendingVersion)变化而自动重渲染。
+            // 这里保留 handler 只是为了明确"我们关注这个信号"。
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
@@ -88,6 +95,7 @@ extension ConversationListView {
                             ConversationItemView(
                                 conversation: conversation,
                                 onDelete: { handleDelete(conversation) },
+                                onPin: { pinConversation(conversation) },
                                 isProcessing: context.isConversationProcessing(conversation.id)
                             )
                             .contentShape(Rectangle())
@@ -373,6 +381,12 @@ extension ConversationListView {
         }
 
         context.switchProject(projectPath: projectPath, reason: "conversationListSelect")
+    }
+
+    private func pinConversation(_ conversation: ConversationListItem) {
+        // Toggle pin state: if currently pinned (order > 0), unpin it; otherwise pin it with order 1
+        let newOrder = conversation.isPinned ? 0 : 1
+        context.setConversationOrder(newOrder, for: conversation.id)
     }
 }
 
