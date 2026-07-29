@@ -69,7 +69,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
         return [
             SettingsTabItem(
                 id: "\(id).tools",
-                title: "Tools",
+                title: LumiPluginLocalization.string("Tools", bundle: .module),
                 systemImage: "wrench.and.screwdriver",
                 order: 50
             ) {

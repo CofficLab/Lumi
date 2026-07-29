@@ -11,6 +11,7 @@ let package = Package(
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/LocalizationKit"),
     ],
     targets: [
         .target(
@@ -19,8 +20,12 @@ let package = Package(
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources/Localizable.xcstrings")
+            ]
         ),
     ]
 )

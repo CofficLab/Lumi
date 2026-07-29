@@ -62,7 +62,7 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
         return [
             SettingsTabItem(
                 id: "\(id).remote-providers",
-                title: "Cloud Providers",
+                title: LumiPluginLocalization.string("Cloud Providers", bundle: .module),
                 systemImage: "cloud",
                 order: 100
             ) {
@@ -70,7 +70,7 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
             },
             SettingsTabItem(
                 id: "\(id).local-providers",
-                title: "Local Providers",
+                title: LumiPluginLocalization.string("Local Providers", bundle: .module),
                 systemImage: "cpu",
                 order: 101
             ) {

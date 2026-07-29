@@ -37,7 +37,7 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
         return [
             SettingsTabItem(
                 id: id,
-                title: name,
+                title: LumiPluginLocalization.string("Activity Heatmap", bundle: .module),
                 systemImage: "chart.bar.xaxis",
                 order: order
             ) {

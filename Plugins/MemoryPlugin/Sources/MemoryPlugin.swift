@@ -67,7 +67,7 @@ public final class MemoryPlugin: LumiPlugin {
         [
             SettingsTabItem(
                 id: "\(id).settings",
-                title: "Memory",
+                title: LumiPluginLocalization.string("Memory", bundle: .module),
                 systemImage: "brain",
                 order: order
             ) {

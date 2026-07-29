@@ -79,7 +79,7 @@ public final class NetworkManagerPlugin: LumiPlugin {
         return [
             SettingsTabItem(
                 id: "\(id).settings",
-                title: "HTTP Logs",
+                title: LumiPluginLocalization.string("HTTP Logs", bundle: .module),
                 systemImage: "arrow.up.arrow.down.circle",
                 order: order
             ) {

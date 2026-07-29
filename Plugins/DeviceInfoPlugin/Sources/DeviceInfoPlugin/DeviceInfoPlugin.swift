@@ -88,7 +88,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
         [
             SettingsTabItem(
                 id: id,
-                title: name,
+                title: LumiPluginLocalization.string("Device Info", bundle: .module),
                 systemImage: "memorychip",
                 order: order
             ) {
