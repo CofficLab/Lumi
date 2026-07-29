@@ -3,33 +3,40 @@ import LumiKernel
 
 /// AskUser 插件桥接器
 ///
-/// 用户做出选择后，通过 NotificationCenter 发送通知，
-/// AskUserResumeObserver 监听通知并恢复 Agent 循环。
+/// 用户做出选择后，直接委托给内核的 AgentTurnManager 恢复 Turn。
 ///
 /// 数据流：
 /// ```
 /// 渲染器用户点击 → AskUserBridge.resume(...)
 ///         ↓
-/// 发送 lumiAskUserDidAnswer 通知
-///         ↓
-/// AskUserResumeObserver 收到通知 → 更新 toolCall result → runTurn 恢复
+/// AgentTurnManager.resumeTurn(...)
 /// ```
 @MainActor
 public final class AskUserBridge: Sendable {
     public static let shared = AskUserBridge()
 
+    private weak var manager: (any AgentTurnManaging)?
+
     private init() {}
 
-    /// 用户做出选择后调用，发送通知触发恢复。
+    public func start(kernel: LumiKernel) {
+        manager = kernel.agentTurnManager
+    }
+
+    /// 用户做出选择后调用，直接触发内核恢复。
     public func resume(conversationId: String, toolCallId: String, answer: String) {
-        NotificationCenter.default.post(
-            name: .lumiAskUserDidAnswer,
-            object: nil,
-            userInfo: [
-                LumiAskUserNotification.conversationIDKey: conversationId,
-                LumiAskUserNotification.toolCallIDKey: toolCallId,
-                LumiAskUserNotification.answerKey: answer,
-            ]
-        )
+        guard let conversationID = UUID(uuidString: conversationId),
+              let manager
+        else { return }
+
+        Task { @MainActor in
+            _ = try? await manager.resumeTurn(
+                in: conversationID,
+                request: AgentTurnResumeRequest(
+                    suspensionID: toolCallId,
+                    answer: answer
+                )
+            )
+        }
     }
 }

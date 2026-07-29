@@ -14,8 +14,7 @@ import SwiftUI
 ///
 /// - `AskUserTool`: LumiAgentTool，实现工具逻辑，检测多选关键词，构建 pending 响应
 /// - `AskUserRowRenderer`: ToolCallRowRenderer，在 awaitingUserResponse 状态下渲染自定义 UI
-/// - `AskUserBridge`: 单例，用户点击后 post `.lumiAskUserDidAnswer` 通知
-/// - `AskUserResumeObserver`: 在 onBoot 时启动，监听通知、覆盖 pending result、重启 turn
+/// - `AskUserBridge`: 单例，用户点击后直接调用内核 AgentTurnManager 恢复 Turn
 @MainActor
 public final class AskUserPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "❓"
@@ -37,8 +36,7 @@ public final class AskUserPlugin: LumiPlugin, SuperLog {
     // MARK: - Lifecycle
 
     public func onBoot(kernel: LumiKernel) async throws {
-        // 启动 AskUserResumeObserver，监听用户回答通知
-        AskUserResumeObserver.shared.start(kernel: kernel)
+        AskUserBridge.shared.start(kernel: kernel)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)AskUserPlugin onBoot")

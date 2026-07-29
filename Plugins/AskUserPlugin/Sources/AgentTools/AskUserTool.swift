@@ -12,11 +12,10 @@ import SuperLogKit
 /// ## 工作流程
 ///
 /// 1. LLM 调用 ask_user 工具
-/// 2. 工具立即返回 `__ASK_USER_PENDING__` 标记 + JSON
-/// 3. AgentTurnRunner 检测到 pending 标记后暂停 turn，状态设为 awaitingUserResponse
+/// 2. 工具返回结构化的 `AgentTurnControl.suspend` + JSON payload
+/// 3. AgentTurnManager 记录暂停状态并结束当前 turn
 /// 4. UI 渲染选择界面，用户点击选项
-/// 5. AskUserBridge 发送 `.lumiAskUserDidAnswer` 通知
-/// 6. AskUserResumeObserver 收到通知后覆盖 pending result 并重新调用 runTurn
+/// 5. AskUserBridge 直接调用 AgentTurnManager.resumeTurn
 /// 7. LLM 收到用户的回答作为 tool result，继续处理
 public struct AskUserTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "❓"
@@ -82,7 +81,35 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         )
 
         let payload = try Self.encodePendingPayload(pendingResponse)
-        return "\(LumiAskUserMarkers.pendingPrefix)\n\(payload)"
+        return payload
+    }
+
+    public func executeResult(
+        arguments: [String: LumiJSONValue],
+        kernel: LumiKernel
+    ) async throws -> LumiToolExecutionResult {
+        let content = try await execute(arguments: arguments, kernel: kernel)
+        guard let data = content.data(using: .utf8),
+              let response = try? JSONDecoder().decode(AskUserPendingResponse.self, from: data),
+              let conversationID = UUID(uuidString: response.conversationId)
+        else {
+            return LumiToolExecutionResult(
+                content: content,
+                isError: content.hasPrefix(LumiAskUserMarkers.errorPrefix)
+            )
+        }
+
+        let suspension = AgentTurnSuspension(
+            suspensionID: response.toolCallId,
+            conversationID: conversationID,
+            toolCallID: response.toolCallId,
+            kind: "userInput",
+            payload: content
+        )
+        return LumiToolExecutionResult(
+            content: content,
+            turnControl: .suspend(suspension)
+        )
     }
 
     // MARK: - Option Resolution

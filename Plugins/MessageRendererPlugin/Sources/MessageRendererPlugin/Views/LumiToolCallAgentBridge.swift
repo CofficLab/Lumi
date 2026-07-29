@@ -16,7 +16,7 @@ extension LumiToolCall {
                     content: lumiResult.content,
                     isError: lumiResult.isError,
                     duration: lumiResult.duration,
-                    awaitingUserResponse: LumiAskUserMarkers.isPendingResponse(lumiResult.content)
+                    awaitingUserResponse: lumiResult.turnControl.isSuspended
                 )
             },
             displayName: displayName

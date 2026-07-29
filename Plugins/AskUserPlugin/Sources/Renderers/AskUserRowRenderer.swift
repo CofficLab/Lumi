@@ -49,10 +49,7 @@ public struct AskUserRowRenderer: ToolCallRowRenderer {
     ///
     /// 暴露为 `static` 以便在没有 `ToolCall` 的单元测试里复用。
     static func parsePendingResponse(from content: String) -> AskUserPendingResponse? {
-        let prefix = "__ASK_USER_PENDING__\n"
-        guard content.hasPrefix(prefix) else { return nil }
-        let jsonString = content.dropFirst(prefix.count)
-        guard let jsonData = jsonString.data(using: .utf8) else { return nil }
+        guard let jsonData = content.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode(AskUserPendingResponse.self, from: jsonData)
     }
 }
