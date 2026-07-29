@@ -76,6 +76,11 @@ public final class ProjectsSyncCoordinator: SuperLog {
         isSyncingFromCoordinator = true
         defer { isSyncingFromCoordinator = false }
 
+        let projects = viewModel.projects.map {
+            ProjectInfo(name: $0.name, path: $0.path, language: $0.language)
+        }
+        project.synchronizeProjects(projects)
+
         // 同步当前项目路径到 kernel
         if let current = viewModel.currentProject {
             try? await project.openProject(at: current.path)
