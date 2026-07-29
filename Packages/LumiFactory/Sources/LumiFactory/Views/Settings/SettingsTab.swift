@@ -4,7 +4,7 @@ import Foundation
 
 /// 设置面板的 tab 选择器。
 ///
-/// 所有设置标签(General / Appearance / About / 插件管理等)均由插件
+/// 所有设置标签(General / Appearance / 插件管理等)均由插件
 /// 通过 `settingsTabItems(kernel:)` 贡献,不再有"宿主内置"特例。
 /// 此处仅保留扁平描述符,供侧边栏渲染。
 typealias SettingsTabID = String
