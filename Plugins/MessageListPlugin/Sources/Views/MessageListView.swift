@@ -81,7 +81,7 @@ struct MessageListView: View, SuperLog {
 
     nonisolated public static let emoji = "💬"
     // Temporarily enabled while diagnosing message-list scroll timing.
-    nonisolated(unsafe) public static var verbose = true
+    nonisolated(unsafe) public static var verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message-list.view")
 
     var body: some View {
