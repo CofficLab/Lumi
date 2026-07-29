@@ -107,16 +107,21 @@ public final class ToolService: ToolManaging {
                     isError: true
                 )
             }
-            let output: String
-            output = try await kernel.withToolExecutionContextState(context) {
-                try await tool.execute(arguments: arguments, kernel: kernel)
+            let executionResult = try await kernel.withToolExecutionContextState(context) {
+                try await tool.executeResult(arguments: arguments, kernel: kernel)
             }
             let images = context.collectImages()
             let duration = Date().timeIntervalSince(startedAt)
             if Self.verbose {
                 Self.logger.info("\(Self.emoji)工具执行完成: \(toolCall.name) (\(String(format: "%.2f", duration * 1000))ms)")
             }
-            return LumiToolResult(content: output, duration: duration, imageAttachments: images)
+            return LumiToolResult(
+                content: executionResult.content,
+                duration: duration,
+                isError: executionResult.isError,
+                imageAttachments: images,
+                turnControl: executionResult.turnControl
+            )
         } catch {
             if Self.verbose {
                 Self.logger.error("\(Self.emoji)工具执行失败: \(toolCall.name) - \(error.localizedDescription)")

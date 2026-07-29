@@ -19,10 +19,7 @@ public struct ToolCallResult: Codable, Sendable, Equatable {
 
     /// 工具正在等待用户回答，Agent 循环应暂停。
     ///
-    /// 当工具（如 `ask_user`）需要用户在 UI 上做出选择时，
-    /// `execute()` 返回 `__ASK_USER_PENDING__` 前缀字符串，
-    /// `ToolCallExecutor` 据此设置此标记为 `true`。
-    /// `AgentTurnService` 检测到后暂停循环，直到用户操作后恢复。
+    /// 由 LumiKernel 的结构化 `AgentTurnControl.suspend` 转换而来。
     public var awaitingUserResponse: Bool
 
     public init(
