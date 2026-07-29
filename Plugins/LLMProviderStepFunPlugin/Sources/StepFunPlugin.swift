@@ -21,7 +21,17 @@ public final class StepFunPlugin: LumiPlugin {
         [StepFunProvider()]
     }
 
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] {
+        [
+            XcodeBuildAgent.definition,
+            BugFixerAgent.definition,
+            CodeReviewAgent.definition,
+            TestWriterAgent.definition,
+            DocWriterAgent.definition,
+            GitCommitWriterAgent.definition,
+        ]
+    }
+
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
