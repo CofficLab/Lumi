@@ -39,11 +39,16 @@ public class MenuBarManagerService: ObservableObject, SuperLog {
     
     // MARK: - Public Methods
     
-    /// 检查辅助功能权限
+    /// 检查辅助功能权限（如果已授权则异步刷新菜单栏项，避免阻塞主线程）。
+    ///
+    /// `AXIsProcessTrustedWithOptions` 同步获取权限状态本身极快，但 `refreshMenuBarItems()`
+    /// 内部调用 `CGWindowListCopyWindowInfo` 会枚举系统所有窗口，在权限系统首次激活或
+    /// 启动时间较长的机器上可能造成明显卡顿。
+    /// 此处直接派发到 `Task` 中执行，让 SwiftUI 先完成本次渲染。
     public func checkPermission() {
         let options = ["AXTrustedCheckOptionPrompt": false] as CFDictionary
         isPermissionGranted = AXIsProcessTrustedWithOptions(options)
-        
+
         if isPermissionGranted {
             refreshMenuBarItems()
         }

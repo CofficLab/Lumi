@@ -11,6 +11,10 @@ public struct ConversationStoreSettingsView: View {
 
     @State private var selectedConversationID: UUID?
     @State private var didSeedSelection = false
+    /// 选中会话的消息列表缓存，避免在 body 中同步调用 `displayMessages`。
+    /// 当会话切换时通过 `.task(id:)` 异步加载并写入此处。
+    @State private var messagesForSelected: [LumiChatMessage] = []
+    @State private var isLoadingMessages = false
 
     public init(kernel: LumiKernel) {
         self._kernel = ObservedObject(wrappedValue: kernel)
@@ -29,11 +33,6 @@ public struct ConversationStoreSettingsView: View {
     private var selectedConversation: LumiConversationSummary? {
         guard let selectedConversationID else { return nil }
         return conversations.first { $0.id == selectedConversationID }
-    }
-
-    private var messagesForSelected: [LumiChatMessage] {
-        guard let id = selectedConversationID else { return [] }
-        return kernel.messageManager?.displayMessages(for: id) ?? []
     }
 
     private var conversationIDs: [UUID] {
@@ -63,6 +62,9 @@ public struct ConversationStoreSettingsView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .task(id: selectedConversationID) {
+            await loadMessages()
         }
         .onAppear {
             seedSelectionIfNeeded()
@@ -232,7 +234,15 @@ public struct ConversationStoreSettingsView: View {
     private var messagesSection: some View {
         let messages = messagesForSelected
         AppSettingsSection(title: "Messages", subtitle: "All \(messages.count) messages in this conversation (read-only)") {
-            if messages.isEmpty {
+            if isLoadingMessages && messages.isEmpty {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Loading messages…")
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+            } else if messages.isEmpty {
                 Text("No messages in this conversation")
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
@@ -316,6 +326,26 @@ public struct ConversationStoreSettingsView: View {
         guard conversations.contains(where: { $0.id == selectedConversationID }) else {
             self.selectedConversationID = conversations.first?.id
             return
+        }
+    }
+
+    // MARK: - Data
+
+    /// 异步加载当前选中会话的消息列表到 `@State`，避免在 body 中同步读取大量消息。
+    ///
+    /// 使用 `withCheckedContinuation` 让出控制权，让 SwiftUI 先渲染 loading 状态，
+    /// 避免在视图出现 / 切换选中会话时阻塞主线程（参考 HTTPExchangeSettingsView 修复模式）。
+    private func loadMessages() async {
+        guard let id = selectedConversationID else {
+            messagesForSelected = []
+            isLoadingMessages = false
+            return
+        }
+        await withCheckedContinuation { continuation in
+            let loaded = kernel.messageManager?.displayMessages(for: id) ?? []
+            messagesForSelected = loaded
+            isLoadingMessages = false
+            continuation.resume()
         }
     }
 
