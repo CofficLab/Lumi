@@ -8,17 +8,20 @@ public struct PluginSettingsScaffold<Content: View>: View {
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey?
     let showHeader: Bool
+    let scrollsContent: Bool
     let content: Content
 
     public init(
         _ title: LocalizedStringKey,
         subtitle: LocalizedStringKey? = nil,
         showHeader: Bool = true,
+        scrollsContent: Bool = true,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.subtitle = subtitle
         self.showHeader = showHeader
+        self.scrollsContent = scrollsContent
         self.content = content()
     }
 
@@ -26,16 +29,18 @@ public struct PluginSettingsScaffold<Content: View>: View {
         title: String,
         subtitle: String? = nil,
         showHeader: Bool = true,
+        scrollsContent: Bool = true,
         @ViewBuilder content: () -> Content
     ) {
         self.title = LocalizedStringKey(title)
         self.subtitle = subtitle.map { LocalizedStringKey($0) }
         self.showHeader = showHeader
+        self.scrollsContent = scrollsContent
         self.content = content()
     }
 
     public var body: some View {
-        AppSettingsContentScaffold(maxContentWidth: nil) {
+        AppSettingsContentScaffold(scrollsContent: scrollsContent, maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 24) {
                 if showHeader {
                     AppSettingsSection(title, subtitle: subtitle) {}

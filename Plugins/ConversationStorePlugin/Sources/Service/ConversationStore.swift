@@ -187,6 +187,66 @@ public actor ConversationStore: SuperLog {
         }
     }
 
+    /// Fetch one conversation page using a keyset cursor.
+    ///
+    /// The cursor is the last item from the previous page. Keyset pagination
+    /// avoids materializing all earlier rows as the conversation table grows.
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil
+    ) -> [LumiConversationSummary] {
+        guard limit > 0 else { return [] }
+
+        let context = ModelContext(container)
+        let cursorTimestamp = beforeUpdatedAt?.timeIntervalSince1970
+        let cursorID = beforeID?.uuidString
+        var descriptor: FetchDescriptor<ConversationModel>
+
+        if let cursorTimestamp, let cursorID {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.updatedAt < cursorTimestamp ||
+                    ($0.updatedAt == cursorTimestamp && $0.id < cursorID)
+                },
+                sortBy: [
+                    SortDescriptor(\.updatedAt, order: .reverse),
+                    SortDescriptor(\.id, order: .reverse),
+                ]
+            )
+        } else {
+            descriptor = FetchDescriptor<ConversationModel>(
+                sortBy: [
+                    SortDescriptor(\.updatedAt, order: .reverse),
+                    SortDescriptor(\.id, order: .reverse),
+                ]
+            )
+        }
+
+        descriptor.fetchLimit = limit
+
+        do {
+            let models = try context.fetch(descriptor)
+            return models.compactMap { $0.toLumiConversationSummary() }
+        } catch {
+            Self.logger.error("\(Self.t)查询对话分页失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// Count conversations without materializing their summaries.
+    func conversationCount() -> Int {
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<ConversationModel>()
+
+        do {
+            return try context.fetchCount(descriptor)
+        } catch {
+            Self.logger.error("\(Self.t)统计对话数量失败：\(error.localizedDescription)")
+            return 0
+        }
+    }
+
     /// Fetch a single conversation by ID
     func fetchConversation(id: UUID) -> LumiConversationSummary? {
         let context = ModelContext(container)
