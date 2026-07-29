@@ -44,6 +44,11 @@ public struct AgentTurnResumeRequest: Sendable, Equatable {
     }
 }
 
+/// Work owned by a parent turn that may complete after the parent has
+/// suspended. The manager starts this work only after the parent suspension has
+/// been persisted, then resumes the parent with the returned answer.
+public typealias AgentTurnChildWork = @MainActor @Sendable () async -> String
+
 /// Control signal returned alongside a tool result.
 public enum AgentTurnControl: Codable, Sendable, Equatable {
     case continueTurn
@@ -99,6 +104,19 @@ public protocol AgentTurnManaging: AnyObject {
         request: AgentTurnResumeRequest
     ) async throws -> AgentTurnOutcome
 
+    /// Register asynchronous work that belongs to a suspended parent turn.
+    ///
+    /// Returning `true` means the manager accepted the work and will start it
+    /// once the corresponding suspension has been committed. Returning `false`
+    /// lets tools fall back to their synchronous behavior when an alternative
+    /// manager does not support child work.
+    @discardableResult
+    func registerChildWork(
+        in conversationID: UUID,
+        suspensionID: String,
+        work: @escaping AgentTurnChildWork
+    ) -> Bool
+
     /// Returns the manager's current state for a conversation.
     func state(for conversationID: UUID) -> AgentTurnState
 
@@ -119,5 +137,14 @@ public extension AgentTurnManaging {
 
     func state(for conversationID: UUID) -> AgentTurnState {
         isRunning(for: conversationID) ? .running : .idle
+    }
+
+    @discardableResult
+    func registerChildWork(
+        in conversationID: UUID,
+        suspensionID: String,
+        work: @escaping AgentTurnChildWork
+    ) -> Bool {
+        false
     }
 }

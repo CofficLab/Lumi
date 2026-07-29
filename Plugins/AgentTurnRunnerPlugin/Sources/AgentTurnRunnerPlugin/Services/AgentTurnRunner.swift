@@ -35,6 +35,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     private var suspensions: [UUID: AgentTurnSuspension] = [:]
     private var turnStates: [UUID: AgentTurnState] = [:]
     private var failedConversations: Set<UUID> = []
+    private var pendingChildWorks: [UUID: [String: AgentTurnChildWork]] = [:]
+    private var activeChildWorks: [UUID: Task<Void, Never>] = [:]
 
     // MARK: - Initialization
 
@@ -93,6 +95,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 turnStates[conversationID] = .suspended(suspension)
             }
             await postTurnFinishedNotification(conversationID: conversationID, reason: .awaitingUserResponse)
+            startChildWorkIfNeeded(for: conversationID)
             return .awaitingUserResponse
         }
 
@@ -151,6 +154,16 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         return try await runTurn(in: conversationID)
     }
 
+    @discardableResult
+    public func registerChildWork(
+        in conversationID: UUID,
+        suspensionID: String,
+        work: @escaping AgentTurnChildWork
+    ) -> Bool {
+        pendingChildWorks[conversationID, default: [:]][suspensionID] = work
+        return true
+    }
+
     public func cancelTurn(in conversationID: UUID) {
         if Self.verbose {
             Self.logger.info("\(Self.t)cancelTurn ➡️ conversationID=\(conversationID.uuidString.prefix(8))…")
@@ -158,6 +171,9 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
         cancelledConversations.insert(conversationID)
         suspensions.removeValue(forKey: conversationID)
+        pendingChildWorks.removeValue(forKey: conversationID)
+        activeChildWorks[conversationID]?.cancel()
+        activeChildWorks.removeValue(forKey: conversationID)
         turnStates[conversationID] = .cancelled
         activeTurnTasks[conversationID]?.cancel()
         activeTurnTasks.removeValue(forKey: conversationID)
@@ -165,6 +181,33 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
     public func isRunning(for conversationID: UUID) -> Bool {
         activeTurnTasks[conversationID] != nil
+    }
+
+    private func startChildWorkIfNeeded(for conversationID: UUID) {
+        guard activeChildWorks[conversationID] == nil,
+              let suspension = suspensions[conversationID],
+              let work = pendingChildWorks[conversationID]?.removeValue(forKey: suspension.suspensionID)
+        else { return }
+
+        if pendingChildWorks[conversationID]?.isEmpty == true {
+            pendingChildWorks.removeValue(forKey: conversationID)
+        }
+
+        let task = Task { @MainActor [weak self] in
+            let answer = await work()
+            guard !Task.isCancelled, let self else { return }
+            activeChildWorks.removeValue(forKey: conversationID)
+            let request = AgentTurnResumeRequest(
+                suspensionID: suspension.suspensionID,
+                answer: answer
+            )
+            if let messageSender = self.kernel?.messageSender {
+                _ = try? await messageSender.resumeTurn(in: conversationID, request: request)
+            } else {
+                _ = try? await self.resumeTurn(in: conversationID, request: request)
+            }
+        }
+        activeChildWorks[conversationID] = task
     }
 
     public func state(for conversationID: UUID) -> AgentTurnState {
@@ -352,7 +395,27 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                     continue
                 }
 
-                let result = await toolManager.execute(toolCall, conversationID: conversationID)
+                var result = await toolManager.execute(toolCall, conversationID: conversationID)
+                // Tool implementations do not receive the outer tool-call ID.
+                // Bind it here before persisting a suspension so a system-owned
+                // child completion can resume the exact parent tool call.
+                if case let .suspend(suspension) = result.turnControl,
+                   suspension.toolCallID == nil {
+                    let boundSuspension = AgentTurnSuspension(
+                        suspensionID: suspension.suspensionID,
+                        conversationID: suspension.conversationID,
+                        toolCallID: toolCall.id,
+                        kind: suspension.kind,
+                        payload: suspension.payload
+                    )
+                    result = LumiToolResult(
+                        content: result.content,
+                        duration: result.duration,
+                        isError: result.isError,
+                        imageAttachments: result.imageAttachments,
+                        turnControl: .suspend(boundSuspension)
+                    )
+                }
                 if Self.verbose {
                     let imageBase64Chars = result.imageAttachments.reduce(0) { $0 + $1.base64Data.count }
                     Self.logger.info("\(Self.t)工具结果 received tool=\(toolCall.name) contentChars=\(result.content.count) images=\(result.imageAttachments.count) imageBase64Chars=\(imageBase64Chars) isError=\(result.isError)")

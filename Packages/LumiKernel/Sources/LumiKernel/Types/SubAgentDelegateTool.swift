@@ -57,6 +57,56 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
         guard let task = arguments["task"]?.stringValue, !task.isEmpty else {
             throw SubAgentError.missingArgument("task")
         }
+        return await runDelegate(task: task, kernel: kernel)
+    }
+
+    @MainActor
+    public func executeResult(
+        arguments: [String: LumiJSONValue],
+        kernel: LumiKernel
+    ) async throws -> LumiToolExecutionResult {
+        try kernel.checkCancellation()
+        guard let task = arguments["task"]?.stringValue, !task.isEmpty else {
+            throw SubAgentError.missingArgument("task")
+        }
+
+        // Prefer a manager-owned child turn. If the installed manager does not
+        // support child work, retain the synchronous behavior for compatibility.
+        guard providerResolver(definition.providerID) != nil,
+              let manager = kernel.agentTurnManager
+        else {
+            return LumiToolExecutionResult(content: await runDelegate(task: task, kernel: kernel))
+        }
+
+        let suspensionID = UUID().uuidString
+        let accepted = manager.registerChildWork(
+            in: kernel.conversationID,
+            suspensionID: suspensionID
+        ) { [self, weak kernel] in
+            guard let kernel else {
+                return "Error: parent kernel was released before sub-agent completion."
+            }
+            return await self.runDelegate(task: task, kernel: kernel)
+        }
+
+        guard accepted else {
+            return LumiToolExecutionResult(content: await runDelegate(task: task, kernel: kernel))
+        }
+
+        let suspension = AgentTurnSuspension(
+            suspensionID: suspensionID,
+            conversationID: kernel.conversationID,
+            kind: "subAgent",
+            payload: "Sub-agent \(definition.displayName) is working. The parent turn will resume when it completes."
+        )
+        return LumiToolExecutionResult(
+            content: suspension.payload,
+            turnControl: .suspend(suspension)
+        )
+    }
+
+    @MainActor
+    private func runDelegate(task: String, kernel: LumiKernel) async -> String {
         guard let provider = providerResolver(definition.providerID) else {
             return "Error: Provider '\(definition.providerID)' not available for sub-agent '\(definition.id)'."
         }
