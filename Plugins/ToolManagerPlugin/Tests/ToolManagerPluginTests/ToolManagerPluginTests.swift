@@ -252,6 +252,23 @@ struct ToolManagerPluginTests {
         #expect(missing.contains("Directory does not exist"))
     }
 
+    @Test("glob finds files under the current search root")
+    func globTool() async throws {
+        let directoryURL = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+        let nested = directoryURL.appendingPathComponent("Sources/Nested", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        try Data("swift".utf8).write(to: nested.appendingPathComponent("Feature.swift"))
+        try Data("text".utf8).write(to: nested.appendingPathComponent("Feature.txt"))
+
+        let result = try await GlobTool().execute(
+            arguments: ["path": .string(directoryURL.path), "pattern": .string("**/*.swift")],
+            kernel: LumiKernel()
+        )
+        #expect(result.contains("Sources/Nested/Feature.swift"))
+        #expect(!result.contains("Feature.txt"))
+    }
+
     @Test("shell tool returns command output and validates arguments")
     func shellTool() async throws {
         let tool = ShellTool()
@@ -374,7 +391,7 @@ struct ToolManagerPluginTests {
         let kernel = LumiKernel()
         #expect(plugin.id == "com.coffic.lumi.plugin.tool-manager")
         #expect(plugin.policy == .alwaysOn)
-        #expect(plugin.agentTools(kernel: kernel).map(\.name) == ["ls", "read_file", "write_file", "edit_file", "run_command"])
+        #expect(plugin.agentTools(kernel: kernel).map(\.name) == ["ls", "glob", "read_file", "write_file", "edit_file", "run_command"])
         #expect(plugin.llmProviders(kernel: kernel).isEmpty)
         #expect(plugin.subAgents(kernel: kernel).isEmpty)
         #expect(plugin.messageRenderers(kernel: kernel).isEmpty)

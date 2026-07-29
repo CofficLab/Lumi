@@ -62,10 +62,15 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
         }
         let tools = resolveTools()
         let runner = SubAgentLoopRunner()
+        let projectPath = kernel.project?.currentProject?.path
+        let contextualSystemPrompt = Self.contextualize(
+            definition.systemPrompt,
+            projectPath: projectPath
+        )
         let result = await runner.run(
             provider: provider,
             model: definition.modelID,
-            systemPrompt: definition.systemPrompt,
+            systemPrompt: contextualSystemPrompt,
             task: task,
             tools: tools,
             toolService: executionToolService,
@@ -114,6 +119,19 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
         case .failed: return "Error: \(result.error ?? "Unknown error")"
         case .maxTurnsReached: return "Max turns reached. Result: \(result.content)"
         }
+    }
+
+    private static func contextualize(_ prompt: String, projectPath: String?) -> String {
+        let path = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let context = path?.isEmpty == false ? path! : "未选择项目（需要路径的工具必须显式提供绝对路径）"
+        return """
+        \(prompt)
+
+        Runtime context:
+        - Current project root: \(context)
+        - File and Git tools must use this absolute project root when their path argument is required.
+        - The available tool names are authoritative. Do not invent tools that are not listed.
+        """
     }
 }
 
@@ -176,6 +194,16 @@ public struct SubAgentLoopRunner {
             }
 
             if assistant.hasInlineToolCallInBody {
+                if let parsed = InlineToolCallParser.parse(
+                    assistant.content,
+                    availableToolNames: Set(tools.map(\.name))
+                ) {
+                    assistant.content = parsed.cleanedContent
+                    assistant.toolCalls = parsed.toolCalls
+                }
+            }
+
+            if assistant.hasInlineToolCallInBody {
                 let nudge = LumiChatMessage(
                     conversationID: conversationID,
                     role: .system,
@@ -186,11 +214,28 @@ public struct SubAgentLoopRunner {
                 do {
                     assistant = try await provider.sendStreaming(retriedRequest) { _ in }
                 } catch {}
+
+                if assistant.hasInlineToolCallInBody,
+                   let parsed = InlineToolCallParser.parse(
+                       assistant.content,
+                       availableToolNames: Set(tools.map(\.name))
+                   ) {
+                    assistant.content = parsed.cleanedContent
+                    assistant.toolCalls = parsed.toolCalls
+                }
             }
 
             messages.append(assistant)
 
             guard let toolCalls = assistant.toolCalls, !toolCalls.isEmpty else {
+                if assistant.hasInlineToolCallInBody {
+                    return SubAgentLoopResult(
+                        content: "",
+                        status: .failed,
+                        duration: Date().timeIntervalSince(start),
+                        error: "子代理返回了无法解析的内联工具调用。请使用结构化工具调用，并仅使用当前工具列表中的工具。"
+                    )
+                }
                 return SubAgentLoopResult(
                     content: assistant.content,
                     status: .completed,

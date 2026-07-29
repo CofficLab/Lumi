@@ -111,20 +111,22 @@ public final class ToolManagerService: ToolManaging {
         }
 
         let startedAt = Date()
+        guard let kernel else {
+            return LumiToolResult(
+                content: "Tool execution failed: kernel is not configured",
+                duration: Date().timeIntervalSince(startedAt),
+                isError: true
+            )
+        }
+        let currentProjectPath = kernel.project?.currentProject?.path
         let executionState = LumiToolExecutionContextState(
             conversationID: conversationID,
             toolCallID: toolCall.id,
-            toolName: toolCall.name
+            toolName: toolCall.name,
+            currentProjectPath: currentProjectPath
         )
         do {
             let arguments = try Self.decodeArguments(toolCall.arguments)
-            guard let kernel else {
-                return LumiToolResult(
-                    content: "Tool execution failed: kernel is not configured",
-                    duration: Date().timeIntervalSince(startedAt),
-                    isError: true
-                )
-            }
             let output = try await kernel.withToolExecutionContextState(executionState) {
                 try await tool.execute(arguments: arguments, kernel: kernel)
             }

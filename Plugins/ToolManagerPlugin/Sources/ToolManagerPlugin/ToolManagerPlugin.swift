@@ -37,6 +37,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
             ListDirectoryTool(),
+            GlobTool(),
             ReadFileTool(),
             WriteFileTool(),
             EditFileTool(),
