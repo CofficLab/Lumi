@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -16,6 +17,7 @@ struct RemoteProviderSettingsPage: View {
     @State private var stats: ModelUsageStatsSnapshot?
     @State private var providerUsage: [String: ProviderDailyTokenUsageSeries] = [:]
     @State private var loadingUsageProviderIDs: Set<String> = []
+    @State private var usageCache: ProviderUsageCache?
 
     private var llmProvider: (any LLMProviderManaging)? {
         kernel.resolveService((any LLMProviderManaging).self)
@@ -40,7 +42,8 @@ struct RemoteProviderSettingsPage: View {
             systemIcon: "cloud.fill",
             localizedProvidersKey: "%lld cloud providers",
             isLocalProvider: { !$0.isLocal },
-            selectedProviderID: $selectedProviderID
+            selectedProviderID: $selectedProviderID,
+            headerAccessory: AnyView(openDataDirectoryButton)
         ) { provider in
             VStack(alignment: .leading, spacing: 32) {
                 ProviderDailyTokenUsageCard(
@@ -70,6 +73,19 @@ struct RemoteProviderSettingsPage: View {
             loadProviderUsage()
             reloadStats()
         }
+    }
+
+    private var openDataDirectoryButton: some View {
+        AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+            openDataDirectory()
+        }
+    }
+
+    private func openDataDirectory() {
+        guard let url = usageCache?.directory
+            ?? kernel.storage?.pluginDataDirectory(for: "LLMProviderManager") else { return }
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        _ = NSWorkspace.shared.open(url)
     }
 
     // MARK: - API Key Section
@@ -149,9 +165,17 @@ struct RemoteProviderSettingsPage: View {
               let messageManager = kernel.messageManager
         else { return }
 
+        let cache = usageCache ?? ProviderUsageCache(
+            storageDirectory: kernel.storage?.pluginDataDirectory(for: "LLMProviderManager")
+        )
+        usageCache = cache
         loadingUsageProviderIDs.insert(providerID)
         Task {
-            let series = await buildProviderUsageSeries(providerID: providerID, messageManager: messageManager)
+            let series = await buildProviderUsageSeries(
+                providerID: providerID,
+                messageManager: messageManager,
+                cache: cache
+            )
             await MainActor.run {
                 providerUsage[providerID] = series
                 loadingUsageProviderIDs.remove(providerID)
@@ -161,7 +185,8 @@ struct RemoteProviderSettingsPage: View {
 
     private func buildProviderUsageSeries(
         providerID: String,
-        messageManager: any MessageManaging
+        messageManager: any MessageManaging,
+        cache: ProviderUsageCache
     ) async -> ProviderDailyTokenUsageSeries {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -170,12 +195,25 @@ struct RemoteProviderSettingsPage: View {
             return ProviderDailyTokenUsageSeries(providerID: providerID, points: [])
         }
 
+        let dates = (0..<days).compactMap { calendar.date(byAdding: .day, value: $0, to: startDay) }
+        let cached = cache.load(providerID: providerID, days: Array(dates.dropLast()))
         var usages: [MessageTokenUsage] = []
-        for offset in 0..<days {
-            guard let day = calendar.date(byAdding: .day, value: offset, to: startDay) else { continue }
-            let usage = await messageManager.fetchTokenUsage(on: day, providerID: providerID, modelName: nil)
+        var cacheMisses: [MessageTokenUsage] = []
+
+        for day in dates {
+            let usage: MessageTokenUsage
+            if day != today, let cachedUsage = cached[day] {
+                usage = cachedUsage
+            } else {
+                usage = await messageManager.fetchTokenUsage(on: day, providerID: providerID, modelName: nil)
+                if day != today {
+                    cacheMisses.append(usage)
+                }
+            }
             usages.append(usage)
         }
+
+        cache.save(cacheMisses, providerID: providerID)
 
         return ProviderDailyTokenUsageSeries.build(providerID: providerID, usages: usages)
     }
