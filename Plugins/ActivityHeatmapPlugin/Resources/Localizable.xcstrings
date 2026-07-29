@@ -213,7 +213,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "日期"
+            "value" : "Date"
           }
         },
         "zh-Hans" : {
@@ -691,7 +691,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "令牌"
+            "value" : "Tokens"
           }
         },
         "zh-Hans" : {

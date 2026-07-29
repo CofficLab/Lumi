@@ -6,7 +6,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld 个项目"
+            "value" : "%lld projects"
           }
         },
         "zh-Hans" : {
@@ -40,7 +40,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "+%lld 更多"
+            "value" : "+%lld more"
           }
         },
         "zh-Hans" : {
@@ -74,7 +74,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "活跃"
+            "value" : "Active"
           }
         },
         "zh-Hans" : {
@@ -246,7 +246,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "当前"
+            "value" : "Current"
           }
         },
         "zh-Hans" : {
@@ -280,7 +280,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "错误"
+            "value" : "Error"
           }
         },
         "zh-Hans" : {
@@ -452,7 +452,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在加载已打开的文件…"
+            "value" : "Loading opened files…"
           }
         },
         "zh-Hans" : {
@@ -520,7 +520,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未记录已打开的文件"
+            "value" : "No opened files recorded"
           }
         },
         "zh-Hans" : {
@@ -554,7 +554,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正常"
+            "value" : "OK"
           }
         },
         "zh-Hans" : {
