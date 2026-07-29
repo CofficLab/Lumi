@@ -24,7 +24,11 @@ public struct RAGSettingsView: View, SuperLog {
     }
 
     public var body: some View {
-        AppSettingsContentScaffold(maxContentWidth: nil) {
+        PluginSettingsScaffold(
+            title: LumiPluginLocalization.string("Project RAG", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Enable natural language queries over your project codebase using a vector database.", bundle: .module),
+            showHeader: false
+        ) {
             VStack(alignment: .leading, spacing: 24) {
                 header
 

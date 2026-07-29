@@ -40,28 +40,27 @@ public struct ConversationStoreSettingsView: View {
     }
 
     public var body: some View {
-        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
-            VStack(alignment: .leading, spacing: 14) {
-                header
+        PluginSettingsScaffold(
+            title: LumiPluginLocalization.string("Conversation Store", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Browse and inspect stored conversations", bundle: .module),
+            showHeader: false
+        ) {
+            HStack(spacing: 0) {
+                sidebar
+                    .frame(width: 340)
+                    .frame(maxHeight: .infinity)
 
-                HStack(spacing: 0) {
-                    sidebar
-                        .frame(width: 340)
-                        .frame(maxHeight: .infinity)
+                AppDivider(.vertical)
 
-                    AppDivider(.vertical)
-
-                    detailPane
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-                .frame(minHeight: 560, maxHeight: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.divider, lineWidth: 1)
-                }
+                detailPane
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .frame(minHeight: 560, maxHeight: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(theme.divider, lineWidth: 1)
+            }
         }
         .task(id: selectedConversationID) {
             await loadMessages()
@@ -74,9 +73,9 @@ public struct ConversationStoreSettingsView: View {
         }
     }
 
-    // MARK: - Header
+    // MARK: - Sidebar Header
 
-    private var header: some View {
+    private var sidebarHeader: some View {
         HStack(spacing: 10) {
             Label("\(conversations.count) conversations", systemImage: "bubble.left.and.bubble.right")
             if let selectedConversation {
@@ -89,12 +88,17 @@ public struct ConversationStoreSettingsView: View {
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(theme.background)
     }
 
     // MARK: - Sidebar
 
     private var sidebar: some View {
         VStack(spacing: 0) {
+            sidebarHeader
+
             if conversations.isEmpty {
                 AppEmptyState(
                     icon: "bubble.left.and.bubble.right",

@@ -20,13 +20,19 @@ public struct IdleTimeSettingsView: View {
     }
 
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                header
+        PluginSettingsScaffold(
+            title: LumiPluginLocalization.string("Idle Time", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Track your activity patterns and detect rest windows", bundle: .module),
+            showHeader: false
+        ) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    header
 
-                IdlePopoverView(snapshot: vm.snapshot)
+                    IdlePopoverView(snapshot: vm.snapshot)
+                }
+                .padding(20)
             }
-            .padding(20)
         }
         .frame(minWidth: 520, minHeight: 440)
     }

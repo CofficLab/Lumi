@@ -26,10 +26,12 @@ public struct HTTPExchangeSettingsView: View {
     }
 
     public var body: some View {
-        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+        PluginSettingsScaffold(
+            title: LumiPluginLocalization.string("HTTP Exchange", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Inspect all HTTP requests and responses made by Lumi", bundle: .module),
+            showHeader: false
+        ) {
             VStack(alignment: .leading, spacing: 14) {
-                header
-
                 requestActivity
 
                 HStack(spacing: 0) {
@@ -49,7 +51,6 @@ public struct HTTPExchangeSettingsView: View {
                         .strokeBorder(theme.divider, lineWidth: 1)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .task {
             await reloadAsync()
@@ -85,7 +86,7 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
-    private var header: some View {
+    private var sidebarHeader: some View {
         HStack(spacing: 10) {
             Label("\(records.count) " + LumiPluginLocalization.string("HTTP exchanges", bundle: .module), systemImage: "arrow.up.arrow.down.circle")
             if let selectedRecord {
@@ -102,10 +103,15 @@ public struct HTTPExchangeSettingsView: View {
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(theme.background)
     }
 
     private var sidebar: some View {
         VStack(spacing: 0) {
+            sidebarHeader
+
             if isLoading {
                 VStack(spacing: 12) {
                     ProgressView()

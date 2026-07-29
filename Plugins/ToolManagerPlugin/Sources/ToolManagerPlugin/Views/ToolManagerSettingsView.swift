@@ -19,14 +19,18 @@ public struct ToolManagerSettingsView: View {
     }
 
     public var body: some View {
-        AppSettingsContentScaffold(maxContentWidth: nil) {
+        PluginSettingsScaffold(
+            title: LumiPluginLocalization.string("Tool Manager", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Manage and inspect available agent tools", bundle: .module),
+            showHeader: false
+        ) {
             VStack(alignment: .leading, spacing: 24) {
                 if groups.isEmpty {
                     // 仅在用户实际打开设置、内核中确实没有任何工具时才显示空状态
                     AppEmptyState(
                         icon: "wrench.and.screwdriver",
-                        title: "No Tools Registered",
-                        description: "No tools are currently registered in the kernel. Enable plugins to make tools available to the LLM."
+                        title: LumiPluginLocalization.string("No Tools Registered", bundle: .module),
+                        description: LumiPluginLocalization.string("No tools are currently registered in the kernel. Enable plugins to make tools available to the LLM.", bundle: .module)
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {

@@ -15,9 +15,14 @@ public struct CodexLocalProviderSettingsView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            cliStatusCard
-            modelListCard
+        PluginSettingsScaffold(
+            title: "Codex Local Provider",
+            subtitle: "通过本地 Codex 命令行调用 OpenAI 模型"
+        ) {
+            VStack(alignment: .leading, spacing: 24) {
+                cliStatusCard
+                modelListCard
+            }
         }
     }
 

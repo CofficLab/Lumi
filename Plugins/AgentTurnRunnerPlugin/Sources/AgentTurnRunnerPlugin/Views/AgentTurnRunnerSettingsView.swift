@@ -31,35 +31,59 @@ public struct AgentTurnRunnerSettingsView: View {
     }
 
     public var body: some View {
-        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
-            VStack(alignment: .leading, spacing: 14) {
-                header
+        PluginSettingsScaffold(
+            title: AgentTurnRunnerLocalization.string("Agent Turn Runner"),
+            subtitle: AgentTurnRunnerLocalization.string("Inspect all LLM requests sent by Lumi"),
+            showHeader: false
+        ) {
+            HStack(spacing: 0) {
+                sidebar
+                    .frame(width: 360)
+                    .frame(maxHeight: .infinity)
 
-                HStack(spacing: 0) {
-                    sidebar
-                        .frame(width: 360)
-                        .frame(maxHeight: .infinity)
+                AppDivider(.vertical)
 
-                    AppDivider(.vertical)
-
-                    detailPane
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-                .frame(minHeight: 560, maxHeight: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.divider, lineWidth: 1)
-                }
+                detailPane
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .frame(minHeight: 560, maxHeight: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(theme.divider, lineWidth: 1)
+            }
         }
         .task { await reload() }
     }
 
-    // MARK: - Header
+    // MARK: - Header (integrated into sidebar header)
 
-    private var header: some View {
+    private var sidebar: some View {
+        VStack(spacing: 0) {
+            sidebarHeader
+
+            if records.isEmpty {
+                AppEmptyState(
+                    icon: "paperplane",
+                    title: AgentTurnRunnerLocalization.string("No sent requests")
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(sortedRecords) { record in
+                            recordRow(record)
+                        }
+                    }
+                    .padding(8)
+                }
+                .frame(maxHeight: .infinity)
+            }
+        }
+        .appSurface(style: .panel, cornerRadius: 0)
+    }
+
+    private var sidebarHeader: some View {
         HStack(spacing: 10) {
             Label(
                 AgentTurnRunnerLocalization.format("Sent Requests", records.count),
@@ -84,31 +108,9 @@ public struct AgentTurnRunnerSettingsView: View {
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)
-    }
-
-    // MARK: - Sidebar
-
-    private var sidebar: some View {
-        VStack(spacing: 0) {
-            if records.isEmpty {
-                AppEmptyState(
-                    icon: "paperplane",
-                    title: AgentTurnRunnerLocalization.string("No sent requests")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 4) {
-                        ForEach(sortedRecords) { record in
-                            recordRow(record)
-                        }
-                    }
-                    .padding(8)
-                }
-                .frame(maxHeight: .infinity)
-            }
-        }
-        .appSurface(style: .panel, cornerRadius: 0)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(theme.background)
     }
 
     private func recordRow(_ record: AgentTurnRecordDTO) -> some View {
