@@ -8,6 +8,10 @@ import os
 ///
 /// 提供 SettingsProviding 服务的默认实现。
 /// 负责管理所有插件的设置标签项和 LLM 提供商设置项的注册和查询。
+///
+/// 同时贡献两个"应用基础设置"标签:General / Appearance。
+/// 这些页面过去是 `LumiFactory` 硬编码的内置标签;现在统一改为由插件贡献,
+/// 使设置界面的所有标签都走同一条 `settingsTabItems(kernel:)` 链路。
 @MainActor
 public final class SettingsPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.settings")
@@ -18,8 +22,8 @@ public final class SettingsPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.settings"
     public let name = "Settings Plugin"
-    public let order = 20
-	public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
+    public let order = 1
+    public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
 
     // MARK: - State
 
@@ -39,6 +43,44 @@ public final class SettingsPlugin: LumiPlugin, SuperLog {
         try SettingsOnReadyHook().execute(kernel)
     }
 
+    // MARK: - Settings Contributions
+
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        [
+            SettingsTabItem(
+                id: "app.general",
+                title: LumiPluginLocalization.string("General", bundle: .module),
+                systemImage: "gearshape",
+                order: 0
+            ) {
+                GeneralSettingsView()
+            },
+            SettingsTabItem(
+                id: "app.appearance",
+                title: LumiPluginLocalization.string("Appearance", bundle: .module),
+                systemImage: "paintbrush",
+                order: 1
+            ) {
+                AppearanceSettingsView(kernel: kernel)
+            },
+        ]
+    }
+
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
+        AnyView(
+            VStack(alignment: .leading, spacing: 6) {
+                Text(LumiPluginLocalization.string("Settings Plugin", bundle: .module))
+                    .font(.headline)
+                Text(LumiPluginLocalization.string(
+                    "Provides the General and Appearance settings tabs.",
+                    bundle: .module
+                ))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
+        )
+    }
 
     // MARK: - LumiPlugin stubs
 
@@ -59,9 +101,7 @@ public final class SettingsPlugin: LumiPlugin, SuperLog {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
-    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }

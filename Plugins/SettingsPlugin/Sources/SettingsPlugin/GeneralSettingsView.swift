@@ -9,16 +9,16 @@ struct GeneralSettingsView: View {
         AppSettingsContentScaffold(maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 24) {
                 AppSettingSection(
-                    title: LumiLocalization.string("Onboarding", bundle: .module),
+                    title: LumiPluginLocalization.string("Onboarding", bundle: .module),
                     titleAlignment: .leading
                 ) {
                     AppSettingRow(
-                        title: LumiLocalization.string("Replay Onboarding", bundle: .module),
-                        description: LumiLocalization.string("Replay the first-run onboarding flow.", bundle: .module),
+                        title: LumiPluginLocalization.string("Replay Onboarding", bundle: .module),
+                        description: LumiPluginLocalization.string("Replay the first-run onboarding flow.", bundle: .module),
                         icon: "graduationcap"
                     ) {
                         AppButton(
-                            LumiLocalization.string("Start", bundle: .module),
+                            LumiPluginLocalization.string("Start", bundle: .module),
                             systemImage: "arrow.right",
                             style: .secondary,
                             size: .small

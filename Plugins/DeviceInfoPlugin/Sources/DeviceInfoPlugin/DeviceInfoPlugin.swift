@@ -15,7 +15,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.device-info"
     public let name = "Device Info Plugin"
-    public let order = 200
+    public let order = 6
     public let policy: LumiPluginPolicy = .alwaysOn // 功能插件
 
     public init() {}

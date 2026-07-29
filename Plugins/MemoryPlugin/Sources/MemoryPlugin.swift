@@ -17,7 +17,7 @@ public final class MemoryPlugin: LumiPlugin {
 
     public let id = "com.coffic.lumi.plugin.memory"
     public let name = "Memory"
-    public let order = 15
+    public let order = 4
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .stable

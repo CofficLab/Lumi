@@ -92,11 +92,13 @@ struct ConversationSpeedToolbarView: View {
         // Capture detail data for the popover.
         modelName = latestSpeedMessage.modelName
         outputTokens = latestSpeedMessage.outputTokenCount ?? Int(latestSpeedMessage.metadata["outputTokens"] ?? "")
-        streamingDurationMs = latestSpeedMessage.streamingDurationMs ?? Double(latestSpeedMessage.metadata["streamingDurationMs"] ?? "")
+        streamingDurationMs = latestSpeedMessage.conversationSpeedDurationMs
         timeToFirstTokenMs = latestSpeedMessage.timeToFirstTokenMs ?? Double(latestSpeedMessage.metadata["timeToFirstTokenMs"] ?? "")
         providerID = latestSpeedMessage.providerID
 
-        // Try tokensPerSecond property first
+        // Prefer the effective duration-based value. A provider may deliver the
+        // whole response in one chunk, making the post-first-token duration only
+        // a few milliseconds even though the user waited several seconds.
         if let tps = history.last?.tokensPerSecond ?? lastMessage.conversationSpeedTokensPerSecond {
             if ConversationSpeedPlugin.verbose {
                 ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)tokensPerSecond from property: \(tps)")
@@ -155,19 +157,39 @@ struct ConversationSpeedSample: Identifiable, Equatable {
 }
 
 private extension LumiChatMessage {
-    var conversationSpeedTokensPerSecond: Double? {
-        if let tokensPerSecond {
-            return tokensPerSecond
-        }
+    /// Duration used for the user-facing speed metric.
+    ///
+    /// `streamingDurationMs` starts at the first token. When a provider buffers
+    /// the response and delivers it in one chunk, that value can be nearly zero.
+    /// The full request latency better represents the speed perceived by the
+    /// user in that case.
+    var conversationSpeedDurationMs: Double? {
+        let streamingDuration = streamingDurationMs
+            ?? Double(metadata["streamingDurationMs"] ?? "")
+        let latency = latencyMs
+            ?? Double(metadata["latencyMs"] ?? "")
 
-        guard let outputTokensString = metadata["outputTokens"],
-              let streamingDurationString = metadata["streamingDurationMs"],
-              let outputTokens = Int(outputTokensString),
-              let streamingDurationMs = Double(streamingDurationString),
-              streamingDurationMs > 0 else {
+        switch (streamingDuration, latency) {
+        case let (streaming?, latency?) where streaming > 0 && latency > 0:
+            return max(streaming, latency)
+        case let (streaming?, _) where streaming > 0:
+            return streaming
+        case let (_, latency?) where latency > 0:
+            return latency
+        default:
             return nil
         }
-        return Double(outputTokens) / (streamingDurationMs / 1000.0)
+    }
+
+    var conversationSpeedTokensPerSecond: Double? {
+        let outputTokens = outputTokenCount
+            ?? Int(metadata["outputTokens"] ?? "")
+        guard let outputTokens,
+              let durationMs = conversationSpeedDurationMs,
+              durationMs > 0 else {
+            return nil
+        }
+        return Double(outputTokens) / (durationMs / 1000.0)
     }
 }
 

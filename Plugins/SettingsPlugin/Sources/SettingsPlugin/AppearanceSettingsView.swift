@@ -79,12 +79,12 @@ struct AppearanceSettingsView: View {
     private var headerStats: some View {
         HStack(spacing: 10) {
             Label(
-                String(format: LumiLocalization.string("%lld Themes", bundle: .module), themes.count),
+                String(format: LumiPluginLocalization.string("%lld Themes", bundle: .module), themes.count),
                 systemImage: "paintbrush"
             )
             if let activeID = themeRegistry.selectedThemeId,
                let active = themes.first(where: { $0.id == activeID }) {
-                Text(String(format: LumiLocalization.string("Current: %@", bundle: .module), active.displayName))
+                Text(String(format: LumiPluginLocalization.string("Current: %@", bundle: .module), active.displayName))
             }
             Spacer()
         }
@@ -97,7 +97,7 @@ struct AppearanceSettingsView: View {
             VStack(spacing: 10) {
                 AppSearchBar(
                     text: $searchText,
-                    placeholder: LocalizedStringKey(LumiLocalization.string("Search Themes", bundle: .module))
+                    placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search Themes", bundle: .module))
                 )
             }
             .padding(12)
@@ -113,7 +113,7 @@ struct AppearanceSettingsView: View {
                     if filteredThemes.isEmpty {
                         AppEmptyState(
                             icon: "magnifyingglass",
-                            title: LumiLocalization.string("No themes found", bundle: .module)
+                            title: LumiPluginLocalization.string("No themes found", bundle: .module)
                         )
                         .padding(.vertical, 32)
                     }
@@ -176,7 +176,7 @@ struct AppearanceSettingsView: View {
         } else {
             AppEmptyState(
                 icon: "paintbrush",
-                title: LumiLocalization.string("Select a theme", bundle: .module)
+                title: LumiPluginLocalization.string("Select a theme", bundle: .module)
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .appSurface(style: .panel, cornerRadius: 0)
@@ -239,10 +239,10 @@ private struct ThemeSettingsDetailView: View {
         }
         .overlay(alignment: .topTrailing) {
             if isActive {
-                AppTag(LumiLocalization.string("Active", bundle: .module), style: .accent)
+                AppTag(LumiPluginLocalization.string("Active", bundle: .module), style: .accent)
             } else {
                 AppButton(
-                    LumiLocalization.string("Use This Theme", bundle: .module),
+                    LumiPluginLocalization.string("Use This Theme", bundle: .module),
                     systemImage: "paintbrush.fill",
                     style: .primary,
                     size: .small,
@@ -255,11 +255,11 @@ private struct ThemeSettingsDetailView: View {
     private var appearanceLabel: String {
         switch contribution.appearanceKind {
         case .dark:
-            return LumiLocalization.string("Dark Theme", bundle: .module)
+            return LumiPluginLocalization.string("Dark Theme", bundle: .module)
         case .light:
-            return LumiLocalization.string("Light Theme", bundle: .module)
+            return LumiPluginLocalization.string("Light Theme", bundle: .module)
         case .system:
-            return LumiLocalization.string("Follow System Appearance", bundle: .module)
+            return LumiPluginLocalization.string("Follow System Appearance", bundle: .module)
         }
     }
 }
@@ -270,72 +270,72 @@ private struct ThemeComponentPreview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             AppSettingsSection(
-                title: LumiLocalization.string("Component Preview", bundle: .module),
-                subtitle: LumiLocalization.string("Common UI components under this theme", bundle: .module),
+                title: LumiPluginLocalization.string("Component Preview", bundle: .module),
+                subtitle: LumiPluginLocalization.string("Common UI components under this theme", bundle: .module),
                 spacing: 12
             ) {
                 VStack(alignment: .leading, spacing: 18) {
-                    previewGroup(title: Text(LumiLocalization.string("Typography", bundle: .module))) {
+                    previewGroup(title: Text(LumiPluginLocalization.string("Typography", bundle: .module))) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(LumiLocalization.string("Primary Text", bundle: .module))
+                            Text(LumiPluginLocalization.string("Primary Text", bundle: .module))
                                 .font(.appBody)
                                 .foregroundStyle(theme.textPrimary)
-                            Text(LumiLocalization.string("Secondary Text", bundle: .module))
+                            Text(LumiPluginLocalization.string("Secondary Text", bundle: .module))
                                 .font(.appCaption)
                                 .foregroundStyle(theme.textSecondary)
-                            Text(LumiLocalization.string("Tertiary Text", bundle: .module))
+                            Text(LumiPluginLocalization.string("Tertiary Text", bundle: .module))
                                 .font(.appMicro)
                                 .foregroundStyle(theme.textTertiary)
                         }
                     }
 
-                    previewGroup(title: Text(LumiLocalization.string("Buttons", bundle: .module))) {
+                    previewGroup(title: Text(LumiPluginLocalization.string("Buttons", bundle: .module))) {
                         HStack(spacing: 8) {
                             previewButton(
-                                Text(LumiLocalization.string("Primary", bundle: .module)),
+                                Text(LumiPluginLocalization.string("Primary", bundle: .module)),
                                 background: theme.primary,
                                 foreground: .white
                             )
                             previewButton(
-                                Text(LumiLocalization.string("Secondary", bundle: .module)),
+                                Text(LumiPluginLocalization.string("Secondary", bundle: .module)),
                                 background: theme.surface,
                                 foreground: theme.textPrimary,
                                 border: theme.divider
                             )
                             previewButton(
-                                Text(LumiLocalization.string("Destructive", bundle: .module)),
+                                Text(LumiPluginLocalization.string("Destructive", bundle: .module)),
                                 background: theme.error.opacity(0.15),
                                 foreground: theme.error
                             )
                         }
                     }
 
-                    previewGroup(title: Text(LumiLocalization.string("Tags", bundle: .module))) {
+                    previewGroup(title: Text(LumiPluginLocalization.string("Tags", bundle: .module))) {
                         HStack(spacing: 8) {
                             previewTag(
-                                Text(LumiLocalization.string("Accent", bundle: .module)),
+                                Text(LumiPluginLocalization.string("Accent", bundle: .module)),
                                 background: theme.primary.opacity(0.15),
                                 foreground: theme.primary
                             )
                             previewTag(
-                                Text(LumiLocalization.string("Subtle", bundle: .module)),
+                                Text(LumiPluginLocalization.string("Subtle", bundle: .module)),
                                 background: theme.elevatedSurface,
                                 foreground: theme.textSecondary
                             )
                             previewTag(
-                                Text(LumiLocalization.string("Success", bundle: .module)),
+                                Text(LumiPluginLocalization.string("Success", bundle: .module)),
                                 background: theme.success.opacity(0.15),
                                 foreground: theme.success
                             )
                         }
                     }
 
-                    previewGroup(title: Text(LumiLocalization.string("Card", bundle: .module))) {
+                    previewGroup(title: Text(LumiPluginLocalization.string("Card", bundle: .module))) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(LumiLocalization.string("Card Title", bundle: .module))
+                            Text(LumiPluginLocalization.string("Card Title", bundle: .module))
                                 .font(.appBodyEmphasized)
                                 .foregroundStyle(theme.textPrimary)
-                            Text(LumiLocalization.string("Description text showing surface color and elevation.", bundle: .module))
+                            Text(LumiPluginLocalization.string("Description text showing surface color and elevation.", bundle: .module))
                                 .font(.appCaption)
                                 .foregroundStyle(theme.textSecondary)
                         }
@@ -349,22 +349,22 @@ private struct ThemeComponentPreview: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
 
-                    previewGroup(title: Text(LumiLocalization.string("Color Swatches", bundle: .module))) {
+                    previewGroup(title: Text(LumiPluginLocalization.string("Color Swatches", bundle: .module))) {
                         HStack(spacing: 10) {
                             colorSwatch(
-                                Text(LumiLocalization.string("Primary", bundle: .module)),
+                                Text(LumiPluginLocalization.string("Primary", bundle: .module)),
                                 color: theme.primary
                             )
                             colorSwatch(
-                                Text(LumiLocalization.string("Success", bundle: .module)),
+                                Text(LumiPluginLocalization.string("Success", bundle: .module)),
                                 color: theme.success
                             )
                             colorSwatch(
-                                Text(LumiLocalization.string("Warning", bundle: .module)),
+                                Text(LumiPluginLocalization.string("Warning", bundle: .module)),
                                 color: theme.warning
                             )
                             colorSwatch(
-                                Text(LumiLocalization.string("Error", bundle: .module)),
+                                Text(LumiPluginLocalization.string("Error", bundle: .module)),
                                 color: theme.error
                             )
                         }

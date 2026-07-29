@@ -47,7 +47,6 @@ import Foundation
 import GitHubPlugin
 import GitPlugin
 import GoalTaskPlugin
-import AppSettingsPlugin
 import HostsManagerPlugin
 import IdleTimePlugin
 import InputPlugin
@@ -156,7 +155,7 @@ public enum PluginService {
             EditorKernelPlugin(),
             EditorProviderPlugin(),
             // App settings tabs (General/Appearance) — order 1, must lead the sidebar
-            AppSettingsPlugin(),
+
             // LLM Providers (order 91-110)
             AiRouterPlugin(),
             DeepSeekPlugin(),

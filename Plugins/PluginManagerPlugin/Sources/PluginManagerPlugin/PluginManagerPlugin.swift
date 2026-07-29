@@ -36,7 +36,7 @@ public final class PluginManagerPlugin: LumiPlugin {
                 id: id,
                 title: PluginManagerText.string(PluginManagerText.plugins),
                 systemImage: "puzzlepiece.extension",
-                order: 5
+                order: 3
             ) {
                 PluginManagementView(kernel: kernel)
             },

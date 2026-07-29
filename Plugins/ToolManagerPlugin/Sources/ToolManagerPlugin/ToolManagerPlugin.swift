@@ -71,7 +71,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
                 id: "\(id).tools",
                 title: LumiPluginLocalization.string("Tools", bundle: .module),
                 systemImage: "wrench.and.screwdriver",
-                order: 50
+                order: 6
             ) {
                 ToolManagerSettingsView(kernel: kernel)
             },
