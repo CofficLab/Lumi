@@ -10,7 +10,14 @@ public struct HTTPExchangeSettingsView: View {
 
     @State private var records: [HTTPExchangeRecord] = []
     @State private var isLoading = true
+    @State private var isReloading = false
+    @State private var isLoadingMore = false
+    @State private var hasMoreRecords = true
+    @State private var totalRecordCount: Int?
     @State private var selectedRecordID: UUID?
+    @State private var dailyCountSeries = HTTPExchangeDailyCountSeries(points: [])
+
+    private let pageSize = 40
 
     public init(store: HTTPExchangeStore) {
         self.store = store
@@ -21,17 +28,27 @@ public struct HTTPExchangeSettingsView: View {
         return records.first { $0.id == selectedRecordID }
     }
 
-    private var dailyCountSeries: HTTPExchangeDailyCountSeries {
-        HTTPExchangeDailyCountSeries.build(records: records)
-    }
-
     public var body: some View {
         PluginSettingsScaffold(
             title: LumiPluginLocalization.string("HTTP Exchange", bundle: .module),
             subtitle: LumiPluginLocalization.string("Inspect all HTTP requests and responses made by Lumi", bundle: .module),
-            showHeader: false
+            showHeader: false,
+            scrollsContent: false
         ) {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(spacing: 12) {
+                HStack {
+                    Spacer()
+                    Label(totalCountLabel, systemImage: "arrow.up.arrow.down.circle")
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                    AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
+                        Task { await reloadAsync() }
+                    }
+                    AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", size: .small) {
+                        NSWorkspace.shared.open(store.directory)
+                    }
+                }
+
                 requestActivity
 
                 HStack(spacing: 0) {
@@ -44,13 +61,14 @@ public struct HTTPExchangeSettingsView: View {
                     detailPane
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(minHeight: 560, maxHeight: .infinity)
+                .frame(maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .strokeBorder(theme.divider, lineWidth: 1)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .task {
             await reloadAsync()
@@ -86,29 +104,9 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
-    private var sidebarHeader: some View {
-        HStack(spacing: 10) {
-            Label("\(records.count) " + LumiPluginLocalization.string("HTTP exchanges", bundle: .module), systemImage: "arrow.up.arrow.down.circle")
-            Spacer()
-            AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
-                Task { await reloadAsync() }
-            }
-            AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", size: .small) {
-                NSWorkspace.shared.open(store.directory)
-            }
-        }
-        .font(.appCaption)
-        .foregroundStyle(theme.textSecondary)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(theme.background)
-    }
-
     private var sidebar: some View {
         VStack(spacing: 0) {
-            sidebarHeader
-
-            if isLoading {
+            if isLoading && records.isEmpty {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.small)
@@ -128,11 +126,22 @@ public struct HTTPExchangeSettingsView: View {
                     LazyVStack(spacing: 4) {
                         ForEach(records) { record in
                             recordRow(record)
+                                .onAppear {
+                                    if record.id == records.last?.id {
+                                        Task { await loadMoreAsync() }
+                                    }
+                                }
                         }
                     }
                     .padding(8)
                 }
                 .frame(maxHeight: .infinity)
+
+                if isLoadingMore {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.bottom, 8)
+                }
             }
         }
         .appSurface(style: .panel, cornerRadius: 0)
@@ -152,7 +161,7 @@ public struct HTTPExchangeSettingsView: View {
                         .font(.appMicro)
                         .foregroundStyle(statusColor(for: record))
                     Spacer(minLength: 0)
-                    Text(relativeDate(record.startedAt))
+                    Text(formattedDate(record.startedAt))
                         .font(.appMicro)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -245,7 +254,7 @@ public struct HTTPExchangeSettingsView: View {
                             .foregroundStyle(theme.textSecondary)
                     }
                     if let details = record.errorDetailsJSON {
-                        codeBlock(prettyJSON(details))
+                        HTTPExchangePayloadView(data: details, fallback: "{}")
                     }
                 }
             }
@@ -263,21 +272,8 @@ public struct HTTPExchangeSettingsView: View {
 
     private func payloadSection(title: String, subtitle: String, data: Data?, fallback: String) -> some View {
         AppSettingsSection(title: title, subtitle: subtitle) {
-            codeBlock(data.map(payloadText) ?? fallback)
+            HTTPExchangePayloadView(data: data, fallback: fallback)
         }
-    }
-
-    private func codeBlock(_ text: String) -> some View {
-        ScrollView([.horizontal, .vertical]) {
-            Text(text)
-                .font(.system(.callout, design: .monospaced))
-                .foregroundStyle(theme.textPrimary)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-        }
-        .frame(minHeight: 70, maxHeight: 260)
-        .background(theme.textSecondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
     private func detailRow(title: String, icon: String, value: String, monospace: Bool = false) -> some View {
@@ -294,18 +290,48 @@ public struct HTTPExchangeSettingsView: View {
     }
 
     private func reloadAsync() async {
-        // Use withCheckedContinuation to "yield" control back to SwiftUI,
-        // allowing the view to render the loading state first.
-        await withCheckedContinuation { continuation in
-            // The synchronous fetchAll() will run after SwiftUI renders
-            let loadedRecords = store.fetchAll()
-            records = loadedRecords
-            if selectedRecordID == nil || !records.contains(where: { $0.id == selectedRecordID }) {
-                selectedRecordID = records.first?.id
-            }
+        guard !isReloading else { return }
+        isReloading = true
+        isLoading = true
+        defer {
+            isReloading = false
             isLoading = false
-            continuation.resume()
         }
+        await Task.yield()
+
+        let loadedRecords = store.fetchPage(limit: pageSize)
+        let total = store.count()
+        let series = store.fetchDailyCountSeries()
+        records = loadedRecords
+        totalRecordCount = total
+        dailyCountSeries = series
+        hasMoreRecords = loadedRecords.count == pageSize
+        if selectedRecordID == nil || !records.contains(where: { $0.id == selectedRecordID }) {
+            selectedRecordID = records.first?.id
+        }
+    }
+
+    private func loadMoreAsync() async {
+        guard !isLoading,
+              !isLoadingMore,
+              hasMoreRecords,
+              let last = records.last else { return }
+
+        isLoadingMore = true
+        let page = store.fetchPage(
+            limit: pageSize,
+            beforeStartedAt: last.startedAt
+        )
+        records.append(contentsOf: page)
+        hasMoreRecords = page.count == pageSize
+        isLoadingMore = false
+    }
+
+    private var totalCountLabel: String {
+        guard let totalRecordCount else {
+            return LumiPluginLocalization.string("Loading...", bundle: .module)
+        }
+        return "\(totalRecordCount) " + LumiPluginLocalization.string("HTTP exchanges", bundle: .module)
     }
 
     private func statusText(for record: HTTPExchangeRecord) -> String {
@@ -324,24 +350,6 @@ public struct HTTPExchangeSettingsView: View {
         ByteCountFormatter.string(fromByteCount: Int64(data?.count ?? 0), countStyle: .binary)
     }
 
-    private func payloadText(_ data: Data) -> String {
-        if let json = try? JSONSerialization.jsonObject(with: data),
-           let prettyData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
-           let pretty = String(data: prettyData, encoding: .utf8) {
-            return pretty
-        }
-        if let text = String(data: data, encoding: .utf8) { return text }
-        return data.map { String(format: "%02x", $0) }.joined(separator: " ")
-    }
-
-    private func prettyJSON(_ data: Data) -> String {
-        payloadText(data)
-    }
-
-    private func relativeDate(_ date: Date) -> String {
-        RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
-    }
-
     private func formattedDate(_ date: Date) -> String {
         Self.dateFormatter.string(from: date)
     }
@@ -352,6 +360,72 @@ public struct HTTPExchangeSettingsView: View {
         formatter.timeStyle = .medium
         return formatter
     }()
+}
+
+private struct HTTPExchangePayloadView: View {
+    @LumiTheme private var theme
+
+    let data: Data?
+    let fallback: String
+
+    @State private var renderedText: String?
+
+    var body: some View {
+        Group {
+            if let renderedText {
+                codeBlock(renderedText)
+            } else {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Loading payload…")
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
+            }
+        }
+        .task {
+            await renderPayload()
+        }
+    }
+
+    private func renderPayload() async {
+        guard let data else {
+            renderedText = fallback
+            return
+        }
+
+        let rendered = await Task.detached(priority: .utility) {
+            HTTPExchangePayloadFormatter.text(data)
+        }.value
+        renderedText = rendered
+    }
+
+    private func codeBlock(_ text: String) -> some View {
+        ScrollView([.horizontal, .vertical]) {
+            Text(text)
+                .font(.system(.callout, design: .monospaced))
+                .foregroundStyle(theme.textPrimary)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+        }
+        .frame(minHeight: 70, maxHeight: 260)
+        .background(theme.textSecondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+}
+
+private enum HTTPExchangePayloadFormatter {
+    static func text(_ data: Data) -> String {
+        if let json = try? JSONSerialization.jsonObject(with: data),
+           let prettyData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
+           let pretty = String(data: prettyData, encoding: .utf8) {
+            return pretty
+        }
+        if let text = String(data: data, encoding: .utf8) { return text }
+        return data.map { String(format: "%02x", $0) }.joined(separator: " ")
+    }
 }
 
 private struct HTTPExchangeDetailView: View {
