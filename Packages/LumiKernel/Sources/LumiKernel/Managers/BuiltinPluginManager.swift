@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// 负责管理所有插件的注册、启动、查询和排序。
 @MainActor
-public final class BuiltinPluginManager: ObservableObject, PluginRegistry {
+public final class BuiltinPluginManager: ObservableObject {
     public private(set) var allPlugins: [LumiPlugin] = []
 
     private var plugins: [String: LumiPlugin] = [:]
