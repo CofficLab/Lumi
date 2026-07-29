@@ -4,10 +4,13 @@ import LumiUI
 import SwiftUI
 
 struct ErrorMessageView: View {
+    @Environment(\.lumiResponseVerbosity) private var verbosity
     @LumiTheme private var theme
 
     let message: LumiChatMessage
     @Binding var showRawMessage: Bool
+
+    private var isBrief: Bool { verbosity == .brief }
 
     private var transportDetails: ResolvedErrorTransportDetails {
         ErrorTransportDetailsResolver.resolve(for: message)
@@ -27,11 +30,20 @@ struct ErrorMessageView: View {
             showRawMessage: $showRawMessage,
             errorTransportDetails: transportDetails
         ) {
-            BorderedUtilityContent(tint: theme.error, role: .error) {
-                Text(summaryText)
-                    .font(.appBody)
-                    .foregroundColor(theme.error)
-                    .textSelection(.enabled)
+            Group {
+                if isBrief {
+                    Text(summaryText)
+                        .font(.appCaption)
+                        .foregroundColor(theme.error)
+                        .textSelection(.enabled)
+                } else {
+                    BorderedUtilityContent(tint: theme.error, role: .error) {
+                        Text(summaryText)
+                            .font(.appBody)
+                            .foregroundColor(theme.error)
+                            .textSelection(.enabled)
+                    }
+                }
             }
         }
     }
