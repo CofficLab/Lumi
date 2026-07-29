@@ -215,7 +215,7 @@ struct ActivityHeatmapCacheTests {
     }
 
     private func createCache() -> ActivityHeatmapCache {
-        ActivityHeatmapCache(storage: nil, pluginID: "com.coffic.test")
+        ActivityHeatmapCache(storageDirectory: nil, pluginID: "com.coffic.test")
     }
 
     // MARK: - Heatmap Cache Tests

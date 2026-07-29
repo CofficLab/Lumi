@@ -26,7 +26,8 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
     public func onBoot(kernel: LumiKernel) async throws {
         // Initialize cache with storage service from kernel
         let storage = kernel.resolveService(StorageProviding.self)
-        cache = ActivityHeatmapCache(storage: storage, pluginID: id)
+        let storageDirectory = await storage?.pluginDataDirectory(for: id)
+        cache = ActivityHeatmapCache(storageDirectory: storageDirectory, pluginID: id)
     }
 
     public func onReady(kernel: LumiKernel) async throws {}

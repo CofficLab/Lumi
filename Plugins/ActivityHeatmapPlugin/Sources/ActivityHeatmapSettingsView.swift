@@ -25,9 +25,6 @@ public struct ActivityHeatmapSettingsView: View {
         ) {
             header
 
-            // Period selector
-            periodSelector
-
             // Heatmap card
             heatmapCard
 
@@ -50,6 +47,22 @@ public struct ActivityHeatmapSettingsView: View {
     private var header: some View {
         HStack(spacing: 10) {
             Spacer()
+
+            HStack(spacing: 6) {
+                Text(LumiPluginLocalization.string("Period", bundle: .module))
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+
+                Picker("", selection: $period) {
+                    ForEach(ActivityHeatmapPeriod.allCases) { p in
+                        Text(p.localizedTitle).tag(p)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .fixedSize()
+            }
+
             if cacheDirectory != nil {
                 AppButton("Open Data Directory", systemImage: "folder", size: .small) {
                     openDataDirectory()
@@ -60,48 +73,18 @@ public struct ActivityHeatmapSettingsView: View {
         .padding(.top, 8)
     }
 
-    // MARK: - Period Selector
-
-    private var periodSelector: some View {
-        AppCard {
-            AppSettingsSection(title: LumiPluginLocalization.string("Statistics Period", bundle: .module)) {
-                AppSettingsRow {
-                    HStack {
-                        Text(LumiPluginLocalization.string("Period", bundle: .module))
-                            .font(.appBody)
-                        Spacer()
-                        Picker("", selection: $period) {
-                            ForEach(ActivityHeatmapPeriod.allCases) { p in
-                                Text(p.localizedTitle).tag(p)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .frame(minWidth: 120)
-                    }
-                }
-            }
-        }
-    }
-
     // MARK: - Heatmap Card
 
     private var heatmapCard: some View {
         AppCard {
             if viewModel.hasLoaded && viewModel.heatmapData.isEmpty && !viewModel.isLoading {
                 emptyState
-            } else if viewModel.heatmapData.isEmpty {
-                loadingView
             } else {
-                ActivityHeatmapView(data: viewModel.heatmapData)
+                ActivityHeatmapView(
+                    data: viewModel.heatmapData.isEmpty ? loadingHeatmapData : viewModel.heatmapData,
+                    isLoading: !viewModel.hasLoaded || viewModel.isLoading
+                )
                     .padding(16)
-                    .overlay(alignment: .topTrailing) {
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                                .padding(8)
-                        }
-                    }
             }
         }
     }
@@ -112,32 +95,48 @@ public struct ActivityHeatmapSettingsView: View {
         AppCard {
             if viewModel.hasLoaded && viewModel.tokenData.isEmpty && !viewModel.isLoading {
                 tokenEmptyState
-            } else if viewModel.tokenData.isEmpty {
-                tokenLoadingView
             } else {
-                TokenLineChartView(data: viewModel.tokenData)
+                TokenLineChartView(
+                    data: viewModel.tokenData.isEmpty ? loadingTokenData : viewModel.tokenData,
+                    isLoading: !viewModel.hasLoaded || viewModel.isLoading
+                )
                     .padding(16)
-                    .overlay(alignment: .topTrailing) {
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                                .padding(8)
-                        }
-                    }
             }
         }
     }
 
     // MARK: - Loading / Empty States
 
-    private var loadingView: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-            Text(LumiPluginLocalization.string("Loading activity data…", bundle: .module))
-                .font(.appCaption)
-                .foregroundStyle(.secondary)
+    private var loadingHeatmapData: [ActivityDay] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let days = period.rawValue
+        guard let oldestDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) else {
+            return []
         }
-        .padding(32)
+
+        return (0..<days).compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: offset, to: oldestDay) else {
+                return nil
+            }
+            return ActivityDay(date: date, level: 0)
+        }
+    }
+
+    private var loadingTokenData: [ActivityDayToken] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let days = period.rawValue
+        guard let oldestDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) else {
+            return []
+        }
+
+        return (0..<days).compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: offset, to: oldestDay) else {
+                return nil
+            }
+            return ActivityDayToken(date: date, totalTokens: 0)
+        }
     }
 
     private var emptyState: some View {
@@ -149,16 +148,6 @@ public struct ActivityHeatmapSettingsView: View {
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-        }
-        .padding(32)
-    }
-
-    private var tokenLoadingView: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-            Text(LumiPluginLocalization.string("Loading token data…", bundle: .module))
-                .font(.appCaption)
-                .foregroundStyle(.secondary)
         }
         .padding(32)
     }

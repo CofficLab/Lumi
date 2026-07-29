@@ -62,7 +62,7 @@ public final class ActivityHeatmapViewModel {
     public init(messageService: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil, pluginID: String = "com.coffic.activity-heatmap") {
         self.messageService = messageService
         self.cache = cache ?? ActivityHeatmapCache(
-            storage: nil,
+            storageDirectory: nil,
             pluginID: pluginID
         )
     }
@@ -122,17 +122,20 @@ public final class ActivityHeatmapViewModel {
 
         guard isCurrent(generation) else { return }
 
-        // Step 4: Save fresh data to cache (only historical, not today)
-        for date in missingHeatmapDates {
-            if let count = freshHeatmapCounts[date] {
-                await cache.saveHeatmapCount(count, for: date)
-            }
-        }
-        for date in missingTokenDates {
-            if let count = freshTokenCounts[date] {
-                await cache.saveTokenCount(count, for: date)
-            }
-        }
+        // Step 4: Save fresh data to cache (only historical, not today).
+        // The aggregate queries omit dates with no records, so explicitly
+        // persist those dates as zero; otherwise every subsequent load would
+        // treat them as cache misses and rescan the message store.
+        let heatmapCountsToCache = Dictionary(uniqueKeysWithValues: missingHeatmapDates.map {
+            ($0, freshHeatmapCounts[$0] ?? 0)
+        })
+        let tokenCountsToCache = Dictionary(uniqueKeysWithValues: missingTokenDates.map {
+            ($0, freshTokenCounts[$0] ?? 0)
+        })
+        await cache.saveCounts(
+            heatmapCounts: heatmapCountsToCache,
+            tokenCounts: tokenCountsToCache
+        )
 
         // Step 5: Merge cached and fresh data
         var allHeatmapCounts: [Date: Int] = cachedHeatmapCounts

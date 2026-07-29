@@ -11,30 +11,33 @@ import os
 /// - 昨天及以前的数据缓存到 SwiftData 数据库，历史数据不会变化
 /// - 批量查询替代数百次文件 I/O
 public actor ActivityHeatmapCache: SuperLog {
+    private static let tokenCacheVersion = "2"
+
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.activity-heatmap.cache")
     public nonisolated static let emoji = "💾"
-    public static var verbose = false
+    public nonisolated static let verbose = false
 
     // MARK: - Properties
 
     private let container: ModelContainer
     private let databaseDirectory: URL
+    private let tokenCacheVersionURL: URL
+    private var tokenCacheNeedsRefresh: Bool
 
     /// 数据库目录，供设置页面打开
     public nonisolated var databaseDirectoryURL: URL { databaseDirectory }
 
     // MARK: - Init
 
-    public init(storage: (any StorageProviding)?, pluginID: String) {
-        let dbDir: URL
-        if let storage = storage {
-            dbDir = storage.pluginDataDirectory(for: pluginID)
-        } else {
-            // Fallback to temp directory (should not happen in production)
-            dbDir = FileManager.default.temporaryDirectory
-                .appendingPathComponent("Lumi/ActivityHeatmap")
-        }
+    public init(storageDirectory: URL?, pluginID: String) {
+        // Fallback to temp directory (should not happen in production)
+        let dbDir = storageDirectory ?? FileManager.default.temporaryDirectory
+            .appendingPathComponent("Lumi/ActivityHeatmap")
         self.databaseDirectory = dbDir
+        let tokenCacheVersionURL = dbDir.appendingPathComponent("token-cache-version", isDirectory: false)
+        self.tokenCacheVersionURL = tokenCacheVersionURL
+        let storedVersion = try? String(contentsOf: tokenCacheVersionURL, encoding: .utf8)
+        self.tokenCacheNeedsRefresh = storedVersion?.trimmingCharacters(in: .whitespacesAndNewlines) != Self.tokenCacheVersion
 
         // 创建 ModelContainer
         let dbURL = dbDir.appendingPathComponent("cache.sqlite", isDirectory: false)
@@ -127,6 +130,7 @@ public actor ActivityHeatmapCache: SuperLog {
     /// 批量加载多个日期的 token 缓存数据（一次查询替代 N 次文件 I/O）
     public func loadTokenCounts(for dates: [Date]) async -> [Date: Int] {
         guard !dates.isEmpty else { return [:] }
+        guard !tokenCacheNeedsRefresh else { return [:] }
 
         let cal = Calendar.current
         let normalizedDates = Set(dates.map { cal.startOfDay(for: $0) })
@@ -150,6 +154,54 @@ public actor ActivityHeatmapCache: SuperLog {
     }
 
     // MARK: - Save
+
+    /// 批量保存多个日期的缓存数据。
+    ///
+    /// 每个传入日期都会写入一条记录，即使值为 0 也会写入，避免无活动
+    /// 的日期在下一次加载时再次被判断为 cache miss。所有 upsert 在一个
+    /// ModelContext 和一次 save 中完成，避免逐日事务带来的启动延迟。
+    public func saveCounts(
+        heatmapCounts: [Date: Int],
+        tokenCounts: [Date: Int]
+    ) async {
+        let dates = Set(heatmapCounts.keys).union(tokenCounts.keys)
+        guard !dates.isEmpty else { return }
+
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<ActivityCacheEntry>(
+            predicate: #Predicate { dates.contains($0.date) }
+        )
+
+        do {
+            let existingEntries = try context.fetch(descriptor)
+            var entriesByDate = Dictionary(
+                uniqueKeysWithValues: existingEntries.map { ($0.date, $0) }
+            )
+
+            for date in dates {
+                if let existing = entriesByDate[date] {
+                    existing.heatmapCount = heatmapCounts[date] ?? existing.heatmapCount
+                    existing.tokenCount = tokenCounts[date] ?? existing.tokenCount
+                } else {
+                    let entry = ActivityCacheEntry(
+                        date: date,
+                        heatmapCount: heatmapCounts[date] ?? 0,
+                        tokenCount: tokenCounts[date] ?? 0
+                    )
+                    context.insert(entry)
+                    entriesByDate[date] = entry
+                }
+            }
+
+            try context.save()
+            if !tokenCounts.isEmpty {
+                try Self.tokenCacheVersion.write(to: tokenCacheVersionURL, atomically: true, encoding: .utf8)
+                tokenCacheNeedsRefresh = false
+            }
+        } catch {
+            Self.logger.error("\(Self.t)批量保存 heatmap 缓存失败: \(error.localizedDescription)")
+        }
+    }
 
     /// 保存单日数据到缓存（upsert 语义）
     public func saveCounts(heatmapCount: Int?, tokenCount: Int?, for date: Date) async {
