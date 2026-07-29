@@ -24,6 +24,7 @@ import ConversationInputPlugin
 import ConversationLanguagePlugin
 import ConversationListPlugin
 import ConversationMessageCountPlugin
+import ConversationContextSizePlugin
 import ConversationNewPlugin
 import ConversationSpeedPlugin
 import ConversationStorePlugin
