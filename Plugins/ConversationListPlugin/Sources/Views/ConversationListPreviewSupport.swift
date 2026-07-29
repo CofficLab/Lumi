@@ -112,6 +112,9 @@
 
         func fetchDailyMessageCounts(since: Date) async -> [Date: Int] { [:] }
         func fetchDailyTokenCounts(since: Date) async -> [Date: Int] { [:] }
+        func fetchTokenUsage(on day: Date, providerID: String?, modelName: String?) async -> MessageTokenUsage {
+            MessageTokenUsage(day: Calendar.current.startOfDay(for: day), inputTokens: 0, outputTokens: 0)
+        }
     }
 
     enum ConversationListPreviewSupport {
