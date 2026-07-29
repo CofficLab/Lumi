@@ -9,14 +9,14 @@ struct PluginMemoryTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
         #expect(MemoryPlugin().id == "com.coffic.lumi.plugin.memory")
-        #expect(MemoryPlugin().name == PluginMemoryLocalization.string("Memory"))
+        #expect(MemoryPlugin().name == "Memory")
         #expect(MemoryPlugin().category == .agent)
         #expect(MemoryPlugin().order == 15)
     }
 
     @Test("plugin registers four memory tools")
     func pluginRegistersTools() {
-        let tools = MemoryPlugin.agentTools(lumiCore: LumiPluginContext(activeSectionID: "chat", activeSectionTitle: "Chat"))
+        let tools = MemoryPlugin().agentTools(kernel: LumiKernel())
 
         #expect(tools.count == 4)
         let names = tools.map(\.name)
@@ -82,8 +82,7 @@ struct PluginMemoryTests {
 
     @Test("localization catalog is packaged")
     func localizationCatalogIsPackaged() {
-        #expect(PluginMemoryLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
-        #expect(PluginMemoryLocalization.string("Memory").isEmpty == false)
+        #expect(LumiPluginLocalization.string("Memory", bundle: .module).isEmpty == false)
     }
 
     @Test("config has sensible defaults")
@@ -94,12 +93,29 @@ struct PluginMemoryTests {
         #expect(config.halfLifeDays == 30)
         #expect(config.injectGlobalIndex == true)
         #expect(config.injectProjectIndex == true)
+        #expect(config.autoRecall == true)
+        #expect(config.autoSave == true)
+        #expect(config.maxInjectedCharacters == 6000)
     }
 
     @Test("tool input strings are trimmed and blank strings are rejected")
     func toolInputStringNormalization() {
         #expect(MemoryToolInput.string(" \n/Users/example/Project\t") == "/Users/example/Project")
         #expect(MemoryToolInput.string(" \n\t ") == nil)
+    }
+
+    @Test("candidate extractor only saves explicit durable guidance")
+    func candidateExtractor() {
+        let candidate = MemoryCandidateExtractor.extract(
+            from: "请记住：以后这个项目的默认语言是中文。",
+            projectPath: "/tmp/Lumi"
+        ).first
+
+        #expect(candidate?.type == .project)
+        #expect(candidate?.scope == .project("/tmp/Lumi"))
+        #expect(candidate?.content.contains("默认语言") == true)
+        #expect(MemoryCandidateExtractor.extract(from: "帮我查看这个文件。", projectPath: "/tmp/Lumi").isEmpty)
+        #expect(MemoryCandidateExtractor.extract(from: "请记住我的密码是 secret", projectPath: nil).isEmpty)
     }
 
     @Test("tool input scopes are trimmed and validated")

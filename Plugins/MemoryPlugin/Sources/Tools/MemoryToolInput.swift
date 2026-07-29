@@ -1,4 +1,5 @@
 import Foundation
+import LumiKernel
 
 enum MemoryToolInput {
     static let defaultMaxResults = 5
@@ -37,5 +38,9 @@ enum MemoryToolInput {
         }
 
         return min(max(requested, lowerBound), upperBound)
+    }
+
+    static func projectPath(_ value: Any?, kernel: LumiKernel) -> String? {
+        string(value) ?? kernel.currentProjectPath
     }
 }

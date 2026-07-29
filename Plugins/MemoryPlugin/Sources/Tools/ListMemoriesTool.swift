@@ -53,13 +53,13 @@ public struct ListMemoriesTool: LumiAgentTool {
         case "global":
             globalMemories = await MemoryStorageService.shared.listMemories(scope: .global)
         case "project":
-            guard let projectPath = MemoryToolInput.string(arguments["project_path"]?.anyValue) else {
+            guard let projectPath = MemoryToolInput.projectPath(arguments["project_path"]?.anyValue, kernel: kernel) else {
                 throw MemoryToolError.missingArgument("project_path is required when scope=project")
             }
             projectMemories = await MemoryStorageService.shared.listMemories(scope: .project(projectPath))
         default: // "all"
             globalMemories = await MemoryStorageService.shared.listMemories(scope: .global)
-            if let projectPath = MemoryToolInput.string(arguments["project_path"]?.anyValue) {
+            if let projectPath = MemoryToolInput.projectPath(arguments["project_path"]?.anyValue, kernel: kernel) {
                 projectMemories = await MemoryStorageService.shared.listMemories(scope: .project(projectPath))
             }
         }
