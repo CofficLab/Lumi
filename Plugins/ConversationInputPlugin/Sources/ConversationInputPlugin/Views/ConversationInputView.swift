@@ -7,7 +7,7 @@ import os
 /// 输入框视图
 struct ConversationInputView: View, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-input.view")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     @LumiTheme private var theme
     @ObservedObject var kernel: LumiKernel

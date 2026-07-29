@@ -80,7 +80,6 @@ public final class AgentTurnNotificationHandler: NSObject, ObservableObject, Sup
 
         do {
             try await center.add(request)
-            AgentTurnNotificationPlugin.logger.debug("\(Self.t)Posted turn completed notification for \(conversationId.uuidString)")
         } catch {
             AgentTurnNotificationPlugin.logger.error("\(Self.t)Failed to post notification: \(error.localizedDescription)")
         }

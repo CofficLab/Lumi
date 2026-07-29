@@ -53,7 +53,7 @@ struct LiveBrewManagerService: BrewManagerServicing {
 @MainActor
 class BrewManagerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🍺"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
     @Published var installedPackages: [BrewPackage] = []
     @Published var outdatedPackages: [BrewPackage] = []
     @Published var searchResults: [BrewPackage] = []

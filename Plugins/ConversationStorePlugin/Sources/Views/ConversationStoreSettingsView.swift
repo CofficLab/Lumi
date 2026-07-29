@@ -322,7 +322,7 @@ public struct ConversationStoreSettingsView: View {
     // MARK: - Formatting
 
     private func displayTitle(for conversation: LumiConversationSummary) -> String {
-        conversation.displayTitle
+        kernel.uiTitle(for: conversation.id)
     }
 
     private func relativeDate(_ date: Date) -> String {

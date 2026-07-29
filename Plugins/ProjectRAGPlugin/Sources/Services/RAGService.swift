@@ -15,6 +15,7 @@ public actor RAGService: SuperLog {
     private static let pluginName = "RAGPlugin"
     private static let ensureThrottleSeconds: TimeInterval = 20
     private static let staleAfterSeconds: TimeInterval = 300
+    private static let maxTrackedProjects = 64
     private nonisolated static let indexingRegistry = RAGIndexingRegistry()
 
     /// 线程安全的初始化状态容器
@@ -39,6 +40,7 @@ public actor RAGService: SuperLog {
 
     /// 正在后台索引的项目路径集合
     private var indexingProjects: Set<String> = []
+    private var backgroundIndexTasks: [String: Task<Void, Never>] = [:]
 
     /// 索引进度回调
     private let onProgress: ((RAGIndexProgressEvent) -> Void)?
@@ -119,6 +121,7 @@ public actor RAGService: SuperLog {
         guard let indexer else { throw RAGError.internalStateCorrupted }
         guard let store else { throw RAGError.internalStateCorrupted }
         guard let embeddingProvider else { throw RAGError.internalStateCorrupted }
+        try Task.checkCancellation()
 
         let normalized = RAGPathUtils.normalizeProjectPath(projectPath)
         guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
@@ -169,6 +172,14 @@ public actor RAGService: SuperLog {
 
         if !force {
             let now = Date()
+            lastEnsureAttemptByProject = lastEnsureAttemptByProject.filter {
+                now.timeIntervalSince($0.value) < Self.staleAfterSeconds
+            }
+            if lastEnsureAttemptByProject.count >= Self.maxTrackedProjects,
+               lastEnsureAttemptByProject[normalized] == nil,
+               let oldest = lastEnsureAttemptByProject.min(by: { $0.value < $1.value })?.key {
+                lastEnsureAttemptByProject.removeValue(forKey: oldest)
+            }
             if let lastAttempt = lastEnsureAttemptByProject[normalized],
                now.timeIntervalSince(lastAttempt) < Self.ensureThrottleSeconds {
                 if Self.verbose {
@@ -255,8 +266,9 @@ public actor RAGService: SuperLog {
         let normalized = RAGPathUtils.normalizeProjectPath(projectPath)
         guard !normalized.isEmpty else { return }
 
-        // 防止重复启动后台索引
-        guard !indexingProjects.contains(normalized) else {
+        // 防止重复启动后台索引。任务句柄也作为第二道保护，避免同一项目的
+        // detached task 在清理标记前被重复创建。
+        guard !indexingProjects.contains(normalized), backgroundIndexTasks[normalized] == nil else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)🔄 后台索引已在进行中，跳过: \(normalized)")
             }
@@ -275,11 +287,11 @@ public actor RAGService: SuperLog {
         }
 
         // 在后台 Task 中执行索引
-        Task.detached { [weak self] in
+        let task = Task.detached { [weak self] in
             guard let self = self else { return }
 
             do {
-                try await self.ensureIndexed(projectPath: projectPath, force: force)
+                try await self.ensureIndexed(projectPath: normalized, force: force)
                 if Self.verbose {
                     Self.logger.info("\(Self.t)✅ 后台索引任务完成: \(normalized)")
                 }
@@ -287,13 +299,23 @@ public actor RAGService: SuperLog {
                 Self.logger.error("\(Self.t)❌ 后台索引任务失败: \(normalized) - \(error)")
             }
 
-            // 移除索引标记
-            await self.removeIndexingProject(normalized)
+            await self.finishBackgroundIndexing(normalized)
         }
+        backgroundIndexTasks[normalized] = task
     }
 
-    private func removeIndexingProject(_ projectPath: String) {
+    /// 取消当前服务创建的后台索引任务。用于插件重载或内核重建。
+    public func cancelBackgroundIndexing() {
+        for task in backgroundIndexTasks.values {
+            task.cancel()
+        }
+        backgroundIndexTasks.removeAll()
+        indexingProjects.removeAll()
+    }
+
+    private func finishBackgroundIndexing(_ projectPath: String) {
         indexingProjects.remove(projectPath)
+        backgroundIndexTasks.removeValue(forKey: projectPath)
     }
 
     /// 兼容旧接口：执行一次全量重建
@@ -337,6 +359,7 @@ public actor RAGService: SuperLog {
         // 向量化耗时
         let embedStart = CFAbsoluteTimeGetCurrent()
         let queryEmbedding = try embeddingProvider.embed(trimmed)
+        try Task.checkCancellation()
         let embedDuration = (CFAbsoluteTimeGetCurrent() - embedStart) * 1000
         if Self.verbose {
             Self.logger.info("\(Self.t)⏱️ embed 耗时：\(RAGUtils.formatDuration(embedDuration))")
@@ -350,6 +373,7 @@ public actor RAGService: SuperLog {
             projectPath: normalizedProjectPath,
             topK: max(topK, 1)
         )
+        try Task.checkCancellation()
         let retrieveDuration = (CFAbsoluteTimeGetCurrent() - retrieveStart) * 1000
         if Self.verbose {
             Self.logger.info("\(Self.t)⏱️ retriever.retrieve 耗时：\(RAGUtils.formatDuration(retrieveDuration))，结果数：\(results.count)")

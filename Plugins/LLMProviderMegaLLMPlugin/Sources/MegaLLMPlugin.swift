@@ -18,7 +18,7 @@ public final class MegaLLMPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [MegaLLMProvider()]
+        [MegaLLMProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

@@ -14,7 +14,7 @@ public struct EditorPreviewPlistView: View, SuperLog {
         category: "plugin.editor-inline-preview.plist-view"
     )
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     @EnvironmentObject private var themeVM: AppThemeVM
 

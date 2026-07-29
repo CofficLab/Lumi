@@ -22,7 +22,7 @@ public struct ProjectRAGOnReadyHook: SuperLog {
 
         // RAG capabilities are provided through RAGPluginService singleton.
         RAGPluginRuntime.kernel = kernel
-        RAGPluginService.configure(kernel: kernel)
+        await RAGPluginService.configure(kernel: kernel)
         bootstrapRuntime(kernel: kernel)
         startBackgroundIndexing(kernel: kernel)
 
@@ -43,7 +43,7 @@ public struct ProjectRAGOnReadyHook: SuperLog {
             Self.logger.info("\(Self.t)background indexing scheduled")
         }
 
-        Task { @MainActor in
+        let task = Task { @MainActor in
             do {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)background service initialize begin")
@@ -77,6 +77,7 @@ public struct ProjectRAGOnReadyHook: SuperLog {
                 Self.logger.error("\(Self.t)background service initialize failed: \(error.localizedDescription)")
             }
         }
+        RAGPluginService.replaceLifecycleTask(task)
     }
 
     private func waitForProjectPaths(kernel: LumiKernel) async -> [String] {

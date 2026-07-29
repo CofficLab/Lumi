@@ -17,6 +17,7 @@ enum RAGPluginService: SuperLog {
             NotificationCenter.postRAGIndexProgress(event)
         }
     )
+    private static var lifecycleTask: Task<Void, Never>?
 
     static func getService() -> RAGService {
         if Self.verbose {
@@ -25,7 +26,10 @@ enum RAGPluginService: SuperLog {
         return service
     }
 
-    static func configure(kernel: LumiKernel) {
+    static func configure(kernel: LumiKernel) async {
+        await service.cancelBackgroundIndexing()
+        lifecycleTask?.cancel()
+        lifecycleTask = nil
         // Resolve the directory eagerly on the main actor so the Sendable
         // provider closure does not need to touch @MainActor-isolated state.
         let resolvedDirectory: URL = {
@@ -54,6 +58,11 @@ enum RAGPluginService: SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)configure completed initialized=\(service.isInitialized)")
         }
+    }
+
+    static func replaceLifecycleTask(_ task: Task<Void, Never>) {
+        lifecycleTask?.cancel()
+        lifecycleTask = task
     }
 
 }

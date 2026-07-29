@@ -58,6 +58,13 @@ public enum RAGTimeout {
             lock.unlock()
             task?.cancel()
         }
+
+        func clearTasks() {
+            lock.lock()
+            operationTask = nil
+            timeoutTask = nil
+            lock.unlock()
+        }
     }
 
     /// 带超时的 await 包装，超时返回 .timedOut 而非挂起
@@ -80,6 +87,7 @@ public enum RAGTimeout {
                 if state.resume(.success(value), continuation: continuation) {
                     taskBox.cancelTimeoutTask()
                 }
+                taskBox.clearTasks()
             }
             taskBox.setOperationTask(operationTask)
 
@@ -87,6 +95,7 @@ public enum RAGTimeout {
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
                 taskBox.cancelOperationTask()
                 _ = state.resume(.timedOut, continuation: continuation)
+                taskBox.clearTasks()
             }
             taskBox.setTimeoutTask(timeoutTask)
         }

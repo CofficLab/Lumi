@@ -13,7 +13,9 @@ public final class EditorSwiftPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        EditorSwiftPlugin.bootstrapFromLumiCoreIfNeeded(kernel: kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
  

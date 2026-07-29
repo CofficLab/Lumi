@@ -13,7 +13,7 @@ import SwiftUI
 /// - **近期活跃**：对话在最近 `recentActivityWindow` 时间内有更新，图标显示圆点指示器
 public struct ConversationItemView: View, SuperLog {
     public nonisolated static let emoji = "🗨️"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 

@@ -28,8 +28,9 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
-        // 记录数据根目录,供 FileTreeSettings 持久化展开状态。
-        ProjectFileTreePluginRuntimeBridge.dataRootDirectory = kernel.storage?.dataRootDirectory
+        // 通过 Storage service 解析插件目录,供 FileTreeSettings 持久化展开状态。
+        ProjectFileTreePluginRuntimeBridge.pluginDirectory =
+            kernel.storage?.pluginDataDirectory(for: "ProjectFileTree")
     }
 
     public func onReady(kernel: LumiKernel) async throws {}

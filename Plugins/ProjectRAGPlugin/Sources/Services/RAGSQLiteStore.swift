@@ -295,7 +295,9 @@ final class RAGSQLiteStore: @unchecked Sendable {
             return lexical
         }
 
-        let fallback = try loadChunks(projectPath: projectPath, limit: fallbackLimit)
+        let remainingLimit = max(fallbackLimit - lexical.count, 0)
+        guard remainingLimit > 0 else { return lexical }
+        let fallback = try loadChunks(projectPath: projectPath, limit: remainingLimit)
         var merged: [RAGStoredChunk] = []
         var seen = Set<String>()
         merged.reserveCapacity(lexical.count + fallback.count)

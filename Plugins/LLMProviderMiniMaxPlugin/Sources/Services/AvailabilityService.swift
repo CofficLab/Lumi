@@ -14,7 +14,7 @@ enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderMiniMax")
 
     static func checkAvailability(
-        provider: any LumiLLMProvider,
+        provider: MiniMaxTokenPlanProvider,
         model: String
     ) async -> LumiModelAvailabilityResult {
         // 优先读磁盘缓存
@@ -23,7 +23,15 @@ enum AvailabilityService {
             return cached.result
         }
 
-        let result = await provider.checkAvailability(model: model)
+        let result = await LumiAnthropicCompatibleAvailability.chatPing(
+            model: model,
+            adapter: provider.internalAdapter,
+            apiService: provider.internalApiService,
+            buildRequest: { url, apiKey in
+                provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
+            },
+            resolveAPIKey: { try provider.lumiResolveAPIKey() }
+        )
         let mapped = mapUnsupportedModelResult(result)
 
         cache.write(model: model, result: mapped, timestamp: Date())

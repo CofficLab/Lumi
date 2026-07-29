@@ -127,8 +127,9 @@ public final class ToolManagerService: ToolManaging {
             let output = try await kernel.withToolExecutionContextState(executionState) {
                 try await tool.execute(arguments: arguments, kernel: kernel)
             }
+            let images = executionState.collectImages()
             let duration = Date().timeIntervalSince(startedAt)
-            return LumiToolResult(content: output, duration: duration)
+            return LumiToolResult(content: output, duration: duration, imageAttachments: images)
         } catch {
             return LumiToolResult(
                 content: "Tool execution failed: \(error.localizedDescription)",

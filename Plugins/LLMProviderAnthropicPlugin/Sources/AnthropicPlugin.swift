@@ -20,7 +20,7 @@ public final class AnthropicPlugin: LumiPlugin {
 
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [AnthropicProvider()]
+        [AnthropicProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
 

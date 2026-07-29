@@ -18,7 +18,7 @@ public final class XiaomiPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [XiaomiProvider()]
+        [XiaomiProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

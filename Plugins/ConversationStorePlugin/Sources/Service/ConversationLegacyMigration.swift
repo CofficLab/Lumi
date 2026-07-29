@@ -41,28 +41,33 @@ public struct ConversationLegacyMigration: SuperLog {
     /// - 上线前:改回 `.once`,生产环境只迁一次。
     public static var policy: MigrationPolicy = .once
 
-    /// 迁移标记的 UserDefaults key
-    private static let migrationMarkerKey = "lumi.v4_migration.conversations.completed"
-
     private let kernel: LumiKernel
     private let store: ConversationStore
     private let progress: ConversationMigrationProgressStore
+    private let migrationMarkerURL: URL
 
-    public init(kernel: LumiKernel, store: ConversationStore, progress: ConversationMigrationProgressStore) {
+    public init(
+        kernel: LumiKernel,
+        store: ConversationStore,
+        progress: ConversationMigrationProgressStore,
+        destinationRootURL: URL
+    ) {
         self.kernel = kernel
         self.store = store
         self.progress = progress
+        self.migrationMarkerURL = destinationRootURL.appendingPathComponent(
+            "migration_state.json",
+            isDirectory: false
+        )
     }
 
     /// 执行迁移。幂等、吞错。**应在后台 Task 中调用**(本方法本身不阻塞主线程 ——
     /// 真正的 IO 在 ConversationStore actor 上)。
     func run() async {
-        let defaults = UserDefaults.standard
         let policy = Self.policy
-        let markerKey = Self.migrationMarkerKey
 
         // 幂等:.once 策略下,已迁移过则直接跳过
-        if policy == .once, defaults.bool(forKey: markerKey) {
+        if policy == .once, migrationMarkerExists() {
             if Self.verbose {
                 Self.logger.info("\(Self.t)会话迁移跳过(marker 已标记完成)")
             }
@@ -79,7 +84,6 @@ public struct ConversationLegacyMigration: SuperLog {
 
         guard legacy.hasLegacyData() else {
             // 没有可迁移的旧数据
-            defaults.set(true, forKey: markerKey)
             if Self.verbose {
                 Self.logger.info("\(Self.t)会话迁移跳过(无 v4 旧数据)")
             }
@@ -97,7 +101,7 @@ public struct ConversationLegacyMigration: SuperLog {
             await progress.setReadCount(summaries.count)
 
             guard !summaries.isEmpty else {
-                defaults.set(true, forKey: markerKey)
+                writeMigrationMarker(importedCount: 0)
                 await progress.finish()
                 if Self.verbose {
                     Self.logger.info("\(Self.t)会话迁移跳过(v4 会话为空)")
@@ -108,7 +112,7 @@ public struct ConversationLegacyMigration: SuperLog {
             let imported = try await store.importSummaries(summaries)
             await progress.setImportedCount(imported)
             // 迁移成功才写 marker(1Password 幂等教训:绝不在迁移前写)
-            defaults.set(true, forKey: markerKey)
+            writeMigrationMarker(importedCount: imported)
             await progress.finish()
 
             let elapsed = Date().timeIntervalSince(startTime)
@@ -122,6 +126,32 @@ public struct ConversationLegacyMigration: SuperLog {
             await progress.fail()
             if Self.verbose {
                 Self.logger.error("\(Self.t)会话迁移失败,已跳过,下次启动将重试: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func migrationMarkerExists() -> Bool {
+        guard let data = try? Data(contentsOf: migrationMarkerURL),
+              let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else {
+            return false
+        }
+        return payload["completed"] as? Bool == true
+    }
+
+    private func writeMigrationMarker(importedCount: Int) {
+        let payload: [String: Any] = [
+            "completed": true,
+            "importedCount": importedCount,
+            "completedAt": ISO8601DateFormatter().string(from: Date()),
+        ]
+
+        do {
+            let data = try JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted])
+            try data.write(to: migrationMarkerURL, options: .atomic)
+        } catch {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)写入会话迁移状态失败: \(error.localizedDescription)")
             }
         }
     }

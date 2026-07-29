@@ -18,7 +18,7 @@ public final class LPgptPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [LPgptProvider()]
+        [LPgptProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

@@ -1,4 +1,24 @@
 import SwiftUI
+import LumiUI
+
+/// 仅在会话迁移运行时显示状态栏入口。
+struct ConversationMigrationStatusBarView: View {
+    @ObservedObject private var progress = ConversationMigrationProgressStore.shared
+
+    var body: some View {
+        if progress.isActive {
+            StatusBarHoverContainer(
+                detailView: ConversationMigrationPopoverView(),
+                id: "conversation-migration-status"
+            ) {
+                Image(systemName: "bubble.left.and.bubble.right")
+                    .font(.appMicroEmphasized)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+            }
+        }
+    }
+}
 
 /// 会话迁移 popover 详情视图
 ///
@@ -7,6 +27,7 @@ import SwiftUI
 ///
 /// 状态栏本身只显示一个静态图标(由 StatusBarItem.systemImage 渲染),不在此视图内。
 struct ConversationMigrationPopoverView: View {
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     @ObservedObject private var progress = ConversationMigrationProgressStore.shared
 
     var body: some View {
@@ -36,9 +57,10 @@ struct ConversationMigrationPopoverView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(phaseTitle)
                     .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(theme.textPrimary)
                 Text("历史会话迁移")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             Spacer()
         }
@@ -57,11 +79,11 @@ struct ConversationMigrationPopoverView: View {
         HStack {
             Text(label)
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
             Spacer()
             Text("\(value) 条会话")
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
         }
     }
 
@@ -71,10 +93,10 @@ struct ConversationMigrationPopoverView: View {
             HStack(spacing: 4) {
                 Image(systemName: "clock")
                     .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.textTertiary)
                 Text("已用时 \(elapsedText(since: startedAt))")
                     .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(theme.textTertiary)
             }
         }
     }
@@ -92,10 +114,10 @@ struct ConversationMigrationPopoverView: View {
 
     private var phaseColor: Color {
         switch progress.phase {
-        case .idle: .secondary
-        case .running: .accentColor
-        case .completed: .green
-        case .failed: .orange
+        case .idle: theme.textSecondary
+        case .running: theme.primary
+        case .completed: theme.success
+        case .failed: theme.warning
         }
     }
 
