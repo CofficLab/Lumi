@@ -441,10 +441,28 @@ public actor MessageStore: SuperLog {
 
         var counts: [Date: Int] = [:]
         let calendar = Calendar.current
+        let decoder = JSONDecoder()
         for model in models {
             let date = Date(timeIntervalSince1970: model.createdAt)
             let day = calendar.startOfDay(for: date)
-            let tokens = (model.inputTokenCount ?? 0) + (model.outputTokenCount ?? 0)
+            let metadata: [String: String]
+            if let metadataJson = model.metadataJson,
+               let data = metadataJson.data(using: .utf8),
+               let decoded = try? decoder.decode([String: String].self, from: data) {
+                metadata = decoded
+            } else {
+                metadata = [:]
+            }
+
+            // Newer messages persist dedicated token columns, while older
+            // streamed messages stored the same values in metadataJson.
+            let inputTokens = model.inputTokenCount
+                ?? metadata[LumiMessageTokenMetadata.inputKey].flatMap { Int($0) }
+                ?? 0
+            let outputTokens = model.outputTokenCount
+                ?? metadata[LumiMessageTokenMetadata.outputKey].flatMap { Int($0) }
+                ?? 0
+            let tokens = inputTokens + outputTokens
             if tokens > 0 {
                 counts[day, default: 0] += tokens
             }
