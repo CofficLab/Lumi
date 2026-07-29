@@ -39,6 +39,16 @@ public final class AgentTempStoragePlugin: LumiPlugin, SuperLog {
     }
 
 
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            ListTempFilesTool(),
+            ReadTempFileTool(),
+            WriteTempFileTool(),
+        ]
+    }
+
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
