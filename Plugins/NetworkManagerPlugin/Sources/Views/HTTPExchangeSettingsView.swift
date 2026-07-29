@@ -11,12 +11,6 @@ public struct HTTPExchangeSettingsView: View {
     @State private var records: [HTTPExchangeRecord] = []
     @State private var isLoading = true
     @State private var selectedRecordID: UUID?
-    @State private var selectedDetailTab: DetailTab = .request
-
-    private enum DetailTab: Hashable {
-        case request
-        case response
-    }
 
     public init(store: HTTPExchangeStore) {
         self.store = store
@@ -172,14 +166,10 @@ public struct HTTPExchangeSettingsView: View {
     @ViewBuilder
     private var detailPane: some View {
         if let selectedRecord {
-            TabView(selection: $selectedDetailTab) {
+            HTTPExchangeDetailView(recordID: selectedRecord.id) {
                 requestTab(for: selectedRecord)
-                    .tabItem { Label(LumiPluginLocalization.string("Request", bundle: .module), systemImage: "arrow.up.right") }
-                    .tag(DetailTab.request)
-
+            } response: {
                 responseTab(for: selectedRecord)
-                    .tabItem { Label(LumiPluginLocalization.string("Response", bundle: .module), systemImage: "arrow.down.left") }
-                    .tag(DetailTab.response)
             }
         } else {
             AppEmptyState(
@@ -360,4 +350,72 @@ public struct HTTPExchangeSettingsView: View {
         formatter.timeStyle = .medium
         return formatter
     }()
+}
+
+private struct HTTPExchangeDetailView: View {
+    private enum DetailTab: String {
+        case request
+        case response
+
+        var title: String {
+            switch self {
+            case .request:
+                LumiPluginLocalization.string("Request", bundle: .module)
+            case .response:
+                LumiPluginLocalization.string("Response", bundle: .module)
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .request: "arrow.up.right"
+            case .response: "arrow.down.left"
+            }
+        }
+    }
+
+    let recordID: UUID
+    private let request: AnyView
+    private let response: AnyView
+    @State private var selectedTab: DetailTab = .request
+
+    init<Request: View, Response: View>(
+        recordID: UUID,
+        @ViewBuilder request: () -> Request,
+        @ViewBuilder response: () -> Response
+    ) {
+        self.recordID = recordID
+        self.request = AnyView(request())
+        self.response = AnyView(response())
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            AppTabBar(
+                tabs: [
+                    AppTabBar.Tab(title: DetailTab.request.title, icon: DetailTab.request.icon, id: DetailTab.request.rawValue),
+                    AppTabBar.Tab(title: DetailTab.response.title, icon: DetailTab.response.icon, id: DetailTab.response.rawValue),
+                ],
+                selectedTab: Binding(
+                    get: { selectedTab.rawValue },
+                    set: { selectedTab = DetailTab(rawValue: $0) ?? .request }
+                )
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+
+            AppDivider()
+
+            Group {
+                switch selectedTab {
+                case .request:
+                    request
+                case .response:
+                    response
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .id(recordID)
+    }
 }
