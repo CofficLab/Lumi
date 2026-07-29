@@ -15,6 +15,8 @@ struct AgentTurnRecordDTO: Identifiable, Sendable {
     let toolsJSON: String
     let imageAttachmentsCount: Int
     let fileAttachmentsCount: Int
+    let messagesCount: Int
+    let toolsCount: Int
 
     init(from model: AgentTurnRecordModel) {
         self.id = model.id
@@ -27,20 +29,20 @@ struct AgentTurnRecordDTO: Identifiable, Sendable {
         self.toolsJSON = model.toolsJSON
         self.imageAttachmentsCount = model.imageAttachmentsCount
         self.fileAttachmentsCount = model.fileAttachmentsCount
+        self.messagesCount = Self.decodeMessagesCount(model.messagesJSON)
+        self.toolsCount = Self.decodeToolsCount(model.toolsJSON)
     }
 
-    /// 消息条数(从 messagesJSON 解析,失败回退为 0)。
-    var messagesCount: Int {
-        guard let data = messagesJSON.data(using: .utf8),
+    private static func decodeMessagesCount(_ json: String) -> Int {
+        guard let data = json.data(using: .utf8),
               let messages = try? JSONDecoder().decode([LumiChatMessage].self, from: data) else {
             return 0
         }
         return messages.count
     }
 
-    /// 工具个数(从 toolsJSON 解析,失败回退为 0)。
-    var toolsCount: Int {
-        guard let data = toolsJSON.data(using: .utf8),
+    private static func decodeToolsCount(_ json: String) -> Int {
+        guard let data = json.data(using: .utf8),
               let tools = try? JSONDecoder().decode([[String: String]].self, from: data) else {
             return 0
         }
@@ -107,7 +109,64 @@ actor AgentTurnRecordStore {
         }
     }
 
-    /// 拉取全部记录(按时间倒序)。
+    /// Fetch one page of records using a keyset cursor.
+    func fetchPage(limit: Int, beforeCreatedAt: Date? = nil, beforeID: String? = nil) -> [AgentTurnRecordDTO] {
+        guard limit > 0 else { return [] }
+
+        let cursorDate = beforeCreatedAt
+        let cursorID = beforeID
+        var descriptor: FetchDescriptor<AgentTurnRecordModel>
+        if let cursorDate, let cursorID {
+            descriptor = FetchDescriptor<AgentTurnRecordModel>(
+                predicate: #Predicate<AgentTurnRecordModel> {
+                    $0.createdAt < cursorDate ||
+                    ($0.createdAt == cursorDate && $0.id < cursorID)
+                },
+                sortBy: [
+                    SortDescriptor(\.createdAt, order: .reverse),
+                    SortDescriptor(\.id, order: .reverse),
+                ]
+            )
+        } else {
+            descriptor = FetchDescriptor<AgentTurnRecordModel>(sortBy: [
+                SortDescriptor(\.createdAt, order: .reverse),
+                SortDescriptor(\.id, order: .reverse),
+            ])
+        }
+        descriptor.fetchLimit = limit
+        guard let models = try? modelContext.fetch(descriptor) else { return [] }
+        return models.map { AgentTurnRecordDTO(from: $0) }
+    }
+
+    /// Count records without materializing request payloads.
+    func count() -> Int {
+        (try? modelContext.fetchCount(FetchDescriptor<AgentTurnRecordModel>())) ?? 0
+    }
+
+    func fetchDailyCountSeries(days: Int = 14, endingAt date: Date = Date()) -> AgentTurnDailyCountSeries {
+        guard days > 0 else { return AgentTurnDailyCountSeries(points: []) }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: date)
+        let firstDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) ?? today
+        let points = (0..<days).compactMap { offset -> AgentTurnDailyCountPoint? in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: firstDay),
+                  let nextDay = calendar.date(byAdding: .day, value: 1, to: day) else {
+                return nil
+            }
+
+            let descriptor = FetchDescriptor<AgentTurnRecordModel>(
+                predicate: #Predicate<AgentTurnRecordModel> {
+                    $0.createdAt >= day && $0.createdAt < nextDay
+                }
+            )
+            let count = (try? modelContext.fetchCount(descriptor)) ?? 0
+            return AgentTurnDailyCountPoint(day: day, count: count)
+        }
+        return AgentTurnDailyCountSeries(points: points)
+    }
+
+    /// Legacy full fetch retained for non-settings callers.
     func fetchAll() -> [AgentTurnRecordDTO] {
         let descriptor = FetchDescriptor<AgentTurnRecordModel>(
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
@@ -162,5 +221,23 @@ actor AgentTurnRecordStore {
             return "[]"
         }
         return string
+    }
+}
+
+enum AgentTurnRecordPayloadDecoder {
+    nonisolated static func messages(from json: String) -> [LumiChatMessage] {
+        guard let data = json.data(using: .utf8),
+              let messages = try? JSONDecoder().decode([LumiChatMessage].self, from: data) else {
+            return []
+        }
+        return messages
+    }
+
+    nonisolated static func tools(from json: String) -> [[String: String]] {
+        guard let data = json.data(using: .utf8),
+              let tools = try? JSONDecoder().decode([[String: String]].self, from: data) else {
+            return []
+        }
+        return tools
     }
 }

@@ -187,6 +187,93 @@ public actor ConversationStore: SuperLog {
         }
     }
 
+    /// Fetch one conversation page using a keyset cursor.
+    ///
+    /// The cursor is the last item from the previous page. Keyset pagination
+    /// avoids materializing all earlier rows as the conversation table grows.
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil
+    ) -> [LumiConversationSummary] {
+        guard limit > 0 else { return [] }
+
+        let context = ModelContext(container)
+        let cursorTimestamp = beforeUpdatedAt?.timeIntervalSince1970
+        let cursorID = beforeID?.uuidString
+        var descriptor: FetchDescriptor<ConversationModel>
+
+        if let cursorTimestamp, let cursorID {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.updatedAt < cursorTimestamp ||
+                    ($0.updatedAt == cursorTimestamp && $0.id < cursorID)
+                },
+                sortBy: [
+                    SortDescriptor(\.updatedAt, order: .reverse),
+                    SortDescriptor(\.id, order: .reverse),
+                ]
+            )
+        } else {
+            descriptor = FetchDescriptor<ConversationModel>(
+                sortBy: [
+                    SortDescriptor(\.updatedAt, order: .reverse),
+                    SortDescriptor(\.id, order: .reverse),
+                ]
+            )
+        }
+
+        descriptor.fetchLimit = limit
+
+        do {
+            let models = try context.fetch(descriptor)
+            return models.compactMap { $0.toLumiConversationSummary() }
+        } catch {
+            Self.logger.error("\(Self.t)查询对话分页失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// Count conversations without materializing their summaries.
+    func conversationCount() -> Int {
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<ConversationModel>()
+
+        do {
+            return try context.fetchCount(descriptor)
+        } catch {
+            Self.logger.error("\(Self.t)统计对话数量失败：\(error.localizedDescription)")
+            return 0
+        }
+    }
+
+    /// Build a recent daily conversation-count series with bounded count queries.
+    func fetchDailyCountSeries(days: Int = 14, endingAt date: Date = Date()) -> ConversationDailyCountSeries {
+        guard days > 0 else { return ConversationDailyCountSeries(points: []) }
+
+        let context = ModelContext(container)
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: date)
+        let firstDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) ?? today
+        let points = (0..<days).compactMap { offset -> ConversationDailyCountPoint? in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: firstDay),
+                  let nextDay = calendar.date(byAdding: .day, value: 1, to: day) else {
+                return nil
+            }
+
+            let startTimestamp = day.timeIntervalSince1970
+            let endTimestamp = nextDay.timeIntervalSince1970
+            let descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.createdAt >= startTimestamp && $0.createdAt < endTimestamp
+                }
+            )
+            let count = (try? context.fetchCount(descriptor)) ?? 0
+            return ConversationDailyCountPoint(day: day, count: count)
+        }
+        return ConversationDailyCountSeries(points: points)
+    }
+
     /// Fetch a single conversation by ID
     func fetchConversation(id: UUID) -> LumiConversationSummary? {
         let context = ModelContext(container)
@@ -271,6 +358,71 @@ public actor ConversationStore: SuperLog {
         model.modelName = modelName
         model.updatedAt = Date().timeIntervalSince1970
         return save(context, operation: "更新供应商")
+    }
+
+    /// Update conversation response preferences
+    func updateConversationPreferences(
+        id: UUID,
+        verbosity: LumiResponseVerbosity? = nil,
+        reasoningEffort: LumiReasoningEffort? = nil
+    ) -> Bool {
+        let context = ModelContext(container)
+        let idString = id.uuidString
+
+        let descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { $0.id == idString }
+        )
+
+        guard let model = try? context.fetch(descriptor).first else {
+            return false
+        }
+
+        if let verbosity {
+            model.verbosityRaw = verbosity.rawValue
+        }
+        if let reasoningEffort {
+            model.reasoningEffortRaw = reasoningEffort.rawValue
+        }
+        model.updatedAt = Date().timeIntervalSince1970
+        return save(context, operation: "更新对话偏好")
+    }
+
+    /// Update conversation order
+    func updateOrder(id: UUID, order: Int) -> Bool {
+        let context = ModelContext(container)
+        let idString = id.uuidString
+
+        let descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { $0.id == idString }
+        )
+
+        guard let model = try? context.fetch(descriptor).first else {
+            return false
+        }
+
+        model.order = order
+        model.updatedAt = Date().timeIntervalSince1970
+        return save(context, operation: "更新排序")
+    }
+
+    /// Fetch pinned conversations, returning their IDs sorted by order.
+    func fetchPinnedConversationIDs() -> [(UUID, Int)] {
+        let context = ModelContext(container)
+
+        var descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { $0.order == 0 },
+            sortBy: [SortDescriptor(\.order)]
+        )
+
+        do {
+            let models = try context.fetch(descriptor)
+            return models.compactMap { model in
+                guard let uuid = UUID(uuidString: model.id) else { return nil }
+                return (uuid, model.order ?? LumiConversationSummary.defaultOrder)
+            }
+        } catch {
+            return []
+        }
     }
 
     // MARK: - Delete

@@ -44,4 +44,21 @@ final class ConversationSpeedPluginTests: XCTestCase {
         XCTAssertEqual(ConversationSpeedSample.averageTokensPerSecond(from: samples), 25)
         XCTAssertNil(ConversationSpeedSample.averageTokensPerSecond(from: []))
     }
+
+    func testSpeedUsesFullLatencyWhenResponseArrivesInOneChunk() throws {
+        let message = LumiChatMessage(
+            conversationID: UUID(),
+            role: .assistant,
+            content: "response",
+            outputTokenCount: 127,
+            latencyMs: 6_650,
+            timeToFirstTokenMs: 6_650,
+            streamingDurationMs: 4
+        )
+
+        let samples = ConversationSpeedSample.samples(from: [message])
+
+        XCTAssertEqual(samples.count, 1)
+        XCTAssertEqual(samples[0].tokensPerSecond, 127.0 / 6.65, accuracy: 0.0001)
+    }
 }

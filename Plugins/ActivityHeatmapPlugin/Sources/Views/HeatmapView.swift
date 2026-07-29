@@ -4,6 +4,9 @@ import LumiUI
 /// GitHub-style activity heatmap showing daily message counts as colored cells.
 public struct ActivityHeatmapView: View {
     public let data: [ActivityDay]
+    public let isLoading: Bool
+
+    @State private var isBreathing = false
 
     // GitHub-style heatmap colors (5 levels)
     private let colors: [Color] = [
@@ -17,8 +20,9 @@ public struct ActivityHeatmapView: View {
     private let cellSize: CGFloat = 12
     private let cellSpacing: CGFloat = 3
 
-    public init(data: [ActivityDay]) {
+    public init(data: [ActivityDay], isLoading: Bool = false) {
         self.data = data
+        self.isLoading = isLoading
     }
 
     public var body: some View {
@@ -45,23 +49,59 @@ public struct ActivityHeatmapView: View {
             // Heatmap grid
             heatmapGrid
         }
+        .onAppear {
+            updateBreathingState()
+        }
+        .onChange(of: isLoading) { _, _ in
+            updateBreathingState()
+        }
     }
 
     private var heatmapGrid: some View {
         let weeks = chunkIntoWeeks(data)
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .top, spacing: cellSpacing) {
-                ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
+                ForEach(Array(weeks.enumerated()), id: \.offset) { weekIndex, week in
                     VStack(spacing: cellSpacing) {
-                        ForEach(week) { day in
+                        ForEach(Array(week.enumerated()), id: \.element.id) { dayIndex, day in
                             RoundedRectangle(cornerRadius: 2)
-                                .fill(colors[min(day.level, colors.count - 1)])
+                                .fill(cellColor(for: day, index: weekIndex * 7 + dayIndex))
                                 .frame(width: cellSize, height: cellSize)
+                                .animation(
+                                    isLoading
+                                        ? .easeInOut(duration: 1.6)
+                                            .repeatForever(autoreverses: true)
+                                            .delay(Double((weekIndex * 7 + dayIndex) % 9) * 0.08)
+                                        : .easeOut(duration: 0.35),
+                                    value: isBreathing
+                                )
                         }
                     }
                 }
             }
             .padding(.vertical, 4)
+        }
+    }
+
+    private func cellColor(for day: ActivityDay, index: Int) -> Color {
+        guard isLoading else {
+            return colors[min(day.level, colors.count - 1)]
+        }
+
+        let baseOpacity = 0.28 + Double((index * 17) % 5) * 0.035
+        let breathingOpacity = isBreathing ? baseOpacity + 0.18 : baseOpacity
+        return colors[0].opacity(breathingOpacity)
+    }
+
+    private func updateBreathingState() {
+        guard isLoading else {
+            isBreathing = false
+            return
+        }
+
+        isBreathing = false
+        withAnimation {
+            isBreathing = true
         }
     }
 

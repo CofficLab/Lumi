@@ -1,5 +1,15 @@
 import Foundation
 
+public enum ToolCallInteractionState: Codable, Sendable, Equatable {
+    case waiting
+    case answered(String)
+
+    public var answer: String? {
+        guard case let .answered(answer) = self else { return nil }
+        return answer
+    }
+}
+
 /// 单次工具调用的执行结果（与调用请求存放在同一 `ToolCall` 中）。
 public struct ToolCallResult: Codable, Sendable, Equatable {
     /// 返回给 LLM 的文本内容
@@ -19,11 +29,11 @@ public struct ToolCallResult: Codable, Sendable, Equatable {
 
     /// 工具正在等待用户回答，Agent 循环应暂停。
     ///
-    /// 当工具（如 `ask_user`）需要用户在 UI 上做出选择时，
-    /// `execute()` 返回 `__ASK_USER_PENDING__` 前缀字符串，
-    /// `ToolCallExecutor` 据此设置此标记为 `true`。
-    /// `AgentTurnService` 检测到后暂停循环，直到用户操作后恢复。
+    /// 由 LumiKernel 的结构化 `AgentTurnControl.suspend` 转换而来。
     public var awaitingUserResponse: Bool
+
+    /// Preserves a custom interaction renderer after the interaction is answered.
+    public var interactionState: ToolCallInteractionState?
 
     public init(
         content: String,
@@ -31,7 +41,8 @@ public struct ToolCallResult: Codable, Sendable, Equatable {
         isError: Bool = false,
         executedAt: Date = Date(),
         duration: TimeInterval? = nil,
-        awaitingUserResponse: Bool = false
+        awaitingUserResponse: Bool = false,
+        interactionState: ToolCallInteractionState? = nil
     ) {
         self.content = content
         self.images = images
@@ -39,12 +50,13 @@ public struct ToolCallResult: Codable, Sendable, Equatable {
         self.executedAt = executedAt
         self.duration = duration
         self.awaitingUserResponse = awaitingUserResponse
+        self.interactionState = interactionState
     }
 
     // MARK: - Codable（兼容旧数据）
 
     private enum CodingKeys: String, CodingKey {
-        case content, images, isError, executedAt, duration, awaitingUserResponse
+        case content, images, isError, executedAt, duration, awaitingUserResponse, interactionState
     }
 
     public init(from decoder: Decoder) throws {
@@ -55,6 +67,7 @@ public struct ToolCallResult: Codable, Sendable, Equatable {
         executedAt = try c.decodeIfPresent(Date.self, forKey: .executedAt) ?? Date()
         duration = try c.decodeIfPresent(TimeInterval.self, forKey: .duration)
         awaitingUserResponse = try c.decodeIfPresent(Bool.self, forKey: .awaitingUserResponse) ?? false
+        interactionState = try c.decodeIfPresent(ToolCallInteractionState.self, forKey: .interactionState)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -65,5 +78,6 @@ public struct ToolCallResult: Codable, Sendable, Equatable {
         try c.encode(executedAt, forKey: .executedAt)
         if let duration { try c.encode(duration, forKey: .duration) }
         if awaitingUserResponse { try c.encode(awaitingUserResponse, forKey: .awaitingUserResponse) }
+        if let interactionState { try c.encode(interactionState, forKey: .interactionState) }
     }
 }

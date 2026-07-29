@@ -48,8 +48,8 @@ public enum ModelDailyTokenBarChartMapper {
             bars.append(AppBarChartData.Bar(value: dayTotal, isHighlighted: isHighlighted, tooltip: tooltip))
         }
 
-        let totalText = ModelSelectorFormatService.tokenCount(totalTokens)
-        let peakText = peakTokens > 0 ? String(localized: "peak \(ModelSelectorFormatService.tokenCount(peakTokens))") : nil
+        let totalText = ModelSelectorFormatService.compactTokenCount(totalTokens)
+        let peakText = peakTokens > 0 ? String(localized: "peak \(ModelSelectorFormatService.compactTokenCount(peakTokens))") : nil
 
         let accessibilitySummary = String(
             localized: "\(title), total \(totalText) tokens, peak \(ModelSelectorFormatService.tokenCount(peakTokens))"
@@ -60,7 +60,9 @@ public enum ModelDailyTokenBarChartMapper {
             totalText: totalText,
             peakText: peakText,
             bars: bars,
-            accessibilitySummary: accessibilitySummary
+            accessibilitySummary: accessibilitySummary,
+            totalTooltip: "total \(ModelSelectorFormatService.tokenCount(totalTokens)) tokens",
+            peakTooltip: peakTokens > 0 ? "peak \(ModelSelectorFormatService.tokenCount(peakTokens)) tokens" : nil
         )
     }
 
@@ -81,9 +83,9 @@ public enum ModelDailyTokenBarChartMapper {
         formatter.timeStyle = .none
 
         let title = String(localized: "Last \(series.buckets.count) days")
-        let totalText = ModelSelectorFormatService.tokenCount(series.totalTokens)
+        let totalText = ModelSelectorFormatService.compactTokenCount(series.totalTokens)
         let peakText: String? = series.peakTokens > 0
-            ? String(localized: "peak \(ModelSelectorFormatService.tokenCount(series.peakTokens))")
+            ? String(localized: "peak \(ModelSelectorFormatService.compactTokenCount(series.peakTokens))")
             : nil
 
         let bars = series.buckets.enumerated().map { index, bucket in
@@ -105,7 +107,9 @@ public enum ModelDailyTokenBarChartMapper {
             totalText: totalText,
             peakText: peakText,
             bars: bars,
-            accessibilitySummary: accessibilitySummary
+            accessibilitySummary: accessibilitySummary,
+            totalTooltip: "total \(ModelSelectorFormatService.tokenCount(series.totalTokens)) tokens",
+            peakTooltip: series.peakTokens > 0 ? "peak \(ModelSelectorFormatService.tokenCount(series.peakTokens)) tokens" : nil
         )
     }
 }

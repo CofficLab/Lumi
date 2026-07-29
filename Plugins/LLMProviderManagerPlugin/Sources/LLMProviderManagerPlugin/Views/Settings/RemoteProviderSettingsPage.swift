@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -14,6 +15,9 @@ struct RemoteProviderSettingsPage: View {
     @State private var apiKey: String = ""
     @State private var isLoadingSettings: Bool = false
     @State private var stats: ModelUsageStatsSnapshot?
+    @State private var providerUsage: [String: ProviderDailyTokenUsageSeries] = [:]
+    @State private var loadingUsageProviderIDs: Set<String> = []
+    @State private var usageCache: ProviderUsageCache?
 
     private var llmProvider: (any LLMProviderManaging)? {
         kernel.resolveService((any LLMProviderManaging).self)
@@ -38,9 +42,16 @@ struct RemoteProviderSettingsPage: View {
             systemIcon: "cloud.fill",
             localizedProvidersKey: "%lld cloud providers",
             isLocalProvider: { !$0.isLocal },
-            selectedProviderID: $selectedProviderID
+            selectedProviderID: $selectedProviderID,
+            headerAccessory: AnyView(openDataDirectoryButton)
         ) { provider in
             VStack(alignment: .leading, spacing: 32) {
+                ProviderDailyTokenUsageCard(
+                    provider: provider,
+                    series: providerUsage[provider.id],
+                    isLoading: loadingUsageProviderIDs.contains(provider.id)
+                )
+
                 if let customItem = kernel.settings?.allLLMProviderSettingsItems.first(where: { $0.providerID == provider.id }),
                    let instance = llmProvider?.llmProvider(id: provider.id) {
                     customItem.makeContent(for: instance)
@@ -52,14 +63,29 @@ struct RemoteProviderSettingsPage: View {
         }
         .onChange(of: selectedProviderID) { _, _ in
             loadAPIKey()
+            loadProviderUsage()
         }
         .onChange(of: apiKey) { _, _ in
             saveAPIKey()
         }
         .onAppear {
             loadAPIKey()
+            loadProviderUsage()
             reloadStats()
         }
+    }
+
+    private var openDataDirectoryButton: some View {
+        AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+            openDataDirectory()
+        }
+    }
+
+    private func openDataDirectory() {
+        guard let url = usageCache?.directory
+            ?? kernel.storage?.pluginDataDirectory(for: "LLMProviderManager") else { return }
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        _ = NSWorkspace.shared.open(url)
     }
 
     // MARK: - API Key Section
@@ -129,6 +155,67 @@ struct RemoteProviderSettingsPage: View {
             messages: messages,
             providers: llmProvider?.allLLMProviders().map { type(of: $0).info } ?? []
         )
+    }
+
+    private func loadProviderUsage() {
+        let providerID = selectedProviderID
+        guard !providerID.isEmpty,
+              providerUsage[providerID] == nil,
+              !loadingUsageProviderIDs.contains(providerID),
+              let messageManager = kernel.messageManager
+        else { return }
+
+        let cache = usageCache ?? ProviderUsageCache(
+            storageDirectory: kernel.storage?.pluginDataDirectory(for: "LLMProviderManager")
+        )
+        usageCache = cache
+        loadingUsageProviderIDs.insert(providerID)
+        Task {
+            let series = await buildProviderUsageSeries(
+                providerID: providerID,
+                messageManager: messageManager,
+                cache: cache
+            )
+            await MainActor.run {
+                providerUsage[providerID] = series
+                loadingUsageProviderIDs.remove(providerID)
+            }
+        }
+    }
+
+    private func buildProviderUsageSeries(
+        providerID: String,
+        messageManager: any MessageManaging,
+        cache: ProviderUsageCache
+    ) async -> ProviderDailyTokenUsageSeries {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let days = ModelUsageStatsService.defaultDailyUsageWindowDays
+        guard let startDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) else {
+            return ProviderDailyTokenUsageSeries(providerID: providerID, points: [])
+        }
+
+        let dates = (0..<days).compactMap { calendar.date(byAdding: .day, value: $0, to: startDay) }
+        let cached = cache.load(providerID: providerID, days: Array(dates.dropLast()))
+        var usages: [MessageTokenUsage] = []
+        var cacheMisses: [MessageTokenUsage] = []
+
+        for day in dates {
+            let usage: MessageTokenUsage
+            if day != today, let cachedUsage = cached[day] {
+                usage = cachedUsage
+            } else {
+                usage = await messageManager.fetchTokenUsage(on: day, providerID: providerID, modelName: nil)
+                if day != today {
+                    cacheMisses.append(usage)
+                }
+            }
+            usages.append(usage)
+        }
+
+        cache.save(cacheMisses, providerID: providerID)
+
+        return ProviderDailyTokenUsageSeries.build(providerID: providerID, usages: usages)
     }
 
     // MARK: - API Key Operations

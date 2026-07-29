@@ -132,23 +132,6 @@
         }
       }
     },
-    "Streaming Speed" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Streaming Speed"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "生成速度"
-          }
-        }
-      }
-    },
     "Streaming duration" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -162,6 +145,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "生成耗时"
+          }
+        }
+      }
+    },
+    "Streaming Speed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streaming Speed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "生成速度"
           }
         }
       }
@@ -233,6 +233,9 @@
           }
         }
       }
+    },
+    "X: %@" : {
+
     }
   },
   "version" : "1.0"

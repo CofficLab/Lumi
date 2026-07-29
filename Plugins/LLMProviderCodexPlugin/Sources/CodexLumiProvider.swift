@@ -16,8 +16,8 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-5.4-mini": 400_000
         ],
         modelCapabilities: [
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true)
+            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true)
         ],
         websiteURL: URL(string: "https://github.com/openai/codex")!
     )
@@ -63,7 +63,11 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
         }
 
         let prompt = Self.buildPrompt(from: request.messages)
-        let output = try await runCodexProcess(prompt: prompt, model: request.model)
+        let output = try await runCodexProcess(
+            prompt: prompt,
+            model: request.model,
+            reasoningEffort: request.generationOptions.reasoningEffort
+        )
         let parsed = CodexOutputParser.parse(output)
 
         guard !parsed.agentMessages.isEmpty else {
@@ -86,11 +90,19 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
         )
     }
 
-    private func runCodexProcess(prompt: String, model: String) async throws -> String {
+    private func runCodexProcess(
+        prompt: String,
+        model: String,
+        reasoningEffort: LumiReasoningEffort?
+    ) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             process.executableURL = URL(fileURLWithPath: cli.executablePath)
-            process.arguments = cli.arguments(prompt: prompt, model: model)
+            process.arguments = cli.arguments(
+                prompt: prompt,
+                model: model,
+                reasoningEffort: reasoningEffort
+            )
 
             let pipe = Pipe()
             process.standardOutput = pipe

@@ -405,6 +405,25 @@ public actor MessageStore: SuperLog {
         return (contentChars, metadataChars, reasoningChars, toolCallArgumentChars)
     }
 
+    private static func tokenCounts(for model: MessageModel, decoder: JSONDecoder) -> (input: Int, output: Int) {
+        let metadata: [String: String]
+        if let metadataJson = model.metadataJson,
+           let data = metadataJson.data(using: .utf8),
+           let decoded = try? decoder.decode([String: String].self, from: data) {
+            metadata = decoded
+        } else {
+            metadata = [:]
+        }
+
+        let inputTokens = model.inputTokenCount
+            ?? metadata[LumiMessageTokenMetadata.inputKey].flatMap { Int($0) }
+            ?? 0
+        let outputTokens = model.outputTokenCount
+            ?? metadata[LumiMessageTokenMetadata.outputKey].flatMap { Int($0) }
+            ?? 0
+        return (inputTokens, outputTokens)
+    }
+
     // MARK: - Aggregate Queries
 
     /// 获取自指定日期以来每日的消息数量
@@ -441,15 +460,57 @@ public actor MessageStore: SuperLog {
 
         var counts: [Date: Int] = [:]
         let calendar = Calendar.current
+        let decoder = JSONDecoder()
         for model in models {
             let date = Date(timeIntervalSince1970: model.createdAt)
             let day = calendar.startOfDay(for: date)
-            let tokens = (model.inputTokenCount ?? 0) + (model.outputTokenCount ?? 0)
+            let tokenCounts = Self.tokenCounts(for: model, decoder: decoder)
+            let tokens = tokenCounts.input + tokenCounts.output
             if tokens > 0 {
                 counts[day, default: 0] += tokens
             }
         }
         return counts
+    }
+
+    /// 获取某一天的 token 消耗量，可按供应商和模型过滤。
+    func fetchTokenUsage(on day: Date, providerID: String? = nil, modelName: String? = nil) -> MessageTokenUsage {
+        let context = ModelContext(container)
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: day)
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+            return MessageTokenUsage(day: startOfDay, inputTokens: 0, outputTokens: 0)
+        }
+
+        let startTimestamp = startOfDay.timeIntervalSince1970
+        let endTimestamp = endOfDay.timeIntervalSince1970
+        let descriptor = FetchDescriptor<MessageModel>(
+            predicate: #Predicate<MessageModel> {
+                $0.createdAt >= startTimestamp && $0.createdAt < endTimestamp
+            }
+        )
+
+        guard let models = try? context.fetch(descriptor) else {
+            return MessageTokenUsage(day: startOfDay, inputTokens: 0, outputTokens: 0)
+        }
+
+        let decoder = JSONDecoder()
+        var inputTokens = 0
+        var outputTokens = 0
+        for model in models {
+            if let providerID, model.providerId != providerID {
+                continue
+            }
+            if let modelName, model.modelName != modelName {
+                continue
+            }
+
+            let tokenCounts = Self.tokenCounts(for: model, decoder: decoder)
+            inputTokens += tokenCounts.input
+            outputTokens += tokenCounts.output
+        }
+
+        return MessageTokenUsage(day: startOfDay, inputTokens: inputTokens, outputTokens: outputTokens)
     }
 }
 

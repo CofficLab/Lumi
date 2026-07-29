@@ -36,6 +36,7 @@ public struct AppBarChart: View {
                 .font(.system(size: 11, weight: .medium))
                 .monospacedDigit()
                 .foregroundColor(theme.textSecondary)
+                .help(data.totalTooltip ?? data.totalText)
 
             Spacer(minLength: 0)
 
@@ -44,6 +45,7 @@ public struct AppBarChart: View {
                     .font(.system(size: 10, weight: .regular))
                     .monospacedDigit()
                     .foregroundColor(theme.textTertiary)
+                    .help(data.peakTooltip ?? peakText)
             }
         }
     }

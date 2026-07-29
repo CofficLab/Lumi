@@ -100,9 +100,10 @@ public struct AddTasksToGoalTool: LumiAgentTool, SuperLog {
         } catch {
             return "Error: failed to add tasks: \(error.localizedDescription)"
         }
-        
+
         // 通知 UI
         if let goal = await manager.fetchGoal(id: goalId) {
+            await manager.resetContinuationCount(conversationId: goal.conversationId)
             NotificationCenter.default.post(
                 name: .goalDidChange,
                 object: nil,

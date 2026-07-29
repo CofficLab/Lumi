@@ -15,6 +15,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID?
     @Published public private(set) var currentTitle: String = "No conversation"
+    @Published public private(set) var isLoadingConversations = true
 
     /// Notification posted when conversations list changes
     static let conversationsDidChangeNotification = Notification.Name.lumiConversationsDidChange
@@ -44,11 +45,13 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
     /// Load conversations from store (called during boot)
     public func loadConversations() {
+        isLoadingConversations = true
         guard let store else {
             if Self.verbose {
                 Self.logger.warning("\(Self.t)Store not available, using empty list")
             }
             conversations = []
+            isLoadingConversations = false
             return
         }
 
@@ -69,12 +72,36 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                 self.updateCurrentTitle()
                 self.persistSelectedConversationID()
                 self.notifyConversationsChanged()
+                self.isLoadingConversations = false
 
                 if Self.verbose {
                     Self.logger.info("\(Self.t)Loaded \(loaded.count) conversations")
                 }
             }
         }
+    }
+
+    /// Load a bounded conversation page for settings/history UIs.
+    public func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil
+    ) async -> [LumiConversationSummary] {
+        await store?.fetchConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID
+        ) ?? []
+    }
+
+    /// Count conversations without loading their summaries.
+    public func conversationCount() async -> Int {
+        await store?.conversationCount() ?? 0
+    }
+
+    /// Fetch daily conversation counts without loading conversation summaries.
+    func fetchDailyCountSeries() async -> ConversationDailyCountSeries {
+        await store?.fetchDailyCountSeries() ?? ConversationDailyCountSeries(points: [])
     }
 
     /// Notify observers that conversations changed
@@ -273,8 +300,41 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         conversations = conversations
         notifyConversationsChanged()
 
+        Task {
+            await store?.updateConversationPreferences(id: conversationID, verbosity: verbosity)
+        }
+
         if Self.verbose {
             Self.logger.info("\(Self.t)setVerbosity: conversation=\(conversationID.uuidString.prefix(8)), verbosity=\(verbosity.rawValue)")
+        }
+    }
+
+    // MARK: - Reasoning Effort
+
+    public func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort {
+        guard let conversationID else {
+            return .defaultEffort
+        }
+        return conversations.first { $0.id == conversationID }?.reasoningEffort ?? .defaultEffort
+    }
+
+    public func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].reasoningEffort = reasoningEffort
+        conversations = conversations
+        notifyConversationsChanged()
+
+        Task {
+            await store?.updateConversationPreferences(id: conversationID, reasoningEffort: reasoningEffort)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setReasoningEffort: conversation=\(conversationID.uuidString.prefix(8)), effort=\(reasoningEffort.rawValue)")
         }
     }
 
@@ -321,6 +381,25 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setLanguage: conversation=\(conversationID.uuidString.prefix(8)), language=\(language.rawValue)")
+        }
+    }
+
+    // MARK: - Conversation Order
+
+    public func setConversationOrder(_ order: Int, for conversationID: UUID) {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].order = order
+        conversations = conversations
+        notifyConversationsChanged()
+
+        Task {
+            await store?.updateOrder(id: conversationID, order: order)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setConversationOrder: conversation=\(conversationID.uuidString.prefix(8)), order=\(order)")
         }
     }
 

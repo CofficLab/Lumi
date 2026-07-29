@@ -912,6 +912,9 @@
         }
       }
     },
+    "Pin Conversation" : {
+
+    },
     "Service unavailable" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1051,6 +1054,9 @@
           }
         }
       }
+    },
+    "Unpin Conversation" : {
+
     },
     "Untitled" : {
       "extractionState" : "stale",

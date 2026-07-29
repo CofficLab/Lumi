@@ -168,6 +168,36 @@ struct ActivityHeatmapViewModelTests {
         let token = ActivityDayToken(date: date, totalTokens: 1000)
         #expect(token.id == date)
     }
+
+    @Test("Statistics summarize activity, streaks, tokens, and weekdays")
+    func statisticsSummary() {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: Date())
+        let activity = (0..<5).map { offset in
+            ActivityDay(
+                date: calendar.date(byAdding: .day, value: offset, to: start)!,
+                level: offset == 0 ? 1 : 4,
+                messageCount: [2, 4, 0, 8, 3][offset]
+            )
+        }
+        let tokens = activity.map {
+            ActivityDayToken(date: $0.date, totalTokens: $0.messageCount * 100)
+        }
+
+        let stats = ActivityHeatmapStatistics(activity: activity, tokens: tokens)
+
+        #expect(stats.totalMessages == 17)
+        #expect(stats.activeDays == 4)
+        #expect(stats.averageMessagesPerDay == 3.4)
+        #expect(stats.averageMessagesPerActiveDay == 4.25)
+        #expect(stats.currentStreak == 2)
+        #expect(stats.longestStreak == 2)
+        #expect(stats.longestIdleStreak == 1)
+        #expect(stats.totalTokens == 1700)
+        #expect(stats.averageTokensPerMessage == 100)
+        #expect(stats.peakMessageDay?.messageCount == 8)
+        #expect(stats.peakTokenDay?.totalTokens == 800)
+    }
 }
 
 @Suite("ActivityHeatmapViewModel load()", .serialized)
@@ -200,12 +230,14 @@ struct ActivityHeatmapViewModelLoadTests {
 
 @Suite("ActivityHeatmapCache")
 @MainActor
-struct ActivityHeatmapCacheTests {
+final class ActivityHeatmapCacheTests {
     private var tempDir: URL!
     private var cache: ActivityHeatmapCache!
 
     init() {
-        let tempPath = FileManager.default.temporaryDirectory.appendingPathComponent("ActivityHeatmapCacheTests")
+        let tempPath = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ActivityHeatmapCacheTests")
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try? FileManager.default.createDirectory(at: tempPath, withIntermediateDirectories: true)
         tempDir = tempPath
     }
@@ -215,7 +247,8 @@ struct ActivityHeatmapCacheTests {
     }
 
     private func createCache() -> ActivityHeatmapCache {
-        ActivityHeatmapCache(storage: nil, pluginID: "com.coffic.test")
+        let directory = tempDir.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        return ActivityHeatmapCache(storageDirectory: directory, pluginID: "com.coffic.test")
     }
 
     // MARK: - Heatmap Cache Tests
@@ -226,8 +259,8 @@ struct ActivityHeatmapCacheTests {
         let testDate = Calendar.current.startOfDay(for: Date())
         let testCount = 42
 
-        cache.saveHeatmapCount(testCount, for: testDate)
-        let loaded = cache.loadHeatmapCount(for: testDate)
+        await cache.saveHeatmapCount(testCount, for: testDate)
+        let loaded = await cache.loadHeatmapCount(for: testDate)
         #expect(loaded == testCount)
     }
 
@@ -236,7 +269,7 @@ struct ActivityHeatmapCacheTests {
         let cache = createCache()
         let testDate = Calendar.current.startOfDay(for: Date())
 
-        let loaded = cache.loadHeatmapCount(for: testDate)
+        let loaded = await cache.loadHeatmapCount(for: testDate)
         #expect(loaded == nil)
     }
 
@@ -249,10 +282,10 @@ struct ActivityHeatmapCacheTests {
         let date1 = cal.date(byAdding: .day, value: -1, to: today)!
         let date2 = cal.date(byAdding: .day, value: -2, to: today)!
 
-        cache.saveHeatmapCount(10, for: date1)
-        cache.saveHeatmapCount(20, for: date2)
+        await cache.saveHeatmapCount(10, for: date1)
+        await cache.saveHeatmapCount(20, for: date2)
 
-        let loaded = cache.loadHeatmapCounts(for: [date1, date2, today])
+        let loaded = await cache.loadHeatmapCounts(for: [date1, date2, today])
 
         #expect(loaded[date1] == 10)
         #expect(loaded[date2] == 20)
@@ -267,8 +300,8 @@ struct ActivityHeatmapCacheTests {
         let testDate = Calendar.current.startOfDay(for: Date())
         let testCount = 12345
 
-        cache.saveTokenCount(testCount, for: testDate)
-        let loaded = cache.loadTokenCount(for: testDate)
+        await cache.saveTokenCount(testCount, for: testDate)
+        let loaded = await cache.loadTokenCount(for: testDate)
         #expect(loaded == testCount)
     }
 
@@ -281,10 +314,10 @@ struct ActivityHeatmapCacheTests {
         let date1 = cal.date(byAdding: .day, value: -1, to: today)!
         let date2 = cal.date(byAdding: .day, value: -3, to: today)!
 
-        cache.saveTokenCount(5000, for: date1)
-        cache.saveTokenCount(8000, for: date2)
+        await cache.saveTokenCount(5000, for: date1)
+        await cache.saveTokenCount(8000, for: date2)
 
-        let loaded = cache.loadTokenCounts(for: [date1, date2])
+        let loaded = await cache.loadTokenCounts(for: [date1, date2])
 
         #expect(loaded[date1] == 5000)
         #expect(loaded[date2] == 8000)
@@ -295,13 +328,13 @@ struct ActivityHeatmapCacheTests {
     @Test("Cache size increases after saving")
     func cacheSizeIncreases() async {
         let cache = createCache()
-        let initialSize = cache.cacheSize()
+        let initialSize = await cache.cacheSize()
 
         let testDate = Calendar.current.startOfDay(for: Date())
-        cache.saveHeatmapCount(100, for: testDate)
-        cache.saveTokenCount(200, for: testDate)
+        await cache.saveHeatmapCount(100, for: testDate)
+        await cache.saveTokenCount(200, for: testDate)
 
-        let newSize = cache.cacheSize()
+        let newSize = await cache.cacheSize()
         #expect(newSize > initialSize)
     }
 }

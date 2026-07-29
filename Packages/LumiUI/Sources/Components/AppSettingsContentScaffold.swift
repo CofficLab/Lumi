@@ -34,7 +34,12 @@ public struct AppSettingsContentScaffold<Content: View>: View {
 
     private var scaffoldContent: some View {
         content
-            .padding(24)
+            // Full-height split views (sidebar + detail) own their scrolling and
+            // should reach the bottom edge of the settings content area. The
+            // regular scrolling variant keeps the symmetric page padding.
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, scrollsContent ? 24 : 0)
             .frame(maxWidth: maxContentWidth, alignment: .leading)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }

@@ -8,7 +8,7 @@ import SwiftUI
 public final class ActivityHeatmapPlugin: LumiPlugin {
     public let id = "com.coffic.activity-heatmap"
     public let name = "Activity Heatmap"
-    public let order = 210
+    public let order = 9
     public let policy: LumiPluginPolicy = .optOut
     public let category: LumiPluginCategory = .general
     public let pluginDescription = "Display daily message activity and token consumption charts."
@@ -16,12 +16,18 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
     /// Shared cache instance for the plugin
     private var cache: ActivityHeatmapCache?
 
+    /// Cache directory for the plugin data (exposed for settings view to open in Finder)
+    package var cacheDirectory: URL? {
+        cache?.databaseDirectoryURL
+    }
+
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
         // Initialize cache with storage service from kernel
         let storage = kernel.resolveService(StorageProviding.self)
-        cache = ActivityHeatmapCache(storage: storage, pluginID: id)
+        let storageDirectory = await storage?.pluginDataDirectory(for: id)
+        cache = ActivityHeatmapCache(storageDirectory: storageDirectory, pluginID: id)
     }
 
     public func onReady(kernel: LumiKernel) async throws {}
@@ -31,7 +37,7 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
         return [
             SettingsTabItem(
                 id: id,
-                title: name,
+                title: LumiPluginLocalization.string("Activity Heatmap", bundle: .module),
                 systemImage: "chart.bar.xaxis",
                 order: order
             ) {
@@ -58,7 +64,9 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
-    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
+        AnyView(ActivityHeatmapAboutView())
+    }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }

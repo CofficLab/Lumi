@@ -14,6 +14,18 @@ public enum OpenAICompatibleGenerationOptionsApplier {
                 body["max_tokens"] = maxTokens
             }
         }
+
+        if let reasoningEffort = normalizedReasoningEffort(config.reasoningEffort) {
+            body["reasoning_effort"] = reasoningEffort
+        }
+    }
+
+    private static func normalizedReasoningEffort(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let normalized = value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalized != "auto", normalized != "automatic" else { return nil }
+        guard ["minimal", "low", "medium", "high"].contains(normalized) else { return nil }
+        return normalized
     }
 }
 
@@ -34,6 +46,25 @@ public enum AnthropicCompatibleGenerationOptionsApplier {
             body["max_tokens"] = maxTokens
         } else if body["max_tokens"] == nil {
             body["max_tokens"] = defaultMaxTokens
+        }
+
+        if let budget = thinkingBudgetTokens(for: config.reasoningEffort) {
+            body["thinking"] = [
+                "type": "enabled",
+                "budget_tokens": budget,
+            ]
+            let currentMaxTokens = body["max_tokens"] as? Int ?? defaultMaxTokens
+            body["max_tokens"] = max(currentMaxTokens, budget + 1024)
+        }
+    }
+
+    private static func thinkingBudgetTokens(for value: String?) -> Int? {
+        guard let value else { return nil }
+        switch value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) {
+        case "low": return 1024
+        case "medium": return 4096
+        case "high": return 8192
+        default: return nil
         }
     }
 }

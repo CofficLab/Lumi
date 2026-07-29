@@ -10,6 +10,9 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
     public let providerID: String?
     public let modelName: String?
     public let messageCount: Int?
+    public let order: Int
+
+    public var isPinned: Bool { order == 0 }
 
     public var displayTitle: String {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -24,7 +27,8 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
         updatedAt: Date,
         providerID: String? = nil,
         modelName: String? = nil,
-        messageCount: Int? = nil
+        messageCount: Int? = nil,
+        order: Int = LumiConversationSummary.defaultOrder
     ) {
         self.id = id
         self.projectPath = projectPath
@@ -34,6 +38,7 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
         self.providerID = providerID
         self.modelName = modelName
         self.messageCount = messageCount
+        self.order = order
     }
 
     static func from(
@@ -49,7 +54,8 @@ public struct ConversationListItem: Identifiable, Equatable, Sendable {
             updatedAt: summary.updatedAt,
             providerID: summary.providerID,
             modelName: summary.modelName,
-            messageCount: messageCount
+            messageCount: messageCount,
+            order: summary.order
         )
     }
 }

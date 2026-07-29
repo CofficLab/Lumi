@@ -55,9 +55,9 @@ public final class OpenRouterProvider: LumiLLMProvider, @unchecked Sendable {
         ],
         modelCapabilities: [
             "alibaba/qwen3.5-397b": .init(supportsVision: false, supportsTools: true),
-            "anthropic/claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true),
-            "anthropic/claude-opus-4-5-20251101": .init(supportsVision: true, supportsTools: true),
-            "anthropic/claude-sonnet-4-5-20250929": .init(supportsVision: true, supportsTools: true),
+            "anthropic/claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "anthropic/claude-opus-4-5-20251101": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "anthropic/claude-sonnet-4-5-20250929": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
             "bytedance-seed/seedream-4.5": .init(supportsVision: true, supportsTools: true),
             "deepseek/deepseek-v3.1": .init(supportsVision: false, supportsTools: true),
             "google/gemma-3-27b-it:free": .init(supportsVision: true, supportsTools: true),
@@ -67,8 +67,8 @@ public final class OpenRouterProvider: LumiLLMProvider, @unchecked Sendable {
             "minimax/minimax-m2.5:free": .init(supportsVision: false, supportsTools: true),
             "nvidia/nemotron-3-super-120b-a12b:free": .init(supportsVision: false, supportsTools: true),
             "openai/gpt-4o": .init(supportsVision: true, supportsTools: true),
-            "openai/gpt-5": .init(supportsVision: true, supportsTools: true),
-            "openai/gpt-5-mini": .init(supportsVision: true, supportsTools: true),
+            "openai/gpt-5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "openai/gpt-5-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
             "openai/gpt-oss-20b:free": .init(supportsVision: false, supportsTools: true),
             "qwen/qwen3.6-plus": .init(supportsVision: true, supportsTools: true),
             "stepfun/step-3.5-flash:free": .init(supportsVision: true, supportsTools: true),
@@ -95,7 +95,8 @@ public final class OpenRouterProvider: LumiLLMProvider, @unchecked Sendable {
             additionalHeaders: ["HTTP-Referer": "Lumi", "X-Title": "Lumi"],
             includeUsageInStreamOptions: false,
             returnsEmptyChunkWhenNoDelta: true,
-            acceptsFunctionScopedToolCallID: true
+            acceptsFunctionScopedToolCallID: true,
+            supportsReasoningEffort: true
         )
         self.adapter = OpenAICompatibleProviderAdapter(configuration: config)
         self.apiService = apiService

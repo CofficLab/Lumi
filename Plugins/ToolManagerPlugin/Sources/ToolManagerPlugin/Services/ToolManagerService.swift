@@ -21,6 +21,10 @@ public final class ToolManagerService: ToolManaging {
     /// 插件首次出现顺序，决定分组在 UI 中的排列。
     private var pluginOrder: [String] = []
 
+    /// 已注册的子 Agent 定义，独立于可执行的 delegate 工具保存，供 UI 和调试查询。
+    private var registeredSubAgents: [String: LumiSubAgentDefinition] = [:]
+    private var subAgentOrder: [String] = []
+
     public init() {}
 
     // MARK: - ToolManaging
@@ -68,10 +72,21 @@ public final class ToolManagerService: ToolManaging {
     }
 
     public func allSubAgents() -> [LumiSubAgentDefinition] {
-        []
+        subAgentOrder.compactMap { registeredSubAgents[$0] }
     }
 
-    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {}
+    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {
+        let key = subAgent.routingID
+        if registeredSubAgents[key] == nil {
+            subAgentOrder.append(key)
+        }
+        registeredSubAgents[key] = subAgent
+    }
+
+    public func removeAllSubAgents() {
+        registeredSubAgents.removeAll()
+        subAgentOrder.removeAll()
+    }
 
     public func collectTools() async throws -> [any LumiAgentTool] {
         allAgentTools()
@@ -96,26 +111,34 @@ public final class ToolManagerService: ToolManaging {
         }
 
         let startedAt = Date()
+        guard let kernel else {
+            return LumiToolResult(
+                content: "Tool execution failed: kernel is not configured",
+                duration: Date().timeIntervalSince(startedAt),
+                isError: true
+            )
+        }
+        let currentProjectPath = kernel.project?.currentProject?.path
         let executionState = LumiToolExecutionContextState(
             conversationID: conversationID,
             toolCallID: toolCall.id,
-            toolName: toolCall.name
+            toolName: toolCall.name,
+            currentProjectPath: currentProjectPath
         )
         do {
             let arguments = try Self.decodeArguments(toolCall.arguments)
-            guard let kernel else {
-                return LumiToolResult(
-                    content: "Tool execution failed: kernel is not configured",
-                    duration: Date().timeIntervalSince(startedAt),
-                    isError: true
-                )
-            }
-            let output = try await kernel.withToolExecutionContextState(executionState) {
-                try await tool.execute(arguments: arguments, kernel: kernel)
+            let executionResult = try await kernel.withToolExecutionContextState(executionState) {
+                try await tool.executeResult(arguments: arguments, kernel: kernel)
             }
             let images = executionState.collectImages()
             let duration = Date().timeIntervalSince(startedAt)
-            return LumiToolResult(content: output, duration: duration, imageAttachments: images)
+            return LumiToolResult(
+                content: executionResult.content,
+                duration: duration,
+                isError: executionResult.isError,
+                imageAttachments: images,
+                turnControl: executionResult.turnControl
+            )
         } catch {
             return LumiToolResult(
                 content: "Tool execution failed: \(error.localizedDescription)",

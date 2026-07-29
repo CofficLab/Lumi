@@ -48,7 +48,7 @@ final class InputState: ObservableObject, ConversationInputProviding {
 
     /// 是否满足发送条件（文本非空且未在发送中）
     func canSend(kernel: LumiKernel) -> Bool {
-        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSending(kernel: kernel)
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// 发送当前输入框文本。

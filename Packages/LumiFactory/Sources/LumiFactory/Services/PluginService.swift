@@ -13,6 +13,7 @@ import BrowserPlugin
 import CADDesignerPlugin
 import CaffeinatePlugin
 import ConversationAttachmentPlugin
+import ConversationPendingMessagePlugin
 import ChatFileAttachmentPlugin
 import ChatModePlugin
 import ChatPanelPlugin
@@ -24,6 +25,7 @@ import ConversationInputPlugin
 import ConversationLanguagePlugin
 import ConversationListPlugin
 import ConversationMessageCountPlugin
+import ConversationContextSizePlugin
 import ConversationNewPlugin
 import ConversationSpeedPlugin
 import ConversationStorePlugin
@@ -46,7 +48,6 @@ import Foundation
 import GitHubPlugin
 import GitPlugin
 import GoalTaskPlugin
-import AppSettingsPlugin
 import HostsManagerPlugin
 import IdleTimePlugin
 import InputPlugin
@@ -106,6 +107,7 @@ import ProjectsPlugin
 import QuickFileSearchPlugin
 import QuickLauncherPlugin
 import RClickPlugin
+import ConversationReasoningPlugin
 import RegistryManagerPlugin
 import SettingsPlugin
 import SharedUIPlugin
@@ -154,7 +156,7 @@ public enum PluginService {
             EditorKernelPlugin(),
             EditorProviderPlugin(),
             // App settings tabs (General/Appearance) — order 1, must lead the sidebar
-            AppSettingsPlugin(),
+
             // LLM Providers (order 91-110)
             AiRouterPlugin(),
             DeepSeekPlugin(),
@@ -200,10 +202,12 @@ public enum PluginService {
             MessageListPlugin(),
             ConversationInputPlugin(),
             ConversationAttachmentPlugin(),
+            ConversationPendingMessagePlugin(),
             ChatScreenshotPlugin(),
             ChatFileAttachmentPlugin(),
             PluginManagerPlugin(),
             ConversationMessageCountPlugin(),
+            ConversationContextSizePlugin(),
             SettingsPlugin(),
             LogoPlugin(),
             LogoCofficPlugin(),
@@ -223,6 +227,7 @@ public enum PluginService {
             BrewManagerPlugin(),
             DiskManagerPlugin(),
             HostsManagerPlugin(),
+            ConversationReasoningPlugin(),
             VerbosityPlugin(),
             ConversationSpeedPlugin(),
             ChatModePlugin(),

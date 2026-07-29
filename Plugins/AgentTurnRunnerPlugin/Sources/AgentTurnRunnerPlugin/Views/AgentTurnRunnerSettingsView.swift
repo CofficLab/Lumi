@@ -16,6 +16,17 @@ public struct AgentTurnRunnerSettingsView: View {
     @State private var records: [AgentTurnRecordDTO] = []
     @State private var selectedID: String?
     @State private var didSeedSelection = false
+    @State private var isLoading = true
+    @State private var isReloading = false
+    @State private var isLoadingMore = false
+    @State private var hasMoreRecords = true
+    @State private var totalRecordCount: Int?
+    @State private var dailyCountSeries = AgentTurnDailyCountSeries(points: [])
+    @State private var decodedMessages: [LumiChatMessage] = []
+    @State private var decodedTools: [[String: String]] = []
+    @State private var isLoadingDetailPayload = false
+
+    private let pageSize = 40
 
     public init(kernel: LumiKernel) {
         self._kernel = ObservedObject(wrappedValue: kernel)
@@ -31,9 +42,30 @@ public struct AgentTurnRunnerSettingsView: View {
     }
 
     public var body: some View {
-        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
-            VStack(alignment: .leading, spacing: 14) {
-                header
+        PluginSettingsScaffold(
+            title: AgentTurnRunnerLocalization.string("Agent Turn Runner"),
+            subtitle: AgentTurnRunnerLocalization.string("Inspect all LLM requests sent by Lumi"),
+            showHeader: false,
+            scrollsContent: false
+        ) {
+            VStack(spacing: 12) {
+                HStack {
+                    Spacer()
+                    Text(totalRecordLabel)
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                    AppButton(AgentTurnRunnerLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
+                        Task { await reload() }
+                    }
+                    AppButton(AgentTurnRunnerLocalization.string("Clear All"), systemImage: "trash", style: .destructive, size: .small) {
+                        Task { await clearAll() }
+                    }
+                    AppButton(AgentTurnRunnerLocalization.string("Open Data Directory"), systemImage: "folder", size: .small) {
+                        openDataDirectory()
+                    }
+                }
+
+                requestActivity
 
                 HStack(spacing: 0) {
                     sidebar
@@ -45,7 +77,7 @@ public struct AgentTurnRunnerSettingsView: View {
                     detailPane
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(minHeight: 560, maxHeight: .infinity)
+                .frame(maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -55,42 +87,47 @@ public struct AgentTurnRunnerSettingsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .task { await reload() }
+        .task(id: selectedID) { await loadDetailPayload() }
     }
 
-    // MARK: - Header
-
-    private var header: some View {
-        HStack(spacing: 10) {
-            Label(
-                AgentTurnRunnerLocalization.format("Sent Requests", records.count),
-                systemImage: "paperplane"
-            )
-            if let selected = selectedRecord {
-                Text(AgentTurnRunnerLocalization.format("Selected: %@", String(selected.conversationID.prefix(8))))
-            }
-            Spacer()
-            AppButton(AgentTurnRunnerLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
-                Task { await reload() }
-            }
-            AppButton(AgentTurnRunnerLocalization.string("Clear All"), systemImage: "trash", style: .destructive, size: .small) {
-                Task {
-                    await AgentTurnRunnerRecordStoreBridge.shared.store?.deleteAll()
-                    await reload()
+    private var requestActivity: some View {
+        AppSettingsSection(
+            title: AgentTurnRunnerLocalization.string("Request Activity"),
+            subtitle: AgentTurnRunnerLocalization.string("Sent LLM requests per day over the last 14 days"),
+            spacing: 12
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Label(AgentTurnRunnerLocalization.string("Daily sent requests"), systemImage: "chart.xyaxis.line")
+                        .font(.appCaptionEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                    Spacer(minLength: 0)
+                    Text("Peak (\(dailyCountSeries.peakCount))")
+                        .font(.appMicro)
+                        .monospacedDigit()
+                        .foregroundStyle(theme.textSecondary)
                 }
+                AgentTurnDailyCountChart(series: dailyCountSeries)
+                    .frame(height: 132)
             }
-            AppButton(AgentTurnRunnerLocalization.string("Open Data Directory"), systemImage: "folder", size: .small) {
-                openDataDirectory()
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(theme.divider, lineWidth: 0.5)
             }
         }
-        .font(.appCaption)
-        .foregroundStyle(theme.textSecondary)
     }
 
-    // MARK: - Sidebar
+    // MARK: - Header (integrated into sidebar header)
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            if records.isEmpty {
+            if isLoading && records.isEmpty {
+                ProgressView(AgentTurnRunnerLocalization.string("Loading..."))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if records.isEmpty {
                 AppEmptyState(
                     icon: "paperplane",
                     title: AgentTurnRunnerLocalization.string("No sent requests")
@@ -101,11 +138,22 @@ public struct AgentTurnRunnerSettingsView: View {
                     LazyVStack(spacing: 4) {
                         ForEach(sortedRecords) { record in
                             recordRow(record)
+                                .onAppear {
+                                    if record.id == sortedRecords.last?.id {
+                                        Task { await loadMore() }
+                                    }
+                                }
                         }
                     }
                     .padding(8)
                 }
                 .frame(maxHeight: .infinity)
+
+                if isLoadingMore {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.bottom, 8)
+                }
             }
         }
         .appSurface(style: .panel, cornerRadius: 0)
@@ -128,7 +176,7 @@ public struct AgentTurnRunnerSettingsView: View {
 
                     Spacer(minLength: 0)
 
-                    Text(relativeDate(record.createdAt))
+                    Text(formattedDate(record.createdAt))
                         .font(.appMicro)
                         .foregroundStyle(theme.textSecondary)
                         .lineLimit(1)
@@ -159,8 +207,8 @@ public struct AgentTurnRunnerSettingsView: View {
                     overviewSection(record)
                     requestInfoSection(record)
                     systemPromptSection(record)
-                    messagesSection(record)
-                    toolsSection(record)
+                    messagesSection(record, messages: decodedMessages)
+                    toolsSection(record, tools: decodedTools)
                 }
                 .padding(22)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -292,13 +340,14 @@ public struct AgentTurnRunnerSettingsView: View {
     // MARK: - Messages
 
     @ViewBuilder
-    private func messagesSection(_ record: AgentTurnRecordDTO) -> some View {
-        let messages = decodeMessages(record.messagesJSON)
+    private func messagesSection(_ record: AgentTurnRecordDTO, messages: [LumiChatMessage]) -> some View {
         AppSettingsSection(
             title: AgentTurnRunnerLocalization.string("Messages"),
             subtitle: AgentTurnRunnerLocalization.format("All %d messages (read-only)", messages.count)
         ) {
-            if messages.isEmpty {
+            if isLoadingDetailPayload {
+                ProgressView(AgentTurnRunnerLocalization.string("Loading..."))
+            } else if messages.isEmpty {
                 Text(AgentTurnRunnerLocalization.string("No messages in this request"))
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
@@ -357,13 +406,14 @@ public struct AgentTurnRunnerSettingsView: View {
     // MARK: - Tools
 
     @ViewBuilder
-    private func toolsSection(_ record: AgentTurnRecordDTO) -> some View {
-        let tools = decodeTools(record.toolsJSON)
+    private func toolsSection(_ record: AgentTurnRecordDTO, tools: [[String: String]]) -> some View {
         AppSettingsSection(
             title: AgentTurnRunnerLocalization.string("Tools"),
             subtitle: AgentTurnRunnerLocalization.format("%d tools available to the model", tools.count)
         ) {
-            if tools.isEmpty {
+            if isLoadingDetailPayload {
+                ProgressView(AgentTurnRunnerLocalization.string("Loading..."))
+            } else if tools.isEmpty {
                 Text(AgentTurnRunnerLocalization.string("No tools in this request"))
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
@@ -400,40 +450,100 @@ public struct AgentTurnRunnerSettingsView: View {
 
     // MARK: - Data
 
+    private func loadDetailPayload() async {
+        guard let selectedID,
+              let record = records.first(where: { $0.id == selectedID }) else {
+            decodedMessages = []
+            decodedTools = []
+            isLoadingDetailPayload = false
+            return
+        }
+
+        isLoadingDetailPayload = true
+        let messagesJSON = record.messagesJSON
+        let toolsJSON = record.toolsJSON
+        async let messages = Task.detached(priority: .utility) {
+            AgentTurnRecordPayloadDecoder.messages(from: messagesJSON)
+        }.value
+        async let tools = Task.detached(priority: .utility) {
+            AgentTurnRecordPayloadDecoder.tools(from: toolsJSON)
+        }.value
+        let (loadedMessages, loadedTools) = await (messages, tools)
+        guard self.selectedID == selectedID else { return }
+        decodedMessages = loadedMessages
+        decodedTools = loadedTools
+        isLoadingDetailPayload = false
+    }
+
     private func reload() async {
-        let fetched = await AgentTurnRunnerRecordStoreBridge.shared.store?.fetchAll() ?? []
-        records = fetched
+        guard !isReloading else { return }
+        isReloading = true
+        isLoading = true
+        defer {
+            isReloading = false
+            isLoading = false
+        }
+
+        await Task.yield()
+        guard let store = AgentTurnRunnerRecordStoreBridge.shared.store else {
+            records = []
+            totalRecordCount = 0
+            hasMoreRecords = false
+            return
+        }
+
+        async let fetched = store.fetchPage(limit: pageSize)
+        async let count = store.count()
+        async let series = store.fetchDailyCountSeries()
+        let (page, total, dailySeries) = await (fetched, count, series)
+        records = page
+        totalRecordCount = total
+        dailyCountSeries = dailySeries
+        hasMoreRecords = page.count == pageSize
+        updateSelectionIfNeeded(using: page)
+    }
+
+    private func loadMore() async {
+        guard !isLoading,
+              !isLoadingMore,
+              hasMoreRecords,
+              let last = records.last,
+              let store = AgentTurnRunnerRecordStoreBridge.shared.store else { return }
+
+        isLoadingMore = true
+        let page = await store.fetchPage(
+            limit: pageSize,
+            beforeCreatedAt: last.createdAt,
+            beforeID: last.id
+        )
+        records.append(contentsOf: page)
+        hasMoreRecords = page.count == pageSize
+        isLoadingMore = false
+        updateSelectionIfNeeded(using: records)
+    }
+
+    private func clearAll() async {
+        await AgentTurnRunnerRecordStoreBridge.shared.store?.deleteAll()
+        await reload()
+    }
+
+    private func updateSelectionIfNeeded(using availableRecords: [AgentTurnRecordDTO]) {
         if !didSeedSelection {
             didSeedSelection = true
-            selectedID = fetched.first?.id
-        } else if let selectedID, !fetched.contains(where: { $0.id == selectedID }) {
-            self.selectedID = fetched.first?.id
+            selectedID = availableRecords.first?.id
+        } else if let selectedID, !availableRecords.contains(where: { $0.id == selectedID }) {
+            self.selectedID = availableRecords.first?.id
         }
     }
 
-    private func decodeMessages(_ json: String) -> [LumiChatMessage] {
-        guard let data = json.data(using: .utf8),
-              let messages = try? JSONDecoder().decode([LumiChatMessage].self, from: data) else {
-            return []
+    private var totalRecordLabel: String {
+        guard let totalRecordCount else {
+            return AgentTurnRunnerLocalization.string("Loading...")
         }
-        return messages
-    }
-
-    private func decodeTools(_ json: String) -> [[String: String]] {
-        guard let data = json.data(using: .utf8),
-              let tools = try? JSONDecoder().decode([[String: String]].self, from: data) else {
-            return []
-        }
-        return tools
+        return AgentTurnRunnerLocalization.format("Sent Requests", totalRecordCount)
     }
 
     // MARK: - Formatting
-
-    private func relativeDate(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
-    }
 
     private func formattedDate(_ date: Date) -> String {
         date.formatted(date: .abbreviated, time: .shortened)

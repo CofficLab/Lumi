@@ -40,8 +40,7 @@ enum GitCommitWriterAgent {
             1. Call git_status to check working tree state
             2. Call git_diff to review the changes
             3. Analyze the changes and generate an appropriate commit message following Conventional Commits format
-            4. Call git_add to stage the files
-            5. Call git_commit to commit with the generated message
+            4. Call git_commit with files=[] to stage all related changes and commit them
 
             Commit message format:
             <type>(<scope>): <description>
@@ -67,7 +66,7 @@ enum GitCommitWriterAgent {
             If commit fails, don't retry more than twice.
             """,
         requiredTags: [.git],
-        excludedTags: [.destructive],
+        additionalToolNames: ["git_commit"],
         excludedToolNames: ["git_push"],
         maxTurns: 8,
         iconName: "checkmark.seal"

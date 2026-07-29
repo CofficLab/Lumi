@@ -16,7 +16,7 @@ public final class ConversationStorePlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.conversation-store"
     public let name = "Conversation Store"
-    public let order = 61
+    public let order = 7
     public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
@@ -62,7 +62,7 @@ public final class ConversationStorePlugin: LumiPlugin, SuperLog {
         [
             SettingsTabItem(
                 id: "\(id).settings",
-                title: "Conversations",
+                title: LumiPluginLocalization.string("Conversations", bundle: .module),
                 systemImage: "bubble.left.and.bubble.right",
                 order: order
             ) {

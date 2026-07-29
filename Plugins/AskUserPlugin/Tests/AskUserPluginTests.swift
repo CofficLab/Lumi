@@ -236,9 +236,9 @@ struct AskUserRowRendererTests {
         #expect(AskUserRowRenderer.priority == 100)
     }
 
-    @Test("parsePendingResponse returns nil for missing prefix")
+    @Test("parsePendingResponse returns nil for malformed content")
     func parseReturnsNilForMissingPrefix() {
-        let result = AskUserRowRenderer.parsePendingResponse(from: "no prefix here")
+        let result = AskUserRowRenderer.parsePendingResponse(from: "no JSON here")
         #expect(result == nil)
     }
 
@@ -248,22 +248,21 @@ struct AskUserRowRendererTests {
         #expect(result == nil)
     }
 
-    @Test("parsePendingResponse returns nil for prefix only")
+    @Test("parsePendingResponse returns nil for empty JSON")
     func parseReturnsNilForPrefixOnly() {
-        let result = AskUserRowRenderer.parsePendingResponse(from: "__ASK_USER_PENDING__")
+        let result = AskUserRowRenderer.parsePendingResponse(from: "")
         #expect(result == nil)
     }
 
     @Test("parsePendingResponse returns nil for malformed JSON")
     func parseReturnsNilForMalformedJSON() {
-        let result = AskUserRowRenderer.parsePendingResponse(from: "__ASK_USER_PENDING__\n{not json}")
+        let result = AskUserRowRenderer.parsePendingResponse(from: "{not json}")
         #expect(result == nil)
     }
 
     @Test("parsePendingResponse decodes valid payload")
     func parseDecodesValid() {
         let payload = """
-        __ASK_USER_PENDING__
         {"toolCallId":"c1","question":"Continue?","options":["是","否"],"allowFreeInput":false,"conversationId":"\(UUID().uuidString)","verbosity":"standard"}
         """
         let result = AskUserRowRenderer.parsePendingResponse(from: payload)
@@ -279,8 +278,9 @@ struct AskUserRowRendererTests {
             name: "ask_user",
             arguments: "{}",
             result: ToolCallResult(
-                content: "__ASK_USER_PENDING__\n{}",
-                awaitingUserResponse: true
+                content: "{}",
+                awaitingUserResponse: true,
+                interactionState: .waiting
             )
         )
         let renderer = AskUserRowRenderer()
@@ -345,40 +345,4 @@ struct AskUserBridgeTests {
         #expect(AskUserBridge.shared === AskUserBridge.shared)
     }
 
-    @Test("resume posts notification with correct userInfo")
-    func resumePostsCorrectNotification() async {
-        let conversationId = UUID().uuidString
-        let toolCallId = "call-bridge-test"
-        let answer = "是"
-
-        var receivedConversationId: String?
-        var receivedToolCallId: String?
-        var receivedAnswer: String?
-
-        let observer = NotificationCenter.default.addObserver(
-            forName: .lumiAskUserDidAnswer,
-            object: nil,
-            queue: .main
-        ) { notification in
-            let userInfo = notification.userInfo ?? [:]
-            receivedConversationId = userInfo[LumiAskUserNotification.conversationIDKey] as? String
-            receivedToolCallId = userInfo[LumiAskUserNotification.toolCallIDKey] as? String
-            receivedAnswer = userInfo[LumiAskUserNotification.answerKey] as? String
-        }
-
-        AskUserBridge.shared.resume(
-            conversationId: conversationId,
-            toolCallId: toolCallId,
-            answer: answer
-        )
-
-        // Wait for notification to dispatch synchronously on main queue
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
-        #expect(receivedConversationId == conversationId)
-        #expect(receivedToolCallId == toolCallId)
-        #expect(receivedAnswer == answer)
-
-        NotificationCenter.default.removeObserver(observer)
-    }
 }

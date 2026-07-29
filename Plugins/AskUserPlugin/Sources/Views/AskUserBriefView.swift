@@ -14,6 +14,14 @@ public struct AskUserBriefView: View {
     @State private var selectedAnswer: String?
     @State private var responded = false
 
+    public init(response: AskUserPendingResponse, toolCall: ToolCall) {
+        self.response = response
+        self.toolCall = toolCall
+        let answer = toolCall.result?.interactionState?.answer
+        _selectedAnswer = State(initialValue: answer)
+        _responded = State(initialValue: answer != nil)
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // 问题文本
@@ -21,18 +29,8 @@ public struct AskUserBriefView: View {
                 .font(.system(size: 14))
                 .foregroundColor(.primary)
 
-            if responded {
-                // 已回答状态
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                    Text(selectedAnswer ?? "")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-                }
-            } else {
-                // 待回答状态 - 仅显示是/否按钮
-                HStack(spacing: 8) {
+            // 选项始终保留；回答后仅禁用。
+            HStack(spacing: 8) {
                     if response.options.contains("是") {
                         Button {
                             submitAnswer("是")
@@ -48,6 +46,8 @@ public struct AskUserBriefView: View {
                                 )
                         }
                         .buttonStyle(.plain)
+                        .disabled(responded)
+                        .opacity(responded && selectedAnswer != "是" ? 0.55 : 1)
                     }
 
                     if response.options.contains("否") {
@@ -65,6 +65,8 @@ public struct AskUserBriefView: View {
                                 )
                         }
                         .buttonStyle(.plain)
+                        .disabled(responded)
+                        .opacity(responded && selectedAnswer != "否" ? 0.55 : 1)
                     }
 
                     // 如果有其他选项，显示下拉选择
@@ -87,8 +89,15 @@ public struct AskUserBriefView: View {
                                         .fill(Color.blue)
                                 )
                         }
+                        .disabled(responded)
+                        .opacity(responded ? 0.55 : 1)
                     }
                 }
+
+            if responded {
+                Text("已回答：\(selectedAnswer ?? "")")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
             }
         }
         .padding(12)
@@ -99,6 +108,7 @@ public struct AskUserBriefView: View {
     }
 
     private func submitAnswer(_ answer: String) {
+        guard !responded else { return }
         selectedAnswer = answer
         responded = true
 

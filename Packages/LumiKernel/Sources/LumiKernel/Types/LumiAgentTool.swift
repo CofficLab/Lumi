@@ -159,6 +159,7 @@ public protocol LumiAgentTool: Sendable {
     var toolDescription: String { get }
     var inputSchema: LumiJSONValue { get }
     func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String
+    func executeResult(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> LumiToolExecutionResult
     func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel
     func displayDescription(arguments: [String: LumiJSONValue]) -> String
 }
@@ -169,6 +170,28 @@ public extension LumiAgentTool {
     var tags: Set<LumiToolTag> { [] }
     func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
     func displayDescription(arguments: [String: LumiJSONValue]) -> String { Self.info.displayName }
+
+    func executeResult(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> LumiToolExecutionResult {
+        LumiToolExecutionResult(content: try await execute(arguments: arguments, kernel: kernel))
+    }
+}
+
+/// Structured output from a tool. Most tools only need `content`; tools that
+/// require a user interaction can return a suspension control signal.
+public struct LumiToolExecutionResult: Sendable, Equatable {
+    public let content: String
+    public let isError: Bool
+    public let turnControl: AgentTurnControl
+
+    public init(
+        content: String,
+        isError: Bool = false,
+        turnControl: AgentTurnControl = .continueTurn
+    ) {
+        self.content = content
+        self.isError = isError
+        self.turnControl = turnControl
+    }
 }
 
 // MARK: - Argument Accessors

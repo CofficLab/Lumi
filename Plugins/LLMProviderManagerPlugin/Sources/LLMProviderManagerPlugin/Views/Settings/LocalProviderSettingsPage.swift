@@ -32,7 +32,8 @@ struct LocalProviderSettingsPage: View {
             systemIcon: "desktopcomputer",
             localizedProvidersKey: "%lld local providers",
             isLocalProvider: { $0.isLocal },
-            selectedProviderID: $selectedProviderID
+            selectedProviderID: $selectedProviderID,
+            headerAccessory: nil
         ) { provider in
             VStack(alignment: .leading, spacing: 32) {
                 if let customItem = kernel.settings?.allLLMProviderSettingsItems.first(where: { $0.providerID == provider.id }),

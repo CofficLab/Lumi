@@ -304,6 +304,13 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return await store.fetchDailyTokenCounts(since: since)
     }
 
+    public func fetchTokenUsage(on day: Date, providerID: String?, modelName: String?) async -> MessageTokenUsage {
+        guard let store else {
+            return MessageTokenUsage(day: Calendar.current.startOfDay(for: day), inputTokens: 0, outputTokens: 0)
+        }
+        return await store.fetchTokenUsage(on: day, providerID: providerID, modelName: modelName)
+    }
+
     // MARK: - Tool Call Result Update
 
     public func updateToolCallResult(

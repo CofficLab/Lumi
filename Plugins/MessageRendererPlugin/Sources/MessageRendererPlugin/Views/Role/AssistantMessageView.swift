@@ -51,8 +51,8 @@ private struct AssistantMessageBody: View {
                     .padding(.top, shouldHideAssistantBody ? 0 : 4)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 2)
+        .padding(.horizontal, verbosity == .brief ? 0 : 12)
+        .padding(.top, verbosity == .brief ? 0 : 2)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

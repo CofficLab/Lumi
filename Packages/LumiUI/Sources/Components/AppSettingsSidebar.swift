@@ -40,7 +40,6 @@ public struct AppSettingsSidebarContainer<Content: View>: View {
 
     public var body: some View {
         content
-            .padding()
             .frame(width: width)
             .background(.background.opacity(0.6))
     }

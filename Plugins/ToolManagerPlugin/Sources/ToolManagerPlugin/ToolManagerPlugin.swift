@@ -37,6 +37,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
             ListDirectoryTool(),
+            GlobTool(),
             ReadFileTool(),
             WriteFileTool(),
             EditFileTool(),
@@ -68,9 +69,9 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
         return [
             SettingsTabItem(
                 id: "\(id).tools",
-                title: "Tools",
+                title: LumiPluginLocalization.string("Tools", bundle: .module),
                 systemImage: "wrench.and.screwdriver",
-                order: 50
+                order: 6
             ) {
                 ToolManagerSettingsView(kernel: kernel)
             },

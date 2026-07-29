@@ -23,7 +23,7 @@ MemoryKit (dependency)
   └── Core storage & retrieval logic (no app dependencies)
 ```
 
-The `MemoryContextSuperSendMiddleware` remains in the app layer because it depends on `WindowProjectVM` for project path and language preference.
+Automatic memory recall is implemented inside `MemoryPlugin` through the plugin lifecycle hook. The plugin receives the current project path from `LumiKernel`, so the app layer does not need a separate memory middleware.
 
 ## Structure
 

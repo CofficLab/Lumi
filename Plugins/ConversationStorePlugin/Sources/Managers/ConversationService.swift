@@ -209,6 +209,24 @@ public final class ConversationService: ConversationManaging {
         try? saveConversations()
     }
 
+    public func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort {
+        guard let conversationID else {
+            return .defaultEffort
+        }
+        return conversations.first { $0.id == conversationID }?.reasoningEffort ?? .defaultEffort
+    }
+
+    public func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].reasoningEffort = reasoningEffort
+        try? saveConversations()
+    }
+
     // MARK: - Automation Level
 
     public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {
@@ -244,6 +262,16 @@ public final class ConversationService: ConversationManaging {
             return
         }
         conversations[index].language = language
+        try? saveConversations()
+    }
+
+    // MARK: - Conversation Order
+
+    public func setConversationOrder(_ order: Int, for conversationID: UUID) {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].order = order
         try? saveConversations()
     }
 }

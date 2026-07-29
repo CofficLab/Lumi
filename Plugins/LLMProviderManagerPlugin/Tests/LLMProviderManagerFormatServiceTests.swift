@@ -35,4 +35,16 @@ import Testing
     @Test func tokenCountZero() {
         #expect(ModelSelectorFormatService.tokenCount(0) == "0")
     }
+
+    // MARK: - compactTokenCount
+
+    @Test func compactTokenCountUsesHumanFriendlyUnits() {
+        #expect(ModelSelectorFormatService.compactTokenCount(51_220_000) == "51.22M")
+        #expect(ModelSelectorFormatService.compactTokenCount(3_000_000_000) == "3.00B")
+        #expect(ModelSelectorFormatService.compactTokenCount(12_345) == "12.35K")
+    }
+
+    @Test func compactTokenCountKeepsSmallValuesExact() {
+        #expect(ModelSelectorFormatService.compactTokenCount(999) == "999")
+    }
 }

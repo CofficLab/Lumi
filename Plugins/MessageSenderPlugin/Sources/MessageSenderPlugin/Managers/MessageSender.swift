@@ -28,6 +28,8 @@ public final class MessageSender: MessageSending, SuperLog {
     nonisolated static let verbose = false
 
     @Published private var sendingConversationIDs: Set<UUID> = []
+    @Published private var pendingMessageQueues: [UUID: [LumiPendingMessage]] = [:]
+    private var pendingContinuationConversationIDs: Set<UUID> = []
 
     public var isSending: Bool {
         !sendingConversationIDs.isEmpty
@@ -63,6 +65,20 @@ public final class MessageSender: MessageSending, SuperLog {
             return isSending
         }
         return sendingConversationIDs.contains(conversationID)
+    }
+
+    public func pendingMessages(for conversationID: UUID) -> [LumiPendingMessage] {
+        pendingMessageQueues[conversationID] ?? []
+    }
+
+    public func cancelPendingMessage(id: UUID, in conversationID: UUID) {
+        guard var queue = pendingMessageQueues[conversationID] else { return }
+        queue.removeAll { $0.id == id }
+        if queue.isEmpty {
+            pendingMessageQueues.removeValue(forKey: conversationID)
+        } else {
+            pendingMessageQueues[conversationID] = queue
+        }
     }
 
     // MARK: - 附件挂起池
@@ -149,9 +165,23 @@ public final class MessageSender: MessageSending, SuperLog {
         imageAttachments: [LumiImageAttachment],
         conversationID: UUID?
     ) async throws {
+        try await sendMessage(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: pendingFileAttachments,
+            conversationID: conversationID
+        )
+    }
+
+    private func sendMessage(
+        _ content: String,
+        imageAttachments: [LumiImageAttachment],
+        fileAttachments: [LumiFileAttachment],
+        conversationID: UUID?
+    ) async throws {
         if Self.verbose {
             let selectedConversationID = self.kernel?.conversations?.selectedConversationID?.uuidString.prefix(8) ?? "nil"
-            let pendingFiles = self.pendingFileAttachments.count
+            let pendingFiles = fileAttachments.count
             let sendingState = self.isSending(for: conversationID)
             Self.logger.info("\(Self.t)sendMessage 开始 ➡️ conversationID=\(conversationID?.uuidString.prefix(8) ?? "nil"), selectedConversationID=\(selectedConversationID), content.len=\(content.count), attachments=\(imageAttachments.count), pendingFiles=\(pendingFiles), isSending(forTarget)=\(sendingState), activeSendingConversations=\(self.sendingConversationIDs.count)")
         }
@@ -194,6 +224,22 @@ public final class MessageSender: MessageSending, SuperLog {
             }
         }
 
+        let pendingMessage = LumiPendingMessage(
+            conversationID: targetID,
+            content: trimmed,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments
+        )
+        if isSending(for: targetID) {
+            pendingMessageQueues[targetID, default: []].append(pendingMessage)
+            clearAttachments()
+            clearFileAttachments()
+            if Self.verbose {
+                Self.logger.info("\(Self.t)消息进入待发送队列 ➡️ conversation=\(targetID.uuidString.prefix(8))…, queue.size=\(self.pendingMessageQueues[targetID]?.count ?? 0)")
+            }
+            return
+        }
+
         // 3. Persist user message into the message history
         if Self.verbose {
             let hasLastMessage = self.kernel?.messageManager?.lastMessage(in: targetID) != nil
@@ -219,8 +265,8 @@ public final class MessageSender: MessageSending, SuperLog {
 
         // 把文件附件序列化进 metadata["fileAttachments"] JSON(如有)。
         // 文件链路与图片并行:取当前文件挂起池快照,文本类文件正文在下游注入用户消息。
-        if !pendingFileAttachments.isEmpty {
-            metadata = LumiFileAttachmentMetadata.encode(pendingFileAttachments, into: metadata)
+        if !fileAttachments.isEmpty {
+            metadata = LumiFileAttachmentMetadata.encode(fileAttachments, into: metadata)
         }
 
         let userMessage = LumiChatMessage(
@@ -240,8 +286,14 @@ public final class MessageSender: MessageSending, SuperLog {
 
         defer {
             endSending(in: targetID)
-            clearAttachments()
-            clearFileAttachments()
+            // Do not clear attachments added while an earlier turn was running;
+            // those belong to a later queued/draft message.
+            if pendingAttachments == imageAttachments {
+                clearAttachments()
+            }
+            if pendingFileAttachments == fileAttachments {
+                clearFileAttachments()
+            }
             if Self.verbose {
                 Self.logger.info("\(Self.t)isSending -> false, sendMessage 结束 ➡️ target=\(targetID.uuidString.prefix(8))…, activeSendingConversations=\(self.sendingConversationIDs.count)")
             }
@@ -254,15 +306,15 @@ public final class MessageSender: MessageSending, SuperLog {
 
         do {
             if Self.verbose {
-                Self.logger.info("\(Self.t)准备调用 agentTurnRunner.runTurn ➡️ target=\(targetID.uuidString.prefix(8))…, lastMessage=\(kernelInstance.messageManager?.lastMessage(in: targetID)?.id.uuidString.prefix(8) ?? "nil")")
+                Self.logger.info("\(Self.t)准备调用 agentTurnManager.runTurn ➡️ target=\(targetID.uuidString.prefix(8))…, lastMessage=\(kernelInstance.messageManager?.lastMessage(in: targetID)?.id.uuidString.prefix(8) ?? "nil")")
             }
-            try await kernelInstance.agentTurnRunner?.runTurn(in: targetID)
+            try await kernelInstance.agentTurnManager?.runTurn(in: targetID)
             if Self.verbose {
-                Self.logger.info("\(Self.t)agentTurnRunner.runTurn 完成 ➡️ target=\(targetID.uuidString.prefix(8))…")
+                Self.logger.info("\(Self.t)agentTurnManager.runTurn 完成 ➡️ target=\(targetID.uuidString.prefix(8))…")
             }
         } catch {
             if Self.verbose {
-                Self.logger.error("\(Self.t)sendMessage ➡️ agentTurnRunner 抛出 error target=\(targetID.uuidString.prefix(8))…: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)sendMessage ➡️ agentTurnManager 抛出 error target=\(targetID.uuidString.prefix(8))…: \(error.localizedDescription)")
             }
             // Insert error message into conversation
             let errorMessage = LumiChatMessage(
@@ -277,11 +329,34 @@ public final class MessageSender: MessageSending, SuperLog {
         }
     }
 
+    public func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentTurnOutcome {
+        beginSending(in: conversationID)
+        defer { endSending(in: conversationID) }
+
+        guard let manager = kernel?.agentTurnManager else {
+            throw AgentTurnManagingError.resumeNotSupported
+        }
+        return try await manager.resumeTurn(in: conversationID, request: request)
+    }
+
+    public func continueTurn(in conversationID: UUID) {
+        guard !isSending(for: conversationID) else {
+            pendingContinuationConversationIDs.insert(conversationID)
+            return
+        }
+
+        startContinuation(in: conversationID)
+    }
+
     public func cancelCurrentRequest() {
         if let conversationID = kernel?.conversations?.selectedConversationID, isSending(for: conversationID) {
+            pendingContinuationConversationIDs.remove(conversationID)
             endSending(in: conversationID)
             // Cancel the agent turn if one is running
-            kernel?.agentTurnRunner?.cancelTurn(in: conversationID)
+            kernel?.agentTurnManager?.cancelTurn(in: conversationID)
             if Self.verbose {
                 Self.logger.info("\(Self.t)cancelCurrentRequest ➡️ conversation=\(conversationID.uuidString.prefix(8))…, turn cancelled, activeSendingConversations=\(self.sendingConversationIDs.count)")
             }
@@ -367,7 +442,7 @@ public final class MessageSender: MessageSending, SuperLog {
         }
 
         do {
-            try await kernelInstance.agentTurnRunner?.runTurn(in: conversationID)
+            try await kernelInstance.agentTurnManager?.runTurn(in: conversationID)
         } catch {
             if Self.verbose {
                 Self.logger.error("\(Self.t)runAgentTurn 抛出 error target=\(conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")
@@ -387,6 +462,50 @@ public final class MessageSender: MessageSending, SuperLog {
 
     private func endSending(in conversationID: UUID) {
         sendingConversationIDs.remove(conversationID)
+        guard let next = dequeuePendingMessage(for: conversationID) else {
+            guard pendingContinuationConversationIDs.remove(conversationID) != nil else { return }
+            startContinuation(in: conversationID)
+            return
+        }
+        startQueuedMessage(next)
+    }
+
+    private func dequeuePendingMessage(for conversationID: UUID) -> LumiPendingMessage? {
+        guard var queue = pendingMessageQueues[conversationID], !queue.isEmpty else { return nil }
+        let next = queue.removeFirst()
+        if queue.isEmpty {
+            pendingMessageQueues.removeValue(forKey: conversationID)
+        } else {
+            pendingMessageQueues[conversationID] = queue
+        }
+        return next
+    }
+
+    private func startQueuedMessage(_ message: LumiPendingMessage) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try await sendMessage(
+                    message.content,
+                    imageAttachments: message.imageAttachments,
+                    fileAttachments: message.fileAttachments,
+                    conversationID: message.conversationID
+                )
+            } catch {
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)消费待发送消息失败 ➡️ conversation=\(message.conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    private func startContinuation(in conversationID: UUID) {
+        beginSending(in: conversationID)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { endSending(in: conversationID) }
+            await runAgentTurn(in: conversationID)
+        }
     }
 }
 

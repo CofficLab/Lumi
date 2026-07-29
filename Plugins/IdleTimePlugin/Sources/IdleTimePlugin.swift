@@ -58,7 +58,9 @@ public final class IdleTimePlugin: LumiPlugin {
         ]
     }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
-    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
+        AnyView(IdleTimeAboutView())
+    }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] {

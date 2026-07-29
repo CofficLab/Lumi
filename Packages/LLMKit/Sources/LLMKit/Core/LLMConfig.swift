@@ -33,6 +33,12 @@ public struct LLMConfig: Codable, Sendable, Equatable {
     /// 不同供应商有不同的默认值和上限。
     public var maxTokens: Int?
 
+    /// 推理强度
+    ///
+    /// 通用字符串值，通常为 `minimal` / `low` / `medium` / `high`。
+    /// 具体供应商适配器会按模型能力决定是否映射到请求体。
+    public var reasoningEffort: String?
+
     /// 默认配置
     ///
     /// 使用 Anthropic Claude 作为默认供应商。
@@ -40,19 +46,22 @@ public struct LLMConfig: Codable, Sendable, Equatable {
         model: "claude-sonnet-4-20250514",
         providerId: "anthropic",
         temperature: nil,
-        maxTokens: nil
+        maxTokens: nil,
+        reasoningEffort: nil
     )
 
     public init(
         model: String,
         providerId: String,
         temperature: Double? = nil,
-        maxTokens: Int? = nil
+        maxTokens: Int? = nil,
+        reasoningEffort: String? = nil
     ) {
         self.model = model
         self.providerId = providerId
         self.temperature = temperature
         self.maxTokens = maxTokens
+        self.reasoningEffort = reasoningEffort
     }
 
     /// 校验配置完整性，在发起请求前调用以便给出明确错误提示。

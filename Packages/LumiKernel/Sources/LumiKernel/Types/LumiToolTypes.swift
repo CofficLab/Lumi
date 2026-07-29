@@ -106,21 +106,24 @@ public struct LumiToolResult: Codable, Equatable, Sendable {
     public let duration: TimeInterval?
     public let isError: Bool
     public let imageAttachments: [LumiImageAttachment]
+    public let turnControl: AgentTurnControl
 
     public init(
         content: String,
         duration: TimeInterval? = nil,
         isError: Bool = false,
-        imageAttachments: [LumiImageAttachment] = []
+        imageAttachments: [LumiImageAttachment] = [],
+        turnControl: AgentTurnControl = .continueTurn
     ) {
         self.content = content
         self.duration = duration
         self.isError = isError
         self.imageAttachments = imageAttachments
+        self.turnControl = turnControl
     }
 
     private enum CodingKeys: String, CodingKey {
-        case content, duration, isError, imageAttachments
+        case content, duration, isError, imageAttachments, turnControl
     }
 
     public init(from decoder: Decoder) throws {
@@ -129,6 +132,7 @@ public struct LumiToolResult: Codable, Equatable, Sendable {
         duration = try c.decodeIfPresent(TimeInterval.self, forKey: .duration)
         isError = try c.decodeIfPresent(Bool.self, forKey: .isError) ?? false
         imageAttachments = try c.decodeIfPresent([LumiImageAttachment].self, forKey: .imageAttachments) ?? []
+        turnControl = try c.decodeIfPresent(AgentTurnControl.self, forKey: .turnControl) ?? .continueTurn
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -137,5 +141,6 @@ public struct LumiToolResult: Codable, Equatable, Sendable {
         if let duration { try c.encode(duration, forKey: .duration) }
         if isError { try c.encode(isError, forKey: .isError) }
         if !imageAttachments.isEmpty { try c.encode(imageAttachments, forKey: .imageAttachments) }
+        if turnControl != .continueTurn { try c.encode(turnControl, forKey: .turnControl) }
     }
 }

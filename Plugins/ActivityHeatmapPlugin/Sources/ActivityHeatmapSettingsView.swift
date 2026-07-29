@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import LumiKernel
 import LumiUI
@@ -8,8 +9,11 @@ public struct ActivityHeatmapSettingsView: View {
     @State private var viewModel: ActivityHeatmapViewModel
     @State private var period: ActivityHeatmapPeriod = .year
 
+    private let cacheDirectory: URL?
+
     public init(messageService: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil) {
         _viewModel = State(initialValue: ActivityHeatmapViewModel(messageService: messageService, cache: cache))
+        self.cacheDirectory = cache?.databaseDirectoryURL
     }
 
     public var body: some View {
@@ -18,8 +22,7 @@ public struct ActivityHeatmapSettingsView: View {
             subtitle: LumiPluginLocalization.string("Conversation activity over time", bundle: .module),
             showHeader: false
         ) {
-            // Period selector
-            periodSelector
+            header
 
             // Heatmap card
             heatmapCard
@@ -38,28 +41,35 @@ public struct ActivityHeatmapSettingsView: View {
         }
     }
 
-    // MARK: - Period Selector
+    // MARK: - Header
 
-    private var periodSelector: some View {
-        AppCard {
-            AppSettingsSection(title: LumiPluginLocalization.string("Statistics Period", bundle: .module)) {
-                AppSettingsRow {
-                    HStack {
-                        Text(LumiPluginLocalization.string("Period", bundle: .module))
-                            .font(.appBody)
-                        Spacer()
-                        Picker("", selection: $period) {
-                            ForEach(ActivityHeatmapPeriod.allCases) { p in
-                                Text(p.localizedTitle).tag(p)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .frame(minWidth: 120)
+    private var header: some View {
+        HStack(spacing: 10) {
+            Spacer()
+
+            HStack(spacing: 6) {
+                Text(LumiPluginLocalization.string("Period", bundle: .module))
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+
+                Picker("", selection: $period) {
+                    ForEach(ActivityHeatmapPeriod.allCases) { p in
+                        Text(p.localizedTitle).tag(p)
                     }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .fixedSize()
+            }
+
+            if cacheDirectory != nil {
+                AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+                    openDataDirectory()
                 }
             }
         }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
     }
 
     // MARK: - Heatmap Card
@@ -68,18 +78,12 @@ public struct ActivityHeatmapSettingsView: View {
         AppCard {
             if viewModel.hasLoaded && viewModel.heatmapData.isEmpty && !viewModel.isLoading {
                 emptyState
-            } else if viewModel.heatmapData.isEmpty {
-                loadingView
             } else {
-                ActivityHeatmapView(data: viewModel.heatmapData)
+                ActivityHeatmapView(
+                    data: viewModel.heatmapData.isEmpty ? loadingHeatmapData : viewModel.heatmapData,
+                    isLoading: !viewModel.hasLoaded || viewModel.isLoading
+                )
                     .padding(16)
-                    .overlay(alignment: .topTrailing) {
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                                .padding(8)
-                        }
-                    }
             }
         }
     }
@@ -90,32 +94,48 @@ public struct ActivityHeatmapSettingsView: View {
         AppCard {
             if viewModel.hasLoaded && viewModel.tokenData.isEmpty && !viewModel.isLoading {
                 tokenEmptyState
-            } else if viewModel.tokenData.isEmpty {
-                tokenLoadingView
             } else {
-                TokenLineChartView(data: viewModel.tokenData)
+                TokenLineChartView(
+                    data: viewModel.tokenData.isEmpty ? loadingTokenData : viewModel.tokenData,
+                    isLoading: !viewModel.hasLoaded || viewModel.isLoading
+                )
                     .padding(16)
-                    .overlay(alignment: .topTrailing) {
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                                .padding(8)
-                        }
-                    }
             }
         }
     }
 
     // MARK: - Loading / Empty States
 
-    private var loadingView: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-            Text(LumiPluginLocalization.string("Loading activity data…", bundle: .module))
-                .font(.appCaption)
-                .foregroundStyle(.secondary)
+    private var loadingHeatmapData: [ActivityDay] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let days = period.rawValue
+        guard let oldestDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) else {
+            return []
         }
-        .padding(32)
+
+        return (0..<days).compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: offset, to: oldestDay) else {
+                return nil
+            }
+            return ActivityDay(date: date, level: 0, messageCount: 0)
+        }
+    }
+
+    private var loadingTokenData: [ActivityDayToken] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let days = period.rawValue
+        guard let oldestDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) else {
+            return []
+        }
+
+        return (0..<days).compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: offset, to: oldestDay) else {
+                return nil
+            }
+            return ActivityDayToken(date: date, totalTokens: 0)
+        }
     }
 
     private var emptyState: some View {
@@ -127,16 +147,6 @@ public struct ActivityHeatmapSettingsView: View {
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-        }
-        .padding(32)
-    }
-
-    private var tokenLoadingView: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-            Text(LumiPluginLocalization.string("Loading token data…", bundle: .module))
-                .font(.appCaption)
-                .foregroundStyle(.secondary)
         }
         .padding(32)
     }
@@ -153,6 +163,15 @@ public struct ActivityHeatmapSettingsView: View {
         }
         .padding(32)
     }
+
+    // MARK: - Actions
+
+    private func openDataDirectory() {
+        guard let url = cacheDirectory else { return }
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        _ = NSWorkspace.shared.open(url)
+    }
+
 }
 
 #Preview {

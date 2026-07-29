@@ -11,15 +11,18 @@ public struct LumiModelCapabilities: Sendable, Equatable {
     public let supportsVision: Bool
     public let supportsTools: Bool
     public let supportsTTS: Bool
+    public let supportsReasoningEffort: Bool
 
     public init(
         supportsVision: Bool,
         supportsTools: Bool,
-        supportsTTS: Bool = false
+        supportsTTS: Bool = false,
+        supportsReasoningEffort: Bool = false
     ) {
         self.supportsVision = supportsVision
         self.supportsTools = supportsTools
         self.supportsTTS = supportsTTS
+        self.supportsReasoningEffort = supportsReasoningEffort
     }
 }
 

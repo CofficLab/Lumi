@@ -16,6 +16,7 @@ struct ProviderSettingsPage<DetailContent: View>: View {
     let localizedProvidersKey: String
     let isLocalProvider: (LumiLLMProviderInfo) -> Bool
     @Binding var selectedProviderID: String
+    let headerAccessory: AnyView?
     let detailContent: (LumiLLMProviderInfo) -> DetailContent
 
     @State private var searchText: String = ""
@@ -88,6 +89,9 @@ struct ProviderSettingsPage<DetailContent: View>: View {
             )
             Text(String(format: "%lld models", selectedProvider?.availableModels.count ?? 0))
             Spacer()
+            if let headerAccessory {
+                headerAccessory
+            }
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)

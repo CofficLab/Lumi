@@ -53,6 +53,11 @@ public final class ActivityHeatmapViewModel {
     /// trigger would cause during initial `.task` seeding.
     public var period: ActivityHeatmapPeriod = .year
 
+    /// Statistics derived from the currently selected period.
+    public var statistics: ActivityHeatmapStatistics {
+        ActivityHeatmapStatistics(activity: heatmapData, tokens: tokenData)
+    }
+
     /// Bumped on every `load()`; results are only applied if the generation is
     /// still current, so a slow earlier request can't clobber a newer one.
     private var loadGeneration = 0
@@ -62,7 +67,7 @@ public final class ActivityHeatmapViewModel {
     public init(messageService: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil, pluginID: String = "com.coffic.activity-heatmap") {
         self.messageService = messageService
         self.cache = cache ?? ActivityHeatmapCache(
-            storage: nil,
+            storageDirectory: nil,
             pluginID: pluginID
         )
     }
@@ -102,8 +107,8 @@ public final class ActivityHeatmapViewModel {
         let todayDate = today
 
         // Step 1: Load cached data for historical dates
-        let cachedHeatmapCounts = cache.loadHeatmapCounts(for: historicalDates)
-        let cachedTokenCounts = cache.loadTokenCounts(for: historicalDates)
+        let cachedHeatmapCounts = await cache.loadHeatmapCounts(for: historicalDates)
+        let cachedTokenCounts = await cache.loadTokenCounts(for: historicalDates)
 
         // Step 2: Find missing dates that need to be fetched
         let missingHeatmapDates = historicalDates.filter { cachedHeatmapCounts[$0] == nil }
@@ -122,17 +127,20 @@ public final class ActivityHeatmapViewModel {
 
         guard isCurrent(generation) else { return }
 
-        // Step 4: Save fresh data to cache (only historical, not today)
-        for date in missingHeatmapDates {
-            if let count = freshHeatmapCounts[date] {
-                cache.saveHeatmapCount(count, for: date)
-            }
-        }
-        for date in missingTokenDates {
-            if let count = freshTokenCounts[date] {
-                cache.saveTokenCount(count, for: date)
-            }
-        }
+        // Step 4: Save fresh data to cache (only historical, not today).
+        // The aggregate queries omit dates with no records, so explicitly
+        // persist those dates as zero; otherwise every subsequent load would
+        // treat them as cache misses and rescan the message store.
+        let heatmapCountsToCache = Dictionary(uniqueKeysWithValues: missingHeatmapDates.map {
+            ($0, freshHeatmapCounts[$0] ?? 0)
+        })
+        let tokenCountsToCache = Dictionary(uniqueKeysWithValues: missingTokenDates.map {
+            ($0, freshTokenCounts[$0] ?? 0)
+        })
+        await cache.saveCounts(
+            heatmapCounts: heatmapCountsToCache,
+            tokenCounts: tokenCountsToCache
+        )
 
         // Step 5: Merge cached and fresh data
         var allHeatmapCounts: [Date: Int] = cachedHeatmapCounts
@@ -187,13 +195,13 @@ public final class ActivityHeatmapViewModel {
         let windowCounts = calendarDays.compactMap { counts[$0] }
         let maxCount = windowCounts.max() ?? 0
         guard maxCount > 0 else {
-            return calendarDays.map { ActivityDay(date: $0, level: 0) }
+            return calendarDays.map { ActivityDay(date: $0, level: 0, messageCount: 0) }
         }
 
         return calendarDays.map { date in
             let count = counts[date] ?? 0
             let level = min(4, Int(Double(count) / Double(maxCount) * 4.99))
-            return ActivityDay(date: date, level: level)
+            return ActivityDay(date: date, level: level, messageCount: count)
         }
     }
 
@@ -216,5 +224,68 @@ public final class ActivityHeatmapViewModel {
         return calendarDays.map { date in
             ActivityDayToken(date: date, totalTokens: tokenCounts[date] ?? 0)
         }
+    }
+}
+
+/// Human-readable summary metrics for the selected heatmap window.
+public struct ActivityHeatmapStatistics: Sendable, Equatable {
+    public let totalMessages: Int
+    public let activeDays: Int
+    public let averageMessagesPerDay: Double
+    public let averageMessagesPerActiveDay: Double
+    public let peakMessageDay: ActivityDay?
+    public let currentStreak: Int
+    public let longestStreak: Int
+    public let longestIdleStreak: Int
+    public let totalTokens: Int
+    public let averageTokensPerDay: Int
+    public let peakTokenDay: ActivityDayToken?
+    public let averageTokensPerMessage: Double
+    public let weekdayTotals: [Int]
+
+    public init(activity: [ActivityDay], tokens: [ActivityDayToken]) {
+        let sorted = activity.sorted { $0.date < $1.date }
+        totalMessages = sorted.reduce(0) { $0 + $1.messageCount }
+        activeDays = sorted.filter { $0.messageCount > 0 }.count
+        averageMessagesPerDay = sorted.isEmpty ? 0 : Double(totalMessages) / Double(sorted.count)
+        averageMessagesPerActiveDay = activeDays == 0 ? 0 : Double(totalMessages) / Double(activeDays)
+        peakMessageDay = sorted.filter { $0.messageCount > 0 }.max { $0.messageCount < $1.messageCount }
+
+        let streaks = Self.streaks(sorted.map { $0.messageCount > 0 })
+        longestStreak = streaks.max() ?? 0
+        currentStreak = Self.currentStreak(sorted.map { $0.messageCount > 0 })
+        longestIdleStreak = Self.streaks(sorted.map { $0.messageCount == 0 }).max() ?? 0
+
+        let tokenValues = tokens.sorted { $0.date < $1.date }
+        totalTokens = tokenValues.reduce(0) { $0 + $1.totalTokens }
+        averageTokensPerDay = tokenValues.isEmpty ? 0 : totalTokens / tokenValues.count
+        peakTokenDay = tokenValues.filter { $0.totalTokens > 0 }.max { $0.totalTokens < $1.totalTokens }
+        averageTokensPerMessage = totalMessages == 0 ? 0 : Double(totalTokens) / Double(totalMessages)
+
+        var totals = Array(repeating: 0, count: 7)
+        let calendar = Calendar.current
+        for day in sorted where day.messageCount > 0 {
+            totals[calendar.component(.weekday, from: day.date) - 1] += day.messageCount
+        }
+        weekdayTotals = totals
+    }
+
+    private static func streaks(_ values: [Bool]) -> [Int] {
+        var result: [Int] = []
+        var current = 0
+        for value in values {
+            if value { current += 1 } else if current > 0 { result.append(current); current = 0 }
+        }
+        if current > 0 { result.append(current) }
+        return result
+    }
+
+    private static func currentStreak(_ values: [Bool]) -> Int {
+        var count = 0
+        for value in values.reversed() {
+            guard value else { break }
+            count += 1
+        }
+        return count
     }
 }

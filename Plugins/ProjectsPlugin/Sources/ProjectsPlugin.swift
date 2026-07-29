@@ -12,7 +12,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.projects"
     public let name = "Projects Plugin"
-    public let order = 20
+    public let order = 5
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
 
     public init() {}
@@ -116,7 +116,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         return [
             SettingsTabItem(
                 id: "\(id).settings",
-                title: "Projects",
+                title: LumiPluginLocalization.string("Projects", bundle: .module),
                 systemImage: "folder",
                 order: order
             ) {

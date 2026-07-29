@@ -51,16 +51,18 @@ struct SettingsView: View {
 
                 AppSettingsDivider()
 
-                VStack(spacing: 6) {
-                    ForEach(descriptors) { descriptor in
-                        AppSettingsSidebarItem(
-                            title: descriptor.title,
-                            systemImage: descriptor.systemImage,
-                            isSelected: selectedTab == descriptor.id
-                        ) {
-                            selectedTab = descriptor.id
+                ScrollView {
+                    VStack(spacing: 6) {
+                        ForEach(descriptors) { descriptor in
+                            AppSettingsSidebarItem(
+                                title: descriptor.title,
+                                systemImage: descriptor.systemImage,
+                                isSelected: selectedTab == descriptor.id
+                            ) {
+                                selectedTab = descriptor.id
+                            }
                         }
-                    }
+                    }.padding(.leading)
                 }
 
                 Spacer()

@@ -14,6 +14,14 @@ public struct AskUserStandardView: View {
     @State private var selectedAnswer: String?
     @State private var responded = false
 
+    public init(response: AskUserPendingResponse, toolCall: ToolCall) {
+        self.response = response
+        self.toolCall = toolCall
+        let answer = toolCall.result?.interactionState?.answer
+        _selectedAnswer = State(initialValue: answer)
+        _responded = State(initialValue: answer != nil)
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // 问题标题
@@ -26,42 +34,38 @@ public struct AskUserStandardView: View {
                     .foregroundColor(.primary)
             }
 
-            if responded {
-                // 已回答状态
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                    Text(selectedAnswer ?? "")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-                }
-            } else {
-                // 待回答状态 - 显示所有选项
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(response.options, id: \.self) { option in
-                        Button {
-                            submitAnswer(option)
-                        } label: {
-                            HStack {
-                                Text(option)
-                                    .font(.system(size: 13))
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(white: 0.95))
-                            )
+            // 选项始终保留；回答后仅禁用，避免用户误以为问题消失。
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(response.options, id: \.self) { option in
+                    Button {
+                        submitAnswer(option)
+                    } label: {
+                        HStack {
+                            Text(option)
+                                .font(.system(size: 13))
+                            Spacer()
+                            Image(systemName: selectedAnswer == option ? "checkmark.circle.fill" : "chevron.right")
+                                .font(.system(size: 10))
+                                .foregroundColor(selectedAnswer == option ? .green : .secondary)
                         }
-                        .buttonStyle(.plain)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedAnswer == option ? Color.green.opacity(0.12) : Color(white: 0.95))
+                        )
                     }
+                    .buttonStyle(.plain)
+                    .disabled(responded)
+                    .opacity(responded && selectedAnswer != option ? 0.55 : 1)
                 }
+            }
 
-                // 提示文字
+            if responded {
+                Text("已回答：\(selectedAnswer ?? "")")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            } else {
                 Text("点击选项回答问题")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
@@ -79,6 +83,7 @@ public struct AskUserStandardView: View {
     }
 
     private func submitAnswer(_ answer: String) {
+        guard !responded else { return }
         selectedAnswer = answer
         responded = true
 

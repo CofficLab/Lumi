@@ -67,6 +67,68 @@ public final class HTTPExchangeStore {
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    /// Fetch one page using a keyset cursor ordered by newest first.
+    ///
+    /// The bounded fetch keeps the settings UI from materializing the entire
+    /// HTTP history, even when the database grows without a fixed limit.
+    public func fetchPage(
+        limit: Int,
+        beforeStartedAt: Date? = nil
+    ) -> [HTTPExchangeRecord] {
+        guard let context = self.context, limit > 0 else { return [] }
+
+        let cursorDate = beforeStartedAt
+        var descriptor: FetchDescriptor<HTTPExchangeRecord>
+
+        if let cursorDate {
+            descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                predicate: #Predicate<HTTPExchangeRecord> {
+                    $0.startedAt < cursorDate
+                },
+                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+            )
+        } else {
+            descriptor = FetchDescriptor<HTTPExchangeRecord>(sortBy: [
+                SortDescriptor(\.startedAt, order: .reverse),
+            ])
+        }
+
+        descriptor.fetchLimit = limit
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    /// Count stored exchanges without materializing request or response bodies.
+    public func count() -> Int {
+        guard let context = self.context else { return 0 }
+        return (try? context.fetchCount(FetchDescriptor<HTTPExchangeRecord>())) ?? 0
+    }
+
+    /// Build the recent activity chart with bounded count queries per day.
+    func fetchDailyCountSeries(days: Int = 14, endingAt date: Date = Date()) -> HTTPExchangeDailyCountSeries {
+        guard days > 0, let context = self.context else {
+            return HTTPExchangeDailyCountSeries(points: [])
+        }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: date)
+        let firstDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) ?? today
+        let points = (0..<days).compactMap { offset -> HTTPExchangeDailyCountPoint? in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: firstDay),
+                  let nextDay = calendar.date(byAdding: .day, value: 1, to: day) else {
+                return nil
+            }
+
+            let descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                predicate: #Predicate<HTTPExchangeRecord> {
+                    $0.startedAt >= day && $0.startedAt < nextDay
+                }
+            )
+            let count = (try? context.fetchCount(descriptor)) ?? 0
+            return HTTPExchangeDailyCountPoint(day: day, count: count)
+        }
+        return HTTPExchangeDailyCountSeries(points: points)
+    }
+
     public func finish(
         _ record: HTTPExchangeRecord?,
         response: URLResponse? = nil,

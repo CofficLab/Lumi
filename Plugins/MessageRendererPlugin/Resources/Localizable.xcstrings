@@ -903,6 +903,7 @@
       }
     },
     "Tool Result %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -970,6 +971,9 @@
           }
         }
       }
+    },
+    "复制消息" : {
+
     },
     "工具执行" : {
       "extractionState" : "stale",
@@ -1109,6 +1113,9 @@
           }
         }
       }
+    },
+    "查看原始消息" : {
+
     },
     "查询结果中..." : {
       "localizations" : {
@@ -1384,6 +1391,9 @@
         }
       }
     },
+    "重新发送" : {
+
+    },
     "重新发送该消息" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1418,6 +1428,9 @@
           }
         }
       }
+    },
+    "隐藏原始消息" : {
+
     }
   },
   "version" : "1.1"

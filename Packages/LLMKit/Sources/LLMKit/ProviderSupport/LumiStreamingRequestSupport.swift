@@ -46,7 +46,8 @@ public enum LumiStreamingRequestSupport: SuperLog {
             messages: LumiLLMRequestMessages.preparedForProvider(request),
             model: request.model,
             tools: request.tools.map(LumiToolSchema.init),
-            systemPrompt: ""
+            systemPrompt: "",
+            config: LLMConfig.from(request)
         )
         if Self.verbose {
             let metrics = requestMessageMetrics(request.messages)
@@ -220,7 +221,8 @@ public enum LumiStreamingRequestSupport: SuperLog {
             messages: LumiLLMRequestMessages.preparedForProvider(request),
             model: request.model,
             tools: request.tools.map(LumiToolSchema.init),
-            systemPrompt: systemPrompt
+            systemPrompt: systemPrompt,
+            config: LLMConfig.from(request)
         )
         customizeBody?(&body, request)
         if Self.verbose {
@@ -523,5 +525,15 @@ public enum LumiStreamingRequestSupport: SuperLog {
         }
 
         return (contentChars, metadataChars, reasoningChars)
+    }
+}
+
+private extension LLMConfig {
+    static func from(_ request: LumiLLMRequest) -> LLMConfig {
+        LLMConfig(
+            model: request.model,
+            providerId: "",
+            reasoningEffort: request.generationOptions.reasoningEffort?.rawValue
+        )
     }
 }

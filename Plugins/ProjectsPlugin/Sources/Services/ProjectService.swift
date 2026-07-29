@@ -31,6 +31,21 @@ public final class ProjectService: ProjectProviding {
     public init(store: ProjectsStore? = nil) {
         self.store = store
         self.openedFilesByProject = store?.loadOpenedFiles() ?? [:]
+
+        let savedProjects = store?.loadProjects() ?? []
+        self.projects = savedProjects.map {
+            ProjectInfo(name: $0.name, path: ProjectsStore.normalizedPath($0.path), language: $0.language)
+        }
+
+        if let current = store?.loadCurrentProject(from: savedProjects) {
+            self.currentProject = ProjectInfo(
+                name: current.name,
+                path: ProjectsStore.normalizedPath(current.path),
+                language: current.language
+            )
+        } else {
+            self.currentProject = nil
+        }
     }
 
     // MARK: - ProjectProviding
@@ -54,6 +69,20 @@ public final class ProjectService: ProjectProviding {
         // 如果不在列表中，添加到列表
         if !projects.contains(where: { $0.path == key }) {
             projects.append(project)
+        }
+    }
+
+    public func synchronizeProjects(_ projects: [ProjectInfo]) {
+        var seen = Set<String>()
+        self.projects = projects.compactMap { project in
+            let path = ProjectsStore.normalizedPath(project.path)
+            guard !path.isEmpty, seen.insert(path).inserted else { return nil }
+            return ProjectInfo(name: project.name, path: path, language: project.language)
+        }
+
+        if let currentProject,
+           !self.projects.contains(where: { $0.path == currentProject.path }) {
+            self.currentProject = self.projects.first
         }
     }
 

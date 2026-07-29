@@ -58,16 +58,16 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
             "claude-haiku-4-5-20251001": 200_000,
         ],
         modelCapabilities: [
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.4": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.3-codex": .init(supportsVision: true, supportsTools: true),
+            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "gpt-5.4": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "gpt-5.3-codex": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
             "claude-fable-5": .init(supportsVision: true, supportsTools: true),
-            "claude-opus-4-8": .init(supportsVision: true, supportsTools: true),
-            "claude-opus-4-7": .init(supportsVision: true, supportsTools: true),
-            "claude-opus-4-6": .init(supportsVision: true, supportsTools: true),
-            "claude-sonnet-4-6": .init(supportsVision: true, supportsTools: true),
-            "claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true),
+            "claude-opus-4-8": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "claude-opus-4-7": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "claude-opus-4-6": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "claude-sonnet-4-6": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
         ],
         websiteURL: URL(string: "https://freemodel.dev/")!
     ,
@@ -86,7 +86,8 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
             nodeLabel: "claude-t0",
             configuration: AnthropicCompatibleProviderConfiguration(
                 baseURL: Endpoints.claudeT0,
-                fallbackBaseURLs: [Endpoints.claudeT1]
+                fallbackBaseURLs: [Endpoints.claudeT1],
+                supportsThinkingBudget: true
             ),
             apiService: apiService
         )
@@ -94,7 +95,8 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
             nodeLabel: "claude-t1",
             configuration: AnthropicCompatibleProviderConfiguration(
                 baseURL: Endpoints.claudeT1,
-                fallbackBaseURLs: [Endpoints.claudeT0]
+                fallbackBaseURLs: [Endpoints.claudeT0],
+                supportsThinkingBudget: true
             ),
             apiService: apiService
         )

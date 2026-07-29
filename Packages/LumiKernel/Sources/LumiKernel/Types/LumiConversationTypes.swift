@@ -89,17 +89,22 @@ public enum LumiModelRoutingMode: String, Codable, Sendable, CaseIterable {
 }
 
 public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendable {
+    /// Non-pinned conversations are kept after pinned conversations when sorted by order.
+    public static let defaultOrder = Int.max / 2
+
     public let id: UUID
     public var title: String?
     public var preview: String
     public var createdAt: Date
     public var updatedAt: Date
     public var verbosity: LumiResponseVerbosity?
+    public var reasoningEffort: LumiReasoningEffort?
     public var language: LumiConversationLanguage?
     public var automationLevel: LumiAutomationLevel?
     public var providerID: String?
     public var modelName: String?
     public var projectPath: String?
+    public var order: Int
 
     public init(
         id: UUID = UUID(),
@@ -108,11 +113,13 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         verbosity: LumiResponseVerbosity? = nil,
+        reasoningEffort: LumiReasoningEffort? = nil,
         language: LumiConversationLanguage? = nil,
         automationLevel: LumiAutomationLevel? = nil,
         providerID: String? = nil,
         modelName: String? = nil,
-        projectPath: String? = nil
+        projectPath: String? = nil,
+        order: Int = Self.defaultOrder
     ) {
         self.id = id
         self.title = title
@@ -120,11 +127,13 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.verbosity = verbosity
+        self.reasoningEffort = reasoningEffort
         self.language = language
         self.automationLevel = automationLevel
         self.providerID = providerID
         self.modelName = modelName
         self.projectPath = projectPath
+        self.order = order
     }
 
     public var displayTitle: String {

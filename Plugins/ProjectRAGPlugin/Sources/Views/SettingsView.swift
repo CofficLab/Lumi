@@ -11,21 +11,27 @@ public struct RAGSettingsView: View, SuperLog {
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
 
-    let kernel: LumiKernel
+    @ObservedObject private var kernel: LumiKernel
     @LumiTheme private var theme
     @State private var statusesByPath: [String: RAGIndexStatus] = [:]
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     @State private var isLoading = false
     @State private var loadError: String?
+    @State private var selectedProjectPath: String?
 
     public init(kernel: LumiKernel) {
-        self.kernel = kernel
+        self._kernel = ObservedObject(wrappedValue: kernel)
     }
 
     public var body: some View {
-        AppSettingsContentScaffold(maxContentWidth: nil) {
-            VStack(alignment: .leading, spacing: 24) {
+        PluginSettingsScaffold(
+            title: LumiPluginLocalization.string("Project RAG", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Enable natural language queries over your project codebase using a vector database.", bundle: .module),
+            showHeader: false,
+            scrollsContent: false
+        ) {
+            VStack(spacing: 12) {
                 header
 
                 if trackedProjects.isEmpty {
@@ -33,48 +39,30 @@ public struct RAGSettingsView: View, SuperLog {
                         icon: "folder.badge.questionmark",
                         title: LumiPluginLocalization.string("Please select or add a project first for RAG to build and display indexes.", bundle: .module)
                     )
-                    .frame(maxWidth: .infinity, minHeight: 200)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    if let loadError {
-                        AppSettingSection(title: LumiPluginLocalization.string("Status", bundle: .module), titleAlignment: .leading) {
-                            VStack(spacing: 0) {
-                                AppSettingRow(
-                                    title: loadError,
-                                    icon: "exclamationmark.triangle.fill"
-                                ) {
-                                    Button {
-                                        Task { await loadStatus() }
-                                    } label: {
-                                        Image(systemName: "arrow.clockwise")
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
-                    }
+                    HStack(spacing: 0) {
+                        projectSidebar
+                            .frame(width: 320)
+                            .frame(maxHeight: .infinity)
 
-                    if let runtimeInfo {
-                        runtimeSection(runtimeInfo)
-                    }
+                        AppDivider(.vertical)
 
-                    let projects = trackedProjects
-                    ForEach(Array(projects.enumerated()), id: \.element.id) { index, project in
-                        RAGSettingsProjectSectionView(
-                            project: project,
-                            statusesByPath: statusesByPath,
-                            progressByPath: progressByPath,
-                            isLoading: isLoading
-                        )
-                        if index < projects.count - 1 {
-                            Divider()
-                                .padding(.vertical, 8)
-                        }
+                        projectDetail
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
+                    .frame(maxHeight: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(theme.divider, lineWidth: 1)
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .task(id: trackedProjects.map(\.path).joined(separator: "|")) {
+            syncSelection()
             await loadStatus()
         }
         .onRAGIndexProgressDidChange { event in
@@ -89,13 +77,136 @@ public struct RAGSettingsView: View, SuperLog {
 
     private var header: some View {
         HStack(spacing: 10) {
+            Label(
+                "\(trackedProjects.count) projects",
+                systemImage: "folder"
+            )
+            .font(.appCaption)
+            .foregroundStyle(theme.textSecondary)
             Spacer()
+            AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
+                Task { await loadStatus() }
+            }
             AppButton("Open Data Directory", systemImage: "folder", size: .small) {
                 openDataDirectory()
             }
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)
+    }
+
+    private var projectSidebar: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Label("Projects", systemImage: "folder.fill")
+                    .font(.appCaptionEmphasized)
+                    .foregroundStyle(theme.textPrimary)
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(theme.background)
+
+            ScrollView {
+                LazyVStack(spacing: 4) {
+                    ForEach(trackedProjects) { project in
+                        projectRow(project)
+                    }
+                }
+                .padding(8)
+            }
+            .frame(maxHeight: .infinity)
+        }
+        .appSurface(style: .panel, cornerRadius: 0)
+    }
+
+    private func projectRow(_ project: RAGTrackedProject) -> some View {
+        let isSelected = selectedProjectPath == project.path
+        let status = statusesByPath[project.path]
+        let isIndexing = progressByPath[project.path].map { !$0.isFinished } ?? false
+
+        return AppListRow(isSelected: isSelected, action: {
+            selectedProjectPath = project.path
+        }) {
+            HStack(spacing: 10) {
+                Image(systemName: isIndexing ? "arrow.triangle.2.circlepath" : "folder")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    .frame(width: 24, height: 24)
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(project.name)
+                        .font(.system(size: 13, weight: .medium))
+                        .lineLimit(1)
+                    Text(project.path)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+
+                Spacer(minLength: 0)
+
+                Circle()
+                    .fill(statusColor(status: status, isIndexing: isIndexing))
+                    .frame(width: 7, height: 7)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var projectDetail: some View {
+        if let project = trackedProjects.first(where: { $0.path == selectedProjectPath }) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    if let loadError {
+                        AppSettingSection(title: LumiPluginLocalization.string("Status", bundle: .module), titleAlignment: .leading) {
+                            AppSettingRow(title: loadError, icon: "exclamationmark.triangle.fill") {
+                                Button {
+                                    Task { await loadStatus() }
+                                } label: {
+                                    Image(systemName: "arrow.clockwise")
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    RAGSettingsProjectSectionView(
+                        project: project,
+                        statusesByPath: statusesByPath,
+                        progressByPath: progressByPath,
+                        isLoading: isLoading
+                    )
+
+                    if let runtimeInfo {
+                        runtimeSection(runtimeInfo)
+                    }
+                }
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .appSurface(style: .panel, cornerRadius: 0)
+        } else {
+            AppEmptyState(icon: "folder", title: "Select a project")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .appSurface(style: .panel, cornerRadius: 0)
+        }
+    }
+
+    private func syncSelection() {
+        if selectedProjectPath == nil || !trackedProjects.contains(where: { $0.path == selectedProjectPath }) {
+            selectedProjectPath = trackedProjects.first?.path
+        }
+    }
+
+    private func statusColor(status: RAGIndexStatus?, isIndexing: Bool) -> Color {
+        if isIndexing { return .blue }
+        if status?.isStale == true { return .orange }
+        if status != nil { return .green }
+        return .secondary
     }
 
     // MARK: - Sections
@@ -180,17 +291,7 @@ extension RAGSettingsView {
         let projects = (kernel.project?.projects ?? []).map {
             RAGTrackedProject(name: $0.name, path: $0.path)
         }
-        let currentPath = RAGPluginRuntime.currentProjectPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        let current: [RAGTrackedProject]
-        if currentPath.isEmpty {
-            current = []
-        } else {
-            let name = RAGPluginRuntime.currentProjectName.isEmpty
-                ? URL(fileURLWithPath: currentPath).lastPathComponent
-                : RAGPluginRuntime.currentProjectName
-            current = [RAGTrackedProject(name: name, path: currentPath)]
-        }
-        return dedupProjects(current + projects)
+        return dedupProjects(projects)
     }
 
     private func dedupProjects(_ projects: [RAGTrackedProject]) -> [RAGTrackedProject] {
@@ -204,12 +305,6 @@ extension RAGSettingsView {
             result.append(RAGTrackedProject(name: project.name, path: normalized))
         }
         return result
-    }
-
-    private func relativeDate(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
-        return formatter.localizedString(for: date, relativeTo: Date())
     }
 
     /// 在 Finder 中打开本插件的磁盘数据目录(RAG 数据库所在位置)。

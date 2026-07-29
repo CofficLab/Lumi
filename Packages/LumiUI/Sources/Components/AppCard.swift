@@ -1,5 +1,23 @@
 import SwiftUI
 
+public enum AppCardStyleOverride: Sendable {
+    case glass
+    case elevated
+    case subtle
+}
+
+private struct AppSettingsCardStyleOverrideKey: EnvironmentKey {
+    static let defaultValue: AppCardStyleOverride? = nil
+}
+
+public extension EnvironmentValues {
+    /// Optional card style supplied by a host surface such as Settings.
+    var appSettingsCardStyleOverride: AppCardStyleOverride? {
+        get { self[AppSettingsCardStyleOverrideKey.self] }
+        set { self[AppSettingsCardStyleOverrideKey.self] = newValue }
+    }
+}
+
 /// 通用卡片组件，统一了 elevated/subtle/glass 三种风格。
 ///
 /// 替代了原有的 `GlassCard` 和旧版 `AppCard`，提供：
@@ -7,7 +25,7 @@ import SwiftUI
 /// - `.elevated`：Material 背景 + hover 缩放动画
 /// - `.subtle`：低透明度半透明背景
 public struct AppCard<Content: View>: View {
-    public enum Style {
+    public enum Style: Sendable {
         /// 玻璃拟态风格：mystic glass 背景 + 渐变边框 + 可选 glow
         case glass
         /// 提升卡片：Material regular 背景 + hover 缩放/阴影动画
@@ -26,6 +44,7 @@ public struct AppCard<Content: View>: View {
     @LumiTheme private var theme
     @LumiMotionPreferenceReader private var motionPreference
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appSettingsCardStyleOverride) private var settingsStyleOverride
     @ViewBuilder let content: Content
     @State private var isHovering = false
 
@@ -51,13 +70,22 @@ public struct AppCard<Content: View>: View {
 
     public var body: some View {
         Group {
-            switch style {
+            switch settingsStyleOverride {
             case .glass:
                 glassBody
             case .elevated:
                 elevatedBody
             case .subtle:
                 subtleBody
+            case nil:
+                switch style {
+                case .glass:
+                    glassBody
+                case .elevated:
+                    elevatedBody
+                case .subtle:
+                    subtleBody
+                }
             }
         }
     }

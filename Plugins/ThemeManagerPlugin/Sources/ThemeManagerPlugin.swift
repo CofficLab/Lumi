@@ -19,9 +19,7 @@ public final class ThemeManagerPlugin: LumiPlugin {
         kernel.registerThemeService(themeServiceInstance)
         self.themeService = themeServiceInstance
 
-        if let pluginProviding = kernel.pluginManager as? PluginRegistry {
-            themeServiceInstance.setPluginService(pluginProviding)
-        }
+        themeServiceInstance.setPluginManager(kernel.pluginManager)
         themeServiceInstance.setEventManager(kernel.eventManager)
     }
 

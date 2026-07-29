@@ -66,6 +66,14 @@ public protocol ConversationManaging: ObservableObject {
     /// 设置指定对话的详细程度
     func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?)
 
+    // MARK: - Reasoning Effort
+
+    /// 获取指定对话的推理强度
+    func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort
+
+    /// 设置指定对话的推理强度
+    func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?)
+
     // MARK: - Automation Level
 
     /// 获取指定对话的自动化程度
@@ -81,4 +89,9 @@ public protocol ConversationManaging: ObservableObject {
 
     /// 设置指定对话的回复语言
     func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?)
+
+    // MARK: - Conversation Order
+
+    /// 设置指定对话的排序优先级（值越小优先级越高，0 为默认无优先级）
+    func setConversationOrder(_ order: Int, for conversationID: UUID)
 }

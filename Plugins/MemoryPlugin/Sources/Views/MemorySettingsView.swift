@@ -70,9 +70,19 @@ public struct MemorySettingsView: View {
     }
 
     public var body: some View {
-        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
-            VStack(alignment: .leading, spacing: 14) {
-                header
+        PluginSettingsScaffold(
+            title: LumiPluginLocalization.string("Memory", bundle: .module),
+            subtitle: LumiPluginLocalization.string("View and manage Lumi's long-term memory across sessions", bundle: .module),
+            showHeader: false,
+            scrollsContent: false
+        ) {
+            VStack(spacing: 12) {
+                HStack {
+                    Spacer()
+                    AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+                        openDataDirectory()
+                    }
+                }
 
                 HStack(spacing: 0) {
                     sidebar
@@ -84,7 +94,7 @@ public struct MemorySettingsView: View {
                     detailPane
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(minHeight: 560, maxHeight: .infinity)
+                .frame(maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -96,9 +106,9 @@ public struct MemorySettingsView: View {
         .task { await reload() }
     }
 
-    // MARK: - Header
+    // MARK: - Sidebar Header
 
-    private var header: some View {
+    private var sidebarHeader: some View {
         HStack(spacing: 10) {
             Label("\(entries.count) memories", systemImage: "brain")
             if let selected = selectedEntry {
@@ -109,18 +119,20 @@ public struct MemorySettingsView: View {
             AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
                 Task { await reload() }
             }
-            AppButton("Open Data Directory", systemImage: "folder", size: .small) {
-                openDataDirectory()
-            }
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(theme.background)
     }
 
     // MARK: - Sidebar（记忆列表）
 
     private var sidebar: some View {
         VStack(spacing: 0) {
+            sidebarHeader
+
             if isLoading {
                 ProgressView()
                     .controlSize(.small)

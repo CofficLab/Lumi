@@ -25,6 +25,9 @@ final public class ConversationModel: @unchecked Sendable {
     /// Verbosity level
     public var verbosityRaw: String?
 
+    /// Reasoning effort level
+    public var reasoningEffortRaw: String?
+
     /// Language preference
     public var languageRaw: String?
 
@@ -40,6 +43,12 @@ final public class ConversationModel: @unchecked Sendable {
     /// Associated project path
     public var projectPath: String?
 
+    /// Sort priority, lower values are higher priority.
+    /// Optional for lightweight migration compatibility: older stores do not
+    /// contain this column, so making it mandatory would fail migration with
+    /// NSCocoaErrorDomain 134110.
+    public var order: Int?
+
     public init(
         id: String = UUID().uuidString,
         title: String,
@@ -47,11 +56,13 @@ final public class ConversationModel: @unchecked Sendable {
         createdAt: TimeInterval = Date().timeIntervalSince1970,
         updatedAt: TimeInterval = Date().timeIntervalSince1970,
         verbosityRaw: String? = nil,
+        reasoningEffortRaw: String? = nil,
         languageRaw: String? = nil,
         automationLevelRaw: String? = nil,
         providerId: String? = nil,
         modelName: String? = nil,
-        projectPath: String? = nil
+        projectPath: String? = nil,
+        order: Int = LumiConversationSummary.defaultOrder
     ) {
         self.id = id
         self.title = title
@@ -59,11 +70,13 @@ final public class ConversationModel: @unchecked Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.verbosityRaw = verbosityRaw
+        self.reasoningEffortRaw = reasoningEffortRaw
         self.languageRaw = languageRaw
         self.automationLevelRaw = automationLevelRaw
         self.providerId = providerId
         self.modelName = modelName
         self.projectPath = projectPath
+        self.order = order
     }
 }
 
@@ -80,11 +93,13 @@ public extension ConversationModel {
             createdAt: summary.createdAt.timeIntervalSince1970,
             updatedAt: summary.updatedAt.timeIntervalSince1970,
             verbosityRaw: summary.verbosity?.rawValue,
+            reasoningEffortRaw: summary.reasoningEffort?.rawValue,
             languageRaw: summary.language?.rawValue,
             automationLevelRaw: summary.automationLevel?.rawValue,
             providerId: summary.providerID,
             modelName: summary.modelName,
-            projectPath: summary.projectPath
+            projectPath: summary.projectPath,
+            order: summary.order
         )
     }
 
@@ -98,6 +113,9 @@ public extension ConversationModel {
         let language: LumiConversationLanguage? = languageRaw.flatMap {
             LumiConversationLanguage(rawValue: $0)
         }
+        let reasoningEffort: LumiReasoningEffort? = reasoningEffortRaw.flatMap {
+            LumiReasoningEffort(rawValue: $0)
+        }
         let automationLevel: LumiAutomationLevel? = automationLevelRaw.flatMap {
             LumiAutomationLevel(rawValue: $0)
         }
@@ -109,11 +127,13 @@ public extension ConversationModel {
             createdAt: Date(timeIntervalSince1970: createdAt),
             updatedAt: Date(timeIntervalSince1970: updatedAt),
             verbosity: verbosity,
+            reasoningEffort: reasoningEffort,
             language: language,
             automationLevel: automationLevel,
             providerID: providerId,
             modelName: modelName,
-            projectPath: projectPath
+            projectPath: projectPath,
+            order: order ?? LumiConversationSummary.defaultOrder
         )
     }
 }

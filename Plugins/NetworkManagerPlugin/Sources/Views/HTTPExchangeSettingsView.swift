@@ -9,13 +9,15 @@ public struct HTTPExchangeSettingsView: View {
     @LumiTheme private var theme
 
     @State private var records: [HTTPExchangeRecord] = []
+    @State private var isLoading = true
+    @State private var isReloading = false
+    @State private var isLoadingMore = false
+    @State private var hasMoreRecords = true
+    @State private var totalRecordCount: Int?
     @State private var selectedRecordID: UUID?
-    @State private var selectedDetailTab: DetailTab = .request
+    @State private var dailyCountSeries = HTTPExchangeDailyCountSeries(points: [])
 
-    private enum DetailTab: Hashable {
-        case request
-        case response
-    }
+    private let pageSize = 40
 
     public init(store: HTTPExchangeStore) {
         self.store = store
@@ -27,9 +29,27 @@ public struct HTTPExchangeSettingsView: View {
     }
 
     public var body: some View {
-        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
-            VStack(alignment: .leading, spacing: 14) {
-                header
+        PluginSettingsScaffold(
+            title: LumiPluginLocalization.string("HTTP Exchange", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Inspect all HTTP requests and responses made by Lumi", bundle: .module),
+            showHeader: false,
+            scrollsContent: false
+        ) {
+            VStack(spacing: 12) {
+                HStack {
+                    Spacer()
+                    Label(totalCountLabel, systemImage: "arrow.up.arrow.down.circle")
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                    AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
+                        Task { await reloadAsync() }
+                    }
+                    AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", size: .small) {
+                        NSWorkspace.shared.open(store.directory)
+                    }
+                }
+
+                requestActivity
 
                 HStack(spacing: 0) {
                     sidebar
@@ -41,7 +61,7 @@ public struct HTTPExchangeSettingsView: View {
                     detailPane
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(minHeight: 560, maxHeight: .infinity)
+                .frame(maxHeight: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -50,39 +70,55 @@ public struct HTTPExchangeSettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .onAppear {
-            reload()
+        .task {
+            await reloadAsync()
         }
         .onReceive(NotificationCenter.default.publisher(for: HTTPExchangeStore.didChangeNotification)) { _ in
-            reload()
+            Task { await reloadAsync() }
         }
     }
 
-    private var header: some View {
-        HStack(spacing: 10) {
-            Label("\(records.count) HTTP exchanges", systemImage: "arrow.up.arrow.down.circle")
-            if let selectedRecord {
-                Text("Selected: \(selectedRecord.requestMethod) \(selectedRecord.requestURL)")
-                    .lineLimit(1)
+    private var requestActivity: some View {
+        AppSettingsSection(title: LumiPluginLocalization.string("Request Activity", bundle: .module), subtitle: LumiPluginLocalization.string("HTTP requests per day over the last 14 days", bundle: .module), spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Label(LumiPluginLocalization.string("Daily HTTP requests", bundle: .module), systemImage: "chart.xyaxis.line")
+                        .font(.appCaptionEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                    Spacer(minLength: 0)
+                    Text(LumiPluginLocalization.string("Peak", bundle: .module) + " (\(dailyCountSeries.peakCount))")
+                        .font(.appMicro)
+                        .monospacedDigit()
+                        .foregroundStyle(theme.textSecondary)
+                }
+                HTTPExchangeDailyCountChart(series: dailyCountSeries)
+                    .frame(height: 132)
             }
-            Spacer()
-            AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
-                reload()
-            }
-            AppButton("Open Data Directory", systemImage: "folder", size: .small) {
-                NSWorkspace.shared.open(store.directory)
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(theme.divider, lineWidth: 0.5)
             }
         }
-        .font(.appCaption)
-        .foregroundStyle(theme.textSecondary)
     }
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            if records.isEmpty {
+            if isLoading && records.isEmpty {
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(LumiPluginLocalization.string("Loading...", bundle: .module))
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if records.isEmpty {
                 AppEmptyState(
                     icon: "arrow.up.arrow.down.circle",
-                    title: "No HTTP exchanges"
+                    title: LumiPluginLocalization.string("No HTTP exchanges", bundle: .module)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -90,11 +126,22 @@ public struct HTTPExchangeSettingsView: View {
                     LazyVStack(spacing: 4) {
                         ForEach(records) { record in
                             recordRow(record)
+                                .onAppear {
+                                    if record.id == records.last?.id {
+                                        Task { await loadMoreAsync() }
+                                    }
+                                }
                         }
                     }
                     .padding(8)
                 }
                 .frame(maxHeight: .infinity)
+
+                if isLoadingMore {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.bottom, 8)
+                }
             }
         }
         .appSurface(style: .panel, cornerRadius: 0)
@@ -114,7 +161,7 @@ public struct HTTPExchangeSettingsView: View {
                         .font(.appMicro)
                         .foregroundStyle(statusColor(for: record))
                     Spacer(minLength: 0)
-                    Text(relativeDate(record.startedAt))
+                    Text(formattedDate(record.startedAt))
                         .font(.appMicro)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -130,19 +177,15 @@ public struct HTTPExchangeSettingsView: View {
     @ViewBuilder
     private var detailPane: some View {
         if let selectedRecord {
-            TabView(selection: $selectedDetailTab) {
+            HTTPExchangeDetailView(recordID: selectedRecord.id) {
                 requestTab(for: selectedRecord)
-                    .tabItem { Label("Request", systemImage: "arrow.up.right") }
-                    .tag(DetailTab.request)
-
+            } response: {
                 responseTab(for: selectedRecord)
-                    .tabItem { Label("Response", systemImage: "arrow.down.left") }
-                    .tag(DetailTab.response)
             }
         } else {
             AppEmptyState(
                 icon: "doc.text.magnifyingglass",
-                title: "Select an HTTP exchange"
+                title: LumiPluginLocalization.string("Select an HTTP exchange", bundle: .module)
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -150,48 +193,48 @@ public struct HTTPExchangeSettingsView: View {
 
     private func requestTab(for record: HTTPExchangeRecord) -> some View {
         detailScroll {
-            AppSettingsSection(title: "Request", subtitle: "HTTP request sent by the client") {
+            AppSettingsSection(title: LumiPluginLocalization.string("Request", bundle: .module), subtitle: LumiPluginLocalization.string("HTTP request sent by the client", bundle: .module)) {
                 VStack(spacing: 0) {
-                    detailRow(title: "Method", icon: "arrow.left.arrow.right", value: record.requestMethod)
+                    detailRow(title: LumiPluginLocalization.string("Method", bundle: .module), icon: "arrow.left.arrow.right", value: record.requestMethod)
                     AppSettingsDivider()
-                    detailRow(title: "URL", icon: "link", value: record.requestURL, monospace: true)
+                    detailRow(title: LumiPluginLocalization.string("URL", bundle: .module), icon: "link", value: record.requestURL, monospace: true)
                     AppSettingsDivider()
-                    detailRow(title: "Started At", icon: "calendar", value: formattedDate(record.startedAt))
+                    detailRow(title: LumiPluginLocalization.string("Started At", bundle: .module), icon: "calendar", value: formattedDate(record.startedAt))
                     if let duration = record.duration {
                         AppSettingsDivider()
-                        detailRow(title: "Duration", icon: "clock", value: String(format: "%.3f s", duration))
+                        detailRow(title: LumiPluginLocalization.string("Duration", bundle: .module), icon: "clock", value: String(format: "%.3f s", duration))
                     }
                 }
             }
 
-            payloadSection(title: "Request Headers", subtitle: "Raw header fields sent with the request", data: record.requestHeadersJSON, fallback: "{}")
-            payloadSection(title: "Request Body", subtitle: "Original request body bytes (\(byteCount(record.requestBody)))", data: record.requestBody, fallback: "<empty>")
-            payloadSection(title: "Request Options", subtitle: "URLRequest transport options captured at send time", data: record.requestDetailsJSON, fallback: "{}")
+            payloadSection(title: LumiPluginLocalization.string("Request Headers", bundle: .module), subtitle: LumiPluginLocalization.string("Raw header fields sent with the request", bundle: .module), data: record.requestHeadersJSON, fallback: "{}")
+            payloadSection(title: LumiPluginLocalization.string("Request Body", bundle: .module), subtitle: String(format: LumiPluginLocalization.string("Original request body bytes (%@)", bundle: .module), byteCount(record.requestBody)), data: record.requestBody, fallback: "<empty>")
+            payloadSection(title: LumiPluginLocalization.string("Request Options", bundle: .module), subtitle: LumiPluginLocalization.string("URLRequest transport options captured at send time", bundle: .module), data: record.requestDetailsJSON, fallback: "{}")
         }
     }
 
     private func responseTab(for record: HTTPExchangeRecord) -> some View {
         detailScroll {
-            AppSettingsSection(title: "Response", subtitle: "HTTP response received from the server") {
+            AppSettingsSection(title: LumiPluginLocalization.string("Response", bundle: .module), subtitle: LumiPluginLocalization.string("HTTP response received from the server", bundle: .module)) {
                 VStack(spacing: 0) {
-                    detailRow(title: "Status", icon: "number", value: statusText(for: record))
+                    detailRow(title: LumiPluginLocalization.string("Status", bundle: .module), icon: "number", value: statusText(for: record))
                     if let responseURL = record.responseURL {
                         AppSettingsDivider()
-                        detailRow(title: "URL", icon: "link", value: responseURL, monospace: true)
+                        detailRow(title: LumiPluginLocalization.string("URL", bundle: .module), icon: "link", value: responseURL, monospace: true)
                     }
                     if let version = record.responseHTTPVersion {
                         AppSettingsDivider()
-                        detailRow(title: "HTTP Version", icon: "globe", value: version)
+                        detailRow(title: LumiPluginLocalization.string("HTTP Version", bundle: .module), icon: "globe", value: version)
                     }
                     if let mimeType = record.responseMIMEType {
                         AppSettingsDivider()
-                        detailRow(title: "MIME Type", icon: "doc.text", value: mimeType)
+                        detailRow(title: LumiPluginLocalization.string("MIME Type", bundle: .module), icon: "doc.text", value: mimeType)
                     }
                 }
             }
 
-            payloadSection(title: "Response Headers", subtitle: "Raw header fields received from the server", data: record.responseHeadersJSON, fallback: "<no response headers>")
-            payloadSection(title: "Response Body", subtitle: "Original response body bytes (\(byteCount(record.responseBody)))", data: record.responseBody, fallback: "<empty>")
+            payloadSection(title: LumiPluginLocalization.string("Response Headers", bundle: .module), subtitle: LumiPluginLocalization.string("Raw header fields received from the server", bundle: .module), data: record.responseHeadersJSON, fallback: "<no response headers>")
+            payloadSection(title: LumiPluginLocalization.string("Response Body", bundle: .module), subtitle: String(format: LumiPluginLocalization.string("Original response body bytes (%@)", bundle: .module), byteCount(record.responseBody)), data: record.responseBody, fallback: "<empty>")
             errorSection(for: record)
         }
     }
@@ -199,7 +242,7 @@ public struct HTTPExchangeSettingsView: View {
     @ViewBuilder
     private func errorSection(for record: HTTPExchangeRecord) -> some View {
         if record.errorDescription != nil {
-            AppSettingsSection(title: "Error", subtitle: "Transport or HTTP failure details") {
+            AppSettingsSection(title: LumiPluginLocalization.string("Error", bundle: .module), subtitle: LumiPluginLocalization.string("Transport or HTTP failure details", bundle: .module)) {
                 VStack(alignment: .leading, spacing: 8) {
                     if let errorDescription = record.errorDescription {
                         Text(errorDescription)
@@ -211,7 +254,7 @@ public struct HTTPExchangeSettingsView: View {
                             .foregroundStyle(theme.textSecondary)
                     }
                     if let details = record.errorDetailsJSON {
-                        codeBlock(prettyJSON(details))
+                        HTTPExchangePayloadView(data: details, fallback: "{}")
                     }
                 }
             }
@@ -229,21 +272,8 @@ public struct HTTPExchangeSettingsView: View {
 
     private func payloadSection(title: String, subtitle: String, data: Data?, fallback: String) -> some View {
         AppSettingsSection(title: title, subtitle: subtitle) {
-            codeBlock(data.map(payloadText) ?? fallback)
+            HTTPExchangePayloadView(data: data, fallback: fallback)
         }
-    }
-
-    private func codeBlock(_ text: String) -> some View {
-        ScrollView([.horizontal, .vertical]) {
-            Text(text)
-                .font(.system(.callout, design: .monospaced))
-                .foregroundStyle(theme.textPrimary)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-        }
-        .frame(minHeight: 70, maxHeight: 260)
-        .background(theme.textSecondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
     private func detailRow(title: String, icon: String, value: String, monospace: Bool = false) -> some View {
@@ -259,16 +289,54 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
-    private func reload() {
-        records = store.fetchAll()
+    private func reloadAsync() async {
+        guard !isReloading else { return }
+        isReloading = true
+        isLoading = true
+        defer {
+            isReloading = false
+            isLoading = false
+        }
+        await Task.yield()
+
+        let loadedRecords = store.fetchPage(limit: pageSize)
+        let total = store.count()
+        let series = store.fetchDailyCountSeries()
+        records = loadedRecords
+        totalRecordCount = total
+        dailyCountSeries = series
+        hasMoreRecords = loadedRecords.count == pageSize
         if selectedRecordID == nil || !records.contains(where: { $0.id == selectedRecordID }) {
             selectedRecordID = records.first?.id
         }
     }
 
+    private func loadMoreAsync() async {
+        guard !isLoading,
+              !isLoadingMore,
+              hasMoreRecords,
+              let last = records.last else { return }
+
+        isLoadingMore = true
+        let page = store.fetchPage(
+            limit: pageSize,
+            beforeStartedAt: last.startedAt
+        )
+        records.append(contentsOf: page)
+        hasMoreRecords = page.count == pageSize
+        isLoadingMore = false
+    }
+
+    private var totalCountLabel: String {
+        guard let totalRecordCount else {
+            return LumiPluginLocalization.string("Loading...", bundle: .module)
+        }
+        return "\(totalRecordCount) " + LumiPluginLocalization.string("HTTP exchanges", bundle: .module)
+    }
+
     private func statusText(for record: HTTPExchangeRecord) -> String {
         if let statusCode = record.responseStatusCode { return String(statusCode) }
-        return record.errorDescription == nil ? "Pending" : "Error"
+        return record.errorDescription == nil ? LumiPluginLocalization.string("Pending", bundle: .module) : LumiPluginLocalization.string("Error", bundle: .module)
     }
 
     private func statusColor(for record: HTTPExchangeRecord) -> Color {
@@ -282,24 +350,6 @@ public struct HTTPExchangeSettingsView: View {
         ByteCountFormatter.string(fromByteCount: Int64(data?.count ?? 0), countStyle: .binary)
     }
 
-    private func payloadText(_ data: Data) -> String {
-        if let json = try? JSONSerialization.jsonObject(with: data),
-           let prettyData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
-           let pretty = String(data: prettyData, encoding: .utf8) {
-            return pretty
-        }
-        if let text = String(data: data, encoding: .utf8) { return text }
-        return data.map { String(format: "%02x", $0) }.joined(separator: " ")
-    }
-
-    private func prettyJSON(_ data: Data) -> String {
-        payloadText(data)
-    }
-
-    private func relativeDate(_ date: Date) -> String {
-        RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
-    }
-
     private func formattedDate(_ date: Date) -> String {
         Self.dateFormatter.string(from: date)
     }
@@ -310,4 +360,138 @@ public struct HTTPExchangeSettingsView: View {
         formatter.timeStyle = .medium
         return formatter
     }()
+}
+
+private struct HTTPExchangePayloadView: View {
+    @LumiTheme private var theme
+
+    let data: Data?
+    let fallback: String
+
+    @State private var renderedText: String?
+
+    var body: some View {
+        Group {
+            if let renderedText {
+                codeBlock(renderedText)
+            } else {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Loading payload…")
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
+            }
+        }
+        .task {
+            await renderPayload()
+        }
+    }
+
+    private func renderPayload() async {
+        guard let data else {
+            renderedText = fallback
+            return
+        }
+
+        let rendered = await Task.detached(priority: .utility) {
+            HTTPExchangePayloadFormatter.text(data)
+        }.value
+        renderedText = rendered
+    }
+
+    private func codeBlock(_ text: String) -> some View {
+        ScrollView([.horizontal, .vertical]) {
+            Text(text)
+                .font(.system(.callout, design: .monospaced))
+                .foregroundStyle(theme.textPrimary)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+        }
+        .frame(minHeight: 70, maxHeight: 260)
+        .background(theme.textSecondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+}
+
+private enum HTTPExchangePayloadFormatter {
+    static func text(_ data: Data) -> String {
+        if let json = try? JSONSerialization.jsonObject(with: data),
+           let prettyData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
+           let pretty = String(data: prettyData, encoding: .utf8) {
+            return pretty
+        }
+        if let text = String(data: data, encoding: .utf8) { return text }
+        return data.map { String(format: "%02x", $0) }.joined(separator: " ")
+    }
+}
+
+private struct HTTPExchangeDetailView: View {
+    private enum DetailTab: String {
+        case request
+        case response
+
+        var title: String {
+            switch self {
+            case .request:
+                LumiPluginLocalization.string("Request", bundle: .module)
+            case .response:
+                LumiPluginLocalization.string("Response", bundle: .module)
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .request: "arrow.up.right"
+            case .response: "arrow.down.left"
+            }
+        }
+    }
+
+    let recordID: UUID
+    private let request: AnyView
+    private let response: AnyView
+    @State private var selectedTab: DetailTab = .request
+
+    init<Request: View, Response: View>(
+        recordID: UUID,
+        @ViewBuilder request: () -> Request,
+        @ViewBuilder response: () -> Response
+    ) {
+        self.recordID = recordID
+        self.request = AnyView(request())
+        self.response = AnyView(response())
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            AppTabBar(
+                tabs: [
+                    AppTabBar.Tab(title: DetailTab.request.title, icon: DetailTab.request.icon, id: DetailTab.request.rawValue),
+                    AppTabBar.Tab(title: DetailTab.response.title, icon: DetailTab.response.icon, id: DetailTab.response.rawValue),
+                ],
+                selectedTab: Binding(
+                    get: { selectedTab.rawValue },
+                    set: { selectedTab = DetailTab(rawValue: $0) ?? .request }
+                )
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+
+            AppDivider()
+
+            Group {
+                switch selectedTab {
+                case .request:
+                    request
+                case .response:
+                    response
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .id(recordID)
+    }
 }

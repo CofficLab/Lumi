@@ -35,6 +35,35 @@ public actor MemoryStorageService {
         )
     }
 
+    /// 创建或更新同一作用域下的记忆，避免自动保存产生重复条目。
+    public func upsertMemory(
+        id: String,
+        type: MemoryType,
+        name: String,
+        description: String,
+        content: String,
+        scope: MemoryScope
+    ) async throws -> MemoryItem {
+        let existing = try? await service.readMemory(id: id, scope: scope)
+        if existing != nil {
+            return try await service.updateMemory(
+                id: id,
+                name: name,
+                description: description,
+                content: content,
+                scope: scope
+            )
+        }
+        return try await createMemory(
+            id: id,
+            type: type,
+            name: name,
+            description: description,
+            content: content,
+            scope: scope
+        )
+    }
+
     public func readMemory(id: String, scope: MemoryScope) async throws -> MemoryItem {
         try await service.readMemory(id: id, scope: scope)
     }

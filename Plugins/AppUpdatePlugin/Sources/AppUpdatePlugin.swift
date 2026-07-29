@@ -11,7 +11,7 @@ import SwiftUI
 /// - Trigger feed URL detection at app launch
 /// - Register "Check for Updates..." command via `kernel.command` with
 ///   `.appMenu` placement so it appears in the Lumi menu after "About"
-/// - Register the "About" settings tab displaying app info and update controls
+/// - Provide the update service used by the General settings page
 ///
 /// Other integration points use `NotificationCenter`:
 /// - `MenuBarManagerPlugin` calls `UpdateService.shared.checkForUpdates()`
@@ -62,19 +62,7 @@ public final class AppUpdatePlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-    // MARK: - Settings Contributions
-
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
-        [
-            SettingsTabItem(
-                id: "app-update.about",
-                title: LumiLocalization.string("About", bundle: .module),
-                systemImage: "info.circle"
-            ) {
-                AboutSettingsView()
-            },
-        ]
-    }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
 
     // MARK: - LumiPlugin stubs
 

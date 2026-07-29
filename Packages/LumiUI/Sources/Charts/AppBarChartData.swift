@@ -16,7 +16,9 @@ public struct AppBarChartData: Equatable, Sendable {
 
     public let title: String
     public let totalText: String
+    public let totalTooltip: String?
     public let peakText: String?
+    public let peakTooltip: String?
     public let bars: [Bar]
     public let accessibilitySummary: String
 
@@ -25,11 +27,15 @@ public struct AppBarChartData: Equatable, Sendable {
         totalText: String,
         peakText: String?,
         bars: [Bar],
-        accessibilitySummary: String
+        accessibilitySummary: String,
+        totalTooltip: String? = nil,
+        peakTooltip: String? = nil
     ) {
         self.title = title
         self.totalText = totalText
+        self.totalTooltip = totalTooltip
         self.peakText = peakText
+        self.peakTooltip = peakTooltip
         self.bars = bars
         self.accessibilitySummary = accessibilitySummary
     }
