@@ -227,20 +227,20 @@ extension ConversationListView {
             updated.reserveCapacity(currentConversations.count)
             for conversation in currentConversations {
                 let updatedCount = await context.messageCount(for: conversation.id)
-                if conversation.messageCount == updatedCount {
-                    updated.append(conversation)
-                } else {
-                    updated.append(ConversationListItem(
-                        id: conversation.id,
-                        projectPath: conversation.projectPath,
-                        title: conversation.title,
-                        createdAt: conversation.createdAt,
-                        updatedAt: conversation.updatedAt,
-                        providerID: conversation.providerID,
-                        modelName: conversation.modelName,
-                        messageCount: updatedCount
-                    ))
-                }
+                // The Kernel title can be derived from the first user message
+                // even when the message count did not change. Always resolve
+                // it here so the list cannot retain a stale fallback title.
+                updated.append(ConversationListItem(
+                    id: conversation.id,
+                    projectPath: conversation.projectPath,
+                    title: context.resolvedTitle(for: conversation.id),
+                    createdAt: conversation.createdAt,
+                    updatedAt: conversation.updatedAt,
+                    providerID: conversation.providerID,
+                    modelName: conversation.modelName,
+                    messageCount: updatedCount,
+                    order: conversation.order
+                ))
             }
             conversations = updated
         }

@@ -124,7 +124,15 @@ public final class ConversationListContext: ObservableObject, SuperLog {
 
     /// 委托给 LumiKernel 级 ``LumiKernelContainer/uiTitle(for:)`` 解析该对话的 UI 标题。
     private func uiTitle(for summary: LumiConversationSummary) -> String {
-        kernel.uiTitle(for: summary.id)
+        resolvedTitle(for: summary.id)
+    }
+
+    /// Returns the same dynamic UI title used by ConversationTitlePlugin.
+    ///
+    /// This must be re-evaluated after messages change because an untitled
+    /// conversation can derive its display title from the first user message.
+    public func resolvedTitle(for conversationID: UUID) -> String {
+        kernel.uiTitle(for: conversationID)
     }
 
     public func isConversationProcessing(_ conversationID: UUID) -> Bool {
