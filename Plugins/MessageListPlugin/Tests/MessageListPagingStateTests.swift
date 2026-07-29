@@ -29,4 +29,16 @@ struct MessageListPagingStateTests {
         #expect(state.shouldAutoRefreshLatestOnMessageChange)
         #expect(state.oldestVisibleMessageID == anchor)
     }
+
+    @Test
+    func resumingLatestFollowDoesNotLoseTheExistingHistoryAnchor() {
+        var state = MessageListPagingState()
+        let anchor = UUID()
+
+        state.didLoadEarlierPage(firstMessageID: anchor)
+        state.resumeFollowingLatest()
+
+        #expect(state.shouldAutoRefreshLatestOnMessageChange)
+        #expect(state.oldestVisibleMessageID == anchor)
+    }
 }
