@@ -64,9 +64,9 @@ enum TurnFinishedHook {
         }
 
         // 简化版本：不检测工具调用，直接递增续聊计数
-        // 如果达到最大续聊次数，清理陈旧任务
+        // 如果达到最大续聊次数，将目标标记为失败并保留现场
         guard await manager.incrementContinuationCount(conversationId: conversationIdStr) != nil else {
-            await cleanupStaleGoals(manager: manager, conversationId: conversationIdStr)
+            await markStaleGoalsFailed(manager: manager, conversationId: conversationIdStr)
             return
         }
 
@@ -88,8 +88,17 @@ enum TurnFinishedHook {
         )
     }
 
-    private static func cleanupStaleGoals(manager: GoalStateManager, conversationId: String) async {
-        try? await manager.deleteAllGoals(conversationId: conversationId)
+    private static func markStaleGoalsFailed(manager: GoalStateManager, conversationId: String) async {
+        let failureReason = "Automatic continuation limit reached before all tasks were completed."
+        let goals = await manager.fetchGoals(conversationId: conversationId)
+
+        for goal in goals where goal.status != .completed && goal.status != .skipped {
+            _ = try? await manager.updateGoalStatus(
+                id: goal.id,
+                status: .failed,
+                failureReason: failureReason
+            )
+        }
 
         // 发送通知，更新 UI
         NotificationCenter.default.post(

@@ -83,6 +83,41 @@ struct GoalStateManagerTests {
         #expect(updated.status == .blocked)
         #expect(updated.blockedReason == "Missing API key")
     }
+
+    @Test("Marking an incomplete goal as failed preserves the goal and tasks")
+    func testFailedGoalPreservesTasks() async throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("GoalTaskTest-\(UUID().uuidString)")
+        let manager = try GoalStateManager(databaseRootURL: tempDir)
+        let conversationID = "test-failed-goal"
+
+        let created = try await manager.createGoal(
+            conversationId: conversationID,
+            title: "Incomplete goal",
+            description: "Should remain inspectable after continuation exhaustion",
+            successCriteria: "All tasks completed",
+            tasks: [
+                (title: "Completed task", description: nil, executionContext: nil, parallelGroup: nil),
+                (title: "Pending task", description: nil, executionContext: nil, parallelGroup: nil)
+            ]
+        )
+
+        let failureReason = "Automatic continuation limit reached before all tasks were completed."
+        let failed = try await manager.updateGoalStatus(
+            id: created.goal.id,
+            status: .failed,
+            failureReason: failureReason
+        )
+
+        let fetchedGoals = await manager.fetchGoals(conversationId: conversationID)
+        let fetchedTasks = await manager.fetchTasks(goalId: created.goal.id)
+
+        #expect(failed.status == .failed)
+        #expect(failed.failureReason == failureReason)
+        #expect(fetchedGoals.count == 1)
+        #expect(fetchedTasks.count == 2)
+        #expect(fetchedTasks.contains { $0.title == "Pending task" && $0.status == .pending })
+    }
     
     @Test("Fetch goals by conversation")
     func testFetchGoals() async throws {
