@@ -273,6 +273,12 @@
         }
       }
     },
+    "Daily HTTP request count chart" : {
+
+    },
+    "Daily HTTP requests" : {
+
+    },
     "Down" : {
       "localizations" : {
         "en" : {
@@ -820,6 +826,12 @@
           }
         }
       }
+    },
+    "Peak (dailyCountSeries.peakCount)" : {
+
+    },
+    "Peak (series.peakCount), total (series.totalCount)" : {
+
     },
     "PID: %lld" : {
       "localizations" : {

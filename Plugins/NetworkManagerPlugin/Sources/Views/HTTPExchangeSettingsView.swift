@@ -27,10 +27,16 @@ public struct HTTPExchangeSettingsView: View {
         return records.first { $0.id == selectedRecordID }
     }
 
+    private var dailyCountSeries: HTTPExchangeDailyCountSeries {
+        HTTPExchangeDailyCountSeries.build(records: records)
+    }
+
     public var body: some View {
         AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 14) {
                 header
+
+                requestActivity
 
                 HStack(spacing: 0) {
                     sidebar
@@ -56,6 +62,32 @@ public struct HTTPExchangeSettingsView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: HTTPExchangeStore.didChangeNotification)) { _ in
             Task { await reloadAsync() }
+        }
+    }
+
+    private var requestActivity: some View {
+        AppSettingsSection(title: "Request Activity", subtitle: "HTTP requests per day over the last 14 days", spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Label("Daily HTTP requests", systemImage: "chart.xyaxis.line")
+                        .font(.appCaptionEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                    Spacer(minLength: 0)
+                    Text("Peak (dailyCountSeries.peakCount)")
+                        .font(.appMicro)
+                        .monospacedDigit()
+                        .foregroundStyle(theme.textSecondary)
+                }
+                HTTPExchangeDailyCountChart(series: dailyCountSeries)
+                    .frame(height: 132)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(theme.divider, lineWidth: 0.5)
+            }
         }
     }
 
