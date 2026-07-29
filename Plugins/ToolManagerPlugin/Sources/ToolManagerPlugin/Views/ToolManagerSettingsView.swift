@@ -13,6 +13,11 @@ public struct ToolManagerSettingsView: View {
 
     @State private var groups: [(pluginID: String, tools: [any LumiAgentTool])] = []
     @State private var pluginDisplayNames: [String: String] = [:]
+    @State private var isLoading = true
+    @State private var isReloading = false
+    @State private var visibleToolLimit = 100
+
+    private let toolPageSize = 100
 
     public init(kernel: LumiKernel) {
         self.kernel = kernel
@@ -22,11 +27,21 @@ public struct ToolManagerSettingsView: View {
         PluginSettingsScaffold(
             title: LumiPluginLocalization.string("Tool Manager", bundle: .module),
             subtitle: LumiPluginLocalization.string("Manage and inspect available agent tools", bundle: .module),
-            showHeader: false
+            showHeader: false,
+            scrollsContent: false
         ) {
-            VStack(alignment: .leading, spacing: 24) {
-                if groups.isEmpty {
-                    // 仅在用户实际打开设置、内核中确实没有任何工具时才显示空状态
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Spacer()
+                    Text(totalToolLabel)
+                        .font(.appCaption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if isLoading {
+                    ProgressView(LumiPluginLocalization.string("Loading...", bundle: .module))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if groups.isEmpty {
                     AppEmptyState(
                         icon: "wrench.and.screwdriver",
                         title: LumiPluginLocalization.string("No Tools Registered", bundle: .module),
@@ -34,22 +49,65 @@ public struct ToolManagerSettingsView: View {
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    ForEach(Array(groups.enumerated()), id: \.element.pluginID) { _, group in
-                        pluginSection(pluginID: group.pluginID, tools: group.tools)
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 24) {
+                            ForEach(displayedGroups, id: \.pluginID) { group in
+                                pluginSection(pluginID: group.pluginID, tools: group.tools)
+                            }
+
+                            if visibleToolLimit < totalToolCount {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .onAppear {
+                                        visibleToolLimit += toolPageSize
+                                    }
+                            }
+                        }
+                        .padding(.bottom, 8)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .task { reload() }
-        .onAppear { reload() }
+        .task {
+            await reload()
+        }
+    }
+
+    private var totalToolCount: Int {
+        groups.reduce(0) { $0 + $1.tools.count }
+    }
+
+    private var totalToolLabel: String {
+        if isLoading {
+            return LumiPluginLocalization.string("Loading...", bundle: .module)
+        }
+        return "\(totalToolCount) tools"
+    }
+
+    private var displayedGroups: [(pluginID: String, tools: [any LumiAgentTool])] {
+        var remaining = visibleToolLimit
+        var result: [(pluginID: String, tools: [any LumiAgentTool])] = []
+        result.reserveCapacity(groups.count)
+
+        for group in groups {
+            guard remaining > 0 else { break }
+            let visibleTools = Array(group.tools.prefix(remaining))
+            guard !visibleTools.isEmpty else { continue }
+            result.append((pluginID: group.pluginID, tools: visibleTools))
+            remaining -= visibleTools.count
+        }
+        return result
     }
 
     private func pluginSection(pluginID: String, tools: [any LumiAgentTool]) -> some View {
         let displayName = pluginDisplayNames[pluginID] ?? pluginID
 
         return AppSettingSection(title: displayName, titleAlignment: .leading) {
-            VStack(spacing: 0) {
+            LazyVStack(spacing: 0) {
                 ForEach(tools, id: \.name) { tool in
                     ToolManagerToolRowView(tool: tool)
                 }
@@ -59,12 +117,23 @@ public struct ToolManagerSettingsView: View {
 
     /// 实时从内核读取当前已注册的工具分组与插件显示名。
     @MainActor
-    private func reload() {
+    private func reload() async {
+        guard !isReloading else { return }
+        isReloading = true
+        isLoading = true
+        defer {
+            isReloading = false
+            isLoading = false
+        }
+
+        // 让 SwiftUI 先提交 loading 状态，再读取当前内存注册表。
+        await Task.yield()
         groups = kernel.toolManager?.agentToolsGroupedByPlugin() ?? []
         var names: [String: String] = [:]
         for plugin in kernel.pluginManager.allPlugins {
             names[plugin.id] = plugin.name
         }
         pluginDisplayNames = names
+        visibleToolLimit = toolPageSize
     }
 }
