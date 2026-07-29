@@ -62,7 +62,7 @@ final public class ConversationModel: @unchecked Sendable {
         providerId: String? = nil,
         modelName: String? = nil,
         projectPath: String? = nil,
-        order: Int = 0
+        order: Int = LumiConversationSummary.defaultOrder
     ) {
         self.id = id
         self.title = title
@@ -133,7 +133,7 @@ public extension ConversationModel {
             providerID: providerId,
             modelName: modelName,
             projectPath: projectPath,
-            order: order ?? 0
+            order: order ?? LumiConversationSummary.defaultOrder
         )
     }
 }

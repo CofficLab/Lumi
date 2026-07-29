@@ -318,12 +318,12 @@ public actor ConversationStore: SuperLog {
         return save(context, operation: "更新排序")
     }
 
-    /// Fetch conversations that have a pinned/ordered value, returning their IDs sorted by order
+    /// Fetch pinned conversations, returning their IDs sorted by order.
     func fetchPinnedConversationIDs() -> [(UUID, Int)] {
         let context = ModelContext(container)
 
         var descriptor = FetchDescriptor<ConversationModel>(
-            predicate: #Predicate<ConversationModel> { ($0.order ?? 0) > 0 },
+            predicate: #Predicate<ConversationModel> { $0.order == 0 },
             sortBy: [SortDescriptor(\.order)]
         )
 
@@ -331,7 +331,7 @@ public actor ConversationStore: SuperLog {
             let models = try context.fetch(descriptor)
             return models.compactMap { model in
                 guard let uuid = UUID(uuidString: model.id) else { return nil }
-                return (uuid, model.order ?? 0)
+                return (uuid, model.order ?? LumiConversationSummary.defaultOrder)
             }
         } catch {
             return []
