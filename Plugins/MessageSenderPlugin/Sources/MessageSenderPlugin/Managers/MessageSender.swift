@@ -254,15 +254,15 @@ public final class MessageSender: MessageSending, SuperLog {
 
         do {
             if Self.verbose {
-                Self.logger.info("\(Self.t)准备调用 agentTurnRunner.runTurn ➡️ target=\(targetID.uuidString.prefix(8))…, lastMessage=\(kernelInstance.messageManager?.lastMessage(in: targetID)?.id.uuidString.prefix(8) ?? "nil")")
+                Self.logger.info("\(Self.t)准备调用 agentTurnManager.runTurn ➡️ target=\(targetID.uuidString.prefix(8))…, lastMessage=\(kernelInstance.messageManager?.lastMessage(in: targetID)?.id.uuidString.prefix(8) ?? "nil")")
             }
-            try await kernelInstance.agentTurnRunner?.runTurn(in: targetID)
+            try await kernelInstance.agentTurnManager?.runTurn(in: targetID)
             if Self.verbose {
-                Self.logger.info("\(Self.t)agentTurnRunner.runTurn 完成 ➡️ target=\(targetID.uuidString.prefix(8))…")
+                Self.logger.info("\(Self.t)agentTurnManager.runTurn 完成 ➡️ target=\(targetID.uuidString.prefix(8))…")
             }
         } catch {
             if Self.verbose {
-                Self.logger.error("\(Self.t)sendMessage ➡️ agentTurnRunner 抛出 error target=\(targetID.uuidString.prefix(8))…: \(error.localizedDescription)")
+                Self.logger.error("\(Self.t)sendMessage ➡️ agentTurnManager 抛出 error target=\(targetID.uuidString.prefix(8))…: \(error.localizedDescription)")
             }
             // Insert error message into conversation
             let errorMessage = LumiChatMessage(
@@ -281,7 +281,7 @@ public final class MessageSender: MessageSending, SuperLog {
         if let conversationID = kernel?.conversations?.selectedConversationID, isSending(for: conversationID) {
             endSending(in: conversationID)
             // Cancel the agent turn if one is running
-            kernel?.agentTurnRunner?.cancelTurn(in: conversationID)
+            kernel?.agentTurnManager?.cancelTurn(in: conversationID)
             if Self.verbose {
                 Self.logger.info("\(Self.t)cancelCurrentRequest ➡️ conversation=\(conversationID.uuidString.prefix(8))…, turn cancelled, activeSendingConversations=\(self.sendingConversationIDs.count)")
             }
@@ -367,7 +367,7 @@ public final class MessageSender: MessageSending, SuperLog {
         }
 
         do {
-            try await kernelInstance.agentTurnRunner?.runTurn(in: conversationID)
+            try await kernelInstance.agentTurnManager?.runTurn(in: conversationID)
         } catch {
             if Self.verbose {
                 Self.logger.error("\(Self.t)runAgentTurn 抛出 error target=\(conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")

@@ -3,7 +3,7 @@ import LumiKernel
 import os
 import SuperLogKit
 
-/// Implementation of `AgentTurnRunning` that executes a full agent turn.
+/// Implementation of `AgentTurnManaging` that executes a full agent turn.
 ///
 /// The agent turn loop:
 /// 1. Send messages to LLM
@@ -20,7 +20,7 @@ import SuperLogKit
 /// - `.lumiTurnCompleted` when turn ends normally (completed)
 /// - `.lumiTurnFinished` when turn ends (any reason)
 @MainActor
-public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
+public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-turn-runner")
     public nonisolated static let emoji = "🤖"
     nonisolated static let verbose = false
@@ -30,12 +30,11 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
     private weak var kernel: LumiKernel?
     private var activeTurnTasks: [UUID: Task<Void, Never>] = [:]
     private var cancelledConversations: Set<UUID> = []
-    /// 因工具返回 pending（如 ask_user 等待用户回答）而暂停的对话。
-    ///
-    /// `executeTurnLoop` 检测到 pending 结果后写入此集合并退出循环，
-    /// `runTurn` 据此返回 `.awaitingUserResponse`。与 `cancelledConversations` 互斥：
-    /// 取消判断在前，已暂停的对话被取消时优先返回 `.cancelled`。
+    /// 因工具请求用户交互而暂停的对话。
     private var awaitingConversations: Set<UUID> = []
+    private var suspensions: [UUID: AgentTurnSuspension] = [:]
+    private var turnStates: [UUID: AgentTurnState] = [:]
+    private var failedConversations: Set<UUID> = []
 
     // MARK: - Initialization
 
@@ -46,7 +45,7 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
         }
     }
 
-    // MARK: - AgentTurnRunning
+    // MARK: - AgentTurnManaging
 
     public func runTurn(in conversationID: UUID) async throws -> AgentTurnOutcome {
         if Self.verbose {
@@ -63,6 +62,8 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
 
         // Clear cancellation flag for this conversation
         cancelledConversations.remove(conversationID)
+        failedConversations.remove(conversationID)
+        turnStates[conversationID] = .running
 
         let task = Task { [weak self] in
             guard let self else { return }
@@ -81,19 +82,70 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
         // Determine outcome based on cancellation state
         if cancelledConversations.contains(conversationID) {
             cancelledConversations.remove(conversationID)
+            turnStates[conversationID] = .cancelled
             await postTurnFinishedNotification(conversationID: conversationID, reason: .cancelled)
             return .cancelled
         }
 
-        // pending 工具结果（如 ask_user）：turn 暂停，等待用户回答后再恢复。
         if awaitingConversations.contains(conversationID) {
             awaitingConversations.remove(conversationID)
+            if let suspension = suspensions[conversationID] {
+                turnStates[conversationID] = .suspended(suspension)
+            }
             await postTurnFinishedNotification(conversationID: conversationID, reason: .awaitingUserResponse)
             return .awaitingUserResponse
         }
 
+        if failedConversations.remove(conversationID) != nil {
+            turnStates[conversationID] = .failed
+            await postTurnFinishedNotification(conversationID: conversationID, reason: .failed)
+            return .failed(AgentTurnManagingError.turnFailed)
+        }
+
+        turnStates[conversationID] = .completed
         await postTurnCompletedNotification(conversationID: conversationID)
         return .completed
+    }
+
+    public func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentTurnOutcome {
+        let suspension = suspensions[conversationID] ?? persistedSuspension(for: conversationID)
+        guard let suspension,
+              suspension.suspensionID == request.suspensionID,
+              let assistantMessage = kernel?.messageManager?.messages(for: conversationID)
+                .reversed()
+                .first(where: { message in
+                    message.role == .assistant
+                        && message.toolCalls?.contains(where: { $0.id == suspension.toolCallID }) == true
+                }),
+              let toolCallID = suspension.toolCallID
+        else {
+            throw AgentTurnManagingError.invalidResumeRequest
+        }
+
+        let result = LumiToolResult(content: request.answer)
+        kernel?.messageManager?.updateToolCallResult(
+            result,
+            toolCallID: toolCallID,
+            assistantMessageID: assistantMessage.id,
+            in: conversationID
+        )
+
+        // Replace the pending tool message that was inserted into the LLM history.
+        if let pendingToolMessage = kernel?.messageManager?.messages(for: conversationID)
+            .last(where: { $0.role == .tool && $0.toolCallID == toolCallID }) {
+            kernel?.messageManager?.updateMessage(
+                id: pendingToolMessage.id,
+                in: conversationID,
+                content: request.answer
+            )
+        }
+
+        suspensions.removeValue(forKey: conversationID)
+        turnStates[conversationID] = .running
+        return try await runTurn(in: conversationID)
     }
 
     public func cancelTurn(in conversationID: UUID) {
@@ -102,12 +154,24 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
         }
 
         cancelledConversations.insert(conversationID)
+        suspensions.removeValue(forKey: conversationID)
+        turnStates[conversationID] = .cancelled
         activeTurnTasks[conversationID]?.cancel()
         activeTurnTasks.removeValue(forKey: conversationID)
     }
 
     public func isRunning(for conversationID: UUID) -> Bool {
         activeTurnTasks[conversationID] != nil
+    }
+
+    public func state(for conversationID: UUID) -> AgentTurnState {
+        if let state = turnStates[conversationID] {
+            return state
+        }
+        if let suspension = persistedSuspension(for: conversationID) {
+            return .suspended(suspension)
+        }
+        return .idle
     }
 
     // MARK: - Turn Loop
@@ -120,6 +184,7 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)kernel 为 nil，turn 结束")
                 }
+                failedConversations.insert(conversationID)
                 return
             }
 
@@ -143,6 +208,7 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                     conversationID: conversationID,
                     content: String(localized: "No LLM provider available", defaultValue: "No LLM provider available")
                 )
+                failedConversations.insert(conversationID)
                 return
             }
 
@@ -244,6 +310,7 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                 )
                 kernel.messageManager?.insertMessage(errorMessage, to: conversationID)
                 postMessageSavedNotification(message: errorMessage, conversationID: conversationID)
+                failedConversations.insert(conversationID)
                 return
             }
 
@@ -317,13 +384,12 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
                     Self.logger.info("\(Self.t)工具执行完成: \(toolCall.name), isError=\(result.isError)")
                 }
 
-                // 工具返回 pending（如 ask_user 等待用户回答）：写入 pending 结果后暂停循环，
-                // 不再执行后续 toolCall，runTurn 据此返回 .awaitingUserResponse。
-                // 恢复时机由对应插件（如 AskUserAnswerObserver）回写答案后再次调用 runTurn。
-                if LumiAskUserMarkers.isPendingResponse(result.content) {
+                // 工具通过结构化控制信号请求暂停：写入 suspension 后停止当前 turn。
+                if case let .suspend(suspension) = result.turnControl {
                     if Self.verbose {
-                        Self.logger.info("\(Self.t)检测到 pending 工具结果（\(toolCall.name)），暂停 turn 等待用户响应")
+                        Self.logger.info("\(Self.t)工具请求暂停（\(toolCall.name)），等待外部恢复")
                     }
+                    suspensions[conversationID] = suspension
                     awaitingConversations.insert(conversationID)
                     return
                 }
@@ -331,6 +397,21 @@ public final class AgentTurnRunner: AgentTurnRunning, SuperLog {
 
             // Continue loop with new tool results in message history
         }
+    }
+
+    /// Rebuilds a suspension from the persisted assistant tool-call result.
+    /// This makes a suspended turn recoverable after the manager is recreated.
+    private func persistedSuspension(for conversationID: UUID) -> AgentTurnSuspension? {
+        let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
+        for message in messages.reversed() where message.role == .assistant {
+            for toolCall in (message.toolCalls ?? []).reversed() {
+                if case let .suspend(suspension) = toolCall.result?.turnControl,
+                   suspension.conversationID == conversationID {
+                    return suspension
+                }
+            }
+        }
+        return nil
     }
 
     // MARK: - Notifications

@@ -83,7 +83,7 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
     ///    `kernel.messageManager?.insertMessage(_:to:)` 落库;若 `imageAttachments`
     ///    非空,应编码为 JSON 写入 `metadata["imageAttachments"]`;此外,实现通常会把
     ///    当前 `pendingFileAttachments` 也编码进 `metadata["fileAttachments"]`(文件链路);
-    /// 4. 触发 `kernel.agentTurnRunner?.runTurn(in:)` 执行完整 agent loop。
+    /// 4. 触发 `kernel.agentTurnManager?.runTurn(in:)` 执行完整 agent loop。
     /// - Parameter content: 用户输入文本(由实现 trim)
     /// - Parameter imageAttachments: 本次随文本一起送出的图片附件;为 `[]` 时等同纯文本
     /// - Parameter conversationID: 同上
