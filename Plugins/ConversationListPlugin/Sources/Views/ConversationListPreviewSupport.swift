@@ -65,6 +65,7 @@
         func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
         func language(for conversationID: UUID?) -> LumiConversationLanguage { .chinese }
         func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
+        func setConversationOrder(_ order: Int, for conversationID: UUID) {}
     }
 
     @MainActor

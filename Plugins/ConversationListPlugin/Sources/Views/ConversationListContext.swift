@@ -251,19 +251,30 @@ public final class ConversationListContext: ObservableObject, SuperLog {
 
         let previousIDs = Set(previousConversations.map(\.id))
         let currentIDs = Set(current.map(\.id))
-
-        if let deletedID = previousIDs.subtracting(currentIDs).first {
-            lastChange = ConversationListChange(type: .deleted, conversationId: deletedID)
-        } else if let updatedID = currentIDs.intersection(previousIDs).first(where: { id in
+        let idsChanged = previousIDs != currentIDs
+        let selectionChanged = previousSelectedID != currentSelected
+        let updatedConversationID = currentIDs.intersection(previousIDs).first(where: { id in
             let prev = previousConversations.first { $0.id == id }
             let curr = current.first { $0.id == id }
             return prev?.updatedAt != curr?.updatedAt
-        }) {
+        })
+
+        if let deletedID = previousIDs.subtracting(currentIDs).first {
+            lastChange = ConversationListChange(type: .deleted, conversationId: deletedID)
+        } else if let updatedID = updatedConversationID {
             lastChange = ConversationListChange(type: .updated, conversationId: updatedID)
         }
 
         previousConversations = current
         previousSelectedID = currentSelected
+
+        // Do not publish on every polling tick. In particular, when the
+        // persistent store failed to load and the source remains empty, an
+        // unconditional version bump causes the list view to reload forever.
+        guard idsChanged || selectionChanged || updatedConversationID != nil else {
+            recalculateUnreadCount()
+            return
+        }
 
         statusVersion += 1
         recalculateUnreadCount()
