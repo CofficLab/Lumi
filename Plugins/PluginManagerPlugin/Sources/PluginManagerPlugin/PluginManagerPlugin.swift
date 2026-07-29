@@ -28,7 +28,8 @@ public final class PluginManagerPlugin: LumiPlugin {
             SettingsTabItem(
                 id: id,
                 title: PluginManagerText.string(PluginManagerText.plugins),
-                systemImage: "puzzlepiece.extension"
+                systemImage: "puzzlepiece.extension",
+                order: 5
             ) {
                 PluginManagementView(kernel: kernel)
             },
