@@ -7,7 +7,8 @@ import SwiftUI
 public final class ConversationPendingMessagePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-pending-message"
     public let name = "Conversation Pending Messages"
-    public let order = 81
+    /// Bottom-fixed order: after attachment previews and immediately before input (83).
+    public let order = 82
     public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
@@ -19,7 +20,7 @@ public final class ConversationPendingMessagePlugin: LumiPlugin {
         [
             ChatSectionItem(
                 id: id,
-                placement: .stack,
+                placement: .bottomFixed,
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {

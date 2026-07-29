@@ -21,7 +21,7 @@ struct PendingMessageListView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     Image(systemName: "clock.arrow.circlepath")
-                    Text("待发送消息 (messages.count)")
+                    Text("待发送消息 \(messages.count)")
                         .font(.appMicroEmphasized)
                     Spacer()
                 }
