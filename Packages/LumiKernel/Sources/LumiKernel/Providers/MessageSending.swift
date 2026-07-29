@@ -16,6 +16,12 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
     /// - Parameter conversationID: 目标对话 ID。传 `nil` 时返回任意对话是否处于发送中。
     func isSending(for conversationID: UUID?) -> Bool
 
+    /// Messages waiting to be sent after the current turn in a conversation.
+    func pendingMessages(for conversationID: UUID) -> [LumiPendingMessage]
+
+    /// Remove one queued message without starting a turn for it.
+    func cancelPendingMessage(id: UUID, in conversationID: UUID)
+
     // MARK: - 附件挂起池(可观察、可修改)
 
     /// 当前挂起、等待下次发送时随消息一起送出的图片附件
@@ -123,6 +129,10 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
 // MARK: - 默认实现
 
 public extension MessageSending {
+    func pendingMessages(for conversationID: UUID) -> [LumiPendingMessage] { [] }
+
+    func cancelPendingMessage(id: UUID, in conversationID: UUID) {}
+
     func resumeTurn(
         in conversationID: UUID,
         request: AgentTurnResumeRequest
