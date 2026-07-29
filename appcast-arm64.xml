@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.2.0</title>
-            <pubDate>Tue, 28 Jul 2026 11:23:07 +0000</pubDate>
-            <sparkle:version>504</sparkle:version>
-            <sparkle:shortVersionString>5.2.0</sparkle:shortVersionString>
+            <title>5.3.0</title>
+            <pubDate>Wed, 29 Jul 2026 11:27:46 +0000</pubDate>
+            <sparkle:version>506</sparkle:version>
+            <sparkle:shortVersionString>5.3.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.2.0</h2>
-<h3>Changes since v5.1.3</h3>
+            <description><![CDATA[<h2>Release v5.3.0</h2>
+<h3>Changes since v5.2.1</h3>
 <ul>
-<li>feat: add DebugBadgePlugin to show debug indicator in toolbar</li>
-<li>feat: add projectPath parameter to createConversation</li>
-<li>feat(AgentTurnRunnerPlugin): add multi-language support (en, zh-Hans, zh-Hant)</li>
-<li>feat(agentturnrunnerplugin): persist outgoing requests to disk (SwiftData) and add settings view</li>
-<li>feat(AgentTurnRunnerPlugin)() persist outgoing requests to disk (SwiftData) and add settings view</li>
-<li>feat(conversationspeedplugin): add average speed display in popover</li>
-<li>feat(conversationspeedplugin): add conversation speed trend line chart</li>
-<li>feat(goaltaskplugin): integrate sidebar view and toolbar button into chat section</li>
-<li>feat(GoalTaskPlugin): integrate sidebar view and toolbar button into chat section</li>
-<li>feat(idletimeplugin): refactor ActivityHeatStripView layout with proportional time axis labels</li>
-<li>feat(LLMKit): add cache tokens support for prompt caching</li>
-<li>feat(LumiKernel): add cache token metadata keys</li>
-<li>feat(lumiplugin): add willSendToLLM hook for pre-request message modification</li>
-<li>feat(LumiPlugin)() add willSendToLLM hook for pre-request message modification</li>
-<li>feat(MessageRenderer): display cache hit rate in message metadata</li>
-<li>feat(messagerenderer/messagesender): add kernel-based resendMessage API</li>
-<li>fix(ProjectsPlugin): ensure syncToKernel called on MainActor</li>
-<li>refactor: add providerID and modelName to ConversationStore</li>
-<li>refactor: add providerID and modelName to createConversation protocol</li>
-<li>refactor: auto-associate current provider and model on conversation creation</li>
+<li>feat: add brief verbosity mode support for message renderer plugin</li>
+<li>feat: add pin/unpin support for conversation list</li>
+<li>feat: register ConversationContextSizePlugin in LumiFactory</li>
+<li>feat(activity-heatmap): add detailed activity statistics</li>
+<li>feat(activity-heatmap): batch cache save, token versioning, and skeleton loading animations</li>
+<li>feat(ActivityHeatmapPlugin): add "Open Data Directory" button to settings view</li>
+<li>feat(AgentTempStoragePlugin): register 3 temp file tools to the system</li>
+<li>feat(AgentTurn): add structured tool control results</li>
+<li>feat(AgentTurn): resume parents after child work</li>
+<li>feat(AskUser): resume suspended turns through the manager</li>
+<li>feat(conversation-list): prevent redundant publishes and add pin/unpin localization</li>
+<li>feat(conversation-store): make order optional for lightweight migration and add setConversationOrder</li>
+<li>feat(ConversationContextSizePlugin): add context size display to chat toolbar</li>
+<li>feat(ConversationReasoningPlugin): add conversation reasoning effort control</li>
+<li>feat(DeviceInfoPlugin): add Lumi app's own memory usage monitor</li>
+<li>feat(DeviceInfoPlugin): add memory monitor settings page</li>
+<li>feat(LLMProviderManager): add daily token usage series and settings UI</li>
+<li>feat(LLMProviderManager): add providerInfo method to protocol</li>
+<li>feat(LLMProviderStepFunPlugin): generalize build agent to support multiple project types</li>
+<li>feat(Localization): localize plugin settings and exchange UI</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.2.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.3.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.2.0/Lumi_5.2.0_arm64.dmg" length="36451305" type="application/octet-stream" sparkle:edSignature="sGFgwrsoQx6UQDb1ezlKR03rLI2jtXxTlCObPfYtaR0HSAD8ItHYnAUpDOdfgU8kuzKgquKsassOHyIdmeaLBA=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.3.0/Lumi_5.3.0_arm64.dmg" length="38307050" type="application/octet-stream" sparkle:edSignature="b/vXFXWyV10+1ofF1kBJtg2APGiNRfim1wVyiHESP5o2Aja0OebBZ7JrIS0nB4M6XQ5ZtgZgRfCY5XEVABurCg=="/>
         </item>
     </channel>
 </rss>
