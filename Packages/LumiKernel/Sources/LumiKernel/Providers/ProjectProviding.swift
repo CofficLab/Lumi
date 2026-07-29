@@ -39,6 +39,11 @@ public protocol ProjectProviding: ObservableObject where ObjectWillChangePublish
 
     /// 刷新项目列表
     func refreshProjects() async throws
+
+    /// 同步应用当前维护的完整项目列表。
+    ///
+    /// 默认实现保持向后兼容；拥有项目持久化能力的实现应覆盖此方法。
+    func synchronizeProjects(_ projects: [ProjectInfo])
 }
 
 public extension ProjectProviding {
@@ -51,4 +56,6 @@ public extension ProjectProviding {
     func updateOpenFiles(_ fileURLs: [URL]) {}
 
     func closeFile(_ fileURL: URL) {}
+
+    func synchronizeProjects(_ projects: [ProjectInfo]) {}
 }
