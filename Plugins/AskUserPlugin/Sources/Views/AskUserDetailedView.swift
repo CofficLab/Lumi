@@ -12,6 +12,15 @@ public struct AskUserDetailedView: View {
     @State private var freeInputText: String = ""
     @State private var responded = false
 
+    public init(response: AskUserPendingResponse, toolCall: ToolCall) {
+        self.response = response
+        self.toolCall = toolCall
+        let answer = toolCall.result?.interactionState?.answer
+        _selectedAnswer = State(initialValue: answer)
+        _freeInputText = State(initialValue: answer ?? "")
+        _responded = State(initialValue: answer != nil)
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {

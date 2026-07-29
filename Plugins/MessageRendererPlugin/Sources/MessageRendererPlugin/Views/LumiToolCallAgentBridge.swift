@@ -16,11 +16,23 @@ extension LumiToolCall {
                     content: lumiResult.content,
                     isError: lumiResult.isError,
                     duration: lumiResult.duration,
-                    awaitingUserResponse: lumiResult.turnControl.isSuspended
+                    awaitingUserResponse: lumiResult.turnControl.isSuspended,
+                    interactionState: Self.interactionState(for: lumiResult.turnControl)
                 )
             },
             displayName: displayName
         )
+    }
+
+    private static func interactionState(for control: AgentTurnControl) -> ToolCallInteractionState? {
+        switch control {
+        case .continueTurn:
+            return nil
+        case .suspend:
+            return .waiting
+        case let .resumed(_, answer):
+            return .answered(answer)
+        }
     }
 }
 

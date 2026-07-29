@@ -279,7 +279,8 @@ struct AskUserRowRendererTests {
             arguments: "{}",
             result: ToolCallResult(
                 content: "{}",
-                awaitingUserResponse: true
+                awaitingUserResponse: true,
+                interactionState: .waiting
             )
         )
         let renderer = AskUserRowRenderer()

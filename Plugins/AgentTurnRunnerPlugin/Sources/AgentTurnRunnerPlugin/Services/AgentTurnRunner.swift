@@ -125,7 +125,10 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             throw AgentTurnManagingError.invalidResumeRequest
         }
 
-        let result = LumiToolResult(content: request.answer)
+        let result = LumiToolResult(
+            content: suspension.payload,
+            turnControl: .resumed(suspension, answer: request.answer)
+        )
         kernel?.messageManager?.updateToolCallResult(
             result,
             toolCallID: toolCallID,

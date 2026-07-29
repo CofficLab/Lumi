@@ -48,10 +48,25 @@ public struct AgentTurnResumeRequest: Sendable, Equatable {
 public enum AgentTurnControl: Codable, Sendable, Equatable {
     case continueTurn
     case suspend(AgentTurnSuspension)
+    case resumed(AgentTurnSuspension, answer: String)
 
     public var isSuspended: Bool {
         if case .suspend = self { return true }
         return false
+    }
+
+    public var isUserInteraction: Bool {
+        switch self {
+        case .suspend, .resumed:
+            return true
+        case .continueTurn:
+            return false
+        }
+    }
+
+    public var answer: String? {
+        guard case let .resumed(_, answer) = self else { return nil }
+        return answer
     }
 }
 

@@ -23,7 +23,7 @@ public struct AskUserRowRenderer: ToolCallRowRenderer {
 
     public func canRender(toolCall: ToolCall) -> Bool {
         toolCall.name == "ask_user"
-            && toolCall.result?.awaitingUserResponse == true
+            && toolCall.result?.interactionState != nil
     }
 
     @MainActor

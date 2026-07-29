@@ -14,6 +14,14 @@ public struct AskUserStandardView: View {
     @State private var selectedAnswer: String?
     @State private var responded = false
 
+    public init(response: AskUserPendingResponse, toolCall: ToolCall) {
+        self.response = response
+        self.toolCall = toolCall
+        let answer = toolCall.result?.interactionState?.answer
+        _selectedAnswer = State(initialValue: answer)
+        _responded = State(initialValue: answer != nil)
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // 问题标题
