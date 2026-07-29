@@ -64,7 +64,7 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
                 id: "\(id).remote-providers",
                 title: "Cloud Providers",
                 systemImage: "cloud",
-                order: 0
+                order: 100
             ) {
                 AnyView(RemoteProviderSettingsPage(kernel: kernel))
             },
@@ -72,7 +72,7 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
                 id: "\(id).local-providers",
                 title: "Local Providers",
                 systemImage: "cpu",
-                order: 1
+                order: 101
             ) {
                 AnyView(LocalProviderSettingsPage(kernel: kernel))
             },

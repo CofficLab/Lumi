@@ -9,9 +9,6 @@ public struct SettingsTabItem: Identifiable, Sendable {
     public let id: String
     public let title: String
     public let systemImage: String
-
-    /// 排序权重,数值越小越靠前。
-    /// 由插件在 `settingsTabItems(kernel:)` 中自行声明。
     public var order: Int
 
     private let contentBuilder: @MainActor @Sendable () -> AnyView
@@ -20,7 +17,7 @@ public struct SettingsTabItem: Identifiable, Sendable {
         id: String,
         title: String,
         systemImage: String,
-        order: Int = 0,
+        order: Int,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> some View
     ) {
         self.id = id

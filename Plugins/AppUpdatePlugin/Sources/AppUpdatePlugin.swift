@@ -69,7 +69,7 @@ public final class AppUpdatePlugin: LumiPlugin {
             SettingsTabItem(
                 id: "app-update.about",
                 title: LumiLocalization.string("About", bundle: .module),
-                systemImage: "info.circle"
+                systemImage: "info.circle", order: 1
             ) {
                 AboutSettingsView()
             },
