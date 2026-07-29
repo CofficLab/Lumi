@@ -6,7 +6,7 @@ import SwiftUI
 public final class ConversationReasoningPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-reasoning"
     public let name = "Conversation Reasoning"
-    public let order = 84
+    public let order = 81
     public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
@@ -14,10 +14,10 @@ public final class ConversationReasoningPlugin: LumiPlugin {
     public func onBoot(kernel: LumiKernel) async throws {}
     public func onReady(kernel: LumiKernel) async throws {}
 
-    public func modelSelectorSidebarItems(kernel: LumiKernel) -> [ModelSelectorSidebarItem] {
+    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
         [
-            ModelSelectorSidebarItem(id: "\(id).model-selector", order: order) {
-                ConversationReasoningModelSelectorPanel(kernel: kernel)
+            ChatSectionActionBarItem(id: "\(id).action-bar-button", placement: .leading) {
+                ConversationReasoningActionBarButton(kernel: kernel)
             }
         ]
     }
@@ -37,7 +37,6 @@ public final class ConversationReasoningPlugin: LumiPlugin {
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
-    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
