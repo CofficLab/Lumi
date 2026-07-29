@@ -73,24 +73,35 @@ public struct MemorySettingsView: View {
         PluginSettingsScaffold(
             title: LumiPluginLocalization.string("Memory", bundle: .module),
             subtitle: LumiPluginLocalization.string("View and manage Lumi's long-term memory across sessions", bundle: .module),
-            showHeader: false
+            showHeader: false,
+            scrollsContent: false
         ) {
-            HStack(spacing: 0) {
-                sidebar
-                    .frame(width: 340)
-                    .frame(maxHeight: .infinity)
+            VStack(spacing: 12) {
+                HStack {
+                    Spacer()
+                    AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+                        openDataDirectory()
+                    }
+                }
 
-                AppDivider(.vertical)
+                HStack(spacing: 0) {
+                    sidebar
+                        .frame(width: 340)
+                        .frame(maxHeight: .infinity)
 
-                detailPane
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    AppDivider(.vertical)
+
+                    detailPane
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+                .frame(maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(theme.divider, lineWidth: 1)
+                }
             }
-            .frame(minHeight: 560, maxHeight: .infinity)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(theme.divider, lineWidth: 1)
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .task { await reload() }
     }
@@ -107,9 +118,6 @@ public struct MemorySettingsView: View {
             Spacer()
             AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
                 Task { await reload() }
-            }
-            AppButton("Open Data Directory", systemImage: "folder", size: .small) {
-                openDataDirectory()
             }
         }
         .font(.appCaption)
