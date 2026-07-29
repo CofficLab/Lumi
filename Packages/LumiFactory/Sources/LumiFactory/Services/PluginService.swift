@@ -13,6 +13,7 @@ import BrowserPlugin
 import CADDesignerPlugin
 import CaffeinatePlugin
 import ConversationAttachmentPlugin
+import ConversationPendingMessagePlugin
 import ChatFileAttachmentPlugin
 import ChatModePlugin
 import ChatPanelPlugin
@@ -201,6 +202,7 @@ public enum PluginService {
             MessageListPlugin(),
             ConversationInputPlugin(),
             ConversationAttachmentPlugin(),
+            ConversationPendingMessagePlugin(),
             ChatScreenshotPlugin(),
             ChatFileAttachmentPlugin(),
             PluginManagerPlugin(),
