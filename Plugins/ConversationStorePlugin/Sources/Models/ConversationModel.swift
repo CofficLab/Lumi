@@ -43,8 +43,11 @@ final public class ConversationModel: @unchecked Sendable {
     /// Associated project path
     public var projectPath: String?
 
-    /// Sort priority, lower values are higher priority
-    public var order: Int
+    /// Sort priority, lower values are higher priority.
+    /// Optional for lightweight migration compatibility: older stores do not
+    /// contain this column, so making it mandatory would fail migration with
+    /// NSCocoaErrorDomain 134110.
+    public var order: Int?
 
     public init(
         id: String = UUID().uuidString,
@@ -129,7 +132,8 @@ public extension ConversationModel {
             automationLevel: automationLevel,
             providerID: providerId,
             modelName: modelName,
-            projectPath: projectPath
+            projectPath: projectPath,
+            order: order ?? 0
         )
     }
 }

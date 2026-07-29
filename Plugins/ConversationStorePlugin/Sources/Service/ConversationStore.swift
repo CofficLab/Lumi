@@ -323,7 +323,7 @@ public actor ConversationStore: SuperLog {
         let context = ModelContext(container)
 
         var descriptor = FetchDescriptor<ConversationModel>(
-            predicate: #Predicate<ConversationModel> { $0.order > 0 },
+            predicate: #Predicate<ConversationModel> { ($0.order ?? 0) > 0 },
             sortBy: [SortDescriptor(\.order)]
         )
 
@@ -331,7 +331,7 @@ public actor ConversationStore: SuperLog {
             let models = try context.fetch(descriptor)
             return models.compactMap { model in
                 guard let uuid = UUID(uuidString: model.id) else { return nil }
-                return (uuid, model.order)
+                return (uuid, model.order ?? 0)
             }
         } catch {
             return []
