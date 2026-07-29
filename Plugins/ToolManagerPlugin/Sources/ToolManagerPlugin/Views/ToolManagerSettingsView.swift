@@ -50,7 +50,7 @@ public struct ToolManagerSettingsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 24) {
+                        VStack(alignment: .leading, spacing: 24) {
                             ForEach(displayedGroups, id: \.pluginID) { group in
                                 pluginSection(pluginID: group.pluginID, tools: group.tools)
                             }
