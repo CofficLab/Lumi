@@ -409,7 +409,7 @@ public struct ConversationStoreSettingsView: View {
             return
         }
         isLoadingMessages = true
-        let loaded = kernel.messageManager?.visibleMessages(
+        let loaded = kernel.messageManager?.messagePage(
             for: id,
             limit: messagePageSize,
             beforeMessageID: nil
@@ -431,7 +431,7 @@ public struct ConversationStoreSettingsView: View {
               let firstMessageID = messagesForSelected.first?.id else { return }
 
         isLoadingEarlierMessages = true
-        let earlier = kernel.messageManager?.visibleMessages(
+        let earlier = kernel.messageManager?.messagePage(
             for: id,
             limit: messagePageSize,
             beforeMessageID: firstMessageID

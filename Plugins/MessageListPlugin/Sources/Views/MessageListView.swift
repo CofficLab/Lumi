@@ -74,7 +74,7 @@ struct MessageListView: View {
             isLoading = false
             return
         }
-        messages = kernel.messageManager?.displayMessages(for: conversationID) ?? []
+        messages = kernel.messageManager?.messages(for: conversationID) ?? []
         isLoading = false
     }
 }

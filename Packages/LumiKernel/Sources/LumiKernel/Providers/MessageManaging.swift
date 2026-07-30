@@ -10,21 +10,12 @@ public protocol MessageManaging: ObservableObject {
     /// 后端逻辑（如构建 LLM 上下文、生成摘要）应使用此方法,确保获得完整消息历史。
     func messages(for conversationID: UUID) -> [LumiChatMessage]
 
-    /// 获取指定对话的 UI 展示消息（根据详细程度过滤）
-    ///
-    /// 低于「详细」(V3) 级别时,会过滤掉工具调用结果消息（role == .tool）。
-    /// UI 层（如 MessageListView）应使用此方法,无需自行判断详细程度。
-    func displayMessages(for conversationID: UUID) -> [LumiChatMessage]
-
-    /// Returns cached display messages without starting a database load.
-    func cachedDisplayMessages(for conversationID: UUID) -> [LumiChatMessage]
-
-    /// 获取指定对话的一页可见消息。
+    /// 分页获取指定对话的消息（原始数据）。
     ///
     /// - Parameters:
     ///   - limit: 最多返回多少条消息。
     ///   - beforeMessageID: 以该消息为边界，返回它之前的消息页；传 `nil` 时返回最近一页。
-    func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage]
+    func messagePage(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage]
 
     /// 获取指定对话的消息数量。
     ///
@@ -82,12 +73,6 @@ public protocol MessageManaging: ObservableObject {
     ///   - modelName: 可选模型名称过滤。
     /// - Returns: input/output token 拆分及总量。
     func fetchTokenUsage(on day: Date, providerID: String?, modelName: String?) async -> MessageTokenUsage
-}
-
-public extension MessageManaging {
-    func cachedDisplayMessages(for conversationID: UUID) -> [LumiChatMessage] {
-        displayMessages(for: conversationID)
-    }
 }
 
 public extension MessageManaging {

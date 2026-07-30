@@ -37,54 +37,17 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return all
     }
 
-    public func displayMessages(for conversationID: UUID) -> [LumiChatMessage] {
-        let all = messages(for: conversationID)
-        // 低于「详细」(V3) 级别时,隐藏工具调用结果消息（role == .tool）,
-        // 让上层 UI 无需自行判断详细程度。
-        let verbosity = kernel?.conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
-        guard verbosity == .detailed else {
-            return all.filter { $0.role != .tool }
-        }
-        return all
-    }
-
-    public func cachedDisplayMessages(for conversationID: UUID) -> [LumiChatMessage] {
-        displayMessages(for: conversationID)
-    }
-
-    public func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage] {
+    public func messagePage(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage] {
         guard let store else { return [] }
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)visibleMessages 开始 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, limit=\(limit), before=\(beforeMessageID?.uuidString.prefix(8) ?? "nil")")
-        }
-
-        let page = store.fetchMessagePage(
+        return store.fetchMessagePage(
             conversationId: conversationID,
             limit: limit,
             beforeMessageID: beforeMessageID
         )
-
-        let verbosity = kernel?.conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
-        let filtered = page.filter {
-            if verbosity == .detailed {
-                return $0.role != .status || $0.renderKind == "turn-completed"
-            }
-            return $0.role != .tool && ($0.role != .status || $0.renderKind == "turn-completed")
-        }
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)visibleMessages 完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, raw=\(page.count), filtered=\(filtered.count), first=\(filtered.first?.id.uuidString.prefix(8) ?? "nil"), last=\(filtered.last?.id.uuidString.prefix(8) ?? "nil"), roles=\(filtered.map { $0.role.rawValue }.joined(separator: ",")), verbosity=\(verbosity.rawValue)")
-        }
-
-        return filtered
     }
 
     public func messageCount(for conversationID: UUID) -> Int {
         let count = store?.messageCount(conversationId: conversationID) ?? 0
-        if Self.verbose {
-            Self.logger.info("\(Self.t)messageCount conversation=\(conversationID.uuidString.prefix(8)) count=\(count)")
-        }
         return count
     }
 
