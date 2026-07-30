@@ -13,7 +13,6 @@ public final class ConversationListStore: ObservableObject, SuperLog {
 
     @Published public private(set) var lastChange: ConversationListChange?
     @Published public private(set) var statusVersion: Int = 0
-    @Published public private(set) var unreadCount: Int = 0
     @Published public private(set) var messageVersion: Int = 0
     /// 发送状态版本号:每次 `MessageSending.sendingConversationIDs` 变化时 +1,
     /// 让 SwiftUI 在 `isConversationProcessing(_:)` 返回值变化时重新渲染。
@@ -56,29 +55,6 @@ public final class ConversationListStore: ObservableObject, SuperLog {
 
     public var selectedConversationId: UUID? {
         conversationManaging.selectedConversationID
-    }
-
-    private var selectedConversationUpdatedAt: Date? {
-        guard let selectedConversationId else { return nil }
-        return conversationManaging.conversations.first(where: { $0.id == selectedConversationId })?.updatedAt
-    }
-
-    private func recalculateUnreadCount() {
-        let selectedUpdatedAt = selectedConversationUpdatedAt
-        guard let selectedUpdatedAt else {
-            unreadCount = 0
-            return
-        }
-
-        unreadCount = conversationManaging.conversations.filter { $0.updatedAt > selectedUpdatedAt }.count
-    }
-
-    public var dataDirectory: URL {
-        conversationManaging.dataDirectory
-    }
-
-    public var conversationCount: Int {
-        conversationManaging.conversations.count
     }
 
     public func fetchConversationsPage(limit: Int, offset: Int) async -> [ConversationListItem] {
@@ -283,11 +259,11 @@ public final class ConversationListStore: ObservableObject, SuperLog {
         let currentIDs = Set(current.map(\.id))
         let idsChanged = previousIDs != currentIDs
         let selectionChanged = previousSelectedID != currentSelected
-        let updatedConversationID = currentIDs.intersection(previousIDs).first(where: { id in
+        let updatedConversationID = currentIDs.intersection(previousIDs).first { id in
             let prev = previousConversations.first { $0.id == id }
             let curr = current.first { $0.id == id }
             return prev?.updatedAt != curr?.updatedAt
-        })
+        }
 
         if let deletedID = previousIDs.subtracting(currentIDs).first {
             lastChange = ConversationListChange(type: .deleted, conversationId: deletedID)
@@ -302,11 +278,9 @@ public final class ConversationListStore: ObservableObject, SuperLog {
         // persistent store failed to load and the source remains empty, an
         // unconditional version bump causes the list view to reload forever.
         guard idsChanged || selectionChanged || updatedConversationID != nil else {
-            recalculateUnreadCount()
             return
         }
 
         statusVersion += 1
-        recalculateUnreadCount()
     }
 }

@@ -61,12 +61,9 @@ public struct ConversationListView: View, SuperLog {
             refreshVisibleMessageCounts()
         }
         .onChange(of: store.statusVersion, handleStatusVersionChanged)
-        // 订阅发送状态版本号:版本号变化时,列表项的 `isProcessing`
-        // 会重新读取 `store.isConversationProcessing(_:)`,从而让 PulseRipple 等动画生效。
         .onChange(of: store.sendingVersion) { _, _ in
             // 不需要做事;依赖 `isProcessing` 的视图节点会因为它读取的 SwiftUI
             // 依赖(这里就是 store.sendingVersion)变化而自动重渲染。
-            // 这里保留 handler 只是为了明确"我们关注这个信号"。
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -80,8 +77,6 @@ extension ConversationListView {
             ScrollView {
                 VStack(spacing: 4) {
                     ForEach(conversations, id: \.id) { conversation in
-                        // 用 onTapGesture 触发选中，绕过 AppListRow 内置 Button 对右键的吞吃，
-                        // 让 ConversationItemView 上的 .contextMenu 在 macOS 上能正常弹出。
                         AppListRow(isSelected: localSelectedConversationId == conversation.id) {
                             ConversationItemView(
                                 conversation: conversation,
@@ -191,11 +186,6 @@ extension ConversationListView {
     }
 
     /// 对话管理后台数据追上来了（statusVersion 变化），但 view 首屏还没拿到数据时，重试首次加载。
-    ///
-    /// 场景：view 在 onAppear 时调用 performInitialLoadIfNeeded()，但此时 kernel.conversations.conversations
-    /// 还是 []（ConversationManager 启动时 + v4 迁移还没完成）。loadNextPageIfNeeded 拉出 0 条。
-    /// ConversationManager.loadConversations() 在迁移后异步加载 SwiftData 数据到 conversations，
-    /// 轮询会触发 statusVersion++；这里如果首屏列表仍空且没在加载中，就 reload。
     private func handleStatusVersionChanged() {
         guard didInitialLoad, conversations.isEmpty, !isLoadingPage else { return }
         reloadFromFirstPage()
@@ -217,9 +207,6 @@ extension ConversationListView {
             updated.reserveCapacity(currentConversations.count)
             for conversation in currentConversations {
                 let updatedCount = counts[conversation.id] ?? nil
-                // The Kernel title can be derived from the first user message
-                // even when the message count did not change. Always resolve
-                // it here so the list cannot retain a stale fallback title.
                 updated.append(ConversationListItem(
                     id: conversation.id,
                     projectPath: conversation.projectPath,
@@ -248,70 +235,51 @@ extension ConversationListView {
                 ConversationListPlugin.logger.info("\(self.t)📄 loadNextPage offset=\(offset) page.count=\(page.count) hasMore_before=\(hasMore)")
             }
 
-            if offset == 0 {
-                conversations = page
-            } else {
-                let existingIds = Set(conversations.map(\.id))
-                conversations.append(contentsOf: page.filter { !existingIds.contains($0.id) })
+            await MainActor.run {
+                if offset == 0 {
+                    conversations = page
+                } else {
+                    conversations.append(contentsOf: page)
+                }
+                nextOffset = offset + page.count
+                hasMore = page.count == pageSize
+                isLoadingPage = false
+
+                if !didRestoreSelection {
+                    didRestoreSelection = true
+                    syncSelectionFromContext()
+                }
             }
-
-            nextOffset += page.count
-            hasMore = page.count == pageSize
-            isLoadingPage = false
-
-            await ensureSelectedConversationVisible()
-            syncSelectionFromContext()
         }
     }
 
     private func restorePersistedSelectionIfNeeded() {
-        guard !didRestoreSelection else { return }
-        didRestoreSelection = true
-
-        guard currentSelectedConversationId == nil,
-              let restoredId = selectionStore.loadSelectedConversationId() else {
-            return
-        }
-
-        Task {
-            guard await store.fetchConversation(id: restoredId) != nil else {
-                selectionStore.saveSelectedConversationId(nil)
-                return
-            }
-
-            store.selectConversation(restoredId, reason: "conversationListRestoreSelection")
+        if let persistedId = selectionStore.loadSelectedConversationId(),
+           conversations.contains(where: { $0.id == persistedId }) {
+            localSelectedConversationId = persistedId
         }
     }
 
-    private func ensureSelectedConversationVisible() async {
-        guard let selectedId = currentSelectedConversationId,
-              conversations.contains(where: { $0.id == selectedId }) == false,
-              let selectedConversation = await store.fetchConversation(id: selectedId) else {
-            return
+    private func handleConversationsChanged(_ newConversations: [ConversationListItem]) {
+        if let localId = localSelectedConversationId,
+           !newConversations.contains(where: { $0.id == localId }) {
+            if Self.verbose, ConversationListPlugin.verbose {
+                ConversationListPlugin.logger.info("\(self.t)⚠️ 当前选中的会话已不在列表中，清除选择")
+            }
+            localSelectedConversationId = nil
         }
-
-        conversations.insert(selectedConversation, at: 0)
     }
 
     private func handleConversationChange(_ change: ConversationListChange) {
         switch change.type {
-        case .created:
-            handleConversationCreated(change.conversationId)
         case .updated:
             handleConversationUpdated(change.conversationId)
         case .deleted:
             handleConversationDeleted(change.conversationId)
-        }
-    }
-
-    private func handleConversationCreated(_ conversationId: UUID) {
-        guard !conversations.contains(where: { $0.id == conversationId }) else { return }
-
-        Task {
-            guard let conversation = await store.fetchConversation(id: conversationId) else { return }
-            conversations.insert(conversation, at: 0)
-            nextOffset += 1
-            syncSelectionFromContext()
+        case .created:
+            // syncFromSource intentionally does not publish .created events.
+            // New conversations are handled via handleStatusVersionChanged.
+            break
         }
     }
 
@@ -322,8 +290,6 @@ extension ConversationListView {
             if let index = conversations.firstIndex(where: { $0.id == conversationId }) {
                 conversations[index] = updatedConversation
             } else {
-                // 本地数组中还没有这个对话（可能错过了 .created 事件）
-                // 这种情况会在创建对话后标题立即更新时发生
                 conversations.insert(updatedConversation, at: 0)
                 nextOffset += 1
                 syncSelectionFromContext()
@@ -342,9 +308,6 @@ extension ConversationListView {
     }
 
     private func switchToProjectIfNeeded(for conversation: ConversationListItem) {
-        // 规则 1：未绑定项目 → 切到"无项目"态（传空串）。
-        // 规则 2：绑定的项目目录即便已不存在，也照常切到该项目；
-        //         真正使用该路径的消费者会在使用时报错给用户。
         let projectPath = conversation.projectPath ?? ""
 
         if Self.verbose, ConversationListPlugin.verbose {
@@ -359,7 +322,6 @@ extension ConversationListView {
     }
 
     private func pinConversation(_ conversation: ConversationListItem) {
-        // Pinning is represented by order 0; non-pinned conversations use the default large order.
         let newOrder = conversation.isPinned ? LumiConversationSummary.defaultOrder : 0
         store.setConversationOrder(newOrder, for: conversation.id)
     }
@@ -368,16 +330,6 @@ extension ConversationListView {
 // MARK: - Event Handler
 
 extension ConversationListView {
-    public func handleConversationsChanged(_ newConversations: [ConversationListItem]) {
-        if let localId = localSelectedConversationId,
-           !newConversations.contains(where: { $0.id == localId }) {
-            if Self.verbose, ConversationListPlugin.verbose {
-                ConversationListPlugin.logger.info("\(self.t)⚠️ 当前选中的会话已不在列表中，清除选择")
-            }
-            localSelectedConversationId = nil
-        }
-    }
-
     public func handleLocalSelectionChange() {
         let currentSelected = currentSelectedConversationId
         guard localSelectedConversationId != currentSelected else { return }
@@ -431,6 +383,19 @@ extension ConversationListView {
             }
         } else {
             localSelectedConversationId = nil
+        }
+    }
+
+    private func ensureSelectedConversationVisible() async {
+        guard let selectedId = store.selectedConversationId,
+              !conversations.contains(where: { $0.id == selectedId }) else { return }
+
+        if let conversation = await store.fetchConversation(id: selectedId) {
+            await MainActor.run {
+                if !conversations.contains(where: { $0.id == selectedId }) {
+                    conversations.insert(conversation, at: 0)
+                }
+            }
         }
     }
 }
