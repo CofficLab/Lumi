@@ -20,6 +20,14 @@ public final class AgentRulesPlugin: LumiPlugin {
         // Register services here
     }
 
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            ListAgentRulesTool(),
+            CreateAgentRuleTool(),
+        ]
+    }
 
     // MARK: - LumiPlugin stubs
 
