@@ -94,11 +94,14 @@ public final class ConversationListContext: ObservableObject, SuperLog {
             }
             return lhs.updatedAt > rhs.updatedAt
         }
-        var items: [ConversationListItem] = []
-        items.reserveCapacity(limit)
-        for summary in sorted.dropFirst(offset).prefix(limit) {
-            let count = await messageCount(for: summary.id)
-            items.append(ConversationListItem.from(summary, messageCount: count, uiTitle: uiTitle(for: summary)))
+        let pageSummaries = Array(sorted.dropFirst(offset).prefix(limit))
+        let counts = await messageCounts(for: pageSummaries.map(\.id))
+        let items = pageSummaries.map { summary in
+            ConversationListItem.from(
+                summary,
+                messageCount: counts[summary.id] ?? nil,
+                uiTitle: uiTitle(for: summary)
+            )
         }
         if Self.verbose {
             let countedItems = items.filter { $0.messageCount != nil }.count
@@ -155,6 +158,23 @@ public final class ConversationListContext: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)messageCount conversation=\(conversationID.uuidString.prefix(8)) count=\(count)")
         }
         return count
+    }
+
+    func messageCounts(for conversationIDs: [UUID]) async -> [UUID: Int?] {
+        await withTaskGroup(of: (UUID, Int?).self, returning: [UUID: Int?].self) { group in
+            for conversationID in conversationIDs {
+                group.addTask { [weak self] in
+                    guard let self else { return (conversationID, nil) }
+                    return (conversationID, await self.messageCount(for: conversationID))
+                }
+            }
+
+            var result: [UUID: Int?] = [:]
+            for await (conversationID, count) in group {
+                result[conversationID] = count
+            }
+            return result
+        }
     }
 
     @discardableResult

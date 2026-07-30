@@ -226,10 +226,11 @@ extension ConversationListView {
         guard !conversations.isEmpty else { return }
         let currentConversations = conversations
         Task {
+            let counts = await context.messageCounts(for: currentConversations.map(\.id))
             var updated: [ConversationListItem] = []
             updated.reserveCapacity(currentConversations.count)
             for conversation in currentConversations {
-                let updatedCount = await context.messageCount(for: conversation.id)
+                let updatedCount = counts[conversation.id] ?? nil
                 // The Kernel title can be derived from the first user message
                 // even when the message count did not change. Always resolve
                 // it here so the list cannot retain a stale fallback title.

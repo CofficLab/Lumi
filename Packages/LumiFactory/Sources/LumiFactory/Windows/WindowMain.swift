@@ -17,6 +17,7 @@ public struct WindowMain: View, SuperLog {
     @State private var initializationError: Error?
     @State private var isInitializing = true
     @State private var windowSaveDelegate: EditorWindowSaveDelegate?
+    @State private var mainWindow: NSWindow?
 
     public init() {}
 
@@ -39,6 +40,7 @@ public struct WindowMain: View, SuperLog {
         }
         .background {
             WindowAccessor { window in
+                mainWindow = window
                 window.configureForLumiMainChrome()
                 attachWindowSaveDelegate(to: window)
             }
@@ -55,6 +57,9 @@ public struct WindowMain: View, SuperLog {
             // 使用 LumiFactory 创建主内核（包含自检）
             let newKernel = try await LumiFactory.createMainKernel()
             self.kernel = newKernel
+            if let mainWindow {
+                attachWindowSaveDelegate(to: mainWindow)
+            }
 
             // 把 LumiCore 注入到 OpenProjectHandler(单例),让外部
             // `application(_:openFile:)` 路径也能切换项目。
