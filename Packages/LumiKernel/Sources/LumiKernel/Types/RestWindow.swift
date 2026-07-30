@@ -31,6 +31,22 @@ public struct RestWindow: Codable, Sendable, Equatable {
         }
         return minuteOfDay >= startMinuteOfDay || minuteOfDay < endMinuteOfDay
     }
+
+    /// Returns whether the whole interval is contained in this rest window.
+    ///
+    /// The end of a rest window is exclusive. Subtracting a small epsilon for
+    /// the interval's end keeps an interval ending exactly at the window edge
+    /// valid while still rejecting intervals that cross the edge.
+    public func covers(
+        startingAt start: Date,
+        duration: TimeInterval,
+        calendar: Calendar = .current
+    ) -> Bool {
+        guard duration >= 0 else { return false }
+        guard contains(start, calendar: calendar) else { return false }
+        guard duration > 0 else { return true }
+        return contains(start.addingTimeInterval(duration - 0.001), calendar: calendar)
+    }
 }
 
 public enum IdleConfidenceLabel: Sendable, Equatable {
