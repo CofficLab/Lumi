@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "MessageListPlugin",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "MessageListPlugin", targets: ["MessageListPlugin"]),
@@ -18,7 +19,10 @@ let package = Package(
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources/Localizable.xcstrings"),
+            ]
         ),
     ]
 )

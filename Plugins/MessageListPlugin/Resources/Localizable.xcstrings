@@ -1,16 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@: %2$@"
-          }
-        }
-      }
-    },
     "Agent Chat" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -117,6 +107,7 @@
       }
     },
     "Agent chat messages timeline in the right ChatSection." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -221,6 +212,7 @@
       }
     },
     "Ask a question, paste context, or describe the task you want Lumi to handle." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -255,6 +247,7 @@
       }
     },
     "Assistant" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -499,6 +492,7 @@
       }
     },
     "Chat Messages" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -883,6 +877,7 @@
       }
     },
     "Copy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -987,6 +982,7 @@
       }
     },
     "Delete" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1126,6 +1122,7 @@
       }
     },
     "Error" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1335,6 +1332,7 @@
       }
     },
     "Explain this concept in simple terms" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1404,6 +1402,7 @@
       }
     },
     "Find where authentication is implemented" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1508,6 +1507,7 @@
       }
     },
     "Help me brainstorm ideas" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1542,6 +1542,7 @@
       }
     },
     "Hide Raw Message" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1611,6 +1612,7 @@
       }
     },
     "Implement the feature described below" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1715,6 +1717,7 @@
       }
     },
     "Investigate this bug and propose a fix" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1918,6 +1921,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在載入歷史訊息…"
+          }
+        }
+      }
+    },
+    "Loading messages…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading messages…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在加载消息…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在載入訊息…"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在載入訊息…"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在載入訊息…"
           }
         }
       }
@@ -2483,7 +2520,6 @@
       }
     },
     "No messages yet" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2621,6 +2657,9 @@
           }
         }
       }
+    },
+    "No renderer for message: %@" : {
+
     },
     "OK" : {
       "extractionState" : "stale",
@@ -2903,6 +2942,7 @@
       }
     },
     "Please restart the app" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3077,6 +3117,7 @@
       }
     },
     "Resend" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3181,6 +3222,7 @@
       }
     },
     "Review this paragraph for clarity" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3215,6 +3257,7 @@
       }
     },
     "Run the necessary tools and report back" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3249,6 +3292,7 @@
       }
     },
     "Scan the project and summarize the architecture" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3948,6 +3992,7 @@
       }
     },
     "Service unavailable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4017,6 +4062,7 @@
       }
     },
     "Show Raw Message" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4123,6 +4169,7 @@
       }
     },
     "Start a conversation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4156,7 +4203,11 @@
         }
       }
     },
+    "Start the conversation by sending a message." : {
+
+    },
     "Status" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4226,6 +4277,7 @@
       }
     },
     "Suggest a safe refactor plan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4295,6 +4347,7 @@
       }
     },
     "System" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4364,6 +4417,7 @@
       }
     },
     "Thinking" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4398,6 +4452,7 @@
       }
     },
     "Tool" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4502,6 +4557,7 @@
       }
     },
     "Unable to load messages" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4606,6 +4662,7 @@
       }
     },
     "Use as Draft" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4675,6 +4732,7 @@
       }
     },
     "You" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4707,9 +4765,6 @@
           }
         }
       }
-    },
-    "思考过程" : {
-
     }
   },
   "version" : "1.1"
