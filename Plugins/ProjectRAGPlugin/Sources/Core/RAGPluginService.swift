@@ -65,6 +65,14 @@ enum RAGPluginService: SuperLog {
         lifecycleTask = task
     }
 
+    static func setIndexingPaused(_ paused: Bool) async {
+        if paused {
+            lifecycleTask?.cancel()
+            lifecycleTask = nil
+        }
+        await service.setIndexingPaused(paused)
+    }
+
 }
 
 extension ProjectRAGPlugin {

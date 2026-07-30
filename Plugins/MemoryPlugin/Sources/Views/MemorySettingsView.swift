@@ -111,10 +111,6 @@ public struct MemorySettingsView: View {
     private var sidebarHeader: some View {
         HStack(spacing: 10) {
             Label("\(entries.count) memories", systemImage: "brain")
-            if let selected = selectedEntry {
-                Text("·")
-                Text(selected.item.name)
-            }
             Spacer()
             AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
                 Task { await reload() }

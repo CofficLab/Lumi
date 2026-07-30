@@ -41,6 +41,7 @@ public actor RAGService: SuperLog {
     /// 正在后台索引的项目路径集合
     private var indexingProjects: Set<String> = []
     private var backgroundIndexTasks: [String: Task<Void, Never>] = [:]
+    private var indexingPaused = false
 
     /// 索引进度回调
     private let onProgress: ((RAGIndexProgressEvent) -> Void)?
@@ -113,10 +114,40 @@ public actor RAGService: SuperLog {
         }
     }
 
+    // MARK: - Indexing Control
+
+    /// Whether the indexing subsystem is paused.
+    public func isIndexingPaused() -> Bool {
+        indexingPaused
+    }
+
+    /// Pauses or resumes all indexing work.
+    ///
+    /// Pausing cancels active background tasks and prevents new indexing tasks
+    /// from being scheduled. The current file may finish its synchronous
+    /// operation before cancellation is observed; completed files remain
+    /// persisted and resume will continue through incremental indexing.
+    public func setIndexingPaused(_ paused: Bool) {
+        indexingPaused = paused
+        if paused {
+            cancelBackgroundIndexing()
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)indexing paused=\(paused)")
+        }
+    }
+
     // MARK: - Indexing
 
     /// 确保指定项目已建立可用索引（不存在则全量，存在则增量）
     public func ensureIndexed(projectPath: String, force: Bool = false) async throws {
+        guard !indexingPaused else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)ensureIndexed skipped: indexing is paused project=\(projectPath)")
+            }
+            return
+        }
         guard isInitialized else { throw RAGError.notInitialized }
         guard let indexer else { throw RAGError.internalStateCorrupted }
         guard let store else { throw RAGError.internalStateCorrupted }
@@ -263,6 +294,12 @@ public actor RAGService: SuperLog {
 
     /// 在后台启动索引任务，不阻塞调用方
     public func ensureIndexedBackground(projectPath: String, force: Bool = false) async {
+        guard !indexingPaused else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)background indexing skipped: indexing is paused project=\(projectPath)")
+            }
+            return
+        }
         let normalized = RAGPathUtils.normalizeProjectPath(projectPath)
         guard !normalized.isEmpty else { return }
 

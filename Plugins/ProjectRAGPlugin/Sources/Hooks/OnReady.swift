@@ -37,7 +37,7 @@ public struct ProjectRAGOnReadyHook: SuperLog {
         RAGPluginRuntime.databaseDirectoryProvider = { ragDirectory }
     }
 
-    private func startBackgroundIndexing(kernel: LumiKernel) {
+    func startBackgroundIndexing(kernel: LumiKernel) {
         let service = RAGPluginService.getService()
         if Self.verbose {
             Self.logger.info("\(Self.t)background indexing scheduled")
@@ -94,6 +94,13 @@ public struct ProjectRAGOnReadyHook: SuperLog {
             }
         }
         RAGPluginService.replaceLifecycleTask(task)
+    }
+
+    public func setIndexingPaused(_ paused: Bool, kernel: LumiKernel) async {
+        await RAGPluginService.setIndexingPaused(paused)
+
+        guard !paused else { return }
+        startBackgroundIndexing(kernel: kernel)
     }
 
     private func waitForProjectPaths(kernel: LumiKernel) async -> [String] {

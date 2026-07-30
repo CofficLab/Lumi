@@ -17,6 +17,8 @@ public struct RAGSettingsView: View, SuperLog {
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     @State private var isLoading = false
+    @State private var isIndexingPaused = false
+    @State private var isUpdatingPauseState = false
     @State private var loadError: String?
     @State private var selectedProjectPath: String?
 
@@ -84,6 +86,16 @@ public struct RAGSettingsView: View, SuperLog {
             .font(.appCaption)
             .foregroundStyle(theme.textSecondary)
             Spacer()
+            AppButton(
+                isIndexingPaused
+                    ? LumiPluginLocalization.string("Resume Indexing", bundle: .module)
+                    : LumiPluginLocalization.string("Pause Indexing", bundle: .module),
+                systemImage: isIndexingPaused ? "play.fill" : "pause.fill",
+                size: .small
+            ) {
+                toggleIndexingPause()
+            }
+            .disabled(isUpdatingPauseState)
             AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
                 Task { await loadStatus() }
             }
@@ -244,8 +256,9 @@ extension RAGSettingsView {
 
         do {
             let service = ProjectRAGPlugin.getService()
+            isIndexingPaused = await service.isIndexingPaused()
             if Self.verbose {
-                Self.logger.info("\(Self.t)Settings loadStatus begin projects=\(projects.count) initialized=\(service.isInitialized)")
+                Self.logger.info("\(Self.t)Settings loadStatus begin projects=\(projects.count) initialized=\(service.isInitialized) paused=\(isIndexingPaused)")
             }
             try await service.initialize()
             if Self.verbose {
@@ -280,6 +293,23 @@ extension RAGSettingsView {
             if Self.verbose {
                 Self.logger.error("\(Self.t)Settings loadStatus failed initialized=\(ProjectRAGPlugin.getService().isInitialized) error=\(error.localizedDescription)")
             }
+        }
+    }
+
+    private func toggleIndexingPause() {
+        guard !isUpdatingPauseState else { return }
+        isUpdatingPauseState = true
+        let shouldPause = !isIndexingPaused
+
+        Task { @MainActor in
+            defer { isUpdatingPauseState = false }
+            await ProjectRAGOnReadyHook().setIndexingPaused(shouldPause, kernel: kernel)
+            let service = ProjectRAGPlugin.getService()
+            isIndexingPaused = await service.isIndexingPaused()
+            if shouldPause {
+                progressByPath.removeAll()
+            }
+            await loadStatus()
         }
     }
 }
