@@ -12,7 +12,7 @@ import SuperLogKit
 final public class XcodeBuildContextProvider: SuperLog, ObservableObject {
 
     nonisolated public static let emoji = "🏗️"
-    nonisolated public static let verbose = false
+    nonisolated public static let verbose = true
 
     nonisolated private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.buildcontext")
 

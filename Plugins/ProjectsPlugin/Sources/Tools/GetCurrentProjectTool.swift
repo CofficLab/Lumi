@@ -7,7 +7,7 @@ import SuperLogKit
 /// Get Current Project Tool
 struct GetCurrentProjectTool: LumiAgentTool, SuperLog {
     nonisolated static let emoji = "📍"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     static let info = LumiAgentToolInfo(
         id: "get_current_project",

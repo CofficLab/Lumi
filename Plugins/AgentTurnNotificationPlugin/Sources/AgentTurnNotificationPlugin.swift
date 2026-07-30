@@ -7,7 +7,7 @@ import os
 @MainActor
 public final class AgentTurnNotificationPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "🔔"
-    public nonisolated static let verbose = false
+    public nonisolated static let verbose = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.turn-notification", category: "AgentTurnNotificationPlugin")
 
     public let id = "com.coffic.lumi.plugin.turn-notification"

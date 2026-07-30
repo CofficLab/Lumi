@@ -17,9 +17,17 @@ public final class PluginManagerPlugin: LumiPlugin {
     public let order = 90
     public let policy: LumiPluginPolicy = .alwaysOn
 
+    private var enabledStateStore: PluginEnabledStateStore?
+
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        guard let storage = kernel.storage else { return }
+        let directory = storage.pluginDataDirectory(for: "PluginManager")
+        let store = PluginEnabledStateStore(pluginDirectory: directory)
+        enabledStateStore = store
+        kernel.pluginManager.installEnabledStatePersistence(store)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 

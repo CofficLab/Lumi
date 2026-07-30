@@ -7,16 +7,18 @@ public final class IdleTimePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.idle-time"
     public let name = "Idle Time"
     public let order = 96
-	public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optOut
+    private var service: IdleTimeService?
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
         // 与其他插件一致（参考 Projects 插件）：使用内核提供的插件数据目录，
         // 而非退回临时目录。必须在首次记录事件前设置。
-        if let storage = kernel.storage {
-            IdleTimeRuntimeBridge.directoryURL = storage.pluginDataDirectory(for: "IdleTime")
-        }
+        let directory = kernel.storage?.pluginDataDirectory(for: "IdleTime")
+        let service = IdleTimeService(store: IdleActivityStore(directoryURL: directory))
+        self.service = service
+        kernel.registerIdleTime(service)
     }
 
     public func onReady(kernel: LumiKernel) async throws {
@@ -45,18 +47,7 @@ public final class IdleTimePlugin: LumiPlugin {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
-        [
-            SettingsTabItem(
-                id: "\(id).settings",
-                title: LumiPluginLocalization.string("Idle Time", bundle: .module),
-                systemImage: "moon.zzz",
-                order: order
-            ) {
-                IdleTimeSettingsView(kernel: kernel)
-            }
-        ]
-    }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(IdleTimeAboutView())
@@ -67,6 +58,7 @@ public final class IdleTimePlugin: LumiPlugin {
         [
             LumiRootOverlayItem(id: "\(id).rootObserver") { content in
                 IdleTimeRootObserver(
+                    provider: kernel.idleTime,
                     projectPathProvider: { kernel.project?.currentProject?.path ?? "" },
                     content: content
                 )

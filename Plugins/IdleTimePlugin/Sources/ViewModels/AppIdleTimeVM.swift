@@ -23,8 +23,10 @@ public final class AppIdleTimeVM: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private nonisolated let refreshTimerHolder = AppIdleTimeTimerHolder()
     private var refreshTask: Task<Void, Never>?
+    private let provider: any IdleTimeProviding
 
-    public init() {
+    public init(provider: any IdleTimeProviding = IdleTimeService.shared) {
+        self.provider = provider
         subscribeToSnapshotChanges()
         schedulePeriodicRefresh()
     }
@@ -62,7 +64,7 @@ public final class AppIdleTimeVM: ObservableObject {
             guard let self else { return }
             defer { self.refreshTask = nil }
 
-            let snapshot = await IdleTimeService.shared.currentSnapshot()
+            let snapshot = await self.provider.currentSnapshot()
 
             self.snapshot = snapshot
             self.restWindow = snapshot.restWindow

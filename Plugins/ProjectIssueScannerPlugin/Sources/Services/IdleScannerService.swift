@@ -8,7 +8,7 @@ import os
 /// 扫描策略：先执行本地规则扫描（零成本），再按需执行 LLM 深度分析（有成本）。
 public actor IdleScannerService: SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.idle-scanner")
     public static let shared = IdleScannerService()
 

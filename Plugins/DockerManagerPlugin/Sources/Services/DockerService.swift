@@ -8,7 +8,7 @@ public enum DockerKit: SuperLog {
     /// Logger instance for DockerKit operations
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docker")
     /// 是否启用日志输出
-    nonisolated(unsafe) public static var verbose: Bool = false
+    nonisolated(unsafe) public static var verbose: Bool = true
 }
 
 /// Core service for Docker operations

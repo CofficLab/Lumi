@@ -4,7 +4,7 @@ import SuperLogKit
 
 /// Global resource limits for semantic indexing workloads.
 public enum SemanticIndexResourceManager: SuperLog {
-    nonisolated(unsafe) static var verbose: Bool = false
+    nonisolated(unsafe) static var verbose: Bool = true
 
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "xcode.semantic-index.resources")
     private static let lock = NSLock()

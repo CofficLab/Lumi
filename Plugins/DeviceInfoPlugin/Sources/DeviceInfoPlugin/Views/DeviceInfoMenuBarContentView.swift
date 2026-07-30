@@ -41,7 +41,7 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject, SuperLog {
 
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemenubar.view")
     nonisolated public static let emoji = "📊"
-    nonisolated(unsafe) static var verbose: Bool = false
+    nonisolated(unsafe) static var verbose: Bool = true
 
     @Published private(set) var snapshot = DeviceInfoMenuBarSnapshot(metrics: .empty)
 

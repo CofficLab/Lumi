@@ -11,7 +11,7 @@ import SuperLogKit
 @MainActor
 public struct LegacyDataOnBootHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.legacy-data")
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     public init() {}
 

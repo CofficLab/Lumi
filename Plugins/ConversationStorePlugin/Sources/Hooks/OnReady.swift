@@ -10,7 +10,7 @@ import os
 @MainActor
 public struct ConversationStoreOnReadyHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     public init() {}
 

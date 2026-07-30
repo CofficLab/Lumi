@@ -28,7 +28,7 @@ public final class EditorState: ObservableObject, SuperLog {
     }
 
     public nonisolated static let emoji = "📝"
-    nonisolated(unsafe) static var verbose: Bool = false
+    nonisolated(unsafe) static var verbose: Bool = true
 
     let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.state")
 

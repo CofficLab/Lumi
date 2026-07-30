@@ -23,7 +23,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.read-file")
     public nonisolated static let emoji = "📄"
-    public nonisolated static let verbose = false
+    public nonisolated static let verbose = true
 
     public init() {}
 

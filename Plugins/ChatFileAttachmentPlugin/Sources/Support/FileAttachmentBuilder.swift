@@ -13,7 +13,7 @@ import UniformTypeIdentifiers
 /// (`.fileImporter` 返回的 URL 是安全作用域的)。
 enum FileAttachmentBuilder: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.chat-file-attachment.builder")
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// 构建结果:图片附件走图片链路,文件附件走文件链路。
     struct Outcome {

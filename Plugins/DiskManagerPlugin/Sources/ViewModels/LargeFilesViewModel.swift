@@ -4,7 +4,7 @@ import SuperLogKit
 @MainActor
 final class LargeFilesViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     @Published var largeFiles: [LargeFileEntry] = []
     @Published var isScanning = false
     @Published var scanProgress: ScanProgress?

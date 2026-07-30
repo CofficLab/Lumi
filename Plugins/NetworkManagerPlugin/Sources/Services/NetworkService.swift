@@ -9,7 +9,7 @@ import ShellKit
 @MainActor
 public class NetworkService: SuperLog, ObservableObject {
     public nonisolated static let emoji = "📡"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public static let shared = NetworkService()
     private var exchangeStore: HTTPExchangeStore?
 

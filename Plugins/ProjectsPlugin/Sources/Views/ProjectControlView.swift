@@ -1,4 +1,5 @@
 import LumiUI
+import LumiKernel
 import SwiftUI
 
 struct ProjectControlView: View {
@@ -18,7 +19,7 @@ struct ProjectControlView: View {
                 Image(systemName: "folder")
                     .font(.system(size: 12, weight: .semibold))
 
-                Text(viewModel.currentProject?.name ?? "Projects")
+                Text(viewModel.currentProject?.name ?? LumiPluginLocalization.string("Projects", bundle: .module))
                     .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
             }

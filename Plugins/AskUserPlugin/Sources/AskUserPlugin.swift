@@ -18,7 +18,7 @@ import SwiftUI
 @MainActor
 public final class AskUserPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "❓"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.ask-user")
 
     // MARK: - LumiPlugin Identity

@@ -10,7 +10,7 @@ import SuperLogKit
 public enum LumiStreamingRequestSupport: SuperLog {
     public static let emoji = "🌊"
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.streaming-request")
-    static let verbose = false
+    static let verbose = true
     
     // MARK: - OpenAI Compatible Streaming
     

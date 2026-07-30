@@ -29,7 +29,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         height: Binding<CGFloat>,
         font: NSFont = .systemFont(ofSize: 15),
         textColor: NSColor = .textColor,
-        isVerbose: Bool = false,
+        isVerbose: Bool = true,
         log: @escaping (String) -> Void = { _ in },
         onSubmit: @escaping () -> Void,
         onArrowUp: (() -> Void)? = nil,

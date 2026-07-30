@@ -17,7 +17,7 @@ public final class LayoutStore: SuperLog {
         category: "plugin.layoutkernel.store"
     )
     public nonisolated static let emoji = "📐"
-    public static var verbose: Bool = false
+    public static var verbose: Bool = true
 
     // MARK: - Constants
 

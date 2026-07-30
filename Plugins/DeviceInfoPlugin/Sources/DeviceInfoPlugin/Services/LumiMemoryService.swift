@@ -8,7 +8,7 @@ import os
 public final class LumiMemoryService: ObservableObject, SuperLog {
     public static let shared = LumiMemoryService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.lumi-memory")
-    nonisolated(unsafe) static var verbose: Bool = false
+    nonisolated(unsafe) static var verbose: Bool = true
     nonisolated public static let emoji = "💾"
 
     // MARK: - Published Properties

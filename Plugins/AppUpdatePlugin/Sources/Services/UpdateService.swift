@@ -19,7 +19,7 @@ import os
 public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.updater")
     nonisolated public static let emoji = "⬆️"
-    nonisolated public static let verbose = false
+    nonisolated public static let verbose = true
 
     public static let shared = UpdateService()
 

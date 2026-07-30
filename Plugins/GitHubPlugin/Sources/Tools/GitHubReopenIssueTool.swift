@@ -6,7 +6,7 @@ import SuperLogKit
 /// GitHub 重新打开 Issue 工具
 public struct GitHubReopenIssueTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔓"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public static let info = LumiAgentToolInfo(
         id: "github_reopen_issue",
         displayName: "GitHubReopenIssue",

@@ -5,7 +5,7 @@ import Combine
 @MainActor
 class XcodeCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🧹"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     @Published var itemsByCategory: [XcodeCleanCategory: [XcodeCleanItem]] = [:]
     @Published var isScanning = false
     @Published var isCleaning = false

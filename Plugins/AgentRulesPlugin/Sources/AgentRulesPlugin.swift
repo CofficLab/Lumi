@@ -7,7 +7,7 @@ public final class AgentRulesPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.agent-rules"
     public let name = "Agent Rules"
     public let order = 50
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .general
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Manage rule documents in .agent/rules directory."
@@ -20,6 +20,14 @@ public final class AgentRulesPlugin: LumiPlugin {
         // Register services here
     }
 
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            ListAgentRulesTool(),
+            CreateAgentRuleTool(),
+        ]
+    }
 
     // MARK: - LumiPlugin stubs
 
@@ -40,7 +48,18 @@ public final class AgentRulesPlugin: LumiPlugin {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        [
+            SettingsTabItem(
+                id: "\(id).settings",
+                title: LumiPluginLocalization.string("Agent Rules", bundle: .module),
+                systemImage: "doc.text",
+                order: order
+            ) {
+                AgentRulesSettingsView(projectProvider: kernel.project)
+            },
+        ]
+    }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }

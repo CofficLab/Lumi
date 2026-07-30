@@ -7,13 +7,16 @@ extension Notification.Name {
 }
 
 public struct IdleTimeRootObserver<Content: View>: View {
+    let provider: (any IdleTimeProviding)?
     let projectPathProvider: () -> String
     public let content: Content
 
     public init(
+        provider: (any IdleTimeProviding)? = nil,
         projectPathProvider: @escaping () -> String = { "" },
         content: Content
     ) {
+        self.provider = provider
         self.projectPathProvider = projectPathProvider
         self.content = content
     }
@@ -25,12 +28,12 @@ public struct IdleTimeRootObserver<Content: View>: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
                 Task {
-                    await IdleTimeService.shared.record(.appBecameActive)
+                    await provider?.record(.appBecameActive)
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .lumiEditorSave)) { _ in
                 Task {
-                    await IdleTimeService.shared.record(.fileSave)
+                    await provider?.record(.fileSave)
                 }
             }
     }
@@ -38,7 +41,7 @@ public struct IdleTimeRootObserver<Content: View>: View {
     private func recordProjectIfNeeded(_ path: String) {
         guard !path.isEmpty else { return }
         Task {
-            await IdleTimeService.shared.record(.projectChanged)
+            await provider?.record(.projectChanged)
         }
     }
 }

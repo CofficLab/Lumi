@@ -20,7 +20,7 @@ public struct ProjectOpenedFiles: Codable, Equatable, Sendable {
 public final class ProjectsStore: SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.store")
     public nonisolated static let emoji = "📁"
-    public static var verbose = false
+    public static var verbose = true
 
     // MARK: - Constants
 

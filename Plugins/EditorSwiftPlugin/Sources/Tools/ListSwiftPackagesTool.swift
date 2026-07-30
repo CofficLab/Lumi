@@ -6,7 +6,7 @@ import XcodeKit
 /// 列出 Xcode 项目中 Swift Package 依赖的 Agent 工具。
 public struct ListSwiftPackagesTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "list_xcode_packages",

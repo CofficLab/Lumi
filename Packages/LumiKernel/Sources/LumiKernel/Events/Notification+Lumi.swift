@@ -36,6 +36,16 @@ public extension Notification.Name {
     static let lumiProviderStatusesDidChange = LumiKernelEvent.providerStatusesDidChange.notificationName
 }
 
+public enum LumiNotificationUserInfoKey {
+    public static let conversationID = "conversationID"
+}
+
+public extension Notification {
+    var lumiConversationID: UUID? {
+        userInfo?[LumiNotificationUserInfoKey.conversationID] as? UUID
+    }
+}
+
 /// Convenience helper for subscribing to enabled-plugins-changed events.
 public extension NotificationCenter {
     /// Subscribe to `.lumiEnabledPluginsDidChange`.

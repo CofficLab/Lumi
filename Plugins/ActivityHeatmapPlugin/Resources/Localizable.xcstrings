@@ -107,6 +107,108 @@
         }
       }
     },
+    "Aggregates daily message counts and token usage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggregates daily message counts and token usage"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇总每日消息数量和 Token 使用量"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "彙總每日訊息數量和 Token 使用量"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "彙總每日訊息數量和 Token 使用量"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "彙總每日訊息數量和 Token 使用量"
+          }
+        }
+      }
+    },
+    "All activity data is stored locally on your device. No data is sent to external servers." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All activity data is stored locally on your device. No data is sent to external servers."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有活动数据均存储在本地设备上，不会发送至外部服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有活動數據均存儲在本地設備上，不會發送至外部伺服器。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有活動數據均儲存於本地設備上，不會發送至外部伺服器。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有活動數據均儲存於本地設備上，不會發送至外部伺服器。"
+          }
+        }
+      }
+    },
+    "Caches historical data for fast subsequent loads" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caches historical data for fast subsequent loads"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存历史数据以便快速加载"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "緩存歷史數據以便快速載入"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "緩存歷史數據以便快速載入"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "緩存歷史數據以便快速載入"
+          }
+        }
+      }
+    },
     "Conversation activity over time" : {
       "localizations" : {
         "en" : {
@@ -211,6 +313,40 @@
         }
       }
     },
+    "Data Privacy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data Privacy"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数据隐私"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "數據隱私"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "數據隱私"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "數據隱私"
+          }
+        }
+      }
+    },
     "Date" : {
       "localizations" : {
         "en" : {
@@ -241,6 +377,176 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "日期"
+          }
+        }
+      }
+    },
+    "Displays data in interactive heatmap and line chart" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Displays data in interactive heatmap and line chart"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在交互式热力图和折线图中展示数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在互動式熱力圖和折線圖中展示數據"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在互動式熱力圖和折線圖中展示數據"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在互動式熱力圖和折線圖中展示數據"
+          }
+        }
+      }
+    },
+    "Efficient Caching" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Efficient Caching"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高效缓存"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高效緩存"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高效緩存"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高效緩存"
+          }
+        }
+      }
+    },
+    "Get instant insights: total messages, active days, current/longest streaks, weekday distribution, and peak activity days." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get instant insights: total messages, active days, current/longest streaks, weekday distribution, and peak activity days."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "获取即时洞察：总消息数、活跃天数、当前/最长连续天数、工作日分布和峰值活跃日。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "獲取即時洞察：總訊息數、活躍天數、當前/最長連續天數、工作日分布和峰值活躍日。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "獲取即時洞察：總訊息數、活躍天數、當前/最長連續天數、工作日分布和峰值活躍日。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "獲取即時洞察：總訊息數、活躍天數、當前/最長連續天數、工作日分布和峰值活躍日。"
+          }
+        }
+      }
+    },
+    "Historical data is cached locally for instant loading. Today's activity is always fetched in real-time for accuracy." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historical data is cached locally for instant loading. Today's activity is always fetched in real-time for accuracy."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "历史数据本地缓存实现即时加载，今日活跃度实时获取以确保准确性。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史數據本地緩存實現即時載入，今日活躍度即時獲取以確保準確性。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史數據本地緩存實現即時載入，今日活躍度即時獲取以確保準確性。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史數據本地緩存實現即時載入，今日活躍度即時獲取以確保準確性。"
+          }
+        }
+      }
+    },
+    "How It Works" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How It Works"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作原理"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作原理"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作原理"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作原理"
           }
         }
       }
@@ -450,6 +756,108 @@
         }
       }
     },
+    "LumiKernel with MessageManaging service" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LumiKernel with MessageManaging service"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "带有 MessageManaging 服务的 LumiKernel"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帶有 MessageManaging 服務的 LumiKernel"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帶有 MessageManaging 服務的 LumiKernel"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帶有 MessageManaging 服務的 LumiKernel"
+          }
+        }
+      }
+    },
+    "macOS 14.0 or later" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS 14.0 or later"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS 14.0 或更高版本"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS 14.0 或更高版本"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS 14.0 或更高版本"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS 14.0 或更高版本"
+          }
+        }
+      }
+    },
+    "Monitor daily token usage through an interactive line chart. Identify high-usage days and optimize your prompts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monitor daily token usage through an interactive line chart. Identify high-usage days and optimize your prompts."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过交互式折线图监控每日 Token 使用量，找出高消耗日并优化提示词。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過互動式折線圖監控每日 Token 使用量，找出高消耗日並優化提示詞。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過互動式折線圖監控每日 Token 使用量，找出高消耗日並優化提示詞。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過互動式折線圖監控每日 Token 使用量，找出高消耗日並優化提示詞。"
+          }
+        }
+      }
+    },
     "More" : {
       "localizations" : {
         "en" : {
@@ -620,6 +1028,74 @@
         }
       }
     },
+    "Requirements" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requirements"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统要求"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統需求"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統需求"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統需求"
+          }
+        }
+      }
+    },
+    "Statistics Dashboard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Statistics Dashboard"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "统计面板"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "統計面板"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "統計面板"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "統計面板"
+          }
+        }
+      }
+    },
     "Statistics Period" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -651,6 +1127,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "統計週期"
+          }
+        }
+      }
+    },
+    "Swift 6.0 or later" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swift 6.0 or later"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swift 6.0 或更高版本"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swift 6.0 或更高版本"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swift 6.0 或更高版本"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swift 6.0 或更高版本"
+          }
+        }
+      }
+    },
+    "Token Consumption Tracking" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token Consumption Tracking"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 消耗追踪"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 消耗追蹤"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 消耗追蹤"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 消耗追蹤"
           }
         }
       }
@@ -723,11 +1267,150 @@
         }
       }
     },
+    "Tracks every message sent through Lumi conversations" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tracks every message sent through Lumi conversations"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追踪通过 Lumi 对话发送的每条消息"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追蹤透過 Lumi 對話傳送的每條訊息"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追蹤透過 Lumi 對話傳送的每條訊息"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追蹤透過 Lumi 對話傳送的每條訊息"
+          }
+        }
+      }
+    },
+    "Visualize your conversation activity with a GitHub-style calendar heatmap. Color intensity reflects daily message volume." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visualize your conversation activity with a GitHub-style calendar heatmap. Color intensity reflects daily message volume."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过 GitHub 风格的日历热力图可视化对话活跃度，颜色深浅反映每日消息量。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過 GitHub 風格的日曆熱力圖可視化對話活躍度，顏色深淺反映每日訊息量。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過 GitHub 風格的日曆熱力圖可視化對話活躍度，顏色深淺反映每日訊息量。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過 GitHub 風格的日曆熱力圖可視化對話活躍度，顏色深淺反映每日訊息量。"
+          }
+        }
+      }
+    },
+    "Activity intensity by time of day" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Activity intensity by time of day" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "一天中各时段的活跃强度" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "一天中各時段的活躍強度" } }
+      }
+    },
+    "Activity patterns and rest windows" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Activity patterns and rest windows" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "活动模式与休息时间段" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "活動模式與休息時段" } }
+      }
+    },
+    "Active days" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Active days" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "活跃天数" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "活躍天數" } }
+      }
+    },
+    "Confidence" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Confidence" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "置信度" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "信心度" } }
+      }
+    },
+    "Events" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Events" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "事件数" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "事件數" } }
+      }
+    },
+    "Idle Time" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Idle Time" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "空闲时间" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "閒置時間" } }
+      }
+    },
+    "Learning" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Learning" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "学习中" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "學習中" } }
+      }
+    },
+    "Open Data Directory" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Data Directory" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开数据目录" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "開啟資料目錄" } }
+      }
+    },
+    "Rest window" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rest window" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "休息时间段" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "休息時段" } }
+      }
+    },
     "X: %@" : {
-
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "X: %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "X：%@" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "X：%@" } }
+      }
     },
     "Y: %@ tokens" : {
-
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Y: %@ tokens" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Y：%@ 个 Token" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "Y：%@ 個 Token" } }
+      }
     }
   },
   "version" : "1.0"

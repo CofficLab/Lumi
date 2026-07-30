@@ -19,7 +19,7 @@ private typealias _MLXModels = MLXModels
 public final class MLXModelManager: ObservableObject, SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.mlx")
     nonisolated public static let emoji = "📦"
-    nonisolated public static let verbose: Bool = false
+    nonisolated public static let verbose: Bool = true
     // MARK: - Published Properties
 
     /// 已缓存的模型 ID 列表

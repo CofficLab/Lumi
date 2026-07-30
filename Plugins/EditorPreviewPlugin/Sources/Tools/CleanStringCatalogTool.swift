@@ -19,7 +19,7 @@ public struct CleanStringCatalogTool: LumiAgentTool, SuperLog {
         category: "plugin.editor-preview.clean-string-catalog"
     )
     public nonisolated static let emoji = "🧹"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public init() {}
 

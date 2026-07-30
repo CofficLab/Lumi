@@ -16,7 +16,7 @@ import SuperLogKit
 public final class ProjectsViewModel: ObservableObject, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.viewmodel")
     public nonisolated static let emoji = "📊"
-    public static var verbose = false
+    public static var verbose = true
 
     // MARK: - Published State
 

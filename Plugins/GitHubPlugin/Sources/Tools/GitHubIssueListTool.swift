@@ -6,7 +6,7 @@ import SuperLogKit
 /// GitHub Issue 列表工具
 public struct GitHubIssueListTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public static let info = LumiAgentToolInfo(
         id: "github_issues",
         displayName: "GitHubIssues",

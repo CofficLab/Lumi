@@ -18,7 +18,7 @@ public enum FilterStatus: String, CaseIterable {
 public class FirewallService: NSObject, ObservableObject, SuperLog, @unchecked Sendable {
     public static let shared = FirewallService()
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
-    private var verbose: Bool = false
+    private var verbose: Bool = true
     
     @Published var status: FilterStatus = .indeterminate
     @Published var events: [FirewallEvent] = []

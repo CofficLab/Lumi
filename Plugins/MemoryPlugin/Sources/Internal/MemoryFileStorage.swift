@@ -37,7 +37,7 @@ public actor MemoryFileStorage: SuperLog {
     /// - Parameters:
     ///   - rootURL: 记忆存储的根目录 URL
     ///   - verbose: 是否启用详细日志
-    public init(rootURL: URL, verbose: Bool = false) {
+    public init(rootURL: URL, verbose: Bool = true) {
         self.memoryRoot = rootURL
         self.verbose = verbose
         self.globalDir = memoryRoot

@@ -9,7 +9,7 @@ import os
 public final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.mac-agent")
     nonisolated public static let emoji = "🍎"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     @Published public var pendingOpenPath: String?
 

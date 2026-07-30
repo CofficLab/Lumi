@@ -12,7 +12,7 @@ import os
 
 class CursorTimer: SuperLog {
     nonisolated static let emoji = "⏱️"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.cursor")
 
     /// The timer that publishes the cursor toggle timer.

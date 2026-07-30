@@ -19,7 +19,7 @@ enum TokenPlanService: SuperLog {
 
     /// 调试开关：开启后会打印配额查询过程中的详细日志，便于定位「配额不可用」的原因。
     /// 正式发布时设为 `false`，排查问题时设为 `true`。
-    nonisolated(unsafe) static var verbose: Bool = false
+    nonisolated(unsafe) static var verbose: Bool = true
 
     /// 获取 Token Plan 配额
     static func fetchTokenPlan(network: (any NetworkProviding)? = nil) async -> TokenPlanStatus {

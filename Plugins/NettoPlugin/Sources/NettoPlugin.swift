@@ -12,7 +12,7 @@ import os
 public final class NettoPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
     nonisolated public static let emoji = "🛡️"
-    nonisolated public static let verbose = false
+    nonisolated public static let verbose = true
 
     // MARK: - LumiPlugin
 

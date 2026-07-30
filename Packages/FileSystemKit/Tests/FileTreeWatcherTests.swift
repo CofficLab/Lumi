@@ -26,7 +26,7 @@ struct FileTreeWatcherTests {
     func startWatchingIncreasesCount() throws {
         let dir = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.startWatching(url: dir)
         #expect(watcher.watchCount == 1)
@@ -38,7 +38,7 @@ struct FileTreeWatcherTests {
     func stopWatchingDecreasesCount() throws {
         let dir = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.startWatching(url: dir)
         #expect(watcher.watchCount == 1)
@@ -52,7 +52,7 @@ struct FileTreeWatcherTests {
         let dir1 = try makeTempDirectory()
         let dir2 = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.startWatching(url: dir1)
         watcher.startWatching(url: dir2)
@@ -66,7 +66,7 @@ struct FileTreeWatcherTests {
     func startWatchingIdempotent() throws {
         let dir = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.startWatching(url: dir)
         watcher.startWatching(url: dir)
@@ -78,7 +78,7 @@ struct FileTreeWatcherTests {
     @Test("stopWatching nonexistent URL is no-op")
     func stopWatchingNonexistentNoOp() throws {
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         let fakeURL = URL(fileURLWithPath: "/nonexistent/\(UUID().uuidString)")
         watcher.stopWatching(url: fakeURL)
@@ -92,7 +92,7 @@ struct FileTreeWatcherTests {
         let dir1 = try makeTempDirectory()
         let dir2 = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.updateWatchedDirectories([dir1, dir2])
         #expect(watcher.watchCount == 2)
@@ -105,7 +105,7 @@ struct FileTreeWatcherTests {
         let dir1 = try makeTempDirectory()
         let dir2 = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.updateWatchedDirectories([dir1, dir2])
         #expect(watcher.watchCount == 2)
@@ -121,7 +121,7 @@ struct FileTreeWatcherTests {
     func updateWatchedDirectoriesEmptyStopsAll() throws {
         let dir = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.updateWatchedDirectories([dir])
         #expect(watcher.watchCount == 1)
@@ -134,7 +134,7 @@ struct FileTreeWatcherTests {
     func updateWatchedDirectoriesIdempotent() throws {
         let dir = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.updateWatchedDirectories([dir])
         #expect(watcher.watchCount == 1)
@@ -155,7 +155,7 @@ struct FileTreeWatcherTests {
         let watcher = FileTreeWatcher { _ in
             expectation.fulfill()
         }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.startWatching(url: dir)
 
@@ -175,7 +175,7 @@ struct FileTreeWatcherTests {
     func startWatchingVerboseTrue() throws {
         let dir = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.startWatching(url: dir)
         #expect(watcher.watchCount == 1)
@@ -187,7 +187,7 @@ struct FileTreeWatcherTests {
     func stopWatchingVerboseTrue() throws {
         let dir = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.startWatching(url: dir)
         watcher.stopWatching(url: dir)
@@ -198,7 +198,7 @@ struct FileTreeWatcherTests {
     func stopAllVerboseTrue() throws {
         let dir = try makeTempDirectory()
         let watcher = FileTreeWatcher { _ in }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.startWatching(url: dir)
         watcher.stopAll()
@@ -214,7 +214,7 @@ struct FileTreeWatcherTests {
         // deinit 中应关闭所有 fileDescriptor 和取消 source
         do {
             let watcher = FileTreeWatcher { _ in }
-            watcher.verbose = false
+            watcher.verbose = true
             watcher.startWatching(url: dir)
             #expect(watcher.watchCount == 1)
             // 不调用 stopAll，让 deinit 负责清理
@@ -232,7 +232,7 @@ struct FileTreeWatcherTests {
         let watcher = FileTreeWatcher { _ in
             expectation.fulfill()
         }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.updateWatchedDirectories([dir])
         #expect(watcher.watchCount == 1)
@@ -257,7 +257,7 @@ struct FileTreeWatcherTests {
         let watcher = FileTreeWatcher { _ in
             counter.increment()
         }
-        watcher.verbose = false
+        watcher.verbose = true
 
         watcher.startWatching(url: watchedDir)
 

@@ -11,12 +11,13 @@ import os
 public struct WindowMain: View, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.window-main")
     nonisolated public static let emoji = "🪟"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     @State private var kernel: LumiKernel?
     @State private var initializationError: Error?
     @State private var isInitializing = true
     @State private var windowSaveDelegate: EditorWindowSaveDelegate?
+    @State private var mainWindow: NSWindow?
 
     public init() {}
 
@@ -39,8 +40,15 @@ public struct WindowMain: View, SuperLog {
         }
         .background {
             WindowAccessor { window in
-                window.configureForLumiMainChrome()
-                attachWindowSaveDelegate(to: window)
+                // WindowAccessor can resolve its NSWindow while SwiftUI is
+                // evaluating the current view update. Defer all @State writes
+                // until that update has finished.
+                Task { @MainActor in
+                    guard self.mainWindow !== window else { return }
+                    self.mainWindow = window
+                    window.configureForLumiMainChrome()
+                    self.attachWindowSaveDelegate(to: window)
+                }
             }
         }
     }
@@ -55,6 +63,9 @@ public struct WindowMain: View, SuperLog {
             // 使用 LumiFactory 创建主内核（包含自检）
             let newKernel = try await LumiFactory.createMainKernel()
             self.kernel = newKernel
+            if let mainWindow {
+                attachWindowSaveDelegate(to: mainWindow)
+            }
 
             // 把 LumiCore 注入到 OpenProjectHandler(单例),让外部
             // `application(_:openFile:)` 路径也能切换项目。

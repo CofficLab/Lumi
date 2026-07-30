@@ -13,7 +13,7 @@ public struct EditorPreviewCSVView: View, SuperLog {
         category: "plugin.editor-inline-preview.csv-view"
     )
     public nonisolated static let emoji = "📊"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     @EnvironmentObject private var themeVM: AppThemeVM
 

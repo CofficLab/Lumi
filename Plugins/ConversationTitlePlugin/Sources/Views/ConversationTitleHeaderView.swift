@@ -27,7 +27,11 @@ struct ConversationTitleHeaderView: View {
                 .foregroundColor(theme.textPrimary)
                 .lineLimit(1)
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { notification in
+            if let conversationID = notification.lumiConversationID,
+               conversationID != kernel.conversations?.selectedConversationID {
+                return
+            }
             messageVersion += 1
         }
     }

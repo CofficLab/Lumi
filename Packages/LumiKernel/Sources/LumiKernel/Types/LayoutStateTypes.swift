@@ -35,7 +35,7 @@ public struct LayoutStateInfo: Sendable, Codable {
 @MainActor
 public final class LayoutState: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📐"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")
 
     @Published public var activeViewContainerID: String? {

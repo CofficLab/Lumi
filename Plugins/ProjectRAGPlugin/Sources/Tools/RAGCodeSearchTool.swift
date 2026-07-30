@@ -4,7 +4,7 @@ import SuperLogKit
 
 public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     /// 默认返回结果数量
     static let defaultTopK = 8
@@ -434,7 +434,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
         limit: Int
     ) async -> [CodeSearchResult] {
         // 快速检查：如果正在索引，直接跳过，避免卡在 actor 队列
-        if RAGService.isAnyIndexing() {
+        if RAGService.isIndexing(projectPath: projectPath) {
             if Self.verbose {
                 ProjectRAGPlugin.logger.info("\(Self.t)search_code semantic: 跳过（后台索引进行中）")
             }

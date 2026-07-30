@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import LumiKernel
 @testable import IdleTimePlugin
 
 /// Unit tests for `RestWindow.contains` (cross-midnight logic),
@@ -48,6 +49,24 @@ import Foundation
                                 confidence: 0.5, source: .defaultFallback, generatedAt: Date())
         let cal = utcCalendar()
         #expect(window.contains(dateAt(0, 0), calendar: cal) == false)
+    }
+
+    @Test func coversWholeIntervalAndRejectsWindowBoundaryCrossing() {
+        let window = RestWindow(
+            startMinuteOfDay: 9 * 60,
+            endMinuteOfDay: 17 * 60,
+            confidence: 0.8,
+            source: .weekday,
+            generatedAt: Date()
+        )
+        let cal = utcCalendar()
+
+        #expect(window.covers(startingAt: dateAt(12, 0), duration: 10 * 60, calendar: cal))
+        #expect(window.covers(startingAt: dateAt(16, 50), duration: 10 * 60, calendar: cal))
+        #expect(!window.covers(startingAt: dateAt(16, 55), duration: 10 * 60, calendar: cal))
+        #expect(!window.covers(startingAt: dateAt(8, 59), duration: 10 * 60, calendar: cal))
+        #expect(window.covers(startingAt: dateAt(12, 0), duration: 0, calendar: cal))
+        #expect(!window.covers(startingAt: dateAt(12, 0), duration: -1, calendar: cal))
     }
 }
 

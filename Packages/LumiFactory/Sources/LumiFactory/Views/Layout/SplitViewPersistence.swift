@@ -82,7 +82,7 @@ struct SplitViewDividerPersistence: NSViewRepresentable {
 final class SplitDividerPersistenceView: NSView, SuperLog {
     nonisolated static let emoji = "📐"
     // 调试期临时打开，便于观察 attach/apply/will/did 全链路。定位完 rail 宽度日志问题后可改回 false。
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "split-view.persistence")
     /// 初始 attach 失败时最多重试多少次（每个 runloop 一次）。
     /// 100 × 0.1s = 10s，覆盖 SwiftUI hosting view 装好的极端延迟。
@@ -108,6 +108,7 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     /// ghost 第一次 attach 时可能只有 outer 可用，挂错层后 viewDidMoveToWindow 不会再触发，
     /// 只能靠 recheck 周期重新跑 `enclosingSplitView` 找到正确的 inner。
     private var postAttachRecheckCount = 0
+    private var postAttachRecheckWorkItem: DispatchWorkItem?
     /// post-attach recheck 的最大次数。20 × 0.1s = 2s，覆盖 SwiftUI 嵌套视图构建的极端延迟。
     private static let maxPostAttachRecheckCount = 20
 
@@ -129,6 +130,7 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     /// 覆盖。这里在一段时间窗口内反复核对“持久化值 vs 实际 divider 位置”，一旦发现被覆盖
     /// 就重新应用，确保切回容器时各栏宽度真正恢复到上次的值。
     private var roleChangeRecheckCount = 0
+    private var roleChangeRecheckWorkItem: DispatchWorkItem?
     private static let maxRoleChangeRecheckCount = 20  // 20 × 0.1s = 2s
 
     /// 抑制接下来若干次 didResize 的持久化。
@@ -165,6 +167,8 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
         lastObservedDividerPosition = nil
         postAttachRecheckCount = 0
         roleChangeRecheckCount = 0
+        roleChangeRecheckWorkItem?.cancel()
+        roleChangeRecheckWorkItem = nil
         // 角色切换后，本次（及随后若干次）didResize 都可能是我们主动 setPosition 的余波，
         // 不能持久化，否则会把上次的宽度覆盖成默认值。
         persistenceSuppressionCount = 3
@@ -179,10 +183,12 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
 
     /// 角色变更后的位置校验：反复核对“持久化值 vs 实际 divider 位置”，被覆盖则重新应用。
     private func scheduleRoleChangeRecheck() {
-        guard roleChangeRecheckCount < Self.maxRoleChangeRecheckCount else { return }
+        guard roleChangeRecheckCount < Self.maxRoleChangeRecheckCount,
+              roleChangeRecheckWorkItem == nil else { return }
         roleChangeRecheckCount += 1
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+        let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
+            self.roleChangeRecheckWorkItem = nil
             guard self.window != nil else { return }
             guard let split = self.observedSplitView else { return }
 
@@ -203,6 +209,8 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
             }
             self.scheduleRoleChangeRecheck()
         }
+        roleChangeRecheckWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
     }
 
     override func viewDidMoveToWindow() {
@@ -224,6 +232,10 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
         }
         observedSplitView = nil
         postAttachRecheckCount = 0
+        postAttachRecheckWorkItem?.cancel()
+        postAttachRecheckWorkItem = nil
+        roleChangeRecheckWorkItem?.cancel()
+        roleChangeRecheckWorkItem = nil
     }
 
     // MARK: - 挂载
@@ -284,19 +296,18 @@ final class SplitDividerPersistenceView: NSView, SuperLog {
     /// 首次 attach 成功后继续 recheck 几次，应对 ghost attach 时嵌套 inner HSplitView
     /// 还没创建的场景（外层先出现、内层后挂上去）。命中正确的层后即稳定。
     private func schedulePostAttachRecheck() {
-        guard postAttachRecheckCount < Self.maxPostAttachRecheckCount else {
-            if Self.verbose {
-                Self.logger.info("\(self.t)post-attach recheck 上限 (\(Self.maxPostAttachRecheckCount)) 已达，停在当前 split view")
-            }
-            return
-        }
+        guard postAttachRecheckCount < Self.maxPostAttachRecheckCount,
+              postAttachRecheckWorkItem == nil else { return }
         postAttachRecheckCount += 1
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+        let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
+            self.postAttachRecheckWorkItem = nil
             // view 已从 window 摘下（dismantleNSView）就停
             guard self.window != nil else { return }
             self.attachIfPossible()
         }
+        postAttachRecheckWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
     }
 
     private func scheduleRetryAttach() {

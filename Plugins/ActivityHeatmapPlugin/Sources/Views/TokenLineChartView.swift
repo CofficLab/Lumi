@@ -59,15 +59,15 @@ public struct TokenLineChartView: View {
         } else {
             Chart(data) { day in
                 LineMark(
-                    x: .value("Date", day.date),
-                    y: .value("Tokens", day.totalTokens)
+                    x: .value(LumiPluginLocalization.string("Date", bundle: .module), day.date),
+                    y: .value(LumiPluginLocalization.string("Tokens", bundle: .module), day.totalTokens)
                 )
                 .foregroundStyle(lineColor)
                 .lineStyle(StrokeStyle(lineWidth: 2))
 
                 AreaMark(
-                    x: .value("Date", day.date),
-                    y: .value("Tokens", day.totalTokens)
+                    x: .value(LumiPluginLocalization.string("Date", bundle: .module), day.date),
+                    y: .value(LumiPluginLocalization.string("Tokens", bundle: .module), day.totalTokens)
                 )
                 .foregroundStyle(areaGradient)
             }
@@ -124,10 +124,10 @@ public struct TokenLineChartView: View {
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(Self.tooltipDateFormatter.string(from: hoveredPoint.date))
                                     .font(.system(size: 10, weight: .medium))
-                                Text("X: \(Self.tooltipDateFormatter.string(from: hoveredPoint.date))")
+                                Text(String(format: LumiPluginLocalization.string("X: %@", bundle: .module), Self.tooltipDateFormatter.string(from: hoveredPoint.date)))
                                     .font(.system(size: 10))
                                     .foregroundStyle(.secondary)
-                                Text("Y: \(formatNumber(hoveredPoint.totalTokens)) tokens")
+                                Text(String(format: LumiPluginLocalization.string("Y: %@ tokens", bundle: .module), formatNumber(hoveredPoint.totalTokens)))
                                     .font(.system(size: 11, weight: .semibold))
                                     .monospacedDigit()
                             }

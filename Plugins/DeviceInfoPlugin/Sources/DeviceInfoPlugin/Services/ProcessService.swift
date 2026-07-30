@@ -9,7 +9,7 @@ import SuperLogKit
 public final class ProcessService: ObservableObject, SuperLog {
     public static let shared = ProcessService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.process")
-    nonisolated(unsafe) static var verbose: Bool = false
+    nonisolated(unsafe) static var verbose: Bool = true
     public nonisolated static let emoji = "⚙️"
 
     // MARK: - Constants

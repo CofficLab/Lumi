@@ -115,7 +115,7 @@ extension SmartApp {
     }
 
     /// Find running app by ID
-    public static func getApp(_ id: String, verbose: Bool = false) -> NSRunningApplication? {
+    public static func getApp(_ id: String, verbose: Bool = true) -> NSRunningApplication? {
         let apps = getRunningAppList()
 
         for app in apps {

@@ -64,7 +64,7 @@ private struct SublyxMappedTool: LumiAgentTool {
 
 public final class SublyxProvider: LumiLLMProvider, SuperLog, @unchecked Sendable {
     public nonisolated static let emoji = "📡"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.sublyx")
     
     public static let apiKeyHelpURL: String? = "https://api.sublyx.org/"

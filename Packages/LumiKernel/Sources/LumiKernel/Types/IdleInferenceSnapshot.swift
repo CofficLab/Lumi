@@ -22,14 +22,9 @@ public struct IdleInferenceSnapshot: Codable, Sendable, Equatable {
     public let bucketScores: [Double]
     public let confidenceBreakdown: ConfidenceBreakdown
 
-    public init(
-        restWindow: RestWindow?,
-        observedDayCount: Int,
-        eventCount: Int,
-        lastActivityAt: Date?,
-        bucketScores: [Double],
-        confidenceBreakdown: ConfidenceBreakdown
-    ) {
+    public init(restWindow: RestWindow?, observedDayCount: Int, eventCount: Int,
+                lastActivityAt: Date?, bucketScores: [Double],
+                confidenceBreakdown: ConfidenceBreakdown) {
         self.restWindow = restWindow
         self.observedDayCount = observedDayCount
         self.eventCount = eventCount

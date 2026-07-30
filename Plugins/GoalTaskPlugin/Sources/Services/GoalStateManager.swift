@@ -12,7 +12,7 @@ import os
 /// 生命周期由 `GoalTaskPlugin` 在 `lifecycle(.didRegister)` 中初始化。
 public actor GoalStateManager: SuperLog {
     nonisolated public static let emoji = "🎯"
-    nonisolated public static let verbose: Bool = false
+    nonisolated public static let verbose: Bool = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "goaltask.state-manager")
     
     // MARK: - Properties

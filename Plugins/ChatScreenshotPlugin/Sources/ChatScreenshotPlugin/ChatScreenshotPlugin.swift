@@ -144,5 +144,5 @@ extension ChatScreenshotPlugin {
         subsystem: "com.coffic.lumi",
         category: "plugin.chat-screenshot"
     )
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 }

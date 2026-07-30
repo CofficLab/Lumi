@@ -2,8 +2,10 @@ import Foundation
 import LumiKernel
 import SuperLogKit
 
-public actor IdleTimeService: SuperLog {
+public actor IdleTimeService: SuperLog, IdleTimeProviding {
     public static let shared = IdleTimeService()
+
+    public static let idlePredictionConfidenceThreshold = 0.70
 
     private let store: IdleActivityStore
     private let inferencer: RestWindowInferencer
@@ -56,6 +58,27 @@ public actor IdleTimeService: SuperLog {
         }
 
         return inferencer.infer(events: [], now: date)
+    }
+
+    public func idlePrediction(
+        for duration: TimeInterval = 10 * 60,
+        at date: Date = Date()
+    ) async -> IdlePrediction {
+        let snapshot = await currentSnapshot(for: date)
+        let window = snapshot.restWindow
+        let confidence = window?.confidence ?? 0
+        let isLikelyIdle = duration > 0
+            && window?.source != .defaultFallback
+            && confidence >= Self.idlePredictionConfidenceThreshold
+            && window?.covers(startingAt: date, duration: duration) == true
+
+        return IdlePrediction(
+            checkedAt: date,
+            duration: duration,
+            isLikelyIdle: isLikelyIdle,
+            confidence: confidence,
+            restWindow: window
+        )
     }
 
     private func refreshSnapshotIfNeeded(now: Date, force: Bool) async {

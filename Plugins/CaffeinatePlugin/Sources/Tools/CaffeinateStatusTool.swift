@@ -7,7 +7,7 @@ import SuperLogKit
 /// 返回当前防休眠的激活状态、模式、持续时间、已激活时长等信息。
 struct CaffeinateStatusTool: LumiAgentTool, SuperLog {
     nonisolated static let emoji = "🔍"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
 
     static let info = LumiAgentToolInfo(
         id: "caffeinate_status",

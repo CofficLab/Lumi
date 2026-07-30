@@ -12,27 +12,14 @@ public final class ConversationListPlugin: LumiPlugin {
     public let order = 76
     public let policy: LumiPluginPolicy = .alwaysOn
 
-    public static let verbose = false
+    public static let verbose = true
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        if let storage = kernel.storage {
-            ConversationListRuntimeBridge.shared.storageDirectory = storage.pluginDataDirectory(for: "ConversationList")
-        } else {
-            ConversationListRuntimeBridge.shared.storageDirectory = ConversationListRuntimeBridge.defaultStorageDirectory
-        }
-
-        // 桥接 kernel.conversations 到 tools RuntimeBridge。
-        // 注意 SetConversationProjectLumiTool 暂未启用 —— 等 ConversationManaging
-        // 协议扩展 setConversationProjectPath(...) 之后再补。
-        if let conversations = kernel.conversations {
-            ConversationListToolRuntimeBridge.conversations = conversations
-        }
-    }
+    public func onReady(kernel: LumiKernel) async throws {}
 
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
@@ -43,8 +30,6 @@ public final class ConversationListPlugin: LumiPlugin {
         ]
     }
 
-    // toolbar item 由 titleToolbarItems(kernel:) 声明式提供,不在此处注册。
-
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
@@ -52,7 +37,7 @@ public final class ConversationListPlugin: LumiPlugin {
                 title: "Chats",
                 systemImage: "message.fill"
             ) {
-                RailView(kernel: kernel)
+                ListView(kernel: kernel)
             },
         ]
     }
@@ -70,7 +55,7 @@ public final class ConversationListPlugin: LumiPlugin {
                 placement: .trailing,
                 order: 200
             ) {
-                ConversationListToolbarButton(kernel: kernel)
+                ToolbarButton(kernel: kernel)
             },
         ]
     }

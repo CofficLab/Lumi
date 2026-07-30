@@ -5,7 +5,7 @@ import SwiftUI
 @MainActor
 final class ProjectCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     @Published var projects: [ProjectInfo] = []
     @Published var selectedItemIds: Set<UUID> = []
     @Published var isScanning = false

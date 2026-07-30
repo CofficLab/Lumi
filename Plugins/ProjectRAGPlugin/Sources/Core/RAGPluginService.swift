@@ -7,7 +7,7 @@ import os
 enum RAGPluginService: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
     nonisolated static let emoji = ProjectRAGPlugin.emoji
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private(set) static var service: RAGService = RAGService(
         databaseDirectoryProvider: {
@@ -63,6 +63,14 @@ enum RAGPluginService: SuperLog {
     static func replaceLifecycleTask(_ task: Task<Void, Never>) {
         lifecycleTask?.cancel()
         lifecycleTask = task
+    }
+
+    static func setIndexingPaused(_ paused: Bool) async {
+        if paused {
+            lifecycleTask?.cancel()
+            lifecycleTask = nil
+        }
+        await service.setIndexingPaused(paused)
     }
 
 }

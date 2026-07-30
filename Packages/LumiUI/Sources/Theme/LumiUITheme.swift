@@ -146,9 +146,10 @@ public final class LumiUIThemeStore: ObservableObject {
     }
 
     public func setTheme(_ theme: any LumiUITheme) {
-        Task { @MainActor in
-            self.theme = theme
-        }
+        // This store is already MainActor-isolated. Publishing through a new
+        // unstructured Task lets the first real app view render with the old
+        // bootstrap theme, which causes a visible dark-to-light flash at launch.
+        self.theme = theme
     }
 
     /// 系统外观变化时触发依赖 `@LumiTheme` 的视图重绘。

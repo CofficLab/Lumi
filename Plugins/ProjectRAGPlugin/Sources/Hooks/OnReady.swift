@@ -10,7 +10,7 @@ import os
 public struct ProjectRAGOnReadyHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
     nonisolated public static let emoji = ProjectRAGPlugin.emoji
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     public init() {}
 
@@ -37,7 +37,7 @@ public struct ProjectRAGOnReadyHook: SuperLog {
         RAGPluginRuntime.databaseDirectoryProvider = { ragDirectory }
     }
 
-    private func startBackgroundIndexing(kernel: LumiKernel) {
+    func startBackgroundIndexing(kernel: LumiKernel) {
         let service = RAGPluginService.getService()
         if Self.verbose {
             Self.logger.info("\(Self.t)background indexing scheduled")
@@ -53,25 +53,30 @@ public struct ProjectRAGOnReadyHook: SuperLog {
                     Self.logger.info("\(Self.t)background service initialize completed initialized=\(service.isInitialized)")
                 }
 
-                let candidatePaths = await waitForProjectPaths(kernel: kernel)
-                guard !candidatePaths.isEmpty else {
+                guard let currentPath = await waitForCurrentProjectPath(kernel: kernel) else {
                     if Self.verbose {
-                        Self.logger.info("\(Self.t)background indexing skipped: no project paths after retries")
+                        Self.logger.info("\(Self.t)background indexing skipped: no current project after retries")
                     }
                     return
                 }
 
-                for path in candidatePaths {
-                    guard !Task.isCancelled else {
-                        if Self.verbose {
-                            Self.logger.info("\(Self.t)background indexing cancelled")
-                        }
-                        return
-                    }
+                guard !Task.isCancelled else {
                     if Self.verbose {
-                        Self.logger.info("\(Self.t)background ensure index project=\(path)")
+                        Self.logger.info("\(Self.t)background indexing cancelled")
                     }
-                    await service.ensureIndexedBackground(projectPath: path)
+                    return
+                }
+
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)background ensure index current project=\(currentPath)")
+                }
+                try await service.ensureIndexed(projectPath: currentPath)
+
+                guard !Task.isCancelled else { return }
+                await RAGIndexScheduler(kernel: kernel, service: service).run()
+            } catch is CancellationError {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)background indexing cancelled")
                 }
             } catch {
                 Self.logger.error("\(Self.t)background service initialize failed: \(error.localizedDescription)")
@@ -80,26 +85,32 @@ public struct ProjectRAGOnReadyHook: SuperLog {
         RAGPluginService.replaceLifecycleTask(task)
     }
 
-    private func waitForProjectPaths(kernel: LumiKernel) async -> [String] {
+    public func setIndexingPaused(_ paused: Bool, kernel: LumiKernel) async {
+        await RAGPluginService.setIndexingPaused(paused)
+
+        guard !paused else { return }
+        startBackgroundIndexing(kernel: kernel)
+    }
+
+    private func waitForCurrentProjectPath(kernel: LumiKernel) async -> String? {
         for attempt in 1...10 {
             let currentPath = kernel.project?.currentProject?.path ?? ""
-            let projectPaths = kernel.project?.projects.map(\.path) ?? []
-            let candidatePaths = Self.uniqueExistingProjectPaths([currentPath] + projectPaths)
+            let candidatePath = Self.uniqueExistingProjectPaths([currentPath]).first
 
-            if !candidatePaths.isEmpty {
+            if let candidatePath {
                 if Self.verbose {
-                    Self.logger.info("\(Self.t)background project paths ready attempt=\(attempt) count=\(candidatePaths.count)")
+                    Self.logger.info("\(Self.t)background current project ready attempt=\(attempt) path=\(candidatePath)")
                 }
-                return candidatePaths
+                return candidatePath
             }
 
             if Self.verbose {
-                Self.logger.info("\(Self.t)background project paths unavailable attempt=\(attempt)")
+                Self.logger.info("\(Self.t)background current project unavailable attempt=\(attempt)")
             }
             try? await Task.sleep(nanoseconds: 500_000_000)
         }
 
-        return []
+        return nil
     }
 
     nonisolated private static func uniqueExistingProjectPaths(_ paths: [String]) -> [String] {

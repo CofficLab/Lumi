@@ -9,6 +9,11 @@ extension LumiKernelContainer {
         resolveService(StorageProviding.self)
     }
 
+    /// Idle-time activity and rest-window service.
+    public var idleTime: (any IdleTimeProviding)? {
+        resolveService(IdleTimeProviding.self)
+    }
+
     /// Project management service
     public var project: (any ProjectProviding)? {
         resolveService(ProjectProviding.self)

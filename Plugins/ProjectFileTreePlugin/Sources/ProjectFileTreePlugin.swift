@@ -12,7 +12,7 @@ import SwiftUI
 public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-file-tree")
     public nonisolated static let emoji = "🌲"
-    public nonisolated static let verbose = false
+    public nonisolated static let verbose = true
 
     // MARK: - 功能开关(供 V2 内部视图/服务读取)
 

@@ -9,7 +9,7 @@ import SuperLogKit
 @MainActor
 public final class EventManager: ObservableObject, SuperLog {
     nonisolated public static let emoji = "📣"
-    nonisolated(unsafe) public static var verbose = false
+    nonisolated(unsafe) public static var verbose = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "kernel.event-manager")
 
     public init() {}
@@ -29,8 +29,11 @@ public final class EventManager: ObservableObject, SuperLog {
         post(.enabledPluginsDidChange, object: object)
     }
 
-    public func postMessagesDidChange(object: Any? = nil) {
-        post(.messagesDidChange, object: object)
+    public func postMessagesDidChange(object: Any? = nil, conversationID: UUID? = nil) {
+        let userInfo = conversationID.map {
+            [LumiNotificationUserInfoKey.conversationID: $0] as [AnyHashable: Any]
+        }
+        post(.messagesDidChange, object: object, userInfo: userInfo)
     }
 
     public func postConversationsDidChange(object: Any? = nil) {

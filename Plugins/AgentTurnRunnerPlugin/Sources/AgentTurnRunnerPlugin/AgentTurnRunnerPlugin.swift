@@ -14,7 +14,7 @@ import SwiftUI
 public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-turn-runner")
     public nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     public let id = "com.coffic.lumi.plugin.agent-turn-runner"
     public let name = LumiLocalization.string("Agent Turn Runner", bundle: .module, table: "Localizable")

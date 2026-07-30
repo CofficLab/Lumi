@@ -10,10 +10,16 @@ public struct ActivityHeatmapSettingsView: View {
     @State private var period: ActivityHeatmapPeriod = .year
 
     private let cacheDirectory: URL?
+    private let idleTimeProvider: (any IdleTimeProviding)?
+    private let idleTimeDataDirectory: URL?
 
-    public init(messageService: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil) {
+    public init(messageService: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil,
+                idleTimeProvider: (any IdleTimeProviding)? = nil,
+                idleTimeDataDirectory: URL? = nil) {
         _viewModel = State(initialValue: ActivityHeatmapViewModel(messageService: messageService, cache: cache))
         self.cacheDirectory = cache?.databaseDirectoryURL
+        self.idleTimeProvider = idleTimeProvider
+        self.idleTimeDataDirectory = idleTimeDataDirectory
     }
 
     public var body: some View {
@@ -29,6 +35,11 @@ public struct ActivityHeatmapSettingsView: View {
 
             // Token usage line chart card
             tokenChartCard
+
+            // Idle-time tracking is part of activity settings.
+            if idleTimeProvider != nil {
+                IdleTimeSettingsCard(provider: idleTimeProvider, dataDirectory: idleTimeDataDirectory)
+            }
         }
         .onChange(of: period) { _, newValue in
             guard viewModel.period != newValue else { return }
@@ -63,7 +74,7 @@ public struct ActivityHeatmapSettingsView: View {
             }
 
             if cacheDirectory != nil {
-                AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+                AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", size: .small) {
                     openDataDirectory()
                 }
             }

@@ -8,7 +8,7 @@ import os
 @MainActor
 public struct RAGSettingsView: View, SuperLog {
     public nonisolated static let emoji = ProjectRAGPlugin.emoji
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
 
     @ObservedObject private var kernel: LumiKernel
@@ -17,6 +17,8 @@ public struct RAGSettingsView: View, SuperLog {
     @State private var runtimeInfo: RAGRuntimeInfo?
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     @State private var isLoading = false
+    @State private var isIndexingPaused = false
+    @State private var hasLoadedPauseState = false
     @State private var loadError: String?
     @State private var selectedProjectPath: String?
 
@@ -84,6 +86,15 @@ public struct RAGSettingsView: View, SuperLog {
             .font(.appCaption)
             .foregroundStyle(theme.textSecondary)
             Spacer()
+            AppButton(
+                isIndexingPaused
+                    ? LumiPluginLocalization.string("Resume Indexing", bundle: .module)
+                    : LumiPluginLocalization.string("Pause Indexing", bundle: .module),
+                systemImage: isIndexingPaused ? "play.fill" : "pause.fill",
+                size: .small
+            ) {
+                toggleIndexingPause()
+            }
             AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
                 Task { await loadStatus() }
             }
@@ -244,8 +255,13 @@ extension RAGSettingsView {
 
         do {
             let service = ProjectRAGPlugin.getService()
+            let servicePauseState = await service.isIndexingPaused()
+            if !hasLoadedPauseState {
+                isIndexingPaused = servicePauseState
+                hasLoadedPauseState = true
+            }
             if Self.verbose {
-                Self.logger.info("\(Self.t)Settings loadStatus begin projects=\(projects.count) initialized=\(service.isInitialized)")
+                Self.logger.info("\(Self.t)Settings loadStatus begin projects=\(projects.count) initialized=\(service.isInitialized) paused=\(isIndexingPaused)")
             }
             try await service.initialize()
             if Self.verbose {
@@ -280,6 +296,21 @@ extension RAGSettingsView {
             if Self.verbose {
                 Self.logger.error("\(Self.t)Settings loadStatus failed initialized=\(ProjectRAGPlugin.getService().isInitialized) error=\(error.localizedDescription)")
             }
+        }
+    }
+
+    private func toggleIndexingPause() {
+        let shouldPause = !isIndexingPaused
+        // Keep the control optimistic: the visual state changes immediately
+        // while the actor performs the actual pause/resume operation.
+        isIndexingPaused = shouldPause
+
+        Task { @MainActor in
+            await ProjectRAGOnReadyHook().setIndexingPaused(shouldPause, kernel: kernel)
+            if shouldPause {
+                progressByPath.removeAll()
+            }
+            await loadStatus()
         }
     }
 }
