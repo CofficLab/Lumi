@@ -18,8 +18,9 @@ public final class BuiltinPluginManager: ObservableObject {
     private var messageRenderers: [String: LumiMessageRendererItem] = [:]
     private var messageRendererOrder: [String] = []
 
-    // 插件启用状态覆盖(用户在设置界面切换的值,持久化跨启动)
-    private let stateStore = PluginEnabledStateStore()
+    // 插件启用状态覆盖只保留在内存中；磁盘持久化由 PluginManagerPlugin 负责。
+    private var enabledOverrides: [String: Bool] = [:]
+    private weak var enabledStatePersistence: (any PluginEnabledStatePersistence)?
 
     /// 插件启用状态变化时广播通知
     public func notifyEnabledPluginsDidChange() {
@@ -46,8 +47,22 @@ public final class BuiltinPluginManager: ObservableObject {
         updateSortedPlugins()
     }
 
+    /// 注入由 PluginManagerPlugin 提供的持久化实现，并把已保存状态载入内存。
+    /// 必须在可配置插件启动前调用。
+    public func installEnabledStatePersistence(_ persistence: any PluginEnabledStatePersistence) {
+        enabledStatePersistence = persistence
+        enabledOverrides = persistence.loadPluginEnabledOverrides()
+    }
+
     public func onBoot(kernel: LumiKernel) async throws {
-        for plugin in allPlugins {
+        // 核心插件先启动：StoragePlugin 会先提供插件数据目录，随后
+        // PluginManagerPlugin 才能加载启用状态。
+        for plugin in allPlugins where plugin.policy == .alwaysOn {
+            try await plugin.onBoot(kernel: kernel)
+        }
+
+        // 可配置插件必须等持久化状态注入后再启动，避免先按默认值启动。
+        for plugin in allPlugins where plugin.policy != .alwaysOn {
             guard effectiveEnabled(for: plugin) else { continue }
             try await plugin.onBoot(kernel: kernel)
         }
@@ -537,7 +552,7 @@ public final class BuiltinPluginManager: ObservableObject {
         case .disabled:
             return false
         case .optOut, .optIn:
-            if let override = stateStore.override(for: plugin.id) {
+            if let override = enabledOverrides[plugin.id] {
                 return override
             }
             return plugin.policy.enabledByDefault
@@ -566,7 +581,8 @@ public final class BuiltinPluginManager: ObservableObject {
         let current = effectiveEnabled(for: plugin)
         guard current != enabled else { return }
 
-        stateStore.setOverride(enabled, for: id)
+        enabledOverrides[id] = enabled
+        enabledStatePersistence?.savePluginEnabledOverride(enabled, for: id)
         objectWillChange.send()
         notifyEnabledPluginsDidChange()
     }
@@ -575,7 +591,8 @@ public final class BuiltinPluginManager: ObservableObject {
     public func resetPlugin(id: String) {
         guard let plugin = plugin(id: id) else { return }
         guard plugin.policy.isConfigurable else { return }
-        stateStore.clearOverride(for: id)
+        enabledOverrides.removeValue(forKey: id)
+        enabledStatePersistence?.clearPluginEnabledOverride(for: id)
         objectWillChange.send()
         notifyEnabledPluginsDidChange()
     }
