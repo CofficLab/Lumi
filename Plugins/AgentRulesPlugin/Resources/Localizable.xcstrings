@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld rules" : {
+
+    },
     "Absolute path to the project directory containing .agent/rules folder." : {
       "localizations" : {
         "en" : {
