@@ -40,9 +40,15 @@ public struct WindowMain: View, SuperLog {
         }
         .background {
             WindowAccessor { window in
-                mainWindow = window
-                window.configureForLumiMainChrome()
-                attachWindowSaveDelegate(to: window)
+                // WindowAccessor can resolve its NSWindow while SwiftUI is
+                // evaluating the current view update. Defer all @State writes
+                // until that update has finished.
+                Task { @MainActor in
+                    guard self.mainWindow !== window else { return }
+                    self.mainWindow = window
+                    window.configureForLumiMainChrome()
+                    self.attachWindowSaveDelegate(to: window)
+                }
             }
         }
     }

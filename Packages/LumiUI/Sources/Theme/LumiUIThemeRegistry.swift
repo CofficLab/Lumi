@@ -148,10 +148,8 @@ public final class LumiUIThemeRegistry: ObservableObject {
         let source = contribution ?? selectedContribution
         guard let source else { return }
         let resolvedUI = source.uiTheme ?? ChromeToUIThemeAdapter(chrome: source.chromeTheme)
-        Task { @MainActor in
-            self.uiTheme = resolvedUI
-            LumiUIThemeStore.shared.setTheme(resolvedUI)
-            ThemeWindowAppearanceSync.syncAllWindows()
-        }
+        self.uiTheme = resolvedUI
+        LumiUIThemeStore.shared.setTheme(resolvedUI)
+        ThemeWindowAppearanceSync.syncAllWindows()
     }
 }
