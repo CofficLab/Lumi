@@ -43,12 +43,18 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
         return all
     }
 
-    public nonisolated func messagePage(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage] {
+    public nonisolated func messagePage(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) -> [LumiChatMessage] {
         guard let store else { return [] }
         return store.fetchMessagePage(
             conversationId: conversationID,
             limit: limit,
-            beforeMessageID: beforeMessageID
+            beforeMessageID: beforeMessageID,
+            includesToolMessages: includesToolMessages
         )
     }
 
@@ -56,8 +62,16 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
         store?.messageCount(conversationId: conversationID) ?? 0
     }
 
-    public nonisolated func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool {
-        store?.hasEarlierMessages(conversationId: conversationID, beforeMessageID: beforeMessageID) ?? false
+    public nonisolated func hasEarlierMessages(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) -> Bool {
+        store?.hasEarlierMessages(
+            conversationId: conversationID,
+            beforeMessageID: beforeMessageID,
+            includesToolMessages: includesToolMessages
+        ) ?? false
     }
 
     @MainActor

@@ -207,10 +207,14 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
     ///   - limit: Maximum number of messages to return.
     ///   - beforeMessageID: If provided, returns the page immediately before this message.
     ///     When `nil`, returns the latest page.
+    ///   - includesToolMessages: When `false`, tool-result messages (role == "tool") are
+    ///     excluded by the SQL predicate and do not count toward `limit`. These messages
+    ///     carry the payloads sent to the LLM and are usually not needed by the UI.
     func fetchMessagePage(
         conversationId: UUID,
         limit: Int,
-        beforeMessageID: UUID? = nil
+        beforeMessageID: UUID? = nil,
+        includesToolMessages: Bool = true
     ) -> [LumiChatMessage] {
         guard limit > 0 else { return [] }
 
@@ -229,7 +233,8 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
                         (
                             $0.createdAt < pivotCreatedAt ||
                             ($0.createdAt == pivotCreatedAt && $0.id < pivotID)
-                        )
+                        ) &&
+                        (includesToolMessages || $0.role != "tool")
                     },
                     sortBy: [
                         SortDescriptor(\.createdAt, order: .reverse),
@@ -248,7 +253,10 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
             }
 
             var descriptor = FetchDescriptor<MessageModel>(
-                predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString },
+                predicate: #Predicate<MessageModel> {
+                    $0.conversationId == conversationIdString &&
+                    (includesToolMessages || $0.role != "tool")
+                },
                 sortBy: [
                     SortDescriptor(\.createdAt, order: .reverse),
                     SortDescriptor(\.id, order: .reverse),
@@ -269,14 +277,28 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
     /// Whether there are earlier messages before the given message.
     ///
     /// Delegates to `fetchMessagePage`, which already serializes through the lock.
-    func hasEarlierMessages(conversationId: UUID, beforeMessageID: UUID? = nil) -> Bool {
+    func hasEarlierMessages(
+        conversationId: UUID,
+        beforeMessageID: UUID? = nil,
+        includesToolMessages: Bool = true
+    ) -> Bool {
         let pageSize = 10
 
         if beforeMessageID != nil {
-            return !fetchMessagePage(conversationId: conversationId, limit: 1, beforeMessageID: beforeMessageID).isEmpty
+            return !fetchMessagePage(
+                conversationId: conversationId,
+                limit: 1,
+                beforeMessageID: beforeMessageID,
+                includesToolMessages: includesToolMessages
+            ).isEmpty
         }
 
-        return fetchMessagePage(conversationId: conversationId, limit: pageSize + 1, beforeMessageID: nil).count > pageSize
+        return fetchMessagePage(
+            conversationId: conversationId,
+            limit: pageSize + 1,
+            beforeMessageID: nil,
+            includesToolMessages: includesToolMessages
+        ).count > pageSize
     }
 
     /// Count messages for a conversation without materializing message bodies.

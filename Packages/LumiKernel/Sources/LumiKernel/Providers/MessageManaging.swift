@@ -22,7 +22,15 @@ public protocol MessageManaging: ObservableObject, Sendable {
     /// - Parameters:
     ///   - limit: 最多返回多少条消息。
     ///   - beforeMessageID: 以该消息为边界，返回它之前的消息页；传 `nil` 时返回最近一页。
-    func messagePage(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage]
+    ///   - includesToolMessages: 是否包含工具调用结果消息（role == .tool）。
+    ///     这类消息携带发送给 LLM 的载荷、体积很大，UI 通常不需要，默认不返回；
+    ///     且不计入 `limit`，分页按"用户可见消息"计算。需要构建 LLM 上下文等场景传 `true`。
+    func messagePage(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) -> [LumiChatMessage]
 
     /// 获取指定对话的消息数量。
     ///
@@ -30,7 +38,14 @@ public protocol MessageManaging: ObservableObject, Sendable {
     func messageCount(for conversationID: UUID) -> Int
 
     /// 指定消息之前是否还有更早的消息。
-    func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool
+    ///
+    /// - Parameter includesToolMessages: 与 `messagePage` 的同名参数一致，默认不把
+    ///   工具消息计入"更早"判断，使分页游标与可见消息口径保持一致。
+    func hasEarlierMessages(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) -> Bool
 
     /// 删除指定消息
     @MainActor
@@ -88,6 +103,23 @@ public protocol MessageManaging: ObservableObject, Sendable {
 }
 
 public extension MessageManaging {
+    /// 默认不包含工具消息的便捷重载（多数 UI 场景）。
+    func messagePage(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?
+    ) -> [LumiChatMessage] {
+        messagePage(for: conversationID, limit: limit, beforeMessageID: beforeMessageID, includesToolMessages: false)
+    }
+
+    /// 默认不包含工具消息的便捷重载,与 messagePage 的可见消息口径一致。
+    func hasEarlierMessages(
+        for conversationID: UUID,
+        beforeMessageID: UUID?
+    ) -> Bool {
+        hasEarlierMessages(for: conversationID, beforeMessageID: beforeMessageID, includesToolMessages: false)
+    }
+
     func fetchTokenUsage(on day: Date) async -> MessageTokenUsage {
         await fetchTokenUsage(on: day, providerID: nil, modelName: nil)
     }
