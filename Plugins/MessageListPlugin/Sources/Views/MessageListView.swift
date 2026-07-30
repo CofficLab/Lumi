@@ -68,10 +68,15 @@ struct MessageListView: View {
         GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
-                    // LazyVStack 惰性渲染:只构建进入屏幕附近的行,避免一次性渲染全部
-                    // 消息而阻塞主线程。renderer 匹配已在 MessageRendererManager 加缓存,
-                    // 滚动时不再每帧重新排序/匹配,不会卡死。
-                    LazyVStack(spacing: 0) {
+                    // 用 VStack 而非 LazyVStack:本列表数据源在流式输出期间会高频变化
+                    // (每条 .lumiMessagesDidChange 都会 refreshTail 重写 messages 尾部)。
+                    // LazyVStack 在数据源高频变化时会陷入主线程重布局活锁——每帧反复
+                    // applyNodes/update 视口内行、重建 _LazyLayoutViewCache,导致 CPU 100%
+                    // 且内存随 _LazyLayout_Subview 持续拷贝分配而单调上涨。
+                    // VStack 一次性构建所有行,只对 messages 变化做一次 diff,反而稳定。
+                    // 列表条数已由游标分页(pageSize=40)和 renderer 两层缓存控制,
+                    // 一次性渲染几十行无压力,无需 LazyVStack 惰性化。
+                    VStack(spacing: 0) {
                         // 顶部"加载更早消息":仅在还有更早消息时显示。
                         if hasEarlierMessages {
                             Button {
