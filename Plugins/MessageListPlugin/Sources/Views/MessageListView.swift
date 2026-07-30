@@ -5,14 +5,6 @@ import SuperLogKit
 import SwiftUI
 import os
 
-private struct MessageListBottomAnchorPositionKey: PreferenceKey {
-    static let defaultValue: CGFloat = .greatestFiniteMagnitude
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
 /// Message List View
 ///
 /// Displays the chat message list for the selected conversation.
