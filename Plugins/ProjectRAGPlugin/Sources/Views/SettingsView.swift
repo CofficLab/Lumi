@@ -18,7 +18,7 @@ public struct RAGSettingsView: View, SuperLog {
     @State private var progressByPath: [String: RAGIndexProgressEvent] = [:]
     @State private var isLoading = false
     @State private var isIndexingPaused = false
-    @State private var isUpdatingPauseState = false
+    @State private var hasLoadedPauseState = false
     @State private var loadError: String?
     @State private var selectedProjectPath: String?
 
@@ -95,7 +95,6 @@ public struct RAGSettingsView: View, SuperLog {
             ) {
                 toggleIndexingPause()
             }
-            .disabled(isUpdatingPauseState)
             AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
                 Task { await loadStatus() }
             }
@@ -256,7 +255,11 @@ extension RAGSettingsView {
 
         do {
             let service = ProjectRAGPlugin.getService()
-            isIndexingPaused = await service.isIndexingPaused()
+            let servicePauseState = await service.isIndexingPaused()
+            if !hasLoadedPauseState {
+                isIndexingPaused = servicePauseState
+                hasLoadedPauseState = true
+            }
             if Self.verbose {
                 Self.logger.info("\(Self.t)Settings loadStatus begin projects=\(projects.count) initialized=\(service.isInitialized) paused=\(isIndexingPaused)")
             }
@@ -297,15 +300,13 @@ extension RAGSettingsView {
     }
 
     private func toggleIndexingPause() {
-        guard !isUpdatingPauseState else { return }
-        isUpdatingPauseState = true
         let shouldPause = !isIndexingPaused
+        // Keep the control optimistic: the visual state changes immediately
+        // while the actor performs the actual pause/resume operation.
+        isIndexingPaused = shouldPause
 
         Task { @MainActor in
-            defer { isUpdatingPauseState = false }
             await ProjectRAGOnReadyHook().setIndexingPaused(shouldPause, kernel: kernel)
-            let service = ProjectRAGPlugin.getService()
-            isIndexingPaused = await service.isIndexingPaused()
             if shouldPause {
                 progressByPath.removeAll()
             }

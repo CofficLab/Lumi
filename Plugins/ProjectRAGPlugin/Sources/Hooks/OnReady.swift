@@ -53,42 +53,24 @@ public struct ProjectRAGOnReadyHook: SuperLog {
                     Self.logger.info("\(Self.t)background service initialize completed initialized=\(service.isInitialized)")
                 }
 
-                let candidatePaths = await waitForProjectPaths(kernel: kernel)
-                guard !candidatePaths.isEmpty else {
+                guard let currentPath = await waitForCurrentProjectPath(kernel: kernel) else {
                     if Self.verbose {
-                        Self.logger.info("\(Self.t)background indexing skipped: no project paths after retries")
+                        Self.logger.info("\(Self.t)background indexing skipped: no current project after retries")
                     }
                     return
                 }
 
-                let currentPath = kernel.project?.currentProject.map {
-                    URL(fileURLWithPath: $0.path).standardizedFileURL.path
-                }
-                let currentProjectPaths = candidatePaths.filter { $0 == currentPath }
-                let deferredProjectPaths = candidatePaths.filter { $0 != currentPath }
-
-                for path in currentProjectPaths {
-                    guard !Task.isCancelled else {
-                        if Self.verbose {
-                            Self.logger.info("\(Self.t)background indexing cancelled")
-                        }
-                        return
-                    }
+                guard !Task.isCancelled else {
                     if Self.verbose {
-                        Self.logger.info("\(Self.t)background ensure index project=\(path)")
+                        Self.logger.info("\(Self.t)background indexing cancelled")
                     }
-                    await service.ensureIndexedBackground(projectPath: path)
+                    return
                 }
 
-                // Keep non-active projects available, but do not compete with
-                // the first window's startup work. The indexing tasks
-                // themselves run at utility priority.
-                guard !deferredProjectPaths.isEmpty else { return }
-                try? await Task.sleep(nanoseconds: 5_000_000_000)
-                for path in deferredProjectPaths {
-                    guard !Task.isCancelled else { return }
-                    await service.ensureIndexedBackground(projectPath: path)
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)background ensure index current project=\(currentPath)")
                 }
+                await service.ensureIndexedBackground(projectPath: currentPath)
             } catch {
                 Self.logger.error("\(Self.t)background service initialize failed: \(error.localizedDescription)")
             }
@@ -103,26 +85,25 @@ public struct ProjectRAGOnReadyHook: SuperLog {
         startBackgroundIndexing(kernel: kernel)
     }
 
-    private func waitForProjectPaths(kernel: LumiKernel) async -> [String] {
+    private func waitForCurrentProjectPath(kernel: LumiKernel) async -> String? {
         for attempt in 1...10 {
             let currentPath = kernel.project?.currentProject?.path ?? ""
-            let projectPaths = kernel.project?.projects.map(\.path) ?? []
-            let candidatePaths = Self.uniqueExistingProjectPaths([currentPath] + projectPaths)
+            let candidatePath = Self.uniqueExistingProjectPaths([currentPath]).first
 
-            if !candidatePaths.isEmpty {
+            if let candidatePath {
                 if Self.verbose {
-                    Self.logger.info("\(Self.t)background project paths ready attempt=\(attempt) count=\(candidatePaths.count)")
+                    Self.logger.info("\(Self.t)background current project ready attempt=\(attempt) path=\(candidatePath)")
                 }
-                return candidatePaths
+                return candidatePath
             }
 
             if Self.verbose {
-                Self.logger.info("\(Self.t)background project paths unavailable attempt=\(attempt)")
+                Self.logger.info("\(Self.t)background current project unavailable attempt=\(attempt)")
             }
             try? await Task.sleep(nanoseconds: 500_000_000)
         }
 
-        return []
+        return nil
     }
 
     nonisolated private static func uniqueExistingProjectPaths(_ paths: [String]) -> [String] {

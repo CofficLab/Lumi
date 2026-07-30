@@ -13,8 +13,8 @@ This is a design document only; it does not implement the changes.
 1. Store the kernel reference and configure the RAG database directory.
 2. Initialize the local SQLite store and embedding provider.
 3. Wait up to approximately five seconds for project paths to become available.
-4. Collect the current project plus all entries in `kernel.project.projects`.
-5. Create a background indexing task for every existing project path.
+4. Resolve the current project from `kernel.project.currentProject`.
+5. Create one background indexing task for the current project only.
 
 Relevant code:
 
@@ -43,11 +43,11 @@ Memory is bounded better than a whole-project load, but the current implementati
 
 The current design has six main weaknesses:
 
-1. All saved projects are scheduled at startup instead of only the active project.
+1. Non-active projects do not yet have a complete explicit on-demand indexing workflow.
 2. Changes are not driven by file events; stale projects require another directory scan.
 3. Embeddings are generated eagerly for every chunk.
 4. There is no idle, foreground, low-power, or system-pressure policy.
-5. Pause, resume, cancellation, and resource budgets are not first-class concepts.
+5. Pause, resume, cancellation, and resource budgets are not fully first-class concepts.
 6. Indexing and querying share one actor, so long synchronous indexing can create queueing.
 
 ## 3. Patterns used by similar tools
@@ -115,6 +115,8 @@ Default to the current project only. Queue other projects when the user switches
 - enable background indexing (default on, subject to scheduling).
 
 This is the highest-value, lowest-risk change.
+
+Status: implemented. Startup now waits for and indexes only the current project. Other tracked projects remain visible in settings but are not automatically indexed.
 
 ### Phase 2: Add idle and low-priority scheduling
 
@@ -305,4 +307,3 @@ Make exclusions visible and editable. When results are empty, indicate whether m
 - Agent keyword/path search remains available before semantic indexing completes.
 - Relaunching the app recovers or cleans up unfinished indexing work.
 - Activity Monitor and internal logs expose CPU peak, memory peak, and indexing duration.
-
