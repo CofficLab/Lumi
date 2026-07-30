@@ -36,7 +36,7 @@ public struct ConversationListView: View, SuperLog {
         VStack(spacing: 0) {
             if conversations.isEmpty {
                 if isLoadingPage {
-                    loadingView
+                    ListLoadingView()
                 } else {
                     ConversationListEmptyView()
                 }
@@ -75,20 +75,9 @@ public struct ConversationListView: View, SuperLog {
 // MARK: - View
 
 extension ConversationListView {
-    private var loadingView: some View {
-        ProgressView(LumiPluginLocalization.string("Loading...", bundle: .module))
-            .font(.appMicro)
-            .foregroundColor(theme.textSecondary)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            .padding(.vertical, 12)
-    }
-
     private var conversationListContent: some View {
         VStack(spacing: 0) {
             ScrollView {
-                // The page is capped at 40 conversations. Use a regular stack
-                // so title/message-count refreshes cannot leave a stale
-                // virtual-row placeholder between conversations.
                 VStack(spacing: 4) {
                     ForEach(conversations, id: \.id) { conversation in
                         // 用 onTapGesture 触发选中，绕过 AppListRow 内置 Button 对右键的吞吃，
@@ -107,8 +96,6 @@ extension ConversationListView {
                         }
                     }
 
-                    // 固定在底部，hasMore 时始终渲染，触发下一页加载。
-                    // 不依赖最后一条出现（LazyVStack 惰性渲染会导致最后一条未创建）。
                     if hasMore {
                         loadingMoreTrigger
                     }
@@ -248,7 +235,6 @@ extension ConversationListView {
             conversations = updated
         }
     }
-
 
     private func loadNextPageIfNeeded() {
         guard hasMore, !isLoadingPage else { return }
@@ -452,13 +438,13 @@ extension ConversationListView {
 // MARK: - Preview
 
 #if DEBUG
-#Preview("对话列表 - 标准尺寸") {
-    ConversationListView(kernel: ConversationListPreviewSupport.makeKernel())
-        .frame(width: 300, height: 600)
-}
+    #Preview("对话列表 - 标准尺寸") {
+        ConversationListView(kernel: ConversationListPreviewSupport.makeKernel())
+            .frame(width: 300, height: 600)
+    }
 
-#Preview("对话列表 - 窄屏") {
-    ConversationListView(kernel: ConversationListPreviewSupport.makeKernel())
-        .frame(width: 250, height: 400)
-}
+    #Preview("对话列表 - 窄屏") {
+        ConversationListView(kernel: ConversationListPreviewSupport.makeKernel())
+            .frame(width: 250, height: 400)
+    }
 #endif

@@ -52,7 +52,7 @@ public final class ConversationListPlugin: LumiPlugin {
                 title: "Chats",
                 systemImage: "message.fill"
             ) {
-                RailView(kernel: kernel)
+                ConversationListView(kernel: kernel)
             },
         ]
     }
