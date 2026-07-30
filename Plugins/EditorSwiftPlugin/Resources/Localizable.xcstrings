@@ -176,6 +176,9 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "%lld %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -701,6 +704,9 @@
         }
       }
     },
+    "Code Actions" : {
+
+    },
     "Config" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -805,6 +811,9 @@
           }
         }
       }
+    },
+    "Context-aware completions for Swift primitive types, keywords, and project symbols." : {
+
     },
     "Copied" : {
       "extractionState" : "stale",
@@ -1156,6 +1165,15 @@
         }
       }
     },
+    "Displays current Xcode project, scheme, and build configuration in the status bar for quick reference." : {
+
+    },
+    "Displays project context in status bar" : {
+
+    },
+    "Documentation on hover" : {
+
+    },
     "Elapsed %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1296,6 +1314,9 @@
         }
       }
     },
+    "Full Swift syntax coloring" : {
+
+    },
     "Generating buildServer.json..." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1365,6 +1386,9 @@
           }
         }
       }
+    },
+    "How It Works" : {
+
     },
     "Index Build Log" : {
       "extractionState" : "stale",
@@ -1611,6 +1635,12 @@
         }
       }
     },
+    "Integrates with Xcode build system" : {
+
+    },
+    "Jump to diagnostics" : {
+
+    },
     "Launched %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1750,6 +1780,9 @@
           }
         }
       }
+    },
+    "macOS 14.0 or later" : {
+
     },
     "Matched Targets" : {
       "extractionState" : "stale",
@@ -2276,6 +2309,9 @@
         }
       }
     },
+    "Parses Swift files using tree-sitter grammar" : {
+
+    },
     "Parsing project membership..." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2416,6 +2452,9 @@
         }
       }
     },
+    "Provides comprehensive Swift language support including syntax highlighting, keyword hovers, and semantic analysis." : {
+
+    },
     "Provides Swift language support, Xcode project identity, build context, and sourcekit-lsp integration." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2450,6 +2489,12 @@
           }
         }
       }
+    },
+    "Provides syntax highlighting and hovers" : {
+
+    },
+    "Quick actions for Swift code selection, including run actions and context-specific operations." : {
+
     },
     "Re-resolve Build Context" : {
       "extractionState" : "stale",
@@ -2556,6 +2601,9 @@
         }
       }
     },
+    "Real-time build feedback" : {
+
+    },
     "Reindex" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2590,6 +2638,9 @@
           }
         }
       }
+    },
+    "Requirements" : {
+
     },
     "Resolution Progress" : {
       "extractionState" : "stale",
@@ -2871,6 +2922,9 @@
         }
       }
     },
+    "Run Swift builds directly from Lumi with real-time build output and error navigation." : {
+
+    },
     "Running xcodebuild -list..." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3151,6 +3205,9 @@
         }
       }
     },
+    "Smart Completions" : {
+
+    },
     "Stage: Build" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3326,6 +3383,9 @@
         }
       }
     },
+    "Supported Features" : {
+
+    },
     "Swift" : {
       "localizations" : {
         "en" : {
@@ -3360,6 +3420,12 @@
         }
       }
     },
+    "Swift 5.9 or later" : {
+
+    },
+    "Swift Build Integration" : {
+
+    },
     "Swift Editor" : {
       "localizations" : {
         "en" : {
@@ -3393,6 +3459,12 @@
           }
         }
       }
+    },
+    "Swift Language Support" : {
+
+    },
+    "Swift Package Manager integration" : {
+
     },
     "Swift semantic indexing in progress" : {
       "extractionState" : "stale",
@@ -3604,6 +3676,12 @@
         }
       }
     },
+    "Tree-sitter Integration" : {
+
+    },
+    "Type-aware suggestions" : {
+
+    },
     "Unavailable" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3744,6 +3822,9 @@
         }
       }
     },
+    "Uses tree-sitter for robust and fast syntax parsing, enabling accurate code structure understanding." : {
+
+    },
     "Workspace" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3849,6 +3930,9 @@
         }
       }
     },
+    "Xcode 15.0 or later (for build integration)" : {
+
+    },
     "Xcode Context" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3883,6 +3967,9 @@
           }
         }
       }
+    },
+    "Xcode Project Status" : {
+
     }
   },
   "version" : "1.0"

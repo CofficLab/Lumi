@@ -15,6 +15,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/ShellKit"),
         // Official tree-sitter/tree-sitter-swift has no Package.swift; use SPM-compatible fork.
         .package(url: "https://github.com/alex-pinkus/tree-sitter-swift.git", branch: "with-generated-files"),
@@ -24,6 +26,8 @@ let package = Package(
             name: "EditorSwiftPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),
             ],
