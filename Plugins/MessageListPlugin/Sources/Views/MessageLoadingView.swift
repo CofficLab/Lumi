@@ -10,21 +10,27 @@ import SwiftUI
 struct MessageLoadingView: View {
     @LumiTheme private var theme
 
-    var body: some View {
-        VStack(spacing: 0) {
-            // Conversation-shaped skeleton: user/assistant bubbles interleaved
-            // a few times. Takes all available space so the caption can sit at
-            // the bottom of the panel rather than the center.
-            MessageSkeletonView()
+    static let useSimple: Bool = true
 
-            // Trailing caption — explicit loading affordance for users who
-            // don't notice the skeleton animation.
-            Text(String(localized: "Loading messages…", bundle: .module))
-                .font(.caption)
-                .foregroundColor(theme.textSecondary.opacity(0.7))
-                .padding(.bottom, 16)
+    var body: some View {
+        if Self.useSimple {
+            ProgressView()
+        } else {
+            VStack(spacing: 0) {
+                // Conversation-shaped skeleton: user/assistant bubbles interleaved
+                // a few times. Takes all available space so the caption can sit at
+                // the bottom of the panel rather than the center.
+                MessageSkeletonView()
+
+                // Trailing caption — explicit loading affordance for users who
+                // don't notice the skeleton animation.
+                Text(String(localized: "Loading messages…", bundle: .module))
+                    .font(.caption)
+                    .foregroundColor(theme.textSecondary.opacity(0.7))
+                    .padding(.bottom, 16)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
