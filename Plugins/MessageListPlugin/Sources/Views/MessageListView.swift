@@ -31,6 +31,7 @@ struct MessageListView: View, SuperLog {
     @State private var followsActiveTurn = false
     /// 当前会话的 verbosity，注入到消息视图环境，使已有消息的渲染（如 header 显隐）随详细程度即时变化。
     @State private var verbosity: LumiResponseVerbosity = .standard
+    @State private var messageLoadTask: Task<Void, Never>?
 
     private let messagePageSize = 10
     private static let bottomAnchorID = "message-list-bottom"
@@ -117,7 +118,11 @@ struct MessageListView: View, SuperLog {
                 Self.logger.info("\(Self.t)isSending changed ➡️ \(newValue), selectedConversationID=\(selectedConversationID?.uuidString.prefix(8) ?? "nil"), localMessages=\(messages.count), displayMessages=\(displayMessages.count)")
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { notification in
+            if let conversationID = notification.lumiConversationID,
+               conversationID != selectedConversationID {
+                return
+            }
             // A user message must be loaded even if the user was reading older
             // history; sending is an explicit request to reveal the new turn.
             let latestRole = selectedConversationID.flatMap { conversationID in
@@ -184,8 +189,10 @@ struct MessageListView: View, SuperLog {
                 .scrollContentBackground(.hidden)
                 .environment(\.preferOuterScroll, ChatMessageListLayout.prefersOuterScrollForMarkdown)
                 .onPreferenceChange(MessageListBottomAnchorPositionKey.self) { bottomMaxY in
+                    let viewportMaxY = viewport.frame(in: .global).maxY
+                    guard bottomMaxY.isFinite, viewportMaxY.isFinite else { return }
                     let wasAtBottom = isAtBottom
-                    isAtBottom = bottomMaxY <= viewport.frame(in: .global).maxY + 24
+                    isAtBottom = bottomMaxY <= viewportMaxY + 24
                     if Self.verbose {
                         Self.logger.info("\(Self.t)bottomAnchor geometry ➡️ bottomMaxY=\(bottomMaxY), viewportMaxY=\(viewport.frame(in: .global).maxY), isAtBottom=\(isAtBottom), changed=\(wasAtBottom != isAtBottom)")
                     }
@@ -346,7 +353,10 @@ struct MessageListView: View, SuperLog {
     }
 
     private func loadMessages() {
-        Task { await loadMessagesAsync() }
+        messageLoadTask?.cancel()
+        messageLoadTask = Task { @MainActor in
+            await loadMessagesAsync()
+        }
     }
 
     @MainActor

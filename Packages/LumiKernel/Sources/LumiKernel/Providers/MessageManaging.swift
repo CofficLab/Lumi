@@ -33,6 +33,9 @@ public protocol MessageManaging: ObservableObject {
     /// UI 层（如 MessageListView）应使用此方法,无需自行判断详细程度。
     func displayMessages(for conversationID: UUID) -> [LumiChatMessage]
 
+    /// Returns cached display messages without starting a database load.
+    func cachedDisplayMessages(for conversationID: UUID) -> [LumiChatMessage]
+
     /// 获取指定对话的一页可见消息。
     ///
     /// - Parameters:
@@ -96,6 +99,12 @@ public protocol MessageManaging: ObservableObject {
     ///   - modelName: 可选模型名称过滤。
     /// - Returns: input/output token 拆分及总量。
     func fetchTokenUsage(on day: Date, providerID: String?, modelName: String?) async -> MessageTokenUsage
+}
+
+public extension MessageManaging {
+    func cachedDisplayMessages(for conversationID: UUID) -> [LumiChatMessage] {
+        displayMessages(for: conversationID)
+    }
 }
 
 public extension MessageManaging {

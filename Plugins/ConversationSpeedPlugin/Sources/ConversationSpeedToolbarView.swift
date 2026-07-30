@@ -57,7 +57,11 @@ struct ConversationSpeedToolbarView: View {
                 EmptyView()
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { notification in
+            if let conversationID = notification.lumiConversationID,
+               conversationID != selectedConversationID {
+                return
+            }
             self.updateTPS()
         }
         .onAppear {

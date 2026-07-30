@@ -16,6 +16,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
     /// In-memory cache of messages per conversation
     private var messageCache: [UUID: [LumiChatMessage]] = [:]
+    private var messageLoadTasks: [UUID: Task<Void, Never>] = [:]
 
     public init(kernel: LumiKernel) {
         self.kernel = kernel
@@ -39,22 +40,30 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             return
         }
 
+        guard messageCache[conversationID] == nil, messageLoadTasks[conversationID] == nil else {
+            return
+        }
+
         if Self.verbose {
             Self.logger.info("\(Self.t)loadMessages(for:) ➡️ conversation=\(conversationID.uuidString.prefix(8))…, cacheBefore=\(self.messageCache[conversationID]?.count ?? 0)")
         }
 
-        Task {
+        let task = Task { [weak self, store] in
+            guard let self else { return }
             let loaded = await store.fetchMessages(conversationId: conversationID)
-            await MainActor.run {
-                self.messageCache[conversationID] = loaded
-                if Self.verbose {
-                    let metrics = Self.messageMetrics(loaded)
-                    Self.logger.info("\(Self.t)loadMessages(for:) 完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, messages=\(loaded.count), first=\(loaded.first?.id.uuidString.prefix(8) ?? "nil"), last=\(loaded.last?.id.uuidString.prefix(8) ?? "nil"), contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars) toolCallArgumentChars=\(metrics.toolCallArgumentChars)")
-                }
-                // Notify UI to refresh
-                self.kernel?.eventManager.postMessagesDidChange(object: self)
+            guard !Task.isCancelled else { return }
+            let current = self.messageCache[conversationID] ?? []
+            var merged = loaded
+            let loadedIDs = Set(loaded.map(\.id))
+            merged.append(contentsOf: current.filter { !loadedIDs.contains($0.id) })
+            self.messageCache[conversationID] = merged
+            self.messageLoadTasks[conversationID] = nil
+            if Self.verbose {
+                Self.logger.info("\(Self.t)loadMessages(for:) 完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, messages=\(merged.count)")
             }
+            self.kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
         }
+        messageLoadTasks[conversationID] = task
     }
 
     // MARK: - MessageManaging
@@ -71,8 +80,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         let cached = messageCache[conversationID] ?? []
 
         if Self.verbose {
-            let metrics = Self.messageMetrics(cached)
-            Self.logger.info("\(Self.t)messages(for:) conversation=\(conversationID.uuidString.prefix(8)) cachedMessages=\(cached.count) cacheConversations=\(self.messageCache.keys.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars)")
+            Self.logger.info("\(Self.t)messages(for:) conversation=\(conversationID.uuidString.prefix(8)) cachedMessages=\(cached.count)")
         }
 
         return cached
@@ -82,6 +90,15 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         let all = messages(for: conversationID)
         // 低于「详细」(V3) 级别时,隐藏工具调用结果消息（role == .tool）,
         // 让上层 UI 无需自行判断详细程度。
+        let verbosity = kernel?.conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
+        guard verbosity == .detailed else {
+            return all.filter { $0.role != .tool }
+        }
+        return all
+    }
+
+    public func cachedDisplayMessages(for conversationID: UUID) -> [LumiChatMessage] {
+        let all = messageCache[conversationID] ?? []
         let verbosity = kernel?.conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
         guard verbosity == .detailed else {
             return all.filter { $0.role != .tool }
@@ -149,7 +166,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         messageCache[conversationID]?.removeAll { $0.id == id }
 
         // Notify observers that messages changed
-        kernel?.eventManager.postMessagesDidChange(object: self)
+        kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
 
         // Delete from store async
         Task {
@@ -209,7 +226,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)准备发布 messagesDidChange ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(messageToInsert.id.uuidString.prefix(8))…, cacheContainsMessage=\(self.messageCache[conversationID]?.contains(where: { $0.id == messageToInsert.id }) ?? false)")
         }
-        kernel?.eventManager.postMessagesDidChange(object: self)
+        kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
 
         // Persist to store async
         Task {
@@ -265,7 +282,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)updateMessage ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(id.uuidString.prefix(8))…, newContentChars=\(content.count)")
         }
-        kernel?.eventManager.postMessagesDidChange(object: self)
+        kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
 
         // Update in store async
         Task {
@@ -372,7 +389,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         }
 
         // Notify UI to refresh
-        kernel?.eventManager.postMessagesDidChange(object: self)
+        kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
 
         // Persist the rebuilt tool calls (incl. nested tool-result images) so they
         // survive a restart. Previously only the in-memory cache was updated.

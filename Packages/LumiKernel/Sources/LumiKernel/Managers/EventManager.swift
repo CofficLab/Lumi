@@ -29,8 +29,11 @@ public final class EventManager: ObservableObject, SuperLog {
         post(.enabledPluginsDidChange, object: object)
     }
 
-    public func postMessagesDidChange(object: Any? = nil) {
-        post(.messagesDidChange, object: object)
+    public func postMessagesDidChange(object: Any? = nil, conversationID: UUID? = nil) {
+        let userInfo = conversationID.map {
+            [LumiNotificationUserInfoKey.conversationID: $0] as [AnyHashable: Any]
+        }
+        post(.messagesDidChange, object: object, userInfo: userInfo)
     }
 
     public func postConversationsDidChange(object: Any? = nil) {
