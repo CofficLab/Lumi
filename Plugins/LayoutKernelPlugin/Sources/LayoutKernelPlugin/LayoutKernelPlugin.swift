@@ -5,13 +5,6 @@ import SuperLogKit
 import SwiftUI
 
 /// 布局插件
-///
-/// 1. 向 LumiKernel 注册 Layout 服务（LayoutManager / LayoutStore）。
-/// 2. 继续承担原 LayoutPlugin 的 UI 注册职责：
-///    - 标题栏右侧「Layout」工具栏按钮
-///    - 根视图覆盖层事件监听与持久化恢复
-///
-/// 这样可以直接删除 LayoutPlugin，避免同一布局能力分散在两个包里。
 @MainActor
 public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
@@ -47,9 +40,7 @@ public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
     }
 
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] {
-        [
-            
-        ]
+        []
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
