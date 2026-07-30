@@ -63,18 +63,34 @@ struct MessageListView: View {
 
     /// 拉取当前会话的消息。
     ///
+    /// 数据库读取(SwiftData fetch + 逐条 JSON 解码)放在后台线程执行,
+    /// 避免长会话加载时阻塞主线程导致风火轮;读完后回到主线程更新 `@State`。
+    ///
     /// - Parameter showLoading: 切换会话时传 `true` 包裹 loading 状态;
     ///   消息变更通知触发的流式刷新传 `false`,静默更新以免闪烁。
     private func loadMessages(showLoading: Bool) {
         if showLoading {
             isLoading = true
         }
-        guard let conversationID = selectedConversationID else {
+        guard let conversationID = selectedConversationID,
+              let messageManager = kernel.messageManager else {
             messages = []
             isLoading = false
             return
         }
-        messages = kernel.messageManager?.messages(for: conversationID) ?? []
-        isLoading = false
+
+        // Task { } 继承主 actor,因此 self 的访问始终在主线程;内部的
+        // Task.detached 仅负责把"读库"这件重活搬到后台线程,产出 Sendable 的数据后返回。
+        Task { @MainActor in
+            // messageManager 已是 Sendable,可安全捕获进后台任务;
+            // messages(for:) 是 nonisolated,真正在后台线程执行读库。
+            let loaded = await Task.detached(priority: .userInitiated) {
+                messageManager.messages(for: conversationID)
+            }.value
+            // 回到主线程:切换会话期间用户可能又选了别的会话,丢弃过期的后台结果。
+            guard selectedConversationID == conversationID else { return }
+            messages = loaded
+            isLoading = false
+        }
     }
 }

@@ -3,8 +3,15 @@ import Foundation
 /// 消息管理能力协议
 ///
 /// 定义消息的获取、删除、插入等管理功能。
-@MainActor
-public protocol MessageManaging: ObservableObject {
+///
+/// 采用方法粒度的 actor 隔离:读路径(messages/messagePage/messageCount 等)
+/// 不加隔离,允许在后台线程执行数据库读取与解码,避免阻塞主线程;
+/// 写路径(insert/update/delete 等)标注 `@MainActor`,因为它们通过 EventManager
+/// 发 `messagesDidChange` 通知刷新 UI,必须在主线程执行。
+///
+/// 继承 `Sendable`:读方法(`nonisolated`)不触碰任何可变状态,因此 manager 引用
+/// 可安全地跨线程传递(例如由 UI 在后台线程发起读取)。
+public protocol MessageManaging: ObservableObject, Sendable {
     /// 获取指定对话的所有消息（原始数据,包含工具调用结果）
     ///
     /// 后端逻辑（如构建 LLM 上下文、生成摘要）应使用此方法,确保获得完整消息历史。
@@ -26,18 +33,22 @@ public protocol MessageManaging: ObservableObject {
     func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool
 
     /// 删除指定消息
+    @MainActor
     func deleteMessage(id: UUID, in conversationID: UUID)
 
     /// 插入新消息到指定对话
+    @MainActor
     func insertMessage(_ message: LumiChatMessage, to conversationID: UUID)
 
     /// 更新消息内容
+    @MainActor
     func updateMessage(id: UUID, in conversationID: UUID, content: String)
 
     /// 更新消息中的 tool call 结果
     ///
     /// 在 tool call 执行完成后，需要更新 assistant 消息中对应 toolCall 的 result 字段，
     /// 以便 UI 能够显示正确的视觉状态（成功/失败/执行时长）。
+    @MainActor
     func updateToolCallResult(
         _ result: LumiToolResult,
         toolCallID: String,
@@ -46,6 +57,7 @@ public protocol MessageManaging: ObservableObject {
     )
 
     /// 清空指定对话的所有消息
+    @MainActor
     func clearMessages(in conversationID: UUID)
 
     /// 获取指定消息

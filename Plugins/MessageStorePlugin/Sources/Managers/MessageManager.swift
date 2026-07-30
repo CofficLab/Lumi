@@ -4,8 +4,12 @@ import os
 import SuperLogKit
 
 /// Message Manager Service
-@MainActor
-public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
+///
+/// 读路径(messages/messagePage/messageCount 等)标 `nonisolated`,不触碰可变状态、
+/// 不发通知,可在后台线程执行数据库读取与解码,避免阻塞主线程。
+/// 写路径(insert/update/delete 等)标 `@MainActor`,因为它们通过 `EventManager`
+/// 发 `messagesDidChange` 通知刷新 UI,必须在主线程执行。
+public final class MessageManager: ObservableObject, MessageManaging, SuperLog, @unchecked Sendable {
     public nonisolated static let emoji = "💬"
     public nonisolated(unsafe) static var verbose = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
@@ -21,13 +25,15 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
     // MARK: - Store Access
 
-    private var store: MessageStore? {
+    /// `nonisolated`:MessageStoreRuntimeBridge 自身用锁保护并发访问,
+    /// 故读取 store 可在任意线程(含后台)进行。
+    private nonisolated var store: MessageStore? {
         MessageStoreRuntimeBridge.shared.store
     }
 
-    // MARK: - MessageManaging
+    // MARK: - MessageManaging (reads — nonisolated, safe to run off-main)
 
-    public func messages(for conversationID: UUID) -> [LumiChatMessage] {
+    public nonisolated func messages(for conversationID: UUID) -> [LumiChatMessage] {
         let all = store?.fetchMessages(conversationId: conversationID) ?? []
 
         if Self.verbose {
@@ -37,7 +43,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return all
     }
 
-    public func messagePage(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage] {
+    public nonisolated func messagePage(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage] {
         guard let store else { return [] }
         return store.fetchMessagePage(
             conversationId: conversationID,
@@ -46,15 +52,15 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         )
     }
 
-    public func messageCount(for conversationID: UUID) -> Int {
-        let count = store?.messageCount(conversationId: conversationID) ?? 0
-        return count
+    public nonisolated func messageCount(for conversationID: UUID) -> Int {
+        store?.messageCount(conversationId: conversationID) ?? 0
     }
 
-    public func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool {
+    public nonisolated func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool {
         store?.hasEarlierMessages(conversationId: conversationID, beforeMessageID: beforeMessageID) ?? false
     }
 
+    @MainActor
     public func deleteMessage(id: UUID, in conversationID: UUID) {
         if Self.verbose {
             Self.logger.info("\(Self.t)deleteMessage ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(id.uuidString.prefix(8))…")
@@ -64,6 +70,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
     }
 
+    @MainActor
     public func insertMessage(_ message: LumiChatMessage, to conversationID: UUID) {
         if Self.verbose {
             Self.logger.info("\(Self.t)insertMessage called ➡️ messageConversation=\(message.conversationID.uuidString.prefix(8)) targetConversation=\(conversationID.uuidString.prefix(8)) role=\(message.role.rawValue) contentChars=\(message.content.count) metadataChars=\(Self.metadataCharacterCount(message.metadata)) reasoningChars=\(message.reasoningContent?.count ?? 0) toolCalls=\(message.toolCalls?.count ?? 0)")
@@ -111,6 +118,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
     }
 
+    @MainActor
     public func updateMessage(id: UUID, in conversationID: UUID, content: String) {
         if Self.verbose {
             Self.logger.info("\(Self.t)updateMessage ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(id.uuidString.prefix(8))…, newContentChars=\(content.count)")
@@ -120,6 +128,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
     }
 
+    @MainActor
     public func clearMessages(in conversationID: UUID) {
         if Self.verbose {
             Self.logger.info("\(Self.t)clearMessages ➡️ conversation=\(conversationID.uuidString.prefix(8))…")
@@ -130,23 +139,23 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
     // MARK: - Message Query
 
-    public func message(id: UUID, in conversationID: UUID) -> LumiChatMessage? {
+    public nonisolated func message(id: UUID, in conversationID: UUID) -> LumiChatMessage? {
         store?.fetchMessage(id: id)
     }
 
-    public func lastMessage(in conversationID: UUID) -> LumiChatMessage? {
+    public nonisolated func lastMessage(in conversationID: UUID) -> LumiChatMessage? {
         store?.fetchMessages(conversationId: conversationID).last
     }
 
-    public func fetchDailyMessageCounts(since: Date) -> [Date: Int] {
+    public nonisolated func fetchDailyMessageCounts(since: Date) -> [Date: Int] {
         store?.fetchDailyMessageCounts(since: since) ?? [:]
     }
 
-    public func fetchDailyTokenCounts(since: Date) -> [Date: Int] {
+    public nonisolated func fetchDailyTokenCounts(since: Date) -> [Date: Int] {
         store?.fetchDailyTokenCounts(since: since) ?? [:]
     }
 
-    public func fetchTokenUsage(on day: Date, providerID: String?, modelName: String?) -> MessageTokenUsage {
+    public nonisolated func fetchTokenUsage(on day: Date, providerID: String?, modelName: String?) -> MessageTokenUsage {
         guard let store else {
             return MessageTokenUsage(day: Calendar.current.startOfDay(for: day), inputTokens: 0, outputTokens: 0)
         }
@@ -155,6 +164,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
     // MARK: - Tool Call Result Update
 
+    @MainActor
     public func updateToolCallResult(
         _ result: LumiToolResult,
         toolCallID: String,
