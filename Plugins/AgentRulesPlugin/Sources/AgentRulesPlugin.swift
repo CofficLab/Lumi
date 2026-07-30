@@ -56,7 +56,7 @@ public final class AgentRulesPlugin: LumiPlugin {
                 systemImage: "doc.text",
                 order: order
             ) {
-                AgentRulesSettingsView()
+                AgentRulesSettingsView(projectProvider: kernel.project)
             },
         ]
     }
