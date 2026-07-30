@@ -2986,7 +2986,7 @@ struct EditorKernelTests {
             hasUnsavedChanges: true,
             reason: "autosave",
             fileName: "Demo.swift",
-            verbose: false,
+            verbose: true,
             log: { _ in },
             runSave: { saveNowCount += 1 }
         )

@@ -8,7 +8,7 @@ import os
 @MainActor
 public struct RAGSettingsView: View, SuperLog {
     public nonisolated static let emoji = ProjectRAGPlugin.emoji
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag")
 
     @ObservedObject private var kernel: LumiKernel

@@ -6,7 +6,7 @@ import os
 public final class EditorExternalFileController: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "editor.ext-file")
     nonisolated public static let emoji = "📄"
-    nonisolated(unsafe) static var verbose: Bool = false
+    nonisolated(unsafe) static var verbose: Bool = true
 
     public struct ConflictState: Equatable {
         public let content: String

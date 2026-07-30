@@ -10,7 +10,7 @@ import SuperLogKit
 @MainActor
 public struct LayoutKernelOnBootHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     public init() {}
 

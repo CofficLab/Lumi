@@ -8,7 +8,7 @@ import SuperLogKit
 /// 当 LLM 发现目标无法实现时，应调用此工具标记为 blocked 并提供原因。
 public struct UpdateGoalStatusTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🎯"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "update_goal_status",

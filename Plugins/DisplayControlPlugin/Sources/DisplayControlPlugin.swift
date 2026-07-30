@@ -11,7 +11,7 @@ import SwiftUI
 @MainActor
 public final class DisplayControlPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.display-control")
-    static let verbose: Bool = false
+    static let verbose: Bool = true
 
     public let id = "com.coffic.lumi.plugin.display-control"
     public let name = "Display Control"

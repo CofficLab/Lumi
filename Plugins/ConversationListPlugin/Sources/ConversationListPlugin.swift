@@ -12,7 +12,7 @@ public final class ConversationListPlugin: LumiPlugin {
     public let order = 76
     public let policy: LumiPluginPolicy = .alwaysOn
 
-    public static let verbose = false
+    public static let verbose = true
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
 
     public init() {}

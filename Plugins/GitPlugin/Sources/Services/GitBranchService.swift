@@ -67,6 +67,6 @@ public enum GitBranchService {
 
     /// 检查工作区是否有未提交的更改
     public static func isWorkingTreeDirty(at path: String) -> Bool {
-        (try? LibGit2.hasUncommittedChanges(at: path, verbose: false)) ?? false
+        (try? LibGit2.hasUncommittedChanges(at: path, verbose: true)) ?? true
     }
 }

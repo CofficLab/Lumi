@@ -5,7 +5,7 @@ import SuperLogKit
 public enum VisionMessageContentBuilder: SuperLog {
     public static let emoji = "🖼️"
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.vision-content-builder")
-    static let verbose = false
+    static let verbose = true
 
     public static func anthropicBlocks(text: String, images: [MessageImage]) -> [[String: Any]] {
         var content: [[String: Any]] = []

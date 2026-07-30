@@ -12,7 +12,7 @@ import SuperLogKit
 public final class EditorPanelPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.lumi-editor")
     public nonisolated static let emoji = "📝"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // MARK: - LumiPlugin
 

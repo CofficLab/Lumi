@@ -6,7 +6,7 @@ import os
 public final class ToolService: ToolManaging {
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.tool")
     nonisolated public static let emoji = "🛠️"
-    nonisolated public static let verbose = false
+    nonisolated public static let verbose = true
 
     public weak var kernel: LumiKernel?
     public var environment: (any ToolServiceEnvironment)?

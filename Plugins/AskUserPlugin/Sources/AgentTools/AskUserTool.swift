@@ -20,7 +20,7 @@ import SuperLogKit
 public struct AskUserTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "❓"
 
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.ask-user")
 
     public static let info = LumiAgentToolInfo(

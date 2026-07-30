@@ -11,7 +11,7 @@ import os
 public struct WindowMain: View, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.window-main")
     nonisolated public static let emoji = "🪟"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     @State private var kernel: LumiKernel?
     @State private var initializationError: Error?

@@ -6,7 +6,7 @@ import SuperLogKit
 /// GitHub 仓库信息工具
 public struct GitHubRepoInfoTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📦"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     public static let info = LumiAgentToolInfo(
         id: "github_repo_info",
         displayName: "GitHubRepoInfo",

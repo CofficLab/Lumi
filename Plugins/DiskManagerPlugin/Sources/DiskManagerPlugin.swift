@@ -12,7 +12,7 @@ import SwiftUI
 public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.disk-manager")
     public nonisolated static let emoji = "💿"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // MARK: - LumiPlugin
 

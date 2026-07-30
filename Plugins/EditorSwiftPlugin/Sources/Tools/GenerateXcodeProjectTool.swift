@@ -6,7 +6,7 @@ import XcodeProjectGen
 /// 从 Spec 声明生成 Xcode 项目的 Agent 工具。
 public struct GenerateXcodeProjectTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🛠️"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "generate_xcode_project",

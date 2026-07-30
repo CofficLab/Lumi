@@ -8,7 +8,7 @@ import SuperLogKit
 /// 批量从多个 URL 下载文件到本地。
 public struct DownloadBatchTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📥"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "download_batch",

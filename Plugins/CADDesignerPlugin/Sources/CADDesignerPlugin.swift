@@ -12,7 +12,7 @@ import SwiftUI
 public final class CADDesignerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.cad-designer")
     public nonisolated static let emoji = "📐"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // MARK: - LumiPlugin
 

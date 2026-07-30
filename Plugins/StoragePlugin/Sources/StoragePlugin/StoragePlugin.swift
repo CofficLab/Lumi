@@ -11,7 +11,7 @@ import os
 public final class StoragePlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.storage")
     nonisolated public static let emoji = "💾"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // MARK: - LumiPlugin
 

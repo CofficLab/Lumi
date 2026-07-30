@@ -10,7 +10,7 @@ import os
 @MainActor
 public struct EditorProviderOnReadyHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-provider")
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     public init() {}
 

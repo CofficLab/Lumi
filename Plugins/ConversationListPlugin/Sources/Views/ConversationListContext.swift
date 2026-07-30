@@ -8,7 +8,7 @@ import SwiftUI
 @MainActor
 public final class ConversationListContext: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📜"
-    public nonisolated static let verbose = false
+    public nonisolated static let verbose = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "conversation-list.context")
 
     @Published public private(set) var lastChange: ConversationListChange?

@@ -9,7 +9,7 @@ struct RailView: View, SuperLog {
     let kernel: LumiKernel
 
     public nonisolated static let emoji = "💬"
-    public nonisolated(unsafe) static var verbose = false
+    public nonisolated(unsafe) static var verbose = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "conversation-list.rail")
 
     @State private var context: ConversationListContext?

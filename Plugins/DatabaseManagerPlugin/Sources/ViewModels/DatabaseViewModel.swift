@@ -5,7 +5,7 @@ import Combine
 @MainActor
 public class DatabaseViewModel: ObservableObject, SuperLog {
     public nonisolated static let emoji = "🗄️"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     @Published var configs: [DatabaseConfig] = []
     @Published var selectedConfig: DatabaseConfig?
     @Published var queryText: String = "SELECT * FROM sqlite_master;"

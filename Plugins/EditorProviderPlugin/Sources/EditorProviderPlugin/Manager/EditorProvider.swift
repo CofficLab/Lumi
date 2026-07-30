@@ -8,7 +8,7 @@ import SuperLogKit
 @MainActor
 public final class EditorProvider: EditorProviding, SuperLog {
     public static let emoji = "🍚"
-    static let verbose: Bool = false
+    static let verbose: Bool = true
 
     /// 注入的具象 EditorService(弱引用,避免循环)。
     /// 在 OnReady 阶段由 plugin 注入;在此之前文件操作走降级路径。

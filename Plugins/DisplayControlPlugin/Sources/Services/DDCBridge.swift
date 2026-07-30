@@ -248,7 +248,7 @@ private enum DDCTransport {
 // MARK: - Arm64 DDC Matcher
 
 private final class Arm64DDCMatcher: SuperLog {
-    static let verbose: Bool = false
+    static let verbose: Bool = true
     private static let maxMatchScore = 20
 
     func matchedServices(for displayIDs: [CGDirectDisplayID]) -> [CGDirectDisplayID: DDCService] {

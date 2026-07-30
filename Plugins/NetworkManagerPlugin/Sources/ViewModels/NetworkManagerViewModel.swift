@@ -7,7 +7,7 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     public static let shared = NetworkManagerViewModel()
 
     public nonisolated static let emoji = "🌐"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     @Published var networkState = NetworkState()
     @Published var interfaces: [NetworkInterfaceInfo] = []
 

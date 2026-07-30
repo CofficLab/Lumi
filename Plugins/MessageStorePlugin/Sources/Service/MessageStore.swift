@@ -10,7 +10,7 @@ import SwiftData
 /// Thread-safe via Actor isolation, following `TaskStateManager` pattern.
 public actor MessageStore: SuperLog {
     public nonisolated static let emoji = "💬"
-    public nonisolated static let verbose = false
+    public nonisolated static let verbose = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.store")
 
     // MARK: - Properties

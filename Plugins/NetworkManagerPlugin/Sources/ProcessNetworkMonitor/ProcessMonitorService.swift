@@ -7,7 +7,7 @@ import Combine
 public class ProcessMonitorService: ObservableObject, SuperLog {
     public static let shared = ProcessMonitorService()
     public nonisolated static let emoji = "👮"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     
     // Sampling interval
     private let interval: TimeInterval = 1.0

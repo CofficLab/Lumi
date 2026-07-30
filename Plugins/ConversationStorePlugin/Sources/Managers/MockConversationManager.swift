@@ -8,7 +8,7 @@ import os
 public final class MockConversationManager: ObservableObject, ConversationManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager.mock")
     nonisolated public static let emoji = "💬"
-    public static let verbose = false
+    public static let verbose = true
 
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID?

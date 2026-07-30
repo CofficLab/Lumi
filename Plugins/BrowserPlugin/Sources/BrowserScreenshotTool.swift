@@ -11,7 +11,7 @@ import os
 /// 截图保存到系统临时目录，返回文件路径。
 public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📸"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.browser.tool")
 

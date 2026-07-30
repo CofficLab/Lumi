@@ -56,11 +56,11 @@ public final class GitBranchMonitor: ObservableObject, SuperLog {
     var debounceTasks: [String: Task<Void, Never>] = [:]
 
     /// 是否启用详细日志
-    public var verbose: Bool = false
+    public var verbose: Bool = true
 
     // MARK: - Initialization
 
-    public init(verbose: Bool = false) {
+    public init(verbose: Bool = true) {
         self.verbose = verbose
     }
 

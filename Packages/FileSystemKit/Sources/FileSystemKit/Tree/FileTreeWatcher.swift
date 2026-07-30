@@ -39,7 +39,7 @@ public final class FileTreeWatcher: SuperLog, @unchecked Sendable {
     private let queue = DispatchQueue(label: "FileTreeWatcher.queue", qos: .utility)
 
     /// 是否启用日志
-    public var verbose: Bool = false
+    public var verbose: Bool = true
 
     // MARK: - Init
 

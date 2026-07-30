@@ -82,7 +82,7 @@ struct SplitViewDividerPersistence: NSViewRepresentable {
 final class SplitDividerPersistenceView: NSView, SuperLog {
     nonisolated static let emoji = "📐"
     // 调试期临时打开，便于观察 attach/apply/will/did 全链路。定位完 rail 宽度日志问题后可改回 false。
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "split-view.persistence")
     /// 初始 attach 失败时最多重试多少次（每个 runloop 一次）。
     /// 100 × 0.1s = 10s，覆盖 SwiftUI hosting view 装好的极端延迟。

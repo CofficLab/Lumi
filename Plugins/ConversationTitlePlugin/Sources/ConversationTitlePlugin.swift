@@ -8,7 +8,7 @@ import os
 public final class ConversationTitlePlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-title")
     nonisolated public static let emoji = "✏️"
-    public static let verbose = false
+    public static let verbose = true
 
     public let id = "com.coffic.lumi.plugin.conversation-title"
     public let name = "Conversation Title"

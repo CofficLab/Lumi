@@ -5,7 +5,7 @@ import Combine
 @MainActor
 class CacheCleanerViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗑️"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     @Published var categories: [CacheCategory] = []
     @Published var isScanning = false
     @Published var isCleaning = false

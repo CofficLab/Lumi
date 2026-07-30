@@ -8,7 +8,7 @@ class FilterDataProvider: NEFilterDataProvider, SuperLog {
 
     private var ipc = IPCConnection.shared
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "netto.filter-data-provider")
-    private var verbose: Bool = false
+    private var verbose: Bool = true
 
     /**
      * Start Filter

@@ -8,7 +8,7 @@ import SuperLogKit
 /// 取消正在进行的下载任务。
 public struct CancelDownloadTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "⛔"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "cancel_download",

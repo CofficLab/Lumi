@@ -8,7 +8,7 @@ import SuperLogKit
 @MainActor
 public class RClickConfigManager: ObservableObject, SuperLog {
     public nonisolated static let emoji = "🖱️"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     /// 与 `LumiFinder/FinderSync` 保持一致
     public nonisolated static let appGroupId = "group.com.coffic.lumi"

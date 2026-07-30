@@ -9,7 +9,7 @@ import SwiftUI
 @MainActor
 public final class RClickPlugin: LumiPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rclick")
-    public nonisolated static let verbose = false
+    public nonisolated static let verbose = true
 
     public let id = "com.coffic.lumi.plugin.rclick"
     public let name = "Right Click"

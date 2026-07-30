@@ -7,7 +7,7 @@ import SuperLogKit
 /// 用于在执行过程中动态添加新任务到现有 Goal。
 public struct AddTasksToGoalTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "➕"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "add_tasks_to_goal",

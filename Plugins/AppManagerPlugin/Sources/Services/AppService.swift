@@ -6,7 +6,7 @@ import SwiftUI
 /// 应用服务
 final class AppService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "📦"
-    nonisolated static let verbose: Bool = false
+    nonisolated static let verbose: Bool = true
     private let cacheManager = CacheManager.shared
 
     // 标准应用安装路径

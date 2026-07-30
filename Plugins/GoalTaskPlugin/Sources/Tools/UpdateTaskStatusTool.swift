@@ -8,7 +8,7 @@ import SuperLogKit
 /// 更新 Task 状态时会自动推导并更新所属 Goal 的状态。
 public struct UpdateTaskStatusTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
 
     public static let info = LumiAgentToolInfo(
         id: "update_task_status",

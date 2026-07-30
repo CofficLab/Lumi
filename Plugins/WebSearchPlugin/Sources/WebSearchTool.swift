@@ -5,7 +5,7 @@ import os
 
 public struct WebSearchTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = false
+    public nonisolated static let verbose: Bool = true
     private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.web-search")
     private let searchClient: @Sendable (String) async throws -> [WebSearchResult]
 

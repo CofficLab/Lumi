@@ -8,7 +8,7 @@ public extension LumiPreviewFacade {
     final class DemoSurfaceFactory: @unchecked Sendable, SuperLog {
         nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "LumiPreviewKit.DemoSurfaceFactory")
         public nonisolated static let emoji = "🎬"
-        public nonisolated static let verbose: Bool = false
+        public nonisolated static let verbose: Bool = true
 
         // MARK: - 单例
 
