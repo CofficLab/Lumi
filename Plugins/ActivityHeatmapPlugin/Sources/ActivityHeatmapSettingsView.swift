@@ -74,7 +74,7 @@ public struct ActivityHeatmapSettingsView: View {
             }
 
             if cacheDirectory != nil {
-                AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+                AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", size: .small) {
                     openDataDirectory()
                 }
             }

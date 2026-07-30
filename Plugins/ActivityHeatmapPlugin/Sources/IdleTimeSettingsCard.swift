@@ -13,14 +13,14 @@ struct IdleTimeSettingsCard: View {
         AppCard {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Label("Idle Time", systemImage: "moon.zzz")
+                    Label(LumiPluginLocalization.string("Idle Time", bundle: .module), systemImage: "moon.zzz")
                         .font(.appBodyEmphasized)
                     Spacer()
-                    Text("Activity patterns and rest windows")
+                    Text(LumiPluginLocalization.string("Activity patterns and rest windows", bundle: .module))
                         .font(.appCaption)
                         .foregroundStyle(.secondary)
                     if dataDirectory != nil {
-                        AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+                        AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", size: .small) {
                             openDataDirectory()
                         }
                     }
@@ -65,19 +65,21 @@ struct IdleTimeSettingsCard: View {
             }
         }
         .frame(height: 48, alignment: .bottom)
-        .accessibilityLabel("Activity intensity by time of day")
+        .accessibilityLabel(LumiPluginLocalization.string("Activity intensity by time of day", bundle: .module))
     }
 
     private func restWindowText(_ snapshot: IdleInferenceSnapshot) -> String {
         guard let window = snapshot.restWindow,
               IdleConfidenceLabel.label(for: window.confidence, source: window.source) != .learning else {
-            return "Learning"
+            return LumiPluginLocalization.string("Learning", bundle: .module)
         }
         return "\(format(window.startMinuteOfDay)) – \(format(window.endMinuteOfDay))"
     }
 
     private func confidenceText(_ snapshot: IdleInferenceSnapshot) -> String {
-        guard let window = snapshot.restWindow else { return "Learning" }
+        guard let window = snapshot.restWindow else {
+            return LumiPluginLocalization.string("Learning", bundle: .module)
+        }
         return "\(Int((window.confidence * 100).rounded()))%"
     }
 
