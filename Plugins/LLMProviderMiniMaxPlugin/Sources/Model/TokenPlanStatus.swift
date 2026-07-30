@@ -1,7 +1,7 @@
 import Foundation
 
 /// MiniMax Token Plan 配额状态
-enum TokenPlanStatus {
+enum TokenPlanStatus: Sendable {
     case loading
     case success(TokenPlanData)
     case authError
@@ -12,7 +12,7 @@ enum TokenPlanStatus {
 ///
 /// 新版接口 `/v1/token_plan/remains` 返回 `model_remains` 数组（顶层），
 /// 字段为 `model_name` 与各类 `remaining_percent` / 计数，不再提供 token 的 total/remains。
-struct TokenPlanData {
+struct TokenPlanData: Sendable {
     let modelName: String
     /// 当前时段剩余百分比（0-100）
     let remainingPercent: Int
