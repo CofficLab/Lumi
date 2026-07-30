@@ -4,15 +4,11 @@ import LumiKernel
 
 /// 会话列表弹窗内容
 struct PopoverContent: View {
-    let kernel: LumiKernel
-    @StateObject private var context: ConversationListContext
+    @ObservedObject private var kernel: LumiKernel
 
     init(kernel: LumiKernel) {
-        self.kernel = kernel
+        _kernel = ObservedObject(wrappedValue: kernel)
         precondition(kernel.conversations != nil, "kernel.conversations is nil when creating ConversationListPopoverContent")
-        _context = StateObject(
-            wrappedValue: ConversationListContext(kernel: kernel)
-        )
     }
 
     var body: some View {
@@ -21,7 +17,7 @@ struct PopoverContent: View {
                 Text("Conversations")
                     .font(.headline)
                 Spacer()
-                Text("\(context.conversationCount)")
+                Text("\(kernel.conversations?.conversations.count ?? 0)")
                     .font(.caption.weight(.semibold))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
@@ -37,7 +33,7 @@ struct PopoverContent: View {
 
             Divider()
 
-            ConversationListView(context: context)
+            ConversationListView(kernel: kernel)
         }
     }
 }

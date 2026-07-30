@@ -119,7 +119,7 @@
 
     enum ConversationListPreviewSupport {
         @MainActor
-        static func makeContext() -> ConversationListContext {
+        static func makeKernel() -> LumiKernel {
             let mock = MockConversationManaging()
             let messageMock = MockMessageManaging()
             for i in 0 ..< 5 {
@@ -135,7 +135,7 @@
             let kernel = LumiKernel()
             kernel.registerService(ConversationManaging.self, mock)
             kernel.registerService(MessageManaging.self, messageMock)
-            return ConversationListContext(kernel: kernel)
+            return kernel
         }
     }
 #endif

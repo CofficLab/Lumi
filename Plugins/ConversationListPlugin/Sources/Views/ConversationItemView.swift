@@ -24,7 +24,7 @@ public struct ConversationItemView: View, SuperLog {
     /// 置顶回调：用户点击置顶/取消置顶后调用
     public let onPin: () -> Void
 
-    /// 对话是否正在处理消息（由 ConversationListContext 驱动）
+    /// 对话是否正在处理消息（由 ConversationListStore 驱动）
     public var isProcessing: Bool = false
 
     /// 近期活跃时间窗口，默认 5 分钟

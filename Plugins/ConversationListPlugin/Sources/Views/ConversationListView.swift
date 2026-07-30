@@ -1,6 +1,5 @@
 import Combine
 import LumiKernel
-import LumiKernel
 import LumiUI
 import SuperLogKit
 import SwiftUI
@@ -12,7 +11,7 @@ public struct ConversationListView: View, SuperLog {
     public nonisolated static let verbose: Bool = true
 
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @ObservedObject private var context: ConversationListContext
+    @StateObject private var store: ConversationListStore
 
     private let selectionStore: ConversationListLocalStore
     @State private var conversations: [ConversationListItem] = []
@@ -26,8 +25,8 @@ public struct ConversationListView: View, SuperLog {
 
     private let pageSize: Int = 40
 
-    public init(context: ConversationListContext) {
-        self.context = context
+    public init(kernel: LumiKernel) {
+        _store = StateObject(wrappedValue: ConversationListStore(kernel: kernel))
         self.selectionStore = ConversationListLocalStore(
             storageDirectory: ConversationListRuntimeBridge.shared.storageDirectory ?? ConversationListRuntimeBridge.defaultStorageDirectory
         )
@@ -47,26 +46,26 @@ public struct ConversationListView: View, SuperLog {
         }
         .onAppear(perform: performInitialLoadIfNeeded)
         .onChange(of: localSelectedConversationId, handleLocalSelectionChange)
-        .onChange(of: context.selectedConversationId, handleConversationSelected)
-        .onChange(of: context.selectedConversationId) { _, newValue in
+        .onChange(of: store.selectedConversationId, handleConversationSelected)
+        .onChange(of: store.selectedConversationId) { _, newValue in
             selectionStore.saveSelectedConversationId(newValue)
         }
         .onChange(of: conversations) { _, newConversations in
             handleConversationsChanged(newConversations)
         }
-        .onChange(of: context.lastChange) { _, change in
+        .onChange(of: store.lastChange) { _, change in
             guard let change else { return }
             handleConversationChange(change)
         }
-        .onChange(of: context.messageVersion) { _, _ in
+        .onChange(of: store.messageVersion) { _, _ in
             refreshVisibleMessageCounts()
         }
-        .onChange(of: context.statusVersion, handleStatusVersionChanged)
+        .onChange(of: store.statusVersion, handleStatusVersionChanged)
         // 订阅发送状态版本号:版本号变化时,列表项的 `isProcessing`
-        // 会重新读取 `context.isConversationProcessing(_:)`,从而让 PulseRipple 等动画生效。
-        .onChange(of: context.sendingVersion) { _, _ in
+        // 会重新读取 `store.isConversationProcessing(_:)`,从而让 PulseRipple 等动画生效。
+        .onChange(of: store.sendingVersion) { _, _ in
             // 不需要做事;依赖 `isProcessing` 的视图节点会因为它读取的 SwiftUI
-            // 依赖(这里就是 context.sendingVersion)变化而自动重渲染。
+            // 依赖(这里就是 store.sendingVersion)变化而自动重渲染。
             // 这里保留 handler 只是为了明确"我们关注这个信号"。
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -99,7 +98,7 @@ extension ConversationListView {
                                 conversation: conversation,
                                 onDelete: { handleDelete(conversation) },
                                 onPin: { pinConversation(conversation) },
-                                isProcessing: context.isConversationProcessing(conversation.id)
+                                isProcessing: store.isConversationProcessing(conversation.id)
                             )
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -148,7 +147,7 @@ extension ConversationListView {
 
 extension ConversationListView {
     private var currentSelectedConversationId: UUID? {
-        context.selectedConversationId
+        store.selectedConversationId
     }
 
     private func syncSelectionFromContext() {
@@ -186,7 +185,7 @@ extension ConversationListView {
             hasMore = true
         }
 
-        _ = context.deleteConversation(id: conversation.id)
+        _ = store.deleteConversation(id: conversation.id)
 
         if Self.verbose && ConversationListPlugin.verbose {
             ConversationListPlugin.logger.info("\(self.t)🗑️ 删除完成：\(conversation.displayTitle) - 剩余 \(conversations.count) 条")
@@ -226,7 +225,7 @@ extension ConversationListView {
         guard !conversations.isEmpty else { return }
         let currentConversations = conversations
         Task {
-            let counts = await context.messageCounts(for: currentConversations.map(\.id))
+            let counts = await store.messageCounts(for: currentConversations.map(\.id))
             var updated: [ConversationListItem] = []
             updated.reserveCapacity(currentConversations.count)
             for conversation in currentConversations {
@@ -237,7 +236,7 @@ extension ConversationListView {
                 updated.append(ConversationListItem(
                     id: conversation.id,
                     projectPath: conversation.projectPath,
-                    title: context.resolvedTitle(for: conversation.id),
+                    title: store.resolvedTitle(for: conversation.id),
                     createdAt: conversation.createdAt,
                     updatedAt: conversation.updatedAt,
                     providerID: conversation.providerID,
@@ -257,7 +256,7 @@ extension ConversationListView {
         isLoadingPage = true
         let offset = nextOffset
         Task {
-            let page = await context.fetchConversationsPage(limit: pageSize, offset: offset)
+            let page = await store.fetchConversationsPage(limit: pageSize, offset: offset)
 
             if Self.verbose, ConversationListPlugin.verbose {
                 ConversationListPlugin.logger.info("\(self.t)📄 loadNextPage offset=\(offset) page.count=\(page.count) hasMore_before=\(hasMore)")
@@ -289,19 +288,19 @@ extension ConversationListView {
         }
 
         Task {
-            guard await context.fetchConversation(id: restoredId) != nil else {
+            guard await store.fetchConversation(id: restoredId) != nil else {
                 selectionStore.saveSelectedConversationId(nil)
                 return
             }
 
-            context.selectConversation(restoredId, reason: "conversationListRestoreSelection")
+            store.selectConversation(restoredId, reason: "conversationListRestoreSelection")
         }
     }
 
     private func ensureSelectedConversationVisible() async {
         guard let selectedId = currentSelectedConversationId,
               conversations.contains(where: { $0.id == selectedId }) == false,
-              let selectedConversation = await context.fetchConversation(id: selectedId) else {
+              let selectedConversation = await store.fetchConversation(id: selectedId) else {
             return
         }
 
@@ -323,7 +322,7 @@ extension ConversationListView {
         guard !conversations.contains(where: { $0.id == conversationId }) else { return }
 
         Task {
-            guard let conversation = await context.fetchConversation(id: conversationId) else { return }
+            guard let conversation = await store.fetchConversation(id: conversationId) else { return }
             conversations.insert(conversation, at: 0)
             nextOffset += 1
             syncSelectionFromContext()
@@ -332,7 +331,7 @@ extension ConversationListView {
 
     private func handleConversationUpdated(_ conversationId: UUID) {
         Task {
-            guard let updatedConversation = await context.fetchConversation(id: conversationId) else { return }
+            guard let updatedConversation = await store.fetchConversation(id: conversationId) else { return }
 
             if let index = conversations.firstIndex(where: { $0.id == conversationId }) {
                 conversations[index] = updatedConversation
@@ -370,13 +369,13 @@ extension ConversationListView {
             }
         }
 
-        context.switchProject(projectPath: projectPath, reason: "conversationListSelect")
+        store.switchProject(projectPath: projectPath, reason: "conversationListSelect")
     }
 
     private func pinConversation(_ conversation: ConversationListItem) {
         // Pinning is represented by order 0; non-pinned conversations use the default large order.
         let newOrder = conversation.isPinned ? LumiConversationSummary.defaultOrder : 0
-        context.setConversationOrder(newOrder, for: conversation.id)
+        store.setConversationOrder(newOrder, for: conversation.id)
     }
 }
 
@@ -402,7 +401,7 @@ extension ConversationListView {
                 ConversationListPlugin.logger.info("\(self.t)👉 [\(newId)] 从 List 选择会话")
             }
 
-            context.selectConversation(newId, reason: "conversationListSelect")
+            store.selectConversation(newId, reason: "conversationListSelect")
 
             if let conversation = conversations.first(where: { $0.id == newId }) {
                 switchToProjectIfNeeded(for: conversation)
@@ -412,17 +411,17 @@ extension ConversationListView {
                 ConversationListPlugin.logger.info("\(self.t)👉 清除会话选择")
             }
 
-            context.selectConversation(nil, reason: "conversationListClear")
+            store.selectConversation(nil, reason: "conversationListClear")
         }
     }
 
     public func handleConversationSelected() {
         let localId = localSelectedConversationId?.uuidString ?? "nil"
-        let selectedId = context.selectedConversationId
+        let selectedId = store.selectedConversationId
 
-        let contextId = selectedId?.uuidString ?? "nil"
+        let selectedID = selectedId?.uuidString ?? "nil"
         if Self.verbose, ConversationListPlugin.verbose {
-            ConversationListPlugin.logger.info("\(self.t)🔄 handleConversationSelected called: local=\(localId), context=\(contextId)")
+            ConversationListPlugin.logger.info("\(self.t)🔄 handleConversationSelected called: local=\(localId), selected=\(selectedID)")
         }
 
         guard localSelectedConversationId != selectedId else { return }
@@ -454,12 +453,12 @@ extension ConversationListView {
 
 #if DEBUG
 #Preview("对话列表 - 标准尺寸") {
-    ConversationListView(context: ConversationListPreviewSupport.makeContext())
+    ConversationListView(kernel: ConversationListPreviewSupport.makeKernel())
         .frame(width: 300, height: 600)
 }
 
 #Preview("对话列表 - 窄屏") {
-    ConversationListView(context: ConversationListPreviewSupport.makeContext())
+    ConversationListView(kernel: ConversationListPreviewSupport.makeKernel())
         .frame(width: 250, height: 400)
 }
 #endif

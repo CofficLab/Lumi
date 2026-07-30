@@ -6,10 +6,10 @@ import SuperLogKit
 import SwiftUI
 
 @MainActor
-public final class ConversationListContext: ObservableObject, SuperLog {
+public final class ConversationListStore: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📜"
     public nonisolated static let verbose = true
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "conversation-list.context")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "conversation-list.store")
 
     @Published public private(set) var lastChange: ConversationListChange?
     @Published public private(set) var statusVersion: Int = 0
@@ -22,12 +22,20 @@ public final class ConversationListContext: ObservableObject, SuperLog {
     @Published public private(set) var sendingVersion: Int = 0
 
     private let kernel: LumiKernel
-    private let conversationManaging: any ConversationManaging
-    private let messageManaging: (any MessageManaging)?
+    /// The kernel owns the services. The store only coordinates their state
+    /// for this list and does not retain duplicate service references.
+    private var conversationManaging: any ConversationManaging {
+        kernel.conversations!
+    }
+
+    private var messageManaging: (any MessageManaging)? {
+        kernel.messageManager
+    }
     /// 真实发送状态持有者(`MessageSender`)。`ConversationManaging.isSending(for:)`
     /// 是 stub,会永远返回 false,所以这里必须直接拿 `MessageSending` 才能拿到真实状态。
-    private let messageSending: (any MessageSending)?
-    private var conversationSnapshots: [UUID: Date] = [:]
+    private var messageSending: (any MessageSending)? {
+        kernel.messageSender
+    }
     private var cancellables = Set<AnyCancellable>()
     private var previousConversations: [LumiConversationSummary] = []
     private var previousSelectedID: UUID?
@@ -38,15 +46,9 @@ public final class ConversationListContext: ObservableObject, SuperLog {
 
     public init(kernel: LumiKernel) {
         self.kernel = kernel
-        self.conversationManaging = kernel.conversations!
-        self.messageManaging = kernel.messageManager
-        self.messageSending = kernel.messageSender
         self.previousConversations = kernel.conversations!.conversations
         self.previousSelectedID = kernel.conversations!.selectedConversationID
 
-        conversationSnapshots = Dictionary(
-            uniqueKeysWithValues: kernel.conversations!.conversations.map { ($0.id, $0.updatedAt) }
-        )
         bindConversationManaging()
         bindMessageManaging()
         bindMessageSending()
@@ -197,7 +199,7 @@ public final class ConversationListContext: ObservableObject, SuperLog {
     }
 
     public func switchProject(projectPath: String, reason: String) {
-        // No-op in this context. Project switching is handled externally.
+        // No-op in this store. Project switching is handled externally.
     }
 
     /// Set conversation order for pinning/unpinning

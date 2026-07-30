@@ -12,22 +12,11 @@ struct RailView: View, SuperLog {
     public nonisolated(unsafe) static var verbose = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "conversation-list.rail")
 
-    @State private var context: ConversationListContext?
-
     var body: some View {
         VStack(spacing: 0) {
             Divider()
-            if let ctx = context {
-                ConversationListView(context: ctx)
-            } else {
-                ConversationListEmptyView()
-            }
+            ConversationListView(kernel: kernel)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onAppear {
-            if context == nil, kernel.conversations != nil {
-                context = ConversationListContext(kernel: kernel)
-            }
-        }
     }
 }
