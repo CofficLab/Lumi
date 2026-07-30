@@ -203,7 +203,7 @@ public struct ProjectsSettingsView: View {
         } else {
             AppEmptyState(
                 icon: "folder",
-                title: projects.isEmpty ? "No projects yet" : "Select a project"
+                title: projects.isEmpty ? LumiPluginLocalization.string("No projects yet", bundle: .module) : LumiPluginLocalization.string("Select a project", bundle: .module)
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .appSurface(style: .panel, cornerRadius: 0)
@@ -242,7 +242,7 @@ public struct ProjectsSettingsView: View {
                                 .foregroundStyle(theme.textPrimary)
                                 .lineLimit(1)
                             Spacer(minLength: 0)
-                            Text("Active")
+                            Text(LumiPluginLocalization.string("Active", bundle: .module))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
