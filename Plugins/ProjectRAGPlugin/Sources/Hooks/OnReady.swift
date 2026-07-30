@@ -61,7 +61,13 @@ public struct ProjectRAGOnReadyHook: SuperLog {
                     return
                 }
 
-                for path in candidatePaths {
+                let currentPath = kernel.project?.currentProject.map {
+                    URL(fileURLWithPath: $0.path).standardizedFileURL.path
+                }
+                let currentProjectPaths = candidatePaths.filter { $0 == currentPath }
+                let deferredProjectPaths = candidatePaths.filter { $0 != currentPath }
+
+                for path in currentProjectPaths {
                     guard !Task.isCancelled else {
                         if Self.verbose {
                             Self.logger.info("\(Self.t)background indexing cancelled")
@@ -71,6 +77,16 @@ public struct ProjectRAGOnReadyHook: SuperLog {
                     if Self.verbose {
                         Self.logger.info("\(Self.t)background ensure index project=\(path)")
                     }
+                    await service.ensureIndexedBackground(projectPath: path)
+                }
+
+                // Keep non-active projects available, but do not compete with
+                // the first window's startup work. The indexing tasks
+                // themselves run at utility priority.
+                guard !deferredProjectPaths.isEmpty else { return }
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                for path in deferredProjectPaths {
+                    guard !Task.isCancelled else { return }
                     await service.ensureIndexedBackground(projectPath: path)
                 }
             } catch {

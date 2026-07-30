@@ -287,7 +287,7 @@ public actor RAGService: SuperLog {
         }
 
         // 在后台 Task 中执行索引
-        let task = Task.detached { [weak self] in
+        let task = Task.detached(priority: .utility) { [weak self] in
             guard let self = self else { return }
 
             do {
