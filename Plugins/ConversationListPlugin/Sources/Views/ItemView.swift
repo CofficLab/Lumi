@@ -2,21 +2,33 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
-/// 会话项视图 - 纯静态展示
+/// 会话项视图
 public struct ItemView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     public let conversation: LumiConversationSummary
-    public let onDelete: () -> Void
-    public let onPin: () -> Void
+    public let svc: any ConversationManaging
 
-    public init(conversation: LumiConversationSummary, onDelete: @escaping () -> Void, onPin: @escaping () -> Void) {
+    @State private var isSelected: Bool = false
+
+    public init(conversation: LumiConversationSummary, svc: any ConversationManaging) {
         self.conversation = conversation
-        self.onDelete = onDelete
-        self.onPin = onPin
+        self.svc = svc
     }
 
     public var body: some View {
+        AppListRow(isSelected: isSelected) {
+            content
+        }
+        .onAppear {
+            isSelected = svc.selectedConversationID == conversation.id
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
+            isSelected = svc.selectedConversationID == conversation.id
+        }
+    }
+
+    private var content: some View {
         HStack(spacing: 8) {
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(.appMicro)
@@ -38,16 +50,21 @@ public struct ItemView: View {
                         .truncationMode(.tail)
                 }
 
-                Text(relativeTime(from: conversation.updatedAt))
+                Text(conversation.updatedAt.relativeTime)
                     .font(.appMicro)
                     .foregroundColor(theme.textSecondary)
             }
 
             Spacer()
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            svc.selectConversation(id: conversation.id)
+        }
         .contextMenu {
             Button {
-                onPin()
+                let newOrder = conversation.order == 0 ? LumiConversationSummary.defaultOrder : 0
+                svc.setConversationOrder(newOrder, for: conversation.id)
             } label: {
                 Label(
                     conversation.order == 0 ? "Unpin" : "Pin",
@@ -56,28 +73,11 @@ public struct ItemView: View {
             }
 
             Button(role: .destructive) {
-                onDelete()
+                svc.deleteConversation(id: conversation.id)
             } label: {
                 Label(LumiPluginLocalization.string("Delete", bundle: .module), systemImage: "trash")
             }
         }
     }
 
-    private func relativeTime(from date: Date) -> String {
-        let delta = Date().timeIntervalSince(date)
-        guard delta >= 0 else { return "Just now" }
-
-        let minutes = Int(delta) / 60
-        if minutes < 60 {
-            return minutes < 1 ? "Just now" : "\(minutes)m ago"
-        }
-
-        let hours = minutes / 60
-        if hours < 24 {
-            return "\(hours)h ago"
-        }
-
-        let days = hours / 24
-        return "\(days)d ago"
-    }
 }

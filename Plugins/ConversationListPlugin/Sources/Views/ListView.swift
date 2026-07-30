@@ -5,7 +5,7 @@ import SwiftUI
 /// 对话列表视图
 public struct ListView: View {
     @State private var conversations: [LumiConversationSummary] = []
-    @State private var isLoaded = false
+    @State private var isLoading = true
     let svc: any ConversationManaging
 
     public init(kernel: LumiKernel) {
@@ -15,7 +15,7 @@ public struct ListView: View {
 
     public var body: some View {
         Group {
-            if !isLoaded {
+            if isLoading {
                 ListLoadingView()
             } else if conversations.isEmpty {
                 ListEmptyView()
@@ -25,7 +25,10 @@ public struct ListView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .task {
-            await loadConversations()
+            await reload()
+            for await _ in NotificationCenter.default.notifications(named: .lumiConversationsDidChange) {
+                await reload()
+            }
         }
     }
 
@@ -33,20 +36,7 @@ public struct ListView: View {
         ScrollView {
             LazyVStack(spacing: 4) {
                 ForEach(conversations, id: \.id) { conversation in
-                    AppListRow(isSelected: svc.selectedConversationID == conversation.id) {
-                        ItemView(
-                            conversation: conversation,
-                            onDelete: { svc.deleteConversation(id: conversation.id) },
-                            onPin: {
-                                let newOrder = conversation.order == 0 ? LumiConversationSummary.defaultOrder : 0
-                                svc.setConversationOrder(newOrder, for: conversation.id)
-                            }
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            svc.selectConversation(id: conversation.id)
-                        }
-                    }
+                    ItemView(conversation: conversation, svc: svc)
                 }
             }
             .padding(.horizontal, 8)
@@ -55,18 +45,10 @@ public struct ListView: View {
         .scrollContentBackground(.hidden)
     }
 
-    private func loadConversations() async {
+    private func reload() async {
         conversations = await MainActor.run {
-            svc.conversations.sorted { lhs, rhs in
-                if lhs.order != rhs.order {
-                    return lhs.order < rhs.order
-                }
-                if lhs.updatedAt == rhs.updatedAt {
-                    return lhs.createdAt > rhs.createdAt
-                }
-                return lhs.updatedAt > rhs.updatedAt
-            }
+            svc.sortedConversations
         }
-        isLoaded = true
+        isLoading = false
     }
 }

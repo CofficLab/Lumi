@@ -839,7 +839,6 @@
       }
     },
     "No conversations" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

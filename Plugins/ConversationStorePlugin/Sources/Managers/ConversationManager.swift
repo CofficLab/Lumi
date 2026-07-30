@@ -179,6 +179,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         selectedConversationID = id
         updateCurrentTitle()
         persistSelectedConversationID()
+        notifyConversationsChanged()
 
         // Touch the conversation to update its timestamp (async)
         Task {
