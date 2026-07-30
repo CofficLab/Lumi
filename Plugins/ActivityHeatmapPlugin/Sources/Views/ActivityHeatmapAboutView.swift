@@ -52,9 +52,9 @@ struct ActivityHeatmapAboutView: View {
                 RequirementsCard(
                     title: LumiPluginLocalization.string("Requirements", bundle: .module),
                     items: [
-                        "macOS 14.0 or later",
-                        "Swift 6.0 or later",
-                        "LumiKernel with MessageManaging service"
+                        LumiPluginLocalization.string("macOS 14.0 or later", bundle: .module),
+                        LumiPluginLocalization.string("Swift 6.0 or later", bundle: .module),
+                        LumiPluginLocalization.string("LumiKernel with MessageManaging service", bundle: .module),
                     ]
                 )
 
