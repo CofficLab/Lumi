@@ -1,4 +1,5 @@
 import Foundation
+import LumiKernel
 
 // MARK: - Internal Inference Profile
 

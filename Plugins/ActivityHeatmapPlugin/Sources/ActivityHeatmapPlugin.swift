@@ -34,6 +34,8 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
 
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
         let messageService = kernel.resolveService(MessageManaging.self)
+        let idleTimeProvider = kernel.idleTime
+        let idleTimeDataDirectory = kernel.storage?.pluginDataDirectory(for: "IdleTime")
         return [
             SettingsTabItem(
                 id: id,
@@ -41,7 +43,9 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
                 systemImage: "chart.bar.xaxis",
                 order: order
             ) {
-                ActivityHeatmapSettingsView(messageService: messageService, cache: self.cache)
+                ActivityHeatmapSettingsView(messageService: messageService, cache: self.cache,
+                                            idleTimeProvider: idleTimeProvider,
+                                            idleTimeDataDirectory: idleTimeDataDirectory)
             },
         ]
     }

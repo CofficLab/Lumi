@@ -9,6 +9,11 @@ extension LumiKernelContainer {
         registerService(StorageProviding.self, storage)
     }
 
+    /// Register idle-time activity service.
+    public func registerIdleTime(_ idleTime: any IdleTimeProviding) {
+        registerService(IdleTimeProviding.self, idleTime)
+    }
+
     /// Register project management service
     public func registerProject(_ project: any ProjectProviding) {
         registerService(ProjectProviding.self, project)

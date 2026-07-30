@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import LumiKernel
 @testable import IdleTimePlugin
 
 /// Unit tests for `RestWindow.contains` (cross-midnight logic),

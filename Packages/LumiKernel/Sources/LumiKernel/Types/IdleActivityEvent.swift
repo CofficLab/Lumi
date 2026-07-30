@@ -22,31 +22,21 @@ public enum IdleActivityKind: String, Codable, Sendable, CaseIterable {
 
     public var inferenceWeight: Double {
         switch self {
-        case .editorInput, .agentMessageSent:
-            return 3.0
-        case .fileSave, .terminalCommandStarted:
-            return 2.0
-        case .projectChanged:
-            return 1.5
-        case .appBecameActive:
-            return 1.0
+        case .editorInput, .agentMessageSent: return 3.0
+        case .fileSave, .terminalCommandStarted: return 2.0
+        case .projectChanged: return 1.5
+        case .appBecameActive: return 1.0
         }
     }
 
     public var throttleInterval: TimeInterval {
         switch self {
-        case .editorInput:
-            return 60
-        case .appBecameActive:
-            return 300
-        case .fileSave:
-            return 30
-        case .terminalCommandStarted:
-            return 60
-        case .agentMessageSent:
-            return 15
-        case .projectChanged:
-            return 60
+        case .editorInput: return 60
+        case .appBecameActive: return 300
+        case .fileSave: return 30
+        case .terminalCommandStarted: return 60
+        case .agentMessageSent: return 15
+        case .projectChanged: return 60
         }
     }
 }
