@@ -5,13 +5,36 @@ import SwiftUI
 /// Message List View
 ///
 /// Displays the chat message list for the selected conversation.
+///
+/// 采用游标分页:首屏只加载最近一页(pageSize 条),向上滚动到顶部时可加载更早的一页,
+/// 内存中最多保留 `maxRetainedCount` 条,超出则丢弃尾部(较新、远离可视区的)消息,
+/// 使内存占用与消息总量无关。数据库读取在后台线程执行,避免阻塞主线程。
 struct MessageListView: View {
     @ObservedObject var kernel: LumiKernel
 
     @LumiTheme private var theme
+
+    /// 当前内存中的消息,按时间升序排列(最老在前、最新在后)。
     @State private var messages: [LumiChatMessage] = []
-    @State private var showRawMessage = false
+    /// 顶部是否还有更早的消息未加载。
+    @State private var hasEarlierMessages = false
+    /// 正在加载更早一页(顶部按钮的 loading 态)。
+    @State private var isLoadingEarlier = false
+    /// 首屏 loading:切换会话时为 true,首屏数据就绪后置 false。
     @State private var isLoading = true
+    /// 用户是否停在列表底部附近;用于决定新消息到达时是否自动滚到底部。
+    @State private var isAtBottom = true
+    /// 切换会话时记录的目标会话,用于丢弃过期的后台读结果。
+    @State private var activeConversationID: UUID?
+
+    @State private var showRawMessage = false
+
+    private let pageSize = 40
+    /// 内存中最多保留的消息条数;超出则丢弃尾部(用户在向上翻历史时)。
+    private let maxRetainedCount = 300
+
+    /// 底部锚点行的 id,用于 isAtBottom 检测和 scrollTo。
+    private static let bottomAnchorID = "message-list-bottom-anchor"
 
     private var selectedConversationID: UUID? {
         kernel.conversations?.selectedConversationID
@@ -30,69 +53,202 @@ struct MessageListView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
         .task(id: selectedConversationID) {
-            // 切换会话:进入 loading → 同步拉取数据 → 结束 loading。
-            loadMessages(showLoading: true)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { notification in
-            guard let conversationID = selectedConversationID else { return }
-            // 消息变更通知携带会话 ID 时只响应当前会话；为 nil 则视为全局刷新。
-            if let changedID = notification.lumiConversationID, changedID != conversationID {
-                return
-            }
-            // 流式刷新:静默更新数据,不触发 loading 以免闪烁。
-            loadMessages(showLoading: false)
+            // 切换会话:重置状态,加载最近一页。
+            activeConversationID = selectedConversationID
+            isLoading = true
+            isAtBottom = true
+            await loadFirstPage()
         }
     }
+
+    // MARK: - Scroll View
 
     private var messageScrollView: some View {
-        ScrollView {
-            // 用 LazyVStack 惰性渲染:只构建进入屏幕附近的行,避免一次性渲染全部
-            // 消息(每条含 markdown/思考链/工具调用)而阻塞主线程。
-            LazyVStack(spacing: 0) {
-                ForEach(messages) { message in
-                    MessageRowView(
-                        message: message,
-                        renderer: kernel.messageRendererManager?.renderer(for: message),
-                        showRawMessage: $showRawMessage
-                    )
-                    .padding(.horizontal, 6)
+        // 外层 GeometryReader 捕获视口 max-Y,用于 isAtBottom 判断。
+        GeometryReader { viewport in
+            ScrollViewReader { proxy in
+                ScrollView {
+                    // LazyVStack 惰性渲染:只构建进入屏幕附近的行,避免一次性渲染全部
+                    // 消息而阻塞主线程。renderer 匹配已在 MessageRendererManager 加缓存,
+                    // 滚动时不再每帧重新排序/匹配,不会卡死。
+                    LazyVStack(spacing: 0) {
+                        // 顶部"加载更早消息":仅在还有更早消息时显示。
+                        if hasEarlierMessages {
+                            Button {
+                                Task { await loadEarlier(proxy: proxy) }
+                            } label: {
+                                if isLoadingEarlier {
+                                    ProgressView().controlSize(.small)
+                                } else {
+                                    Text("Load earlier messages")
+                                        .font(.appCaption)
+                                        .foregroundColor(theme.textSecondary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                        }
+
+                        ForEach(messages) { message in
+                            MessageRowView(
+                                message: message,
+                                renderer: kernel.messageRendererManager?.renderer(for: message),
+                                showRawMessage: $showRawMessage
+                            )
+                            .id(message.id)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                        }
+
+                        // 底部锚点:通过它的几何位置判断 isAtBottom。
+                        bottomAnchor
+                    }
                     .padding(.vertical, 4)
                 }
+                .onPreferenceChange(MessageListBottomAnchorPositionKey.self) { bottomMaxY in
+                    let viewMaxY = viewport.frame(in: .global).maxY
+                    guard bottomMaxY.isFinite, viewMaxY.isFinite else { return }
+                    // 底部锚点进入视口下方 48pt 容差范围 → 视为"在底部"。
+                    isAtBottom = bottomMaxY <= viewMaxY + 48
+                }
+                .task(id: selectedConversationID) {
+                    // 首屏数据就绪后,滚到最底部(无动画)。
+                    scrollToBottom(proxy: proxy, animated: false)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { _ in
+                    // 尾部新消息/流式刷新:重新查最近一页,覆盖尾部;若用户在底部则滚到底。
+                    Task {
+                        let wasAtBottom = isAtBottom
+                        await refreshTail()
+                        if wasAtBottom {
+                            // 等一帧让新内容布局后再滚动。
+                            try? await Task.sleep(nanoseconds: 30_000_000)
+                            scrollToBottom(proxy: proxy, animated: true)
+                        }
+                    }
+                }
             }
-            .padding(.vertical, 4)
         }
     }
 
-    /// 拉取当前会话的消息。
-    ///
-    /// 数据库读取(SwiftData fetch + 逐条 JSON 解码)放在后台线程执行,
-    /// 避免长会话加载时阻塞主线程导致风火轮;读完后回到主线程更新 `@State`。
-    ///
-    /// - Parameter showLoading: 切换会话时传 `true` 包裹 loading 状态;
-    ///   消息变更通知触发的流式刷新传 `false`,静默更新以免闪烁。
-    private func loadMessages(showLoading: Bool) {
-        if showLoading {
-            isLoading = true
+    /// 底部锚点行:1pt 高的透明视图,报告其全局 max-Y。
+    private var bottomAnchor: some View {
+        GeometryReader { geometry in
+            Color.clear
+                .preference(
+                    key: MessageListBottomAnchorPositionKey.self,
+                    value: geometry.frame(in: .global).maxY
+                )
         }
+        .frame(height: 1)
+        .id(Self.bottomAnchorID)
+        .accessibilityHidden(true)
+    }
+
+    // MARK: - Data Loading
+
+    /// 首屏:加载最近一页,并探测是否还有更早消息。
+    private func loadFirstPage() async {
         guard let conversationID = selectedConversationID,
               let messageManager = kernel.messageManager else {
             messages = []
+            hasEarlierMessages = false
             isLoading = false
             return
         }
+        let page = await readOffMain { messageManager.messagePage(for: conversationID, limit: pageSize, beforeMessageID: nil) } ?? []
+        let hasEarlier = await readOffMain { messageManager.hasEarlierMessages(for: conversationID, beforeMessageID: page.first?.id) } ?? false
+        // 切换会话期间用户可能又选了别的会话,丢弃过期结果。
+        guard activeConversationID == conversationID else { return }
+        messages = page
+        hasEarlierMessages = hasEarlier
+        isLoading = false
+    }
 
-        // Task { } 继承主 actor,因此 self 的访问始终在主线程;内部的
-        // Task.detached 仅负责把"读库"这件重活搬到后台线程,产出 Sendable 的数据后返回。
-        Task { @MainActor in
-            // messageManager 已是 Sendable,可安全捕获进后台任务;
-            // messages(for:) 是 nonisolated,真正在后台线程执行读库。
-            let loaded = await Task.detached(priority: .userInitiated) {
-                messageManager.messages(for: conversationID)
-            }.value
-            // 回到主线程:切换会话期间用户可能又选了别的会话,丢弃过期的后台结果。
-            guard selectedConversationID == conversationID else { return }
-            messages = loaded
-            isLoading = false
+    /// 向上翻页:加载更早一页并 prepend,保持滚动位置,触发窗口回收。
+    private func loadEarlier(proxy: ScrollViewProxy) async {
+        guard !isLoadingEarlier,
+              hasEarlierMessages,
+              let conversationID = selectedConversationID,
+              let messageManager = kernel.messageManager,
+              let firstID = messages.first?.id else { return }
+
+        isLoadingEarlier = true
+        // 记住 prepend 前的"顶部第一条",prepend 后把它钉回视口顶部。
+        let anchorID = firstID
+        let earlier = await readOffMain { messageManager.messagePage(for: conversationID, limit: pageSize, beforeMessageID: firstID) } ?? []
+        let stillHasEarlier = await readOffMain { messageManager.hasEarlierMessages(for: conversationID, beforeMessageID: earlier.first?.id) } ?? false
+        guard activeConversationID == conversationID else {
+            isLoadingEarlier = false
+            return
         }
+        guard !earlier.isEmpty else {
+            isLoadingEarlier = false
+            return
+        }
+        messages = earlier + messages
+        hasEarlierMessages = stillHasEarlier
+        isLoadingEarlier = false
+        evictTailIfNeeded()
+
+        // prepend 后,等一帧让新行布局,再把锚点行钉回视口顶部,避免视觉跳动。
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            proxy.scrollTo(anchorID, anchor: .top)
+        }
+    }
+
+    /// 尾部刷新:重新查最近一页,与当前尾部比对并更新;若用户在底部则滚到底。
+    private func refreshTail() async {
+        guard let conversationID = selectedConversationID,
+              let messageManager = kernel.messageManager else { return }
+
+        let latestPage = await readOffMain { messageManager.messagePage(for: conversationID, limit: pageSize, beforeMessageID: nil) } ?? []
+        guard activeConversationID == conversationID else { return }
+        guard !latestPage.isEmpty else { return }
+
+        // 合并:用最近一页覆盖尾部重叠区,保留头部更早的历史。
+        // 找出当前 messages 中第一条属于 latestPage 的消息,从那里截断并拼接最新页。
+        let latestIDs = Set(latestPage.map(\.id))
+        if let firstOverlapIndex = messages.firstIndex(where: { latestIDs.contains($0.id) }) {
+            messages = Array(messages[..<firstOverlapIndex]) + latestPage
+        } else if messages.isEmpty {
+            // 当前为空(首次异步到达),直接用最近一页。
+            messages = latestPage
+            hasEarlierMessages = await readOffMain { messageManager.hasEarlierMessages(for: conversationID, beforeMessageID: latestPage.first?.id) } ?? false
+        } else {
+            // 无重叠(用户在翻很早的历史,最近一页与当前完全不交):不强行覆盖,避免破坏位置。
+            // 仍提示有最新消息;不滚动(用户在上方)。
+            return
+        }
+    }
+
+    // MARK: - Window Eviction
+
+    /// 内存超阈值时丢弃尾部(较新、远离当前可视区的)消息。
+    /// 仅在用户正在向上翻历史(即不在底部)时执行,避免裁掉正在流式的尾部。
+    private func evictTailIfNeeded() {
+        guard messages.count > maxRetainedCount, !isAtBottom else { return }
+        let overflow = messages.count - maxRetainedCount
+        messages.removeLast(overflow)
+    }
+
+    // MARK: - Scrolling
+
+    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool) {
+        guard !messages.isEmpty else { return }
+        if animated {
+            withAnimation(.easeOut(duration: 0.2)) {
+                proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
+            }
+        } else {
+            proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
+        }
+    }
+
+    /// 在后台线程执行一段 nonisolated 读操作(返回 Sendable 结果),避免阻塞主线程。
+    private func readOffMain<T: Sendable>(_ body: @escaping @Sendable () -> T) async -> T? {
+        await Task.detached(priority: .userInitiated) { body() }.value
     }
 }
