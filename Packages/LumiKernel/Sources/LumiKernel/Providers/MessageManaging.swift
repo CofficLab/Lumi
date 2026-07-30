@@ -1,22 +1,5 @@
 import Foundation
 
-public struct MessageTokenUsage: Sendable, Equatable {
-    /// 已用当前日历归一化到当天 00:00 的日期。
-    public let day: Date
-    public let inputTokens: Int
-    public let outputTokens: Int
-
-    public init(day: Date, inputTokens: Int, outputTokens: Int) {
-        self.day = day
-        self.inputTokens = inputTokens
-        self.outputTokens = outputTokens
-    }
-
-    public var totalTokens: Int {
-        inputTokens + outputTokens
-    }
-}
-
 /// 消息管理能力协议
 ///
 /// 定义消息的获取、删除、插入等管理功能。
@@ -41,15 +24,15 @@ public protocol MessageManaging: ObservableObject {
     /// - Parameters:
     ///   - limit: 最多返回多少条消息。
     ///   - beforeMessageID: 以该消息为边界，返回它之前的消息页；传 `nil` 时返回最近一页。
-    func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) async -> [LumiChatMessage]
+    func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage]
 
     /// 获取指定对话的消息数量。
     ///
     /// 列表、徽标等轻量 UI 应使用此方法，避免为了计数加载整段消息正文或附件。
-    func messageCount(for conversationID: UUID) async -> Int
+    func messageCount(for conversationID: UUID) -> Int
 
     /// 指定消息之前是否还有更早的消息。
-    func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) async -> Bool
+    func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool
 
     /// 删除指定消息
     func deleteMessage(id: UUID, in conversationID: UUID)

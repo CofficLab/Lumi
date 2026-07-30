@@ -23,16 +23,16 @@ struct MessageStorePaginationTests {
                 content: "Message \(index)",
                 createdAt: baseDate.addingTimeInterval(Double(index))
             )
-            _ = try await store.insertMessage(message)
+            _ = try store.insertMessage(message)
         }
 
-        let latestPage = await store.fetchMessagePage(conversationId: conversationID, limit: 10)
+        let latestPage = store.fetchMessagePage(conversationId: conversationID, limit: 10)
         #expect(latestPage.count == 10)
         #expect(latestPage.first?.content == "Message 5")
         #expect(latestPage.last?.content == "Message 14")
 
         let pivotID = try #require(latestPage.first?.id)
-        let earlierPage = await store.fetchMessagePage(
+        let earlierPage = store.fetchMessagePage(
             conversationId: conversationID,
             limit: 10,
             beforeMessageID: pivotID
@@ -41,10 +41,10 @@ struct MessageStorePaginationTests {
         #expect(earlierPage.count == 5)
         #expect(earlierPage.first?.content == "Message 0")
         #expect(earlierPage.last?.content == "Message 4")
-        #expect(await store.hasEarlierMessages(conversationId: conversationID, beforeMessageID: pivotID))
+        #expect(store.hasEarlierMessages(conversationId: conversationID, beforeMessageID: pivotID))
 
         let oldestEarlierID = try #require(earlierPage.first?.id)
-        #expect(!(await store.hasEarlierMessages(conversationId: conversationID, beforeMessageID: oldestEarlierID)))
+        #expect(!(store.hasEarlierMessages(conversationId: conversationID, beforeMessageID: oldestEarlierID)))
     }
 
     @Test
@@ -61,7 +61,7 @@ struct MessageStorePaginationTests {
         let sameDay = try #require(calendar.date(byAdding: .hour, value: 13, to: targetDay))
         let nextDay = try #require(calendar.date(byAdding: .day, value: 1, to: targetDay))
 
-        _ = try await store.insertMessage(LumiChatMessage(
+        _ = try store.insertMessage(LumiChatMessage(
             conversationID: conversationID,
             role: .assistant,
             content: "openai response",
@@ -71,7 +71,7 @@ struct MessageStorePaginationTests {
             inputTokenCount: 10,
             outputTokenCount: 20
         ))
-        _ = try await store.insertMessage(LumiChatMessage(
+        _ = try store.insertMessage(LumiChatMessage(
             conversationID: conversationID,
             role: .assistant,
             content: "metadata response",
@@ -83,7 +83,7 @@ struct MessageStorePaginationTests {
                 LumiMessageTokenMetadata.outputKey: "7",
             ]
         ))
-        _ = try await store.insertMessage(LumiChatMessage(
+        _ = try store.insertMessage(LumiChatMessage(
             conversationID: conversationID,
             role: .assistant,
             content: "anthropic response",
@@ -93,7 +93,7 @@ struct MessageStorePaginationTests {
             inputTokenCount: 5,
             outputTokenCount: 6
         ))
-        _ = try await store.insertMessage(LumiChatMessage(
+        _ = try store.insertMessage(LumiChatMessage(
             conversationID: conversationID,
             role: .assistant,
             content: "next day response",
@@ -104,21 +104,21 @@ struct MessageStorePaginationTests {
             outputTokenCount: 200
         ))
 
-        let allUsage = await store.fetchTokenUsage(on: sameDay)
+        let allUsage = store.fetchTokenUsage(on: sameDay)
         #expect(allUsage.day == Calendar.current.startOfDay(for: sameDay))
         #expect(allUsage.inputTokens == 18)
         #expect(allUsage.outputTokens == 33)
         #expect(allUsage.totalTokens == 51)
 
-        let openAIUsage = await store.fetchTokenUsage(on: sameDay, providerID: "openai")
+        let openAIUsage = store.fetchTokenUsage(on: sameDay, providerID: "openai")
         #expect(openAIUsage.inputTokens == 13)
         #expect(openAIUsage.outputTokens == 27)
 
-        let filteredUsage = await store.fetchTokenUsage(on: sameDay, providerID: "openai", modelName: "gpt-5")
+        let filteredUsage = store.fetchTokenUsage(on: sameDay, providerID: "openai", modelName: "gpt-5")
         #expect(filteredUsage.inputTokens == 13)
         #expect(filteredUsage.outputTokens == 27)
 
-        let missingUsage = await store.fetchTokenUsage(on: sameDay, providerID: "openai", modelName: "gpt-4")
+        let missingUsage = store.fetchTokenUsage(on: sameDay, providerID: "openai", modelName: "gpt-4")
         #expect(missingUsage.totalTokens == 0)
     }
 }

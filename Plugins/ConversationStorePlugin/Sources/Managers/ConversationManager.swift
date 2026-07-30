@@ -454,7 +454,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             // 收集没有任何消息的空对话 ID
             var emptyIDs: [UUID] = []
             for conversation in snapshot {
-                let count = await messageManager?.messageCount(for: conversation.id) ?? 0
+                let count = messageManager?.messageCount(for: conversation.id) ?? 0
                 if count == 0 {
                     emptyIDs.append(conversation.id)
                 }

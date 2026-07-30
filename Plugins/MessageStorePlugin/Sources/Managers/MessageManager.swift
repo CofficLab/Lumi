@@ -4,8 +4,6 @@ import os
 import SuperLogKit
 
 /// Message Manager Service
-///
-/// Implements MessageManaging protocol with SwiftData persistence.
 @MainActor
 public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     public nonisolated static let emoji = "💬"
@@ -13,10 +11,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
 
     private weak var kernel: LumiKernel?
-
-    /// In-memory cache of messages per conversation
-    private var messageCache: [UUID: [LumiChatMessage]] = [:]
-    private var messageLoadTasks: [UUID: Task<Void, Never>] = [:]
 
     public init(kernel: LumiKernel) {
         self.kernel = kernel
@@ -31,59 +25,16 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         MessageStoreRuntimeBridge.shared.store
     }
 
-    // MARK: - Load
-
-    /// Load messages for a conversation from store
-    public func loadMessages(for conversationID: UUID) {
-        guard let store else {
-            Self.logger.error("\(Self.t)Store not available")
-            return
-        }
-
-        guard messageCache[conversationID] == nil, messageLoadTasks[conversationID] == nil else {
-            return
-        }
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)loadMessages(for:) ➡️ conversation=\(conversationID.uuidString.prefix(8))…, cacheBefore=\(self.messageCache[conversationID]?.count ?? 0)")
-        }
-
-        let task = Task { [weak self, store] in
-            guard let self else { return }
-            let loaded = await store.fetchMessages(conversationId: conversationID)
-            guard !Task.isCancelled else { return }
-            let current = self.messageCache[conversationID] ?? []
-            var merged = loaded
-            let loadedIDs = Set(loaded.map(\.id))
-            merged.append(contentsOf: current.filter { !loadedIDs.contains($0.id) })
-            self.messageCache[conversationID] = merged
-            self.messageLoadTasks[conversationID] = nil
-            if Self.verbose {
-                Self.logger.info("\(Self.t)loadMessages(for:) 完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, messages=\(merged.count)")
-            }
-            self.kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
-        }
-        messageLoadTasks[conversationID] = task
-    }
-
     // MARK: - MessageManaging
 
     public func messages(for conversationID: UUID) -> [LumiChatMessage] {
-        // If cache doesn't exist for this conversation, trigger async load
-        if messageCache[conversationID] == nil {
-            if Self.verbose {
-                Self.logger.info("\(Self.t)Full-history cache miss conversation=\(conversationID.uuidString.prefix(8)), loading from database async")
-            }
-            // Start async load - UI will be updated via notification
-            loadMessages(for: conversationID)
-        }
-        let cached = messageCache[conversationID] ?? []
+        let all = store?.fetchMessages(conversationId: conversationID) ?? []
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)messages(for:) conversation=\(conversationID.uuidString.prefix(8)) cachedMessages=\(cached.count)")
+            Self.logger.info("\(Self.t)messages(for:) conversation=\(conversationID.uuidString.prefix(8)) messages=\(all.count)")
         }
 
-        return cached
+        return all
     }
 
     public func displayMessages(for conversationID: UUID) -> [LumiChatMessage] {
@@ -98,22 +49,17 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     }
 
     public func cachedDisplayMessages(for conversationID: UUID) -> [LumiChatMessage] {
-        let all = messageCache[conversationID] ?? []
-        let verbosity = kernel?.conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
-        guard verbosity == .detailed else {
-            return all.filter { $0.role != .tool }
-        }
-        return all
+        displayMessages(for: conversationID)
     }
 
-    public func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) async -> [LumiChatMessage] {
+    public func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage] {
         guard let store else { return [] }
 
         if Self.verbose {
             Self.logger.info("\(Self.t)visibleMessages 开始 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, limit=\(limit), before=\(beforeMessageID?.uuidString.prefix(8) ?? "nil")")
         }
 
-        let page = await store.fetchMessagePage(
+        let page = store.fetchMessagePage(
             conversationId: conversationID,
             limit: limit,
             beforeMessageID: beforeMessageID
@@ -134,49 +80,30 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return filtered
     }
 
-    public func messageCount(for conversationID: UUID) async -> Int {
-        if let cached = messageCache[conversationID] {
-            if Self.verbose {
-                Self.logger.info("\(Self.t)messageCount cache-hit conversation=\(conversationID.uuidString.prefix(8)) count=\(cached.count)")
-            }
-            return cached.count
-        }
-        guard let store else { return 0 }
-        let count = await store.messageCount(conversationId: conversationID)
+    public func messageCount(for conversationID: UUID) -> Int {
+        let count = store?.messageCount(conversationId: conversationID) ?? 0
         if Self.verbose {
-            Self.logger.info("\(Self.t)messageCount store-count conversation=\(conversationID.uuidString.prefix(8)) count=\(count) fullHistoryLoaded=false")
+            Self.logger.info("\(Self.t)messageCount conversation=\(conversationID.uuidString.prefix(8)) count=\(count)")
         }
         return count
     }
 
-    public func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) async -> Bool {
-        guard let store else { return false }
-        return await store.hasEarlierMessages(conversationId: conversationID, beforeMessageID: beforeMessageID)
-    }
-
-    public nonisolated func messagesAsync(for conversationID: UUID) async -> [LumiChatMessage] {
-        await store?.fetchMessages(conversationId: conversationID) ?? []
+    public func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool {
+        store?.hasEarlierMessages(conversationId: conversationID, beforeMessageID: beforeMessageID) ?? false
     }
 
     public func deleteMessage(id: UUID, in conversationID: UUID) {
-        // Remove from cache
         if Self.verbose {
-            Self.logger.info("\(Self.t)deleteMessage ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(id.uuidString.prefix(8))…, cacheBefore=\(self.messageCache[conversationID]?.count ?? 0)")
+            Self.logger.info("\(Self.t)deleteMessage ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(id.uuidString.prefix(8))…")
         }
-        messageCache[conversationID]?.removeAll { $0.id == id }
-
+        store?.deleteMessage(id: id)
         // Notify observers that messages changed
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
-
-        // Delete from store async
-        Task {
-            await store?.deleteMessage(id: id)
-        }
     }
 
     public func insertMessage(_ message: LumiChatMessage, to conversationID: UUID) {
         if Self.verbose {
-            Self.logger.info("\(Self.t)insertMessage called ➡️ messageConversation=\(message.conversationID.uuidString.prefix(8)) targetConversation=\(conversationID.uuidString.prefix(8)) role=\(message.role.rawValue) contentChars=\(message.content.count) metadataChars=\(Self.metadataCharacterCount(message.metadata)) reasoningChars=\(message.reasoningContent?.count ?? 0) toolCalls=\(message.toolCalls?.count ?? 0) cacheBefore=\(self.messageCache[conversationID]?.count ?? 0)")
+            Self.logger.info("\(Self.t)insertMessage called ➡️ messageConversation=\(message.conversationID.uuidString.prefix(8)) targetConversation=\(conversationID.uuidString.prefix(8)) role=\(message.role.rawValue) contentChars=\(message.content.count) metadataChars=\(Self.metadataCharacterCount(message.metadata)) reasoningChars=\(message.reasoningContent?.count ?? 0) toolCalls=\(message.toolCalls?.count ?? 0)")
         }
 
         // Ensure message has the correct conversationID
@@ -208,124 +135,59 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             )
         }
 
-        // Add to cache immediately
-        if messageCache[conversationID] == nil {
-            messageCache[conversationID] = []
+        // Persist synchronously
+        do {
+            try store?.insertMessage(messageToInsert)
+        } catch {
             if Self.verbose {
-                Self.logger.info("\(Self.t)Created new cache array conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.error("\(Self.t)Failed to persist message: \(error)")
             }
-        }
-        messageCache[conversationID]?.append(messageToInsert)
-
-        let totalCount = self.messageCache[conversationID]?.count ?? 0
-        if Self.verbose {
-            Self.logger.info("\(Self.t)Inserted message to cache ➡️ message=\(messageToInsert.id.uuidString.prefix(8)) conversation=\(conversationID.uuidString.prefix(8)) cachedMessages=\(totalCount) cacheConversations=\(self.messageCache.keys.count)")
         }
 
         // Notify observers that messages changed
-        if Self.verbose {
-            Self.logger.info("\(Self.t)准备发布 messagesDidChange ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(messageToInsert.id.uuidString.prefix(8))…, cacheContainsMessage=\(self.messageCache[conversationID]?.contains(where: { $0.id == messageToInsert.id }) ?? false)")
-        }
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
-
-        // Persist to store async
-        Task {
-            do {
-                if Self.verbose {
-                    Self.logger.info("\(Self.t)开始异步写入 store ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(messageToInsert.id.uuidString.prefix(8))…")
-                }
-                try await store?.insertMessage(messageToInsert)
-                if Self.verbose {
-                    Self.logger.info("\(Self.t)异步写入 store 完成 ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(messageToInsert.id.uuidString.prefix(8))…")
-                }
-            } catch {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)Failed to persist message: \(error)")
-                }
-            }
-        }
     }
 
     public func updateMessage(id: UUID, in conversationID: UUID, content: String) {
-        // Update in cache
-        guard let index = messageCache[conversationID]?.firstIndex(where: { $0.id == id }) else {
-            if Self.verbose {
-                Self.logger.warning("\(Self.t)updateMessage: message \(id) not found")
-            }
-            return
-        }
-
-        let old = messageCache[conversationID]![index]
-        messageCache[conversationID]![index] = LumiChatMessage(
-            id: old.id,
-            conversationID: old.conversationID,
-            role: old.role,
-            content: content,
-            createdAt: old.createdAt,
-            providerID: old.providerID,
-            modelName: old.modelName,
-            isError: old.isError,
-            rawErrorDetail: old.rawErrorDetail,
-            renderKind: old.renderKind,
-            metadata: old.metadata,
-            toolCalls: old.toolCalls,
-            toolCallID: old.toolCallID,
-            reasoningContent: old.reasoningContent,
-            inputTokenCount: old.inputTokenCount,
-            outputTokenCount: old.outputTokenCount,
-            latencyMs: old.latencyMs,
-            timeToFirstTokenMs: old.timeToFirstTokenMs,
-            streamingDurationMs: old.streamingDurationMs
-        )
-
-        // Notify UI to refresh (previously missing — content updates did not trigger re-render)
         if Self.verbose {
             Self.logger.info("\(Self.t)updateMessage ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(id.uuidString.prefix(8))…, newContentChars=\(content.count)")
         }
+        store?.updateMessage(id: id, content: content)
+        // Notify UI to refresh
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
-
-        // Update in store async
-        Task {
-            await store?.updateMessage(id: id, content: content)
-        }
     }
 
     public func clearMessages(in conversationID: UUID) {
         if Self.verbose {
-            Self.logger.info("\(Self.t)clearMessages ➡️ conversation=\(conversationID.uuidString.prefix(8))…, cacheBefore=\(self.messageCache[conversationID]?.count ?? 0)")
+            Self.logger.info("\(Self.t)clearMessages ➡️ conversation=\(conversationID.uuidString.prefix(8))…")
         }
-        messageCache[conversationID] = []
-
-        Task {
-            await store?.deleteAllMessages(conversationId: conversationID)
-        }
+        store?.deleteAllMessages(conversationId: conversationID)
+        kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
     }
 
     // MARK: - Message Query
 
     public func message(id: UUID, in conversationID: UUID) -> LumiChatMessage? {
-        messageCache[conversationID]?.first { $0.id == id }
+        store?.fetchMessage(id: id)
     }
 
     public func lastMessage(in conversationID: UUID) -> LumiChatMessage? {
-        messageCache[conversationID]?.last
+        store?.fetchMessages(conversationId: conversationID).last
     }
 
-    public func fetchDailyMessageCounts(since: Date) async -> [Date: Int] {
-        guard let store else { return [:] }
-        return await store.fetchDailyMessageCounts(since: since)
+    public func fetchDailyMessageCounts(since: Date) -> [Date: Int] {
+        store?.fetchDailyMessageCounts(since: since) ?? [:]
     }
 
-    public func fetchDailyTokenCounts(since: Date) async -> [Date: Int] {
-        guard let store else { return [:] }
-        return await store.fetchDailyTokenCounts(since: since)
+    public func fetchDailyTokenCounts(since: Date) -> [Date: Int] {
+        store?.fetchDailyTokenCounts(since: since) ?? [:]
     }
 
-    public func fetchTokenUsage(on day: Date, providerID: String?, modelName: String?) async -> MessageTokenUsage {
+    public func fetchTokenUsage(on day: Date, providerID: String?, modelName: String?) -> MessageTokenUsage {
         guard let store else {
             return MessageTokenUsage(day: Calendar.current.startOfDay(for: day), inputTokens: 0, outputTokens: 0)
         }
-        return await store.fetchTokenUsage(on: day, providerID: providerID, modelName: modelName)
+        return store.fetchTokenUsage(on: day, providerID: providerID, modelName: modelName)
     }
 
     // MARK: - Tool Call Result Update
@@ -336,14 +198,13 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         assistantMessageID: UUID,
         in conversationID: UUID
     ) {
-        guard let index = messageCache[conversationID]?.firstIndex(where: { $0.id == assistantMessageID }) else {
+        guard let old = store?.fetchMessage(id: assistantMessageID) else {
             if Self.verbose {
                 Self.logger.warning("\(Self.t)updateToolCallResult: message \(assistantMessageID) not found")
             }
             return
         }
 
-        let old = messageCache[conversationID]![index]
         guard var toolCalls = old.toolCalls else {
             if Self.verbose {
                 Self.logger.warning("\(Self.t)updateToolCallResult: message has no toolCalls")
@@ -359,30 +220,8 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             }
         }
 
-        // Rebuild the message with updated toolCalls
-        let updatedMessage = LumiChatMessage(
-            id: old.id,
-            conversationID: old.conversationID,
-            role: old.role,
-            content: old.content,
-            createdAt: old.createdAt,
-            providerID: old.providerID,
-            modelName: old.modelName,
-            isError: old.isError,
-            rawErrorDetail: old.rawErrorDetail,
-            renderKind: old.renderKind,
-            metadata: old.metadata,
-            toolCalls: toolCalls,
-            toolCallID: old.toolCallID,
-            reasoningContent: old.reasoningContent,
-            inputTokenCount: old.inputTokenCount,
-            outputTokenCount: old.outputTokenCount,
-            latencyMs: old.latencyMs,
-            timeToFirstTokenMs: old.timeToFirstTokenMs,
-            streamingDurationMs: old.streamingDurationMs
-        )
-
-        messageCache[conversationID]![index] = updatedMessage
+        // Persist the rebuilt tool calls (incl. nested tool-result images)
+        store?.updateToolCalls(id: old.id, toolCalls: toolCalls)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)updateToolCallResult ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(assistantMessageID.uuidString.prefix(8))…, toolCall=\(toolCallID)")
@@ -390,12 +229,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
         // Notify UI to refresh
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
-
-        // Persist the rebuilt tool calls (incl. nested tool-result images) so they
-        // survive a restart. Previously only the in-memory cache was updated.
-        Task {
-            await store?.updateToolCalls(id: old.id, toolCalls: toolCalls)
-        }
     }
 }
 

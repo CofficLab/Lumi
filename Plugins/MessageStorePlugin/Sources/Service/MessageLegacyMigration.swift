@@ -54,12 +54,11 @@ public struct MessageLegacyMigration: SuperLog {
             .appendingPathComponent("migration_state.json", isDirectory: false)
     }
 
-    /// 执行迁移。幂等、吞错。**应在后台 Task 中调用**(本方法本身不阻塞主线程 ——
-    /// 真正的 IO 在 MessageStore actor 上,读 legacy 库在当前 Task 上下文)。
+    /// 执行迁移。幂等、吞错。
     ///
-    /// - Note: 本方法设计为 `nonisolated` 可调用,进度更新通过 `await MainActor.run`
-    ///   回主线程刷新 `@Published` 字段。这样可由 `Task.detached` 直接驱动。
-    func run() async {
+    /// 读 v4 legacy 库与写 v5 库都在调用方上下文(由 `OnReady` 里的 `Task` 驱动,
+    /// 当前是主线程)同步完成;进度更新直接刷新 `@Published` 字段。
+    func run() {
         let policy = Self.policy
 
         // 幂等:.once 策略下,已迁移过则直接跳过
@@ -84,7 +83,7 @@ public struct MessageLegacyMigration: SuperLog {
             conversations = try legacy.fetchLegacyConversations()
         } catch {
             Self.logger.error("\(Self.t)消息迁移失败:无法读取 v4 会话列表: \(error.localizedDescription)")
-            await progress.fail()
+            progress.fail()
             return
         }
         guard !conversations.isEmpty else {
@@ -94,7 +93,7 @@ public struct MessageLegacyMigration: SuperLog {
         }
 
         let startTime = Date()
-        await progress.start(totalConversations: conversations.count)
+        progress.start(totalConversations: conversations.count)
         if Self.verbose { Self.logger.info("\(Self.t)消息迁移开始:共 \(conversations.count) 个会话") }
 
         var totalImported = 0
@@ -109,7 +108,7 @@ public struct MessageLegacyMigration: SuperLog {
             } catch {
                 hadFailures = true
                 Self.logger.error("\(Self.t)消息迁移:会话 \(conversation.id) 消息读取失败,跳过该会话: \(error.localizedDescription)")
-                await progress.tick(importedDelta: 0)
+                progress.tick(importedDelta: 0)
                 continue
             }
             totalRead += messages.count
@@ -120,7 +119,7 @@ public struct MessageLegacyMigration: SuperLog {
                 imported = 0
             } else {
                 do {
-                    imported = try await store.importMessages(messages)
+                    imported = try store.importMessages(messages)
                 } catch {
                     hadFailures = true
                     Self.logger.error("\(Self.t)消息迁移:会话 \(conversation.id) 消息导入失败,跳过该会话: \(error.localizedDescription)")
@@ -129,8 +128,8 @@ public struct MessageLegacyMigration: SuperLog {
             }
             totalImported += imported
 
-            // 更新进度(回主线程刷新 UI)
-            await progress.tick(importedDelta: imported)
+            // 更新进度
+            progress.tick(importedDelta: imported)
 
             // 每 50 个会话打印一次进度(保留日志可观测性)
             if (index + 1) % 50 == 0, Self.verbose {
@@ -142,7 +141,7 @@ public struct MessageLegacyMigration: SuperLog {
         if !hadFailures {
             writeMigrationMarker(importedCount: totalImported)
         }
-        await progress.finish()
+        progress.finish()
         let elapsed = Date().timeIntervalSince(startTime)
         let policyLabel = policy == .once ? "once" : "always"
         if Self.verbose {

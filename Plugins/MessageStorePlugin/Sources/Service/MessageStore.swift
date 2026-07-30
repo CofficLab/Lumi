@@ -7,8 +7,10 @@ import SwiftData
 /// Message storage service using SwiftData
 ///
 /// Manages message persistence with SQLite database in plugin directory.
-/// Thread-safe via Actor isolation, following `TaskStateManager` pattern.
-public actor MessageStore: SuperLog {
+/// Thread-safe via an internal `NSLock`: each method creates its own
+/// `ModelContext(container)` and serializes the context's create/read/update
+/// through the lock to avoid concurrent `save` conflicts.
+public final class MessageStore: SuperLog, @unchecked Sendable {
     public nonisolated static let emoji = "💬"
     public nonisolated static let verbose = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.store")
@@ -16,11 +18,20 @@ public actor MessageStore: SuperLog {
     // MARK: - Properties
 
     private let container: ModelContainer
+    private let lock = NSLock()
 
     // MARK: - Initialization
 
     public init(databaseRootURL: URL) throws {
         self.container = try Self.makeContainer(databaseRootURL: databaseRootURL)
+    }
+
+    /// Runs `body` while holding the store lock, making each operation atomic
+    /// with respect to other callers.
+    private func locked<T>(_ body: () throws -> T) rethrows -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return try body()
     }
 
     static func makeContainer(databaseRootURL: URL) throws -> ModelContainer {
@@ -101,16 +112,18 @@ public actor MessageStore: SuperLog {
     /// Insert a new message
     @discardableResult
     func insertMessage(_ message: LumiChatMessage) throws -> MessageModel {
-        let context = ModelContext(container)
-        let model = MessageModel.from(message: message)
-        context.insert(model)
-        try context.save()
+        try locked {
+            let context = ModelContext(container)
+            let model = MessageModel.from(message: message)
+            context.insert(model)
+            try context.save()
 
-        if Self.verbose {
-            Self.logger.info("\(Self.t)插入消息：\(message.id) to conversation \(message.conversationID)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)插入消息：\(message.id) to conversation \(message.conversationID)")
+            }
+
+            return model
         }
-
-        return model
     }
 
     // MARK: - Migration Import
@@ -127,34 +140,36 @@ public actor MessageStore: SuperLog {
     func importMessages(_ messages: [LumiChatMessage]) throws -> Int {
         guard !messages.isEmpty else { return 0 }
 
-        let context = ModelContext(container)
+        return try locked {
+            let context = ModelContext(container)
 
-        // 查出已存在的 id 集合,用于去重
-        let existingIDs: Set<String> = {
-            let descriptor = FetchDescriptor<MessageModel>()
-            let models = (try? context.fetch(descriptor)) ?? []
-            return Set(models.map { $0.id })
-        }()
+            // 查出已存在的 id 集合,用于去重
+            let existingIDs: Set<String> = {
+                let descriptor = FetchDescriptor<MessageModel>()
+                let models = (try? context.fetch(descriptor)) ?? []
+                return Set(models.map { $0.id })
+            }()
 
-        var inserted = 0
-        for message in messages {
-            let idString = message.id.uuidString
-            guard !existingIDs.contains(idString) else { continue }
-            context.insert(MessageModel.from(message: message))
-            inserted += 1
-        }
-
-        guard inserted > 0 else { return 0 }
-
-        do {
-            try context.save()
-            if Self.verbose {
-                Self.logger.info("\(Self.t)迁移导入 \(inserted) 条历史消息")
+            var inserted = 0
+            for message in messages {
+                let idString = message.id.uuidString
+                guard !existingIDs.contains(idString) else { continue }
+                context.insert(MessageModel.from(message: message))
+                inserted += 1
             }
-            return inserted
-        } catch {
-            Self.logger.error("\(Self.t)迁移导入消息失败：\(error.localizedDescription)")
-            throw error
+
+            guard inserted > 0 else { return 0 }
+
+            do {
+                try context.save()
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)迁移导入 \(inserted) 条历史消息")
+                }
+                return inserted
+            } catch {
+                Self.logger.error("\(Self.t)迁移导入消息失败：\(error.localizedDescription)")
+                throw error
+            }
         }
     }
 
@@ -162,25 +177,27 @@ public actor MessageStore: SuperLog {
 
     /// Fetch all messages for a conversation, sorted by createdAt
     func fetchMessages(conversationId: UUID) -> [LumiChatMessage] {
-        let context = ModelContext(container)
-        let conversationIdString = conversationId.uuidString
+        locked {
+            let context = ModelContext(container)
+            let conversationIdString = conversationId.uuidString
 
-        let descriptor = FetchDescriptor<MessageModel>(
-            predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString },
-            sortBy: [SortDescriptor(\.createdAt, order: .forward)]
-        )
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString },
+                sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+            )
 
-        do {
-            let models = try context.fetch(descriptor)
-            let messages = models.compactMap { $0.toLumiChatMessage() }
-            if Self.verbose {
-                let metrics = Self.messageMetrics(messages)
-                Self.logger.info("\(Self.t)fetchMessages materialized conversation=\(conversationId.uuidString.prefix(8)) messages=\(messages.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars) toolCallArgumentChars=\(metrics.toolCallArgumentChars)")
+            do {
+                let models = try context.fetch(descriptor)
+                let messages = models.compactMap { $0.toLumiChatMessage() }
+                if Self.verbose {
+                    let metrics = Self.messageMetrics(messages)
+                    Self.logger.info("\(Self.t)fetchMessages materialized conversation=\(conversationId.uuidString.prefix(8)) messages=\(messages.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars) toolCallArgumentChars=\(metrics.toolCallArgumentChars)")
+                }
+                return messages
+            } catch {
+                Self.logger.error("\(Self.t)查询消息失败：\(error.localizedDescription)")
+                return []
             }
-            return messages
-        } catch {
-            Self.logger.error("\(Self.t)查询消息失败：\(error.localizedDescription)")
-            return []
         }
     }
 
@@ -197,22 +214,41 @@ public actor MessageStore: SuperLog {
     ) -> [LumiChatMessage] {
         guard limit > 0 else { return [] }
 
-        let context = ModelContext(container)
-        let conversationIdString = conversationId.uuidString
+        return locked {
+            let context = ModelContext(container)
+            let conversationIdString = conversationId.uuidString
 
-        if let beforeMessageID {
-            guard let pivot = fetchMessage(id: beforeMessageID) else { return [] }
-            let pivotCreatedAt = pivot.createdAt.timeIntervalSince1970
-            let pivotID = beforeMessageID.uuidString
+            if let beforeMessageID {
+                guard let pivot = Self.fetchMessageLocked(id: beforeMessageID, in: context) else { return [] }
+                let pivotCreatedAt = pivot.createdAt.timeIntervalSince1970
+                let pivotID = beforeMessageID.uuidString
+
+                var descriptor = FetchDescriptor<MessageModel>(
+                    predicate: #Predicate<MessageModel> {
+                        $0.conversationId == conversationIdString &&
+                        (
+                            $0.createdAt < pivotCreatedAt ||
+                            ($0.createdAt == pivotCreatedAt && $0.id < pivotID)
+                        )
+                    },
+                    sortBy: [
+                        SortDescriptor(\.createdAt, order: .reverse),
+                        SortDescriptor(\.id, order: .reverse),
+                    ]
+                )
+                descriptor.fetchLimit = limit
+
+                do {
+                    let models = try context.fetch(descriptor)
+                    return models.reversed().compactMap { $0.toLumiChatMessage() }
+                } catch {
+                    Self.logger.error("\(Self.t)查询消息分页失败：\(error.localizedDescription)")
+                    return []
+                }
+            }
 
             var descriptor = FetchDescriptor<MessageModel>(
-                predicate: #Predicate<MessageModel> {
-                    $0.conversationId == conversationIdString &&
-                    (
-                        $0.createdAt < pivotCreatedAt ||
-                        ($0.createdAt == pivotCreatedAt && $0.id < pivotID)
-                    )
-                },
+                predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString },
                 sortBy: [
                     SortDescriptor(\.createdAt, order: .reverse),
                     SortDescriptor(\.id, order: .reverse),
@@ -228,30 +264,15 @@ public actor MessageStore: SuperLog {
                 return []
             }
         }
-
-        var descriptor = FetchDescriptor<MessageModel>(
-            predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString },
-            sortBy: [
-                SortDescriptor(\.createdAt, order: .reverse),
-                SortDescriptor(\.id, order: .reverse),
-            ]
-        )
-        descriptor.fetchLimit = limit
-
-        do {
-            let models = try context.fetch(descriptor)
-            return models.reversed().compactMap { $0.toLumiChatMessage() }
-        } catch {
-            Self.logger.error("\(Self.t)查询消息分页失败：\(error.localizedDescription)")
-            return []
-        }
     }
 
     /// Whether there are earlier messages before the given message.
+    ///
+    /// Delegates to `fetchMessagePage`, which already serializes through the lock.
     func hasEarlierMessages(conversationId: UUID, beforeMessageID: UUID? = nil) -> Bool {
         let pageSize = 10
 
-        if let beforeMessageID {
+        if beforeMessageID != nil {
             return !fetchMessagePage(conversationId: conversationId, limit: 1, beforeMessageID: beforeMessageID).isEmpty
         }
 
@@ -260,53 +281,53 @@ public actor MessageStore: SuperLog {
 
     /// Count messages for a conversation without materializing message bodies.
     func messageCount(conversationId: UUID) -> Int {
-        let context = ModelContext(container)
-        let conversationIdString = conversationId.uuidString
-        let descriptor = FetchDescriptor<MessageModel>(
-            predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString }
-        )
+        locked {
+            let context = ModelContext(container)
+            let conversationIdString = conversationId.uuidString
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString }
+            )
 
-        do {
-            let count = try context.fetchCount(descriptor)
-            if Self.verbose {
-                Self.logger.info("\(Self.t)messageCount fetchCount conversation=\(conversationId.uuidString.prefix(8)) count=\(count) materializedMessages=false")
+            do {
+                let count = try context.fetchCount(descriptor)
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)messageCount fetchCount conversation=\(conversationId.uuidString.prefix(8)) count=\(count) materializedMessages=false")
+                }
+                return count
+            } catch {
+                Self.logger.error("\(Self.t)统计消息数量失败：\(error.localizedDescription)")
+                return 0
             }
-            return count
-        } catch {
-            Self.logger.error("\(Self.t)统计消息数量失败：\(error.localizedDescription)")
-            return 0
         }
     }
 
     /// Fetch a single message by ID
     func fetchMessage(id: UUID) -> LumiChatMessage? {
-        let context = ModelContext(container)
-        let idString = id.uuidString
-
-        let descriptor = FetchDescriptor<MessageModel>(
-            predicate: #Predicate<MessageModel> { $0.id == idString }
-        )
-
-        return try? context.fetch(descriptor).first?.toLumiChatMessage()
+        locked {
+            let context = ModelContext(container)
+            return Self.fetchMessageLocked(id: id, in: context)
+        }
     }
 
     // MARK: - Update
 
     /// Update message content
     func updateMessage(id: UUID, content: String) -> Bool {
-        let context = ModelContext(container)
-        let idString = id.uuidString
+        locked {
+            let context = ModelContext(container)
+            let idString = id.uuidString
 
-        let descriptor = FetchDescriptor<MessageModel>(
-            predicate: #Predicate<MessageModel> { $0.id == idString }
-        )
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.id == idString }
+            )
 
-        guard let model = try? context.fetch(descriptor).first else {
-            return false
+            guard let model = try? context.fetch(descriptor).first else {
+                return false
+            }
+
+            model.content = content
+            return save(context, operation: "更新消息")
         }
-
-        model.content = content
-        return save(context, operation: "更新消息")
     }
 
     /// Update the tool calls (incl. nested tool results) of a message.
@@ -315,64 +336,82 @@ public actor MessageStore: SuperLog {
     /// so encoding the rebuilt `toolCalls` array preserves tool-result images across
     /// restarts — `updateToolCallResult` previously only mutated the in-memory cache.
     func updateToolCalls(id: UUID, toolCalls: [LumiToolCall]) -> Bool {
-        let context = ModelContext(container)
-        let idString = id.uuidString
+        locked {
+            let context = ModelContext(container)
+            let idString = id.uuidString
 
-        let descriptor = FetchDescriptor<MessageModel>(
-            predicate: #Predicate<MessageModel> { $0.id == idString }
-        )
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.id == idString }
+            )
 
-        guard let model = try? context.fetch(descriptor).first else {
-            return false
+            guard let model = try? context.fetch(descriptor).first else {
+                return false
+            }
+
+            let data = try? JSONEncoder().encode(toolCalls)
+            model.toolCallsJson = data.flatMap { String(data: $0, encoding: .utf8) }
+            return save(context, operation: "更新 toolCalls")
         }
-
-        let data = try? JSONEncoder().encode(toolCalls)
-        model.toolCallsJson = data.flatMap { String(data: $0, encoding: .utf8) }
-        return save(context, operation: "更新 toolCalls")
     }
 
     // MARK: - Delete
 
     /// Delete a message by ID
     func deleteMessage(id: UUID) -> Bool {
-        let context = ModelContext(container)
+        locked {
+            let context = ModelContext(container)
+            let idString = id.uuidString
+
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.id == idString }
+            )
+
+            guard let model = try? context.fetch(descriptor).first else {
+                return false
+            }
+
+            context.delete(model)
+            return save(context, operation: "删除消息")
+        }
+    }
+
+    /// Delete all messages for a conversation
+    func deleteAllMessages(conversationId: UUID) -> Bool {
+        locked {
+            let context = ModelContext(container)
+            let conversationIdString = conversationId.uuidString
+
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString }
+            )
+
+            do {
+                let models = try context.fetch(descriptor)
+                for model in models {
+                    context.delete(model)
+                }
+                try context.save()
+                return true
+            } catch {
+                Self.logger.error("\(Self.t)删除会话消息失败：\(error.localizedDescription)")
+                return false
+            }
+        }
+    }
+
+    // MARK: - Private
+
+    /// Fetches a single message by ID on an already-acquired `context`.
+    /// Callers must already hold `lock` (used by `fetchMessage` and `fetchMessagePage`).
+    private static func fetchMessageLocked(id: UUID, in context: ModelContext) -> LumiChatMessage? {
         let idString = id.uuidString
 
         let descriptor = FetchDescriptor<MessageModel>(
             predicate: #Predicate<MessageModel> { $0.id == idString }
         )
 
-        guard let model = try? context.fetch(descriptor).first else {
-            return false
-        }
-
-        context.delete(model)
-        return save(context, operation: "删除消息")
+        return try? context.fetch(descriptor).first?.toLumiChatMessage()
     }
-
-    /// Delete all messages for a conversation
-    func deleteAllMessages(conversationId: UUID) -> Bool {
-        let context = ModelContext(container)
-        let conversationIdString = conversationId.uuidString
-
-        let descriptor = FetchDescriptor<MessageModel>(
-            predicate: #Predicate<MessageModel> { $0.conversationId == conversationIdString }
-        )
-
-        do {
-            let models = try context.fetch(descriptor)
-            for model in models {
-                context.delete(model)
-            }
-            try context.save()
-            return true
-        } catch {
-            Self.logger.error("\(Self.t)删除会话消息失败：\(error.localizedDescription)")
-            return false
-        }
-    }
-
-    // MARK: - Private
 
     private func save(_ context: ModelContext, operation: StaticString) -> Bool {
         do {
@@ -428,89 +467,95 @@ public actor MessageStore: SuperLog {
 
     /// 获取自指定日期以来每日的消息数量
     func fetchDailyMessageCounts(since: Date) -> [Date: Int] {
-        let context = ModelContext(container)
-        let sinceTimestamp = since.timeIntervalSince1970
+        locked {
+            let context = ModelContext(container)
+            let sinceTimestamp = since.timeIntervalSince1970
 
-        let descriptor = FetchDescriptor<MessageModel>(
-            predicate: #Predicate<MessageModel> { $0.createdAt >= sinceTimestamp }
-        )
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.createdAt >= sinceTimestamp }
+            )
 
-        guard let models = try? context.fetch(descriptor) else { return [:] }
+            guard let models = try? context.fetch(descriptor) else { return [:] }
 
-        var counts: [Date: Int] = [:]
-        let calendar = Calendar.current
-        for model in models {
-            let date = Date(timeIntervalSince1970: model.createdAt)
-            let day = calendar.startOfDay(for: date)
-            counts[day, default: 0] += 1
+            var counts: [Date: Int] = [:]
+            let calendar = Calendar.current
+            for model in models {
+                let date = Date(timeIntervalSince1970: model.createdAt)
+                let day = calendar.startOfDay(for: date)
+                counts[day, default: 0] += 1
+            }
+            return counts
         }
-        return counts
     }
 
     /// 获取自指定日期以来每日的 token 消耗总量
     func fetchDailyTokenCounts(since: Date) -> [Date: Int] {
-        let context = ModelContext(container)
-        let sinceTimestamp = since.timeIntervalSince1970
+        locked {
+            let context = ModelContext(container)
+            let sinceTimestamp = since.timeIntervalSince1970
 
-        let descriptor = FetchDescriptor<MessageModel>(
-            predicate: #Predicate<MessageModel> { $0.createdAt >= sinceTimestamp }
-        )
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.createdAt >= sinceTimestamp }
+            )
 
-        guard let models = try? context.fetch(descriptor) else { return [:] }
+            guard let models = try? context.fetch(descriptor) else { return [:] }
 
-        var counts: [Date: Int] = [:]
-        let calendar = Calendar.current
-        let decoder = JSONDecoder()
-        for model in models {
-            let date = Date(timeIntervalSince1970: model.createdAt)
-            let day = calendar.startOfDay(for: date)
-            let tokenCounts = Self.tokenCounts(for: model, decoder: decoder)
-            let tokens = tokenCounts.input + tokenCounts.output
-            if tokens > 0 {
-                counts[day, default: 0] += tokens
+            var counts: [Date: Int] = [:]
+            let calendar = Calendar.current
+            let decoder = JSONDecoder()
+            for model in models {
+                let date = Date(timeIntervalSince1970: model.createdAt)
+                let day = calendar.startOfDay(for: date)
+                let tokenCounts = Self.tokenCounts(for: model, decoder: decoder)
+                let tokens = tokenCounts.input + tokenCounts.output
+                if tokens > 0 {
+                    counts[day, default: 0] += tokens
+                }
             }
+            return counts
         }
-        return counts
     }
 
     /// 获取某一天的 token 消耗量，可按供应商和模型过滤。
     func fetchTokenUsage(on day: Date, providerID: String? = nil, modelName: String? = nil) -> MessageTokenUsage {
-        let context = ModelContext(container)
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: day)
-        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
-            return MessageTokenUsage(day: startOfDay, inputTokens: 0, outputTokens: 0)
-        }
-
-        let startTimestamp = startOfDay.timeIntervalSince1970
-        let endTimestamp = endOfDay.timeIntervalSince1970
-        let descriptor = FetchDescriptor<MessageModel>(
-            predicate: #Predicate<MessageModel> {
-                $0.createdAt >= startTimestamp && $0.createdAt < endTimestamp
-            }
-        )
-
-        guard let models = try? context.fetch(descriptor) else {
-            return MessageTokenUsage(day: startOfDay, inputTokens: 0, outputTokens: 0)
-        }
-
-        let decoder = JSONDecoder()
-        var inputTokens = 0
-        var outputTokens = 0
-        for model in models {
-            if let providerID, model.providerId != providerID {
-                continue
-            }
-            if let modelName, model.modelName != modelName {
-                continue
+        locked {
+            let context = ModelContext(container)
+            let calendar = Calendar.current
+            let startOfDay = calendar.startOfDay(for: day)
+            guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+                return MessageTokenUsage(day: startOfDay, inputTokens: 0, outputTokens: 0)
             }
 
-            let tokenCounts = Self.tokenCounts(for: model, decoder: decoder)
-            inputTokens += tokenCounts.input
-            outputTokens += tokenCounts.output
-        }
+            let startTimestamp = startOfDay.timeIntervalSince1970
+            let endTimestamp = endOfDay.timeIntervalSince1970
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> {
+                    $0.createdAt >= startTimestamp && $0.createdAt < endTimestamp
+                }
+            )
 
-        return MessageTokenUsage(day: startOfDay, inputTokens: inputTokens, outputTokens: outputTokens)
+            guard let models = try? context.fetch(descriptor) else {
+                return MessageTokenUsage(day: startOfDay, inputTokens: 0, outputTokens: 0)
+            }
+
+            let decoder = JSONDecoder()
+            var inputTokens = 0
+            var outputTokens = 0
+            for model in models {
+                if let providerID, model.providerId != providerID {
+                    continue
+                }
+                if let modelName, model.modelName != modelName {
+                    continue
+                }
+
+                let tokenCounts = Self.tokenCounts(for: model, decoder: decoder)
+                inputTokens += tokenCounts.input
+                outputTokens += tokenCounts.output
+            }
+
+            return MessageTokenUsage(day: startOfDay, inputTokens: inputTokens, outputTokens: outputTokens)
+        }
     }
 }
 

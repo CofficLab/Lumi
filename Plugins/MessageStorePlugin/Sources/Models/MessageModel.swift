@@ -1,12 +1,12 @@
 import Foundation
-import SwiftData
 import LumiKernel
+import SwiftData
 
 /// SwiftData model for chat messages
 ///
 /// Stored in plugin专属 SQLite database, managed by `MessageStore`.
 @Model
-final public class MessageModel: @unchecked Sendable {
+public final class MessageModel: @unchecked Sendable {
     /// Unique identifier (UUID)
     public var id: String
 

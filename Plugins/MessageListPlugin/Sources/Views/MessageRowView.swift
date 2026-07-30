@@ -1,5 +1,4 @@
 import LumiKernel
-import LumiKernel
 import SwiftUI
 
 /// Renders a single message using the injected message renderer,
