@@ -25,7 +25,11 @@ public struct RAGIndexer: SuperLog {
         self.onProgress = onProgress
     }
 
-    public func rebuildProjectIndex(at projectPath: String) throws -> RAGIndexStats {
+    public func rebuildProjectIndex(
+        at projectPath: String,
+        background: Bool = false,
+        shouldContinue: @escaping @Sendable () -> Bool = { true }
+    ) throws -> RAGIndexStats {
         let files = RAGFileScanner.discoverFiles(in: projectPath)
         let indexedStates = try store.fetchIndexedFileStates(projectPath: projectPath)
         if Self.verbose {
@@ -37,7 +41,7 @@ public struct RAGIndexer: SuperLog {
             try store.deleteFileState(projectPath: projectPath, filePath: state.filePath)
         }
 
-        var stats = try indexFiles(files, projectPath: projectPath)
+        var stats = try indexFiles(files, projectPath: projectPath, background: background, shouldContinue: shouldContinue)
         let fileCount = try store.countProjectFiles(projectPath: projectPath)
         let chunkCount = try store.countProjectChunks(projectPath: projectPath)
         try store.upsertProjectIndexState(
@@ -56,12 +60,16 @@ public struct RAGIndexer: SuperLog {
         return stats
     }
 
-    public func indexProjectIncrementally(at projectPath: String) throws -> RAGIndexStats {
+    public func indexProjectIncrementally(
+        at projectPath: String,
+        background: Bool = false,
+        shouldContinue: @escaping @Sendable () -> Bool = { true }
+    ) throws -> RAGIndexStats {
         let files = RAGFileScanner.discoverFiles(in: projectPath)
         if Self.verbose {
             Self.logger.info("\(Self.t)增量索引开始 files=\(files.count)")
         }
-        var stats = try indexFiles(files, projectPath: projectPath)
+        var stats = try indexFiles(files, projectPath: projectPath, background: background, shouldContinue: shouldContinue)
 
         // 删除已被移除的文件索引
         let existing = try store.fetchIndexedFileStates(projectPath: projectPath)
@@ -91,12 +99,20 @@ public struct RAGIndexer: SuperLog {
 
     // MARK: - Private
 
-    private func indexFiles(_ files: [String], projectPath: String) throws -> RAGIndexStats {
+    private func indexFiles(
+        _ files: [String],
+        projectPath: String,
+        background: Bool,
+        shouldContinue: @escaping @Sendable () -> Bool
+    ) throws -> RAGIndexStats {
         let existingStates = try store.fetchIndexedFileStates(projectPath: projectPath)
         var stats = RAGIndexStats()
 
         for filePath in files {
             try Task.checkCancellation()
+            if background, (Task.isCancelled || !shouldContinue()) {
+                throw CancellationError()
+            }
             stats.scannedFiles += 1
             guard let fileAttr = try? FileManager.default.attributesOfItem(atPath: filePath),
                   let modifiedDate = fileAttr[.modificationDate] as? Date else {
@@ -133,7 +149,15 @@ public struct RAGIndexer: SuperLog {
             }
 
             let chunks = chunker.chunk(content)
+            if background {
+                guard shouldContinue() else { throw CancellationError() }
+                try Task.checkCancellation()
+            }
             let embeddings = try embeddingProvider.embedBatch(chunks.map(\.content))
+            if background {
+                guard shouldContinue() else { throw CancellationError() }
+                try Task.checkCancellation()
+            }
             try store.replaceFileChunks(
                 projectPath: projectPath,
                 filePath: filePath,

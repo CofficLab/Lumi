@@ -42,6 +42,7 @@ public actor RAGService: SuperLog {
     private var indexingProjects: Set<String> = []
     private var backgroundIndexTasks: [String: Task<Void, Never>] = [:]
     private var indexingPaused = false
+    private let backgroundCancellationGate = RAGBackgroundCancellationGate()
 
     /// 索引进度回调
     private let onProgress: ((RAGIndexProgressEvent) -> Void)?
@@ -141,7 +142,11 @@ public actor RAGService: SuperLog {
     // MARK: - Indexing
 
     /// 确保指定项目已建立可用索引（不存在则全量，存在则增量）
-    public func ensureIndexed(projectPath: String, force: Bool = false) async throws {
+    public func ensureIndexed(
+        projectPath: String,
+        force: Bool = false,
+        background: Bool = false
+    ) async throws {
         guard !indexingPaused else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)ensureIndexed skipped: indexing is paused project=\(projectPath)")
@@ -153,6 +158,10 @@ public actor RAGService: SuperLog {
         guard let store else { throw RAGError.internalStateCorrupted }
         guard let embeddingProvider else { throw RAGError.internalStateCorrupted }
         try Task.checkCancellation()
+
+        if background {
+            backgroundCancellationGate.reset()
+        }
 
         let normalized = RAGPathUtils.normalizeProjectPath(projectPath)
         guard !normalized.isEmpty else { throw RAGError.invalidProjectPath }
@@ -189,10 +198,17 @@ public actor RAGService: SuperLog {
         }
 
         if force || modelMismatch {
+            if background && modelMismatch && !force {
+                throw RAGError.dbError("后台索引暂不执行 embedding 模型迁移，请在前台重建索引")
+            }
             if Self.verbose {
                 Self.logger.info("\(Self.t)♻️ 执行全量重建索引")
             }
-            let stats = try indexer.rebuildProjectIndex(at: normalized)
+            let stats = try indexer.rebuildProjectIndex(
+                at: normalized,
+                background: background,
+                shouldContinue: { [backgroundCancellationGate] in backgroundCancellationGate.isActive }
+            )
             if Self.verbose {
                 Self.logger.info(
                     "\(Self.t)✅ 全量重建完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
@@ -232,7 +248,11 @@ public actor RAGService: SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)🔁 执行增量索引")
         }
-        let stats = try indexer.indexProjectIncrementally(at: normalized)
+        let stats = try indexer.indexProjectIncrementally(
+            at: normalized,
+            background: background,
+            shouldContinue: { [backgroundCancellationGate] in backgroundCancellationGate.isActive }
+        )
         if Self.verbose {
             Self.logger.info(
                 "\(Self.t)✅ 增量索引完成 scanned=\(stats.scannedFiles) indexed=\(stats.indexedFiles) skipped=\(stats.skippedFiles) chunks=\(stats.chunkCount)"
@@ -328,7 +348,7 @@ public actor RAGService: SuperLog {
             guard let self = self else { return }
 
             do {
-                try await self.ensureIndexed(projectPath: normalized, force: force)
+                try await self.ensureIndexed(projectPath: normalized, force: force, background: true)
                 if Self.verbose {
                     Self.logger.info("\(Self.t)✅ 后台索引任务完成: \(normalized)")
                 }
@@ -343,6 +363,7 @@ public actor RAGService: SuperLog {
 
     /// 取消当前服务创建的后台索引任务。用于插件重载或内核重建。
     public func cancelBackgroundIndexing() {
+        backgroundCancellationGate.cancel()
         for task in backgroundIndexTasks.values {
             task.cancel()
         }
@@ -499,6 +520,23 @@ public actor RAGService: SuperLog {
     private func isIndexStateStale(_ state: RAGProjectIndexState, now: Date) -> Bool {
         let indexedAt = Date(timeIntervalSince1970: state.lastIndexedAt)
         return now.timeIntervalSince(indexedAt) > Self.staleAfterSeconds
+    }
+}
+
+private final class RAGBackgroundCancellationGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var cancelled = false
+
+    var isActive: Bool {
+        lock.withLock { !cancelled }
+    }
+
+    func reset() {
+        lock.withLock { cancelled = false }
+    }
+
+    func cancel() {
+        lock.withLock { cancelled = true }
     }
 }
 

@@ -70,7 +70,14 @@ public struct ProjectRAGOnReadyHook: SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)background ensure index current project=\(currentPath)")
                 }
-                await service.ensureIndexedBackground(projectPath: currentPath)
+                try await service.ensureIndexed(projectPath: currentPath)
+
+                guard !Task.isCancelled else { return }
+                await RAGIndexScheduler(kernel: kernel, service: service).run()
+            } catch is CancellationError {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)background indexing cancelled")
+                }
             } catch {
                 Self.logger.error("\(Self.t)background service initialize failed: \(error.localizedDescription)")
             }
