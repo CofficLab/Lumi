@@ -46,7 +46,9 @@ struct MessageListView: View {
 
     private var messageScrollView: some View {
         ScrollView {
-            VStack(spacing: 0) {
+            // 用 LazyVStack 惰性渲染:只构建进入屏幕附近的行,避免一次性渲染全部
+            // 消息(每条含 markdown/思考链/工具调用)而阻塞主线程。
+            LazyVStack(spacing: 0) {
                 ForEach(messages) { message in
                     MessageRowView(
                         message: message,
