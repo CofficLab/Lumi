@@ -19,6 +19,10 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     /// 布局持久化存储
     private let store: LayoutStore
 
+    /// 持久化数据目录（`layout-info.json` 所在的 settings 子目录）。
+    /// 供设置视图等外部消费者展示/打开数据目录用。
+    public var settingsDirectory: URL { store.settingsDirectory }
+
     /// 订阅 `layoutState.objectWillChange`,转发到本服务。
     ///
     /// `activeRailTabID`、`bottomPanelVisible` 等运行时状态都存放在 `LayoutState` 的

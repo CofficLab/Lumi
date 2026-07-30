@@ -9,6 +9,9 @@ public protocol LayoutProviding: ObservableObject {
     /// 布局状态（包含 @Published 属性，用于视图绑定）
     var layoutState: LayoutState { get }
 
+    /// 持久化数据目录（供设置视图等消费者展示/打开数据目录用）。
+    var settingsDirectory: URL { get }
+
     // MARK: - Workspace Visibility
 
     var isRailVisible: Bool { get }
