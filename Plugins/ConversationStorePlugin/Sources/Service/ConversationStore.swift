@@ -405,6 +405,37 @@ public actor ConversationStore: SuperLog {
         return save(context, operation: "更新排序")
     }
 
+    /// 批量更新一组对话的关联项目路径。
+    ///
+    /// 用于「当前项目切换时，把所有空对话迁移到新项目」：一次查询、单次 `save`，
+    /// 避免逐条更新的多次磁盘写入。传入空数组时直接返回 `false`。
+    ///
+    /// - Parameters:
+    ///   - conversationIDs: 待迁移的对话 ID 列表。
+    ///   - projectPath: 新的项目路径（nil 表示取消关联）。
+    /// - Returns: 至少更新一条返回 `true`，否则 `false`。
+    @discardableResult
+    func updateProjectPath(for conversationIDs: [UUID], projectPath: String?) -> Bool {
+        guard !conversationIDs.isEmpty else { return false }
+
+        let context = ModelContext(container)
+        let idStrings = conversationIDs.map { $0.uuidString }
+
+        let descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { idStrings.contains($0.id) }
+        )
+
+        guard let models = try? context.fetch(descriptor), !models.isEmpty else {
+            return false
+        }
+
+        for model in models {
+            model.projectPath = projectPath
+        }
+
+        return save(context, operation: "批量更新对话项目路径")
+    }
+
     /// Fetch pinned conversations, returning their IDs sorted by order.
     func fetchPinnedConversationIDs() -> [(UUID, Int)] {
         let context = ModelContext(container)
