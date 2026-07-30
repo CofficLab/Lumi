@@ -35,16 +35,39 @@ struct MessageListView: View {
 
     /// 底部锚点行的 id,用于 isAtBottom 检测和 scrollTo。
     private static let bottomAnchorID = "message-list-bottom-anchor"
+    /// 发送中追加的临时状态消息 id,稳定不变以便 SwiftUI 正确 diff。
+    private static let transientStatusMessageID = UUID()
 
     private var selectedConversationID: UUID? {
         kernel.conversations?.selectedConversationID
+    }
+
+    /// 当前会话是否正在发送。
+    private var isSending: Bool {
+        kernel.messageSender?.isSending(for: selectedConversationID) ?? false
+    }
+
+    /// 仅用于展示的消息列表:发送中在尾部追加一条临时 `.status` 消息,
+    /// 由 `StatusMessageView` 渲染为"正在发送消息…"气泡。它不写入 `messages`,
+    /// 因此分页/尾部合并/裁剪逻辑仍只基于真实消息。
+    private var displayMessages: [LumiChatMessage] {
+        guard let conversationID = selectedConversationID else { return messages }
+        guard isSending else { return messages }
+        let statusMessage = LumiChatMessage(
+            id: Self.transientStatusMessageID,
+            conversationID: conversationID,
+            role: .status,
+            content: "正在发送消息…",
+            metadata: ["isTransientStatus": "true"]
+        )
+        return messages + [statusMessage]
     }
 
     var body: some View {
         Group {
             if isLoading {
                 MessageLoadingView()
-            } else if messages.isEmpty {
+            } else if messages.isEmpty && !isSending {
                 MessageEmptyStateView()
             } else {
                 messageScrollView
@@ -95,7 +118,7 @@ struct MessageListView: View {
                             .padding(.vertical, 8)
                         }
 
-                        ForEach(messages) { message in
+                        ForEach(displayMessages) { message in
                             MessageRowView(
                                 message: message,
                                 renderer: kernel.messageRendererManager?.renderer(for: message),
