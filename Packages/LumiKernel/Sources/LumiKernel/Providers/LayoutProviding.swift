@@ -49,12 +49,20 @@ public protocol LayoutProviding: ObservableObject {
 
     // MARK: - Rail Tabs
 
-    var activeRailTabID: String { get }
-    func presentRailTab(id: String)
+    /// 查询某 ViewContainer 当前选中的侧边栏 Rail Tab。
+    func activeRailTabID(for viewContainerID: String) -> String
+
+    /// 设置某 ViewContainer 选中的 Rail Tab（同时触发持久化）。
+    func presentRailTab(id: String, for viewContainerID: String)
 
     // MARK: - Bottom Panel
 
     var bottomPanelVisible: Bool { get }
+
+    /// 查询某 ViewContainer 当前选中的底部面板 Tab。
+    func activeBottomTabID(for viewContainerID: String) -> String
+
+    /// 设置某 ViewContainer 选中的底部面板 Tab（同时触发持久化）。
     func presentBottomTab(id: String, viewContainerID: String)
 
     // MARK: - Dividers

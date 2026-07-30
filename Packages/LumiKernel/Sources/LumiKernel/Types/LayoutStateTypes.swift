@@ -14,13 +14,24 @@ public struct LayoutStateInfo: Sendable, Codable {
     public var panelVisible: Bool
     public var panelBottomVisible: Bool
 
+    /// 每个 ViewContainer 上次选中的侧边栏 Rail Tab（键为容器 ID，值为 tab ID）
+    public var activeRailTabIDs: [String: String]
+    /// 每个 ViewContainer 上次选中的底部面板 Tab（键为容器 ID，值为 tab ID）
+    public var activeBottomTabIDs: [String: String]
+    /// 每个 ViewContainer 用户手动调整过的可见性（键为容器 ID）。
+    /// `nil` 字段表示用户未调整该开关，解析时回退到容器声明或全局默认。
+    public var visibilityOverrides: [String: VisibilityFlags]
+
     public init(
         activeViewContainerID: String? = nil,
         chatSectionVisible: Bool = true,
         railVisible: Bool = true,
         contentVisible: Bool = true,
         panelVisible: Bool = true,
-        panelBottomVisible: Bool = true
+        panelBottomVisible: Bool = true,
+        activeRailTabIDs: [String: String] = [:],
+        activeBottomTabIDs: [String: String] = [:],
+        visibilityOverrides: [String: VisibilityFlags] = [:]
     ) {
         self.activeViewContainerID = activeViewContainerID
         self.chatSectionVisible = chatSectionVisible
@@ -28,6 +39,64 @@ public struct LayoutStateInfo: Sendable, Codable {
         self.contentVisible = contentVisible
         self.panelVisible = panelVisible
         self.panelBottomVisible = panelBottomVisible
+        self.activeRailTabIDs = activeRailTabIDs
+        self.activeBottomTabIDs = activeBottomTabIDs
+        self.visibilityOverrides = visibilityOverrides
+    }
+
+    /// 自定义解码：旧版 `layout-info.json` 不含 tab 字典字段时，以空字典兜底，
+    /// 避免历史文件因缺字段解码失败而整体丢失布局。
+    private enum CodingKeys: String, CodingKey {
+        case activeViewContainerID
+        case chatSectionVisible
+        case railVisible
+        case contentVisible
+        case panelVisible
+        case panelBottomVisible
+        case activeRailTabIDs
+        case activeBottomTabIDs
+        case visibilityOverrides
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.activeViewContainerID = try c.decodeIfPresent(String.self, forKey: .activeViewContainerID)
+        self.chatSectionVisible = try c.decodeIfPresent(Bool.self, forKey: .chatSectionVisible) ?? true
+        self.railVisible = try c.decodeIfPresent(Bool.self, forKey: .railVisible) ?? true
+        self.contentVisible = try c.decodeIfPresent(Bool.self, forKey: .contentVisible) ?? true
+        self.panelVisible = try c.decodeIfPresent(Bool.self, forKey: .panelVisible) ?? true
+        self.panelBottomVisible = try c.decodeIfPresent(Bool.self, forKey: .panelBottomVisible) ?? true
+        self.activeRailTabIDs = try c.decodeIfPresent([String: String].self, forKey: .activeRailTabIDs) ?? [:]
+        self.activeBottomTabIDs = try c.decodeIfPresent([String: String].self, forKey: .activeBottomTabIDs) ?? [:]
+        self.visibilityOverrides = try c.decodeIfPresent([String: VisibilityFlags].self, forKey: .visibilityOverrides) ?? [:]
+    }
+}
+
+/// 某个 ViewContainer 用户手动调整过的可见性覆盖值。
+///
+/// 全部为可选：`nil` 表示用户未对该开关做调整，解析时回退到容器声明或全局默认。
+public struct VisibilityFlags: Codable, Sendable {
+    public var isRailVisible: Bool?
+    public var isChatVisible: Bool?
+    public var isContentVisible: Bool?
+    public var isPanelVisible: Bool?
+    public var isPanelHeaderVisible: Bool?
+    public var isPanelBottomVisible: Bool?
+
+    public init(
+        isRailVisible: Bool? = nil,
+        isChatVisible: Bool? = nil,
+        isContentVisible: Bool? = nil,
+        isPanelVisible: Bool? = nil,
+        isPanelHeaderVisible: Bool? = nil,
+        isPanelBottomVisible: Bool? = nil
+    ) {
+        self.isRailVisible = isRailVisible
+        self.isChatVisible = isChatVisible
+        self.isContentVisible = isContentVisible
+        self.isPanelVisible = isPanelVisible
+        self.isPanelHeaderVisible = isPanelHeaderVisible
+        self.isPanelBottomVisible = isPanelBottomVisible
     }
 }
 
@@ -71,15 +140,56 @@ public final class LayoutState: ObservableObject, SuperLog {
         }
     }
 
-    @Published public var activeRailTabID: String = "explorer" {
-        didSet {
-            guard activeRailTabID != oldValue else { return }
-            let value = activeRailTabID
-            if Self.verbose {
-                Self.logger.info("\(Self.t)activeRailTabID → \(value)")
-            }
-            NotificationCenter.postActiveRailTabIDDidChange(railTabID: value)
+    /// 每个 ViewContainer 上次选中的侧边栏 Rail Tab（键为容器 ID，值为 tab ID）。
+    /// 对齐底部 tab 的 `activeBottomTabIDs`：同一套 rail tab 在不同容器下各自记忆选中项。
+    @Published private var activeRailTabIDs: [String: String] = [:]
+
+    /// 默认 Rail Tab ID，供查询时兜底（实际选中由视图 `ensureValidSelection` 自愈）。
+    public static let defaultRailTabID = "explorer"
+
+    /// 查询某容器当前选中的 Rail Tab。
+    public func activeRailTabID(for viewContainerID: String) -> String {
+        activeRailTabIDs[viewContainerID] ?? Self.defaultRailTabID
+    }
+
+    /// 设置某容器选中的 Rail Tab，并发送变更通知。
+    public func setActiveRailTabID(_ id: String, for viewContainerID: String) {
+        guard activeRailTabIDs[viewContainerID] != id else { return }
+        activeRailTabIDs[viewContainerID] = id
+        if Self.verbose {
+            Self.logger.info("\(Self.t)activeRailTabID[\(viewContainerID)] → \(id)")
         }
+        NotificationCenter.postActiveRailTabIDDidChange(containerID: viewContainerID, railTabID: id)
+    }
+
+    /// 从磁盘恢复某容器的 Rail Tab（不发送通知）。
+    public func restoreActiveRailTabID(_ id: String, for viewContainerID: String) {
+        activeRailTabIDs[viewContainerID] = id
+    }
+
+    /// 供持久化序列化使用的只读快照。
+    public var activeRailTabIDsDictionary: [String: String] { activeRailTabIDs }
+
+    // MARK: - Visibility Overrides (per-container)
+
+    /// 用户手动调整过的可见性覆盖层（键为容器 ID）。
+    ///
+    /// 解析某容器可见性时的优先级：用户覆盖 > 容器静态声明 > 全局默认(true)。
+    /// 这里的值由 `setXxxVisible` / `applyVisibility` 在有激活容器时自动记录。
+    @Published private var visibilityOverrides: [String: VisibilityFlags] = [:]
+
+    /// 供持久化序列化使用的只读快照。
+    public var visibilityOverridesDictionary: [String: VisibilityFlags] { visibilityOverrides }
+
+    /// 从磁盘恢复覆盖层（不发送通知，启动阶段用）。
+    public func restoreVisibilityOverrides(_ overrides: [String: VisibilityFlags]) {
+        visibilityOverrides = overrides
+    }
+
+    /// 把用户对某开关的调整记录到当前激活容器的覆盖层（若有激活容器）。
+    private func recordUserOverride<T>(_ keyPath: WritableKeyPath<VisibilityFlags, T?>, _ value: T) {
+        guard let containerID = activeViewContainerID else { return }
+        visibilityOverrides[containerID, default: VisibilityFlags()][keyPath: keyPath] = value
     }
 
     // MARK: - Workspace Visibility (merged from WorkspaceStateProviding)
@@ -127,62 +237,94 @@ public final class LayoutState: ObservableObject, SuperLog {
 
     public func setRailVisible(_ visible: Bool) {
         isRailVisible = visible
+        recordUserOverride(\.isRailVisible, visible)
     }
 
     public func setChatVisible(_ visible: Bool) {
         isChatVisible = visible
+        recordUserOverride(\.isChatVisible, visible)
     }
 
     public func setContentVisible(_ visible: Bool) {
         isContentVisible = visible
+        recordUserOverride(\.isContentVisible, visible)
     }
 
     public func setPanelVisible(_ visible: Bool) {
         isPanelVisible = visible
+        recordUserOverride(\.isPanelVisible, visible)
+    }
+
+    public func setPanelHeaderVisible(_ visible: Bool) {
+        isPanelHeaderVisible = visible
+        recordUserOverride(\.isPanelHeaderVisible, visible)
     }
 
     public func setPanelBottomVisible(_ visible: Bool) {
         isPanelBottomVisible = visible
+        recordUserOverride(\.isPanelBottomVisible, visible)
     }
 
-    /// 激活容器并通知观察者，同时根据容器配置自动应用可见性
+    /// 激活容器并通知观察者，同时按优先级解析可见性。
+    ///
+    /// 优先级：用户对该容器的覆盖 > 容器静态声明 > 全局默认(true)。
+    /// 这样用户手动调整过的设置不会被容器声明覆盖丢失。
     public func activateContainer(id: String) {
         activeViewContainerID = id
-        // 根据容器配置自动应用可见性
         if let container = viewContainer(id: id) {
-            applyVisibility(
-                rail: container.isRailVisible,
-                chat: container.isChatVisible,
-                content: container.isContentVisible,
-                panel: container.isPanelVisible
-            )
-            if container.isPanelHeaderVisible != nil {
-                isPanelHeaderVisible = container.isPanelHeaderVisible!
-            }
-            if container.isPanelBottomVisible != nil {
-                isPanelBottomVisible = container.isPanelBottomVisible!
-            }
+            applyResolvedVisibility(for: id, container: container)
         }
         for observer in containerObservers {
             observer(id)
         }
     }
 
-    /// 批量应用可见性变更
+    /// 解析某容器的可见性并应用到全局标志（当前激活容器的运行时视图）。
+    private func applyResolvedVisibility(for id: String, container: ViewContainerItem) {
+        let user = visibilityOverrides[id]
+        /// 优先级：用户覆盖 > 容器声明 > 全局默认(true)。
+        func resolve(_ userVal: Bool?, _ containerVal: Bool?) -> Bool {
+            userVal ?? containerVal ?? true
+        }
+        isRailVisible = resolve(user?.isRailVisible, container.isRailVisible)
+        isChatVisible = resolve(user?.isChatVisible, container.isChatVisible)
+        isContentVisible = resolve(user?.isContentVisible, container.isContentVisible)
+        isPanelVisible = resolve(user?.isPanelVisible, container.isPanelVisible)
+        isPanelHeaderVisible = resolve(user?.isPanelHeaderVisible, container.isPanelHeaderVisible)
+        isPanelBottomVisible = resolve(user?.isPanelBottomVisible, container.isPanelBottomVisible)
+    }
+
+    /// 批量应用可见性变更，并同步记录到当前激活容器的覆盖层（与 `setXxxVisible` 一致）。
     public func applyVisibility(
         rail: Bool?,
         chat: Bool?,
         content: Bool?,
         panel: Bool?
     ) {
-        if let rail { isRailVisible = rail }
-        if let chat { isChatVisible = chat }
-        if let content { isContentVisible = content }
-        if let panel { isPanelVisible = panel }
+        if let rail {
+            isRailVisible = rail
+            recordUserOverride(\.isRailVisible, rail)
+        }
+        if let chat {
+            isChatVisible = chat
+            recordUserOverride(\.isChatVisible, chat)
+        }
+        if let content {
+            isContentVisible = content
+            recordUserOverride(\.isContentVisible, content)
+        }
+        if let panel {
+            isPanelVisible = panel
+            recordUserOverride(\.isPanelVisible, panel)
+        }
     }
 
     // MARK: - View Containers
 
+    /// 容器注册表（私有）。视图不直接读它，而是经 `allViewContainers` →
+    /// `@Published sortedViewContainers` 拿到排序后的快照。
+    /// 重要不变量：任何对 `viewContainers` 的写入都必须随后调用
+    /// `updateSortedViewContainers()`，否则视图不会刷新。
     private var viewContainers: [String: ViewContainerItem] = [:]
     private var viewContainerOrder: [String] = []
     @Published private var sortedViewContainers: [ViewContainerItem] = []
@@ -342,6 +484,9 @@ public final class LayoutState: ObservableObject, SuperLog {
         activeBottomTabIDs[viewContainerID] ?? legacyBottomTabID ?? Self.defaultBottomTabID
     }
 
+    /// 供持久化序列化使用的只读快照。
+    public var activeBottomTabIDsDictionary: [String: String] { activeBottomTabIDs }
+
     public func setActiveBottomTabID(_ id: String, for viewContainerID: String) {
         guard activeBottomTabIDs[viewContainerID] != id else { return }
         activeBottomTabIDs[viewContainerID] = id
@@ -405,8 +550,8 @@ public final class LayoutState: ObservableObject, SuperLog {
         }
     }
 
-    public func presentRailTab(id: String) {
-        activeRailTabID = id
+    public func presentRailTab(id: String, for viewContainerID: String) {
+        setActiveRailTabID(id, for: viewContainerID)
     }
 
     public func presentBottomTab(id: String, viewContainerID: String) {
