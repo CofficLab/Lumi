@@ -2,8 +2,6 @@ import Foundation
 import LocalizationKit
 
 /// Runtime localization for ConversationListPlugin bundle.
-///
-/// Provides localization lookup scoped to this plugin by delegating to LumiLocalization.
 enum LumiPluginLocalization {
     static func string(
         _ key: String,

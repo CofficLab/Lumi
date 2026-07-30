@@ -25,7 +25,7 @@ struct GetConversationCountLumiTool: LumiAgentTool, @unchecked Sendable {
         let projectPath = kernel.currentProjectPath
 
         let (totalCount, projectCount, projectName) = await MainActor.run { () -> (Int, Int, String?) in
-            guard let svc = ConversationListToolRuntimeBridge.conversations else {
+            guard let svc = kernel.conversations else {
                 return (0, 0, nil)
             }
             let all = svc.conversations

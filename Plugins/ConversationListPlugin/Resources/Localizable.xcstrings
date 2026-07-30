@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%@/%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -209,9 +210,6 @@
           }
         }
       }
-    },
-    "%lld" : {
-
     },
     "•" : {
       "extractionState" : "stale",
@@ -490,9 +488,6 @@
           }
         }
       }
-    },
-    "Conversations" : {
-
     },
     "Create New Conversation" : {
       "extractionState" : "stale",
@@ -844,6 +839,7 @@
       }
     },
     "No conversations" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -912,7 +908,7 @@
         }
       }
     },
-    "Pin Conversation" : {
+    "Pin" : {
 
     },
     "Service unavailable" : {
@@ -1055,7 +1051,7 @@
         }
       }
     },
-    "Unpin Conversation" : {
+    "Unpin" : {
 
     },
     "Untitled" : {

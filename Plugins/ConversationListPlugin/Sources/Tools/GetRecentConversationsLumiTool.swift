@@ -47,7 +47,7 @@ struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
         let limit = min(max(arguments["limit"]?.intValue ?? 5, 1), 20)
 
         let (allCount, recentConversations) = await MainActor.run { () -> (Int, [ConversationInfo]) in
-            guard let svc = ConversationListToolRuntimeBridge.conversations else {
+            guard let svc = kernel.conversations else {
                 return (0, [])
             }
             let all = svc.conversations

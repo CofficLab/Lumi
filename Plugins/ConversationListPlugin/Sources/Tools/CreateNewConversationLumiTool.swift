@@ -41,9 +41,8 @@ struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         let conversationID = await MainActor.run { () -> UUID? in
-            guard let svc = ConversationListToolRuntimeBridge.conversations else { return nil }
+            guard let svc = kernel.conversations else { return nil }
             do {
-                // projectPath 传 nil，由 ConversationManager 自动使用当前项目
                 return try svc.createConversation(title: customTitle, projectPath: nil, providerID: nil, modelName: nil)
             } catch {
                 return nil
@@ -59,8 +58,7 @@ struct CreateNewConversationLumiTool: LumiAgentTool, @unchecked Sendable {
         }
 
         let summary = await MainActor.run { () -> LumiConversationSummary? in
-            ConversationListToolRuntimeBridge.conversations?.conversations
-                .first(where: { $0.id == conversationID })
+            kernel.conversations?.conversations.first(where: { $0.id == conversationID })
         }
 
         let idShort = String(conversationID.uuidString.prefix(8))

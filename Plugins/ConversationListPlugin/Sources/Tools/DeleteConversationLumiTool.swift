@@ -66,7 +66,7 @@ struct DeleteConversationLumiTool: LumiAgentTool, @unchecked Sendable {
         }
 
         return await MainActor.run {
-            guard let svc = ConversationListToolRuntimeBridge.conversations else {
+            guard let svc = kernel.conversations else {
                 return """
                 ## Delete Conversation ❌
 
