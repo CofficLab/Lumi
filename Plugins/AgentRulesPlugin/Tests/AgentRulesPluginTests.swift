@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import LumiKernel
 @testable import AgentRulesPlugin
 
 @MainActor
@@ -13,9 +14,10 @@ import Foundation
     #expect(plugin.id == "com.coffic.lumi.plugin.agent-rules")
     #expect(plugin.name == "Agent Rules")
     #expect(plugin.order == 50)
-    #expect(plugin.policy == .disabled)
+    #expect(plugin.policy == .alwaysOn)
     #expect(plugin.category == .general)
     #expect(plugin.stage == .stable)
+    #expect(plugin.settingsTabItems(kernel: LumiKernel()).count == 1)
 }
 
 @MainActor
