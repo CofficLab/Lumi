@@ -10,8 +10,12 @@ struct RailContentView: View {
         kernel.uiManager?.allPanelRailTabItems ?? []
     }
 
+    private var viewContainerID: String {
+        kernel.layoutManager?.activeViewContainerID ?? ""
+    }
+
     private var activeTabID: String {
-        kernel.layoutManager?.activeRailTabID ?? ""
+        kernel.layoutManager?.activeRailTabID(for: viewContainerID) ?? ""
     }
 
     @ViewBuilder

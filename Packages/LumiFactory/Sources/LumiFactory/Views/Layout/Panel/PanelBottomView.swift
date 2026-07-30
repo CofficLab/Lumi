@@ -18,8 +18,9 @@ struct PanelBottomView: View {
         kernel.layoutManager?.activeViewContainerID ?? ""
     }
 
-    private var layoutState: LayoutState {
-        kernel.layoutManager?.layoutState ?? LayoutState()
+    /// 当前容器选中的底部 tab（经协议查询，按容器独立记忆 + 持久化）。
+    private var selectedTabID: String {
+        kernel.layoutManager?.activeBottomTabID(for: viewContainerID) ?? ""
     }
 
     var body: some View {
@@ -43,9 +44,9 @@ struct PanelBottomView: View {
         AppTabBar(
             tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
             selectedTab: Binding(
-                get: { layoutState.activeBottomTabID(for: viewContainerID) },
+                get: { selectedTabID },
                 set: { newValue in
-                    layoutState.setActiveBottomTabID(newValue, for: viewContainerID)
+                    kernel.layoutManager?.presentBottomTab(id: newValue, viewContainerID: viewContainerID)
                 }
             )
         )
@@ -56,7 +57,7 @@ struct PanelBottomView: View {
 
     @ViewBuilder
     private var tabContent: some View {
-        let selectedID = layoutState.activeBottomTabID(for: viewContainerID)
+        let selectedID = selectedTabID
         if let tab = tabs.first(where: { $0.id == selectedID }) ?? tabs.first {
             tab.makeView()
                 .id(tab.id)
@@ -70,10 +71,10 @@ struct PanelBottomView: View {
 
     private func ensureValidSelection() {
         guard !tabs.isEmpty else { return }
-        let selectedID = layoutState.activeBottomTabID(for: viewContainerID)
+        let selectedID = selectedTabID
         if tabs.contains(where: { $0.id == selectedID }) {
             return
         }
-        layoutState.setActiveBottomTabID(tabs[0].id, for: viewContainerID)
+        kernel.layoutManager?.presentBottomTab(id: tabs[0].id, viewContainerID: viewContainerID)
     }
 }
