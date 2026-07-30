@@ -1,4 +1,3 @@
-import Combine
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -16,8 +15,10 @@ public struct ListView: View {
 
     public var body: some View {
         Group {
-            if !isLoaded || conversations.isEmpty {
+            if !isLoaded {
                 ListLoadingView()
+            } else if conversations.isEmpty {
+                ListEmptyView()
             } else {
                 listContent
             }
@@ -67,14 +68,5 @@ public struct ListView: View {
             }
         }
         isLoaded = true
-    }
-}
-
-/// 加载视图
-private struct ListLoadingView: View {
-    var body: some View {
-        ProgressView()
-            .controlSize(.small)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
