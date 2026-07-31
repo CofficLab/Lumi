@@ -10,6 +10,7 @@ public struct TokenLineChartView: View {
     @Environment(\.locale) private var locale
     @State private var shimmerPhase: CGFloat = -1.2
     @State private var hoveredPoint: ActivityDayToken?
+    @State private var showTokenExplanation = false
 
     private let lineColor = Color(hex: "6db0f0")
     private let areaGradient = LinearGradient(
@@ -35,9 +36,39 @@ public struct TokenLineChartView: View {
                     .bold()
                 Spacer()
                 if let total = totalTokens {
-                    Text(formatNumber(total))
-                        .font(.appCaption)
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 4) {
+                        Text(formatNumber(total))
+                            .font(.appCaption)
+                            .foregroundColor(.secondary)
+                        Button {
+                            showTokenExplanation = true
+                        } label: {
+                            Image(systemName: "questionmark.circle")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .popover(isPresented: $showTokenExplanation, arrowEdge: .top) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(LumiPluginLocalization.string("What is Token Usage?", bundle: .module))
+                                    .font(.headline)
+                                Text(LumiPluginLocalization.string("This is the total number of tokens consumed during conversations within the selected time period.", bundle: .module))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(LumiPluginLocalization.string("Tokens include both input (your messages) and output (AI responses). Different models have different token pricing.", bundle: .module))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                HStack(spacing: 12) {
+                                    Label("1K = 1,000", systemImage: "number")
+                                    Label("1M = 1,000,000", systemImage: "number.square")
+                                }
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                            }
+                            .padding()
+                            .frame(maxWidth: 280)
+                        }
+                    }
                 }
             }
 

@@ -1411,6 +1411,27 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Y：%@ 个 Token" } },
         "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "Y：%@ 個 Token" } }
       }
+    },
+    "What is Token Usage?" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "What is Token Usage?" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "什么是 Token 使用量？" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "什麼是 Token 使用量？" } }
+      }
+    },
+    "This is the total number of tokens consumed during conversations within the selected time period." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This is the total number of tokens consumed during conversations within the selected time period." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "这是所选时间段内所有对话消耗的 Token 总数。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "這是所選時間段內所有對話消耗的 Token 總數。" } }
+      }
+    },
+    "Tokens include both input (your messages) and output (AI responses). Different models have different token pricing." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tokens include both input (your messages) and output (AI responses). Different models have different token pricing." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Token 包括输入（你的消息）和输出（AI 响应）。不同模型的 Token 定价不同。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "Token 包括輸入（你的訊息）和輸出（AI 回應）。不同模型的 Token 定價不同。" } }
+      }
     }
   },
   "version" : "1.0"
