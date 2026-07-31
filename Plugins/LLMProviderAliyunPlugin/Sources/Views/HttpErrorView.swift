@@ -10,7 +10,6 @@ struct HttpErrorView: View {
 
     let message: LumiChatMessage
     let statusCode: Int?
-    @Binding var showRawMessage: Bool
 
     private var title: String {
         if let statusCode {
@@ -25,7 +24,7 @@ struct HttpErrorView: View {
     }
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.appCallout)

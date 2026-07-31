@@ -10,9 +10,9 @@ enum HttpErrorRenderer {
         canRender: { message in
             AliyunRenderKind.matchesOtherHttpError(message)
         },
-        render: { message, showRawMessage in
+        render: { message in
             let statusCode = AliyunRenderKind.httpStatusCode(from: message.renderKind)
-            HttpErrorView(message: message, statusCode: statusCode, showRawMessage: showRawMessage)
+            HttpErrorView(message: message, statusCode: statusCode)
         }
     )
 }

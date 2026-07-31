@@ -12,8 +12,8 @@ enum RequestFailedRenderer {
         canRender: { message in
             AliyunRenderKind.matches(renderKind: AliyunRenderKind.requestFailed, message: message)
         },
-        render: { message, showRawMessage in
-            HttpErrorView(message: message, statusCode: nil, showRawMessage: showRawMessage)
+        render: { message in
+            HttpErrorView(message: message, statusCode: nil)
         }
     )
 }
