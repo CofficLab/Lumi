@@ -73,9 +73,25 @@ public final class MessageSender: MessageSending, SuperLog {
             id: LumiStatusRowID,
             conversationID: conversationID,
             role: .status,
-            content: String(localized: "Sending message…", defaultValue: "正在发送消息…"),
+            content: statusContent(for: kernel?.messageStreaming?.currentStage ?? .idle),
             metadata: ["isTransientStatus": "true"]
         )
+    }
+
+    /// 把当前阶段映射成用户可见的状态文案。
+    ///
+    /// 阶段来自 `MessageStreaming`（由 runner 在流式生命周期中维护）。
+    /// 工具调用回合间隔阶段归到 `.sending`（"正在发送消息…"）——
+    /// 因为 onChunk 不推送 tool-call 增量，store 此时回到空态，无法精确区分。
+    private func statusContent(for stage: ChatStage) -> String {
+        switch stage {
+        case .idle, .sending:
+            String(localized: "status.sending", defaultValue: "正在发送消息…")
+        case .thinking:
+            String(localized: "status.thinking", defaultValue: "正在思考…")
+        case .generating:
+            String(localized: "status.generating", defaultValue: "正在生成回复…")
+        }
     }
 
     public func pendingMessages(for conversationID: UUID) -> [LumiPendingMessage] {

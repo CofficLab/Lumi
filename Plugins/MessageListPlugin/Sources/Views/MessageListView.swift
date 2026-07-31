@@ -50,17 +50,20 @@ struct MessageListView: View {
     /// 在真实消息(`messages`)末尾拼接两类**不写库**的临时行,因此分页/尾部合并/裁剪
     /// 逻辑仍只基于真实消息,不会被临时行干扰:
     /// 1. 流式临时行:来自 `kernel.messageStreaming`(独立稳定 id,与落库行永不冲突)。
-    /// 2. 发送中状态行:来自 `kernel.messageSender`(数据层构造,UI 只消费)。
+    ///    一旦出现,说明 LLM 已开始回复,内容本身就是进度反馈。
+    /// 2. 发送中状态行:来自 `kernel.messageSender`(数据层构造,UI 只读取)。
+    ///    仅在**没有流式行**时显示(发送阶段),避免与流式内容重复堆叠。
     private var displayMessages: [LumiChatMessage] {
         guard let conversationID = selectedConversationID else { return messages }
         var rows = messages
         // 流式临时行(仅当属于当前会话;切会话时自动被过滤,无需额外清理)。
-        if let streamingRow = kernel.messageStreaming?.currentStreamingRow,
-           streamingRow.conversationID == conversationID {
+        let streamingRow = kernel.messageStreaming?.currentStreamingRow
+        if let streamingRow, streamingRow.conversationID == conversationID {
             rows.append(streamingRow)
         }
-        // 发送中状态行(由数据层构造,UI 只读取)。
-        if let statusRow = kernel.messageSender?.currentStatusRow(for: conversationID) {
+        // 发送中状态行:仅在没有流式行时显示(发送阶段,尚未收到 LLM 响应)。
+        // 思考/生成阶段由流式行本身体现进度,不再叠加状态行。
+        if streamingRow == nil, let statusRow = kernel.messageSender?.currentStatusRow(for: conversationID) {
             rows.append(statusRow)
         }
         return rows

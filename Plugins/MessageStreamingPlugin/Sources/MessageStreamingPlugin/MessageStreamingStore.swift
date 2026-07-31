@@ -17,6 +17,9 @@ public final class MessageStreamingStore: MessageStreaming {
     /// 每次 reassign 都会触发 `objectWillChange`（经 kernel 转发，UI 自动刷新）。
     @Published public private(set) var currentStreamingRow: LumiChatMessage?
 
+    /// 当前回合所处的阶段。随 start/append/end 自动流转,供状态行生成动态文案。
+    @Published public private(set) var currentStage: ChatStage = .idle
+
     /// 当前流式所属的会话 id。UI 据此判断是否属于当前选中的会话，避免串台。
     private(set) var streamingConversationID: UUID?
 
@@ -27,6 +30,7 @@ public final class MessageStreamingStore: MessageStreaming {
 
     public func startStreaming(conversationID: UUID) async {
         streamingConversationID = conversationID
+        currentStage = .sending
         currentStreamingRow = LumiChatMessage(
             id: LumiStreamingRowID,
             conversationID: conversationID,
@@ -39,16 +43,19 @@ public final class MessageStreamingStore: MessageStreaming {
         guard !piece.isEmpty, var row = currentStreamingRow else { return }
         row.content += piece
         currentStreamingRow = row
+        currentStage = .generating
     }
 
     public func appendThinking(_ piece: String) async {
         guard !piece.isEmpty, var row = currentStreamingRow else { return }
         row.reasoningContent = (row.reasoningContent ?? "") + piece
         currentStreamingRow = row
+        currentStage = .thinking
     }
 
     public func endStreaming() async {
         currentStreamingRow = nil
         streamingConversationID = nil
+        currentStage = .idle
     }
 }
