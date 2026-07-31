@@ -11,7 +11,7 @@ import Foundation
 /// 调用约定：所有写方法标 `async`。runner 的 `onChunk` 在 provider 后台线程执行，
 /// 通过 `await` 跳回 `@MainActor` 执行写操作，保证线程安全。
 @MainActor
-public protocol MessageStreaming: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol MessageStreaming: ObservableObject, Sendable where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 当前正在流式的临时行（最多一条）。
     ///
     /// 非 nil 时 UI 把它拼到 messages 末尾渲染；nil 时表示无流式进行。
