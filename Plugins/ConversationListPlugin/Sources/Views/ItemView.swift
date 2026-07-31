@@ -37,12 +37,46 @@ public struct ItemView: View {
                 .foregroundColor(theme.textTertiary)
                 .padding(3)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(conversation.title ?? "对话")
                     .font(.appMicroEmphasized)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
+                
+                if let providerID = conversation.providerID {
+                    HStack(spacing: 4) {
+                        Text(providerID)
+                            .font(.footnote)
+                            .foregroundColor(theme.textTertiary)
+                        
+                        if let modelName = conversation.modelName, !modelName.isEmpty {
+                            Text("·")
+                                .foregroundColor(theme.textTertiary)
+                            Text(modelName)
+                                .font(.footnote)
+                                .foregroundColor(theme.textTertiary)
+                        }
+                    }
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                }
+                
+                HStack {
+                    Text(conversation.updatedAt.relativeTime)
+                        .font(.footnote)
+                        .foregroundColor(theme.textTertiary)
+                    
+                    Spacer()
+                    
+                    if let projectPath = conversation.projectPath {
+                        Text(URL(fileURLWithPath: projectPath).lastPathComponent)
+                            .font(.footnote)
+                            .foregroundColor(theme.textTertiary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                }
             }
 
             Spacer()
