@@ -7,10 +7,12 @@ struct ProviderAPIKeyMissingView: View {
 
     let message: LumiChatMessage
     let provider: (any LumiLLMProvider)?
-    @Binding var showRawMessage: Bool
 
     @State private var apiKey: String = ""
     @State private var isAPIKeyVisible = false
+    /// 内联 "Details" 展开状态:取代之前的外部 `@Binding var showRawMessage`,
+    /// 因为该状态仅本视图内部消费,无须再由上层 Renderer 持有。
+    @State private var isDetailsExpanded = false
 
     private var providerName: String {
         provider.map { type(of: $0).info.displayName }
@@ -81,7 +83,7 @@ struct ProviderAPIKeyMissingView: View {
                     .foregroundStyle(theme.textSecondary)
             }
 
-            DisclosureGroup(isExpanded: $showRawMessage) {
+            DisclosureGroup(isExpanded: $isDetailsExpanded) {
                 if let raw = message.rawErrorDetail, !raw.isEmpty {
                     Text(raw)
                         .font(.appCaption)

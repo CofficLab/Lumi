@@ -11,11 +11,10 @@ enum ProviderAPIKeyMissingRenderer {
             canRender: { message in
                 LumiLLMProviderAPIKeyMessage.isMissingAPIKeyMessage(message)
             },
-            render: { message, showRawMessage in
+            render: { message in
                 ProviderAPIKeyMissingView(
                     message: message,
-                    provider: provider(for: message, kernel: kernel),
-                    showRawMessage: showRawMessage
+                    provider: provider(for: message, kernel: kernel)
                 )
             }
         )
