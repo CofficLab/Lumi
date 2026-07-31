@@ -150,7 +150,13 @@ struct MessageListView: View {
                     let viewMaxY = viewport.frame(in: .global).maxY
                     guard bottomMaxY.isFinite, viewMaxY.isFinite else { return }
                     // 底部锚点进入视口下方 48pt 容差范围 → 视为"在底部"。
-                    isAtBottom = bottomMaxY <= viewMaxY + 48
+                    // 仅在布尔值真正翻转时才写 state:底部锚点在滚动/流式刷新期间每帧
+                    // 都会重报 maxY,若每帧都赋值会触发 body 重建 → preference 重发,
+                    // 进而命中 "Bound preference ... tried to update multiple times per frame"。
+                    let next = bottomMaxY <= viewMaxY + 48
+                    if next != isAtBottom {
+                        isAtBottom = next
+                    }
                 }
                 .task(id: selectedConversationID) {
                     // 首屏数据就绪后,滚到最底部(无动画)。
