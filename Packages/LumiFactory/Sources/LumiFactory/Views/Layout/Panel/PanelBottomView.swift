@@ -28,7 +28,18 @@ struct PanelBottomView: View {
     var body: some View {
         if layoutManager.isPanelBottomVisible {
             VStack(spacing: 0) {
-                tabBar
+                AppTabBar(
+                    tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
+                    selectedTab: Binding(
+                        get: { selectedTabID },
+                        set: { newValue in
+                            layoutManager.presentBottomTab(id: newValue, viewContainerID: viewContainerID)
+                        }
+                    )
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 8)
+                .background(theme.surface.opacity(0.85))
                 AppDivider()
                 tabContent
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -36,21 +47,6 @@ struct PanelBottomView: View {
             .frame(minHeight: 80)
             .background(theme.surface)
         }
-    }
-
-    private var tabBar: some View {
-        AppTabBar(
-            tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
-            selectedTab: Binding(
-                get: { selectedTabID },
-                set: { newValue in
-                    layoutManager.presentBottomTab(id: newValue, viewContainerID: viewContainerID)
-                }
-            )
-        )
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 8)
-        .background(theme.surface.opacity(0.85))
     }
 
     @ViewBuilder
