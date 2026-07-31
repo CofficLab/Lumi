@@ -443,40 +443,6 @@
         }
       }
     },
-    "DeepSeek R1 Distill 14B" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DeepSeek R1 Distill 14B"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DeepSeek R1 Distill 14B"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DeepSeek R1 Distill 14B"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DeepSeek R1 Distill 14B"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "DeepSeek R1 Distill 14B"
-          }
-        }
-      }
-    },
     "DeepSeek R1 Distill 7B" : {
       "localizations" : {
         "en" : {
@@ -507,6 +473,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DeepSeek R1 Distill 7B"
+          }
+        }
+      }
+    },
+    "DeepSeek R1 Distill 14B" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 14B"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 14B"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 14B"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 14B"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DeepSeek R1 Distill 14B"
           }
         }
       }
@@ -1431,40 +1431,6 @@
         }
       }
     },
-    "MLX" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MLX"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MLX"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MLX"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MLX"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MLX"
-          }
-        }
-      }
-    },
     "Mistral Nemo 12B" : {
       "localizations" : {
         "en" : {
@@ -1495,6 +1461,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mistral Nemo 12B"
+          }
+        }
+      }
+    },
+    "MLX" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MLX"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MLX"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MLX"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MLX"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MLX"
           }
         }
       }
@@ -1601,41 +1601,6 @@
         }
       }
     },
-    "Qwen 3.5 14B" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qwen 3.5 14B"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qwen 3.5 14B"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qwen 3.5 14B"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qwen 3.5 14B"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qwen 3.5 14B"
-          }
-        }
-      }
-    },
     "Qwen 3.5 4B OptiQ" : {
       "localizations" : {
         "en" : {
@@ -1700,6 +1665,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qwen 3.5 9B"
+          }
+        }
+      }
+    },
+    "Qwen 3.5 14B" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 14B"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 14B"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 14B"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 14B"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen 3.5 14B"
           }
         }
       }
@@ -1909,6 +1909,7 @@
       }
     },
     "Raw error details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1943,6 +1944,7 @@
       }
     },
     "Received Data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1977,6 +1979,7 @@
       }
     },
     "Request / Response Details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2045,6 +2048,7 @@
       }
     },
     "Sending Data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2079,6 +2083,7 @@
       }
     },
     "Show raw error details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2113,6 +2118,7 @@
       }
     },
     "Show request and response details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2210,6 +2216,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "體積 %@ · 記憶體 ≥ %d GB"
+          }
+        }
+      }
+    },
+    "最强开源模型，需要高配置" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最强开源模型，需要高配置"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最强开源模型，需要高配置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最强开源模型，需要高配置"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最强开源模型，需要高配置"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最强开源模型，需要高配置"
           }
         }
       }
@@ -2657,40 +2697,6 @@
         }
       }
     },
-    "最强开源模型，需要高配置" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最强开源模型，需要高配置"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最强开源模型，需要高配置"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最强开源模型，需要高配置"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最强开源模型，需要高配置"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最强开源模型，需要高配置"
-          }
-        }
-      }
-    },
     "极小体积，适合入门与低内存设备" : {
       "localizations" : {
         "en" : {
@@ -2895,40 +2901,6 @@
         }
       }
     },
-    "超轻量推理模型，适合入门体验思维链" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "超轻量推理模型，适合入门体验思维链"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "超轻量推理模型，适合入门体验思维链"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "超轻量推理模型，适合入门体验思维链"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "超轻量推理模型，适合入门体验思维链"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "超轻量推理模型，适合入门体验思维链"
-          }
-        }
-      }
-    },
     "超轻量，适合低配置设备" : {
       "localizations" : {
         "en" : {
@@ -2959,6 +2931,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "超轻量，适合低配置设备"
+          }
+        }
+      }
+    },
+    "超轻量推理模型，适合入门体验思维链" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量推理模型，适合入门体验思维链"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量推理模型，适合入门体验思维链"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量推理模型，适合入门体验思维链"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量推理模型，适合入门体验思维链"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "超轻量推理模型，适合入门体验思维链"
           }
         }
       }
