@@ -10,21 +10,28 @@ struct PanelView: View {
 
     @LumiTheme private var theme
 
+    private var layoutManager: LayoutProviding? {
+        kernel.layoutManager
+    }
+
     private var isPanelVisible: Bool {
-        kernel.layoutManager?.isPanelVisible ?? true
+        layoutManager?.isPanelVisible ?? true
     }
 
     private var viewContainerID: String {
-        kernel.layoutManager?.activeViewContainerID ?? ""
+        layoutManager?.activeViewContainerID ?? ""
     }
 
     private var layoutState: LayoutState {
-        kernel.layoutManager?.layoutState ?? LayoutState()
+        layoutManager?.layoutState ?? LayoutState()
     }
 
     var body: some View {
         Group {
-            if isPanelVisible {
+            if layoutManager == nil {
+                ErrorView(error: LumiKernelError.serviceNotAvailable(service: "LayoutManager"))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if isPanelVisible {
                 VSplitView {
                     if layoutState.isPanelHeaderVisible {
                         PanelHeaderView(kernel: kernel)
