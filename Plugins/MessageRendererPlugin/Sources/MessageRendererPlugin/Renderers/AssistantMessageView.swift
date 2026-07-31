@@ -5,23 +5,22 @@ import MarkdownKit
 import SwiftUI
 
 struct AssistantMessageView: View {
-    @Environment(\.lumiResponseVerbosity) private var verbosity
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
+    let verbosity: LumiResponseVerbosity
 
     var body: some View {
-        MessageViewChrome(message: message, showRawMessage: $showRawMessage, showsHeader: verbosity != .brief) {
-            AssistantMessageBody(message: message, shouldHideAssistantBody: message.isToolExecutionOnly)
+        MessageViewChrome(message: message, showsHeader: verbosity != .brief, verbosity: verbosity) {
+            AssistantMessageBody(message: message, shouldHideAssistantBody: message.isToolExecutionOnly, verbosity: verbosity)
         }
     }
 }
 
 private struct AssistantMessageBody: View {
-    @Environment(\.lumiResponseVerbosity) private var verbosity
     @LumiTheme private var theme
 
     let message: LumiChatMessage
     let shouldHideAssistantBody: Bool
+    let verbosity: LumiResponseVerbosity
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

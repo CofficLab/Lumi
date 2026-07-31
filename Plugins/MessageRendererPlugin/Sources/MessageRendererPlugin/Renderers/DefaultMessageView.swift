@@ -7,10 +7,10 @@ struct DefaultMessageView: View {
     @LumiTheme private var theme
 
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
+    let verbosity: LumiResponseVerbosity
 
     var body: some View {
-        MessageViewChrome(message: message, showRawMessage: $showRawMessage) {
+        MessageViewChrome(message: message, verbosity: verbosity) {
             Text(message.content)
                 .font(.appBody)
                 .foregroundColor(theme.textPrimary)

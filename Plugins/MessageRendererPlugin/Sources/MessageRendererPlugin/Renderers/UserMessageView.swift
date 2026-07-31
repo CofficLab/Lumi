@@ -3,15 +3,14 @@ import LumiUI
 import SwiftUI
 
 struct UserMessageView: View {
-    @Environment(\.lumiResponseVerbosity) private var verbosity
     let kernel: LumiKernel
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
+    let verbosity: LumiResponseVerbosity
 
     private var isBrief: Bool { verbosity == .brief }
 
     var body: some View {
-        MessageViewChrome(kernel: kernel, message: message, showRawMessage: $showRawMessage, showsResendButton: true) {
+        MessageViewChrome(kernel: kernel, message: message, showsResendButton: true, verbosity: verbosity) {
             VStack(alignment: .leading, spacing: 8) {
                 if !message.userImageData.isEmpty {
                     AppImagePreviewGrid(imageDataList: message.userImageData)

@@ -4,10 +4,10 @@ import LumiUI
 import SwiftUI
 
 struct StatusMessageView: View {
-    @Environment(\.lumiResponseVerbosity) private var verbosity
     @LumiTheme private var theme
 
     let message: LumiChatMessage
+    let verbosity: LumiResponseVerbosity
 
     var body: some View {
         if verbosity == .brief {

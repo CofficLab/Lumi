@@ -4,16 +4,15 @@ import LumiUI
 import SwiftUI
 
 struct ToolMessageView: View {
-    @Environment(\.lumiResponseVerbosity) private var verbosity
     @LumiTheme private var theme
 
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
+    let verbosity: LumiResponseVerbosity
 
     private var isBrief: Bool { verbosity == .brief }
 
     var body: some View {
-        MessageViewChrome(message: message, showRawMessage: $showRawMessage) {
+        MessageViewChrome(message: message, verbosity: verbosity) {
             Group {
                 if isBrief {
                     briefContent
