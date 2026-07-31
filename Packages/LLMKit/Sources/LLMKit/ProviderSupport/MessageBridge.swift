@@ -13,7 +13,7 @@ import SuperLogKit
 public enum LumiVisionMessageSupport: SuperLog {
     public static let emoji = "🌉"
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "llm.message-bridge")
-    static let verbose = true
+    static let verbose = false
 
     public static func preparedMessages(for request: LumiLLMRequest) -> [ChatMessage] {
         var messages = request.messages.map(convert)
