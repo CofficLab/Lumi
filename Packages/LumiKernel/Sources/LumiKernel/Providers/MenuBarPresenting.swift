@@ -13,8 +13,8 @@ public protocol MenuBarPresenting: AnyObject {
     /// 安装或更新菜单栏宿主。
     ///
     /// - Parameters:
-    ///   - contentItems: 菜单栏图标区内容项，通常由 `UIManager.allMenuBarContents` 提供。
-    ///   - popupItems: 菜单栏弹窗内容项，通常由 `UIManager.allMenuBarPopups` 提供。
+    ///   - contentItems: 菜单栏图标区内容项，通常由 `WorkspaceProviding.allMenuBarContents` 提供。
+    ///   - popupItems: 菜单栏弹窗内容项，通常由 `WorkspaceProviding.allMenuBarPopups` 提供。
     func presentMenuBar(
         contentItems: [MenuBarContentItem],
         popupItems: [MenuBarPopupItem]

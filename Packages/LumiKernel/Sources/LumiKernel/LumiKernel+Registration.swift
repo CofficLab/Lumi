@@ -19,19 +19,14 @@ extension LumiKernelContainer {
         try registerService(ProjectProviding.self, project)
     }
 
-    /// Register layout service
-    public func registerLayout(_ layout: any LayoutProviding) throws {
-        try registerService(LayoutProviding.self, layout)
+    /// Register workspace service (layout geometry + plugin UI contributions)
+    public func registerWorkspace(_ workspace: any WorkspaceProviding) throws {
+        try registerService(WorkspaceProviding.self, workspace)
     }
 
     /// Register command service
     public func registerCommandService(_ command: any CommandProviding) throws {
         try registerService(CommandProviding.self, command)
-    }
-
-    /// Register shared UI service
-    public func registerSharedUIService(_ sharedUI: any UIManaging) throws {
-        try registerService(UIManaging.self, sharedUI)
     }
 
     /// Register message send service

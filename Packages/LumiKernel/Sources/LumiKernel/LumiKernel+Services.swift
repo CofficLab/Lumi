@@ -19,19 +19,17 @@ extension LumiKernelContainer {
         resolveService(ProjectProviding.self)
     }
 
-    /// Layout service
-    public var layoutManager: (any LayoutProviding)? {
-        resolveService(LayoutProviding.self)
+    /// Workspace service (layout geometry + plugin UI contributions)
+    ///
+    /// 合并自原 LayoutProviding（布局状态机）与 UIManaging（插件 UI 贡献注册表）。
+    /// 由 LayoutManager 实现。
+    public var workspace: (any WorkspaceProviding)? {
+        resolveService(WorkspaceProviding.self)
     }
 
     /// Command menu service
     public var command: (any CommandProviding)? {
         resolveService(CommandProviding.self)
-    }
-
-    /// Shared UI service
-    public var uiManager: (any UIManaging)? {
-        resolveService(UIManaging.self)
     }
 
     /// Menu bar presentation service

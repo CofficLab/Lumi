@@ -25,7 +25,7 @@ struct LumiKernelUsageExample {
 
         // 方式二：直接创建并注册（一行搞定）
         try kernel.registerProject(ProjectService())
-        try kernel.registerLayout(LayoutService())
+        try kernel.registerWorkspace(LayoutService())
 
         // ========== 4. 使用服务 ==========
         if let storage = kernel.storage {
@@ -77,7 +77,7 @@ private final class ProjectService: ProjectProviding {
 }
 
 @MainActor
-private final class LayoutService: LayoutProviding {
+private final class LayoutService: WorkspaceProviding {
     var currentViewContainer: ViewContainerItem? { nil }
 }
 

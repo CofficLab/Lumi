@@ -86,9 +86,8 @@ public final class LumiKernelContainer: ObservableObject {
         // 2. 服务校验 — 必需的内核服务必须在 OnBoot 阶段注册完毕
         guard storage != nil,
               project != nil,
-              layoutManager != nil,
+              workspace != nil,
               command != nil,
-              uiManager != nil,
               messageSender != nil,
               llmProvider != nil,
               agentTurnManager != nil,
@@ -101,9 +100,8 @@ public final class LumiKernelContainer: ObservableObject {
             let missingServices = [
                 storage == nil ? "Storage" : nil,
                 project == nil ? "Project" : nil,
-                layoutManager == nil ? "Layout" : nil,
+                workspace == nil ? "Workspace" : nil,
                 command == nil ? "Command" : nil,
-                uiManager == nil ? "SharedUI" : nil,
                 messageSender == nil ? "MessageSend" : nil,
                 llmProvider == nil ? "LLMProvider" : nil,
                 agentTurnManager == nil ? "AgentTurnManager" : nil,
@@ -141,12 +139,12 @@ public final class LumiKernelContainer: ObservableObject {
         pluginManager.registerEditorPlugins(in: self)
 
         // 8. 同步当前激活容器的可见性状态
-        //    — 从 LayoutProviding 获取 activeViewContainerID,
-        //    — 再从 LayoutProviding 获取该容器的 rail/chat/content/panel 可见性,
-        //    — 最后更新到 LayoutProviding 的状态中。
-        if let containerID = layoutManager?.layoutState.activeViewContainerID,
-           let container = layoutManager?.viewContainer(id: containerID) {
-            layoutManager?.applyVisibility(
+        //    — 从 WorkspaceProviding 获取 activeViewContainerID,
+        //    — 再从 WorkspaceProviding 获取该容器的 rail/chat/content/panel 可见性,
+        //    — 最后更新到 WorkspaceProviding 的状态中。
+        if let containerID = workspace?.layoutState.activeViewContainerID,
+           let container = workspace?.viewContainer(id: containerID) {
+            workspace?.applyVisibility(
                 rail: container.isRailVisible,
                 chat: container.isChatVisible,
                 content: container.isContentVisible,
@@ -154,7 +152,7 @@ public final class LumiKernelContainer: ObservableObject {
             )
         }
 
-        // 9. 将 UIManager 中已收集的菜单栏视图交给展示层
+        // 9. 将工作区服务中已收集的菜单栏视图交给展示层
         refreshMenuBarPresentation()
 
         // 10. 将内核主题服务持有的主题贡献同步到 LumiUI 的主题注册中心
@@ -162,12 +160,12 @@ public final class LumiKernelContainer: ObservableObject {
         theme?.syncToLumiUI()
     }
 
-    /// 让菜单栏展示层刷新为当前 UIManager 收集到的内容。
+    /// 让菜单栏展示层刷新为当前工作区服务收集到的内容。
     public func refreshMenuBarPresentation() {
         guard let presenter = menuBarPresenter else { return }
         presenter.refreshMenuBar(
-            contentItems: uiManager?.allMenuBarContents ?? [],
-            popupItems: uiManager?.allMenuBarPopups ?? []
+            contentItems: workspace?.allMenuBarContents ?? [],
+            popupItems: workspace?.allMenuBarPopups ?? []
         )
     }
 

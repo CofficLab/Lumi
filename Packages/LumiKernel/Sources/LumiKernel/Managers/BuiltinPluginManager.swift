@@ -75,7 +75,7 @@ public final class BuiltinPluginManager: ObservableObject {
         }
 
         // 注册容器激活观察者，当容器切换时通知所有插件
-        kernel.layoutManager?.addContainerObserver { [weak self] containerID in
+        kernel.workspace?.addContainerObserver { [weak self] containerID in
             guard let self else { return }
             Task { @MainActor in
                 self.onContainerActivated(kernel: kernel, containerID: containerID)
@@ -108,7 +108,7 @@ public final class BuiltinPluginManager: ObservableObject {
         // 首次启动时各 registry 为空,清空为 no-op,不影响行为。
         clearInternalContributions()
         kernel.settings?.clearAllContributions()
-        kernel.uiManager?.clearAllContributions()
+        kernel.workspace?.clearAllContributions()
         kernel.logo?.clearAllContributions()
         // onboarding 服务当前未注册(kernel.onboarding == nil),无需处理。
 
@@ -126,20 +126,20 @@ public final class BuiltinPluginManager: ObservableObject {
 
             // Menu Bar
             for content in plugin.menuBarContentItems(kernel: kernel) {
-                kernel.uiManager?.registerMenuBarContent(content)
+                kernel.workspace?.registerMenuBarContent(content)
             }
             for popup in plugin.menuBarPopupItems(kernel: kernel) {
-                kernel.uiManager?.registerMenuBarPopup(popup)
+                kernel.workspace?.registerMenuBarPopup(popup)
             }
 
             // Title Toolbar
             for item in plugin.titleToolbarItems(kernel: kernel) {
-                kernel.uiManager?.registerTitleToolbarItem(item)
+                kernel.workspace?.registerTitleToolbarItem(item)
             }
 
             // Panel
             for item in plugin.panelHeaderItems(kernel: kernel) {
-                kernel.uiManager?.registerPanelHeaderItem(item)
+                kernel.workspace?.registerPanelHeaderItem(item)
             }
             for item in plugin.panelBottomTabItems(kernel: kernel) {
                 var tabItem = PanelBottomTabItem(
@@ -149,7 +149,7 @@ public final class BuiltinPluginManager: ObservableObject {
                     content: item.makeView
                 )
                 tabItem.order = pluginOrder
-                kernel.uiManager?.registerPanelBottomTabItem(tabItem)
+                kernel.workspace?.registerPanelBottomTabItem(tabItem)
             }
             for item in plugin.panelRailTabItems(kernel: kernel) {
                 var railItem = PanelRailTabItem(
@@ -159,7 +159,7 @@ public final class BuiltinPluginManager: ObservableObject {
                     content: item.makeView
                 )
                 railItem.order = pluginOrder
-                kernel.uiManager?.registerPanelRailTabItem(railItem)
+                kernel.workspace?.registerPanelRailTabItem(railItem)
             }
 
             // View Containers
@@ -193,7 +193,7 @@ public final class BuiltinPluginManager: ObservableObject {
                 }
                 var containerWithOrder = viewContainer
                 containerWithOrder.order = pluginOrder
-                kernel.layoutManager?.registerViewContainer(containerWithOrder)
+                kernel.workspace?.registerViewContainer(containerWithOrder)
             }
 
             // Chat Section
@@ -206,7 +206,7 @@ public final class BuiltinPluginManager: ObservableObject {
                     content: item.makeView
                 )
                 chatItem.order = pluginOrder
-                kernel.uiManager?.registerChatSectionItem(chatItem)
+                kernel.workspace?.registerChatSectionItem(chatItem)
             }
             for item in plugin.chatSectionToolbarItems(kernel: kernel) {
                 var toolbarItem = ChatSectionToolbarItem(
@@ -215,7 +215,7 @@ public final class BuiltinPluginManager: ObservableObject {
                     content: item.makeView
                 )
                 toolbarItem.order = pluginOrder
-                kernel.uiManager?.registerChatSectionToolbarItem(toolbarItem)
+                kernel.workspace?.registerChatSectionToolbarItem(toolbarItem)
             }
             for item in plugin.chatSectionToolbarBarItems(kernel: kernel) {
                 var barItem = ChatSectionToolbarBarItem(
@@ -223,7 +223,7 @@ public final class BuiltinPluginManager: ObservableObject {
                     content: item.makeView
                 )
                 barItem.order = pluginOrder
-                kernel.uiManager?.registerChatSectionToolbarBarItem(barItem)
+                kernel.workspace?.registerChatSectionToolbarBarItem(barItem)
             }
             for item in plugin.chatSectionHeaderItems(kernel: kernel) {
                 var headerItem = ChatSectionHeaderItem(
@@ -231,7 +231,7 @@ public final class BuiltinPluginManager: ObservableObject {
                     content: item.makeView
                 )
                 headerItem.order = pluginOrder
-                kernel.uiManager?.registerChatSectionHeaderItem(headerItem)
+                kernel.workspace?.registerChatSectionHeaderItem(headerItem)
             }
             for item in plugin.chatSectionActionBarItems(kernel: kernel) {
                 var actionBarItem = ChatSectionActionBarItem(
@@ -240,12 +240,12 @@ public final class BuiltinPluginManager: ObservableObject {
                     content: item.makeView
                 )
                 actionBarItem.order = pluginOrder
-                kernel.uiManager?.registerChatSectionActionBarItem(actionBarItem)
+                kernel.workspace?.registerChatSectionActionBarItem(actionBarItem)
             }
 
             // Status Bar
             for item in plugin.statusBarItems(kernel: kernel) {
-                kernel.uiManager?.registerStatusBarItem(item)
+                kernel.workspace?.registerStatusBarItem(item)
             }
 
             // Settings
@@ -260,7 +260,7 @@ public final class BuiltinPluginManager: ObservableObject {
             for item in plugin.rootOverlays(kernel: kernel) {
                 var overlayItem = item
                 overlayItem.order = pluginOrder
-                kernel.uiManager?.registerRootOverlayItem(overlayItem)
+                kernel.workspace?.registerRootOverlayItem(overlayItem)
             }
 
             // Logo
@@ -294,9 +294,9 @@ public final class BuiltinPluginManager: ObservableObject {
         }
 
         // Sync layout active section with registered view containers.
-        let containers = kernel.layoutManager?.allViewContainers ?? []
+        let containers = kernel.workspace?.allViewContainers ?? []
         if let first = containers.first,
-           let layoutService = kernel.layoutManager,
+           let layoutService = kernel.workspace,
            layoutService.layoutState.activeViewContainerID == nil {
             layoutService.layoutState.activeViewContainerID = first.id
         }
@@ -306,9 +306,9 @@ public final class BuiltinPluginManager: ObservableObject {
         // 此时容器还未注册，只能直接给 `activeViewContainerID` 赋值，绕过了
         // `activateContainer` → `onContainerActivated` 的可见性应用路径。
         // 因此启动/重建完成后必须在此处补一次 apply，否则 rail/chat 仍按默认值显示。
-        if let containerID = kernel.layoutManager?.layoutState.activeViewContainerID,
-           let container = kernel.layoutManager?.viewContainer(id: containerID) {
-            kernel.layoutManager?.applyVisibility(
+        if let containerID = kernel.workspace?.layoutState.activeViewContainerID,
+           let container = kernel.workspace?.viewContainer(id: containerID) {
+            kernel.workspace?.applyVisibility(
                 rail: container.isRailVisible,
                 chat: container.isChatVisible,
                 content: container.isContentVisible,
