@@ -36,7 +36,6 @@ struct ConversationTitleHeaderView: View {
         }
     }
 
-    /// 标题显示逻辑统一委托给 LumiKernel 级 ``LumiKernelContainer/uiTitle(for:)``。
     private var displayTitle: String {
         _ = messageVersion
 
