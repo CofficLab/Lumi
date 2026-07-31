@@ -124,6 +124,13 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
     /// 实现应复用原消息的正文和附件 metadata,并在同一对话中触发新的 agent turn。
     /// 找不到消息、消息不是 user role、或该对话正在发送时应 no-op。
     func resendMessage(id: UUID, in conversationID: UUID) async
+
+    /// 当前会话的"发送中"状态行（瞬时内存态，不落库）。
+    ///
+    /// 当会话正在发送时返回一条 `role == .status` 的临时消息（稳定 id
+    /// `LumiStatusRowID`），由 UI 拼接到消息列表末尾渲染为"正在发送…"气泡；
+    /// 未发送时返回 nil。文案、role、metadata 均由数据层决定，UI 只消费不构造。
+    func currentStatusRow(for conversationID: UUID) -> LumiChatMessage?
 }
 
 // MARK: - 默认实现
@@ -132,6 +139,9 @@ public extension MessageSending {
     func pendingMessages(for conversationID: UUID) -> [LumiPendingMessage] { [] }
 
     func cancelPendingMessage(id: UUID, in conversationID: UUID) {}
+
+    /// 默认不提供 status 行(实现方可覆盖以暴露发送中状态)。
+    func currentStatusRow(for conversationID: UUID) -> LumiChatMessage? { nil }
 
     func resumeTurn(
         in conversationID: UUID,
@@ -161,3 +171,10 @@ public extension MessageSending {
 
     func resendMessage(id: UUID, in conversationID: UUID) async {}
 }
+
+/// "发送中"状态行使用的进程级**稳定常量 id**。
+///
+/// 与 `LumiStreamingRowID` 同理：一次性生成、跨进程稳定不变，SwiftUI 的 ForEach
+/// diff 稳定，且永不与任何落库消息冲突。由 `MessageSending.currentStatusRow(for:)`
+/// 的实现用它构造瞬时 status 消息，UI 据此识别。
+public let LumiStatusRowID = UUID()

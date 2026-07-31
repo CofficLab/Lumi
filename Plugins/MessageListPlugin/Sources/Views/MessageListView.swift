@@ -35,8 +35,6 @@ struct MessageListView: View {
 
     /// 底部锚点行的 id,用于 isAtBottom 检测和 scrollTo。
     private static let bottomAnchorID = "message-list-bottom-anchor"
-    /// 发送中追加的临时状态消息 id,稳定不变以便 SwiftUI 正确 diff。
-    private static let transientStatusMessageID = UUID()
 
     private var selectedConversationID: UUID? {
         kernel.conversations?.selectedConversationID
@@ -50,9 +48,9 @@ struct MessageListView: View {
     /// 仅用于展示的消息列表。
     ///
     /// 在真实消息(`messages`)末尾拼接两类**不写库**的临时行,因此分页/尾部合并/裁剪
-    /// 逻辑仍只基于真实消息,不会被临时行干扰(这正是抽取 store 的核心收益):
+    /// 逻辑仍只基于真实消息,不会被临时行干扰:
     /// 1. 流式临时行:来自 `kernel.messageStreaming`(独立稳定 id,与落库行永不冲突)。
-    /// 2. 发送中状态行:"正在发送消息…"气泡。
+    /// 2. 发送中状态行:来自 `kernel.messageSender`(数据层构造,UI 只消费)。
     private var displayMessages: [LumiChatMessage] {
         guard let conversationID = selectedConversationID else { return messages }
         var rows = messages
@@ -61,16 +59,10 @@ struct MessageListView: View {
            streamingRow.conversationID == conversationID {
             rows.append(streamingRow)
         }
-        // 发送中状态行。
-        guard isSending else { return rows }
-        let statusMessage = LumiChatMessage(
-            id: Self.transientStatusMessageID,
-            conversationID: conversationID,
-            role: .status,
-            content: "正在发送消息…",
-            metadata: ["isTransientStatus": "true"]
-        )
-        rows.append(statusMessage)
+        // 发送中状态行(由数据层构造,UI 只读取)。
+        if let statusRow = kernel.messageSender?.currentStatusRow(for: conversationID) {
+            rows.append(statusRow)
+        }
         return rows
     }
 

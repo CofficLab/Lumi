@@ -67,6 +67,17 @@ public final class MessageSender: MessageSending, SuperLog {
         return sendingConversationIDs.contains(conversationID)
     }
 
+    public func currentStatusRow(for conversationID: UUID) -> LumiChatMessage? {
+        guard isSending(for: conversationID) else { return nil }
+        return LumiChatMessage(
+            id: LumiStatusRowID,
+            conversationID: conversationID,
+            role: .status,
+            content: String(localized: "Sending message…", defaultValue: "正在发送消息…"),
+            metadata: ["isTransientStatus": "true"]
+        )
+    }
+
     public func pendingMessages(for conversationID: UUID) -> [LumiPendingMessage] {
         pendingMessageQueues[conversationID] ?? []
     }
