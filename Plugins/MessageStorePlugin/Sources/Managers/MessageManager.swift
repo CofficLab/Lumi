@@ -11,7 +11,7 @@ import SuperLogKit
 /// 发 `messagesDidChange` 通知刷新 UI,必须在主线程执行。
 public final class MessageManager: ObservableObject, MessageManaging, SuperLog, @unchecked Sendable {
     public nonisolated static let emoji = "💬"
-    public nonisolated(unsafe) static var verbose = true
+    public nonisolated(unsafe) static var verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
 
     private weak var kernel: LumiKernel?

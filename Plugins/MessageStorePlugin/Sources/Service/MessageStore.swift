@@ -12,7 +12,7 @@ import SwiftData
 /// through the lock to avoid concurrent `save` conflicts.
 public final class MessageStore: SuperLog, @unchecked Sendable {
     public nonisolated static let emoji = "💬"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.store")
 
     // MARK: - Properties
