@@ -27,9 +27,9 @@ public final class MessageSender: MessageSending, SuperLog {
     public nonisolated static let emoji = "📤"
     nonisolated static let verbose = true
 
-    @Published private var sendingConversationIDs: Set<UUID> = []
-    @Published private var pendingMessageQueues: [UUID: [LumiPendingMessage]] = [:]
-    private var pendingContinuationConversationIDs: Set<UUID> = []
+    @Published internal(set) var sendingConversationIDs: Set<UUID> = []
+    @Published internal(set) var pendingMessageQueues: [UUID: [LumiPendingMessage]] = [:]
+    internal var pendingContinuationConversationIDs: Set<UUID> = []
 
     public var isSending: Bool {
         !sendingConversationIDs.isEmpty
@@ -37,11 +37,11 @@ public final class MessageSender: MessageSending, SuperLog {
 
     /// 当前挂起、等待下次发送时随消息一起送出的图片附件。
     /// `addAttachment / removeAttachment / clearAttachments` 维护此集合。
-    @Published public private(set) var pendingAttachments: [LumiImageAttachment] = []
+    @Published public internal(set) var pendingAttachments: [LumiImageAttachment] = []
 
     /// 当前挂起、等待下次发送时随消息一起送出的**文件**附件(与图片并行的链路)。
     /// `addFileAttachment / removeFileAttachment / clearFileAttachments` 维护此集合。
-    @Published public private(set) var pendingFileAttachments: [LumiFileAttachment] = []
+    @Published public internal(set) var pendingFileAttachments: [LumiFileAttachment] = []
 
     private weak var kernel: LumiKernel?
     private var resendObserver: NotificationObserverToken?
@@ -113,74 +113,6 @@ public final class MessageSender: MessageSending, SuperLog {
             pendingMessageQueues.removeValue(forKey: conversationID)
         } else {
             pendingMessageQueues[conversationID] = queue
-        }
-    }
-
-    // MARK: - 附件挂起池
-
-    /// 添加附件。幂等:同 `id` 已存在则忽略。
-    public func addAttachment(_ attachment: LumiImageAttachment) {
-        guard !pendingAttachments.contains(where: { $0.id == attachment.id }) else {
-            if Self.verbose {
-                Self.logger.info("\(Self.t)addAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))… 已存在,忽略")
-            }
-            return
-        }
-        pendingAttachments.append(attachment)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)addAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))…, mime=\(attachment.mimeType), pool.size=\(self.pendingAttachments.count)")
-        }
-    }
-
-    /// 按 id 移除挂起附件。id 不存在则 no-op。
-    public func removeAttachment(id: UUID) {
-        let before = pendingAttachments.count
-        pendingAttachments.removeAll { $0.id == id }
-        if Self.verbose {
-            Self.logger.info("\(Self.t)removeAttachment ➡️ id=\(id.uuidString.prefix(8))…, before=\(before), after=\(self.pendingAttachments.count)")
-        }
-    }
-
-    /// 清空所有挂起附件。
-    public func clearAttachments() {
-        let count = pendingAttachments.count
-        pendingAttachments.removeAll()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)clearAttachments ➡️ cleared \(count) items")
-        }
-    }
-
-    // MARK: - 文件附件挂起池
-
-    /// 添加文件附件。幂等:同 `id` 已存在则忽略。
-    public func addFileAttachment(_ attachment: LumiFileAttachment) {
-        guard !pendingFileAttachments.contains(where: { $0.id == attachment.id }) else {
-            if Self.verbose {
-                Self.logger.info("\(Self.t)addFileAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))… 已存在,忽略")
-            }
-            return
-        }
-        pendingFileAttachments.append(attachment)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)addFileAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))…, name=\(attachment.fileName), pool.size=\(self.pendingFileAttachments.count)")
-        }
-    }
-
-    /// 按 id 移除挂起文件附件。id 不存在则 no-op。
-    public func removeFileAttachment(id: UUID) {
-        let before = pendingFileAttachments.count
-        pendingFileAttachments.removeAll { $0.id == id }
-        if Self.verbose {
-            Self.logger.info("\(Self.t)removeFileAttachment ➡️ id=\(id.uuidString.prefix(8))…, before=\(before), after=\(self.pendingFileAttachments.count)")
-        }
-    }
-
-    /// 清空所有挂起文件附件。
-    public func clearFileAttachments() {
-        let count = pendingFileAttachments.count
-        pendingFileAttachments.removeAll()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)clearFileAttachments ➡️ cleared \(count) items")
         }
     }
 
