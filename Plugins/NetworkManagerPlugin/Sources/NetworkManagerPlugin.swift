@@ -10,7 +10,7 @@ public struct PluginInfo {
 
 @MainActor
 public final class NetworkManagerPlugin: LumiPlugin {
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.network-manager")
     public static let info = PluginInfo(displayName: "Network Monitor")
     private var httpExchangeStore: HTTPExchangeStore?

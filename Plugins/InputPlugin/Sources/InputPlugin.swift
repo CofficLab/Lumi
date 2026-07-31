@@ -9,7 +9,7 @@ import os
 @MainActor
 public final class InputPlugin: LumiPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input-manager")
-    nonisolated public static let verbose = true
+    nonisolated public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.input-manager"
     public let name = "Input Manager"

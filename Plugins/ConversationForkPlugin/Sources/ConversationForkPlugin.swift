@@ -7,7 +7,7 @@ import os
 @MainActor
 public final class ConversationForkPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "🔀"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-fork", category: "ConversationForkPlugin")
 
     public let id = "com.coffic.lumi.plugin.conversation-fork"

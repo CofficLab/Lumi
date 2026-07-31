@@ -12,7 +12,7 @@ import SwiftUI
 public final class ConversationStorePlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
     public nonisolated static let emoji = "💬"
-    public static let verbose = true
+    public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.conversation-store"
     public let name = "Conversation Store"
