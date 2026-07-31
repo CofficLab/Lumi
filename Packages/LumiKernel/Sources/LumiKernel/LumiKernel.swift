@@ -22,17 +22,26 @@ public final class LumiKernelContainer: ObservableObject {
     private var serviceSubscriptions: [ObjectIdentifier: AnyCancellable] = [:]
 
     /// 内置插件管理器（直接持有，不使用服务注册表）
-    public let pluginManager: BuiltinPluginManager
+    public let pluginManager: PluginManager
 
     /// 内核统一事件分发器。
     public let eventManager: EventManager
+
+    /// 内核协调器注册表(Coordinators/ 层)。
+    ///
+    /// 协调器把"服务 A 的变化引发服务 B 的动作"这类内核内部联动集中装配:
+    /// `startup()` 在插件服务注册完毕后调用 `startAll`,统一校验依赖、
+    /// 构造编排器并把编排结果注册回内核。当前无内置协调器(发送等链路由
+    /// 插件实现),保留此注册表供将来纯内核实现的联动链登记。详见 `LumiCoordinator`。
+    public let coordinatorRegistry: LumiCoordinatorRegistry
 
     // MARK: - Initialization
 
     public init() {
         // 初始化内置插件管理器（先创建，再设置 kernel 引用）
         self.eventManager = EventManager()
-        self.pluginManager = BuiltinPluginManager()
+        self.pluginManager = PluginManager()
+        self.coordinatorRegistry = LumiCoordinatorRegistry.makeDefault()
         self.pluginManager.kernel = self
     }
 
@@ -85,6 +94,11 @@ public final class LumiKernelContainer: ObservableObject {
         services[ObjectIdentifier(type)] as? T
     }
 
+    /// 指定服务类型是否已注册(协调器装配前的依赖校验用)。
+    public func isServiceRegistered(_ id: ObjectIdentifier) -> Bool {
+        services[id] != nil
+    }
+
     /// Unregister service
     public func unregisterService<T>(_ type: T.Type) {
         let key = ObjectIdentifier(type)
@@ -134,22 +148,26 @@ public final class LumiKernelContainer: ObservableObject {
         // 3. 插件系统 On Ready — 阶段 2:依赖服务的异步初始化
         try await pluginManager.onReady(kernel: self)
 
-        // 4. 收集所有插件贡献的 Agent 工具,并注册到内核 ToolManaging
+        // 4. 协调层装配 — 当前无内置协调器(makeDefault 为空);
+        //    保留调用点,将来某条纯内核实现的联动链登记后即在此装配。
+        try coordinatorRegistry.startAll(kernel: self)
+
+        // 5. 收集所有插件贡献的 Agent 工具,并注册到内核 ToolManaging
         //    — 在 onReady 之后执行,确保 `kernel.toolManager` 服务可用,
         //    且各插件的 `agentTools(kernel:)` 可以在完整内核上运行。
         //    — 必须在 registerPluginUIContributions 之前执行,确保
         //    settingsTabItems 等 UI 贡献在创建时能读取到已注册的工具列表。
         try pluginManager.registerAgentTools(in: self)
 
-        // 5. 收集所有插件贡献的 UI 视图,并注册到内核的共享 UI 服务
+        // 6. 收集所有插件贡献的 UI 视图,并注册到内核的共享 UI 服务
         pluginManager.registerPluginUIContributions(in: self)
 
-        // 6. 收集所有插件贡献的 LLM Provider,并注册到内核 LLMProviderManaging
+        // 7. 收集所有插件贡献的 LLM Provider,并注册到内核 LLMProviderManaging
         //    — 在 onReady 之后执行,确保 `kernel.llmProvider` 服务可用,
         //    且各插件的 `llmProviders(kernel:)` 可以在完整内核上运行。
         try pluginManager.registerLLMProviders(in: self)
 
-        // 7. 收集所有插件贡献的编辑器运行时插件,并注册到 EditorProviding。
+        // 8. 收集所有插件贡献的编辑器运行时插件,并注册到 EditorProviding。
         //    语言高亮、语法、语言描述等扩展通过 typed 的 `EditorPlugin` 协议接入,
         //    由具体编辑器宿主在边界处桥接到运行时实现。
         pluginManager.registerEditorPlugins(in: self)
