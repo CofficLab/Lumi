@@ -36,29 +36,6 @@ public final class EventManager: ObservableObject, SuperLog {
         post(.messagesDidChange, object: object, userInfo: userInfo)
     }
 
-    /// 发送流式输出生命周期事件（start / delta / end）。
-    ///
-    /// 流式期间 runner 节流后调用，UI 收到后按 `messageID` 原地 patch 那一条临时消息，
-    /// 全程不查库。`conversationID` 用于 UI 判断是否属于当前会话。
-    public func postMessageStreaming(
-        kind: LumiStreamingKind,
-        messageID: UUID,
-        conversationID: UUID?,
-        content: String,
-        isThinking: Bool
-    ) {
-        var userInfo: [AnyHashable: Any] = [
-            LumiNotificationUserInfoKey.messageID: messageID,
-            LumiNotificationUserInfoKey.streamingKind: kind.rawValue,
-            LumiNotificationUserInfoKey.content: content,
-            LumiNotificationUserInfoKey.isThinking: isThinking
-        ]
-        if let conversationID {
-            userInfo[LumiNotificationUserInfoKey.conversationID] = conversationID
-        }
-        post(.messageStreaming, userInfo: userInfo)
-    }
-
     public func postConversationsDidChange(object: Any? = nil) {
         post(.conversationsDidChange, object: object)
     }
