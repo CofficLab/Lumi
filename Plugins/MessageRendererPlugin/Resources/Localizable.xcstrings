@@ -766,6 +766,7 @@
       }
     },
     "Thinking" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
