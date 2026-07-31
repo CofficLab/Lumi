@@ -333,17 +333,53 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             )
 
             // Call LLM
+            // 流式输出:全程不查库。runner 预生成 assistantID,UI 据此 append 一条临时 assistant 行;
+            // onChunk 节流后发 delta,UI 原地 patch 那一条;结束时用 assistantID 重建最终消息,
+            // 与临时行同 id → insertMessage 触发的 messagesDidChange 会平滑覆盖临时行(无闪烁)。
+            let assistantID = UUID()
+            kernel.eventManager.postMessageStreaming(
+                kind: .start,
+                messageID: assistantID,
+                conversationID: conversationID,
+                content: "",
+                isThinking: false
+            )
             let assistantMessage: LumiChatMessage
             do {
                 if Self.verbose {
                     let metrics = Self.messageMetrics(preparedMessages)
                     Self.logger.info("\(Self.t)LLM request start provider=\(type(of: targetProvider).info.id) model=\(model) messages=\(preparedMessages.count) tools=\(tools.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars)")
                 }
-                assistantMessage = try await targetProvider.send(request)
+                // onChunk 在 provider 后台任务里调用(@Sendable),累积状态用不公平锁保护以保证线程安全。
+                // 节流:距上次发 delta ≥50ms 才发;最后一个 delta 可能被丢,但最终落库的完整消息会兜底纠正。
+                let state = StreamingChunkState()
+                assistantMessage = try await targetProvider.sendStreaming(request) { chunk in
+                    let isThinking = chunk.isThinking
+                    let piece = chunk.content ?? ""
+                    // 区分思考/正文增量,分别累积。tool-call 增量不通过 onChunk 推送,此处无需处理。
+                    if isThinking {
+                        await state.appendThinking(piece)
+                    } else {
+                        await state.appendContent(piece)
+                    }
+                    await state.maybeEmitDelta(
+                        conversationID: conversationID,
+                        messageID: assistantID,
+                        eventManager: kernel.eventManager
+                    )
+                }
             } catch {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)LLM 调用失败: \(error.localizedDescription)")
                 }
+                // 流式期间 UI 已 append 临时行;失败时发 end 让 UI 清掉它,避免残留空行。
+                kernel.eventManager.postMessageStreaming(
+                    kind: .end,
+                    messageID: assistantID,
+                    conversationID: conversationID,
+                    content: "",
+                    isThinking: false
+                )
                 let disposition = targetProvider.retryDisposition(
                     for: error,
                     context: LumiLLMRetryContext(attempt: 1, maxAttempts: 1)
@@ -360,9 +396,32 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 return
             }
 
-            // Append assistant message to history
-            kernel.messageManager?.insertMessage(assistantMessage, to: conversationID)
-            postMessageSavedNotification(message: assistantMessage, conversationID: conversationID)
+            // Append assistant message to history.
+            // 用预生成的 assistantID 重建:这样临时行与最终落库行同 id,
+            // refreshTail 的 overlap 合并会平滑覆盖,实现无闪烁过渡。
+            let finalizedMessage = LumiChatMessage(
+                id: assistantID,
+                conversationID: assistantMessage.conversationID,
+                role: assistantMessage.role,
+                content: assistantMessage.content,
+                createdAt: assistantMessage.createdAt,
+                providerID: assistantMessage.providerID,
+                modelName: assistantMessage.modelName,
+                isError: assistantMessage.isError,
+                rawErrorDetail: assistantMessage.rawErrorDetail,
+                renderKind: assistantMessage.renderKind,
+                metadata: assistantMessage.metadata,
+                toolCalls: assistantMessage.toolCalls,
+                toolCallID: assistantMessage.toolCallID,
+                reasoningContent: assistantMessage.reasoningContent,
+                inputTokenCount: assistantMessage.inputTokenCount,
+                outputTokenCount: assistantMessage.outputTokenCount,
+                latencyMs: assistantMessage.latencyMs,
+                timeToFirstTokenMs: assistantMessage.timeToFirstTokenMs,
+                streamingDurationMs: assistantMessage.streamingDurationMs
+            )
+            kernel.messageManager?.insertMessage(finalizedMessage, to: conversationID)
+            postMessageSavedNotification(message: finalizedMessage, conversationID: conversationID)
 
             if Self.verbose {
                 let toolArgChars = assistantMessage.toolCalls?.reduce(0) { $0 + $1.arguments.count } ?? 0
@@ -561,5 +620,64 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         }
 
         return (contentChars, metadataChars, reasoningChars, toolCallArgumentChars)
+    }
+}
+
+/// 流式累积 + 节流状态(actor 隔离,保证 onChunk 跨线程调用安全)。
+///
+/// 累积正文/思考两路增量,按 ~50ms 节流发送 delta 通知。
+/// 节流可能丢最后一帧,但落库的完整消息会兜底纠正,可接受。
+private actor StreamingChunkState {
+    private var contentAccumulator = ""
+    private var thinkingAccumulator = ""
+    /// 上次发 delta 的时间(用于节流)。
+    private var lastEmitTime: Date?
+    /// 当前累积主体是否为思考(决定 delta 带哪个字段、isThinking 取值)。
+    /// 进入思考段后 isThinking=true,切回正文段则回到 false。
+    private var lastEmitWasThinking = false
+
+    /// delta 最小发送间隔。约 20 帧/秒,兼顾流畅度与主线程 diff 压力。
+    static let throttleInterval: TimeInterval = 0.05
+
+    func appendContent(_ piece: String) {
+        if !piece.isEmpty {
+            contentAccumulator += piece
+            lastEmitWasThinking = false
+        }
+    }
+
+    func appendThinking(_ piece: String) {
+        if !piece.isEmpty {
+            thinkingAccumulator += piece
+            lastEmitWasThinking = true
+        }
+    }
+
+    /// 节流发送 delta:距上次发送 ≥ throttleInterval 才发。
+    /// 全文(content 或 reasoning)每次都完整带出,UI 直接原地替换。
+    func maybeEmitDelta(
+        conversationID: UUID,
+        messageID: UUID,
+        eventManager: EventManager
+    ) async {
+        let now = Date()
+        let shouldEmit: Bool
+        if let last = lastEmitTime {
+            shouldEmit = now.timeIntervalSince(last) >= Self.throttleInterval
+        } else {
+            shouldEmit = true
+        }
+        guard shouldEmit else { return }
+
+        lastEmitTime = now
+        let payload = lastEmitWasThinking ? thinkingAccumulator : contentAccumulator
+        // EventManager 是 @MainActor,跨 actor 调用需 await(通知最终投递到主队列)。
+        await eventManager.postMessageStreaming(
+            kind: .delta,
+            messageID: messageID,
+            conversationID: conversationID,
+            content: payload,
+            isThinking: lastEmitWasThinking
+        )
     }
 }
