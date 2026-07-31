@@ -246,11 +246,17 @@ public final class MessageSender: MessageSending, SuperLog {
                 Self.logger.info("\(Self.t)解析目标会话 ➡️ 使用 selectedConversationID=\(targetID.uuidString.prefix(8))…")
             }
         } else {
-            // No conversation selected - auto-create one
+            // No conversation selected - auto-create one with first message as title
+            let firstLine = trimmed.components(separatedBy: .newlines).first ?? trimmed
+            let maxLength = 40
+            let truncatedTitle = firstLine.count > maxLength 
+                ? String(firstLine.prefix(maxLength)) + "..."
+                : firstLine
+            
             if Self.verbose {
-                Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建新对话")
+                Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建新对话,标题=\"\(truncatedTitle)\"")
             }
-            guard let newID = try? kernel?.conversations?.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil) else {
+            guard let newID = try? kernel?.conversations?.createConversation(title: truncatedTitle, projectPath: nil, providerID: nil, modelName: nil) else {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 创建对话失败")
                 }
