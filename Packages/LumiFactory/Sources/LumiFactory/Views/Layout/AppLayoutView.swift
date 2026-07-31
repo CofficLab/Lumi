@@ -34,7 +34,7 @@ struct AppLayoutView: View {
             AppDivider()
 
             HStack(spacing: 0) {
-                ActivityBar(kernel: kernel)
+                ActivityBar(workspace: layoutManager)
                     .frame(maxHeight: .infinity)
                 AppDivider(.vertical)
 
