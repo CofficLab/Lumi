@@ -33,6 +33,9 @@ public protocol ConversationManaging: ObservableObject {
     /// 选择对话
     func selectConversation(id: UUID)
 
+    /// 取消选择当前对话（将 selectedConversationID 置为 nil）
+    func deselectConversation()
+
     /// 删除对话
     func deleteConversation(id: UUID)
 
@@ -104,4 +107,7 @@ public extension ConversationManaging {
             return lhs.updatedAt > rhs.updatedAt
         }
     }
+
+    /// 默认空实现，测试 mock 无需自行实现即可编译通过
+    func deselectConversation() {}
 }

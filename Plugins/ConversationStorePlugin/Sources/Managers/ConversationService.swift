@@ -116,6 +116,12 @@ public final class ConversationService: ConversationManaging {
         try? saveState()
     }
 
+    public func deselectConversation() {
+        selectedConversationID = nil
+        updateCurrentTitle()
+        try? saveState()
+    }
+
     private func updateCurrentTitle() {
         guard let selectedID = selectedConversationID,
               let conversation = conversations.first(where: { $0.id == selectedID })

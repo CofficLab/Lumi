@@ -194,6 +194,16 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
+    public func deselectConversation() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Deselecting conversation")
+        }
+        selectedConversationID = nil
+        updateCurrentTitle()
+        persistSelectedConversationID()
+        notifyConversationsChanged()
+    }
+
     public func deleteConversation(id: UUID) {
         if Self.verbose {
             Self.logger.info("\(Self.t)Deleting conversation \(id.uuidString.prefix(8))...")

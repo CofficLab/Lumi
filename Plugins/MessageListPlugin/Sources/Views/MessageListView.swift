@@ -57,7 +57,9 @@ struct MessageListView: View {
 
     var body: some View {
         Group {
-            if isLoading {
+            if selectedConversationID == nil {
+                NoConversationSelectedView()
+            } else if isLoading {
                 MessageLoadingView()
             } else if messages.isEmpty {
                 MessageEmptyStateView()

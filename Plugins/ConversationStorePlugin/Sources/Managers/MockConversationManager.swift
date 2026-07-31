@@ -125,6 +125,14 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
         updateCurrentTitle()
     }
 
+    public func deselectConversation() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Deselecting conversation")
+        }
+        selectedConversationID = nil
+        updateCurrentTitle()
+    }
+
     public func deleteConversation(id: UUID) {
         if Self.verbose {
             Self.logger.info("\(Self.t)Deleting conversation \(id.uuidString.prefix(8))...")

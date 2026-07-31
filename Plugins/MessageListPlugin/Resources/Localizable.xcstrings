@@ -2239,6 +2239,9 @@
         }
       }
     },
+    "No conversation selected" : {
+
+    },
     "No Conversations" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4555,6 +4558,9 @@
           }
         }
       }
+    },
+    "Type a message and press Enter to start a new conversation." : {
+
     },
     "Unable to load messages" : {
       "extractionState" : "stale",
