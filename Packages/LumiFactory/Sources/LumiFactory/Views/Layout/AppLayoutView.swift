@@ -16,6 +16,15 @@ struct AppLayoutView: View {
     }
 
     var body: some View {
+        if kernel.layoutManager == nil {
+            ErrorView(error: LumiKernelError.serviceNotAvailable(service: "LayoutManager"))
+        } else {
+            mainLayout
+        }
+    }
+
+    @ViewBuilder
+    private var mainLayout: some View {
         VStack(spacing: 0) {
             AppTitleToolbar(kernel: kernel)
             AppDivider()
