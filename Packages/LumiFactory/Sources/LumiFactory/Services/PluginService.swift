@@ -85,9 +85,8 @@ import MenuBarManagerPlugin
 import MessageListPlugin
 import MessageRendererPlugin
 import MessageStreamingPlugin
-import MessageStorePlugin
+import MessageManagerPlugin
 import MessageSenderPlugin
-import MessageTimelinePlugin
 import ModelSelectorPlugin
 import NettoPlugin
 import NetworkManagerPlugin
@@ -186,12 +185,11 @@ public enum PluginService {
             ProjectsPlugin(),
             WorkspacePlugin(),
             ConversationStorePlugin(),
-            MessageStorePlugin(),
+            MessageManagerPlugin(),
             MessageSenderPlugin(),
             MessageStreamingPlugin(),
             AgentTurnRunnerPlugin(),
             MessageRendererPlugin(),
-            MessageTimelinePlugin(),
             ConversationTitlePlugin(),
             ConversationListPlugin(),
             ConversationNewPlugin(),
