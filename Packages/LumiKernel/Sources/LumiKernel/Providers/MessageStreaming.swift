@@ -1,22 +1,6 @@
 import Combine
 import Foundation
 
-/// 聊天回合的当前阶段。
-///
-/// 反映一轮对话从用户发送到 LLM 回复完成的进度，供 UI 展示阶段性状态文案
-/// （如"正在发送消息…"/"正在思考…"/"正在生成回复…"）。由 `MessageStreaming`
-/// 在流式生命周期中维护。
-public enum ChatStage: Sendable, Equatable {
-    /// 无进行中的回合（空闲）。
-    case idle
-    /// 用户消息已落库，等待 LLM 首个响应（含工具调用回合之间的间隔）。
-    case sending
-    /// 正在接收 LLM 的思考（reasoning）增量。
-    case thinking
-    /// 正在接收 LLM 的正文增量。
-    case generating
-}
-
 /// 流式输出能力协议（runner 写、UI 读）。
 ///
 /// 持有"当前正在流式的临时 assistant 行"，全程不查库。
