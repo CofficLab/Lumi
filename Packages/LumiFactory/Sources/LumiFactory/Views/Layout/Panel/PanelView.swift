@@ -7,52 +7,42 @@ import SwiftUI
 /// 只负责组合 Header / Body / Bottom 三个子视图，并应用底部 divider 持久化。
 struct PanelView: View {
     @ObservedObject var kernel: LumiKernel
+    private let layoutManager: WorkspaceProviding
 
-    @LumiTheme private var theme
-
-    private var layoutManager: LayoutProviding? {
-        kernel.layoutManager
+    init(kernel: LumiKernel, layoutManager: WorkspaceProviding) {
+        self.kernel = kernel
+        self.layoutManager = layoutManager
     }
 
     private var isPanelVisible: Bool {
-        layoutManager?.isPanelVisible ?? true
+        layoutManager.isPanelVisible
     }
 
     private var viewContainerID: String {
-        layoutManager?.activeViewContainerID ?? ""
+        layoutManager.activeViewContainerID ?? ""
     }
 
     private var layoutState: LayoutState {
-        layoutManager?.layoutState ?? LayoutState()
+        layoutManager.layoutState
     }
 
     var body: some View {
-        Group {
-            if layoutManager == nil {
-                ErrorView(error: LumiKernelError.serviceNotAvailable(service: "LayoutManager"))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if isPanelVisible {
-                VSplitView {
-                    if layoutState.isPanelHeaderVisible {
-                        PanelHeaderView(kernel: kernel)
-                            .frame(maxWidth: .infinity)
-                    }
-                    PanelBodyView(kernel: kernel)
-                        .frame(maxWidth: .infinity)
-                    if layoutState.isPanelBottomVisible {
-                        PanelBottomView(kernel: kernel)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    SplitViewDividerPersistence.bottomPanel(
-                        layoutState: layoutState,
-                        viewContainerID: viewContainerID
-                    )
-                )
-                .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
+        if isPanelVisible {
+            VSplitView {
+                PanelHeaderView(layoutManager: layoutManager)
+                    .frame(maxWidth: .infinity)
+                PanelBodyView(layoutManager: layoutManager)
+                    .frame(maxWidth: .infinity)
+                PanelBottomView(layoutManager: layoutManager)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                SplitViewDividerPersistence.bottomPanel(
+                    layoutState: layoutState,
+                    viewContainerID: viewContainerID
+                )
+            )
+            .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

@@ -10,11 +10,11 @@ struct ChatToolbarView: View {
     @ObservedObject var kernel: LumiKernel
 
     private var toolbarItems: [ChatSectionToolbarItem] {
-        kernel.uiManager?.allChatSectionToolbarItems ?? []
+        kernel.workspace?.allChatSectionToolbarItems ?? []
     }
 
     private var toolbarBarItems: [ChatSectionToolbarBarItem] {
-        kernel.uiManager?.allChatSectionToolbarBarItems ?? []
+        kernel.workspace?.allChatSectionToolbarBarItems ?? []
     }
 
     private var leadingToolbarItems: [ChatSectionToolbarItem] {

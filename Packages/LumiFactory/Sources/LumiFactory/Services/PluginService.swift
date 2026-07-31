@@ -111,7 +111,6 @@ import RClickPlugin
 import ConversationReasoningPlugin
 import RegistryManagerPlugin
 import SettingsPlugin
-import SharedUIPlugin
 import ShowImagePlugin
 import SkillPlugin
 import StoragePlugin
@@ -182,7 +181,6 @@ public enum PluginService {
             CodexLumiPlugin(),
             ZhipuPlugin(),
             // UI & Features
-            SharedUIPlugin(),
             ToolManagerPlugin(),
             ProjectsPlugin(),
             LayoutKernelPlugin(),

@@ -3,40 +3,42 @@ import LumiUI
 import SwiftUI
 
 /// 底部面板视图
-///
-/// 只接收 kernel，从 layoutState 读取可见性和标签状态。
 struct PanelBottomView: View {
-    @ObservedObject var kernel: LumiKernel
+    private let layoutManager: WorkspaceProviding
 
     @LumiTheme private var theme
 
+    init(layoutManager: WorkspaceProviding) {
+        self.layoutManager = layoutManager
+    }
+
+    private var isVisible: Bool {
+        layoutManager.layoutState.isPanelBottomVisible
+    }
+
     private var tabs: [PanelBottomTabItem] {
-        kernel.uiManager?.allPanelBottomTabItems ?? []
+        []
     }
 
     private var viewContainerID: String {
-        kernel.layoutManager?.activeViewContainerID ?? ""
+        layoutManager.activeViewContainerID ?? ""
     }
 
     /// 当前容器选中的底部 tab（经协议查询，按容器独立记忆 + 持久化）。
     private var selectedTabID: String {
-        kernel.layoutManager?.activeBottomTabID(for: viewContainerID) ?? ""
+        layoutManager.activeBottomTabID(for: viewContainerID) ?? ""
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            tabBar
-            AppDivider()
-            tabContent
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(minHeight: 80)
-        .background(theme.surface)
-        .onAppear {
-            ensureValidSelection()
-        }
-        .onChange(of: tabs.map(\.id)) { _, _ in
-            ensureValidSelection()
+        if isVisible {
+            VStack(spacing: 0) {
+                tabBar
+                AppDivider()
+                tabContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .frame(minHeight: 80)
+            .background(theme.surface)
         }
     }
 
@@ -46,7 +48,7 @@ struct PanelBottomView: View {
             selectedTab: Binding(
                 get: { selectedTabID },
                 set: { newValue in
-                    kernel.layoutManager?.presentBottomTab(id: newValue, viewContainerID: viewContainerID)
+                    layoutManager.presentBottomTab(id: newValue, viewContainerID: viewContainerID)
                 }
             )
         )
@@ -67,14 +69,5 @@ struct PanelBottomView: View {
                 title: "No panels"
             )
         }
-    }
-
-    private func ensureValidSelection() {
-        guard !tabs.isEmpty else { return }
-        let selectedID = selectedTabID
-        if tabs.contains(where: { $0.id == selectedID }) {
-            return
-        }
-        kernel.layoutManager?.presentBottomTab(id: tabs[0].id, viewContainerID: viewContainerID)
     }
 }

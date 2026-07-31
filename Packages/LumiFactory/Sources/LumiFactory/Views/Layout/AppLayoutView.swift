@@ -6,7 +6,7 @@ import SwiftUI
 struct AppLayoutView: View {
     @LumiTheme private var theme
     @ObservedObject var kernel: LumiKernel
-    private let layoutManager: LayoutProviding?
+    private let layoutManager: (any WorkspaceProviding)?
 
     @State private var isRailVisible: Bool = true
     @State private var isContentVisible: Bool = true
@@ -14,7 +14,7 @@ struct AppLayoutView: View {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
-        self.layoutManager = kernel.layoutManager
+        self.layoutManager = kernel.workspace
     }
 
     var body: some View {
@@ -28,7 +28,7 @@ struct AppLayoutView: View {
     // MARK: - Main Layout
 
     @ViewBuilder
-    private func mainLayout(_ layoutManager: LayoutProviding) -> some View {
+    private func mainLayout(_ layoutManager: any WorkspaceProviding) -> some View {
         VStack(spacing: 0) {
             AppTitleToolbar(kernel: kernel)
             AppDivider()
@@ -71,20 +71,20 @@ struct AppLayoutView: View {
 
     // MARK: - Split Layout
 
-    private func showRail(for layoutManager: LayoutProviding) -> Bool {
+    private func showRail(for layoutManager: any WorkspaceProviding) -> Bool {
         isRailVisible && layoutManager.layoutState.activeViewContainerID != nil
     }
 
-    private func showChat(for layoutManager: LayoutProviding) -> Bool {
+    private func showChat(for layoutManager: any WorkspaceProviding) -> Bool {
         isChatVisible && layoutManager.layoutState.activeViewContainerID != nil
     }
 
-    private func viewContainerID(for layoutManager: LayoutProviding) -> String {
+    private func viewContainerID(for layoutManager: any WorkspaceProviding) -> String {
         layoutManager.layoutState.activeViewContainerID ?? ""
     }
 
     @ViewBuilder
-    private func splitLayout(_ layoutManager: LayoutProviding) -> some View {
+    private func splitLayout(_ layoutManager: any WorkspaceProviding) -> some View {
         if showRail(for: layoutManager) {
             HSplitView {
                 RailView(kernel: kernel)
@@ -103,10 +103,10 @@ struct AppLayoutView: View {
     }
 
     @ViewBuilder
-    private func mainSplitContent(_ layoutManager: LayoutProviding) -> some View {
+    private func mainSplitContent(_ layoutManager: any WorkspaceProviding) -> some View {
         if showChat(for: layoutManager) {
             HSplitView {
-                PanelView(kernel: kernel)
+                PanelView(kernel: kernel, layoutManager: layoutManager)
                     .frame(minWidth: 280, maxWidth: .infinity)
                 ChatView(kernel: kernel)
                     .frame(minWidth: 280, idealWidth: 320, maxWidth: .infinity)
@@ -119,7 +119,7 @@ struct AppLayoutView: View {
                     )
             }
         } else {
-            PanelView(kernel: kernel)
+            PanelView(kernel: kernel, layoutManager: layoutManager)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }

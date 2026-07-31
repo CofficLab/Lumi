@@ -26,7 +26,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     private var statusItem: NSStatusItem?
     private var hostingView: MenuBarHostingView<MenuBarIconView>?
     private var popover: NSPopover?
-    private var uiManagerObservation: AnyCancellable?
+    private var workspaceObservation: AnyCancellable?
 
     public init() {}
 
@@ -104,7 +104,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         isMenuBarPresented = true
         ensureStatusItem()
         updateMenuBarPresentation()
-        startObservingUIManagerChangesIfNeeded()
+        startObservingWorkspaceChangesIfNeeded()
     }
 
     public func refreshMenuBar(
@@ -125,8 +125,8 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         isMenuBarPresented = false
         presentedMenuBarContentItems.removeAll()
         presentedMenuBarPopupItems.removeAll()
-        uiManagerObservation?.cancel()
-        uiManagerObservation = nil
+        workspaceObservation?.cancel()
+        workspaceObservation = nil
 
         popover?.close()
         popover = nil
@@ -209,12 +209,12 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         button.needsDisplay = true
     }
 
-    private func startObservingUIManagerChangesIfNeeded() {
-        guard uiManagerObservation == nil, let kernel, let uiManager = kernel.uiManager else { return }
-        guard let observable = uiManager as? any ObservableObject else { return }
+    private func startObservingWorkspaceChangesIfNeeded() {
+        guard workspaceObservation == nil, let kernel, let workspace = kernel.workspace else { return }
+        guard let observable = workspace as? any ObservableObject else { return }
 
         let publisher = observable.objectWillChange as! ObservableObjectPublisher
-        uiManagerObservation = publisher
+        workspaceObservation = publisher
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -227,8 +227,8 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     private func refreshFromKernel() {
         guard let kernel else { return }
         refreshMenuBar(
-            contentItems: kernel.uiManager?.allMenuBarContents ?? [],
-            popupItems: kernel.uiManager?.allMenuBarPopups ?? []
+            contentItems: kernel.workspace?.allMenuBarContents ?? [],
+            popupItems: kernel.workspace?.allMenuBarPopups ?? []
         )
     }
 

@@ -4,20 +4,15 @@ import SwiftUI
 
 /// 面板正文视图
 struct PanelBodyView: View {
-    @ObservedObject var kernel: LumiKernel
+    private let layoutManager: WorkspaceProviding
 
     @LumiTheme private var theme
 
-    var body: some View {
-        if let layoutManager = kernel.layoutManager {
-            contentView(layoutManager)
-        } else {
-            ErrorView(error: LumiKernelError.serviceNotAvailable(service: "LayoutManager"))
-        }
+    init(layoutManager: WorkspaceProviding) {
+        self.layoutManager = layoutManager
     }
 
-    @ViewBuilder
-    private func contentView(_ layoutManager: LayoutProviding) -> some View {
+    var body: some View {
         let container = layoutManager.currentViewContainer
 
         Group {

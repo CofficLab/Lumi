@@ -88,7 +88,7 @@ public struct WindowMain: View, SuperLog {
     /// 按 order 依次把 rootOverlays 包裹到内容视图外层
     @ViewBuilder
     private func applyRootOverlays<V: View>(_ content: V, kernel: LumiKernel) -> some View {
-        let overlays = kernel.uiManager?.allRootOverlays ?? []
+        let overlays = kernel.workspace?.allRootOverlays ?? []
         if overlays.isEmpty {
             content
         } else {

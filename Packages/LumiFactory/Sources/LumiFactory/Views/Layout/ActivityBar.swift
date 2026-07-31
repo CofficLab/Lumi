@@ -7,11 +7,11 @@ struct ActivityBar: View {
     @ObservedObject var kernel: LumiKernel
 
     private var containers: [ViewContainerItem] {
-        kernel.layoutManager?.allViewContainers ?? []
+        kernel.workspace?.allViewContainers ?? []
     }
 
     private var activeID: String? {
-        kernel.layoutManager?.layoutState.activeViewContainerID
+        kernel.workspace?.layoutState.activeViewContainerID
     }
 
     var body: some View {
@@ -22,7 +22,7 @@ struct ActivityBar: View {
                     label: container.title,
                     isActive: activeID == container.id
                 ) {
-                    kernel.layoutManager?.activateContainer(id: container.id)
+                    kernel.workspace?.activateContainer(id: container.id)
                 }
             }
 

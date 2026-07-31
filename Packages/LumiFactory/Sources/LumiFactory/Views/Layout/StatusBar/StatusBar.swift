@@ -5,7 +5,7 @@ import SwiftUI
 /// 状态栏视图
 ///
 /// 显示所有插件注册的状态栏项，按位置分为左侧、中间、右侧三个区域。
-/// 如果 SharedUI 服务不可用，显示错误提示。
+/// 如果工作区服务（WorkspaceProviding）不可用，显示错误提示。
 struct StatusBar: View {
     @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
     @ObservedObject var kernel: LumiKernel
@@ -30,12 +30,12 @@ struct StatusBar: View {
 
     private var statusBarResult: Result<StatusBarItems, Error> {
         do {
-            guard let sharedUIService = kernel.uiManager else {
-                throw LumiKernelError.serviceNotAvailable(service: "SharedUI")
+            guard let workspace = kernel.workspace else {
+                throw LumiKernelError.serviceNotAvailable(service: "Workspace")
             }
-            let leading = try sharedUIService.statusBarItems(placement: .leading)
-            let center = try sharedUIService.statusBarItems(placement: .center)
-            let trailing = try sharedUIService.statusBarItems(placement: .trailing)
+            let leading = workspace.statusBarItems(placement: .leading)
+            let center = workspace.statusBarItems(placement: .center)
+            let trailing = workspace.statusBarItems(placement: .trailing)
             return .success(StatusBarItems(leading: leading, center: center, trailing: trailing))
         } catch {
             return .failure(error)

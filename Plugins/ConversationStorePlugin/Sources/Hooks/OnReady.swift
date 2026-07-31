@@ -58,7 +58,7 @@ public struct ConversationStoreOnReadyHook: SuperLog {
                     manager.loadConversations()
                 }
                 if !progress.isActive {
-                    kernel.uiManager?.unregisterStatusBarItem(id: itemID)
+                    kernel.workspace?.unregisterStatusBarItem(id: itemID)
                 }
             }
 
