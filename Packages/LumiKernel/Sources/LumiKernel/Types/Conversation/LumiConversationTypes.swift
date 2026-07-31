@@ -89,9 +89,6 @@ public enum LumiModelRoutingMode: String, Codable, Sendable, CaseIterable {
 }
 
 public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendable {
-    /// Non-pinned conversations are kept after pinned conversations when sorted by order.
-    public static let defaultOrder = Int.max / 2
-
     public let id: UUID
     public var title: String?
     public var preview: String
@@ -104,7 +101,6 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
     public var providerID: String?
     public var modelName: String?
     public var projectPath: String?
-    public var order: Int
 
     public init(
         id: UUID = UUID(),
@@ -118,8 +114,7 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         automationLevel: LumiAutomationLevel? = nil,
         providerID: String? = nil,
         modelName: String? = nil,
-        projectPath: String? = nil,
-        order: Int = Self.defaultOrder
+        projectPath: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -133,7 +128,6 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         self.providerID = providerID
         self.modelName = modelName
         self.projectPath = projectPath
-        self.order = order
     }
 
     public var displayTitle: String {

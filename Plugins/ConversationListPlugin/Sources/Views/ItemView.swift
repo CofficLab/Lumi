@@ -25,7 +25,7 @@ public struct ItemView: View {
         .onAppear {
             isSelected = svc.selectedConversationID == conversation.id
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
+        .onLumiConversationsDidChange {
             isSelected = svc.selectedConversationID == conversation.id
         }
     }
@@ -38,23 +38,11 @@ public struct ItemView: View {
                 .padding(3)
 
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 4) {
-                    if conversation.order == 0 {
-                        Image(systemName: "pin.fill")
-                            .font(.system(size: 9))
-                            .foregroundColor(theme.primary)
-                    }
-
-                    Text(kernel.uiTitle(for: conversation.id))
-                        .font(.appMicroEmphasized)
-                        .foregroundColor(theme.textPrimary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-
-                Text(conversation.updatedAt.relativeTime)
-                    .font(.appMicro)
-                    .foregroundColor(theme.textSecondary)
+                Text(kernel.uiTitle(for: conversation.id))
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
 
             Spacer()
@@ -64,16 +52,6 @@ public struct ItemView: View {
             svc.selectConversation(id: conversation.id)
         }
         .contextMenu {
-            Button {
-                let newOrder = conversation.order == 0 ? LumiConversationSummary.defaultOrder : 0
-                svc.setConversationOrder(newOrder, for: conversation.id)
-            } label: {
-                Label(
-                    conversation.order == 0 ? "Unpin" : "Pin",
-                    systemImage: conversation.order == 0 ? "pin.slash" : "pin"
-                )
-            }
-
             Button(role: .destructive) {
                 svc.deleteConversation(id: conversation.id)
             } label: {

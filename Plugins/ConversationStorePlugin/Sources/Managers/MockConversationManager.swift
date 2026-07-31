@@ -255,13 +255,4 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
         }
         conversations[index].language = language
     }
-
-    // MARK: - Conversation Order
-
-    public func setConversationOrder(_ order: Int, for conversationID: UUID) {
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
-        }
-        conversations[index].order = order
-    }
 }

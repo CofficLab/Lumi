@@ -264,16 +264,6 @@ public final class ConversationService: ConversationManaging {
         conversations[index].language = language
         try? saveConversations()
     }
-
-    // MARK: - Conversation Order
-
-    public func setConversationOrder(_ order: Int, for conversationID: UUID) {
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
-        }
-        conversations[index].order = order
-        try? saveConversations()
-    }
 }
 
 // MARK: - State

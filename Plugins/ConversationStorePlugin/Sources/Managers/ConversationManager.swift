@@ -392,25 +392,6 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
-    // MARK: - Conversation Order
-
-    public func setConversationOrder(_ order: Int, for conversationID: UUID) {
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
-        }
-        conversations[index].order = order
-        conversations = conversations
-        notifyConversationsChanged()
-
-        Task {
-            await store?.updateOrder(id: conversationID, order: order)
-        }
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)setConversationOrder: conversation=\(conversationID.uuidString.prefix(8)), order=\(order)")
-        }
-    }
-
     // MARK: - Project Switch → Migrate Empty Conversations
 
     /// 订阅内核 `ProjectProviding` 的变更，在当前项目切换时把所有空对话迁移到新项目。

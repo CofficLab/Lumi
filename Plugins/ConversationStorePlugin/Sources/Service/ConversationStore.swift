@@ -387,33 +387,7 @@ public actor ConversationStore: SuperLog {
         return save(context, operation: "更新对话偏好")
     }
 
-    /// Update conversation order
-    func updateOrder(id: UUID, order: Int) -> Bool {
-        let context = ModelContext(container)
-        let idString = id.uuidString
 
-        let descriptor = FetchDescriptor<ConversationModel>(
-            predicate: #Predicate<ConversationModel> { $0.id == idString }
-        )
-
-        guard let model = try? context.fetch(descriptor).first else {
-            return false
-        }
-
-        model.order = order
-        model.updatedAt = Date().timeIntervalSince1970
-        return save(context, operation: "更新排序")
-    }
-
-    /// 批量更新一组对话的关联项目路径。
-    ///
-    /// 用于「当前项目切换时，把所有空对话迁移到新项目」：一次查询、单次 `save`，
-    /// 避免逐条更新的多次磁盘写入。传入空数组时直接返回 `false`。
-    ///
-    /// - Parameters:
-    ///   - conversationIDs: 待迁移的对话 ID 列表。
-    ///   - projectPath: 新的项目路径（nil 表示取消关联）。
-    /// - Returns: 至少更新一条返回 `true`，否则 `false`。
     @discardableResult
     func updateProjectPath(for conversationIDs: [UUID], projectPath: String?) -> Bool {
         guard !conversationIDs.isEmpty else { return false }
@@ -434,26 +408,6 @@ public actor ConversationStore: SuperLog {
         }
 
         return save(context, operation: "批量更新对话项目路径")
-    }
-
-    /// Fetch pinned conversations, returning their IDs sorted by order.
-    func fetchPinnedConversationIDs() -> [(UUID, Int)] {
-        let context = ModelContext(container)
-
-        var descriptor = FetchDescriptor<ConversationModel>(
-            predicate: #Predicate<ConversationModel> { $0.order == 0 },
-            sortBy: [SortDescriptor(\.order)]
-        )
-
-        do {
-            let models = try context.fetch(descriptor)
-            return models.compactMap { model in
-                guard let uuid = UUID(uuidString: model.id) else { return nil }
-                return (uuid, model.order ?? LumiConversationSummary.defaultOrder)
-            }
-        } catch {
-            return []
-        }
     }
 
     // MARK: - Delete

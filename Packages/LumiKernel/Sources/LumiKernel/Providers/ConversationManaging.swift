@@ -92,20 +92,12 @@ public protocol ConversationManaging: ObservableObject {
 
     /// 设置指定对话的回复语言
     func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?)
-
-    // MARK: - Conversation Order
-
-    /// 设置指定对话的排序优先级（值越小优先级越高，0 为默认无优先级）
-    func setConversationOrder(_ order: Int, for conversationID: UUID)
 }
 
 public extension ConversationManaging {
-    /// 默认排序：置顶优先 (order == 0)，然后按 updatedAt 倒序
+    /// 按更新时间倒序排序
     var sortedConversations: [LumiConversationSummary] {
         conversations.sorted { lhs, rhs in
-            if lhs.order != rhs.order {
-                return lhs.order < rhs.order
-            }
             if lhs.updatedAt == rhs.updatedAt {
                 return lhs.createdAt > rhs.createdAt
             }
