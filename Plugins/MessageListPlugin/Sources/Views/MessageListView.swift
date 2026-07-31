@@ -3,19 +3,6 @@ import LumiUI
 import SwiftUI
 
 /// Message List View
-///
-/// Displays the chat message list for the selected conversation.
-///
-/// 采用游标分页:首屏只加载最近一页(pageSize 条),向上滚动到顶部时可加载更早的一页,
-/// 内存中最多保留 `maxRetainedCount` 条,超出则丢弃尾部(较新、远离可视区的)消息,
-/// 使内存占用与消息总量无关。
-///
-/// **业务策略下沉到 `Services/`**:
-/// - `MessagePaginationService` —— 首屏 / 向上翻页 / 尾部刷新 / 窗口回收 + 后台读切换。
-/// - `MessageListRowBuilder` —— 拼接真实行 + 流式行 + 状态行为最终展示序列。
-/// - `MessageListScrollCoordinator` —— 底部锚点判定 + 滚动(普通 / 跟随 / post-layout)。
-///
-/// 本 View 只负责:SwiftUI 渲染、生命周期挂载、`@State` 持有、调用 Service。
 struct MessageListView: View {
     @ObservedObject var kernel: LumiKernel
 
@@ -58,11 +45,6 @@ struct MessageListView: View {
             .verbosity(for: selectedConversationID) ?? .defaultVerbosity
     }
 
-    /// 当前会话是否正在发送。
-    private var isSending: Bool {
-        kernel.messageSender?.isSending(for: selectedConversationID) ?? false
-    }
-
     /// 真实消息 + 流式临时行 + 发送中状态行的合并列表(由 `MessageListRowBuilder` 产出)。
     private var displayMessages: [LumiChatMessage] {
         rowBuilder.build(
@@ -77,7 +59,7 @@ struct MessageListView: View {
         Group {
             if isLoading {
                 MessageLoadingView()
-            } else if messages.isEmpty && !isSending {
+            } else if messages.isEmpty {
                 MessageEmptyStateView()
             } else {
                 messageScrollView
