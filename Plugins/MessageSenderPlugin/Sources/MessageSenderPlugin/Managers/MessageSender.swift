@@ -25,7 +25,7 @@ import SuperLogKit
 public final class MessageSender: MessageSending, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-send-manager.service")
     public nonisolated static let emoji = "📤"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     @Published private var sendingConversationIDs: Set<UUID> = []
     @Published private var pendingMessageQueues: [UUID: [LumiPendingMessage]] = [:]
@@ -49,9 +49,6 @@ public final class MessageSender: MessageSending, SuperLog {
     public init(kernel: LumiKernel) {
         self.kernel = kernel
         installResendObserver()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)MessageSendManager (kernel=\(String(describing: ObjectIdentifier(kernel))))")
-        }
     }
 
     deinit {
@@ -218,10 +215,7 @@ public final class MessageSender: MessageSending, SuperLog {
         conversationID: UUID?
     ) async throws {
         if Self.verbose {
-            let selectedConversationID = self.kernel?.conversations?.selectedConversationID?.uuidString.prefix(8) ?? "nil"
-            let pendingFiles = fileAttachments.count
-            let sendingState = self.isSending(for: conversationID)
-            Self.logger.info("\(Self.t)sendMessage 开始 ➡️ conversationID=\(conversationID?.uuidString.prefix(8) ?? "nil"), selectedConversationID=\(selectedConversationID), content.len=\(content.count), attachments=\(imageAttachments.count), pendingFiles=\(pendingFiles), isSending(forTarget)=\(sendingState), activeSendingConversations=\(self.sendingConversationIDs.count)")
+            Self.logger.info("\(Self.t)sendMessage 开始")
         }
 
         // 1. Trim & early-return on empty input
@@ -237,35 +231,24 @@ public final class MessageSender: MessageSending, SuperLog {
         let targetID: UUID
         if let conversationID {
             targetID = conversationID
-            if Self.verbose {
-                Self.logger.info("\(Self.t)解析目标会话 ➡️ 使用显式 conversationID=\(targetID.uuidString.prefix(8))…")
-            }
         } else if let selected = kernel?.conversations?.selectedConversationID {
             targetID = selected
-            if Self.verbose {
-                Self.logger.info("\(Self.t)解析目标会话 ➡️ 使用 selectedConversationID=\(targetID.uuidString.prefix(8))…")
-            }
         } else {
             // No conversation selected - auto-create one with first message as title
             let firstLine = trimmed.components(separatedBy: .newlines).first ?? trimmed
             let maxLength = 40
-            let truncatedTitle = firstLine.count > maxLength 
+            let truncatedTitle = firstLine.count > maxLength
                 ? String(firstLine.prefix(maxLength)) + "..."
                 : firstLine
-            
+
             if Self.verbose {
                 Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建新对话,标题=\"\(truncatedTitle)\"")
             }
             guard let newID = try? kernel?.conversations?.createConversation(title: truncatedTitle, projectPath: nil, providerID: nil, modelName: nil) else {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 创建对话失败")
-                }
+                Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 创建对话失败")
                 throw LumiKernelError.noActiveConversation
             }
             targetID = newID
-            if Self.verbose {
-                Self.logger.info("\(Self.t)自动创建对话成功 ➡️ id=\(targetID.uuidString.prefix(8))…")
-            }
         }
 
         let pendingMessage = LumiPendingMessage(
@@ -323,10 +306,6 @@ public final class MessageSender: MessageSending, SuperLog {
             Self.logger.info("\(Self.t)即将插入 user 消息 ➡️ id=\(userMessage.id.uuidString.prefix(8))…, target=\(targetID.uuidString.prefix(8))…, metadataKeys=\(metadata.keys.sorted().joined(separator: ","))")
         }
         kernel?.messageManager?.insertMessage(userMessage, to: targetID)
-        if Self.verbose {
-            let cached = kernel?.messageManager?.message(id: userMessage.id, in: targetID)
-            Self.logger.info("\(Self.t)user 消息已提交给 MessageManager ➡️ id=\(userMessage.id.uuidString.prefix(8))…, cacheHit=\(cached != nil), content.len=\(trimmed.count), attachments=\(imageAttachments.count)")
-        }
 
         defer {
             endSending(in: targetID)
@@ -350,16 +329,14 @@ public final class MessageSender: MessageSending, SuperLog {
 
         do {
             if Self.verbose {
-                Self.logger.info("\(Self.t)准备调用 agentTurnManager.runTurn ➡️ target=\(targetID.uuidString.prefix(8))…, lastMessage=\(kernelInstance.messageManager?.lastMessage(in: targetID)?.id.uuidString.prefix(8) ?? "nil")")
+                Self.logger.info("\(Self.t)🛫 准备调用 agentTurnManager.runTurn")
             }
             try await kernelInstance.agentTurnManager?.runTurn(in: targetID)
             if Self.verbose {
-                Self.logger.info("\(Self.t)agentTurnManager.runTurn 完成 ➡️ target=\(targetID.uuidString.prefix(8))…")
+                Self.logger.info("\(Self.t)agentTurnManager.runTurn 完成")
             }
         } catch {
-            if Self.verbose {
-                Self.logger.error("\(Self.t)sendMessage ➡️ agentTurnManager 抛出 error target=\(targetID.uuidString.prefix(8))…: \(error.localizedDescription)")
-            }
+            Self.logger.error("\(Self.t)sendMessage ➡️ agentTurnManager 抛出 error target=\(targetID.uuidString.prefix(8))…: \(error.localizedDescription)")
             // Insert error message into conversation
             let errorMessage = LumiChatMessage(
                 conversationID: targetID,
@@ -457,9 +434,9 @@ public final class MessageSender: MessageSending, SuperLog {
             guard let messageID = Self.uuidValue(
                 notification.userInfo?[LumiMessageSavedNotification.messageIDKey]
             ),
-            let conversationID = Self.uuidValue(
-                notification.userInfo?[LumiMessageSavedNotification.conversationIDKey]
-            ) else {
+                let conversationID = Self.uuidValue(
+                    notification.userInfo?[LumiMessageSavedNotification.conversationIDKey]
+                ) else {
                 return
             }
 
@@ -470,7 +447,7 @@ public final class MessageSender: MessageSending, SuperLog {
         resendObserver = NotificationObserverToken(value: observer)
     }
 
-    nonisolated private static func uuidValue(_ value: Any?) -> UUID? {
+    private nonisolated static func uuidValue(_ value: Any?) -> UUID? {
         if let uuid = value as? UUID {
             return uuid
         }
