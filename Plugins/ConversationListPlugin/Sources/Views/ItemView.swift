@@ -32,11 +32,6 @@ public struct ItemView: View {
 
     private var content: some View {
         HStack(spacing: 8) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.appMicro)
-                .foregroundColor(theme.textTertiary)
-                .padding(3)
-
             VStack(alignment: .leading, spacing: 2) {
                 Text(conversation.title ?? "对话")
                     .font(.appMicroEmphasized)
