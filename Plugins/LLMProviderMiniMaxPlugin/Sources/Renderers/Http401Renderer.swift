@@ -10,8 +10,8 @@ enum Http401Renderer {
         canRender: { message in
             MiniMaxRenderKind.matchesHttp(statusCode: 401, message: message)
         },
-        render: { message, showRawMessage in
-            ApiKeyMissingView(message: message, issue: .invalid, showRawMessage: showRawMessage)
+        render: { message in
+            ApiKeyMissingView(message: message, issue: .invalid)
         }
     )
 }

@@ -10,7 +10,7 @@ import os
 @MainActor
 public final class UpdateService: ObservableObject {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.update")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     @Published public var isCheckingForUpdates = false
     @Published public var updateAvailable = false

@@ -19,19 +19,17 @@ extension LumiKernelContainer {
         resolveService(ProjectProviding.self)
     }
 
-    /// Layout service
-    public var layoutManager: (any LayoutProviding)? {
-        resolveService(LayoutProviding.self)
+    /// Workspace service (layout geometry + plugin UI contributions)
+    ///
+    /// 合并自原 LayoutProviding（布局状态机）与 UIManaging（插件 UI 贡献注册表）。
+    /// 由 LayoutManager 实现。
+    public var workspace: (any WorkspaceProviding)? {
+        resolveService(WorkspaceProviding.self)
     }
 
     /// Command menu service
     public var command: (any CommandProviding)? {
         resolveService(CommandProviding.self)
-    }
-
-    /// Shared UI service
-    public var uiManager: (any UIManaging)? {
-        resolveService(UIManaging.self)
     }
 
     /// Menu bar presentation service
@@ -54,9 +52,22 @@ extension LumiKernelContainer {
         resolveService(ConversationManaging.self)
     }
 
+    /// 同 `conversations`,作为 `ConversationManaging` 的简写访问器,
+    /// 便于 UI 层按职责命名(管理对话设置,包括 verbosity 等)。
+    public var conversationManager: (any ConversationManaging)? {
+        resolveService(ConversationManaging.self)
+    }
+
     /// Message management service
     public var messageManager: (any MessageManaging)? {
         resolveService(MessageManaging.self)
+    }
+
+    /// Message streaming service (current in-flight streaming assistant row).
+    ///
+    /// 由 runner 写入、UI 读取。可选服务，未注册时为 nil（UI 不显示流式临时行）。
+    public var messageStreaming: (any MessageStreaming)? {
+        resolveService(MessageStreaming.self)
     }
 
     /// Editor service

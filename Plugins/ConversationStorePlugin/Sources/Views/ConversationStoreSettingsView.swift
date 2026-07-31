@@ -409,12 +409,12 @@ public struct ConversationStoreSettingsView: View {
             return
         }
         isLoadingMessages = true
-        let loaded = await kernel.messageManager?.visibleMessages(
+        let loaded = kernel.messageManager?.messagePage(
             for: id,
             limit: messagePageSize,
             beforeMessageID: nil
         ) ?? []
-        let hasEarlier = await kernel.messageManager?.hasEarlierMessages(
+        let hasEarlier = kernel.messageManager?.hasEarlierMessages(
             for: id,
             beforeMessageID: loaded.first?.id
         ) ?? false
@@ -431,12 +431,12 @@ public struct ConversationStoreSettingsView: View {
               let firstMessageID = messagesForSelected.first?.id else { return }
 
         isLoadingEarlierMessages = true
-        let earlier = await kernel.messageManager?.visibleMessages(
+        let earlier = kernel.messageManager?.messagePage(
             for: id,
             limit: messagePageSize,
             beforeMessageID: firstMessageID
         ) ?? []
-        let stillHasEarlier = await kernel.messageManager?.hasEarlierMessages(
+        let stillHasEarlier = kernel.messageManager?.hasEarlierMessages(
             for: id,
             beforeMessageID: earlier.first?.id
         ) ?? false
@@ -493,7 +493,7 @@ public struct ConversationStoreSettingsView: View {
         guard let messageManager = kernel.messageManager else { return }
 
         for conversation in conversations where messageCounts[conversation.id] == nil {
-            let count = await messageManager.messageCount(for: conversation.id)
+            let count = messageManager.messageCount(for: conversation.id)
             messageCounts[conversation.id] = count
         }
     }

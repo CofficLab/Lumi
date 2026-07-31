@@ -7,11 +7,15 @@ struct RailContentView: View {
     @ObservedObject var kernel: LumiKernel
 
     private var tabs: [PanelRailTabItem] {
-        kernel.uiManager?.allPanelRailTabItems ?? []
+        kernel.workspace?.allPanelRailTabItems ?? []
+    }
+
+    private var viewContainerID: String {
+        kernel.workspace?.activeViewContainerID ?? ""
     }
 
     private var activeTabID: String {
-        kernel.layoutManager?.activeRailTabID ?? ""
+        kernel.workspace?.activeRailTabID(for: viewContainerID) ?? ""
     }
 
     @ViewBuilder

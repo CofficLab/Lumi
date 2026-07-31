@@ -11,8 +11,8 @@ enum RequestFailedRenderer {
         canRender: { message in
             XiaomiRenderKind.matches(renderKind: XiaomiRenderKind.requestFailed, message: message)
         },
-        render: { message, showRawMessage in
-            HttpErrorView(message: message, statusCode: nil, showRawMessage: showRawMessage)
+        render: { message in
+            HttpErrorView(message: message, statusCode: nil)
         }
     )
 }

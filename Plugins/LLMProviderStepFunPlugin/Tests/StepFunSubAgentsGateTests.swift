@@ -102,7 +102,6 @@ import LumiKernel
         func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
         func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { .automatic }
         func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
-        func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? { nil }
         func messages(for conversationID: UUID) -> [LumiChatMessage] { [] }
         func displayMessages(for conversationID: UUID) -> [LumiChatMessage] { [] }
         func transientStatusMessage(for conversationID: UUID) -> LumiChatMessage? { nil }

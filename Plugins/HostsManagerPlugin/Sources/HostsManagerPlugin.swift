@@ -12,7 +12,7 @@ import SwiftUI
 public final class HostsManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.hosts-manager")
     public nonisolated static let emoji = "📝"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - LumiPlugin
 

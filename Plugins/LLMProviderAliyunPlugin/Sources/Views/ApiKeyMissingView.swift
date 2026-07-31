@@ -14,7 +14,6 @@ struct ApiKeyMissingView: View {
 
     let message: LumiChatMessage
     var issue: ApiKeyIssue = .missing
-    @Binding var showRawMessage: Bool
 
     @State private var apiKey: String = ""
     @State private var isApiKeyVisible = false
@@ -38,7 +37,7 @@ struct ApiKeyMissingView: View {
     }
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(title)
                     .font(.appCallout)

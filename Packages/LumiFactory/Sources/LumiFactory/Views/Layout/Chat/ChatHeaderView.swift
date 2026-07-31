@@ -6,7 +6,7 @@ struct ChatHeaderView: View {
     @ObservedObject var kernel: LumiKernel
 
     private var items: [ChatSectionHeaderItem] {
-        kernel.uiManager?.allChatSectionHeaderItems ?? []
+        kernel.workspace?.allChatSectionHeaderItems ?? []
     }
 
     var body: some View {

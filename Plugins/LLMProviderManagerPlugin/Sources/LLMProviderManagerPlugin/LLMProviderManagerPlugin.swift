@@ -10,7 +10,7 @@ import SwiftUI
 public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.llm-provider-manager")
     public nonisolated static let emoji = "🧠"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.llm-provider-manager"
     public let name = "LLM Provider Manager"
@@ -23,7 +23,7 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {
         let service = LLMProviderManager()
-        kernel.registerLLMProviderService(service)
+        try kernel.registerLLMProviderService(service)
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 LLMProviderManager 到内核")
         }

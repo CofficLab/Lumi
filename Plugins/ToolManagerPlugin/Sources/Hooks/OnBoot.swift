@@ -9,7 +9,7 @@ import os
 @MainActor
 public struct ToolManagerOnBootHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-manager")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public init() {}
 
@@ -17,7 +17,7 @@ public struct ToolManagerOnBootHook {
     public func execute(_ kernel: LumiKernel) async throws {
         let toolManagerService = ToolManagerService()
         toolManagerService.kernel = kernel
-        kernel.registerToolManagerService(toolManagerService)
+        try kernel.registerToolManagerService(toolManagerService)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 ToolManager 服务")

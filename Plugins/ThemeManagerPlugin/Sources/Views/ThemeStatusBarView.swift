@@ -33,7 +33,7 @@ struct ThemeStatusBarView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiThemeDidChange)) { _ in
+        .onLumiThemeDidChange {
             selectedContribution = themeService?.selectedContribution
         }
     }

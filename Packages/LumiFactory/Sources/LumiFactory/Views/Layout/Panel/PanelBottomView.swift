@@ -3,60 +3,55 @@ import LumiUI
 import SwiftUI
 
 /// 底部面板视图
-///
-/// 只接收 kernel，从 layoutState 读取可见性和标签状态。
 struct PanelBottomView: View {
-    @ObservedObject var kernel: LumiKernel
+    private let layoutManager: WorkspaceProviding
 
     @LumiTheme private var theme
 
+    init(layoutManager: WorkspaceProviding) {
+        self.layoutManager = layoutManager
+    }
+    
     private var tabs: [PanelBottomTabItem] {
-        kernel.uiManager?.allPanelBottomTabItems ?? []
+        self.layoutManager.allPanelBottomTabItems
     }
 
     private var viewContainerID: String {
-        kernel.layoutManager?.activeViewContainerID ?? ""
+        layoutManager.activeViewContainerID ?? ""
     }
 
-    private var layoutState: LayoutState {
-        kernel.layoutManager?.layoutState ?? LayoutState()
+    /// 当前容器选中的底部 tab（经协议查询，按容器独立记忆 + 持久化）。
+    private var selectedTabID: String {
+        layoutManager.activeBottomTabID(for: viewContainerID) ?? ""
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            tabBar
-            AppDivider()
-            tabContent
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        if layoutManager.isPanelBottomVisible {
+            VStack(spacing: 0) {
+                AppTabBar(
+                    tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
+                    selectedTab: Binding(
+                        get: { selectedTabID },
+                        set: { newValue in
+                            layoutManager.presentBottomTab(id: newValue, viewContainerID: viewContainerID)
+                        }
+                    )
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 8)
+                .background(theme.surface.opacity(0.85))
+                AppDivider()
+                tabContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .frame(minHeight: 80)
+            .background(theme.surface)
         }
-        .frame(minHeight: 80)
-        .background(theme.surface)
-        .onAppear {
-            ensureValidSelection()
-        }
-        .onChange(of: tabs.map(\.id)) { _, _ in
-            ensureValidSelection()
-        }
-    }
-
-    private var tabBar: some View {
-        AppTabBar(
-            tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
-            selectedTab: Binding(
-                get: { layoutState.activeBottomTabID(for: viewContainerID) },
-                set: { newValue in
-                    layoutState.setActiveBottomTabID(newValue, for: viewContainerID)
-                }
-            )
-        )
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 8)
-        .background(theme.surface.opacity(0.85))
     }
 
     @ViewBuilder
     private var tabContent: some View {
-        let selectedID = layoutState.activeBottomTabID(for: viewContainerID)
+        let selectedID = selectedTabID
         if let tab = tabs.first(where: { $0.id == selectedID }) ?? tabs.first {
             tab.makeView()
                 .id(tab.id)
@@ -66,14 +61,5 @@ struct PanelBottomView: View {
                 title: "No panels"
             )
         }
-    }
-
-    private func ensureValidSelection() {
-        guard !tabs.isEmpty else { return }
-        let selectedID = layoutState.activeBottomTabID(for: viewContainerID)
-        if tabs.contains(where: { $0.id == selectedID }) {
-            return
-        }
-        layoutState.setActiveBottomTabID(tabs[0].id, for: viewContainerID)
     }
 }

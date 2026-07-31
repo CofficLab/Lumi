@@ -18,7 +18,7 @@ public final class IdleTimePlugin: LumiPlugin {
         let directory = kernel.storage?.pluginDataDirectory(for: "IdleTime")
         let service = IdleTimeService(store: IdleActivityStore(directoryURL: directory))
         self.service = service
-        kernel.registerIdleTime(service)
+        try kernel.registerIdleTime(service)
     }
 
     public func onReady(kernel: LumiKernel) async throws {

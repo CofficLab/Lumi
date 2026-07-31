@@ -122,8 +122,8 @@ import LumiKernel
                 provider: "openai",
                 model: "gpt-5",
                 metadata: [
-                    LumiMessageTokenMetadata.cachedInputKey: "45",
-                    LumiMessageTokenMetadata.cacheTotalInputKey: "90",
+                    MessageTokenMetadata.cachedInputKey: "45",
+                    MessageTokenMetadata.cacheTotalInputKey: "90",
                 ]
             )
         )
@@ -136,8 +136,8 @@ import LumiKernel
             for: message(
                 provider: "anthropic",
                 metadata: [
-                    LumiMessageTokenMetadata.cachedInputKey: "0",
-                    LumiMessageTokenMetadata.cacheTotalInputKey: "90",
+                    MessageTokenMetadata.cachedInputKey: "0",
+                    MessageTokenMetadata.cacheTotalInputKey: "90",
                 ]
             )
         )

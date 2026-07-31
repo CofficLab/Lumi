@@ -57,7 +57,7 @@ extension LumiKernelContainer {
         messageManaging: (any MessageManaging)?
     ) -> String? {
         guard let messageManaging else { return nil }
-        let message = messageManaging.cachedDisplayMessages(for: conversationID)
+        let message = messageManaging.messages(for: conversationID)
             .first {
                 $0.role == .user
                     && !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

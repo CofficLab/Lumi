@@ -1,36 +1,162 @@
 import Foundation
 
 /// MiniMax Token Plan 配额状态
-enum TokenPlanStatus {
+enum TokenPlanStatus: Sendable {
     case loading
     case success(TokenPlanData)
     case authError
     case unavailable
 }
 
+/// 时段/周配额状态码语义
+enum QuotaStatusCode: Int, Sendable {
+    /// 正常可用
+    case normal = 1
+    /// 已耗尽 / 不可用
+    case exhausted = 2
+
+    var label: String {
+        switch self {
+        case .normal: return "正常"
+        case .exhausted: return "已耗尽"
+        }
+    }
+}
+
 /// MiniMax Token Plan API 响应数据
 ///
 /// 新版接口 `/v1/token_plan/remains` 返回 `model_remains` 数组（顶层），
-/// 字段为 `model_name` 与各类 `remaining_percent` / 计数，不再提供 token 的 total/remains。
-struct TokenPlanData {
+/// 字段为 `model_name` 与各类 `remaining_percent` / 计数 / 时间戳。
+struct TokenPlanData: Sendable {
     let modelName: String
+
+    // MARK: - 当前时段 (interval)
+
     /// 当前时段剩余百分比（0-100）
     let remainingPercent: Int
-    /// 本周剩余百分比（0-100）
-    let weeklyRemainingPercent: Int
+    /// 当前时段状态码（1=正常, 2=已耗尽）
+    let intervalStatus: Int
     /// 当前时段总调用次数
     let intervalTotal: Int
     /// 当前时段已用调用次数
     let intervalUsage: Int
+    /// 当前时段开始时间（毫秒时间戳）
+    let startTime: Int64
+    /// 当前时段结束时间（毫秒时间戳）
+    let endTime: Int64
+    /// 当前时段剩余秒数
+    let remainsTime: Int64
+
+    // MARK: - 本周 (weekly)
+
+    /// 本周剩余百分比（0-100）
+    let weeklyRemainingPercent: Int
+    /// 本周状态码（1=正常, 2=已耗尽）
+    let weeklyStatus: Int
+    /// 本周总调用次数
+    let weeklyTotal: Int
+    /// 本周已用调用次数
+    let weeklyUsage: Int
+    /// 本周开始时间（毫秒时间戳）
+    let weeklyStartTime: Int64
+    /// 本周结束时间（毫秒时间戳）
+    let weeklyEndTime: Int64
+    /// 本周剩余秒数
+    let weeklyRemainsTime: Int64
+
+    // MARK: - Derived
 
     /// 格式化状态栏显示文本
+    /// 格式: "40% · 50%" (时段剩余% · 周剩余%)
     var statusText: String {
-        let shortModel = modelName.split(separator: "-").first.map(String.init) ?? modelName
-        return String(format: "%d%% %@", remainingPercent, shortModel)
+        return "\(remainingPercent)% · \(weeklyRemainingPercent)%"
     }
 
     /// 剩余百分比
     var remainingPercentage: Double {
         return Double(remainingPercent)
+    }
+
+    /// 当前时段状态语义
+    var intervalStatusLabel: String {
+        QuotaStatusCode(rawValue: intervalStatus)?.label ?? "未知(\(intervalStatus))"
+    }
+
+    /// 本周状态语义
+    var weeklyStatusLabel: String {
+        QuotaStatusCode(rawValue: weeklyStatus)?.label ?? "未知(\(weeklyStatus))"
+    }
+
+    /// 当前时段起止时间文本
+    var intervalTimeRange: String {
+        "\(Self.formatTimestamp(startTime)) — \(Self.formatTimestamp(endTime))"
+    }
+
+    /// 本周起止时间文本
+    var weeklyTimeRange: String {
+        "\(Self.formatTimestamp(weeklyStartTime)) — \(Self.formatTimestamp(weeklyEndTime))"
+    }
+
+    /// 当前时段重置时间文本
+    ///
+    /// 格式: "MM/dd HH:mm（相对时间）"，例如 "08/01 12:00（1小时后）"
+    var remainsTimeText: String {
+        Self.formatResetTime(endTime: endTime, remainsSeconds: remainsTime)
+    }
+
+    /// 本周重置时间文本
+    ///
+    /// 格式: "MM/dd HH:mm（相对时间）"，例如 "08/07 00:00（5天后）"
+    var weeklyRemainsTimeText: String {
+        Self.formatResetTime(endTime: weeklyEndTime, remainsSeconds: weeklyRemainsTime)
+    }
+
+    // MARK: - Formatters
+
+    /// 毫秒时间戳 → "MM/dd HH:mm"
+    private static func formatTimestamp(_ ms: Int64) -> String {
+        guard ms > 0 else { return "—" }
+        let date = Date(timeIntervalSince1970: Double(ms) / 1000)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM/dd HH:mm"
+        formatter.timeZone = .current
+        return formatter.string(from: date)
+    }
+
+    /// 秒数 → "Xd Xh" / "Xh Xm" / "Xm Xs" / "Xs"
+    private static func formatDuration(_ seconds: Int64) -> String {
+        guard seconds > 0 else { return "—" }
+        let s = seconds
+        let days = s / 86400
+        let hours = (s % 86400) / 3600
+        let minutes = (s % 3600) / 60
+        let secs = s % 60
+
+        if days > 0 {
+            return "\(days)天\(hours)小时"
+        } else if hours > 0 {
+            return "\(hours)小时\(minutes)分钟"
+        } else if minutes > 0 {
+            return "\(minutes)分钟\(secs)秒"
+        } else {
+            return "\(secs)秒"
+        }
+    }
+
+    /// 重置时间文本
+    ///
+    /// 格式: "MM/dd HH:mm（相对时间）"，例如 "08/01 12:00（1小时后）"
+    /// - Parameters:
+    ///   - endTime: 重置时间戳（毫秒）
+    ///   - remainsSeconds: 剩余秒数
+    private static func formatResetTime(endTime: Int64, remainsSeconds: Int64) -> String {
+        guard remainsSeconds > 0 else { return "—" }
+        let resetDate = Date(timeIntervalSince1970: Double(endTime) / 1000)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM/dd HH:mm"
+        formatter.timeZone = .current
+        let absoluteTime = formatter.string(from: resetDate)
+        let relativeTime = Self.formatDuration(remainsSeconds)
+        return "\(absoluteTime)（\(relativeTime)）"
     }
 }

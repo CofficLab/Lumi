@@ -13,7 +13,7 @@ import SwiftUI
 public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-manager")
     public nonisolated static let emoji = "🔧"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.tool-manager"
     public let name = "ToolManager Plugin"
@@ -25,7 +25,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: LumiKernel) async throws {
         let toolManagerService = ToolManagerService()
         toolManagerService.kernel = kernel
-        kernel.registerToolManagerService(toolManagerService)
+        try kernel.registerToolManagerService(toolManagerService)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 ToolManager 服务")

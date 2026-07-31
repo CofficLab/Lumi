@@ -11,7 +11,7 @@ import os
 public struct WindowMain: View, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.window-main")
     nonisolated public static let emoji = "🪟"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     @State private var kernel: LumiKernel?
     @State private var initializationError: Error?
@@ -88,7 +88,7 @@ public struct WindowMain: View, SuperLog {
     /// 按 order 依次把 rootOverlays 包裹到内容视图外层
     @ViewBuilder
     private func applyRootOverlays<V: View>(_ content: V, kernel: LumiKernel) -> some View {
-        let overlays = kernel.uiManager?.allRootOverlays ?? []
+        let overlays = kernel.workspace?.allRootOverlays ?? []
         if overlays.isEmpty {
             content
         } else {

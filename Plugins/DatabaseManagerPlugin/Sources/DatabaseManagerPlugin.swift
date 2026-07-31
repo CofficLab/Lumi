@@ -7,7 +7,7 @@ import SuperLogKit
 @MainActor
 public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "🗄️"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "DatabaseManagerPlugin")
 
     public let id = "com.coffic.lumi.plugin.database-manager"
@@ -35,7 +35,12 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
             ViewContainerItem(
                 id: "database-manager",
                 title: "Database",
-                systemImage: "cylinder.split.1x2"
+                systemImage: "cylinder.split.1x2",
+                isRailVisible: false,
+                isChatVisible: false,
+                isContentVisible: false,
+                isPanelVisible: true,
+                isPanelBottomVisible: false
             ) {
                 AnyView(DatabaseMainView())
             }

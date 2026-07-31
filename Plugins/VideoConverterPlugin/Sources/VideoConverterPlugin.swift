@@ -12,7 +12,7 @@ import SwiftUI
 public final class VideoConverterPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.video-converter")
     public nonisolated static let emoji = "🎬"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
 
     // MARK: - LumiPlugin
 
@@ -39,6 +39,8 @@ public final class VideoConverterPlugin: LumiPlugin, SuperLog {
                 systemImage: "video",
                 isRailVisible: false,
                 isChatVisible: false,
+                isContentVisible: true,
+                isPanelVisible: true,
                 isPanelHeaderVisible: false,
                 isPanelBottomVisible: false
             ) {

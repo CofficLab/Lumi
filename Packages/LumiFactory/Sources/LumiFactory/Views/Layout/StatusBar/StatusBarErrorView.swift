@@ -3,7 +3,7 @@ import SwiftUI
 
 /// 状态栏错误视图
 ///
-/// 当 SharedUI 服务不可用时显示错误提示。
+/// 当工作区服务（WorkspaceProviding）不可用时显示错误提示。
 ///
 /// 高度仅 24pt(状态栏标准行高),不适合使用 `AppErrorBanner`(那是带 padding 的
 /// 大尺寸横幅)。这里保留紧凑布局,但颜色一律走 `@LumiTheme`(`theme.error` /
@@ -34,6 +34,6 @@ struct StatusBarErrorView: View {
         .onHover { hovering in
             isHovered = hovering
         }
-        .help("SharedUI service is not registered. Please ensure SharedUIPlugin is loaded.")
+        .help("Workspace service is not registered. Please ensure WorkspacePlugin is loaded.")
     }
 }

@@ -21,7 +21,7 @@ struct ChatView: View {
             }
         }
         .onAppear {
-            isVisible = kernel.layoutManager?.isChatVisible ?? true
+            isVisible = kernel.workspace?.isChatVisible ?? true
         }
         .onChatSectionVisibleDidChange { visible in
             isVisible = visible

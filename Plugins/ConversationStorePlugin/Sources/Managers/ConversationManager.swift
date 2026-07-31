@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import LumiKernel
 import SuperLogKit
@@ -10,7 +11,7 @@ import os
 public final class ConversationManager: ObservableObject, ConversationManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
     nonisolated public static let emoji = "💬"
-    public static let verbose = true
+    public static let verbose = false
 
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID?
@@ -21,6 +22,11 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     static let conversationsDidChangeNotification = Notification.Name.lumiConversationsDidChange
 
     private weak var kernel: LumiKernel?
+
+    /// 项目变更订阅，用于在切换当前项目时把空对话迁移到新项目。
+    private var projectChangeCancellable: AnyCancellable?
+    /// 上一次观察到的当前项目路径，用于在 `objectWillChange` 触发后判断是否真正发生切换。
+    private var previousProjectPath: String?
 
     public var dataDirectory: URL {
         ConversationManagerRuntimeBridge.shared.dataDirectory ?? ConversationStore.defaultDatabaseRootURL
@@ -33,6 +39,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         if Self.verbose {
             Self.logger.info("\(Self.t)ConversationManager initialized")
         }
+        observeProjectChanges()
     }
 
     // MARK: - Store Access
@@ -185,6 +192,16 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         Task {
             await store?.touchConversation(id: id)
         }
+    }
+
+    public func deselectConversation() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Deselecting conversation")
+        }
+        selectedConversationID = nil
+        updateCurrentTitle()
+        persistSelectedConversationID()
+        notifyConversationsChanged()
     }
 
     public func deleteConversation(id: UUID) {
@@ -385,22 +402,76 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
-    // MARK: - Conversation Order
+    // MARK: - Project Switch → Migrate Empty Conversations
 
-    public func setConversationOrder(_ order: Int, for conversationID: UUID) {
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
-        }
-        conversations[index].order = order
-        conversations = conversations
-        notifyConversationsChanged()
+    /// 订阅内核 `ProjectProviding` 的变更，在当前项目切换时把所有空对话迁移到新项目。
+    ///
+    /// `objectWillChange` 在 `ProjectService` 的任何 `@Published` 状态（如 `openFileURLs`、
+    /// `projects`）变化时都会触发，因此这里通过比较切换前后的 `currentProject.path` 来判断
+    /// 是否为真正的「当前项目切换」，避免误迁移。`currentProject.path` 已由
+    /// `ProjectService.openProject(at:)` 标准化，与 `createConversation` 写入的路径一致。
+    private func observeProjectChanges() {
+        guard let project = kernel?.project else { return }
+        previousProjectPath = project.currentProject?.path
 
-        Task {
-            await store?.updateOrder(id: conversationID, order: order)
-        }
+        projectChangeCancellable = project.objectWillChange
+            .map { _ in () }
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let newProjectPath = project.currentProject?.path
+                guard newProjectPath != self.previousProjectPath else { return }
 
-        if Self.verbose {
-            Self.logger.info("\(Self.t)setConversationOrder: conversation=\(conversationID.uuidString.prefix(8)), order=\(order)")
+                // 关闭项目（新路径为 nil）：仅更新缓存，不迁移空对话。
+                let oldPath = self.previousProjectPath
+                self.previousProjectPath = newProjectPath
+                guard let newProjectPath else { return }
+
+                self.reassignEmptyConversations(to: newProjectPath, from: oldPath)
+            }
+    }
+
+    /// 把所有「没有任何消息」的空对话关联项目更新为 `projectPath`。
+    ///
+    /// 空判定以 `MessageManaging.messageCount(for:)` 为准（命中缓存优先）。
+    /// 整个流程在 `Task` 中异步执行：收集空对话 → 更新内存数组 → 持久化 → 广播刷新。
+    private func reassignEmptyConversations(to projectPath: String, from oldProjectPath: String?) {
+        let messageManager = kernel?.messageManager
+        let snapshot = conversations
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            // 收集没有任何消息的空对话 ID
+            var emptyIDs: [UUID] = []
+            for conversation in snapshot {
+                let count = messageManager?.messageCount(for: conversation.id) ?? 0
+                if count == 0 {
+                    emptyIDs.append(conversation.id)
+                }
+            }
+
+            guard !emptyIDs.isEmpty else { return }
+
+            // 更新内存数组对应项的 projectPath，并触发 @Published 刷新
+            var updated = false
+            let idSet = Set(emptyIDs)
+            for index in self.conversations.indices where idSet.contains(self.conversations[index].id) {
+                self.conversations[index].projectPath = projectPath
+                updated = true
+            }
+            guard updated else { return }
+            self.conversations = self.conversations
+
+            // 持久化到数据库（批量、单次 save）
+            await self.store?.updateProjectPath(for: emptyIDs, projectPath: projectPath)
+
+            // 广播变更，让对话列表 UI 即时刷新
+            self.notifyConversationsChanged()
+
+            if Self.verbose {
+                Self.logger.info("\(Self.t)项目切换 \(oldProjectPath ?? "nil") → \(projectPath)：迁移 \(emptyIDs.count) 个空对话")
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import SwiftUI
 struct AppLayoutView: View {
     @LumiTheme private var theme
     @ObservedObject var kernel: LumiKernel
+    private let layoutManager: (any WorkspaceProviding)?
 
     @State private var isRailVisible: Bool = true
     @State private var isContentVisible: Bool = true
@@ -13,21 +14,33 @@ struct AppLayoutView: View {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
+        self.layoutManager = kernel.workspace
     }
 
     var body: some View {
+        if let layoutManager {
+            mainLayout(layoutManager)
+        } else {
+            ErrorView(error: LumiKernelError.serviceNotAvailable(service: "LayoutManager"))
+        }
+    }
+
+    // MARK: - Main Layout
+
+    @ViewBuilder
+    private func mainLayout(_ layoutManager: any WorkspaceProviding) -> some View {
         VStack(spacing: 0) {
             AppTitleToolbar(kernel: kernel)
             AppDivider()
 
             HStack(spacing: 0) {
-                ActivityBar(kernel: kernel)
+                ActivityBar(workspace: layoutManager)
                     .frame(maxHeight: .infinity)
                 AppDivider(.vertical)
 
                 Group {
-                    if kernel.layoutManager?.layoutState.activeViewContainerID != nil {
-                        splitLayout
+                    if layoutManager.activeViewContainerID != nil {
+                        splitLayout(layoutManager)
                     } else {
                         WelcomeView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -50,67 +63,63 @@ struct AppLayoutView: View {
             isChatVisible = visible
         }
         .onAppear {
-            isRailVisible = kernel.layoutManager?.isRailVisible ?? true
-            isContentVisible = kernel.layoutManager?.isContentVisible ?? true
-            isChatVisible = kernel.layoutManager?.isChatVisible ?? true
+            isRailVisible = layoutManager.isRailVisible
+            isContentVisible = layoutManager.isContentVisible
+            isChatVisible = layoutManager.isChatVisible
         }
     }
 
     // MARK: - Split Layout
 
-    private var showRail: Bool {
-        isRailVisible && kernel.layoutManager?.layoutState.activeViewContainerID != nil
+    private func showRail(for layoutManager: any WorkspaceProviding) -> Bool {
+        isRailVisible && layoutManager.activeViewContainerID != nil
     }
 
-    private var showChat: Bool {
-        isChatVisible && kernel.layoutManager?.layoutState.activeViewContainerID != nil
+    private func showChat(for layoutManager: any WorkspaceProviding) -> Bool {
+        isChatVisible && layoutManager.activeViewContainerID != nil
     }
 
-    private var viewContainerID: String {
-        kernel.layoutManager?.layoutState.activeViewContainerID ?? ""
-    }
-
-    private var layoutState: LayoutState {
-        kernel.layoutManager?.layoutState ?? LayoutState()
+    private func viewContainerID(for layoutManager: any WorkspaceProviding) -> String {
+        layoutManager.activeViewContainerID ?? ""
     }
 
     @ViewBuilder
-    private var splitLayout: some View {
-        if showRail {
+    private func splitLayout(_ layoutManager: any WorkspaceProviding) -> some View {
+        if showRail(for: layoutManager) {
             HSplitView {
                 RailView(kernel: kernel)
                     .frame(minWidth: 180, idealWidth: 240, maxWidth: 400)
                     .background(
                         SplitViewDividerPersistence.rail(
-                            layoutState: layoutState,
-                            viewContainerID: viewContainerID
+                            layoutState: layoutManager.layoutState,
+                            viewContainerID: viewContainerID(for: layoutManager)
                         )
                     )
-                mainSplitContent
+                mainSplitContent(layoutManager)
             }
         } else {
-            mainSplitContent
+            mainSplitContent(layoutManager)
         }
     }
 
     @ViewBuilder
-    private var mainSplitContent: some View {
-        if showChat {
+    private func mainSplitContent(_ layoutManager: any WorkspaceProviding) -> some View {
+        if showChat(for: layoutManager) {
             HSplitView {
-                PanelView(kernel: kernel)
+                PanelView(kernel: kernel, layoutManager: layoutManager)
                     .frame(minWidth: 280, maxWidth: .infinity)
                 ChatView(kernel: kernel)
                     .frame(minWidth: 280, idealWidth: 320, maxWidth: .infinity)
                     .background(
                         SplitViewDividerPersistence.chatSection(
-                            layoutState: layoutState,
-                            viewContainerID: viewContainerID,
+                            layoutState: layoutManager.layoutState,
+                            viewContainerID: viewContainerID(for: layoutManager),
                             layout: .narrow
                         )
                     )
             }
         } else {
-            PanelView(kernel: kernel)
+            PanelView(kernel: kernel, layoutManager: layoutManager)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }

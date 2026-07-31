@@ -95,7 +95,7 @@ public final class MemoryPluginLocalStore: SuperLog, @unchecked Sendable {
     // MARK: - 便捷访问
 
     public var isVerbose: Bool {
-        bool(forKey: .verboseLogging, defaultValue: true)
+        bool(forKey: .verboseLogging, defaultValue: false)
     }
 
     public var maxRelevantMemories: Int {

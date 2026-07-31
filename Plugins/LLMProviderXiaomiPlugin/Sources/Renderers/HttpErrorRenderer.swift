@@ -11,9 +11,9 @@ enum HttpErrorRenderer {
         canRender: { message in
             XiaomiRenderKind.matchesOtherHttpError(message)
         },
-        render: { message, showRawMessage in
+        render: { message in
             let statusCode = XiaomiRenderKind.httpStatusCode(from: message.renderKind)
-            HttpErrorView(message: message, statusCode: statusCode, showRawMessage: showRawMessage)
+            HttpErrorView(message: message, statusCode: statusCode)
         }
     )
 }

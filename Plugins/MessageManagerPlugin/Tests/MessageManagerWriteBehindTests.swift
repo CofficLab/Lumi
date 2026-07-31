@@ -1,0 +1,257 @@
+import Foundation
+import LumiKernel
+import Testing
+@testable import MessageManagerPlugin
+
+/// Write-behind + read-your-writes 行为测试。
+///
+/// 锁定 `MessageManager` 参考 ChatGPT 策略的写入语义:
+/// - insert 后 UI 立即能从读路径看到消息(read-your-writes),不等落盘;
+/// - user 消息立即同步落盘,assistant 消息后台落盘;
+/// - 后台落盘完成后,消息仍在读路径可见(磁盘已有)。
+@MainActor
+@Suite("MessageManager Write-Behind", .serialized)
+struct MessageManagerWriteBehindTests {
+    /// 共享桥接单例需在用例间隔离:每个用例装一个临时 store。
+    private func installTemporaryStore() throws -> (MessageStore, URL) {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MessageManagerWB-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let store = try MessageStore(databaseRootURL: directory)
+        MessageStoreRuntimeBridge.shared.store = store
+        return (store, directory)
+    }
+
+    private func makeManager() -> (MessageManager, LumiKernel) {
+        let kernel = LumiKernel()
+        let manager = MessageManager(kernel: kernel)
+        return (manager, kernel)
+    }
+
+    @Test("insert 后立即能读到(assistant 走后台落盘,不等盘)")
+    func readYourWritesForAssistant() async throws {
+        let (_, directory) = try installTemporaryStore()
+        defer {
+            MessageStoreRuntimeBridge.shared.store = nil
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let (manager, _) = makeManager()
+        let conversationID = UUID()
+
+        let msg = LumiChatMessage(
+            conversationID: conversationID, role: .assistant,
+            content: "hello", createdAt: Date()
+        )
+        manager.insertMessage(msg, to: conversationID)
+
+        // 后台落盘可能尚未完成,但读路径必须立即看到(read-your-writes)。
+        let page = manager.messagePage(for: conversationID, limit: 10, beforeMessageID: nil, includesToolMessages: false)
+        #expect(page.count == 1)
+        #expect(page.first?.content == "hello")
+    }
+
+    @Test("user 消息立即同步落盘")
+    func userMessagePersistedEagerly() async throws {
+        let (store, directory) = try installTemporaryStore()
+        defer {
+            MessageStoreRuntimeBridge.shared.store = nil
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let (manager, _) = makeManager()
+        let conversationID = UUID()
+
+        let msg = LumiChatMessage(
+            conversationID: conversationID, role: .user,
+            content: "hi", createdAt: Date()
+        )
+        manager.insertMessage(msg, to: conversationID)
+
+        // user 消息同步落盘:绕过 manager,直接查 store 也能立即查到。
+        #expect(store.fetchMessages(conversationId: conversationID).count == 1)
+    }
+
+    @Test("assistant 消息最终落盘(等后台队列完成后)")
+    func assistantEventuallyPersisted() async throws {
+        let (store, directory) = try installTemporaryStore()
+        defer {
+            MessageStoreRuntimeBridge.shared.store = nil
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let (manager, _) = makeManager()
+        let conversationID = UUID()
+
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .assistant,
+                            content: "delayed", createdAt: Date()),
+            to: conversationID
+        )
+
+        // 轮询等后台落盘完成(串行队列,通常很快)。
+        var persisted = false
+        for _ in 0..<100 {
+            if store.fetchMessages(conversationId: conversationID).count == 1 {
+                persisted = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(persisted)
+    }
+
+    @Test("store 不可用时,assistant 消息仍可从内存读路径读到(优雅降级)")
+    func readableEvenWhenStoreUnavailable() async throws {
+        // 不安装任何 store —— 直接无磁盘。本用例不触发临时目录创建,避免影响其它用例。
+        let previousStore = MessageStoreRuntimeBridge.shared.store
+        MessageStoreRuntimeBridge.shared.store = nil
+        defer { MessageStoreRuntimeBridge.shared.store = previousStore }
+
+        let (manager, _) = makeManager()
+        let conversationID = UUID()
+
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .assistant,
+                            content: "no disk", createdAt: Date()),
+            to: conversationID
+        )
+
+        let page = manager.messagePage(for: conversationID, limit: 10, beforeMessageID: nil, includesToolMessages: false)
+        #expect(page.count == 1)
+        #expect(page.first?.content == "no disk")
+    }
+}
+
+/// 瞬时 status 消息行为测试。
+///
+/// 锁定 status 走 insert 模式后的语义:
+/// - status 只入内存、不落盘(磁盘查不到);
+/// - status 从读路径可见(合并到 messagePage 末尾);
+/// - insert 回合产物(assistant/error)时自动清除该会话 status;user/tool 不清;
+/// - clearStatusMessage 显式清除(取消等场景兜底)。
+@MainActor
+@Suite("MessageManager Status Message", .serialized)
+struct MessageManagerStatusMessageTests {
+    private func installTemporaryStore() throws -> (MessageStore, URL) {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MessageManagerStatus-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let store = try MessageStore(databaseRootURL: directory)
+        MessageStoreRuntimeBridge.shared.store = store
+        return (store, directory)
+    }
+
+    private func makeManager() -> MessageManager {
+        MessageManager(kernel: LumiKernel())
+    }
+
+    @Test("status 不落盘:磁盘查不到,但读路径可见")
+    func statusInMemoryOnly() async throws {
+        let (store, directory) = try installTemporaryStore()
+        defer {
+            MessageStoreRuntimeBridge.shared.store = nil
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let manager = makeManager()
+        let conversationID = UUID()
+
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .status, content: "正在发送…"),
+            to: conversationID
+        )
+
+        // 磁盘没有 status(绕过 manager 直接查 store)。
+        #expect(store.fetchMessages(conversationId: conversationID).isEmpty)
+        // 读路径能看到 status(合并到末尾)。
+        let page = manager.messagePage(for: conversationID, limit: 10, beforeMessageID: nil, includesToolMessages: false)
+        #expect(page.count == 1)
+        #expect(page.first?.role == .status)
+    }
+
+    @Test("user 不清 status;tool/assistant/error 清 status(阶段产物退场)")
+    func autoClearOnTurnProductOnly() async throws {
+        let (_, directory) = try installTemporaryStore()
+        defer {
+            MessageStoreRuntimeBridge.shared.store = nil
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let manager = makeManager()
+        let conversationID = UUID()
+
+        func page() -> [LumiChatMessage] {
+            manager.messagePage(for: conversationID, limit: 10, beforeMessageID: nil, includesToolMessages: false)
+        }
+        func hasStatus() -> Bool { page().contains { $0.role == .status } }
+
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .status, content: "正在发送…"),
+            to: conversationID
+        )
+        #expect(hasStatus())
+
+        // user 消息不清 status(user 与 status 同属发送这一轮)。
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .user, content: "你好"),
+            to: conversationID
+        )
+        #expect(hasStatus(), "user 消息不应清除 status")
+
+        // 重新 insert 一条 status(模拟工具执行前 runner insert)。
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .status, content: "正在执行工具…"),
+            to: conversationID
+        )
+        #expect(hasStatus())
+
+        // tool 消息(工具结果)→ status 自动清除。
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .tool, content: "工具结果"),
+            to: conversationID
+        )
+        #expect(!hasStatus(), "tool 消息应清除 status")
+    }
+
+    @Test("clearStatusMessage 显式清除(取消场景兜底)")
+    func clearStatusExplicitly() async throws {
+        let (_, directory) = try installTemporaryStore()
+        defer {
+            MessageStoreRuntimeBridge.shared.store = nil
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let manager = makeManager()
+        let conversationID = UUID()
+
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .status, content: "正在发送…"),
+            to: conversationID
+        )
+        #expect(manager.messagePage(for: conversationID, limit: 10, beforeMessageID: nil, includesToolMessages: false).count == 1)
+
+        manager.clearStatusMessage(in: conversationID)
+
+        #expect(manager.messagePage(for: conversationID, limit: 10, beforeMessageID: nil, includesToolMessages: false).isEmpty)
+    }
+
+    @Test("同会话多次 insert status 只保留最新一条")
+    func statusReplacesPrevious() async throws {
+        let (_, directory) = try installTemporaryStore()
+        defer {
+            MessageStoreRuntimeBridge.shared.store = nil
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let manager = makeManager()
+        let conversationID = UUID()
+
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .status, content: "第一"),
+            to: conversationID
+        )
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .status, content: "第二"),
+            to: conversationID
+        )
+
+        let page = manager.messagePage(for: conversationID, limit: 10, beforeMessageID: nil, includesToolMessages: false)
+        let statuses = page.filter { $0.role == .status }
+        #expect(statuses.count == 1)
+        #expect(statuses.first?.content == "第二")
+    }
+}

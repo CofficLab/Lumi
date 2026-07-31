@@ -25,7 +25,7 @@ private final class DisplayServicesBridge: Sendable {
 final class DisplayService: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.display")
     nonisolated static let emoji = "🖥"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let shared = DisplayService()
 

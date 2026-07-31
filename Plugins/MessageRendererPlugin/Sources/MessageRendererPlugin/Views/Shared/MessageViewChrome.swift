@@ -1,18 +1,17 @@
+import AppKit
 import LumiKernel
 import LumiUI
-import AppKit
 import SwiftUI
 
 struct MessageViewChrome<Content: View>: View {
     @LumiTheme private var theme
-    @Environment(\.lumiResponseVerbosity) private var verbosity
 
     var kernel: LumiKernel? = nil
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
     var showsResendButton = false
     var showsHeader = true
     var errorTransportDetails: ResolvedErrorTransportDetails?
+    let verbosity: LumiResponseVerbosity
     @State private var didCopy = false
     @State private var showThinkingPopover = false
     @ViewBuilder let content: () -> Content
@@ -54,7 +53,7 @@ struct MessageViewChrome<Content: View>: View {
                 return String(format: "%.1fk", k)
             }
         }
-        return "\(count)"
+        return String(count)
     }
 
     var body: some View {
@@ -127,45 +126,27 @@ struct MessageViewChrome<Content: View>: View {
             }
 
             content()
-
-            if showRawMessage {
-                Text(MessageViewHelpers.rawDescription(for: message))
-                    .font(.appMonoCaption)
-                    .foregroundColor(theme.textSecondary)
-                    .textSelection(.enabled)
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .appSurface(style: .panel, cornerRadius: 8)
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
     private var briefContextMenu: some View {
-            Button {
-                copyMessageContent()
-            } label: {
-                Label("复制消息", systemImage: "doc.on.doc")
-            }
+        Button {
+            copyMessageContent()
+        } label: {
+            Label("复制消息", systemImage: "doc.on.doc")
+        }
 
-            if showsResendButton, let kernel, !message.content.isEmpty {
-                Button {
-                    Task {
-                        await kernel.resendMessage(id: message.id, in: message.conversationID)
-                    }
-                } label: {
-                    Label("重新发送", systemImage: "arrow.clockwise")
+        if showsResendButton, let kernel, !message.content.isEmpty {
+            Button {
+                Task {
+                    await kernel.resendMessage(id: message.id, in: message.conversationID)
                 }
-            }
-
-            Divider()
-
-            Button {
-                showRawMessage.toggle()
             } label: {
-                Label(showRawMessage ? "隐藏原始消息" : "查看原始消息", systemImage: "curlybraces")
+                Label("重新发送", systemImage: "arrow.clockwise")
             }
+        }
     }
 
     private func copyMessageContent() {

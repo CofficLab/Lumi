@@ -16,14 +16,14 @@ import os
 ///   都迁,便于验证幂等)。幂等性始终由 `importSummaries` 的按 id 去重兜底。当前默认
 ///   `.always`,**上线前改回 `.once`**。
 /// - **吞错**:`do/catch` 捕获所有错误并记日志,**绝不向上抛** —— 因为 onReady 是串行
-///   调度,抛错会阻塞后续所有插件(MessageStorePlugin 等)。
+///   调度,抛错会阻塞后续所有插件(MessageManagerPlugin 等)。
 /// - **无 legacy 服务时跳过**:全新安装或迁移窗口期之后,`kernel.legacyData` 为 nil。
 /// - **marker 时机**:迁移成功才写(绝不在迁移前写,防崩了误以为迁完)。
 @MainActor
 public struct ConversationLegacyMigration: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
     nonisolated public static let emoji = "💬"
-    static let verbose: Bool = true
+    static let verbose: Bool = false
 
     /// 迁移策略
     public enum MigrationPolicy {

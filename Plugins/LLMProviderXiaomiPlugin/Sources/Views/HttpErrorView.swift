@@ -5,15 +5,13 @@ import SwiftUI
 
 /// HTTP 错误（403/其它状态码）或请求失败的渲染视图。
 ///
-/// 不含 401（未授权复用 `ApiKeyMissingView` 配置界面）。展示状态码、错误摘要，
-/// 并复用 `ErrorMessageLayout` 的复制 / 查看请求响应详情能力。
+/// 不含 401（未授权复用 `ApiKeyMissingView` 配置界面）。展示状态码、错误摘要。
 struct HttpErrorView: View {
     @LumiTheme private var theme
     private static let transportDetailsSeparator = "\n\n--- Request / Response Details ---\n"
 
     let message: LumiChatMessage
     let statusCode: Int?
-    @Binding var showRawMessage: Bool
 
     private var title: String {
         if let statusCode {
@@ -36,7 +34,7 @@ struct HttpErrorView: View {
     }
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.appCallout)

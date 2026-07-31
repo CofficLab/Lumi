@@ -1,22 +1,24 @@
-import Foundation
-import SuperLogKit
 import AppKit
 import Combine
+import Foundation
+import SuperLogKit
+import os
 
 @MainActor
 public class ClipboardMonitor: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = true
-    
+    public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = ClipboardManagerPlugin.logger
+
     public static let shared = ClipboardMonitor()
-    
+
     @Published var lastChangeCount: Int
     private var timer: Timer?
     private let pasteboard = NSPasteboard.general
 
     // Dependencies
     private let storage = ClipboardStorage.shared
-    
+
     private init() {
         self.lastChangeCount = pasteboard.changeCount
     }
@@ -31,24 +33,22 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
             }
         }
     }
-    
+
     public func stopMonitoring() {
         timer?.invalidate()
         timer = nil
         if Self.verbose {
-            if ClipboardManagerPlugin.verbose {
-                            ClipboardManagerPlugin.logger.info("\(Self.t)🛑 Clipboard monitoring stopped")
-            }
+            Self.logger.info("\(Self.t)🛑 Clipboard monitoring stopped")
         }
     }
-    
+
     private func checkForChanges() {
         if pasteboard.changeCount != lastChangeCount {
             lastChangeCount = pasteboard.changeCount
             processPasteboardContent()
         }
     }
-    
+
     private func processPasteboardContent() {
         Task {
             let items = await Self.itemsAsync(
@@ -171,9 +171,8 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
             try pngData.write(to: imageURL)
             return imageURL.path
         } catch {
-            if ClipboardManagerPlugin.verbose {
-                ClipboardManagerPlugin.logger.error("\(Self.t)❌ Failed to save image: \(error.localizedDescription)")
-            }
+            Self.logger.error("\(Self.t)❌ Failed to save image: \(error.localizedDescription)")
+
             return nil
         }
     }

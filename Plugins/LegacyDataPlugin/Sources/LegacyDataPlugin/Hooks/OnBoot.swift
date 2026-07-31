@@ -6,12 +6,12 @@ import SuperLogKit
 /// LegacyData 插件 OnBoot 阶段钩子
 ///
 /// 在 boot 阶段定位 v4 旧数据目录并注册只读 `LegacyDataService`。
-/// 注册在 onBoot 完成,确保消费插件(ConversationStorePlugin / MessageStorePlugin)
+/// 注册在 onBoot 完成,确保消费插件(ConversationStorePlugin / MessageManagerPlugin)
 /// 在 onReady 时能通过 `kernel.legacyData` 取用。
 @MainActor
 public struct LegacyDataOnBootHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.legacy-data")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public init() {}
 
@@ -20,7 +20,7 @@ public struct LegacyDataOnBootHook: SuperLog {
         let v4Root = resolveV4DataRootDirectory(kernel: kernel)
 
         let service = LegacyDataService(v4DataRootDirectory: v4Root)
-        kernel.registerLegacyDataService(service)
+        try kernel.registerLegacyDataService(service)
 
         if Self.verbose {
             if let v4Root {

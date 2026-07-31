@@ -9,17 +9,13 @@ import os
 @MainActor
 public struct AgentTurnRunnerOnBootHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-turn-runner")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public init() {}
 
     /// 执行 boot
     public func execute(_ kernel: LumiKernel) async throws {
         let service = AgentTurnRunner(kernel: kernel)
-        kernel.registerAgentTurnManagerService(service)
-        if Self.verbose {
-            Self.logger.info("已注册 AgentTurnRunner")
-            Self.logger.info("AgentTurnRunnerPlugin boot 完成")
-        }
+        try kernel.registerAgentTurnManagerService(service)
     }
 }

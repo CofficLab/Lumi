@@ -20,7 +20,7 @@ public protocol RAGConfiguration: Sendable {
 public struct DefaultRAGConfiguration: RAGConfiguration, Sendable {
     public let verboseLogging: Bool
 
-    public init(verboseLogging: Bool = true) {
+    public init(verboseLogging: Bool = false) {
         self.verboseLogging = verboseLogging
     }
 

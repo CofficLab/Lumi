@@ -13,8 +13,8 @@ enum Http401Renderer {
         canRender: { message in
             StepFunRenderKind.matchesHttp(statusCode: 401, message: message)
         },
-        render: { message, showRawMessage in
-            Http401View(message: message, showRawMessage: showRawMessage)
+        render: { message in
+            Http401View(message: message)
         }
     )
 }
@@ -23,13 +23,12 @@ struct Http401View: View {
     @LumiTheme private var theme
 
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
 
     @State private var apiKey: String = ""
     @State private var isApiKeyVisible = false
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(LumiPluginLocalization.string("StepFun API Key invalid or expired", bundle: .module))
                     .font(.appCallout)

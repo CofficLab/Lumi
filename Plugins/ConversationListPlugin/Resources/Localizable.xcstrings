@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "·" : {
+
+    },
     "%@/%@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -907,9 +910,6 @@
         }
       }
     },
-    "Pin" : {
-
-    },
     "Service unavailable" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1049,9 +1049,6 @@
           }
         }
       }
-    },
-    "Unpin" : {
-
     },
     "Untitled" : {
       "extractionState" : "stale",

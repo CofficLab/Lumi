@@ -3,31 +3,32 @@ import PackageDescription
 
 let package = Package(
     name: "MessageListPlugin",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "MessageListPlugin", targets: ["MessageListPlugin"]),
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
-        .package(path: "../../Packages/MarkdownKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
         .target(
             name: "MessageListPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources/Localizable.xcstrings"),
+            ]
         ),
         .testTarget(
             name: "MessageListPluginTests",
-            dependencies: [
-                "MessageListPlugin",
-                .product(name: "MarkdownKitTesting", package: "MarkdownKit"),
-            ],
+            dependencies: ["MessageListPlugin"],
             path: "Tests"
         ),
     ]

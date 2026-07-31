@@ -7,7 +7,7 @@ import SuperLogKit
 /// Add Project Tool
 struct AddProjectTool: LumiAgentTool, SuperLog {
     nonisolated static let emoji = "➕"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     static let info = LumiAgentToolInfo(
         id: "add_project",

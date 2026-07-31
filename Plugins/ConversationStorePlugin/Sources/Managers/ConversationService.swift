@@ -116,6 +116,12 @@ public final class ConversationService: ConversationManaging {
         try? saveState()
     }
 
+    public func deselectConversation() {
+        selectedConversationID = nil
+        updateCurrentTitle()
+        try? saveState()
+    }
+
     private func updateCurrentTitle() {
         guard let selectedID = selectedConversationID,
               let conversation = conversations.first(where: { $0.id == selectedID })
@@ -262,16 +268,6 @@ public final class ConversationService: ConversationManaging {
             return
         }
         conversations[index].language = language
-        try? saveConversations()
-    }
-
-    // MARK: - Conversation Order
-
-    public func setConversationOrder(_ order: Int, for conversationID: UUID) {
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
-        }
-        conversations[index].order = order
         try? saveConversations()
     }
 }

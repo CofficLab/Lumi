@@ -118,7 +118,7 @@ public final class ChatScreenshotState {
 
     // MARK: - 日志
 
-    private static let verbose = true
+    private static let verbose = false
 }
 
 // MARK: - Logger (与主类共用 SuperLog 风格)

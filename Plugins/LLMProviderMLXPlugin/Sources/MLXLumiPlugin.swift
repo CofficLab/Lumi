@@ -30,7 +30,9 @@ public final class MLXLumiPlugin: LumiPlugin {
     // MARK: - LumiPlugin stubs
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
-    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
+        [ModelNotDownloadedRenderer.item]
+    }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }

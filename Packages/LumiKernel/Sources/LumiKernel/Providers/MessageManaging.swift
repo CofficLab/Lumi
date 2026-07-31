@@ -1,69 +1,69 @@
 import Foundation
 
-public struct MessageTokenUsage: Sendable, Equatable {
-    /// 已用当前日历归一化到当天 00:00 的日期。
-    public let day: Date
-    public let inputTokens: Int
-    public let outputTokens: Int
-
-    public init(day: Date, inputTokens: Int, outputTokens: Int) {
-        self.day = day
-        self.inputTokens = inputTokens
-        self.outputTokens = outputTokens
-    }
-
-    public var totalTokens: Int {
-        inputTokens + outputTokens
-    }
-}
-
 /// 消息管理能力协议
 ///
 /// 定义消息的获取、删除、插入等管理功能。
-@MainActor
-public protocol MessageManaging: ObservableObject {
+///
+/// 采用方法粒度的 actor 隔离:读路径(messages/messagePage/messageCount 等)
+/// 不加隔离,允许在后台线程执行数据库读取与解码,避免阻塞主线程;
+/// 写路径(insert/update/delete 等)标注 `@MainActor`,因为它们通过 EventManager
+/// 发 `messagesDidChange` 通知刷新 UI,必须在主线程执行。
+///
+/// 继承 `Sendable`:读方法(`nonisolated`)不触碰任何可变状态,因此 manager 引用
+/// 可安全地跨线程传递(例如由 UI 在后台线程发起读取)。
+public protocol MessageManaging: ObservableObject, Sendable {
     /// 获取指定对话的所有消息（原始数据,包含工具调用结果）
     ///
     /// 后端逻辑（如构建 LLM 上下文、生成摘要）应使用此方法,确保获得完整消息历史。
     func messages(for conversationID: UUID) -> [LumiChatMessage]
 
-    /// 获取指定对话的 UI 展示消息（根据详细程度过滤）
-    ///
-    /// 低于「详细」(V3) 级别时,会过滤掉工具调用结果消息（role == .tool）。
-    /// UI 层（如 MessageListView）应使用此方法,无需自行判断详细程度。
-    func displayMessages(for conversationID: UUID) -> [LumiChatMessage]
-
-    /// Returns cached display messages without starting a database load.
-    func cachedDisplayMessages(for conversationID: UUID) -> [LumiChatMessage]
-
-    /// 获取指定对话的一页可见消息。
+    /// 分页获取指定对话的消息（原始数据）。
     ///
     /// - Parameters:
     ///   - limit: 最多返回多少条消息。
     ///   - beforeMessageID: 以该消息为边界，返回它之前的消息页；传 `nil` 时返回最近一页。
-    func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) async -> [LumiChatMessage]
+    ///   - includesToolMessages: 是否包含工具调用结果消息（role == .tool）。
+    ///     这类消息携带发送给 LLM 的载荷、体积很大，UI 通常不需要，默认不返回；
+    ///     且不计入 `limit`，分页按"用户可见消息"计算。需要构建 LLM 上下文等场景传 `true`。
+    func messagePage(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) -> [LumiChatMessage]
 
     /// 获取指定对话的消息数量。
     ///
     /// 列表、徽标等轻量 UI 应使用此方法，避免为了计数加载整段消息正文或附件。
-    func messageCount(for conversationID: UUID) async -> Int
+    func messageCount(for conversationID: UUID) -> Int
 
     /// 指定消息之前是否还有更早的消息。
-    func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) async -> Bool
+    ///
+    /// - Parameter includesToolMessages: 与 `messagePage` 的同名参数一致，默认不把
+    ///   工具消息计入"更早"判断，使分页游标与可见消息口径保持一致。
+    func hasEarlierMessages(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) -> Bool
 
     /// 删除指定消息
+    @MainActor
     func deleteMessage(id: UUID, in conversationID: UUID)
 
     /// 插入新消息到指定对话
+    @MainActor
     func insertMessage(_ message: LumiChatMessage, to conversationID: UUID)
 
     /// 更新消息内容
+    @MainActor
     func updateMessage(id: UUID, in conversationID: UUID, content: String)
 
     /// 更新消息中的 tool call 结果
     ///
     /// 在 tool call 执行完成后，需要更新 assistant 消息中对应 toolCall 的 result 字段，
     /// 以便 UI 能够显示正确的视觉状态（成功/失败/执行时长）。
+    @MainActor
     func updateToolCallResult(
         _ result: LumiToolResult,
         toolCallID: String,
@@ -72,7 +72,16 @@ public protocol MessageManaging: ObservableObject {
     )
 
     /// 清空指定对话的所有消息
+    @MainActor
     func clearMessages(in conversationID: UUID)
+
+    /// 清除指定对话的瞬时 status 消息(如"正在发送…")。
+    ///
+    /// status 是发送/回合期间的瞬时态,由发送方在结束 sending 时显式清除;
+    /// insert 任一非 status 消息时 manager 也会自动清除(保险)。本方法供
+    /// 取消等"不落新消息就要结束 sending"的场景使用。
+    @MainActor
+    func clearStatusMessage(in conversationID: UUID)
 
     /// 获取指定消息
     func message(id: UUID, in conversationID: UUID) -> LumiChatMessage?
@@ -102,12 +111,23 @@ public protocol MessageManaging: ObservableObject {
 }
 
 public extension MessageManaging {
-    func cachedDisplayMessages(for conversationID: UUID) -> [LumiChatMessage] {
-        displayMessages(for: conversationID)
+    /// 默认不包含工具消息的便捷重载（多数 UI 场景）。
+    func messagePage(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?
+    ) -> [LumiChatMessage] {
+        messagePage(for: conversationID, limit: limit, beforeMessageID: beforeMessageID, includesToolMessages: false)
     }
-}
 
-public extension MessageManaging {
+    /// 默认不包含工具消息的便捷重载,与 messagePage 的可见消息口径一致。
+    func hasEarlierMessages(
+        for conversationID: UUID,
+        beforeMessageID: UUID?
+    ) -> Bool {
+        hasEarlierMessages(for: conversationID, beforeMessageID: beforeMessageID, includesToolMessages: false)
+    }
+
     func fetchTokenUsage(on day: Date) async -> MessageTokenUsage {
         await fetchTokenUsage(on: day, providerID: nil, modelName: nil)
     }

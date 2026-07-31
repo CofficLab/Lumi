@@ -14,11 +14,15 @@ struct RailTabBarView: View {
     @LumiTheme private var theme
 
     private var tabs: [PanelRailTabItem] {
-        kernel.uiManager?.allPanelRailTabItems ?? []
+        kernel.workspace?.allPanelRailTabItems ?? []
+    }
+
+    private var viewContainerID: String {
+        kernel.workspace?.activeViewContainerID ?? ""
     }
 
     private var activeRailTabID: String {
-        kernel.layoutManager?.activeRailTabID ?? ""
+        kernel.workspace?.activeRailTabID(for: viewContainerID) ?? ""
     }
 
     /// 仅当已注册的侧边栏标签多于一个时才显示标签栏。
@@ -39,7 +43,7 @@ struct RailTabBarView: View {
                     selectedTab: Binding(
                         get: { activeRailTabID },
                         set: { newValue in
-                            kernel.layoutManager?.presentRailTab(id: newValue)
+                            kernel.workspace?.presentRailTab(id: newValue, for: viewContainerID)
                         }
                     ),
                     showText: false
@@ -59,6 +63,6 @@ struct RailTabBarView: View {
     private func ensureValidSelection() {
         guard !tabs.isEmpty else { return }
         if tabs.contains(where: { $0.id == activeRailTabID }) { return }
-        kernel.layoutManager?.presentRailTab(id: tabs[0].id)
+        kernel.workspace?.presentRailTab(id: tabs[0].id, for: viewContainerID)
     }
 }

@@ -16,7 +16,7 @@ public final class ThemeManagerPlugin: LumiPlugin {
 
     public func onBoot(kernel: LumiKernel) async throws {
         let themeServiceInstance = ThemeManager()
-        kernel.registerThemeService(themeServiceInstance)
+        try kernel.registerThemeService(themeServiceInstance)
         self.themeService = themeServiceInstance
 
         themeServiceInstance.setPluginManager(kernel.pluginManager)

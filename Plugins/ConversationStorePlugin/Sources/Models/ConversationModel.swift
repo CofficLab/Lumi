@@ -43,12 +43,6 @@ final public class ConversationModel: @unchecked Sendable {
     /// Associated project path
     public var projectPath: String?
 
-    /// Sort priority, lower values are higher priority.
-    /// Optional for lightweight migration compatibility: older stores do not
-    /// contain this column, so making it mandatory would fail migration with
-    /// NSCocoaErrorDomain 134110.
-    public var order: Int?
-
     public init(
         id: String = UUID().uuidString,
         title: String,
@@ -61,8 +55,7 @@ final public class ConversationModel: @unchecked Sendable {
         automationLevelRaw: String? = nil,
         providerId: String? = nil,
         modelName: String? = nil,
-        projectPath: String? = nil,
-        order: Int = LumiConversationSummary.defaultOrder
+        projectPath: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -76,7 +69,6 @@ final public class ConversationModel: @unchecked Sendable {
         self.providerId = providerId
         self.modelName = modelName
         self.projectPath = projectPath
-        self.order = order
     }
 }
 
@@ -98,8 +90,7 @@ public extension ConversationModel {
             automationLevelRaw: summary.automationLevel?.rawValue,
             providerId: summary.providerID,
             modelName: summary.modelName,
-            projectPath: summary.projectPath,
-            order: summary.order
+            projectPath: summary.projectPath
         )
     }
 
@@ -132,8 +123,7 @@ public extension ConversationModel {
             automationLevel: automationLevel,
             providerID: providerId,
             modelName: modelName,
-            projectPath: projectPath,
-            order: order ?? LumiConversationSummary.defaultOrder
+            projectPath: projectPath
         )
     }
 }

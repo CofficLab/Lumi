@@ -11,7 +11,7 @@ import os
 public final class ConversationInputPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-input")
     public nonisolated static let emoji = "⌨️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - LumiPlugin
 
@@ -36,7 +36,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {
-        kernel.registerConversationInputService(inputState)
+        try kernel.registerConversationInputService(inputState)
     }
 
     public func onReady(kernel: LumiKernel) async throws {

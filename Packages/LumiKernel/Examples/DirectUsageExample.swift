@@ -21,11 +21,11 @@ struct LumiKernelUsageExample {
 
         // 方式一：创建实例后注册
         let storage = StorageService(dataRootDirectory: dataRoot)
-        kernel.registerStorage(storage)
+        try kernel.registerStorage(storage)
 
         // 方式二：直接创建并注册（一行搞定）
-        kernel.registerProject(ProjectService())
-        kernel.registerLayout(LayoutService())
+        try kernel.registerProject(ProjectService())
+        try kernel.registerWorkspace(LayoutService())
 
         // ========== 4. 使用服务 ==========
         if let storage = kernel.storage {
@@ -35,9 +35,9 @@ struct LumiKernelUsageExample {
             print("Plugin directory: \(pluginDir.path)")
         }
 
-        // ========== 5. 可选：运行时替换服务 ==========
-        // 如果需要替换某个服务，直接重新注册即可
-        kernel.registerStorage(AnotherStorageService(dataRootDirectory: dataRoot))
+        // ========== 5. 注意：重复注册会抛出错误 ==========
+        // 如果需要替换某个服务，需要先 unregister 再 register
+        // try kernel.registerStorage(AnotherStorageService(dataRootDirectory: dataRoot))  // 会抛出错误
 
         print("✅ LumiKernel initialized successfully!")
     }
@@ -77,7 +77,8 @@ private final class ProjectService: ProjectProviding {
 }
 
 @MainActor
-private final class LayoutService: LayoutProviding {
+private final class LayoutService: WorkspaceProviding {
+    var currentViewContainer: ViewContainerItem? { nil }
 }
 
 @MainActor

@@ -10,14 +10,12 @@ import os
 @MainActor
 public struct CommandOnReadyHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.command")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public init() {}
 
     /// 执行 onReady
     public func execute(_ kernel: LumiKernel) throws {
-        if Self.verbose {
-            Self.logger.info("Command onReady (no-op, 服务已在 OnBoot 注册)")
-        }
+
     }
 }

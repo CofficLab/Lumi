@@ -227,7 +227,6 @@ private final class MockChatService: LumiChatServicing {
     func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { .automatic }
     func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
     func registerToolService(_ toolService: (any ToolManaging)?) {}
-    func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? { nil }
     func messages(for conversationID: UUID) -> [LumiChatMessage] {
         messagesByID[conversationID] ?? []
     }

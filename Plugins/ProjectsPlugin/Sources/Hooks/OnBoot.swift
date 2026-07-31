@@ -10,7 +10,7 @@ import os
 @MainActor
 public struct ProjectsOnBootHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     nonisolated public static let emoji = "📂"
 
     public init() {}
@@ -25,7 +25,7 @@ public struct ProjectsOnBootHook: SuperLog {
             store = nil
         }
         let projectService = ProjectService(store: store)
-        kernel.registerProject(projectService)
+        try kernel.registerProject(projectService)
 
         if Self.verbose {
             Self.logger.info("📂 Registered ProjectService")

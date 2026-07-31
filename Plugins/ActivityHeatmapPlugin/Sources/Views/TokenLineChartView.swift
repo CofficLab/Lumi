@@ -7,8 +7,10 @@ public struct TokenLineChartView: View {
     public let data: [ActivityDayToken]
     public let isLoading: Bool
 
+    @Environment(\.locale) private var locale
     @State private var shimmerPhase: CGFloat = -1.2
     @State private var hoveredPoint: ActivityDayToken?
+    @State private var showTokenExplanation = false
 
     private let lineColor = Color(hex: "6db0f0")
     private let areaGradient = LinearGradient(
@@ -34,9 +36,39 @@ public struct TokenLineChartView: View {
                     .bold()
                 Spacer()
                 if let total = totalTokens {
-                    Text(formatNumber(total))
-                        .font(.appCaption)
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 4) {
+                        Text(formatNumber(total))
+                            .font(.appCaption)
+                            .foregroundColor(.secondary)
+                        Button {
+                            showTokenExplanation = true
+                        } label: {
+                            Image(systemName: "questionmark.circle")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .popover(isPresented: $showTokenExplanation, arrowEdge: .top) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(LumiPluginLocalization.string("What is Token Usage?", bundle: .module))
+                                    .font(.headline)
+                                Text(LumiPluginLocalization.string("This is the total number of tokens consumed during conversations within the selected time period.", bundle: .module))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(LumiPluginLocalization.string("Tokens include both input (your messages) and output (AI responses). Different models have different token pricing.", bundle: .module))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                HStack(spacing: 12) {
+                                    Label("1K = 1,000", systemImage: "number")
+                                    Label("1M = 1,000,000", systemImage: "number.square")
+                                }
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                            }
+                            .padding()
+                            .frame(maxWidth: 280)
+                        }
+                    }
                 }
             }
 
@@ -72,7 +104,14 @@ public struct TokenLineChartView: View {
                 .foregroundStyle(areaGradient)
             }
             .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 5))
+                AxisMarks(values: .automatic(desiredCount: 5)) { value in
+                    if let date = value.as(Date.self) {
+                        AxisValueLabel {
+                            Text(formatAxisDate(date))
+                        }
+                    }
+                    AxisGridLine()
+                }
             }
             .chartYAxis {
                 AxisMarks(position: .leading)
@@ -122,9 +161,9 @@ public struct TokenLineChartView: View {
                                 .position(x: x, y: y)
 
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(Self.tooltipDateFormatter.string(from: hoveredPoint.date))
+                                Text(tooltipDateFormatter().string(from: hoveredPoint.date))
                                     .font(.system(size: 10, weight: .medium))
-                                Text(String(format: LumiPluginLocalization.string("X: %@", bundle: .module), Self.tooltipDateFormatter.string(from: hoveredPoint.date)))
+                                Text(String(format: LumiPluginLocalization.string("X: %@", bundle: .module), tooltipDateFormatter().string(from: hoveredPoint.date)))
                                     .font(.system(size: 10))
                                     .foregroundStyle(.secondary)
                                 Text(String(format: LumiPluginLocalization.string("Y: %@ tokens", bundle: .module), formatNumber(hoveredPoint.totalTokens)))
@@ -222,12 +261,22 @@ public struct TokenLineChartView: View {
         }
     }
 
-    private static let tooltipDateFormatter: DateFormatter = {
+    /// Formats a date for the X axis using the current locale.
+    private func formatAxisDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M/d"
+        formatter.locale = locale
+        return formatter.string(from: date)
+    }
+
+    /// Returns a DateFormatter configured with the current locale for tooltip display.
+    private func tooltipDateFormatter() -> DateFormatter {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
+        formatter.locale = locale
         return formatter
-    }()
+    }
 }
 
 #Preview("With Data") {

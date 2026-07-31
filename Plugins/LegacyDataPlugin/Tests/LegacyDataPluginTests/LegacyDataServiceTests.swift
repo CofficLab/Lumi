@@ -184,7 +184,7 @@ struct LegacyDataServiceTests {
 
         // 用 kernel.storage 指向 v5 目录
         let kernel = LumiKernel()
-        kernel.registerService(StorageProviding.self, FakeStorage(dataRootDirectory: v5Root))
+        try kernel.registerService(StorageProviding.self, FakeStorage(dataRootDirectory: v5Root))
 
         try await LegacyDataOnBootHook().execute(kernel)
 
@@ -201,7 +201,7 @@ struct LegacyDataServiceTests {
         // 不创建 v4 目录
 
         let kernel = LumiKernel()
-        kernel.registerService(StorageProviding.self, FakeStorage(dataRootDirectory: v5Root))
+        try kernel.registerService(StorageProviding.self, FakeStorage(dataRootDirectory: v5Root))
 
         try await LegacyDataOnBootHook().execute(kernel)
 

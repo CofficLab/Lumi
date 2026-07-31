@@ -10,7 +10,7 @@ import SwiftData
 /// Thread-safe via Actor isolation, following `TaskStateManager` pattern.
 public actor ConversationStore: SuperLog {
     public nonisolated static let emoji = "💬"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "conversation.store")
 
     // MARK: - Properties
@@ -387,42 +387,27 @@ public actor ConversationStore: SuperLog {
         return save(context, operation: "更新对话偏好")
     }
 
-    /// Update conversation order
-    func updateOrder(id: UUID, order: Int) -> Bool {
+
+    @discardableResult
+    func updateProjectPath(for conversationIDs: [UUID], projectPath: String?) -> Bool {
+        guard !conversationIDs.isEmpty else { return false }
+
         let context = ModelContext(container)
-        let idString = id.uuidString
+        let idStrings = conversationIDs.map { $0.uuidString }
 
         let descriptor = FetchDescriptor<ConversationModel>(
-            predicate: #Predicate<ConversationModel> { $0.id == idString }
+            predicate: #Predicate<ConversationModel> { idStrings.contains($0.id) }
         )
 
-        guard let model = try? context.fetch(descriptor).first else {
+        guard let models = try? context.fetch(descriptor), !models.isEmpty else {
             return false
         }
 
-        model.order = order
-        model.updatedAt = Date().timeIntervalSince1970
-        return save(context, operation: "更新排序")
-    }
-
-    /// Fetch pinned conversations, returning their IDs sorted by order.
-    func fetchPinnedConversationIDs() -> [(UUID, Int)] {
-        let context = ModelContext(container)
-
-        var descriptor = FetchDescriptor<ConversationModel>(
-            predicate: #Predicate<ConversationModel> { $0.order == 0 },
-            sortBy: [SortDescriptor(\.order)]
-        )
-
-        do {
-            let models = try context.fetch(descriptor)
-            return models.compactMap { model in
-                guard let uuid = UUID(uuidString: model.id) else { return nil }
-                return (uuid, model.order ?? LumiConversationSummary.defaultOrder)
-            }
-        } catch {
-            return []
+        for model in models {
+            model.projectPath = projectPath
         }
+
+        return save(context, operation: "批量更新对话项目路径")
     }
 
     // MARK: - Delete

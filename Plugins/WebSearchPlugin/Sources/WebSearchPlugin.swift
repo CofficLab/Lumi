@@ -7,7 +7,7 @@ import SuperLogKit
 @MainActor
 public final class WebSearchPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "🔍"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "plugin.web-search"
@@ -26,9 +26,7 @@ public final class WebSearchPlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        if Self.verbose {
-            Self.logger.info("🔍 WebSearch 插件初始化完成")
-        }
+
     }
 
 

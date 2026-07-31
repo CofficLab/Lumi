@@ -8,7 +8,7 @@ import os
 public final class MockConversationManager: ObservableObject, ConversationManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager.mock")
     nonisolated public static let emoji = "💬"
-    public static let verbose = true
+    public static let verbose = false
 
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID?
@@ -122,6 +122,14 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
             Self.logger.info("\(Self.t)Selecting conversation \(id.uuidString.prefix(8))...")
         }
         selectedConversationID = id
+        updateCurrentTitle()
+    }
+
+    public func deselectConversation() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Deselecting conversation")
+        }
+        selectedConversationID = nil
         updateCurrentTitle()
     }
 
@@ -254,14 +262,5 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
             return
         }
         conversations[index].language = language
-    }
-
-    // MARK: - Conversation Order
-
-    public func setConversationOrder(_ order: Int, for conversationID: UUID) {
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
-        }
-        conversations[index].order = order
     }
 }

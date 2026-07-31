@@ -275,12 +275,6 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             // 抽取最近一条 user message 的文件附件(由 MessageSender 写入 metadata["fileAttachments"])。
             // 文本类文件正文在下游 MessageBridge 注入用户消息文本。
             let pendingFiles = LumiFileAttachmentMetadata.extract(from: history)
-            if Self.verbose {
-                let imageBase64Chars = pendingImages.reduce(0) { $0 + $1.base64Data.count }
-                let fileBase64Chars = pendingFiles.reduce(0) { $0 + $1.base64Data.count }
-                let fileTextChars = pendingFiles.reduce(0) { $0 + ($1.textContent?.count ?? 0) }
-                Self.logger.info("\(Self.t)LLM attachments extracted conversation=\(conversationID.uuidString.prefix(8)) images=\(pendingImages.count) imageBase64Chars=\(imageBase64Chars) files=\(pendingFiles.count) fileBase64Chars=\(fileBase64Chars) fileTextChars=\(fileTextChars)")
-            }
 
             // 调用所有插件的 willSendToLLM 钩子,让插件可注入/修改 system prompt 等内容。
             // 钩子按插件 order 升序串行执行,每个插件拿到上一个插件处理后的 messages。
@@ -288,10 +282,6 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             for plugin in kernel.pluginManager.allPlugins {
                 guard plugin.policy.shouldRegister else { continue }
                 preparedMessages = await plugin.willSendToLLM(kernel: kernel, messages: preparedMessages)
-                if Self.verbose {
-                    let metrics = Self.messageMetrics(preparedMessages)
-                    Self.logger.info("\(Self.t)willSendToLLM plugin=\(plugin.id) messages=\(preparedMessages.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars)")
-                }
             }
 
             // 拼接策略:把所有插件注入的 system 消息合并为单条,放在 messages 首位,
@@ -306,9 +296,6 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                     content: mergedSystem
                 )
                 preparedMessages = [systemMessage] + nonSystem
-                if Self.verbose {
-                    Self.logger.info("\(Self.t)Merged system prompt fragments=\(systemFragments.count) mergedChars=\(mergedSystem.count) nonSystemMessages=\(nonSystem.count)")
-                }
             }
 
             let request = LumiLLMRequest(
@@ -333,17 +320,41 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             )
 
             // Call LLM
+            // 流式输出:runner 调 kernel.messageStreaming (store) 写临时行,UI 读 store 渲染。
+            // 临时行用进程级稳定 id(LumiStreamingRowID),与最终落库行 id 永不冲突——
+            // 故最终消息无需对齐临时行 id,直接落库即可;落库后清掉 store 的临时行,
+            // UI 的 messagesDidChange 会刷新出真实行(两次独立 diff,无需协调)。
+            //
+            // 每一轮 LLM 调用前 insert 一条 status:第一轮覆盖 sender 的"正在发送…"
+            // (同会话只保留最新),后续轮次(工具结果发回 LLM)补上"正在思考…"指示。
+            // 流式 thinking/generating 阶段由 RowBuilder 剔除 status,改由流式行承载。
+            insertStatusMessage(
+                conversationID: conversationID,
+                content: String(localized: "status.thinking", defaultValue: "正在思考…")
+            )
+            let streamingStore = kernel.messageStreaming
+            await streamingStore?.startStreaming(conversationID: conversationID)
             let assistantMessage: LumiChatMessage
             do {
                 if Self.verbose {
                     let metrics = Self.messageMetrics(preparedMessages)
                     Self.logger.info("\(Self.t)LLM request start provider=\(type(of: targetProvider).info.id) model=\(model) messages=\(preparedMessages.count) tools=\(tools.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars)")
                 }
-                assistantMessage = try await targetProvider.send(request)
-            } catch {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)LLM 调用失败: \(error.localizedDescription)")
+                // onChunk 在 provider 后台任务里调用(@Sendable)。store 的写方法标 async,
+                // 通过 await 跳回 @MainActor 执行,保证对 @Published 的写安全。
+                // tool-call 增量不通过 onChunk 推送,此处无需处理;最终落库消息会带上完整 toolCalls。
+                assistantMessage = try await targetProvider.sendStreaming(request) { chunk in
+                    let piece = chunk.content ?? ""
+                    if chunk.isThinking {
+                        await streamingStore?.appendThinking(piece)
+                    } else {
+                        await streamingStore?.appendContent(piece)
+                    }
                 }
+            } catch {
+                Self.logger.error("\(Self.t)LLM 调用失败: \(error.localizedDescription)")
+                // 流式期间 store 已持有临时行;失败时清掉它,避免 UI 残留空行。
+                await streamingStore?.endStreaming()
                 let disposition = targetProvider.retryDisposition(
                     for: error,
                     context: LumiLLMRetryContext(attempt: 1, maxAttempts: 1)
@@ -360,9 +371,12 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 return
             }
 
-            // Append assistant message to history
+            // Append assistant message to history.
+            // 直接落库(无需重建对齐 id):临时行用独立稳定 id,落库行用 provider 生成的随机 id,
+            // 两者互不干扰。落库后清掉 store 的临时行,UI 自然从 messagesDidChange 刷新出真实行。
             kernel.messageManager?.insertMessage(assistantMessage, to: conversationID)
             postMessageSavedNotification(message: assistantMessage, conversationID: conversationID)
+            await streamingStore?.endStreaming()
 
             if Self.verbose {
                 let toolArgChars = assistantMessage.toolCalls?.reduce(0) { $0 + $1.arguments.count } ?? 0
@@ -388,6 +402,14 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)执行工具: \(toolCall.name)")
                 }
+
+                // 流式已结束(endStreaming),工具执行期间没有流式行 —— insert 一条
+                // 瞬时 status("正在执行: X…")让 UI 有进度指示。工具结果(tool 消息)
+                // insert 时 MessageManager 自动清除此 status;下一个工具再 insert 新的。
+                insertStatusMessage(
+                    conversationID: conversationID,
+                    content: String(localized: "status.executing-tool", defaultValue: "正在执行: \(toolCall.name)…")
+                )
 
                 // Execute tool
                 guard let toolManager = kernel.toolManager else {
@@ -540,6 +562,19 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         )
         kernel.messageManager?.insertMessage(errorMessage, to: conversationID)
         postMessageSavedNotification(message: errorMessage, conversationID: conversationID)
+    }
+
+    /// 插入一条瞬时 status 消息(如"正在执行: X…"),由 `MessageManaging` 仅存内存、不落盘。
+    /// 工具结果/回合产物 insert 时自动清除。不发送 messageSaved 通知(status 是瞬时的,无需回看)。
+    private func insertStatusMessage(conversationID: UUID, content: String) {
+        guard let kernel else { return }
+        let status = LumiChatMessage(
+            conversationID: conversationID,
+            role: .status,
+            content: content,
+            metadata: ["isTransientStatus": "true"]
+        )
+        kernel.messageManager?.insertMessage(status, to: conversationID)
     }
 
     private static func messageMetrics(_ messages: [LumiChatMessage]) -> (

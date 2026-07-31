@@ -10,7 +10,7 @@ import os
 @MainActor
 public final class DockerManagerPlugin: LumiPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docker-manager")
-    nonisolated public static let verbose = true
+    nonisolated public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.docker-manager"
     public let name = "Docker"

@@ -10,14 +10,14 @@ import os
 @MainActor
 public struct ConversationStoreOnReadyHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public init() {}
 
     /// 执行 onReady
     public func execute(_ kernel: LumiKernel) async throws {
         let manager = ConversationManager(kernel: kernel)
-        kernel.registerConversations(manager)
+        try kernel.registerConversations(manager)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 ConversationManager")
@@ -58,7 +58,7 @@ public struct ConversationStoreOnReadyHook: SuperLog {
                     manager.loadConversations()
                 }
                 if !progress.isActive {
-                    kernel.uiManager?.unregisterStatusBarItem(id: itemID)
+                    kernel.workspace?.unregisterStatusBarItem(id: itemID)
                 }
             }
 

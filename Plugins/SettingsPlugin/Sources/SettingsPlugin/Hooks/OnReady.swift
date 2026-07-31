@@ -10,14 +10,12 @@ import os
 @MainActor
 public struct SettingsOnReadyHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.settings")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public init() {}
 
     /// 执行 onReady
     public func execute(_ kernel: LumiKernel) throws {
-        if Self.verbose {
-            Self.logger.info("Settings onReady (no-op, 服务已在 OnBoot 注册)")
-        }
+
     }
 }

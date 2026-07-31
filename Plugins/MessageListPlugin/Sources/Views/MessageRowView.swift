@@ -1,18 +1,24 @@
 import LumiKernel
-import LumiKernel
 import SwiftUI
 
 /// Renders a single message using the injected message renderer,
 /// or a fallback if no renderer is available.
+///
+/// `verbosity` 由 `MessageListView` 计算并显式传入，再由 `LumiMessageRendererItem.render`
+/// 闭包转发给具体视图。
 struct MessageRowView: View {
+    let kernel: LumiKernel
     let message: LumiChatMessage
-    let renderer: LumiMessageRendererItem?
-    @Binding var showRawMessage: Bool
+    let verbosity: LumiResponseVerbosity
+
+    private var renderer: LumiMessageRendererItem? {
+        kernel.messageRendererManager?.renderer(for: message)
+    }
 
     var body: some View {
         Group {
             if let renderer {
-                renderer.render(message, $showRawMessage)
+                renderer.render(message, verbosity)
             } else {
                 Text("No renderer for message: \(message.id)")
                     .foregroundColor(.orange)

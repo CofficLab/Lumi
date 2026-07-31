@@ -27,9 +27,9 @@ public final class MessageSender: MessageSending, SuperLog {
     public nonisolated static let emoji = "📤"
     nonisolated static let verbose = true
 
-    @Published private var sendingConversationIDs: Set<UUID> = []
-    @Published private var pendingMessageQueues: [UUID: [LumiPendingMessage]] = [:]
-    private var pendingContinuationConversationIDs: Set<UUID> = []
+    @Published internal(set) var sendingConversationIDs: Set<UUID> = []
+    @Published internal(set) var pendingMessageQueues: [UUID: [LumiPendingMessage]] = [:]
+    internal var pendingContinuationConversationIDs: Set<UUID> = []
 
     public var isSending: Bool {
         !sendingConversationIDs.isEmpty
@@ -37,11 +37,11 @@ public final class MessageSender: MessageSending, SuperLog {
 
     /// 当前挂起、等待下次发送时随消息一起送出的图片附件。
     /// `addAttachment / removeAttachment / clearAttachments` 维护此集合。
-    @Published public private(set) var pendingAttachments: [LumiImageAttachment] = []
+    @Published public internal(set) var pendingAttachments: [LumiImageAttachment] = []
 
     /// 当前挂起、等待下次发送时随消息一起送出的**文件**附件(与图片并行的链路)。
     /// `addFileAttachment / removeFileAttachment / clearFileAttachments` 维护此集合。
-    @Published public private(set) var pendingFileAttachments: [LumiFileAttachment] = []
+    @Published public internal(set) var pendingFileAttachments: [LumiFileAttachment] = []
 
     private weak var kernel: LumiKernel?
     private var resendObserver: NotificationObserverToken?
@@ -49,9 +49,6 @@ public final class MessageSender: MessageSending, SuperLog {
     public init(kernel: LumiKernel) {
         self.kernel = kernel
         installResendObserver()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)MessageSendManager (kernel=\(String(describing: ObjectIdentifier(kernel))))")
-        }
     }
 
     deinit {
@@ -78,74 +75,6 @@ public final class MessageSender: MessageSending, SuperLog {
             pendingMessageQueues.removeValue(forKey: conversationID)
         } else {
             pendingMessageQueues[conversationID] = queue
-        }
-    }
-
-    // MARK: - 附件挂起池
-
-    /// 添加附件。幂等:同 `id` 已存在则忽略。
-    public func addAttachment(_ attachment: LumiImageAttachment) {
-        guard !pendingAttachments.contains(where: { $0.id == attachment.id }) else {
-            if Self.verbose {
-                Self.logger.info("\(Self.t)addAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))… 已存在,忽略")
-            }
-            return
-        }
-        pendingAttachments.append(attachment)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)addAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))…, mime=\(attachment.mimeType), pool.size=\(self.pendingAttachments.count)")
-        }
-    }
-
-    /// 按 id 移除挂起附件。id 不存在则 no-op。
-    public func removeAttachment(id: UUID) {
-        let before = pendingAttachments.count
-        pendingAttachments.removeAll { $0.id == id }
-        if Self.verbose {
-            Self.logger.info("\(Self.t)removeAttachment ➡️ id=\(id.uuidString.prefix(8))…, before=\(before), after=\(self.pendingAttachments.count)")
-        }
-    }
-
-    /// 清空所有挂起附件。
-    public func clearAttachments() {
-        let count = pendingAttachments.count
-        pendingAttachments.removeAll()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)clearAttachments ➡️ cleared \(count) items")
-        }
-    }
-
-    // MARK: - 文件附件挂起池
-
-    /// 添加文件附件。幂等:同 `id` 已存在则忽略。
-    public func addFileAttachment(_ attachment: LumiFileAttachment) {
-        guard !pendingFileAttachments.contains(where: { $0.id == attachment.id }) else {
-            if Self.verbose {
-                Self.logger.info("\(Self.t)addFileAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))… 已存在,忽略")
-            }
-            return
-        }
-        pendingFileAttachments.append(attachment)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)addFileAttachment ➡️ id=\(attachment.id.uuidString.prefix(8))…, name=\(attachment.fileName), pool.size=\(self.pendingFileAttachments.count)")
-        }
-    }
-
-    /// 按 id 移除挂起文件附件。id 不存在则 no-op。
-    public func removeFileAttachment(id: UUID) {
-        let before = pendingFileAttachments.count
-        pendingFileAttachments.removeAll { $0.id == id }
-        if Self.verbose {
-            Self.logger.info("\(Self.t)removeFileAttachment ➡️ id=\(id.uuidString.prefix(8))…, before=\(before), after=\(self.pendingFileAttachments.count)")
-        }
-    }
-
-    /// 清空所有挂起文件附件。
-    public func clearFileAttachments() {
-        let count = pendingFileAttachments.count
-        pendingFileAttachments.removeAll()
-        if Self.verbose {
-            Self.logger.info("\(Self.t)clearFileAttachments ➡️ cleared \(count) items")
         }
     }
 
@@ -180,10 +109,7 @@ public final class MessageSender: MessageSending, SuperLog {
         conversationID: UUID?
     ) async throws {
         if Self.verbose {
-            let selectedConversationID = self.kernel?.conversations?.selectedConversationID?.uuidString.prefix(8) ?? "nil"
-            let pendingFiles = fileAttachments.count
-            let sendingState = self.isSending(for: conversationID)
-            Self.logger.info("\(Self.t)sendMessage 开始 ➡️ conversationID=\(conversationID?.uuidString.prefix(8) ?? "nil"), selectedConversationID=\(selectedConversationID), content.len=\(content.count), attachments=\(imageAttachments.count), pendingFiles=\(pendingFiles), isSending(forTarget)=\(sendingState), activeSendingConversations=\(self.sendingConversationIDs.count)")
+            Self.logger.info("\(Self.t)🚀 sendMessage 开始")
         }
 
         // 1. Trim & early-return on empty input
@@ -199,29 +125,24 @@ public final class MessageSender: MessageSending, SuperLog {
         let targetID: UUID
         if let conversationID {
             targetID = conversationID
-            if Self.verbose {
-                Self.logger.info("\(Self.t)解析目标会话 ➡️ 使用显式 conversationID=\(targetID.uuidString.prefix(8))…")
-            }
         } else if let selected = kernel?.conversations?.selectedConversationID {
             targetID = selected
-            if Self.verbose {
-                Self.logger.info("\(Self.t)解析目标会话 ➡️ 使用 selectedConversationID=\(targetID.uuidString.prefix(8))…")
-            }
         } else {
-            // No conversation selected - auto-create one
+            // No conversation selected - auto-create one with first message as title
+            let firstLine = trimmed.components(separatedBy: .newlines).first ?? trimmed
+            let maxLength = 40
+            let truncatedTitle = firstLine.count > maxLength
+                ? String(firstLine.prefix(maxLength)) + "..."
+                : firstLine
+
             if Self.verbose {
-                Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建新对话")
+                Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建新对话,标题=\"\(truncatedTitle)\"")
             }
-            guard let newID = try? kernel?.conversations?.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil) else {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 创建对话失败")
-                }
+            guard let newID = try? kernel?.conversations?.createConversation(title: truncatedTitle, projectPath: nil, providerID: nil, modelName: nil) else {
+                Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 创建对话失败")
                 throw LumiKernelError.noActiveConversation
             }
             targetID = newID
-            if Self.verbose {
-                Self.logger.info("\(Self.t)自动创建对话成功 ➡️ id=\(targetID.uuidString.prefix(8))…")
-            }
         }
 
         let pendingMessage = LumiPendingMessage(
@@ -241,14 +162,7 @@ public final class MessageSender: MessageSending, SuperLog {
         }
 
         // 3. Persist user message into the message history
-        if Self.verbose {
-            let hasLastMessage = self.kernel?.messageManager?.lastMessage(in: targetID) != nil
-            Self.logger.info("\(Self.t)准备进入发送态 ➡️ target=\(targetID.uuidString.prefix(8))…, hasLastMessage=\(hasLastMessage)")
-        }
         beginSending(in: targetID)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)isSending -> true, 准备写入 user 消息到会话 \(targetID.uuidString.prefix(8))…, activeSendingConversations=\(self.sendingConversationIDs.count)")
-        }
 
         // 把 attachments 序列化进 metadata["imageAttachments"] JSON(如有)
         var metadata: [String: String] = [:]
@@ -257,9 +171,7 @@ public final class MessageSender: MessageSending, SuperLog {
                 let data = try JSONEncoder().encode(imageAttachments)
                 metadata["imageAttachments"] = String(data: data, encoding: .utf8) ?? ""
             } catch {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)sendMessage ➡️ 编码 attachments 失败: \(error.localizedDescription)")
-                }
+                Self.logger.error("\(Self.t)sendMessage ➡️ 编码 attachments 失败: \(error.localizedDescription)")
             }
         }
 
@@ -275,25 +187,19 @@ public final class MessageSender: MessageSending, SuperLog {
             content: trimmed,
             metadata: metadata
         )
-        if Self.verbose {
-            Self.logger.info("\(Self.t)即将插入 user 消息 ➡️ id=\(userMessage.id.uuidString.prefix(8))…, target=\(targetID.uuidString.prefix(8))…, metadataKeys=\(metadata.keys.sorted().joined(separator: ","))")
-        }
+
         kernel?.messageManager?.insertMessage(userMessage, to: targetID)
-        if Self.verbose {
-            let cached = kernel?.messageManager?.message(id: userMessage.id, in: targetID)
-            Self.logger.info("\(Self.t)user 消息已提交给 MessageManager ➡️ id=\(userMessage.id.uuidString.prefix(8))…, cacheHit=\(cached != nil), content.len=\(trimmed.count), attachments=\(imageAttachments.count)")
+
+        // 用户消息落盘后立即清空附件(仅当挂起池未被用户在等待期间修改过)。
+        if pendingAttachments == imageAttachments {
+            clearAttachments()
+        }
+        if pendingFileAttachments == fileAttachments {
+            clearFileAttachments()
         }
 
         defer {
             endSending(in: targetID)
-            // Do not clear attachments added while an earlier turn was running;
-            // those belong to a later queued/draft message.
-            if pendingAttachments == imageAttachments {
-                clearAttachments()
-            }
-            if pendingFileAttachments == fileAttachments {
-                clearFileAttachments()
-            }
             if Self.verbose {
                 Self.logger.info("\(Self.t)isSending -> false, sendMessage 结束 ➡️ target=\(targetID.uuidString.prefix(8))…, activeSendingConversations=\(self.sendingConversationIDs.count)")
             }
@@ -306,16 +212,14 @@ public final class MessageSender: MessageSending, SuperLog {
 
         do {
             if Self.verbose {
-                Self.logger.info("\(Self.t)准备调用 agentTurnManager.runTurn ➡️ target=\(targetID.uuidString.prefix(8))…, lastMessage=\(kernelInstance.messageManager?.lastMessage(in: targetID)?.id.uuidString.prefix(8) ?? "nil")")
+                Self.logger.info("\(Self.t)🛫 准备调用 agentTurnManager.runTurn")
             }
             try await kernelInstance.agentTurnManager?.runTurn(in: targetID)
             if Self.verbose {
-                Self.logger.info("\(Self.t)agentTurnManager.runTurn 完成 ➡️ target=\(targetID.uuidString.prefix(8))…")
+                Self.logger.info("\(Self.t)agentTurnManager.runTurn 完成")
             }
         } catch {
-            if Self.verbose {
-                Self.logger.error("\(Self.t)sendMessage ➡️ agentTurnManager 抛出 error target=\(targetID.uuidString.prefix(8))…: \(error.localizedDescription)")
-            }
+            Self.logger.error("\(Self.t)sendMessage ➡️ agentTurnManager 抛出 error target=\(targetID.uuidString.prefix(8))…: \(error.localizedDescription)")
             // Insert error message into conversation
             let errorMessage = LumiChatMessage(
                 conversationID: targetID,
@@ -413,9 +317,9 @@ public final class MessageSender: MessageSending, SuperLog {
             guard let messageID = Self.uuidValue(
                 notification.userInfo?[LumiMessageSavedNotification.messageIDKey]
             ),
-            let conversationID = Self.uuidValue(
-                notification.userInfo?[LumiMessageSavedNotification.conversationIDKey]
-            ) else {
+                let conversationID = Self.uuidValue(
+                    notification.userInfo?[LumiMessageSavedNotification.conversationIDKey]
+                ) else {
                 return
             }
 
@@ -426,7 +330,7 @@ public final class MessageSender: MessageSending, SuperLog {
         resendObserver = NotificationObserverToken(value: observer)
     }
 
-    nonisolated private static func uuidValue(_ value: Any?) -> UUID? {
+    private nonisolated static func uuidValue(_ value: Any?) -> UUID? {
         if let uuid = value as? UUID {
             return uuid
         }
@@ -444,9 +348,8 @@ public final class MessageSender: MessageSending, SuperLog {
         do {
             try await kernelInstance.agentTurnManager?.runTurn(in: conversationID)
         } catch {
-            if Self.verbose {
-                Self.logger.error("\(Self.t)runAgentTurn 抛出 error target=\(conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")
-            }
+            Self.logger.error("\(Self.t)runAgentTurn 抛出 error target=\(conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")
+
             let errorMessage = LumiChatMessage(
                 conversationID: conversationID,
                 role: .error,
@@ -458,10 +361,22 @@ public final class MessageSender: MessageSending, SuperLog {
 
     private func beginSending(in conversationID: UUID) {
         sendingConversationIDs.insert(conversationID)
+        // 插入一条瞬时 status 消息("正在发送…"),由 MessageManager 仅存内存、不落盘。
+        // 流式行出现后由 UI 读模型互斥剔除;回合结束(endSending)时清除。
+        let status = LumiChatMessage(
+            conversationID: conversationID,
+            role: .status,
+            content: String(localized: "status.sending", defaultValue: "正在发送消息…"),
+            metadata: ["isTransientStatus": "true"]
+        )
+        kernel?.messageManager?.insertMessage(status, to: conversationID)
     }
 
     private func endSending(in conversationID: UUID) {
         sendingConversationIDs.remove(conversationID)
+        // 清除瞬时 status 消息(若回合正常完成,manager 在落 assistant 消息时已自动清掉,
+        // 这里是取消等"不落新消息就结束 sending"场景的兜底)。
+        kernel?.messageManager?.clearStatusMessage(in: conversationID)
         guard let next = dequeuePendingMessage(for: conversationID) else {
             guard pendingContinuationConversationIDs.remove(conversationID) != nil else { return }
             startContinuation(in: conversationID)
@@ -492,9 +407,7 @@ public final class MessageSender: MessageSending, SuperLog {
                     conversationID: message.conversationID
                 )
             } catch {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)消费待发送消息失败 ➡️ conversation=\(message.conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")
-                }
+                Self.logger.error("\(Self.t)消费待发送消息失败 ➡️ conversation=\(message.conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")
             }
         }
     }

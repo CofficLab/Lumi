@@ -71,14 +71,14 @@ enum MessageViewHelpers {
     }
 
     static func cacheHitRateItem(for message: LumiChatMessage) -> String? {
-        guard let cached = intMetadata(message, LumiMessageTokenMetadata.cachedInputKey),
+        guard let cached = intMetadata(message, MessageTokenMetadata.cachedInputKey),
               cached > 0
         else {
             return nil
         }
 
-        let total = intMetadata(message, LumiMessageTokenMetadata.cacheTotalInputKey)
-            ?? intMetadata(message, LumiMessageTokenMetadata.inputKey)
+        let total = intMetadata(message, MessageTokenMetadata.cacheTotalInputKey)
+            ?? intMetadata(message, MessageTokenMetadata.inputKey)
             ?? 0
         guard total > 0 else { return nil }
 

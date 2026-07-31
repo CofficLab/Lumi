@@ -8,9 +8,9 @@ enum HttpErrorRenderer {
         canRender: { message in
             ZhipuRenderKind.matchesOtherHttpError(message)
         },
-        render: { message, showRawMessage in
+        render: { message in
             let statusCode = ZhipuRenderKind.httpStatusCode(from: message.renderKind)
-            HttpErrorView(message: message, statusCode: statusCode, showRawMessage: showRawMessage)
+            HttpErrorView(message: message, statusCode: statusCode)
         }
     )
 }

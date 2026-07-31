@@ -13,7 +13,7 @@ import os
 public final class PortManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.port-manager")
     nonisolated public static let emoji = "🔌"
-    nonisolated public static let verbose = true
+    nonisolated public static let verbose = false
 
     // MARK: - LumiPlugin
 

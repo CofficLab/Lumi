@@ -10,9 +10,9 @@ enum HttpErrorRenderer {
         canRender: { message in
             MiniMaxRenderKind.matchesOtherHttpError(message)
         },
-        render: { message, showRawMessage in
+        render: { message in
             let statusCode = MiniMaxRenderKind.httpStatusCode(from: message.renderKind)
-            HttpErrorView(message: message, statusCode: statusCode, showRawMessage: showRawMessage)
+            HttpErrorView(message: message, statusCode: statusCode)
         }
     )
 }

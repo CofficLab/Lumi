@@ -51,7 +51,7 @@ import GoalTaskPlugin
 import HostsManagerPlugin
 import IdleTimePlugin
 import InputPlugin
-import LayoutKernelPlugin
+import WorkspacePlugin
 import LegacyDataPlugin
 import LLMProviderAiRouterPlugin
 import LLMProviderAliyunPlugin
@@ -84,8 +84,9 @@ import MemoryPlugin
 import MenuBarManagerPlugin
 import MessageListPlugin
 import MessageRendererPlugin
+import MessageStreamingPlugin
+import MessageManagerPlugin
 import MessageSenderPlugin
-import MessageStorePlugin
 import ModelSelectorPlugin
 import NettoPlugin
 import NetworkManagerPlugin
@@ -110,7 +111,6 @@ import RClickPlugin
 import ConversationReasoningPlugin
 import RegistryManagerPlugin
 import SettingsPlugin
-import SharedUIPlugin
 import ShowImagePlugin
 import SkillPlugin
 import StoragePlugin
@@ -181,13 +181,13 @@ public enum PluginService {
             CodexLumiPlugin(),
             ZhipuPlugin(),
             // UI & Features
-            SharedUIPlugin(),
             ToolManagerPlugin(),
             ProjectsPlugin(),
-            LayoutKernelPlugin(),
+            WorkspacePlugin(),
             ConversationStorePlugin(),
-            MessageStorePlugin(),
+            MessageManagerPlugin(),
             MessageSenderPlugin(),
+            MessageStreamingPlugin(),
             AgentTurnRunnerPlugin(),
             MessageRendererPlugin(),
             ConversationTitlePlugin(),
