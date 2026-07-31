@@ -19,7 +19,10 @@ public struct ItemView: View {
     }
 
     public var body: some View {
-        AppListRow(isSelected: isSelected) {
+        AppListRow(isSelected: isSelected, action: {
+            self.isSelected = true
+            svc.selectConversation(id: conversation.id)
+        }) {
             content
         }
         .onAppear {
@@ -75,10 +78,6 @@ public struct ItemView: View {
             }
 
             Spacer()
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            svc.selectConversation(id: conversation.id)
         }
         .contextMenu {
             Button(role: .destructive) {
