@@ -52,6 +52,12 @@ extension LumiKernelContainer {
         resolveService(ConversationManaging.self)
     }
 
+    /// 同 `conversations`,作为 `ConversationManaging` 的简写访问器,
+    /// 便于 UI 层按职责命名(管理对话设置,包括 verbosity 等)。
+    public var conversationManager: (any ConversationManaging)? {
+        resolveService(ConversationManaging.self)
+    }
+
     /// Message management service
     public var messageManager: (any MessageManaging)? {
         resolveService(MessageManaging.self)
