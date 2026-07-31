@@ -25,7 +25,7 @@ import SuperLogKit
 public final class MessageSender: MessageSending, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-send-manager.service")
     public nonisolated static let emoji = "📤"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     @Published private var sendingConversationIDs: Set<UUID> = []
     @Published private var pendingMessageQueues: [UUID: [LumiPendingMessage]] = [:]

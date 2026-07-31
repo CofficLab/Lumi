@@ -12,7 +12,7 @@ import os
 @MainActor
 public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menubar-manager")
-    nonisolated public static let verbose = true
+    nonisolated public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.menubar-manager"
     public let name = "Menu Bar Manager"

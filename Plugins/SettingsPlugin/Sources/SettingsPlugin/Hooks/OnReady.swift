@@ -16,8 +16,6 @@ public struct SettingsOnReadyHook {
 
     /// 执行 onReady
     public func execute(_ kernel: LumiKernel) throws {
-        if Self.verbose {
-            Self.logger.info("Settings onReady (no-op, 服务已在 OnBoot 注册)")
-        }
+
     }
 }

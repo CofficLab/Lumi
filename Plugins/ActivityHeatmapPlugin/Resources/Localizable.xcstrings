@@ -38,6 +38,34 @@
     "%lld" : {
 
     },
+    "1K = 1,000" : {
+
+    },
+    "1M = 1,000,000" : {
+
+    },
+    "Active days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active days"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活跃天数"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活躍天數"
+          }
+        }
+      }
+    },
     "Activity" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -103,6 +131,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "活躍熱力圖"
+          }
+        }
+      }
+    },
+    "Activity intensity by time of day" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity intensity by time of day"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一天中各时段的活跃强度"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一天中各時段的活躍強度"
+          }
+        }
+      }
+    },
+    "Activity patterns and rest windows" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity patterns and rest windows"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活动模式与休息时间段"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活動模式與休息時段"
           }
         }
       }
@@ -205,6 +277,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "緩存歷史數據以便快速載入"
+          }
+        }
+      }
+    },
+    "Confidence" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confidence"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "置信度"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "信心度"
           }
         }
       }
@@ -449,6 +543,28 @@
         }
       }
     },
+    "Events" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Events"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事件数"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事件數"
+          }
+        }
+      }
+    },
     "Get instant insights: total messages, active days, current/longest streaks, weekday distribution, and peak activity days." : {
       "localizations" : {
         "en" : {
@@ -551,6 +667,28 @@
         }
       }
     },
+    "Idle Time" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idle Time"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空闲时间"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閒置時間"
+          }
+        }
+      }
+    },
     "Last 30 days" : {
       "localizations" : {
         "en" : {
@@ -649,6 +787,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最近一年"
+          }
+        }
+      }
+    },
+    "Learning" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "学习中"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "學習中"
           }
         }
       }
@@ -994,6 +1154,28 @@
         }
       }
     },
+    "Open Data Directory" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Data Directory"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开数据目录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟資料目錄"
+          }
+        }
+      }
+    },
     "Period" : {
       "localizations" : {
         "en" : {
@@ -1058,6 +1240,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "系統需求"
+          }
+        }
+      }
+    },
+    "Rest window" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest window"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "休息时间段"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "休息時段"
           }
         }
       }
@@ -1165,6 +1369,28 @@
         }
       }
     },
+    "This is the total number of tokens consumed during conversations within the selected time period." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is the total number of tokens consumed during conversations within the selected time period."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这是所选时间段内所有对话消耗的 Token 总数。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這是所選時間段內所有對話消耗的 Token 總數。"
+          }
+        }
+      }
+    },
     "Token Consumption Tracking" : {
       "localizations" : {
         "en" : {
@@ -1267,6 +1493,28 @@
         }
       }
     },
+    "Tokens include both input (your messages) and output (AI responses). Different models have different token pricing." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens include both input (your messages) and output (AI responses). Different models have different token pricing."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 包括输入（你的消息）和输出（AI 响应）。不同模型的 Token 定价不同。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 包括輸入（你的訊息）和輸出（AI 回應）。不同模型的 Token 定價不同。"
+          }
+        }
+      }
+    },
     "Tracks every message sent through Lumi conversations" : {
       "localizations" : {
         "en" : {
@@ -1335,102 +1583,70 @@
         }
       }
     },
-    "Activity intensity by time of day" : {
+    "What is Token Usage?" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Activity intensity by time of day" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "一天中各时段的活跃强度" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "一天中各時段的活躍強度" } }
-      }
-    },
-    "Activity patterns and rest windows" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Activity patterns and rest windows" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "活动模式与休息时间段" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "活動模式與休息時段" } }
-      }
-    },
-    "Active days" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Active days" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "活跃天数" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "活躍天數" } }
-      }
-    },
-    "Confidence" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Confidence" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "置信度" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "信心度" } }
-      }
-    },
-    "Events" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Events" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "事件数" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "事件數" } }
-      }
-    },
-    "Idle Time" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Idle Time" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "空闲时间" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "閒置時間" } }
-      }
-    },
-    "Learning" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Learning" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "学习中" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "學習中" } }
-      }
-    },
-    "Open Data Directory" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Data Directory" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开数据目录" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "開啟資料目錄" } }
-      }
-    },
-    "Rest window" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rest window" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "休息时间段" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "休息時段" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is Token Usage?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "什么是 Token 使用量？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "什麼是 Token 使用量？"
+          }
+        }
       }
     },
     "X: %@" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "X: %@" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "X：%@" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "X：%@" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "X: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "X：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "X：%@"
+          }
+        }
       }
     },
     "Y: %@ tokens" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Y: %@ tokens" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Y：%@ 个 Token" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "Y：%@ 個 Token" } }
-      }
-    },
-    "What is Token Usage?" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "What is Token Usage?" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "什么是 Token 使用量？" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "什麼是 Token 使用量？" } }
-      }
-    },
-    "This is the total number of tokens consumed during conversations within the selected time period." : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "This is the total number of tokens consumed during conversations within the selected time period." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "这是所选时间段内所有对话消耗的 Token 总数。" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "這是所選時間段內所有對話消耗的 Token 總數。" } }
-      }
-    },
-    "Tokens include both input (your messages) and output (AI responses). Different models have different token pricing." : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tokens include both input (your messages) and output (AI responses). Different models have different token pricing." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Token 包括输入（你的消息）和输出（AI 响应）。不同模型的 Token 定价不同。" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "Token 包括輸入（你的訊息）和輸出（AI 回應）。不同模型的 Token 定價不同。" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Y: %@ tokens"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Y：%@ 个 Token"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Y：%@ 個 Token"
+          }
+        }
       }
     }
   },

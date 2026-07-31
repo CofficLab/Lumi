@@ -11,7 +11,7 @@ import SwiftUI
 public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.device-info")
     public nonisolated static let emoji = "📊"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.device-info"
     public let name = "Device Info Plugin"

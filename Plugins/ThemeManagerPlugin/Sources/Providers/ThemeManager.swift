@@ -12,7 +12,7 @@ import os
 @MainActor
 public final class ThemeManager: UIThemeProviding {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.theme")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public let themeRegistry: LumiUIThemeRegistry
     private var themeSelectionStore: ThemeSelectionStore

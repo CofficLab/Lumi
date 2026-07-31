@@ -23,7 +23,7 @@ import os
 public struct ConversationLegacyMigration: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
     nonisolated public static let emoji = "💬"
-    static let verbose: Bool = true
+    static let verbose: Bool = false
 
     /// 迁移策略
     public enum MigrationPolicy {

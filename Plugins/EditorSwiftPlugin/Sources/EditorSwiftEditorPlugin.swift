@@ -1,5 +1,5 @@
-import os
 import LumiKernel
+import os
 
 /// Swift 插件日志辅助（插件内共享）
 public enum SwiftPluginLog {
@@ -17,15 +17,7 @@ public final class EditorSwiftEditorPlugin: EditorPlugin {
     public init() {}
 
     public func registerExtensions(into registrar: any EditorExtensionRegistrar) {
-        if SwiftPluginLog.verbose {
-            SwiftPluginLog.logger.info("开始注册编辑器扩展")
-        }
-
         registrar.registerLanguage(EditorSwiftPluginDescriptor.swift)
         registrar.registerGrammarProvider(EditorSwiftGrammarProvider())
-
-        if SwiftPluginLog.verbose {
-            SwiftPluginLog.logger.info("编辑器扩展注册完成")
-        }
     }
 }

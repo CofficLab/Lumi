@@ -9,7 +9,7 @@ import SwiftUI
 public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
     public nonisolated static let emoji = "📐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.layout"
     public let name = "Layout Plugin"

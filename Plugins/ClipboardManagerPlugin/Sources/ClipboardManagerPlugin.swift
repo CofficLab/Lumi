@@ -10,7 +10,7 @@ import SwiftUI
 public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.clipboard-manager")
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.clipboard-manager"
     public let name = "Clipboard Manager Plugin"

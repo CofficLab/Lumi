@@ -13,7 +13,7 @@ import SwiftUI
 public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-manager")
     public nonisolated static let emoji = "🔧"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.tool-manager"
     public let name = "ToolManager Plugin"

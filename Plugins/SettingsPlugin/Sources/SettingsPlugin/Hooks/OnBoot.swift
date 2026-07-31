@@ -18,10 +18,5 @@ public struct SettingsOnBootHook {
         // 1. 注册 SettingsService（内核服务）
         let settingsServiceInstance = DefaultSettingsProviding()
         try kernel.registerSettingsService(settingsServiceInstance)
-
-        if Self.verbose {
-            Self.logger.info("已注册 Settings 插件到内核")
-            Self.logger.info("Settings 插件启动完成")
-        }
     }
 }

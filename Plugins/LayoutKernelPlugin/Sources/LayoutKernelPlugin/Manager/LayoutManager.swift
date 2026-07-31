@@ -11,7 +11,7 @@ import SuperLogKit
 public final class LayoutManager: LayoutProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout.service")
     nonisolated public static let emoji = "📐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// 布局状态（用于视图绑定和运行时状态）
     public let layoutState: LayoutState

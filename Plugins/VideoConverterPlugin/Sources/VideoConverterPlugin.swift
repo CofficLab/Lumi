@@ -39,6 +39,8 @@ public final class VideoConverterPlugin: LumiPlugin, SuperLog {
                 systemImage: "video",
                 isRailVisible: false,
                 isChatVisible: false,
+                isContentVisible: true,
+                isPanelVisible: true,
                 isPanelHeaderVisible: false,
                 isPanelBottomVisible: false
             ) {

@@ -15,7 +15,7 @@ public actor ActivityHeatmapCache: SuperLog {
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.activity-heatmap.cache")
     public nonisolated static let emoji = "💾"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
 
     // MARK: - Properties
 

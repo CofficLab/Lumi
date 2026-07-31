@@ -24,7 +24,7 @@ import os
 public struct MessageLegacyMigration: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-store")
     nonisolated public static let emoji = "💬"
-    nonisolated(unsafe) static var verbose = true
+    nonisolated(unsafe) static var verbose = false
 
     /// 迁移策略(语义同 ConversationLegacyMigration)
     public enum MigrationPolicy {

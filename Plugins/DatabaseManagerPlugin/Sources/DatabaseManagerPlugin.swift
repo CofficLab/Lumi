@@ -35,7 +35,12 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
             ViewContainerItem(
                 id: "database-manager",
                 title: "Database",
-                systemImage: "cylinder.split.1x2"
+                systemImage: "cylinder.split.1x2",
+                isRailVisible: false,
+                isChatVisible: false,
+                isContentVisible: false,
+                isPanelVisible: true,
+                isPanelBottomVisible: false
             ) {
                 AnyView(DatabaseMainView())
             }

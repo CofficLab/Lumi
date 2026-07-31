@@ -10,7 +10,7 @@ import os
 @MainActor
 public struct ProjectsOnBootHook: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     nonisolated public static let emoji = "📂"
 
     public init() {}

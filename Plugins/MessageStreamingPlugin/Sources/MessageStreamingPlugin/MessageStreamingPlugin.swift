@@ -16,7 +16,7 @@ import SuperLogKit
 public final class MessageStreamingPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-streaming")
     public nonisolated static let emoji = "🌊"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - LumiPlugin
 
