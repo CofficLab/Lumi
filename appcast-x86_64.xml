@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.5.0</title>
-            <pubDate>Thu, 30 Jul 2026 08:56:36 +0000</pubDate>
-            <sparkle:version>508</sparkle:version>
-            <sparkle:shortVersionString>5.5.0</sparkle:shortVersionString>
+            <title>5.6.0</title>
+            <pubDate>Fri, 31 Jul 2026 16:50:55 +0000</pubDate>
+            <sparkle:version>509</sparkle:version>
+            <sparkle:shortVersionString>5.6.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.5.0</h2>
-<h3>Changes since v5.4.0</h3>
+            <description><![CDATA[<h2>Release v5.6.0</h2>
+<h3>Changes since v5.5.0</h3>
 <ul>
-<li>check working tree state</li>
-<li>docs: add Project RAG resource optimization plan</li>
-<li>feat: add indexing pause/resume functionality to RAG plugin</li>
-<li>feat: optimize RAG indexing scope and pause control</li>
-<li>feat: refactor conversation list tools and clean up unused code</li>
-<li>feat: schedule inactive project RAG indexing during idle time</li>
-<li>feat: update project implementation</li>
-<li>feat(agent-rules-plugin): register ListAgentRulesTool and CreateAgentRuleTool</li>
-<li>feat(AgentRulesPlugin): add settings view for managing agent rules</li>
-<li>feat(AgentRulesPlugin): show project rules in settings</li>
-<li>feat(EditorSwiftPlugin): add about view with feature highlights</li>
-<li>feat(idletime): add idle prediction api</li>
-<li>fix: Fix Activity Heatmap localization for Chinese</li>
-<li>fix(agent-temp-storage): remove duplicate RuntimeBridge and create missing LocalStore</li>
-<li>fix(Messages): scope updates and deduplicate history loads</li>
-<li>i18n(activity-heatmap): add missing Chinese translations for About view strings</li>
-<li>i18n(projects): add localization entries for 17 missing strings</li>
-<li>i18n(projects): add missing Chinese translations for settings view strings</li>
-<li>perf(RAG): defer inactive project indexing</li>
-<li>perf(UI): reduce startup and conversation list churn</li>
+<li>document:  update documentation</li>
+<li>feat: add VerbosityEnvironment extension and refine token plan UI</li>
+<li>feat: change NewChatButton to deselect conversation and add placeholder view</li>
+<li>feat(activity-heatmap): add info button for token usage explanation</li>
+<li>feat(agent-runner): stream assistant tokens via sendStreaming with throttled deltas</li>
+<li>feat(conversation): reassign empty conversations to the new project on switch</li>
+<li>feat(ConversationListPlugin): add multi-line display for conversation items</li>
+<li>feat(factory): adapt rail and bottom tabs to per-container API</li>
+<li>feat(kernel): add message-streaming lifecycle event and dispatcher</li>
+<li>feat(kernel): add MessageStreaming protocol and registration plumbing</li>
+<li>feat(layout-plugin): add read-only settings view for layout state</li>
+<li>feat(layout-plugin): persist rail tabs and visibility overrides with auto-save</li>
+<li>feat(layout): make rail tabs per-container and add visibility override system</li>
+<li>feat(llm-minimax): move response parsing to background task and add Sendable conformance</li>
+<li>feat(lumi): add ErrorView and show it when kernel.layoutManager is nil</li>
+<li>feat(LumiKernel): add conversationManager service accessor</li>
+<li>feat(LumiKernel): add coordinator skeleton for intra-kernel orchestration</li>
+<li>feat(message-list): render streaming assistant tokens as a live typewriter row</li>
+<li>feat(message-list): show a shimmering skeleton while messages load</li>
+<li>feat(message-managing): exclude tool messages from paging by default</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.5.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.5.0/Lumi_5.5.0_x86_64.dmg" length="41242526" type="application/octet-stream" sparkle:edSignature="65Wevy5BUe2CKIuRWRl1cmOQ27SHy2NTuB+GZo//uXPEuODq8a6wtheGCWdZpHzprBJmPaBbjlLioLBPUbSzDw=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.6.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.6.0/Lumi_5.6.0_x86_64.dmg" length="42105318" type="application/octet-stream" sparkle:edSignature="ZMz5FKL5Av2fosckX//yIwNsW6kMrV/HYD4fqPCp/u+R33Np3vmnfcFDkj3YXiRgr127aKe0jFom/G5HAjbqBQ=="/>
         </item>
     </channel>
 </rss>
