@@ -297,7 +297,7 @@ public final class BuiltinPluginManager: ObservableObject {
         let containers = kernel.workspace?.allViewContainers ?? []
         if let first = containers.first,
            let layoutService = kernel.workspace,
-           layoutService.layoutState.activeViewContainerID == nil {
+           layoutService.activeViewContainerID == nil {
             layoutService.layoutState.activeViewContainerID = first.id
         }
 
@@ -306,7 +306,7 @@ public final class BuiltinPluginManager: ObservableObject {
         // 此时容器还未注册，只能直接给 `activeViewContainerID` 赋值，绕过了
         // `activateContainer` → `onContainerActivated` 的可见性应用路径。
         // 因此启动/重建完成后必须在此处补一次 apply，否则 rail/chat 仍按默认值显示。
-        if let containerID = kernel.workspace?.layoutState.activeViewContainerID,
+        if let containerID = kernel.workspace?.activeViewContainerID,
            let container = kernel.workspace?.viewContainer(id: containerID) {
             kernel.workspace?.applyVisibility(
                 rail: container.isRailVisible,

@@ -11,7 +11,7 @@ struct ActivityBar: View {
     }
 
     private var activeID: String? {
-        kernel.workspace?.layoutState.activeViewContainerID
+        kernel.workspace?.activeViewContainerID
     }
 
     var body: some View {

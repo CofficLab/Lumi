@@ -29,8 +29,8 @@ public struct LayoutMenuButton: View {
             VStack(alignment: .leading, spacing: 0) {
                 LayoutPopoverToggle(
                     isOn: Binding(
-                        get: { layoutManager?.layoutState.isChatVisible ?? true },
-                        set: { layoutManager?.layoutState.setChatVisible($0) }
+                        get: { layoutManager?.isChatVisible ?? true },
+                        set: { layoutManager?.setChatVisible($0) }
                     ),
                     icon: "rectangle.rightthird.inset.filled",
                     title: LumiPluginLocalization.string("Right Sidebar")
@@ -41,8 +41,8 @@ public struct LayoutMenuButton: View {
 
                 LayoutPopoverToggle(
                     isOn: Binding(
-                        get: { layoutManager?.layoutState.isPanelVisible ?? true },
-                        set: { layoutManager?.layoutState.setPanelVisible($0) }
+                        get: { layoutManager?.isPanelVisible ?? true },
+                        set: { layoutManager?.setPanelVisible($0) }
                     ),
                     icon: "rectangle.inset.filled",
                     title: LumiPluginLocalization.string("Bottom Panel")

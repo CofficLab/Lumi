@@ -39,7 +39,7 @@ struct AppLayoutView: View {
                 AppDivider(.vertical)
 
                 Group {
-                    if layoutManager.layoutState.activeViewContainerID != nil {
+                    if layoutManager.activeViewContainerID != nil {
                         splitLayout(layoutManager)
                     } else {
                         WelcomeView()
@@ -72,15 +72,15 @@ struct AppLayoutView: View {
     // MARK: - Split Layout
 
     private func showRail(for layoutManager: any WorkspaceProviding) -> Bool {
-        isRailVisible && layoutManager.layoutState.activeViewContainerID != nil
+        isRailVisible && layoutManager.activeViewContainerID != nil
     }
 
     private func showChat(for layoutManager: any WorkspaceProviding) -> Bool {
-        isChatVisible && layoutManager.layoutState.activeViewContainerID != nil
+        isChatVisible && layoutManager.activeViewContainerID != nil
     }
 
     private func viewContainerID(for layoutManager: any WorkspaceProviding) -> String {
-        layoutManager.layoutState.activeViewContainerID ?? ""
+        layoutManager.activeViewContainerID ?? ""
     }
 
     @ViewBuilder

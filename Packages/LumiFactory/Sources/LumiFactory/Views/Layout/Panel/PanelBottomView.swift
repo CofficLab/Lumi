@@ -11,13 +11,9 @@ struct PanelBottomView: View {
     init(layoutManager: WorkspaceProviding) {
         self.layoutManager = layoutManager
     }
-
-    private var isVisible: Bool {
-        layoutManager.layoutState.isPanelBottomVisible
-    }
-
+    
     private var tabs: [PanelBottomTabItem] {
-        []
+        self.layoutManager.allPanelBottomTabItems
     }
 
     private var viewContainerID: String {
@@ -30,7 +26,7 @@ struct PanelBottomView: View {
     }
 
     var body: some View {
-        if isVisible {
+        if layoutManager.isPanelBottomVisible {
             VStack(spacing: 0) {
                 tabBar
                 AppDivider()

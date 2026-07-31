@@ -12,18 +12,10 @@ struct PanelHeaderView: View {
         self.layoutManager = layoutManager
     }
 
-    private var isVisible: Bool {
-        layoutManager.layoutState.isPanelHeaderVisible
-    }
-
-    private var items: [PanelHeaderItem] {
-        []
-    }
-
     var body: some View {
-        if isVisible {
+        if layoutManager.isPanelHeaderVisible {
             VStack(spacing: 0) {
-                ForEach(items) { item in
+                ForEach(self.layoutManager.allPanelHeaderItems) { item in
                     item.makeView()
                         .id(item.id)
                 }

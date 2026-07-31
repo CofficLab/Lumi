@@ -142,7 +142,7 @@ public final class LumiKernelContainer: ObservableObject {
         //    — 从 WorkspaceProviding 获取 activeViewContainerID,
         //    — 再从 WorkspaceProviding 获取该容器的 rail/chat/content/panel 可见性,
         //    — 最后更新到 WorkspaceProviding 的状态中。
-        if let containerID = workspace?.layoutState.activeViewContainerID,
+        if let containerID = workspace?.activeViewContainerID,
            let container = workspace?.viewContainer(id: containerID) {
             workspace?.applyVisibility(
                 rail: container.isRailVisible,
