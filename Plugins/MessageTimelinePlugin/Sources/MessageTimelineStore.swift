@@ -12,15 +12,14 @@ import LumiKernel
 /// - **行合并**:真实消息 + 流式临时行 + 发送中状态行,委托给
 ///   `MessageTimelineRowBuilder`;UI 只面对已准备好的 `displayRows`,
 ///   不再区分行的来源与类型。
-/// - **渲染分发**:`renderer(for:)` 与 `verbosity`,UI 不再接触
-///   `messageRendererManager` / `conversationManager`。
+/// - **verbosity**:UI 直接从 `kernel.conversationManager` 获取。
 ///
 /// 流式/发送服务的变化通过**窄播订阅**(直接订阅服务的 objectWillChange)
 /// 触发展示行重算,绕开 kernel 的全局 objectWillChange 广播 ——
 /// 流式期间 store 每个 token 都更新,若经 kernel 广播会拖慢整个 app。
 ///
 /// 本类型是**纯数据层**:不依赖 SwiftUI,行序列以 `LumiChatMessage` 为货币,
-/// 渲染器以 `LumiMessageRendererItem` 透出,最终 View 构造由 UI 层完成。
+/// 渲染器由 UI 层直接从 `kernel.messageRendererManager` 获取。
 ///
 /// - SeeAlso: `MessageTimelinePaginationService`(分页策略)、
 ///   `MessageTimelineRowBuilder`(行合并规则)。
@@ -79,10 +78,6 @@ public final class MessageTimelineStore: MessageTimelineProviding {
     public var verbosity: LumiResponseVerbosity {
         kernel.conversationManager?
             .verbosity(for: selectedConversationID) ?? .defaultVerbosity
-    }
-
-    public func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem? {
-        kernel.messageRendererManager?.renderer(for: message)
     }
 
     // MARK: - Lifecycle

@@ -7,9 +7,13 @@ import SwiftUI
 /// `verbosity` 由 `MessageListView` 计算并显式传入，再由 `LumiMessageRendererItem.render`
 /// 闭包转发给具体视图。
 struct MessageRowView: View {
+    let kernel: LumiKernel
     let message: LumiChatMessage
-    let renderer: LumiMessageRendererItem?
     let verbosity: LumiResponseVerbosity
+
+    private var renderer: LumiMessageRendererItem? {
+        kernel.messageRendererManager?.renderer(for: message)
+    }
 
     var body: some View {
         Group {

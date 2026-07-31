@@ -123,8 +123,8 @@ private struct MessageListContentView: View {
 
                         ForEach(timeline.displayRows) { message in
                             MessageRowView(
+                                kernel: kernel,
                                 message: message,
-                                renderer: timeline.renderer(for: message),
                                 verbosity: timeline.verbosity
                             )
                             .id(message.id)

@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 /// 消息时间线数据源
@@ -10,8 +9,9 @@ import Foundation
 ///   `displayRows` 已是最终序列,不区分来源、不关心消息类型。
 /// - **分页数据策略**:首屏加载 / 向上翻页 / 尾部刷新 / 窗口回收,
 ///   UI 只通过 `activate` / `loadEarlier` / `refreshTail` 触发。
-/// - **渲染器分发**:`renderer(for:)` 按消息匹配渲染器并附带当前会话的
-///   `verbosity`;UI 拿到渲染器只做最终 `render()` 调用。
+/// - **渲染器分发**:UI 直接持有 `kernel`,自行从
+///   `kernel.messageRendererManager?.renderer(for:)` 获取渲染器并附带当前会话的
+///   `verbosity`;渲染器分发逻辑无需进入数据层。
 /// - **流式高频更新**:实现内部自行窄播订阅 streaming/sender 服务,
 ///   绕开 kernel 全局广播;本服务注册时同样不转发 objectWillChange
 ///   (见 `registerMessageTimelineProvider`),消费方用
@@ -57,7 +57,4 @@ public protocol MessageTimelineProviding: ObservableObject where ObjectWillChang
 
     /// 尾部刷新:重新查最近一页覆盖尾部(新消息到达 / 流式落库)。
     func refreshTail() async
-
-    /// 查找可渲染指定消息的渲染器;`nil` 表示无匹配(UI 应显示占位)。
-    func renderer(for message: LumiChatMessage) -> LumiMessageRendererItem?
 }
