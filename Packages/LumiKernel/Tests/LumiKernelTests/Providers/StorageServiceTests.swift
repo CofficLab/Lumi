@@ -2,55 +2,26 @@ import Foundation
 @testable import LumiKernel
 import Testing
 
-@Suite("Storage Service Tests")
+/// `StorageProviding` 的内核契约测试。
+///
+/// 模块对应:`Sources/LumiKernel/Providers/StorageProviding.swift`。
+/// 验证注册/解析 + 目录计算。
+@Suite("StorageProviding")
 @MainActor
 struct StorageServiceTests {
-
-    @Test("Storage service registration and usage")
-    func testStorageService() async throws {
-        // 1. 创建核心
-        let kernel = LumiKernel()
-
-        // 2. 准备测试数据目录
+    @Test("注册后可解析,plugin/core 目录按 id/固定名计算")
+    func registerAndResolve() async throws {
+        let kernel = KernelTestKit.makeKernel()
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("LumiTest", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
 
-        // 3. 创建并注册存储服务
-        let storage = StorageService(dataRootDirectory: tempDir)
+        let storage = MockStorageProviding(dataRootDirectory: tempDir)
         try kernel.registerStorage(storage)
 
-        // 4. 验证服务可用
         let resolved = kernel.storage
         #expect(resolved != nil)
-
-        // 5. 测试功能
-        let pluginDir = resolved!.pluginDataDirectory(for: "test-plugin")
-        #expect(pluginDir.path.contains("test-plugin"))
-
-        let coreDir = resolved!.coreDataDirectory()
-        #expect(coreDir.path.contains("Core"))
-
-        // 6. 清理
-        try? FileManager.default.removeItem(at: tempDir)
-    }
-}
-
-// MARK: - Test Implementation
-
-/// 测试用的存储服务实现
-@MainActor
-private final class StorageService: StorageProviding {
-    public let dataRootDirectory: URL
-
-    public init(dataRootDirectory: URL) {
-        self.dataRootDirectory = dataRootDirectory
-    }
-
-    public func pluginDataDirectory(for pluginID: String) -> URL {
-        dataRootDirectory.appendingPathComponent("Plugins/\(pluginID)")
-    }
-
-    public func coreDataDirectory() -> URL {
-        dataRootDirectory.appendingPathComponent("Core")
+        #expect(resolved!.pluginDataDirectory(for: "test-plugin").path.contains("test-plugin"))
+        #expect(resolved!.coreDataDirectory().path.contains("Core"))
     }
 }

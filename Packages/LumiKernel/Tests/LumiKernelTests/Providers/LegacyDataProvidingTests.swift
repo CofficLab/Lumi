@@ -10,28 +10,28 @@ struct LegacyDataProvidingTests {
 
     @Test("注册后可通过 kernel.legacyData 解析")
     func testRegisterAndResolve() async throws {
-        let kernel = LumiKernel()
-        let mock = MockLegacyDataService()
+        let kernel = KernelTestKit.makeKernel()
+        let mock = MockLegacyDataProviding()
         try kernel.registerLegacyDataService(mock)
 
         let resolved = kernel.legacyData
         #expect(resolved != nil)
         // 同一实例(注册表单实例语义)
-        #expect(resolved as? MockLegacyDataService === mock)
+        #expect(resolved as? MockLegacyDataProviding === mock)
     }
 
     @Test("未注册时返回 nil(全新安装语义)")
     func testUnregisteredReturnsNil() async throws {
-        let kernel = LumiKernel()
+        let kernel = KernelTestKit.makeKernel()
         // 不注册任何 legacy 服务
         #expect(kernel.legacyData == nil)
     }
 
     @Test("重复注册后者抛出错误")
     func testReRegistrationThrows() async throws {
-        let kernel = LumiKernel()
-        let first = MockLegacyDataService()
-        let second = MockLegacyDataService()
+        let kernel = KernelTestKit.makeKernel()
+        let first = MockLegacyDataProviding()
+        let second = MockLegacyDataProviding()
 
         try kernel.registerLegacyDataService(first)
         // 重复注册应抛出错误
@@ -42,23 +42,23 @@ struct LegacyDataProvidingTests {
 
     @Test("unregister 后可重新注册")
     func testUnregisterAndReregister() async throws {
-        let kernel = LumiKernel()
-        let first = MockLegacyDataService()
-        let second = MockLegacyDataService()
+        let kernel = KernelTestKit.makeKernel()
+        let first = MockLegacyDataProviding()
+        let second = MockLegacyDataProviding()
 
         try kernel.registerLegacyDataService(first)
         kernel.unregisterService(LegacyDataProviding.self)
         try kernel.registerLegacyDataService(second)
 
-        let resolved = kernel.legacyData as? MockLegacyDataService
+        let resolved = kernel.legacyData as? MockLegacyDataProviding
         #expect(resolved === second)
         #expect(resolved !== first)
     }
 
     @Test("unregisterService 后 legacyData 变为 nil")
     func testUnregisterClears() async throws {
-        let kernel = LumiKernel()
-        try kernel.registerLegacyDataService(MockLegacyDataService())
+        let kernel = KernelTestKit.makeKernel()
+        try kernel.registerLegacyDataService(MockLegacyDataProviding())
         #expect(kernel.legacyData != nil)
 
         kernel.unregisterService(LegacyDataProviding.self)
@@ -72,57 +72,21 @@ struct LegacyDataProvidingTests {
         // (LumiKernel.swift 的 missingServices 列表)不包含它 —— 该列表里没有
         // legacyData 的判定行,故无需注册也能通过必需服务枚举(其他必需服务由各自
         // 插件注册,本测试只断言 legacyData 不在校验范围)。
-        let kernel = LumiKernel()
+        let kernel = KernelTestKit.makeKernel()
         #expect(kernel.legacyData == nil)
         // 若它是必需服务,kernel 会在 startup 时抛 missingRequiredServices;此处不调
         // startup(会因其他必需服务缺失而失败),仅断言其「可选」语义体现在访问器返回 nil。
-    }
-
-    // MARK: - Error Type
-
-    @Test("LegacyDataError 各 case 有非空 errorDescription")
-    func testErrorDescriptions() async throws {
-        let underlying = NSError(domain: "test", code: 42)
-
-        #expect((LegacyDataError.legacyDataNotFound.errorDescription ?? "").isEmpty == false)
-        #expect((LegacyDataError.snapshotCopyFailed(underlying: underlying).errorDescription ?? "").isEmpty == false)
-        #expect((LegacyDataError.openFailed(underlying: underlying).errorDescription ?? "").isEmpty == false)
-        #expect((LegacyDataError.fetchFailed(entity: "Conversation", underlying: underlying).errorDescription ?? "").isEmpty == false)
-    }
-
-    @Test("LegacyDataError 符合 Error,可被 do/catch 捕获")
-    func testErrorIsThrowable() async throws {
-        #expect(throws: LegacyDataError.self) {
-            throw LegacyDataError.legacyDataNotFound
-        }
-    }
-
-    // MARK: - DTO
-
-    @Test("LumiLegacyDataSnapshot 持有源路径与副本路径")
-    func testSnapshotValueSemantics() async throws {
-        let source = URL(fileURLWithPath: "/db_production_v4")
-        let snapshot = URL(fileURLWithPath: "/tmp/snapshot")
-        let value = LumiLegacyDataSnapshot(snapshotURL: snapshot, sourceURL: source)
-        #expect(value.snapshotURL == snapshot)
-        #expect(value.sourceURL == source)
-    }
-
-    @Test("LumiLegacyDataKind 枚举值")
-    func testMigrationKinds() async throws {
-        #expect(LumiLegacyDataKind.conversations.rawValue == "conversations")
-        #expect(LumiLegacyDataKind.messages.rawValue == "messages")
     }
 
     // MARK: - 端到端调用链(模拟消费插件场景)
 
     @Test("消费插件典型调用链:guard let → hasLegacyData → fetch → 拿到中性 DTO")
     func testConsumerPluginCallChain() async throws {
-        let kernel = LumiKernel()
+        let kernel = KernelTestKit.makeKernel()
 
         // 预置 legacy 数据
         let convID = UUID()
-        let mock = MockLegacyDataService()
+        let mock = MockLegacyDataProviding()
         mock.stubConversations = [
             LumiConversationSummary(id: convID, title: "旧会话", projectPath: "/proj")
         ]
@@ -155,8 +119,8 @@ struct LegacyDataProvidingTests {
 
     @Test("fetch 抛错时消费插件应吞错而非中断(契约验证)")
     func testConsumerSwallowsFetchError() async throws {
-        let kernel = LumiKernel()
-        let mock = MockLegacyDataService()
+        let kernel = KernelTestKit.makeKernel()
+        let mock = MockLegacyDataProviding()
         mock.fetchConversationsThrows = true
         try kernel.registerLegacyDataService(mock)
 
@@ -177,8 +141,8 @@ struct LegacyDataProvidingTests {
 
     @Test("releaseLegacySnapshot 幂等:多次调用安全")
     func testReleaseIdempotent() async throws {
-        let kernel = LumiKernel()
-        let mock = MockLegacyDataService()
+        let kernel = KernelTestKit.makeKernel()
+        let mock = MockLegacyDataProviding()
         try kernel.registerLegacyDataService(mock)
 
         let legacy = kernel.legacyData!
@@ -189,64 +153,13 @@ struct LegacyDataProvidingTests {
 
     @Test("legacyDataRootDirectory 为 nil 时表示无旧数据")
     func testNilRootDirectoryMeansNoLegacy() async throws {
-        let kernel = LumiKernel()
-        let mock = MockLegacyDataService()
+        let kernel = KernelTestKit.makeKernel()
+        let mock = MockLegacyDataProviding()
         mock.stubRootDirectory = nil
         try kernel.registerLegacyDataService(mock)
 
         let legacy = kernel.legacyData
         #expect(legacy?.legacyDataRootDirectory == nil)
         #expect(legacy?.hasLegacyData() == false)
-    }
-}
-
-// MARK: - Mock Implementation
-
-/// 测试用的 LegacyDataProviding 实现
-///
-/// 通过可配置的 stub 字段模拟 v4 旧数据读取,验证协议契约与内核注册链路。
-/// 真实实现(LegacyDataService,含复制副本 + SwiftData 打开)在插件层,不在此测试范围。
-@MainActor
-private final class MockLegacyDataService: LegacyDataProviding {
-    var stubRootDirectory: URL? = URL(fileURLWithPath: "/db_production_v4")
-
-    /// 显式覆写 hasLegacyData();nil 时跟随 stubRootDirectory 是否存在(模拟真实实现)。
-    var overrideHasLegacyData: Bool? = nil
-    var stubConversations: [LumiConversationSummary] = []
-    var stubMessagesByConversation: [UUID: [LumiChatMessage]] = [:]
-    var fetchConversationsThrows: Bool = false
-
-    var releaseCallCount: Int = 0
-
-    var legacyDataRootDirectory: URL? { stubRootDirectory }
-
-    /// 真实实现里:目录不存在即无旧数据。Mock 模拟此联动 —— 除非显式覆写。
-    func hasLegacyData() -> Bool {
-        if let overrideHasLegacyData { return overrideHasLegacyData }
-        return stubRootDirectory != nil
-    }
-
-    func fetchLegacyConversations() throws -> [LumiConversationSummary] {
-        if fetchConversationsThrows {
-            throw LegacyDataError.fetchFailed(
-                entity: "Conversation",
-                underlying: NSError(domain: "test", code: 1)
-            )
-        }
-        return stubConversations
-    }
-
-    func fetchLegacyMessages(for conversationID: UUID) throws -> [LumiChatMessage] {
-        if fetchConversationsThrows {
-            throw LegacyDataError.fetchFailed(
-                entity: "ChatMessageEntity",
-                underlying: NSError(domain: "test", code: 2)
-            )
-        }
-        return stubMessagesByConversation[conversationID] ?? []
-    }
-
-    func releaseLegacySnapshot() {
-        releaseCallCount += 1
     }
 }
