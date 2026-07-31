@@ -5,51 +5,12 @@ import SwiftUI
 /// Message List View
 ///
 /// 纯展示组件:只负责**展示、滚动、分页触发**。
-/// 行序列的合并(流式临时行 / 状态行)、分页数据加载、渲染器分发、详细程度等
-/// "消息知识"全部由内核数据源 `MessageTimelineProviding` 承担 —— 本视图只面对
-/// 已准备好的 `timeline.displayRows` 行序列,不区分行的类型与来源。
-///
-/// 结构:`kernel.messageTimeline` 是协议存在类型且高频变更不转发 kernel 广播,
-/// 先用 `ObservableMessageTimelineBox` 桥接(窄播精确订阅),再交给内层内容视图。
+/// 行序列的合并(流式临时行 / 状态行)、分页数据加载、详细程度等"消息知识"
+/// 全部由自带 viewmodel `MessageListViewModel` 承担 —— 本视图只面对已准备好的
+/// `viewModel.displayRows` 行序列,不区分行的类型与来源。
 struct MessageListView: View {
     @ObservedObject var kernel: LumiKernel
-    @StateObject private var boxHolder = BoxHolder()
-
-    var body: some View {
-        if let timeline = kernel.messageTimeline {
-            MessageListContentView(
-                kernel: kernel,
-                box: boxHolder.box(for: timeline)
-            )
-        } else {
-            // 数据源未注册(kernel 启动未完成):显示 loading,优雅降级。
-            MessageLoadingView()
-        }
-    }
-}
-
-/// 持有当前 timeline 对应的 box;service 实例变化时重建。
-///
-/// 与 `AttachmentPreviewResolverView.BoxHolder` 同理:只在 body 内被调用,
-/// 不能在此发布 objectWillChange;父视图的重渲染由 `kernel` 驱动。
-@MainActor
-private final class BoxHolder: ObservableObject {
-    private(set) var box: ObservableMessageTimelineBox?
-
-    func box(for timeline: any MessageTimelineProviding) -> ObservableMessageTimelineBox {
-        if let existing = box, existing.service as AnyObject === timeline as AnyObject {
-            return existing
-        }
-        let new = ObservableMessageTimelineBox(service: timeline)
-        box = new
-        return new
-    }
-}
-
-/// 消息列表内容视图:展示 + 滚动 + 分页触发,数据源通过 `box.service` 窄播订阅。
-private struct MessageListContentView: View {
-    @ObservedObject var kernel: LumiKernel
-    @ObservedObject var box: ObservableMessageTimelineBox
+    @StateObject private var viewModel: MessageListViewModel
 
     @LumiTheme private var theme
 
@@ -60,7 +21,10 @@ private struct MessageListContentView: View {
 
     private let scrollCoordinator = MessageListScrollCoordinator()
 
-    private var timeline: any MessageTimelineProviding { box.service }
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        _viewModel = StateObject(wrappedValue: MessageListViewModel(kernel: kernel))
+    }
 
     private var selectedConversationID: UUID? {
         kernel.conversations?.selectedConversationID
@@ -70,9 +34,9 @@ private struct MessageListContentView: View {
         Group {
             if selectedConversationID == nil {
                 NoConversationSelectedView()
-            } else if timeline.isLoading {
+            } else if viewModel.isLoading {
                 MessageLoadingView()
-            } else if !timeline.hasPersistedMessages {
+            } else if !viewModel.hasPersistedMessages {
                 MessageEmptyStateView()
             } else {
                 messageScrollView
@@ -81,9 +45,9 @@ private struct MessageListContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
         .task(id: selectedConversationID) {
-            // 切换会话:重置滚动位置,通知数据源加载最近一页。
+            // 切换会话:重置滚动位置,通知 viewmodel 加载最近一页。
             isAtBottom = true
-            await timeline.activate(conversationID: selectedConversationID)
+            await viewModel.activate(conversationID: selectedConversationID)
         }
     }
 
@@ -104,11 +68,11 @@ private struct MessageListContentView: View {
                     // 一次性渲染几十行无压力,无需 LazyVStack 惰性化。
                     VStack(spacing: 0) {
                         // 顶部"加载更早消息":仅在还有更早消息时显示。
-                        if timeline.hasEarlierMessages {
+                        if viewModel.hasEarlierMessages {
                             Button {
                                 Task { await loadEarlier(proxy: proxy) }
                             } label: {
-                                if timeline.isLoadingEarlier {
+                                if viewModel.isLoadingEarlier {
                                     ProgressView().controlSize(.small)
                                 } else {
                                     Text("Load earlier messages")
@@ -121,11 +85,11 @@ private struct MessageListContentView: View {
                             .padding(.vertical, 8)
                         }
 
-                        ForEach(timeline.displayRows) { message in
+                        ForEach(viewModel.displayRows) { message in
                             MessageRowView(
                                 kernel: kernel,
                                 message: message,
-                                verbosity: timeline.verbosity
+                                verbosity: viewModel.verbosity
                             )
                             .id(message.id)
                             .padding(.horizontal, 6)
@@ -155,26 +119,26 @@ private struct MessageListContentView: View {
                     // 首屏数据就绪后,滚到最底部(无动画)。
                     scrollCoordinator.scrollToBottom(
                         proxy: proxy,
-                        messages: timeline.displayRows,
+                        messages: viewModel.displayRows,
                         animated: false
                     )
                 }
                 .onLumiMessagesDidChange {
-                    // 尾部新消息/流式落库:通知数据源刷新尾部;若用户在底部则滚到底。
+                    // 尾部新消息/流式落库:通知 viewmodel 刷新尾部;若用户在底部则滚到底。
                     Task {
                         let wasAtBottom = isAtBottom
-                        await timeline.refreshTail()
+                        await viewModel.refreshTail()
                         if wasAtBottom {
                             await scrollCoordinator.scrollToBottomAfterLayout(
                                 proxy: proxy,
-                                messages: timeline.displayRows
+                                messages: viewModel.displayRows
                             )
                         }
                     }
                 }
                 // 流式跟随滚动:流式行内容变化时,
                 // 若用户停在底部则跟随滚到底(无动画,避免高频 delta 抖动)。
-                .onChange(of: timeline.tailStreamingContent) { _ in
+                .onChange(of: viewModel.tailStreamingContent) { _ in
                     if isAtBottom {
                         proxy.scrollTo(MessageListScrollCoordinator.bottomAnchorID, anchor: .bottom)
                     }
@@ -200,9 +164,9 @@ private struct MessageListContentView: View {
     // MARK: - Pagination Trigger
 
     /// 向上翻页:View 只负责触发加载并把锚点行钉回视口顶部,
-    /// 数据加载与窗口回收由数据源完成。
+    /// 数据加载与窗口回收由 viewmodel 完成。
     private func loadEarlier(proxy: ScrollViewProxy) async {
-        guard let anchorID = await timeline.loadEarlier(isAtBottom: isAtBottom) else { return }
+        guard let anchorID = await viewModel.loadEarlier(isAtBottom: isAtBottom) else { return }
         await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
     }
 }
