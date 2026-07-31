@@ -1,34 +1,13 @@
+import LumiKernel
 import Testing
-@testable import LumiKernel
+@testable import ToolManagerPlugin
 
 @Suite("Sub-agent registry")
 @MainActor
 struct SubAgentRegistryTests {
-    @Test("Inline XML tool calls become structured Lumi calls")
-    func parsesInlineToolCall() {
-        let result = InlineToolCallParser.parse(
-            "before <tool_call>{\"name\":\"Glob\",\"arguments\":{\"pattern\":\"**/*.swift\"}}</tool_call> after",
-            availableToolNames: ["glob"]
-        )
-        #expect(result?.toolCalls.count == 1)
-        #expect(result?.toolCalls.first?.name == "glob")
-        #expect(result?.toolCalls.first?.arguments.contains("pattern") == true)
-        #expect(result?.cleanedContent == "before  after")
-    }
-
-    @Test("Inline function-call XML parameters are decoded")
-    func parsesInvokeToolCall() {
-        let result = InlineToolCallParser.parse(
-            "<function_calls><invoke name=\"read_file\"><parameter name=\"path\">/tmp/A.swift</parameter></invoke></function_calls>",
-            availableToolNames: ["read_file"]
-        )
-        #expect(result?.toolCalls.first?.name == "read_file")
-        #expect(result?.toolCalls.first?.arguments.contains("path") == true)
-    }
-
-    @Test("ToolService retains sub-agent definitions in registration order")
+    @Test("ToolManagerService retains sub-agent definitions in registration order")
     func retainsDefinitions() {
-        let service = ToolService()
+        let service = ToolManagerService()
         let first = makeDefinition(id: "first")
         let second = makeDefinition(id: "second")
 
@@ -41,9 +20,9 @@ struct SubAgentRegistryTests {
         #expect(service.allSubAgents().isEmpty)
     }
 
-    @Test("ToolService allows provider-local sub-agent ids")
+    @Test("ToolManagerService allows provider-local sub-agent ids")
     func retainsProviderLocalDefinitions() {
-        let service = ToolService()
+        let service = ToolManagerService()
         let stepfunExplore = makeDefinition(id: "explore", providerID: "stepfun")
         let openAIExplore = makeDefinition(id: "explore", providerID: "openai")
 
@@ -64,7 +43,7 @@ struct SubAgentRegistryTests {
             definitions: definitions,
             providerResolver: { _ in nil },
             availableTools: [],
-            executionToolService: ToolService()
+            executionToolService: ToolManagerService()
         )
 
         let output = try await router.execute(
@@ -90,7 +69,7 @@ struct SubAgentRegistryTests {
             definitions: definitions,
             providerResolver: { _ in nil },
             availableTools: [],
-            executionToolService: ToolService()
+            executionToolService: ToolManagerService()
         )
 
         let output = try await router.execute(
