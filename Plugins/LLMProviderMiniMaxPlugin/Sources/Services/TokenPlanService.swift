@@ -99,9 +99,11 @@ enum TokenPlanService: SuperLog {
             return .unavailable
         }
 
-        if let businessStatusCode = json["status_code"] as? Int, businessStatusCode != 0 {
-            let baseResp = json["base_resp"] as? [String: Any]
-            let errorMessage = baseResp?["message"] as? String ?? "未知错误"
+        // 解析 base_resp 中的状态码和消息
+        let baseResp = json["base_resp"] as? [String: Any]
+        let businessStatusCode = baseResp?["status_code"] as? Int ?? 0
+        if businessStatusCode != 0 {
+            let errorMessage = baseResp?["status_msg"] as? String ?? "未知错误"
             if businessStatusCode == 1001 || businessStatusCode == 1002 {
                 if Self.verbose { Self.logger.warning("\(Self.t)业务状态码=\(businessStatusCode)，返回认证失败 message=\(errorMessage)") }
                 return .authError
@@ -120,9 +122,19 @@ enum TokenPlanService: SuperLog {
             return TokenPlanData(
                 modelName: modelName,
                 remainingPercent: item["current_interval_remaining_percent"] as? Int ?? 0,
-                weeklyRemainingPercent: item["current_weekly_remaining_percent"] as? Int ?? 0,
+                intervalStatus: item["current_interval_status"] as? Int ?? 0,
                 intervalTotal: item["current_interval_total_count"] as? Int ?? 0,
-                intervalUsage: item["current_interval_usage_count"] as? Int ?? 0
+                intervalUsage: item["current_interval_usage_count"] as? Int ?? 0,
+                startTime: item["start_time"] as? Int64 ?? 0,
+                endTime: item["end_time"] as? Int64 ?? 0,
+                remainsTime: (item["remains_time"] as? Int64 ?? 0) / 1000,
+                weeklyRemainingPercent: item["current_weekly_remaining_percent"] as? Int ?? 0,
+                weeklyStatus: item["current_weekly_status"] as? Int ?? 0,
+                weeklyTotal: item["current_weekly_total_count"] as? Int ?? 0,
+                weeklyUsage: item["current_weekly_usage_count"] as? Int ?? 0,
+                weeklyStartTime: item["weekly_start_time"] as? Int64 ?? 0,
+                weeklyEndTime: item["weekly_end_time"] as? Int64 ?? 0,
+                weeklyRemainsTime: (item["weekly_remains_time"] as? Int64 ?? 0) / 1000
             )
         }
 
