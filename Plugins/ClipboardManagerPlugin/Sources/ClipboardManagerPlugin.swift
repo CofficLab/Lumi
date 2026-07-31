@@ -5,10 +5,7 @@ import os
 import SuperLogKit
 import SwiftUI
 
-/// Clipboard Manager 内核插件
-///
-/// 向 LumiKernel 注册剪贴板管理相关的功能：
-/// - ViewContainer：剪贴板历史视图
+/// Clipboard Manager 插件
 @MainActor
 public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.clipboard-manager")
@@ -38,7 +35,8 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
                 isChatVisible: false,
                 isContentVisible: true,
                 isPanelVisible: true,
-                isPanelHeaderVisible: false
+                isPanelHeaderVisible: false,
+                isPanelBottomVisible: false
             ) {
                 ClipboardHistoryView()
             },
