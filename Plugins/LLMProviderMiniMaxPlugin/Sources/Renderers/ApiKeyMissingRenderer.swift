@@ -10,8 +10,8 @@ enum ApiKeyMissingRenderer {
         canRender: { message in
             MiniMaxRenderKind.matchesApiKeyMissing(message)
         },
-        render: { message, showRawMessage in
-            ApiKeyMissingView(message: message, showRawMessage: showRawMessage)
+        render: { message in
+            ApiKeyMissingView(message: message)
         }
     )
 }

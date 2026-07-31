@@ -10,8 +10,8 @@ enum Http403Renderer {
         canRender: { message in
             MiniMaxRenderKind.matchesHttp(statusCode: 403, message: message)
         },
-        render: { message, showRawMessage in
-            HttpErrorView(message: message, statusCode: 403, showRawMessage: showRawMessage)
+        render: { message in
+            HttpErrorView(message: message, statusCode: 403)
         }
     )
 }

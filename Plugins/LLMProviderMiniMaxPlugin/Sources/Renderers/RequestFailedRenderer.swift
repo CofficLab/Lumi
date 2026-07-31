@@ -10,8 +10,8 @@ enum RequestFailedRenderer {
         canRender: { message in
             MiniMaxRenderKind.matches(renderKind: MiniMaxRenderKind.requestFailed, message: message)
         },
-        render: { message, showRawMessage in
-            HttpErrorView(message: message, statusCode: nil, showRawMessage: showRawMessage)
+        render: { message in
+            HttpErrorView(message: message, statusCode: nil)
         }
     )
 }
