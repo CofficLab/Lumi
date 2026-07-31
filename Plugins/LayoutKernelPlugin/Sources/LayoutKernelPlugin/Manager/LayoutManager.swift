@@ -110,12 +110,14 @@ public final class LayoutManager: LayoutProviding, SuperLog {
             Self.logger.info("\(Self.t)saveState: activeViewContainerID=\(info.activeViewContainerID ?? "nil"), railTabs=\(info.activeRailTabIDs.count), bottomTabs=\(info.activeBottomTabIDs.count), visibilityOverrides=\(info.visibilityOverrides.count)")
         }
     }
+
     public func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?) {
         if Self.verbose {
             Self.logger.info("\(Self.t)applyVisibility(rail: \(rail.map { String($0) } ?? "-"), chat: \(chat.map { String($0) } ?? "-"), content: \(content.map { String($0) } ?? "-"), panel: \(panel.map { String($0) } ?? "-"))")
         }
         layoutState.applyVisibility(rail: rail, chat: chat, content: content, panel: panel)
     }
+
     public func addContainerObserver(_ observer: @escaping (String) -> Void) {
         layoutState.addContainerObserver(observer)
     }
@@ -131,11 +133,17 @@ public final class LayoutManager: LayoutProviding, SuperLog {
 
     public var activeViewContainerID: String? { layoutState.activeViewContainerID }
 
+    public var currentViewContainer: ViewContainerItem? {
+        guard let id = activeViewContainerID else { return nil }
+        return viewContainer(id: id)
+    }
+
     // MARK: - Rail Tabs
 
     public func activeRailTabID(for viewContainerID: String) -> String {
         layoutState.activeRailTabID(for: viewContainerID)
     }
+
     public func presentRailTab(id: String, for viewContainerID: String) {
         layoutState.presentRailTab(id: id, for: viewContainerID)
     }
@@ -143,9 +151,11 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     // MARK: - Bottom Panel
 
     public var bottomPanelVisible: Bool { layoutState.bottomPanelVisible }
+
     public func activeBottomTabID(for viewContainerID: String) -> String {
         layoutState.activeBottomTabID(for: viewContainerID)
     }
+
     public func presentBottomTab(id: String, viewContainerID: String) {
         layoutState.presentBottomTab(id: id, viewContainerID: viewContainerID)
     }
@@ -155,6 +165,7 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     public func railDivider(for viewContainerID: String, fallback: CGFloat?) -> CGFloat {
         layoutState.railDivider(for: viewContainerID, fallback: fallback)
     }
+
     public func setRailDivider(_ position: CGFloat, for viewContainerID: String) {
         layoutState.setRailDivider(position, for: viewContainerID)
     }
@@ -162,6 +173,7 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     public func chatSectionDivider(for viewContainerID: String, layout: LumiChatSectionLayout, fallback: CGFloat?) -> CGFloat {
         layoutState.chatSectionDivider(for: viewContainerID, layout: layout, fallback: fallback)
     }
+
     public func setChatSectionDivider(_ position: CGFloat, for viewContainerID: String, layout: LumiChatSectionLayout) {
         layoutState.setChatSectionDivider(position, for: viewContainerID, layout: layout)
     }
@@ -169,6 +181,7 @@ public final class LayoutManager: LayoutProviding, SuperLog {
     public func bottomPanelDivider(for viewContainerID: String, fallback: CGFloat?) -> CGFloat {
         layoutState.bottomPanelDivider(for: viewContainerID, fallback: fallback)
     }
+
     public func setBottomPanelDivider(_ position: CGFloat, for viewContainerID: String) {
         layoutState.setBottomPanelDivider(position, for: viewContainerID)
     }

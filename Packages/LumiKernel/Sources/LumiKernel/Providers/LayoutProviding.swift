@@ -46,9 +46,10 @@ public protocol LayoutProviding: ObservableObject {
     /// 注销视图容器
     func unregisterViewContainer(id: String)
 
-    // MARK: - Container
-
     var activeViewContainerID: String? { get }
+
+    /// 当前活跃的视图容器（computed，直接返回完整的 ViewContainerItem）
+    var currentViewContainer: ViewContainerItem? { get }
 
     // MARK: - Rail Tabs
 

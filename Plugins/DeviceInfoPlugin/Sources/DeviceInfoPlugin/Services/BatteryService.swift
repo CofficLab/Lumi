@@ -17,7 +17,7 @@ public final class BatteryService: ObservableObject, SuperLog {
     public static let shared = BatteryService()
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemonitor.battery")
     nonisolated public static let emoji = "🔋"
-    nonisolated(unsafe) static var verbose: Bool = true
+    nonisolated(unsafe) static var verbose: Bool = false
 
     // MARK: - Published Properties
 
