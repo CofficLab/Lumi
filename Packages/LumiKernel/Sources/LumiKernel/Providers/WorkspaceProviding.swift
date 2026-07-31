@@ -23,6 +23,7 @@ public protocol WorkspaceProviding: ObservableObject {
     var isChatVisible: Bool { get }
     var isContentVisible: Bool { get }
     var isPanelVisible: Bool { get }
+    var isPanelHeaderVisible: Bool { get }
     var isPanelBottomVisible: Bool { get }
 
     // MARK: - Workspace Commands
@@ -31,6 +32,7 @@ public protocol WorkspaceProviding: ObservableObject {
     func setChatVisible(_ visible: Bool)
     func setContentVisible(_ visible: Bool)
     func setPanelVisible(_ visible: Bool)
+    func setPanelHeaderVisible(_ visible: Bool)
     func setPanelBottomVisible(_ visible: Bool)
 
     func activateContainer(id: String)
