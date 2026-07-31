@@ -362,7 +362,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                     } else {
                         await state.appendContent(piece)
                     }
-                    await state.maybeEmitDelta(
+                    await state.emitDelta(
                         conversationID: conversationID,
                         messageID: assistantID,
                         eventManager: kernel.eventManager
@@ -623,21 +623,18 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     }
 }
 
-/// 流式累积 + 节流状态(actor 隔离,保证 onChunk 跨线程调用安全)。
+/// 流式累积状态(actor 隔离,保证 onChunk 跨线程调用安全)。
 ///
-/// 累积正文/思考两路增量,按 ~50ms 节流发送 delta 通知。
-/// 节流可能丢最后一帧,但落库的完整消息会兜底纠正,可接受。
+/// 累积正文/思考两路增量,每个 chunk 都推送一次 delta(带累积全文,UI 直接原地替换)。
+/// 不做节流:单次回复的 chunk 数通常只有几十个,逐个 patch messages[index] 后
+/// SwiftUI 只 diff 那一行,主线程开销可忽略。节流反而会把短回复的绝大部分增量吞掉,
+/// 导致打字机效果看不到。
 private actor StreamingChunkState {
     private var contentAccumulator = ""
     private var thinkingAccumulator = ""
-    /// 上次发 delta 的时间(用于节流)。
-    private var lastEmitTime: Date?
     /// 当前累积主体是否为思考(决定 delta 带哪个字段、isThinking 取值)。
     /// 进入思考段后 isThinking=true,切回正文段则回到 false。
     private var lastEmitWasThinking = false
-
-    /// delta 最小发送间隔。约 20 帧/秒,兼顾流畅度与主线程 diff 压力。
-    static let throttleInterval: TimeInterval = 0.05
 
     func appendContent(_ piece: String) {
         if !piece.isEmpty {
@@ -653,23 +650,12 @@ private actor StreamingChunkState {
         }
     }
 
-    /// 节流发送 delta:距上次发送 ≥ throttleInterval 才发。
-    /// 全文(content 或 reasoning)每次都完整带出,UI 直接原地替换。
-    func maybeEmitDelta(
+    /// 推送一次 delta:全文(content 或 reasoning)每次都完整带出,UI 直接原地替换。
+    func emitDelta(
         conversationID: UUID,
         messageID: UUID,
         eventManager: EventManager
     ) async {
-        let now = Date()
-        let shouldEmit: Bool
-        if let last = lastEmitTime {
-            shouldEmit = now.timeIntervalSince(last) >= Self.throttleInterval
-        } else {
-            shouldEmit = true
-        }
-        guard shouldEmit else { return }
-
-        lastEmitTime = now
         let payload = lastEmitWasThinking ? thinkingAccumulator : contentAccumulator
         // EventManager 是 @MainActor,跨 actor 调用需 await(通知最终投递到主队列)。
         await eventManager.postMessageStreaming(
