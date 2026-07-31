@@ -52,8 +52,12 @@ extension LumiKernelContainer {
     /// Register message streaming service (runner writes streaming tokens, UI reads them).
     ///
     /// 可选增强服务：缺失时 UI 优雅降级为不显示流式临时行（最终落库消息仍正常显示）。
+    ///
+    /// **不转发 objectWillChange**：流式期间该服务高频变更（每个 token 一次），
+    /// 经 kernel 全局广播会拖慢整个 app。消费方改用 `ObservableMessageStreamingBox`
+    /// 精确订阅。
     public func registerMessageStreaming(_ streaming: any MessageStreaming) throws {
-        try registerService(MessageStreaming.self, streaming)
+        try registerService(MessageStreaming.self, streaming, forwardsObjectWillChange: false)
     }
 
     /// Register editor service

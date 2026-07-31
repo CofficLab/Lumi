@@ -12,6 +12,10 @@ import SwiftUI
 struct MessageListView: View {
     @ObservedObject var kernel: LumiKernel
 
+    /// 精确订阅流式 store（窄播），绕开 kernel 的全局 objectWillChange 广播。
+    /// 流式期间 store 每个 token 都更新;若经 kernel 广播会拖慢整个 app。
+    @StateObject private var streamingBox = ObservableMessageStreamingBox()
+
     @LumiTheme private var theme
 
     /// 当前内存中的消息,按时间升序排列(最老在前、最新在后)。
@@ -57,7 +61,8 @@ struct MessageListView: View {
     private var displayMessages: [LumiChatMessage] {
         guard let conversationID = selectedConversationID else { return messages }
         var rows = messages
-        let streaming = kernel.messageStreaming
+        // 通过 box 读流式 store(精确订阅,绕开 kernel 广播)。
+        let streaming = streamingBox.service
         // 流式临时行(仅当属于当前会话;切会话时自动被过滤,无需额外清理)。
         let streamingRow = streaming?.currentStreamingRow
         if let streamingRow, streamingRow.conversationID == conversationID {
@@ -88,6 +93,8 @@ struct MessageListView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
         .task(id: selectedConversationID) {
+            // 绑定流式 store(box 精确订阅,绕开 kernel 广播)。幂等:重复绑定同实例为 no-op。
+            streamingBox.bind(kernel.messageStreaming)
             // 切换会话:重置状态,加载最近一页。
             activeConversationID = selectedConversationID
             isLoading = true
@@ -174,9 +181,9 @@ struct MessageListView: View {
                         }
                     }
                 }
-                // 流式跟随滚动:store 的临时行变化时(kernel 自动转发 objectWillChange),
+                // 流式跟随滚动:box 订阅的 store 临时行变化时,
                 // 若用户停在底部则跟随滚到底(无动画,避免高频 delta 抖动)。
-                .onChange(of: kernel.messageStreaming?.currentStreamingRow?.content) { _ in
+                .onChange(of: streamingBox.service?.currentStreamingRow?.content) { _ in
                     if isAtBottom {
                         proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
                     }

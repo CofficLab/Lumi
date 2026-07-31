@@ -40,14 +40,30 @@ public final class LumiKernelContainer: ObservableObject {
 
     /// Register service implementation
     public func registerService<T>(_ type: T.Type, _ instance: T) throws {
+        try registerService(type, instance, forwardsObjectWillChange: true)
+    }
+
+    /// 注册服务，可选择是否把服务的 `objectWillChange` 转发到 kernel。
+    ///
+    /// 高频变更的服务（如流式输出 store：每个 LLM token 都触发 objectWillChange）
+    /// 应传 `forwardsObjectWillChange: false`——否则 kernel 会把这种高频更新广播给
+    /// 所有订阅 kernel 的视图（20+），导致整个 app 跟着重渲染、UI 卡顿。
+    /// 此类服务改由消费方用 `Observable*Box` 精确订阅（窄播）。
+    public func registerService<T>(
+        _ type: T.Type,
+        _ instance: T,
+        forwardsObjectWillChange: Bool
+    ) throws {
         let key = ObjectIdentifier(type)
         if services[key] != nil {
             throw LumiKernelError.serviceAlreadyRegistered(type: type)
         }
         services[key] = instance
 
-        // Forward objectWillChange from ObservableObject services
-        subscribeToObjectWillChange(observable: instance, key: key)
+        // 仅在需要时转发 objectWillChange;高频服务应 opt-out 以避免全局广播。
+        if forwardsObjectWillChange {
+            subscribeToObjectWillChange(observable: instance, key: key)
+        }
     }
 
     /// Helper to subscribe to ObservableObject's objectWillChange
