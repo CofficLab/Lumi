@@ -5,7 +5,7 @@ import SuperLogKit
 
 /// LayoutKernel 插件 OnBoot 阶段钩子
 ///
-/// 负责 boot 阶段的核心 Layout 服务注册,确保在 onReady 之前内核已持有 LayoutProviding。
+/// 负责 boot 阶段的核心工作区服务注册,确保在 onReady 之前内核已持有 WorkspaceProviding。
 /// 同时从磁盘恢复布局状态到内存。
 @MainActor
 public struct LayoutKernelOnBootHook: SuperLog {
@@ -47,10 +47,10 @@ public struct LayoutKernelOnBootHook: SuperLog {
             }
         }
 
-        try kernel.registerLayout(manager)
+        try kernel.registerWorkspace(manager)
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)Layout service registered successfully")
+            Self.logger.info("\(Self.t)Workspace service registered successfully")
         }
     }
 }

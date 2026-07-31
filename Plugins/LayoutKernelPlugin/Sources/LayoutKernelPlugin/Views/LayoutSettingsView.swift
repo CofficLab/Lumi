@@ -23,11 +23,11 @@ public struct LayoutSettingsView: View {
     }
 
     private var layoutState: LayoutState? {
-        kernel.layoutManager?.layoutState
+        kernel.workspace?.layoutState
     }
 
     private var containers: [ViewContainerItem] {
-        kernel.layoutManager?.allViewContainers ?? []
+        kernel.workspace?.allViewContainers ?? []
     }
 
     private var containerIDs: [String] {
@@ -35,7 +35,7 @@ public struct LayoutSettingsView: View {
     }
 
     private var activeContainerID: String? {
-        kernel.layoutManager?.activeViewContainerID
+        kernel.workspace?.activeViewContainerID
     }
 
     private var selectedContainer: ViewContainerItem? {
@@ -339,7 +339,7 @@ public struct LayoutSettingsView: View {
     // MARK: - Actions
 
     private func openDataDirectory() {
-        guard let url = kernel.layoutManager?.settingsDirectory else { return }
+        guard let url = kernel.workspace?.settingsDirectory else { return }
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         _ = NSWorkspace.shared.open(url)
     }

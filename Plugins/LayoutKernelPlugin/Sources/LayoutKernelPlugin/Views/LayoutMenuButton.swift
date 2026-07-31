@@ -17,7 +17,7 @@ public struct LayoutMenuButton: View {
     }
 
     public var body: some View {
-        let layoutManager = kernel.layoutManager
+        let layoutManager = kernel.workspace
 
         return AppIconButton(
             systemImage: "sidebar.leading",
