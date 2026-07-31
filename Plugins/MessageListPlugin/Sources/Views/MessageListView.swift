@@ -150,7 +150,7 @@ struct MessageListView: View {
                         animated: false
                     )
                 }
-                .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { _ in
+                .onLumiMessagesDidChange {
                     // 尾部新消息/流式刷新:重新查最近一页,覆盖尾部;若用户在底部则滚到底。
                     Task {
                         let wasAtBottom = isAtBottom

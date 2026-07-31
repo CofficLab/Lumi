@@ -1,4 +1,3 @@
-import Combine
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -27,11 +26,7 @@ struct ConversationTitleHeaderView: View {
                 .foregroundColor(theme.textPrimary)
                 .lineLimit(1)
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { notification in
-            if let conversationID = notification.lumiConversationID,
-               conversationID != kernel.conversations?.selectedConversationID {
-                return
-            }
+        .onLumiMessagesDidChange {
             messageVersion += 1
         }
     }
