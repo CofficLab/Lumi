@@ -1,4 +1,7 @@
 import Foundation
+import SwiftUI
+
+// MARK: - Kernel Event Names
 
 /// Kernel-level event names centralized in LumiKernel.
 ///
@@ -63,6 +66,135 @@ public extension NotificationCenter {
     func onLumiThemeDidChange(_ handler: @escaping () -> Void) -> NSObjectProtocol {
         addObserver(forName: .lumiThemeDidChange, object: nil, queue: .main) { _ in
             handler()
+        }
+    }
+}
+
+// MARK: - Kernel NotificationCenter Posting Helpers
+
+public extension NotificationCenter {
+    /// 发送 `.lumiEnabledPluginsDidChange` 通知
+    static func postLumiEnabledPluginsDidChange() {
+        NotificationCenter.default.post(name: .lumiEnabledPluginsDidChange, object: nil)
+    }
+
+    /// 发送 `.lumiMessagesDidChange` 通知
+    static func postLumiMessagesDidChange() {
+        NotificationCenter.default.post(name: .lumiMessagesDidChange, object: nil)
+    }
+
+    /// 发送 `.lumiConversationsDidChange` 通知
+    static func postLumiConversationsDidChange() {
+        NotificationCenter.default.post(name: .lumiConversationsDidChange, object: nil)
+    }
+
+    /// 发送 `.lumiThemeDidChange` 通知
+    static func postLumiThemeDidChange() {
+        NotificationCenter.default.post(name: .lumiThemeDidChange, object: nil)
+    }
+
+    /// 发送 `.lumiSelectedRemoteProviderIDDidChange` 通知
+    static func postLumiSelectedRemoteProviderIDDidChange() {
+        NotificationCenter.default.post(name: .lumiSelectedRemoteProviderIDDidChange, object: nil)
+    }
+
+    /// 发送 `.lumiSelectedLocalProviderIDDidChange` 通知
+    static func postLumiSelectedLocalProviderIDDidChange() {
+        NotificationCenter.default.post(name: .lumiSelectedLocalProviderIDDidChange, object: nil)
+    }
+
+    /// 发送 `.lumiSelectedModelsDidChange` 通知
+    static func postLumiSelectedModelsDidChange() {
+        NotificationCenter.default.post(name: .lumiSelectedModelsDidChange, object: nil)
+    }
+
+    /// 发送 `.lumiRoutingModeDidChange` 通知
+    static func postLumiRoutingModeDidChange() {
+        NotificationCenter.default.post(name: .lumiRoutingModeDidChange, object: nil)
+    }
+
+    /// 发送 `.lumiProviderAvailabilityDidChange` 通知
+    static func postLumiProviderAvailabilityDidChange() {
+        NotificationCenter.default.post(name: .lumiProviderAvailabilityDidChange, object: nil)
+    }
+
+    /// 发送 `.lumiProviderStatusesDidChange` 通知
+    static func postLumiProviderStatusesDidChange() {
+        NotificationCenter.default.post(name: .lumiProviderStatusesDidChange, object: nil)
+    }
+}
+
+// MARK: - Kernel SwiftUI View Extensions
+
+@MainActor
+public extension View {
+    /// 监听 `.lumiEnabledPluginsDidChange` 通知
+    func onLumiEnabledPluginsDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiEnabledPluginsDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiMessagesDidChange` 通知
+    func onLumiMessagesDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiConversationsDidChange` 通知
+    func onLumiConversationsDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiThemeDidChange` 通知
+    func onLumiThemeDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiThemeDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiSelectedRemoteProviderIDDidChange` 通知
+    func onLumiSelectedRemoteProviderIDDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedRemoteProviderIDDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiSelectedLocalProviderIDDidChange` 通知
+    func onLumiSelectedLocalProviderIDDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedLocalProviderIDDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiSelectedModelsDidChange` 通知
+    func onLumiSelectedModelsDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedModelsDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiRoutingModeDidChange` 通知
+    func onLumiRoutingModeDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiRoutingModeDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiProviderAvailabilityDidChange` 通知
+    func onLumiProviderAvailabilityDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiProviderAvailabilityDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiProviderStatusesDidChange` 通知
+    func onLumiProviderStatusesDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiProviderStatusesDidChange)) { _ in
+            action()
         }
     }
 }
