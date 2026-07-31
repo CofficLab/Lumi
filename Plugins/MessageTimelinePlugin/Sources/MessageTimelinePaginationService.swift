@@ -1,9 +1,10 @@
 import Foundation
 import LumiKernel
 
-/// Message Pagination Service
+/// Message Timeline Pagination Service
 ///
-/// 封装 `MessageListView` 的"消息窗口管理"策略:
+/// 封装消息时间线的"消息窗口管理"策略(沉淀自原
+/// `MessageListPlugin.MessagePaginationService`):
 ///
 /// 1. **首屏加载** —— 加载最近一页(pageSize 条),并探测是否还有更早消息。
 /// 2. **向上翻页** —— 在当前最早一条之前加载更早一页并 prepend;未读到则
@@ -18,9 +19,9 @@ import LumiKernel
 /// 调用方无需关心线程。
 ///
 /// 本服务**不持有状态**:`messages`、`hasEarlierMessages`、`activeConversationID`
-/// 均由 View 用 `@State` 持有,本服务只对它们做变换。
+/// 均由 `MessageTimelineStore` 持有,本服务只对它们做变换。
 @MainActor
-struct MessagePaginationService {
+struct MessageTimelinePaginationService {
     let pageSize: Int
     let maxRetainedCount: Int
 
@@ -33,8 +34,8 @@ struct MessagePaginationService {
     ///
     /// 无可用 `messageManager`(kernel 初始化未完成)时,返回空状态。
     /// `activeConversationID` 与请求 id 不一致时,结果被丢弃(防止过期返回
-    /// 覆盖用户切到的新会话)。该过期判定由 `View` 持有 `activeConversationID`,
-    /// 本服务不参与。
+    /// 覆盖用户切到的新会话)。该过期判定由 `MessageTimelineStore` 持有
+    /// `activeConversationID`,本服务不参与。
     ///
     /// - Parameters:
     ///   - conversationID: 目标会话 ID。
@@ -69,12 +70,13 @@ struct MessagePaginationService {
     /// - 没有当前消息可供基准(`currentFirstID == nil`)
     /// - DB 返回的更早一页为空
     ///
-    /// 注意:"是否已在加载"由调用方(View)用 `@State isLoadingEarlier` 保证
-    /// 一次只有一次调用。本服务不参与 reentrancy 判定,保持纯粹。
+    /// 注意:"是否已在加载"由调用方(`MessageTimelineStore`)用
+    /// `isLoadingEarlier` 保证一次只有一次调用。本服务不参与 reentrancy 判定,
+    /// 保持纯粹。
     ///
-    /// 返回 `.loaded(...)` 时,View 应:更新 `messages = earlier + messages`、
-    /// `hasEarlierMessages = stillHasEarlier`,然后调用
-    /// `ScrollCoordinator.pinToAnchor(proxy:anchorID:)`。
+    /// 返回结果时,调用方应:更新 `messages = earlier + messages`、
+    /// `hasEarlierMessages = stillHasEarlier`,然后由 UI 把 `anchorID`
+    /// 钉回视口顶部。
     func loadEarlier(
         conversationID: UUID,
         messageManager: (any MessageManaging)?,
@@ -184,7 +186,7 @@ struct LoadFirstPageResult: Sendable {
 }
 
 /// `loadEarlier` 的返回结构。`anchorID` 是 prepend 前最早一条消息的 id,
-/// View 应在 prepend 后调用 `ScrollCoordinator.pinToAnchor` 把它钉回顶部。
+/// UI 应在 prepend 后把它钉回视口顶部。
 struct LoadEarlierResult: Sendable {
     let anchorID: UUID
     let earlier: [LumiChatMessage]
@@ -192,7 +194,7 @@ struct LoadEarlierResult: Sendable {
 }
 
 /// `refreshTail` 的返回结构。`hasEarlierMessages` 仅在"从空到非空"时填值;
-/// 其他情况 View 应保留旧值(传 `nil`)。
+/// 其他情况调用方应保留旧值(传 `nil`)。
 struct RefreshTailResult: Sendable {
     let merged: [LumiChatMessage]
     let hasEarlierMessages: Bool?

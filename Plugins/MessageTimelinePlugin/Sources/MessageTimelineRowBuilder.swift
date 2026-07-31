@@ -1,14 +1,14 @@
 import Foundation
 import LumiKernel
 
-/// Message List Row Builder
+/// Message Timeline Row Builder
 ///
-/// 负责把"展示用的最终行序列"从 `MessageListView` 里抽出来:
-/// 在真实落库消息(`messages`)之后,根据流式阶段 / 发送中状态拼接两类
+/// 负责把"展示用的最终行序列"的合并规则收敛在数据层:
+/// 在真实落库消息(`persisted`)之后,根据流式阶段 / 发送中状态拼接两类
 /// **不写库**的临时行 —— 真实消息的分页、合并、裁剪逻辑只基于真实消息,
 /// 临时行不会污染真实分页状态(因为它们使用稳定常量 id 与真实行永不冲突)。
 ///
-/// 行合并规则(由原 `MessageListView.displayMessages` 沉淀):
+/// 行合并规则(沉淀自原 `MessageListPlugin.MessageListRowBuilder`):
 /// 1. 流式临时行(来自 `MessageStreaming.currentStreamingRow`)—
 ///    仅当 `conversationID` 匹配当前会话。切会话时该临时行会被自动过滤,
 ///    无需额外清理。
@@ -17,9 +17,9 @@ import LumiKernel
 ///    - 处于 `thinking` 阶段(流式行的正文为空,思考文本走状态行展示)。
 ///    正文生成阶段(`generating`)由流式行承载,不叠加状态行。
 ///
-/// - SeeAlso: `MessageListPaginationService`,负责真实消息的分页。
+/// - SeeAlso: `MessageTimelinePaginationService`,负责真实消息的分页。
 @MainActor
-struct MessageListRowBuilder {
+struct MessageTimelineRowBuilder {
     /// 拼接真实消息 + 流式临时行 + 发送中状态行,产出最终展示列表。
     ///
     /// - Parameters:

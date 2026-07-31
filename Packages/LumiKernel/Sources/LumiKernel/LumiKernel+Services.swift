@@ -131,6 +131,14 @@ extension LumiKernelContainer {
         resolveService(MessageRendering.self)
     }
 
+    /// Message timeline data source (merged display rows + pagination for message-list UIs)
+    ///
+    /// 可选服务:未注册时消息列表 UI 应显示空态/占位。
+    /// 该服务高频变更不转发 kernel 广播,消费方用 `ObservableMessageTimelineBox` 订阅。
+    public var messageTimeline: (any MessageTimelineProviding)? {
+        resolveService(MessageTimelineProviding.self)
+    }
+
     /// Legacy data service (v4 → v5 migration, read-only)
     ///
     /// 可选服务:未注册时返回 nil(全新安装或迁移窗口期之后)。

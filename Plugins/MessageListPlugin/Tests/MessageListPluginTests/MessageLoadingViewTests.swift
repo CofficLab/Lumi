@@ -21,13 +21,13 @@ struct MessageLoadingViewTests {
         // Extract the Text from the accessibility modifier
         // The view uses Text("Loading messages…", bundle: .module)
         // We verify the view can be created and body accessed
-        #expect(bodyView is some View)
+        #expect(!String(describing: type(of: bodyView)).isEmpty)
     }
     
     @Test("Initial breathing state is false")
     func testInitialBreathingState() {
         // The @State isBreathing starts as false, animation triggers on appear
         let view = MessageLoadingView()
-        #expect(view.body is some View)
+        #expect(!String(describing: type(of: view.body)).isEmpty)
     }
 }

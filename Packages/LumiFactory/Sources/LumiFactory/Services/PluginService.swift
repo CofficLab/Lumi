@@ -87,6 +87,7 @@ import MessageRendererPlugin
 import MessageSenderPlugin
 import MessageStreamingPlugin
 import MessageStorePlugin
+import MessageTimelinePlugin
 import ModelSelectorPlugin
 import NettoPlugin
 import NetworkManagerPlugin
@@ -190,6 +191,7 @@ public enum PluginService {
             MessageSenderPlugin(),
             AgentTurnRunnerPlugin(),
             MessageRendererPlugin(),
+            MessageTimelinePlugin(),
             ConversationTitlePlugin(),
             ConversationListPlugin(),
             ConversationNewPlugin(),

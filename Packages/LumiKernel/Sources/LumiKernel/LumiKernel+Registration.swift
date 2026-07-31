@@ -121,6 +121,15 @@ extension LumiKernelContainer {
         try registerService(MessageRendering.self, manager)
     }
 
+    /// Register message timeline data source (merged display rows for message-list UIs).
+    ///
+    /// **不转发 objectWillChange**:流式期间该服务高频变更(每个 token 都会重算
+    /// `displayRows`),经 kernel 全局广播会拖慢整个 app。消费方改用
+    /// `ObservableMessageTimelineBox` 精确订阅。
+    public func registerMessageTimelineProvider(_ timeline: any MessageTimelineProviding) throws {
+        try registerService(MessageTimelineProviding.self, timeline, forwardsObjectWillChange: false)
+    }
+
     /// Register legacy data service (v4 → v5 migration, read-only)
     ///
     /// 可选服务:仅在 v4→v5 迁移窗口期注册,迁移完成后可整体移除。
