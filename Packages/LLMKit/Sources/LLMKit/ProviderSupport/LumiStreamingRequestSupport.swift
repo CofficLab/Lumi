@@ -388,7 +388,7 @@ public enum LumiStreamingRequestSupport: SuperLog {
     private static func messageMetadata(from state: StreamingState) async -> [String: String] {
         let endTime = CFAbsoluteTimeGetCurrent()
         let startTime = await state.startTime
-        var metadata = LumiMessageTokenMetadata.metadata(
+        var metadata = MessageTokenMetadata.metadata(
             inputTokens: await state.inputTokens,
             outputTokens: await state.outputTokens,
             cachedInputTokens: await state.cachedInputTokens,
@@ -396,7 +396,7 @@ public enum LumiStreamingRequestSupport: SuperLog {
             cacheTotalInputTokens: await state.cacheTotalInputTokens
         )
         metadata.merge(
-            LumiMessagePerformanceMetadata.metadata(
+            MessagePerformanceMetadata.metadata(
                 latencyMs: (endTime - startTime) * 1000.0,
                 timeToFirstTokenMs: await state.timeToFirstToken,
                 streamingDurationMs: await state.getStreamingDuration()
