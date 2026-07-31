@@ -211,16 +211,6 @@
         }
       }
     },
-    "%lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@"
-          }
-        }
-      }
-    },
     "•" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -917,9 +907,6 @@
         }
       }
     },
-    "Pin" : {
-
-    },
     "Service unavailable" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1059,9 +1046,6 @@
           }
         }
       }
-    },
-    "Unpin" : {
-
     },
     "Untitled" : {
       "extractionState" : "stale",

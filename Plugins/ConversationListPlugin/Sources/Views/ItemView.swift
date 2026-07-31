@@ -38,7 +38,7 @@ public struct ItemView: View {
                 .padding(3)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(kernel.uiTitle(for: conversation.id))
+                Text(conversation.title ?? "对话")
                     .font(.appMicroEmphasized)
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
