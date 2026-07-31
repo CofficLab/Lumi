@@ -13,7 +13,6 @@ struct ApiKeyMissingView: View {
     @LumiTheme private var theme
 
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
 
     @State private var apiKey: String = ""
     @State private var isApiKeyVisible = false
@@ -48,7 +47,7 @@ struct ApiKeyMissingView: View {
     }
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(String(
                     format: LumiPluginLocalization.string("%@ API Key required", bundle: .module),
