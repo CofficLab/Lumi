@@ -3,65 +3,40 @@ import LumiUI
 import SwiftUI
 
 /// Message List View
+///
+/// 纯展示组件:只负责**展示、滚动、分页触发**。
+/// 行的合并(流式临时行 / 状态行)、渲染器分发、详细程度、分页数据加载等
+/// "消息知识"全部由 `MessageListViewModel` 承担 —— 本视图只面对
+/// 已准备好的 `viewModel.displayRows` 行序列,不区分行的类型与来源。
 struct MessageListView: View {
     @ObservedObject var kernel: LumiKernel
-
-    /// 精确订阅流式 store（窄播），绕开 kernel 的全局 objectWillChange 广播。
-    /// 流式期间 store 每个 token 都更新;若经 kernel 广播会拖慢整个 app。
-    @StateObject private var streamingBox = ObservableMessageStreamingBox()
+    @StateObject private var viewModel: MessageListViewModel
 
     @LumiTheme private var theme
 
-    /// 当前内存中的真实消息,按时间升序排列(最老在前、最新在后)。
-    @State private var messages: [LumiChatMessage] = []
-    /// 顶部是否还有更早的消息未加载。
-    @State private var hasEarlierMessages = false
-    /// 正在加载更早一页(顶部按钮的 loading 态)。
-    @State private var isLoadingEarlier = false
-    /// 首屏 loading:切换会话时为 true,首屏数据就绪后置 false。
-    @State private var isLoading = true
     /// 用户是否停在列表底部附近;用于决定新消息到达时是否自动滚到底部。
     @State private var isAtBottom = true
-    /// 切换会话时记录的目标会话,用于丢弃过期的后台读结果。
-    @State private var activeConversationID: UUID?
 
     // MARK: - Services
 
-    private let pagination = MessagePaginationService()
-    private let rowBuilder = MessageListRowBuilder()
     private let scrollCoordinator = MessageListScrollCoordinator()
 
-    // MARK: - Derived State
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        _viewModel = StateObject(wrappedValue: MessageListViewModel(kernel: kernel))
+    }
 
     private var selectedConversationID: UUID? {
         kernel.conversations?.selectedConversationID
-    }
-
-    /// 当前会话的响应详细程度;未选择会话或读取失败时回退到默认值。
-    /// 通过 `MessageRowView` 透传给 `LumiMessageRendererItem.render` 闭包，
-    /// 渲染器可据此切换简洁/标准/详细外观。
-    private var currentVerbosity: LumiResponseVerbosity {
-        kernel.conversationManager?
-            .verbosity(for: selectedConversationID) ?? .defaultVerbosity
-    }
-
-    /// 真实消息 + 流式临时行 + 发送中状态行的合并列表(由 `MessageListRowBuilder` 产出)。
-    private var displayMessages: [LumiChatMessage] {
-        rowBuilder.build(
-            persisted: messages,
-            conversationID: selectedConversationID,
-            sender: kernel.messageSender,
-            streaming: streamingBox
-        )
     }
 
     var body: some View {
         Group {
             if selectedConversationID == nil {
                 NoConversationSelectedView()
-            } else if isLoading {
+            } else if viewModel.isLoading {
                 MessageLoadingView()
-            } else if messages.isEmpty {
+            } else if viewModel.persistedMessages.isEmpty {
                 MessageEmptyStateView()
             } else {
                 messageScrollView
@@ -70,13 +45,9 @@ struct MessageListView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
         .task(id: selectedConversationID) {
-            // 绑定流式 store(box 精确订阅,绕开 kernel 广播)。幂等:重复绑定同实例为 no-op。
-            streamingBox.bind(kernel.messageStreaming)
-            // 切换会话:重置状态,加载最近一页。
-            activeConversationID = selectedConversationID
-            isLoading = true
+            // 切换会话:重置滚动位置,加载最近一页。
             isAtBottom = true
-            await loadFirstPage()
+            await viewModel.activate(conversationID: selectedConversationID)
         }
     }
 
@@ -88,20 +59,20 @@ struct MessageListView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     // 用 VStack 而非 LazyVStack:本列表数据源在流式输出期间会高频变化
-                    // (每条 .lumiMessagesDidChange 都会 refreshTail 重写 messages 尾部)。
+                    // (每个流式 token 都会重算 displayRows)。
                     // LazyVStack 在数据源高频变化时会陷入主线程重布局活锁——每帧反复
                     // applyNodes/update 视口内行、重建 _LazyLayoutViewCache,导致 CPU 100%
                     // 且内存随 _LazyLayout_Subview 持续拷贝分配而单调上涨。
-                    // VStack 一次性构建所有行,只对 messages 变化做一次 diff,反而稳定。
+                    // VStack 一次性构建所有行,只对行序列变化做一次 diff,反而稳定。
                     // 列表条数已由游标分页(pageSize=40)和 renderer 两层缓存控制,
                     // 一次性渲染几十行无压力,无需 LazyVStack 惰性化。
                     VStack(spacing: 0) {
                         // 顶部"加载更早消息":仅在还有更早消息时显示。
-                        if hasEarlierMessages {
+                        if viewModel.hasEarlierMessages {
                             Button {
                                 Task { await loadEarlier(proxy: proxy) }
                             } label: {
-                                if isLoadingEarlier {
+                                if viewModel.isLoadingEarlier {
                                     ProgressView().controlSize(.small)
                                 } else {
                                     Text("Load earlier messages")
@@ -114,11 +85,11 @@ struct MessageListView: View {
                             .padding(.vertical, 8)
                         }
 
-                        ForEach(displayMessages) { message in
+                        ForEach(viewModel.displayRows) { message in
                             MessageRowView(
                                 message: message,
-                                renderer: kernel.messageRendererManager?.renderer(for: message),
-                                verbosity: currentVerbosity
+                                renderer: viewModel.renderer(for: message),
+                                verbosity: viewModel.verbosity
                             )
                             .id(message.id)
                             .padding(.horizontal, 6)
@@ -148,26 +119,26 @@ struct MessageListView: View {
                     // 首屏数据就绪后,滚到最底部(无动画)。
                     scrollCoordinator.scrollToBottom(
                         proxy: proxy,
-                        messages: messages,
+                        messages: viewModel.persistedMessages,
                         animated: false
                     )
                 }
                 .onLumiMessagesDidChange {
-                    // 尾部新消息/流式刷新:重新查最近一页,覆盖尾部;若用户在底部则滚到底。
+                    // 尾部新消息/流式落库:重新查最近一页覆盖尾部;若用户在底部则滚到底。
                     Task {
                         let wasAtBottom = isAtBottom
-                        await refreshTail()
+                        await viewModel.refreshTail()
                         if wasAtBottom {
                             await scrollCoordinator.scrollToBottomAfterLayout(
                                 proxy: proxy,
-                                messages: messages
+                                messages: viewModel.persistedMessages
                             )
                         }
                     }
                 }
-                // 流式跟随滚动:box 订阅的 store 临时行变化时,
+                // 流式跟随滚动:流式行内容变化时,
                 // 若用户停在底部则跟随滚到底(无动画,避免高频 delta 抖动)。
-                .onChange(of: streamingBox.service?.currentStreamingRow?.content) { _ in
+                .onChange(of: viewModel.tailStreamingContent) { _ in
                     if isAtBottom {
                         proxy.scrollTo(MessageListScrollCoordinator.bottomAnchorID, anchor: .bottom)
                     }
@@ -190,69 +161,12 @@ struct MessageListView: View {
         .accessibilityHidden(true)
     }
 
-    // MARK: - Data Loading (委托给 Services,仅剩生命周期/过期判定)
+    // MARK: - Pagination Trigger
 
-    /// 首屏:加载最近一页,并探测是否还有更早消息。
-    /// 过期会话切换的结果丢弃逻辑保留在 View(因它持有 `activeConversationID`)。
-    private func loadFirstPage() async {
-        guard let conversationID = selectedConversationID else {
-            messages = []
-            hasEarlierMessages = false
-            isLoading = false
-            return
-        }
-        let result = await pagination.loadFirstPage(
-            conversationID: conversationID,
-            messageManager: kernel.messageManager
-        )
-        // 切换会话期间用户可能又选了别的会话,丢弃过期结果。
-        guard activeConversationID == conversationID else { return }
-        messages = result.messages
-        hasEarlierMessages = result.hasEarlierMessages
-        isLoading = false
-    }
-
-    /// 向上翻页:加载更早一页并 prepend,保持滚动位置,触发窗口回收。
+    /// 向上翻页:View 只负责触发加载并把锚点行钉回视口顶部,
+    /// 数据加载与窗口回收由 ViewModel 完成。
     private func loadEarlier(proxy: ScrollViewProxy) async {
-        guard let conversationID = selectedConversationID,
-              !isLoadingEarlier,
-              let currentFirstID = messages.first?.id else { return }
-        isLoadingEarlier = true
-        guard let result = await pagination.loadEarlier(
-            conversationID: conversationID,
-            messageManager: kernel.messageManager,
-            currentFirstID: currentFirstID,
-            hasEarlier: hasEarlierMessages
-        ) else {
-            isLoadingEarlier = false
-            return
-        }
-        guard activeConversationID == conversationID else {
-            isLoadingEarlier = false
-            return
-        }
-        messages = result.earlier + messages
-        hasEarlierMessages = result.hasEarlierMessages
-        messages = pagination.evictTailIfNeeded(messages: messages, isAtBottom: isAtBottom)
-        isLoadingEarlier = false
-        await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: result.anchorID)
-    }
-
-    /// 尾部刷新:重新查最近一页,与当前尾部比对并更新;若用户在底部则滚到底。
-    ///
-    /// 只作用于真实落库消息(`messages`);流式临时行由 `MessageStreamingStore` 独立持有,
-    /// 不参与此合并,故无需任何流式特例处理(摘出/挂回/去重)。
-    private func refreshTail() async {
-        guard let conversationID = selectedConversationID else { return }
-        guard let result = await pagination.refreshTail(
-            conversationID: conversationID,
-            messageManager: kernel.messageManager,
-            current: messages
-        ) else { return }
-        guard activeConversationID == conversationID else { return }
-        messages = result.merged
-        if let hasEarlier = result.hasEarlierMessages {
-            hasEarlierMessages = hasEarlier
-        }
+        guard let anchorID = await viewModel.loadEarlier(isAtBottom: isAtBottom) else { return }
+        await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
     }
 }

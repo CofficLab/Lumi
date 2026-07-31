@@ -28,25 +28,25 @@ struct MessageListRowBuilder {
     ///     (无会话 → 临时行无展示意义)。
     ///   - sender: 发送服务 —— 仅当需要构造状态行时被调用。
     ///   - streaming: 流式服务 —— 读取临时行 + 当前阶段。可能为 `nil`
-    ///     (尚未绑定);`nil` 等价于"无流式进行"。
+    ///     (尚未就绪);`nil` 等价于"无流式进行"。
     func build(
         persisted: [LumiChatMessage],
         conversationID: UUID?,
         sender: (any MessageSending)?,
-        streaming: ObservableMessageStreamingBox?
+        streaming: (any MessageStreaming)?
     ) -> [LumiChatMessage] {
         guard let conversationID else { return persisted }
         var rows = persisted
 
         // 1) 流式临时行(仅当属于当前会话;切会话时自动被过滤)。
-        let streamingRow = streaming?.service?.currentStreamingRow
+        let streamingRow = streaming?.currentStreamingRow
         if let streamingRow, streamingRow.conversationID == conversationID {
             rows.append(streamingRow)
         }
 
         // 2) 状态行:仅在"无流式行"或"思考阶段正文为空"时显示
         //    正文生成阶段(`generating`)由流式行承载,不叠加状态行。
-        let stage = streaming?.service?.currentStage ?? .idle
+        let stage = streaming?.currentStage ?? .idle
         let belongsToCurrent: Bool = streamingRow?.conversationID == conversationID
         let showStatus = streamingRow == nil
             || (belongsToCurrent && stage == .thinking)
