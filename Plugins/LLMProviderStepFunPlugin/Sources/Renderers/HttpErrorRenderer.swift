@@ -13,9 +13,9 @@ enum HttpErrorRenderer {
         canRender: { message in
             StepFunRenderKind.matchesOtherHttpError(message)
         },
-        render: { message, showRawMessage in
+        render: { message in
             let statusCode = StepFunRenderKind.httpStatusCode(from: message.renderKind)
-            HttpErrorView(message: message, statusCode: statusCode, showRawMessage: showRawMessage)
+            HttpErrorView(message: message, statusCode: statusCode)
         }
     )
 }
@@ -25,10 +25,9 @@ struct HttpErrorView: View {
 
     let message: LumiChatMessage
     let statusCode: Int?
-    @Binding var showRawMessage: Bool
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(LumiPluginLocalization.string("StepFun API error", bundle: .module))
                     .font(.appCallout)

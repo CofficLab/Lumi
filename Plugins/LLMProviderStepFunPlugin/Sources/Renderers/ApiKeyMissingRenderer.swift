@@ -13,8 +13,8 @@ enum ApiKeyMissingRenderer {
         canRender: { message in
             StepFunRenderKind.matchesApiKeyMissing(message)
         },
-        render: { message, showRawMessage in
-            ApiKeyMissingView(message: message, showRawMessage: showRawMessage)
+        render: { message in
+            ApiKeyMissingView(message: message)
         }
     )
 }
@@ -23,13 +23,12 @@ struct ApiKeyMissingView: View {
     @LumiTheme private var theme
 
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
 
     @State private var apiKey: String = ""
     @State private var isApiKeyVisible = false
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(LumiPluginLocalization.string("StepFun API Key required", bundle: .module))
                     .font(.appCallout)

@@ -13,8 +13,8 @@ enum RequestFailedRenderer {
         canRender: { message in
             StepFunRenderKind.matches(renderKind: StepFunRenderKind.requestFailed, message: message)
         },
-        render: { message, showRawMessage in
-            RequestFailedView(message: message, showRawMessage: showRawMessage)
+        render: { message in
+            RequestFailedView(message: message)
         }
     )
 }
@@ -23,10 +23,9 @@ struct RequestFailedView: View {
     @LumiTheme private var theme
 
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(LumiPluginLocalization.string("StepFun request failed", bundle: .module))
                     .font(.appCallout)

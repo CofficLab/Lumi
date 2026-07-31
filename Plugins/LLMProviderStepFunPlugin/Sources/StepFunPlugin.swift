@@ -33,7 +33,15 @@ public final class StepFunPlugin: LumiPlugin {
         ]
     }
 
-    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
+        [
+            ApiKeyMissingRenderer.item,
+            Http401Renderer.item,
+            Http403Renderer.item,
+            HttpErrorRenderer.item,
+            RequestFailedRenderer.item,
+        ]
+    }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
