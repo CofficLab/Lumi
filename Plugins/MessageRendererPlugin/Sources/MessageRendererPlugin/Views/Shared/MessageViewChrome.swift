@@ -5,14 +5,13 @@ import SwiftUI
 
 struct MessageViewChrome<Content: View>: View {
     @LumiTheme private var theme
-    @Environment(\.lumiResponseVerbosity) private var verbosity
 
     var kernel: LumiKernel? = nil
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
     var showsResendButton = false
     var showsHeader = true
     var errorTransportDetails: ResolvedErrorTransportDetails?
+    let verbosity: LumiResponseVerbosity
     @State private var didCopy = false
     @State private var showThinkingPopover = false
     @ViewBuilder let content: () -> Content
@@ -54,7 +53,7 @@ struct MessageViewChrome<Content: View>: View {
                 return String(format: "%.1fk", k)
             }
         }
-        return "\(count)"
+        return String(count)
     }
 
     var body: some View {
@@ -127,16 +126,6 @@ struct MessageViewChrome<Content: View>: View {
             }
 
             content()
-
-            if showRawMessage {
-                Text(MessageViewHelpers.rawDescription(for: message))
-                    .font(.appMonoCaption)
-                    .foregroundColor(theme.textSecondary)
-                    .textSelection(.enabled)
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .appSurface(style: .panel, cornerRadius: 8)
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -157,14 +146,6 @@ struct MessageViewChrome<Content: View>: View {
                 } label: {
                     Label("重新发送", systemImage: "arrow.clockwise")
                 }
-            }
-
-            Divider()
-
-            Button {
-                showRawMessage.toggle()
-            } label: {
-                Label(showRawMessage ? "隐藏原始消息" : "查看原始消息", systemImage: "curlybraces")
             }
     }
 

@@ -1,32 +1,44 @@
 import SwiftUI
 
+/// 消息渲染器条目:由插件贡献,被 `MessageRendering` 管理器统一注册和匹配。
+///
+/// 渲染闭包 `render` 现在只接收 2 个参数:
+/// - `LumiChatMessage` — 当前要渲染的消息
+/// - `LumiResponseVerbosity` — 当前对话的响应详细程度(brief / standard / detailed)
 public struct LumiMessageRendererItem: Identifiable, @unchecked Sendable {
     public let id: String
     public let order: Int
     public let canRender: @MainActor (LumiChatMessage) -> Bool
-    public let render: @MainActor (LumiChatMessage, Binding<Bool>) -> AnyView
+    public let render: @MainActor (LumiChatMessage, LumiResponseVerbosity) -> AnyView
 
+    /// 主构造器:render 闭包接收 message 与 verbosity。
     public init<Content: View>(
         id: String,
         order: Int = 0,
         canRender: @escaping @MainActor (LumiChatMessage) -> Bool,
-        @ViewBuilder render: @escaping @MainActor (LumiChatMessage, Binding<Bool>) -> Content
+        @ViewBuilder render: @escaping @MainActor (LumiChatMessage, LumiResponseVerbosity) -> Content
     ) {
         self.id = id
         self.order = order
         self.canRender = canRender
-        self.render = { AnyView(render($0, $1)) }
+        self.render = { message, verbosity in
+            AnyView(render(message, verbosity))
+        }
     }
 
+    /// 兼容层:render 只关心 message。
+    @available(*, deprecated, message: "迁移到 2 参数 render (message, verbosity)")
     public init<Content: View>(
         id: String,
         order: Int = 0,
         canRender: @escaping @MainActor (LumiChatMessage) -> Bool,
         @ViewBuilder render: @escaping @MainActor (LumiChatMessage) -> Content
     ) {
-        self.id = id
-        self.order = order
-        self.canRender = canRender
-        self.render = { message, _ in AnyView(render(message)) }
+        self.init(
+            id: id,
+            order: order,
+            canRender: canRender,
+            render: { message, _ in render(message) }
+        )
     }
 }

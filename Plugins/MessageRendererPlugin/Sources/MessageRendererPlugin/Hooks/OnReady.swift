@@ -13,6 +13,5 @@ public struct MessageRendererOnReadyHook {
 
     /// 执行 onReady
     public func execute(_ kernel: LumiKernel) throws {
-        // 所有注册已迁移至 OnBoot,这里保持为空。
     }
 }

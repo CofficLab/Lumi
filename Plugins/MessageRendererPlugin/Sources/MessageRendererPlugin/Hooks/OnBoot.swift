@@ -48,8 +48,8 @@ public struct MessageRendererOnBootHook {
                         && message.renderKind != "turn-completed"
                         && message.content != LumiChatMarkers.turnCompleted
                 },
-                render: { message, _ in
-                    StatusMessageView(message: message)
+                render: { message, verbosity in
+                    StatusMessageView(message: message, verbosity: verbosity)
                 }
             )
         )
@@ -67,8 +67,8 @@ public struct MessageRendererOnBootHook {
                     }
                     return true
                 },
-                render: { message, showRawMessage in
-                    ErrorMessageView(message: message, showRawMessage: showRawMessage)
+                render: { message, verbosity in
+                    ErrorMessageView(message: message, verbosity: verbosity)
                 }
             )
         )
@@ -81,8 +81,8 @@ public struct MessageRendererOnBootHook {
                 canRender: { message in
                     message.role == .tool
                 },
-                render: { message, showRawMessage in
-                    ToolMessageView(message: message, showRawMessage: showRawMessage)
+                render: { message, verbosity in
+                    ToolMessageView(message: message, verbosity: verbosity)
                 }
             )
         )
@@ -95,8 +95,8 @@ public struct MessageRendererOnBootHook {
                 canRender: { message in
                     message.role == .user
                 },
-                render: { message, showRawMessage in
-                    UserMessageView(kernel: kernel, message: message, showRawMessage: showRawMessage)
+                render: { message, verbosity in
+                    UserMessageView(kernel: kernel, message: message, verbosity: verbosity)
                 }
             )
         )
@@ -109,8 +109,8 @@ public struct MessageRendererOnBootHook {
                 canRender: { message in
                     message.role == .assistant
                 },
-                render: { message, showRawMessage in
-                    AssistantMessageView(message: message, showRawMessage: showRawMessage)
+                render: { message, verbosity in
+                    AssistantMessageView(message: message, verbosity: verbosity)
                 }
             )
         )
@@ -123,8 +123,8 @@ public struct MessageRendererOnBootHook {
                 canRender: { message in
                     message.role == .system
                 },
-                render: { message, showRawMessage in
-                    SystemMessageView(message: message, showRawMessage: showRawMessage)
+                render: { message, verbosity in
+                    SystemMessageView(message: message, verbosity: verbosity)
                 }
             )
         )
@@ -137,8 +137,8 @@ public struct MessageRendererOnBootHook {
                 canRender: { message in
                     !message.content.isEmpty
                 },
-                render: { message, showRawMessage in
-                    DefaultMessageView(message: message, showRawMessage: showRawMessage)
+                render: { message, verbosity in
+                    DefaultMessageView(message: message, verbosity: verbosity)
                 }
             )
         )
