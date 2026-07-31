@@ -79,8 +79,8 @@ struct MessageStorePaginationTests {
             providerID: "openai",
             modelName: "gpt-5",
             metadata: [
-                LumiMessageTokenMetadata.inputKey: "3",
-                LumiMessageTokenMetadata.outputKey: "7",
+                MessageTokenMetadata.inputKey: "3",
+                MessageTokenMetadata.outputKey: "7",
             ]
         ))
         _ = try store.insertMessage(LumiChatMessage(

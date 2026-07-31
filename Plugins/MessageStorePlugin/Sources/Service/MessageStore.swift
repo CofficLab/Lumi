@@ -477,10 +477,10 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         }
 
         let inputTokens = model.inputTokenCount
-            ?? metadata[LumiMessageTokenMetadata.inputKey].flatMap { Int($0) }
+            ?? metadata[MessageTokenMetadata.inputKey].flatMap { Int($0) }
             ?? 0
         let outputTokens = model.outputTokenCount
-            ?? metadata[LumiMessageTokenMetadata.outputKey].flatMap { Int($0) }
+            ?? metadata[MessageTokenMetadata.outputKey].flatMap { Int($0) }
             ?? 0
         return (inputTokens, outputTokens)
     }

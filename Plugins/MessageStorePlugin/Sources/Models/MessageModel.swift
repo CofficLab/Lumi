@@ -117,8 +117,8 @@ public extension MessageModel {
         let metadataJson = metadataData.flatMap { String(data: $0, encoding: .utf8) }
         let toolCallsData = try? encoder.encode(message.toolCalls)
         let toolCallsJson = toolCallsData.flatMap { String(data: $0, encoding: .utf8) }
-        let metadataInputTokens = message.metadata[LumiMessageTokenMetadata.inputKey].flatMap { Int($0) }
-        let metadataOutputTokens = message.metadata[LumiMessageTokenMetadata.outputKey].flatMap { Int($0) }
+        let metadataInputTokens = message.metadata[MessageTokenMetadata.inputKey].flatMap { Int($0) }
+        let metadataOutputTokens = message.metadata[MessageTokenMetadata.outputKey].flatMap { Int($0) }
 
         return MessageModel(
             id: message.id.uuidString,
