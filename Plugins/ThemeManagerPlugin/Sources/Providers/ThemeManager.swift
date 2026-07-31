@@ -19,7 +19,7 @@ public final class ThemeManager: UIThemeProviding {
     private var pluginsChangedObserver: NSObjectProtocol?
 
     /// Reference to the plugin manager for collecting theme contributions.
-    private weak var pluginManager: BuiltinPluginManager?
+    private weak var pluginManager: PluginManager?
 
     /// Kernel event dispatcher, used to broadcast theme-change events.
     private weak var eventManager: EventManager?
@@ -48,7 +48,7 @@ public final class ThemeManager: UIThemeProviding {
 
     public init(
         themeRegistry: LumiUIThemeRegistry = .shared,
-        pluginManager: BuiltinPluginManager? = nil
+        pluginManager: PluginManager? = nil
     ) {
         self.themeRegistry = themeRegistry
         self.themeSelectionStore = ThemeSelectionStore.shared
@@ -85,7 +85,7 @@ public final class ThemeManager: UIThemeProviding {
     /// `ThemeManager.init` runs during `ThemeManagerPlugin.onBoot(kernel:)`,
     /// but the plugin manager may not be fully initialized at that point.
     /// The plugin manager is wired up here and themes are reloaded.
-    public func setPluginManager(_ manager: BuiltinPluginManager) {
+    public func setPluginManager(_ manager: PluginManager) {
         self.pluginManager = manager
         if Self.verbose {
             Self.logger.info("Plugin manager injected")

@@ -67,9 +67,9 @@ struct TokenPlanData: Sendable {
     // MARK: - Derived
 
     /// 格式化状态栏显示文本
+    /// 格式: "40% · 50%" (时段剩余% · 周剩余%)
     var statusText: String {
-        let shortModel = modelName.split(separator: "-").first.map(String.init) ?? modelName
-        return String(format: "%d%% %@", remainingPercent, shortModel)
+        return "\(remainingPercent)% · \(weeklyRemainingPercent)%"
     }
 
     /// 剩余百分比
