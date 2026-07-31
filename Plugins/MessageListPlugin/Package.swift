@@ -24,5 +24,10 @@ let package = Package(
                 .process("../Resources/Localizable.xcstrings"),
             ]
         ),
+        .testTarget(
+            name: "MessageListPluginTests",
+            dependencies: ["MessageListPlugin"],
+            path: "Tests"
+        ),
     ]
 )
