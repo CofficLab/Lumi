@@ -150,12 +150,12 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         let endTime = CFAbsoluteTimeGetCurrent()
         let streamingDurationMs = (endTime - startTime) * 1000.0
 
-        var metadata = LumiMessageTokenMetadata.metadata(
+        var metadata = MessageTokenMetadata.metadata(
             inputTokens: nil,
             outputTokens: stats.outputTokenCount > 0 ? stats.outputTokenCount : nil
         )
         metadata.merge(
-            LumiMessagePerformanceMetadata.metadata(
+            MessagePerformanceMetadata.metadata(
                 latencyMs: streamingDurationMs,
                 timeToFirstTokenMs: stats.timeToFirstTokenMs,
                 streamingDurationMs: streamingDurationMs
