@@ -1,6 +1,6 @@
+import AppKit
 import LumiKernel
 import LumiUI
-import AppKit
 import SwiftUI
 
 struct MessageViewChrome<Content: View>: View {
@@ -132,21 +132,21 @@ struct MessageViewChrome<Content: View>: View {
 
     @ViewBuilder
     private var briefContextMenu: some View {
-            Button {
-                copyMessageContent()
-            } label: {
-                Label("复制消息", systemImage: "doc.on.doc")
-            }
+        Button {
+            copyMessageContent()
+        } label: {
+            Label("复制消息", systemImage: "doc.on.doc")
+        }
 
-            if showsResendButton, let kernel, !message.content.isEmpty {
-                Button {
-                    Task {
-                        await kernel.resendMessage(id: message.id, in: message.conversationID)
-                    }
-                } label: {
-                    Label("重新发送", systemImage: "arrow.clockwise")
+        if showsResendButton, let kernel, !message.content.isEmpty {
+            Button {
+                Task {
+                    await kernel.resendMessage(id: message.id, in: message.conversationID)
                 }
+            } label: {
+                Label("重新发送", systemImage: "arrow.clockwise")
             }
+        }
     }
 
     private func copyMessageContent() {
