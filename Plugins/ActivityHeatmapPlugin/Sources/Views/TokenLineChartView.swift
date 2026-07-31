@@ -76,7 +76,7 @@ public struct TokenLineChartView: View {
                 AxisMarks(values: .automatic(desiredCount: 5)) { value in
                     if let date = value.as(Date.self) {
                         AxisValueLabel {
-                            Text(date, format: Date.FormatStyle.dateTime.day().month(.abbreviated).locale(locale))
+                            Text(formatAxisDate(date))
                         }
                     }
                     AxisGridLine()
@@ -228,6 +228,14 @@ public struct TokenLineChartView: View {
         } else {
             return String(value)
         }
+    }
+
+    /// Formats a date for the X axis using the current locale.
+    private func formatAxisDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M/d"
+        formatter.locale = locale
+        return formatter.string(from: date)
     }
 
     /// Returns a DateFormatter configured with the current locale for tooltip display.
