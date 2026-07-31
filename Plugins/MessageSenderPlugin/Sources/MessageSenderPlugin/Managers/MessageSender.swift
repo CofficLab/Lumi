@@ -215,7 +215,7 @@ public final class MessageSender: MessageSending, SuperLog {
         conversationID: UUID?
     ) async throws {
         if Self.verbose {
-            Self.logger.info("\(Self.t)sendMessage 开始")
+            Self.logger.info("\(Self.t)🚀 sendMessage 开始")
         }
 
         // 1. Trim & early-return on empty input
@@ -268,14 +268,7 @@ public final class MessageSender: MessageSending, SuperLog {
         }
 
         // 3. Persist user message into the message history
-        if Self.verbose {
-            let hasLastMessage = self.kernel?.messageManager?.lastMessage(in: targetID) != nil
-            Self.logger.info("\(Self.t)准备进入发送态 ➡️ target=\(targetID.uuidString.prefix(8))…, hasLastMessage=\(hasLastMessage)")
-        }
         beginSending(in: targetID)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)isSending -> true, 准备写入 user 消息到会话 \(targetID.uuidString.prefix(8))…, activeSendingConversations=\(self.sendingConversationIDs.count)")
-        }
 
         // 把 attachments 序列化进 metadata["imageAttachments"] JSON(如有)
         var metadata: [String: String] = [:]
@@ -284,9 +277,7 @@ public final class MessageSender: MessageSending, SuperLog {
                 let data = try JSONEncoder().encode(imageAttachments)
                 metadata["imageAttachments"] = String(data: data, encoding: .utf8) ?? ""
             } catch {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)sendMessage ➡️ 编码 attachments 失败: \(error.localizedDescription)")
-                }
+                Self.logger.error("\(Self.t)sendMessage ➡️ 编码 attachments 失败: \(error.localizedDescription)")
             }
         }
 
@@ -302,21 +293,19 @@ public final class MessageSender: MessageSending, SuperLog {
             content: trimmed,
             metadata: metadata
         )
-        if Self.verbose {
-            Self.logger.info("\(Self.t)即将插入 user 消息 ➡️ id=\(userMessage.id.uuidString.prefix(8))…, target=\(targetID.uuidString.prefix(8))…, metadataKeys=\(metadata.keys.sorted().joined(separator: ","))")
-        }
+
         kernel?.messageManager?.insertMessage(userMessage, to: targetID)
+
+        // 用户消息落盘后立即清空附件(仅当挂起池未被用户在等待期间修改过)。
+        if pendingAttachments == imageAttachments {
+            clearAttachments()
+        }
+        if pendingFileAttachments == fileAttachments {
+            clearFileAttachments()
+        }
 
         defer {
             endSending(in: targetID)
-            // Do not clear attachments added while an earlier turn was running;
-            // those belong to a later queued/draft message.
-            if pendingAttachments == imageAttachments {
-                clearAttachments()
-            }
-            if pendingFileAttachments == fileAttachments {
-                clearFileAttachments()
-            }
             if Self.verbose {
                 Self.logger.info("\(Self.t)isSending -> false, sendMessage 结束 ➡️ target=\(targetID.uuidString.prefix(8))…, activeSendingConversations=\(self.sendingConversationIDs.count)")
             }
@@ -465,9 +454,8 @@ public final class MessageSender: MessageSending, SuperLog {
         do {
             try await kernelInstance.agentTurnManager?.runTurn(in: conversationID)
         } catch {
-            if Self.verbose {
-                Self.logger.error("\(Self.t)runAgentTurn 抛出 error target=\(conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")
-            }
+            Self.logger.error("\(Self.t)runAgentTurn 抛出 error target=\(conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")
+
             let errorMessage = LumiChatMessage(
                 conversationID: conversationID,
                 role: .error,
@@ -513,9 +501,7 @@ public final class MessageSender: MessageSending, SuperLog {
                     conversationID: message.conversationID
                 )
             } catch {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)消费待发送消息失败 ➡️ conversation=\(message.conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")
-                }
+                Self.logger.error("\(Self.t)消费待发送消息失败 ➡️ conversation=\(message.conversationID.uuidString.prefix(8))…: \(error.localizedDescription)")
             }
         }
     }
