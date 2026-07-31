@@ -1,6 +1,6 @@
 import Foundation
 
-public enum LumiMessageTokenMetadata {
+public enum MessageTokenMetadata {
     public static let inputKey = "inputTokens"
     public static let outputKey = "outputTokens"
     public static let cachedInputKey = "cachedInputTokens"

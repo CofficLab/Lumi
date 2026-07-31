@@ -1,6 +1,6 @@
 import Foundation
 
-public enum LumiMessagePerformanceMetadata {
+public enum MessagePerformanceMetadata {
     public static let latencyKey = "latencyMs"
     public static let timeToFirstTokenKey = "timeToFirstTokenMs"
     public static let streamingDurationKey = "streamingDurationMs"
