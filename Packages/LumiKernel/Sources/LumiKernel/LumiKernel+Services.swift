@@ -59,6 +59,13 @@ extension LumiKernelContainer {
         resolveService(MessageManaging.self)
     }
 
+    /// Message streaming service (current in-flight streaming assistant row).
+    ///
+    /// 由 runner 写入、UI 读取。可选服务，未注册时为 nil（UI 不显示流式临时行）。
+    public var messageStreaming: (any MessageStreaming)? {
+        resolveService(MessageStreaming.self)
+    }
+
     /// Editor service
     public var editorProvider: (any EditorProviding)? {
         resolveService(EditorProviding.self)

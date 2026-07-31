@@ -54,6 +54,13 @@ extension LumiKernelContainer {
         try registerService(MessageManaging.self, messageManager)
     }
 
+    /// Register message streaming service (runner writes streaming tokens, UI reads them).
+    ///
+    /// 可选增强服务：缺失时 UI 优雅降级为不显示流式临时行（最终落库消息仍正常显示）。
+    public func registerMessageStreaming(_ streaming: any MessageStreaming) throws {
+        try registerService(MessageStreaming.self, streaming)
+    }
+
     /// Register editor service
     public func registerEditor(_ editor: any EditorProviding) throws {
         try registerService(EditorProviding.self, editor)
