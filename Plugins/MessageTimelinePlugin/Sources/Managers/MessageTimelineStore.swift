@@ -1,6 +1,8 @@
 import Combine
 import Foundation
 import LumiKernel
+import os
+import SuperLogKit
 
 /// Message Timeline Store
 ///
@@ -24,7 +26,11 @@ import LumiKernel
 /// - SeeAlso: `MessageTimelinePaginationService`(分页策略)、
 ///   `MessageTimelineRowBuilder`(行合并规则)。
 @MainActor
-public final class MessageTimelineStore: MessageTimelineProviding {
+public final class MessageTimelineStore: MessageTimelineProviding, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-timeline-store")
+    public nonisolated static let emoji = "📜"
+    nonisolated static let verbose = true
+
     // MARK: - Published State (供 UI 展示)
 
     /// 最终展示行序列:真实消息 + 流式临时行 + 状态行(由 RowBuilder 合并)。
@@ -84,6 +90,9 @@ public final class MessageTimelineStore: MessageTimelineProviding {
 
     /// 切换/进入会话:绑定服务订阅(幂等),记录目标会话,加载最近一页。
     public func activate(conversationID: UUID?) async {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🔄 activate 开始 ➡️ conversation=\(conversationID?.uuidString.prefix(8) ?? "nil")")
+        }
         bindServicesIfNeeded()
         activeConversationID = conversationID
         isLoading = true
@@ -101,6 +110,9 @@ public final class MessageTimelineStore: MessageTimelineProviding {
         guard let conversationID = selectedConversationID,
               !isLoadingEarlier,
               let currentFirstID = persistedMessages.first?.id else { return nil }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)⬆️ loadEarlier 开始 ➡️ conversation=\(conversationID.uuidString.prefix(8))…")
+        }
         isLoadingEarlier = true
         defer { isLoadingEarlier = false }
         guard let result = await pagination.loadEarlier(
@@ -110,7 +122,12 @@ public final class MessageTimelineStore: MessageTimelineProviding {
             hasEarlier: hasEarlierMessages
         ) else { return nil }
         // 加载期间用户可能切了会话,丢弃过期结果。
-        guard activeConversationID == conversationID else { return nil }
+        guard activeConversationID == conversationID else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)⬆️ loadEarlier 过期丢弃")
+            }
+            return nil
+        }
         persistedMessages = result.earlier + persistedMessages
         hasEarlierMessages = result.hasEarlierMessages
         persistedMessages = pagination.evictTailIfNeeded(
@@ -125,12 +142,20 @@ public final class MessageTimelineStore: MessageTimelineProviding {
     /// 经 `rebuildRows` 参与合并,无需任何特例处理。
     public func refreshTail() async {
         guard let conversationID = selectedConversationID else { return }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🔄 refreshTail 开始 ➡️ conversation=\(conversationID.uuidString.prefix(8))…")
+        }
         guard let result = await pagination.refreshTail(
             conversationID: conversationID,
             messageManager: kernel.messageManager,
             current: persistedMessages
         ) else { return }
-        guard activeConversationID == conversationID else { return }
+        guard activeConversationID == conversationID else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)🔄 refreshTail 过期丢弃")
+            }
+            return
+        }
         persistedMessages = result.merged
         if let hasEarlier = result.hasEarlierMessages {
             hasEarlierMessages = hasEarlier
@@ -142,19 +167,33 @@ public final class MessageTimelineStore: MessageTimelineProviding {
     /// 首屏:加载最近一页,并探测是否还有更早消息。
     private func loadFirstPage(conversationID: UUID?) async {
         guard let conversationID else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)📄 loadFirstPage ➡️ conversationID 为空,清空消息")
+            }
             persistedMessages = []
             hasEarlierMessages = false
             isLoading = false
             return
+        }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)📄 loadFirstPage 开始 ➡️ conversation=\(conversationID.uuidString.prefix(8))…")
         }
         let result = await pagination.loadFirstPage(
             conversationID: conversationID,
             messageManager: kernel.messageManager
         )
         // 切换会话期间用户可能又选了别的会话,丢弃过期结果。
-        guard activeConversationID == conversationID else { return }
+        guard activeConversationID == conversationID else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)📄 loadFirstPage 过期丢弃")
+            }
+            return
+        }
         persistedMessages = result.messages
         hasEarlierMessages = result.hasEarlierMessages
+        if Self.verbose {
+            Self.logger.info("\(Self.t)📄 loadFirstPage 完成 ➡️ messages=\(result.messages.count), hasEarlier=\(result.hasEarlierMessages)")
+        }
         isLoading = false
     }
 

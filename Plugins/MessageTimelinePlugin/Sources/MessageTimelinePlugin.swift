@@ -1,8 +1,8 @@
 import Foundation
-import SwiftUI
 import LumiKernel
 import os
 import SuperLogKit
+import SwiftUI
 
 /// Message Timeline Plugin
 ///
@@ -23,29 +23,21 @@ public final class MessageTimelinePlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.message-timeline"
     public let name = "Message Timeline"
-    public let order = 81  // After message services (61–64), before MessageListPlugin (82)
+    public let order = 81 // After message services (61–64), before MessageListPlugin (82)
     public let policy: LumiPluginPolicy = .alwaysOn
 
     // MARK: - Initialization
 
-    public init() {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)\(Self.onInit)MessageTimelinePlugin")
-        }
-    }
+    public init() {}
 
     // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {
         let store = MessageTimelineStore(kernel: kernel)
         try kernel.registerMessageTimelineProvider(store)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 MessageTimelineStore")
-        }
     }
 
     public func onReady(kernel: LumiKernel) async throws {}
-
 
     // MARK: - LumiPlugin stubs
 
