@@ -8,12 +8,14 @@ public struct ItemView: View {
 
     public let conversation: LumiConversationSummary
     public let svc: any ConversationManaging
+    public let kernel: LumiKernel
 
     @State private var isSelected: Bool = false
 
-    public init(conversation: LumiConversationSummary, svc: any ConversationManaging) {
+    public init(conversation: LumiConversationSummary, svc: any ConversationManaging, kernel: LumiKernel) {
         self.conversation = conversation
         self.svc = svc
+        self.kernel = kernel
     }
 
     public var body: some View {
@@ -43,7 +45,7 @@ public struct ItemView: View {
                             .foregroundColor(theme.primary)
                     }
 
-                    Text(conversation.displayTitle)
+                    Text(kernel.uiTitle(for: conversation.id))
                         .font(.appMicroEmphasized)
                         .foregroundColor(theme.textPrimary)
                         .lineLimit(1)
