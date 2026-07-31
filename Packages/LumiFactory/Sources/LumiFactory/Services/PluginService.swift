@@ -85,6 +85,7 @@ import MenuBarManagerPlugin
 import MessageListPlugin
 import MessageRendererPlugin
 import MessageSenderPlugin
+import MessageStreamingPlugin
 import MessageStorePlugin
 import ModelSelectorPlugin
 import NettoPlugin
@@ -187,6 +188,7 @@ public enum PluginService {
             LayoutKernelPlugin(),
             ConversationStorePlugin(),
             MessageStorePlugin(),
+            MessageStreamingPlugin(),
             MessageSenderPlugin(),
             AgentTurnRunnerPlugin(),
             MessageRendererPlugin(),
