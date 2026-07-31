@@ -8,8 +8,8 @@ enum Http401Renderer {
         canRender: { message in
             ZhipuRenderKind.matchesHttp(statusCode: 401, message: message)
         },
-        render: { message, showRawMessage in
-            ApiKeyMissingView(message: message, showRawMessage: showRawMessage)
+        render: { message in
+            ApiKeyMissingView(message: message)
         }
     )
 }

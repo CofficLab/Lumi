@@ -654,6 +654,7 @@
       }
     },
     "Raw error details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -688,6 +689,7 @@
       }
     },
     "Received Data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -790,6 +792,7 @@
       }
     },
     "Request / Response Details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -892,6 +895,7 @@
       }
     },
     "Sending Data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -960,6 +964,7 @@
       }
     },
     "Show raw error details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -994,6 +999,7 @@
       }
     },
     "Show request and response details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
