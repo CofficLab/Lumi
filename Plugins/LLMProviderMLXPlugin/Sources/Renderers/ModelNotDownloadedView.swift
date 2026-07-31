@@ -16,7 +16,6 @@ struct ModelNotDownloadedView: View {
     @LumiTheme private var theme
 
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
 
     @ObservedObject private var downloadManager = MLXDownloadManager.shared
 
@@ -51,7 +50,7 @@ struct ModelNotDownloadedView: View {
     }
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 10) {
                 header
 
