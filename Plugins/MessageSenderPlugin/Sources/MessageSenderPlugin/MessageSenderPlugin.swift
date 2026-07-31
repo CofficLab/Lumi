@@ -35,7 +35,7 @@ public final class MessageSenderPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {
         let service = MessageSender(kernel: kernel)
-        kernel.registerMessageSend(service)
+        try kernel.registerMessageSend(service)
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 MessageSender")
             Self.logger.info("\(Self.t)MessageSenderPlugin boot 完成")

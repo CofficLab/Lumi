@@ -22,7 +22,7 @@ public final class SharedUIPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {
         let sharedUIServiceInstance = UIManager()
-        kernel.registerSharedUIService(sharedUIServiceInstance)
+        try kernel.registerSharedUIService(sharedUIServiceInstance)
         self.sharedUIService = sharedUIServiceInstance
 
         if Self.verbose {

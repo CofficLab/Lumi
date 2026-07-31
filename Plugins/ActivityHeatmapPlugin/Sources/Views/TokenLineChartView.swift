@@ -7,6 +7,7 @@ public struct TokenLineChartView: View {
     public let data: [ActivityDayToken]
     public let isLoading: Bool
 
+    @Environment(\.locale) private var locale
     @State private var shimmerPhase: CGFloat = -1.2
     @State private var hoveredPoint: ActivityDayToken?
 
@@ -72,7 +73,14 @@ public struct TokenLineChartView: View {
                 .foregroundStyle(areaGradient)
             }
             .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 5))
+                AxisMarks(values: .automatic(desiredCount: 5)) { value in
+                    if let date = value.as(Date.self) {
+                        AxisValueLabel {
+                            Text(date, format: Date.FormatStyle.dateTime.day().month(.abbreviated).locale(locale))
+                        }
+                    }
+                    AxisGridLine()
+                }
             }
             .chartYAxis {
                 AxisMarks(position: .leading)
@@ -122,9 +130,9 @@ public struct TokenLineChartView: View {
                                 .position(x: x, y: y)
 
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(Self.tooltipDateFormatter.string(from: hoveredPoint.date))
+                                Text(tooltipDateFormatter().string(from: hoveredPoint.date))
                                     .font(.system(size: 10, weight: .medium))
-                                Text(String(format: LumiPluginLocalization.string("X: %@", bundle: .module), Self.tooltipDateFormatter.string(from: hoveredPoint.date)))
+                                Text(String(format: LumiPluginLocalization.string("X: %@", bundle: .module), tooltipDateFormatter().string(from: hoveredPoint.date)))
                                     .font(.system(size: 10))
                                     .foregroundStyle(.secondary)
                                 Text(String(format: LumiPluginLocalization.string("Y: %@ tokens", bundle: .module), formatNumber(hoveredPoint.totalTokens)))
@@ -222,12 +230,14 @@ public struct TokenLineChartView: View {
         }
     }
 
-    private static let tooltipDateFormatter: DateFormatter = {
+    /// Returns a DateFormatter configured with the current locale for tooltip display.
+    private func tooltipDateFormatter() -> DateFormatter {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
+        formatter.locale = locale
         return formatter
-    }()
+    }
 }
 
 #Preview("With Data") {

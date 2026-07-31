@@ -17,14 +17,13 @@ public struct CommandOnBootHook {
     public func execute(_ kernel: LumiKernel) async throws {
         // 1. 注册 CommandService（内核服务）
         let commandServiceInstance = DefaultCommandProviding()
-        kernel.registerCommandService(commandServiceInstance)
+        try kernel.registerCommandService(commandServiceInstance)
 
         // 2. 注册内置 Debug 菜单命令
         DebugCommands().register(into: kernel)
 
         if Self.verbose {
             Self.logger.info("已注册 Command 插件到内核")
-            Self.logger.info("Command 插件启动完成")
         }
     }
 }

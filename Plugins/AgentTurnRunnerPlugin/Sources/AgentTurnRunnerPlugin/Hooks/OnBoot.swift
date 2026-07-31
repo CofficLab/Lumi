@@ -16,7 +16,7 @@ public struct AgentTurnRunnerOnBootHook {
     /// 执行 boot
     public func execute(_ kernel: LumiKernel) async throws {
         let service = AgentTurnRunner(kernel: kernel)
-        kernel.registerAgentTurnManagerService(service)
+        try kernel.registerAgentTurnManagerService(service)
         if Self.verbose {
             Self.logger.info("已注册 AgentTurnRunner")
             Self.logger.info("AgentTurnRunnerPlugin boot 完成")

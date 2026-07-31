@@ -17,7 +17,7 @@ public struct LogoOnBootHook: SuperLog {
     public func execute(_ kernel: LumiKernel) async throws {
         // 1. 注册 LogoService（内核服务）
         let logoServiceInstance = LogoManager()
-        kernel.registerLogoService(logoServiceInstance)
+        try kernel.registerLogoService(logoServiceInstance)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 Logo 管理插件到内核")

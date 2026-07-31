@@ -36,7 +36,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public func onBoot(kernel: LumiKernel) async throws {
-        kernel.registerConversationInputService(inputState)
+        try kernel.registerConversationInputService(inputState)
     }
 
     public func onReady(kernel: LumiKernel) async throws {

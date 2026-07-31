@@ -20,7 +20,7 @@ public struct LegacyDataOnBootHook: SuperLog {
         let v4Root = resolveV4DataRootDirectory(kernel: kernel)
 
         let service = LegacyDataService(v4DataRootDirectory: v4Root)
-        kernel.registerLegacyDataService(service)
+        try kernel.registerLegacyDataService(service)
 
         if Self.verbose {
             if let v4Root {

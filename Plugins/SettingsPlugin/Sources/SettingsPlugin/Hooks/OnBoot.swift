@@ -17,7 +17,7 @@ public struct SettingsOnBootHook {
     public func execute(_ kernel: LumiKernel) async throws {
         // 1. 注册 SettingsService（内核服务）
         let settingsServiceInstance = DefaultSettingsProviding()
-        kernel.registerSettingsService(settingsServiceInstance)
+        try kernel.registerSettingsService(settingsServiceInstance)
 
         if Self.verbose {
             Self.logger.info("已注册 Settings 插件到内核")

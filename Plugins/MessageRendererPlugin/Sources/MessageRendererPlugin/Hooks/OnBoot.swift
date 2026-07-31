@@ -16,7 +16,7 @@ public struct MessageRendererOnBootHook {
     /// 执行 boot
     public func execute(_ kernel: LumiKernel) async throws {
         // 注册 Manager
-        kernel.registerMessageRendererManagerService(MessageRendererManager.shared)
+        try kernel.registerMessageRendererManagerService(MessageRendererManager.shared)
 
         // 注册内置渲染器
         guard let manager = kernel.resolveService(MessageRendering.self) else {

@@ -12,7 +12,7 @@ struct LegacyDataProvidingTests {
     func testRegisterAndResolve() async throws {
         let kernel = LumiKernel()
         let mock = MockLegacyDataService()
-        kernel.registerLegacyDataService(mock)
+        try kernel.registerLegacyDataService(mock)
 
         let resolved = kernel.legacyData
         #expect(resolved != nil)
@@ -27,14 +27,28 @@ struct LegacyDataProvidingTests {
         #expect(kernel.legacyData == nil)
     }
 
-    @Test("重复注册后者覆盖前者")
-    func testReRegistrationOverwrites() async throws {
+    @Test("重复注册后者抛出错误")
+    func testReRegistrationThrows() async throws {
         let kernel = LumiKernel()
         let first = MockLegacyDataService()
         let second = MockLegacyDataService()
 
-        kernel.registerLegacyDataService(first)
-        kernel.registerLegacyDataService(second)
+        try kernel.registerLegacyDataService(first)
+        // 重复注册应抛出错误
+        #expect(throws: LumiKernelError.self) {
+            try kernel.registerLegacyDataService(second)
+        }
+    }
+
+    @Test("unregister 后可重新注册")
+    func testUnregisterAndReregister() async throws {
+        let kernel = LumiKernel()
+        let first = MockLegacyDataService()
+        let second = MockLegacyDataService()
+
+        try kernel.registerLegacyDataService(first)
+        kernel.unregisterService(LegacyDataProviding.self)
+        try kernel.registerLegacyDataService(second)
 
         let resolved = kernel.legacyData as? MockLegacyDataService
         #expect(resolved === second)
@@ -44,7 +58,7 @@ struct LegacyDataProvidingTests {
     @Test("unregisterService 后 legacyData 变为 nil")
     func testUnregisterClears() async throws {
         let kernel = LumiKernel()
-        kernel.registerLegacyDataService(MockLegacyDataService())
+        try kernel.registerLegacyDataService(MockLegacyDataService())
         #expect(kernel.legacyData != nil)
 
         kernel.unregisterService(LegacyDataProviding.self)
@@ -116,7 +130,7 @@ struct LegacyDataProvidingTests {
             LumiChatMessage(conversationID: convID, role: .user, content: "你好"),
             LumiChatMessage(conversationID: convID, role: .assistant, content: "你好,在的")
         ]
-        kernel.registerLegacyDataService(mock)
+        try kernel.registerLegacyDataService(mock)
 
         // 模拟一个消费插件的 onReady 迁移片段
         guard let legacy = kernel.legacyData else {
@@ -144,7 +158,7 @@ struct LegacyDataProvidingTests {
         let kernel = LumiKernel()
         let mock = MockLegacyDataService()
         mock.fetchConversationsThrows = true
-        kernel.registerLegacyDataService(mock)
+        try kernel.registerLegacyDataService(mock)
 
         // 模拟消费插件:do/catch 吞错,绝不向上抛(否则阻塞 onReady 串行链)
         let legacy = kernel.legacyData
@@ -165,7 +179,7 @@ struct LegacyDataProvidingTests {
     func testReleaseIdempotent() async throws {
         let kernel = LumiKernel()
         let mock = MockLegacyDataService()
-        kernel.registerLegacyDataService(mock)
+        try kernel.registerLegacyDataService(mock)
 
         let legacy = kernel.legacyData!
         legacy.releaseLegacySnapshot()
@@ -178,7 +192,7 @@ struct LegacyDataProvidingTests {
         let kernel = LumiKernel()
         let mock = MockLegacyDataService()
         mock.stubRootDirectory = nil
-        kernel.registerLegacyDataService(mock)
+        try kernel.registerLegacyDataService(mock)
 
         let legacy = kernel.legacyData
         #expect(legacy?.legacyDataRootDirectory == nil)
@@ -195,11 +209,13 @@ struct LegacyDataProvidingTests {
 @MainActor
 private final class MockLegacyDataService: LegacyDataProviding {
     var stubRootDirectory: URL? = URL(fileURLWithPath: "/db_production_v4")
+
     /// 显式覆写 hasLegacyData();nil 时跟随 stubRootDirectory 是否存在(模拟真实实现)。
     var overrideHasLegacyData: Bool? = nil
     var stubConversations: [LumiConversationSummary] = []
     var stubMessagesByConversation: [UUID: [LumiChatMessage]] = [:]
     var fetchConversationsThrows: Bool = false
+
     var releaseCallCount: Int = 0
 
     var legacyDataRootDirectory: URL? { stubRootDirectory }

@@ -16,7 +16,7 @@ public struct MessageStoreOnReadyHook {
     /// 执行 onReady
     public func execute(_ kernel: LumiKernel) async throws {
         let manager = MessageManager(kernel: kernel)
-        kernel.registerMessageManager(manager)
+        try kernel.registerMessageManager(manager)
 
         // Initialize MessageStore with proper database root URL
         let databaseRootURL: URL

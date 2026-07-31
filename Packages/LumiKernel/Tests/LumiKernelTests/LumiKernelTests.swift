@@ -13,7 +13,7 @@ struct LumiKernelTests {
 
         // 测试服务注册
         let storage = MockStorageService()
-        kernel.registerService(StorageProviding.self, storage)
+        try kernel.registerService(StorageProviding.self, storage)
 
         // 测试服务解析
         let resolved = kernel.resolveService(StorageProviding.self)
@@ -25,7 +25,7 @@ struct LumiKernelTests {
         let kernel = LumiKernel()
         let input = MockConversationInputService()
 
-        kernel.registerConversationInputService(input)
+        try kernel.registerConversationInputService(input)
 
         let resolved = kernel.conversationInput
         #expect(resolved != nil)
@@ -36,7 +36,7 @@ struct LumiKernelTests {
     func testConversationInputStateSharedThroughKernel() async throws {
         let kernel = LumiKernel()
         let input = MockConversationInputService()
-        kernel.registerConversationInputService(input)
+        try kernel.registerConversationInputService(input)
 
         kernel.conversationInput?.text = "hello kernel"
         kernel.conversationInput?.inputHeight = 120
@@ -55,7 +55,7 @@ struct LumiKernelTests {
     func testConversationInputConversationReferences() async throws {
         let kernel = LumiKernel()
         let input = MockConversationInputService()
-        kernel.registerConversationInputService(input)
+        try kernel.registerConversationInputService(input)
 
         let fileA = URL(fileURLWithPath: "/tmp/A.swift")
         let fileB = URL(fileURLWithPath: "/tmp/B.swift")

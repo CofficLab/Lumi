@@ -17,7 +17,7 @@ public struct ConversationStoreOnReadyHook: SuperLog {
     /// 执行 onReady
     public func execute(_ kernel: LumiKernel) async throws {
         let manager = ConversationManager(kernel: kernel)
-        kernel.registerConversations(manager)
+        try kernel.registerConversations(manager)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 ConversationManager")
