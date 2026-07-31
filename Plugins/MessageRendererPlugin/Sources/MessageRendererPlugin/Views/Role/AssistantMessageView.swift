@@ -23,31 +23,8 @@ private struct AssistantMessageBody: View {
     let message: LumiChatMessage
     let shouldHideAssistantBody: Bool
 
-    /// 思考内容：优先读 `reasoningContent`（流式写入 + 多数 provider 落库字段），
-    /// 其次读 `metadata["thinkingContent"]`（历史兼容）。与 `MessageViewChrome`
-    /// 的 `thinkingContent` 口径一致，确保流式思考过程能在正文区实时展示。
-    private var thinkingContent: String? {
-        if let reasoning = message.reasoningContent, !reasoning.isEmpty {
-            return reasoning
-        }
-        if let thinking = message.metadata["thinkingContent"], !thinking.isEmpty {
-            return thinking
-        }
-        return nil
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if let thinking = thinkingContent {
-                DisclosureGroup("Thinking") {
-                    Text(thinking)
-                        .font(.appMonoCaption)
-                        .foregroundColor(theme.textSecondary)
-                        .textSelection(.enabled)
-                }
-                .font(.appCaptionEmphasized)
-            }
-
             if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !shouldHideAssistantBody {
                 MarkdownBlockRenderer(
                     markdown: message.content,

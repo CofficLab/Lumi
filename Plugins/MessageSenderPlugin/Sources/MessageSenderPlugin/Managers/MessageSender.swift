@@ -69,11 +69,15 @@ public final class MessageSender: MessageSending, SuperLog {
 
     public func currentStatusRow(for conversationID: UUID) -> LumiChatMessage? {
         guard isSending(for: conversationID) else { return nil }
+        let streaming = kernel?.messageStreaming
         return LumiChatMessage(
             id: LumiStatusRowID,
             conversationID: conversationID,
             role: .status,
-            content: statusContent(for: kernel?.messageStreaming?.currentStage ?? .idle),
+            content: statusContent(
+                stage: streaming?.currentStage ?? .idle,
+                thinking: streaming?.currentStreamingRow?.reasoningContent
+            ),
             metadata: ["isTransientStatus": "true"]
         )
     }
@@ -81,14 +85,21 @@ public final class MessageSender: MessageSending, SuperLog {
     /// 把当前阶段映射成用户可见的状态文案。
     ///
     /// 阶段来自 `MessageStreaming`（由 runner 在流式生命周期中维护）。
+    /// - `thinking` 阶段：展示实际的思考文本（实时滚动），让用户看到模型推理过程；
+    /// - 其余阶段用固定文案。
     /// 工具调用回合间隔阶段归到 `.sending`（"正在发送消息…"）——
     /// 因为 onChunk 不推送 tool-call 增量，store 此时回到空态，无法精确区分。
-    private func statusContent(for stage: ChatStage) -> String {
+    private func statusContent(stage: ChatStage, thinking: String?) -> String {
         switch stage {
         case .idle, .sending:
             String(localized: "status.sending", defaultValue: "正在发送消息…")
         case .thinking:
-            String(localized: "status.thinking", defaultValue: "正在思考…")
+            // 思考阶段直接展示思考文本;尚未收到任何思考增量时回退到固定文案。
+            if let thinking, !thinking.isEmpty {
+                thinking
+            } else {
+                String(localized: "status.thinking", defaultValue: "正在思考…")
+            }
         case .generating:
             String(localized: "status.generating", defaultValue: "正在生成回复…")
         }
