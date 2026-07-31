@@ -63,7 +63,7 @@ public actor MemoryFileRetrieval {
 
     // MARK: - Initialization
 
-    public init(config: MemoryFileRetrievalConfig = MemoryFileRetrievalConfig(), verbose: Bool = true) {
+    public init(config: MemoryFileRetrievalConfig = MemoryFileRetrievalConfig(), verbose: Bool = false) {
         self.config = config
         self.verbose = verbose
     }

@@ -14,7 +14,7 @@ import NetworkExtension
 public class IPCConnection: NSObject, SuperLog, @unchecked Sendable {
     public static let shared = IPCConnection()
     private let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.netto")
-    private var verbose: Bool = true
+    private var verbose: Bool = false
     
     public var listener: NSXPCListener?
     public var currentConnection: NSXPCConnection?

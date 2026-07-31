@@ -23,7 +23,7 @@ import SuperLogKit
 @preconcurrency
 public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefinitionDelegate, SuperLog {
     public nonisolated static let emoji = "🔗"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     private let logger = Logger(subsystem: EditorHostEnvironment.current.logSubsystem, category: "editor.jump-to-definition")
     
     public weak var treeSitterClient: TreeSitterClient?

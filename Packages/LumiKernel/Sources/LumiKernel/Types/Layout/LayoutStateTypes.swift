@@ -104,7 +104,7 @@ public struct VisibilityFlags: Codable, Sendable {
 @MainActor
 public final class LayoutState: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.layout")
 
     @Published public var activeViewContainerID: String? {

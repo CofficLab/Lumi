@@ -56,7 +56,7 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog {
 
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-log")
     nonisolated public static let emoji = "📝"
-    nonisolated(unsafe) static var verbose: Bool = true
+    nonisolated(unsafe) static var verbose: Bool = false
 
     // MARK: - Constants
 

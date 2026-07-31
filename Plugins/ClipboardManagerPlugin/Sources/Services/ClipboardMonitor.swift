@@ -7,7 +7,7 @@ import os
 @MainActor
 public class ClipboardMonitor: ObservableObject, SuperLog {
     public nonisolated static let emoji = "📋"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = ClipboardManagerPlugin.logger
 
     public static let shared = ClipboardMonitor()

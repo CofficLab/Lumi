@@ -6,7 +6,7 @@ import SuperLogKit
 @MainActor
 public final class LumiProviderState: ObservableObject, SuperLog {
     nonisolated public static let emoji = "🤖"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.provider")
 
     @Published public var selectedRemoteProviderID: String? {

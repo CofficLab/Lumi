@@ -11,7 +11,7 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public let name = "AppStoreConnect"
     public let order = 65
     public nonisolated static let emoji = "🚀"
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-store-connect", category: "AppStoreConnectPlugin")
     public let policy: LumiPluginPolicy = .alwaysOn
 
