@@ -26,11 +26,6 @@ struct MessageListView: View {
     @State private var isAtBottom = true
     /// 切换会话时记录的目标会话,用于丢弃过期的后台读结果。
     @State private var activeConversationID: UUID?
-    /// 当前正在流式输出的临时 assistant 行 id(由 runner 在 start 阶段发送)。
-    ///
-    /// 它已 append 进 `messages`,流式期间原地 patch 其 content/reasoningContent;
-    /// 结束时落库的最终消息与它同 id,refreshTail 会平滑覆盖。切会话时清空。
-    @State private var streamingMessageID: UUID?
 
     @State private var showRawMessage = false
 
@@ -52,12 +47,22 @@ struct MessageListView: View {
         kernel.messageSender?.isSending(for: selectedConversationID) ?? false
     }
 
-    /// 仅用于展示的消息列表:发送中在尾部追加一条临时 `.status` 消息,
-    /// 由 `StatusMessageView` 渲染为"正在发送消息…"气泡。它不写入 `messages`,
-    /// 因此分页/尾部合并/裁剪逻辑仍只基于真实消息。
+    /// 仅用于展示的消息列表。
+    ///
+    /// 在真实消息(`messages`)末尾拼接两类**不写库**的临时行,因此分页/尾部合并/裁剪
+    /// 逻辑仍只基于真实消息,不会被临时行干扰(这正是抽取 store 的核心收益):
+    /// 1. 流式临时行:来自 `kernel.messageStreaming`(独立稳定 id,与落库行永不冲突)。
+    /// 2. 发送中状态行:"正在发送消息…"气泡。
     private var displayMessages: [LumiChatMessage] {
         guard let conversationID = selectedConversationID else { return messages }
-        guard isSending else { return messages }
+        var rows = messages
+        // 流式临时行(仅当属于当前会话;切会话时自动被过滤,无需额外清理)。
+        if let streamingRow = kernel.messageStreaming?.currentStreamingRow,
+           streamingRow.conversationID == conversationID {
+            rows.append(streamingRow)
+        }
+        // 发送中状态行。
+        guard isSending else { return rows }
         let statusMessage = LumiChatMessage(
             id: Self.transientStatusMessageID,
             conversationID: conversationID,
@@ -65,7 +70,8 @@ struct MessageListView: View {
             content: "正在发送消息…",
             metadata: ["isTransientStatus": "true"]
         )
-        return messages + [statusMessage]
+        rows.append(statusMessage)
+        return rows
     }
 
     var body: some View {
@@ -85,11 +91,6 @@ struct MessageListView: View {
             activeConversationID = selectedConversationID
             isLoading = true
             isAtBottom = true
-            // 清掉上一会话残留的流式临时行与标记,避免错位显示。
-            if let id = streamingMessageID {
-                messages.removeAll { $0.id == id }
-                streamingMessageID = nil
-            }
             await loadFirstPage()
         }
     }
@@ -166,9 +167,12 @@ struct MessageListView: View {
                         }
                     }
                 }
-                .onReceive(NotificationCenter.default.publisher(for: .lumiMessageStreaming)) { note in
-                    // 流式输出:全程不查库,只原地 patch 那一条临时行。
-                    Task { await handleStreaming(note, proxy: proxy) }
+                // 流式跟随滚动:store 的临时行变化时(kernel 自动转发 objectWillChange),
+                // 若用户停在底部则跟随滚到底(无动画,避免高频 delta 抖动)。
+                .onChange(of: kernel.messageStreaming?.currentStreamingRow?.content) { _ in
+                    if isAtBottom {
+                        proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
+                    }
                 }
             }
         }
@@ -242,6 +246,9 @@ struct MessageListView: View {
     }
 
     /// 尾部刷新:重新查最近一页,与当前尾部比对并更新;若用户在底部则滚到底。
+    ///
+    /// 只作用于真实落库消息(`messages`);流式临时行由 `MessageStreamingStore` 独立持有,
+    /// 不参与此合并,故无需任何流式特例处理(摘出/挂回/去重)。
     private func refreshTail() async {
         guard let conversationID = selectedConversationID,
               let messageManager = kernel.messageManager else { return }
@@ -250,25 +257,9 @@ struct MessageListView: View {
         guard activeConversationID == conversationID else { return }
         guard !latestPage.isEmpty else { return }
 
-        let latestIDs = Set(latestPage.map(\.id))
-
-        // 流式临时行不写库。判断它是否已"落库"——即最终消息是否已经进入数据库最近一页。
-        // - 尚未落库(还在流式):把它从 messages 摘出,合并后再挂回尾部(否则会被 overlap 覆盖丢失)。
-        // - 已落库:overlap 合并后的 latestPage 已包含同 id 的真实行,直接清掉 streamingMessageID,
-        //   让真实行生效——绝不能再 append,否则同一 id 出现两次,SwiftUI 会进入未定义状态。
-        var streamingRow: LumiChatMessage?
-        if let sid = streamingMessageID {
-            let alreadyPersisted = latestIDs.contains(sid)
-            if alreadyPersisted {
-                streamingMessageID = nil
-            } else if let idx = messages.firstIndex(where: { $0.id == sid }) {
-                streamingRow = messages[idx]
-                messages.remove(at: idx)
-            }
-        }
-
         // 合并:用最近一页覆盖尾部重叠区,保留头部更早的历史。
         // 找出当前 messages 中第一条属于 latestPage 的消息,从那里截断并拼接最新页。
+        let latestIDs = Set(latestPage.map(\.id))
         if let firstOverlapIndex = messages.firstIndex(where: { latestIDs.contains($0.id) }) {
             messages = Array(messages[..<firstOverlapIndex]) + latestPage
         } else if messages.isEmpty {
@@ -278,82 +269,7 @@ struct MessageListView: View {
         } else {
             // 无重叠(用户在翻很早的历史,最近一页与当前完全不交):不强行覆盖,避免破坏位置。
             // 仍提示有最新消息;不滚动(用户在上方)。
-            // 但仍需把摘出的临时行挂回,否则它会丢失。
-            if let row = streamingRow { messages.append(row) }
             return
-        }
-
-        // 把"尚未落库"的临时行挂回尾部(已落库的已在上方处理,不会走到这里)。
-        if let row = streamingRow {
-            // 兜底防御:确保不产生重复 id(理论上 latestIDs 不含它,但防御性编程)。
-            guard !messages.contains(where: { $0.id == row.id }) else { return }
-            messages.append(row)
-        }
-    }
-
-    // MARK: - Streaming
-
-    /// 处理流式输出事件(start/delta/end),原地维护 `messages` 里那一条临时 assistant 行。
-    ///
-    /// 全程不查库:
-    /// - `start`:若属于当前会话,append 一条空临时行,记录其 id,滚到底。
-    /// - `delta`:按 id 原地替换该行的 content/reasoningContent;仅当 isAtBottom 时滚到底。
-    /// - `end`:清掉 streamingMessageID(临时行若存在则交由后续 messagesDidChange 覆盖)。
-    private func handleStreaming(_ note: Notification, proxy: ScrollViewProxy) async {
-        // 只处理当前会话的流式,避免 A 会话被 B 会话的输出打扰。
-        guard let messageID = note.lumiStreamingMessageID,
-              note.lumiConversationID == selectedConversationID,
-              let kind = note.lumiStreamingKind else {
-            return
-        }
-
-        switch kind {
-        case .start:
-            // 防御:若已有同名 id 的临时行(异常重入),不重复 append。
-            guard !messages.contains(where: { $0.id == messageID }) else { return }
-
-            // 关键:先把已落库的真实历史补齐到 messages,再 append 临时行。
-            // 修复"首轮 user 消息不显示":streaming start 往往比 user 消息的
-            // messagesDidChange → refreshTail 先到达(后者是 async Task,会晚执行)。
-            // 若直接 append 临时行,会盖住尚未进 messages 的 user 消息。
-            // 这里主动同步一次尾部,确保 user 消息等真实历史先就位,临时行只能排在它们后面。
-            await refreshTail()
-
-            let placeholder = LumiChatMessage(
-                id: messageID,
-                conversationID: note.lumiConversationID ?? selectedConversationID!,
-                role: .assistant,
-                content: ""
-            )
-            messages.append(placeholder)
-            streamingMessageID = messageID
-            // 等一帧让新行布局后再滚到底部。
-            try? await Task.sleep(nanoseconds: 30_000_000)
-            scrollToBottom(proxy: proxy, animated: false)
-
-        case .delta:
-            guard messageID == streamingMessageID else { return }
-            guard let index = messages.firstIndex(where: { $0.id == messageID }) else { return }
-            let content = note.lumiStreamingContent
-            // 区分思考/正文:isThinking 的增量写入 reasoningContent,否则写 content。
-            if note.lumiStreamingIsThinking {
-                messages[index].reasoningContent = content
-            } else {
-                messages[index].content = content
-            }
-            // 仅当用户停在底部时跟随滚动(无动画,避免高频 delta 时抖动)。
-            if isAtBottom {
-                proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
-            }
-
-        case .end:
-            // 流式结束:清空标记。临时行(若存在)会被随后 messagesDidChange → refreshTail
-            // 用同 id 的最终完整消息平滑覆盖。失败路径下没有最终消息覆盖,
-            // 故主动移除残留空行,避免 UI 上留下空白气泡。
-            if let id = streamingMessageID {
-                streamingMessageID = nil
-                messages.removeAll { $0.id == id }
-            }
         }
     }
 
