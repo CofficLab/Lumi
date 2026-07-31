@@ -78,6 +78,7 @@ private final class ProjectService: ProjectProviding {
 
 @MainActor
 private final class LayoutService: LayoutProviding {
+    var currentViewContainer: ViewContainerItem? { nil }
 }
 
 @MainActor
