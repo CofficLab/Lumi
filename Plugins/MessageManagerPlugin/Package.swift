@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "MessageTimelinePlugin",
+    name: "MessageManagerPlugin",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "MessageTimelinePlugin", targets: ["MessageTimelinePlugin"]),
+        .library(name: "MessageManagerPlugin", targets: ["MessageManagerPlugin"]),
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
@@ -13,12 +13,17 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "MessageTimelinePlugin",
+            name: "MessageManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources"
+        ),
+        .testTarget(
+            name: "MessageManagerPluginTests",
+            dependencies: ["MessageManagerPlugin"],
+            path: "Tests"
         ),
     ]
 )

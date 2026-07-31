@@ -1,7 +1,7 @@
 import Foundation
 import LumiKernel
 import Testing
-@testable import MessageStorePlugin
+@testable import MessageManagerPlugin
 
 @Suite(.serialized)
 struct MessageStorePaginationTests {

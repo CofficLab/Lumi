@@ -6,7 +6,7 @@ import SuperLogKit
 /// LegacyData 插件 OnBoot 阶段钩子
 ///
 /// 在 boot 阶段定位 v4 旧数据目录并注册只读 `LegacyDataService`。
-/// 注册在 onBoot 完成,确保消费插件(ConversationStorePlugin / MessageStorePlugin)
+/// 注册在 onBoot 完成,确保消费插件(ConversationStorePlugin / MessageManagerPlugin)
 /// 在 onReady 时能通过 `kernel.legacyData` 取用。
 @MainActor
 public struct LegacyDataOnBootHook: SuperLog {

@@ -1,7 +1,7 @@
 import Foundation
 import LumiKernel
 import Testing
-@testable import MessageStorePlugin
+@testable import MessageManagerPlugin
 
 /// Write-behind + read-your-writes 行为测试。
 ///

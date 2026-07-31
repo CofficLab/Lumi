@@ -5,7 +5,7 @@ import Foundation
 /// 旧版本(v4)数据读取能力协议 - 迁移专用只读接口
 ///
 /// 用于「跨大版本数据迁移」场景:当 App 从 v4 升级到 v5 时,每个 Store 插件
-/// (ConversationStorePlugin / MessageStorePlugin)在自己的 `onReady` 阶段
+/// (ConversationStorePlugin / MessageManagerPlugin)在自己的 `onReady` 阶段
 /// 通过本协议读取 v4 旧库里与自己相关的数据,转换后写入 v5 新库。
 ///
 /// # 设计要点

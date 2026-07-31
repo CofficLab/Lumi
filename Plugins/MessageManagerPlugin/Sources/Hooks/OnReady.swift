@@ -51,10 +51,10 @@ public struct MessageStoreOnReadyHook {
             }
 
             if Self.verbose {
-                Self.logger.info("MessageStorePlugin 启动完成，数据库路径: \(databaseRootURL.path)")
+                Self.logger.info("MessageManagerPlugin 启动完成，数据库路径: \(databaseRootURL.path)")
             }
         } catch {
-            throw MessageStoreError.initializationFailed("MessageStorePlugin 数据库初始化失败: \(error.localizedDescription)")
+            throw MessageStoreError.initializationFailed("MessageManagerPlugin 数据库初始化失败: \(error.localizedDescription)")
         }
     }
 }

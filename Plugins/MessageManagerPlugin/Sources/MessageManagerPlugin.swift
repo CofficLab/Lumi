@@ -6,7 +6,7 @@ import LumiKernel
 ///
 /// Implements MessageManaging protocol with SwiftData persistence.
 @MainActor
-public final class MessageStorePlugin: LumiPlugin {
+public final class MessageManagerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.message-store"
     public let name = "Message Store"
     public let order = 62  // After ConversationStorePlugin

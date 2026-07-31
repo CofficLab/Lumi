@@ -22,7 +22,7 @@ public final class MessageStreamingPlugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.message-streaming"
     public let name = "Message Streaming"
-    public let order = 61  // Before MessageStorePlugin (62) and AgentTurnRunner (64)
+    public let order = 61  // Before MessageManagerPlugin (62) and AgentTurnRunner (64)
     public let policy: LumiPluginPolicy = .alwaysOn
 
     // MARK: - Initialization
