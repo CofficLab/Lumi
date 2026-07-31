@@ -10,7 +10,7 @@ import os
 @MainActor
 public struct CommandOnReadyHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.command")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public init() {}
 

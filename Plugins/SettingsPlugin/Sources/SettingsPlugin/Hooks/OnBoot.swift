@@ -9,7 +9,7 @@ import os
 @MainActor
 public struct SettingsOnBootHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.settings")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public init() {}
 

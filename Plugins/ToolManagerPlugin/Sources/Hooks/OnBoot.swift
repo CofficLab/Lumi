@@ -9,7 +9,7 @@ import os
 @MainActor
 public struct ToolManagerOnBootHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-manager")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public init() {}
 

@@ -10,14 +10,11 @@ import os
 @MainActor
 public struct EditorKernelOnReadyHook {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-kernel")
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public init() {}
 
     /// 执行 onReady
     public func execute(_ kernel: LumiKernel) throws {
-        if Self.verbose {
-            Self.logger.info("EditorKernel onReady (no-op, 服务已在 OnBoot 注册)")
-        }
     }
 }
