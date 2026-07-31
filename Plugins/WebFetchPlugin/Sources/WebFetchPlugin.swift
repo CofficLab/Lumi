@@ -25,11 +25,7 @@ public final class WebFetchPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        if Self.verbose {
-            Self.logger.info("🌐 WebFetch 插件初始化完成")
-        }
-    }
+    public func onReady(kernel: LumiKernel) async throws {}
 
 
     // MARK: - LumiPlugin stubs

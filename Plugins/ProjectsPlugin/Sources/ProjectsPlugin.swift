@@ -8,7 +8,7 @@ import SwiftUI
 public final class ProjectsPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects")
     public nonisolated static let emoji = "📂"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.projects"
     public let name = "Projects Plugin"
