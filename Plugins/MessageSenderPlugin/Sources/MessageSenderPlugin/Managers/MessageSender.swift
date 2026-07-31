@@ -64,44 +64,6 @@ public final class MessageSender: MessageSending, SuperLog {
         return sendingConversationIDs.contains(conversationID)
     }
 
-    public func currentStatusRow(for conversationID: UUID) -> LumiChatMessage? {
-        guard isSending(for: conversationID) else { return nil }
-        let streaming = kernel?.messageStreaming
-        return LumiChatMessage(
-            id: LumiStatusRowID,
-            conversationID: conversationID,
-            role: .status,
-            content: statusContent(
-                stage: streaming?.currentStage ?? .idle,
-                thinking: streaming?.currentStreamingRow?.reasoningContent
-            ),
-            metadata: ["isTransientStatus": "true"]
-        )
-    }
-
-    /// 把当前阶段映射成用户可见的状态文案。
-    ///
-    /// 阶段来自 `MessageStreaming`（由 runner 在流式生命周期中维护）。
-    /// - `thinking` 阶段：展示实际的思考文本（实时滚动），让用户看到模型推理过程；
-    /// - 其余阶段用固定文案。
-    /// 工具调用回合间隔阶段归到 `.sending`（"正在发送消息…"）——
-    /// 因为 onChunk 不推送 tool-call 增量，store 此时回到空态，无法精确区分。
-    private func statusContent(stage: ChatStage, thinking: String?) -> String {
-        switch stage {
-        case .idle, .sending:
-            String(localized: "status.sending", defaultValue: "正在发送消息…")
-        case .thinking:
-            // 思考阶段直接展示思考文本;尚未收到任何思考增量时回退到固定文案。
-            if let thinking, !thinking.isEmpty {
-                thinking
-            } else {
-                String(localized: "status.thinking", defaultValue: "正在思考…")
-            }
-        case .generating:
-            String(localized: "status.generating", defaultValue: "正在生成回复…")
-        }
-    }
-
     public func pendingMessages(for conversationID: UUID) -> [LumiPendingMessage] {
         pendingMessageQueues[conversationID] ?? []
     }
@@ -399,10 +361,22 @@ public final class MessageSender: MessageSending, SuperLog {
 
     private func beginSending(in conversationID: UUID) {
         sendingConversationIDs.insert(conversationID)
+        // 插入一条瞬时 status 消息("正在发送…"),由 MessageManager 仅存内存、不落盘。
+        // 流式行出现后由 UI 读模型互斥剔除;回合结束(endSending)时清除。
+        let status = LumiChatMessage(
+            conversationID: conversationID,
+            role: .status,
+            content: String(localized: "status.sending", defaultValue: "正在发送消息…"),
+            metadata: ["isTransientStatus": "true"]
+        )
+        kernel?.messageManager?.insertMessage(status, to: conversationID)
     }
 
     private func endSending(in conversationID: UUID) {
         sendingConversationIDs.remove(conversationID)
+        // 清除瞬时 status 消息(若回合正常完成,manager 在落 assistant 消息时已自动清掉,
+        // 这里是取消等"不落新消息就结束 sending"场景的兜底)。
+        kernel?.messageManager?.clearStatusMessage(in: conversationID)
         guard let next = dequeuePendingMessage(for: conversationID) else {
             guard pendingContinuationConversationIDs.remove(conversationID) != nil else { return }
             startContinuation(in: conversationID)

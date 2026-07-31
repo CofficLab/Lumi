@@ -31,6 +31,13 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
     /// 一条消息后台落盘成功后从这里移除;UI 早已显示它,移除是隐形的,无需再通知。
     private nonisolated let pending = PendingMessageBuffer()
 
+    /// 瞬时 status 消息缓冲(每会话最多一条,永不落盘)。
+    ///
+    /// `role == .status` 的消息(如"正在发送…")是视图层瞬时态,不进磁盘:
+    /// insert 时只入此缓冲;同会话一旦 insert 任何**非 status**消息(回合推进的标志),
+    /// 本缓冲里该会话的 status 立即被清除(manager 自动清理,调用方无需关心)。
+    private nonisolated let statusBuffer = StatusMessageBuffer()
+
     /// 后台落盘串行队列,保证同一会话内消息落盘顺序与插入顺序一致。
     private nonisolated let persistQueue = DispatchQueue(label: "com.coffic.lumi.message.persist")
 
@@ -87,7 +94,11 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
         let pending = pendingSnapshot(for: conversationID).filter {
             includesToolMessages || $0.role != .tool
         }
-        guard !pending.isEmpty else { return disk }
+        // status 是"当前进行中"的瞬时态,语义上永远显示在列表最末(最新位置),
+        // 不参与 pending 的 createdAt 排序。
+        let status = statusBuffer.snapshot(for: conversationID)
+
+        if pending.isEmpty && status == nil { return disk }
 
         let diskIDs = Set(disk.map(\.id))
         var merged = disk
@@ -98,6 +109,8 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
             if lhs.createdAt == rhs.createdAt { return lhs.id < rhs.id }
             return lhs.createdAt < rhs.createdAt
         }
+        // status 追加在最末。
+        if let status { merged.append(status) }
         return Array(merged.suffix(limit))
     }
 
@@ -201,16 +214,34 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
             )
         }
 
+        // status 消息:纯内存瞬时态,不落盘。每会话最多一条(insert 即替换)。
+        // 见 StatusMessageBuffer。回合产物(assistant/error)insert 时由下方自动清理移除。
+        if messageToInsert.role == .status {
+            statusBuffer.set(messageToInsert, conversationID: conversationID)
+            kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
+            return
+        }
+
+        // 回合产物(assistant/tool/error)到来 = 当前阶段结束,自动清除该会话的瞬时 status。
+        // 注意:user 消息不清 status —— user 是发送发起点(与 status 同属一轮),
+        // 清掉会让"正在发送…"瞬间消失。assistant(模型回复)/tool(工具结果)/error
+        // 都是阶段产物:它们落库意味着对应阶段(生成/工具执行/出错)结束,status 退场。
+        if messageToInsert.role == .assistant
+            || messageToInsert.role == .tool
+            || messageToInsert.role == .error {
+            statusBuffer.clear(conversationID: conversationID)
+        }
+
         // 1) 写入内存缓冲,立即通知 UI —— UI 这一刻就能从读路径看到它(read-your-writes)。
         enqueuePending(messageToInsert, conversationID: conversationID)
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
 
         // 2) 按 role 分流落盘:
-        //    - user / error / status:立即同步落盘(用户输入与错误不可丢);
+        //    - user / error:立即同步落盘(用户输入与错误不可丢);
         //    - assistant / tool:后台串行落盘(丢了可重发/重算,且不阻塞 UI)。
+        // status 不会走到这里(上方已 return)。
         let shouldPersistEagerly = messageToInsert.role == .user
             || messageToInsert.role == .error
-            || messageToInsert.role == .status
         if shouldPersistEagerly {
             persistNow(messageToInsert, conversationID: conversationID)
         } else {
@@ -264,6 +295,13 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
             Self.logger.info("\(Self.t)clearMessages ➡️ conversation=\(conversationID.uuidString.prefix(8))…")
         }
         store?.deleteAllMessages(conversationId: conversationID)
+        statusBuffer.clear(conversationID: conversationID)
+        kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
+    }
+
+    @MainActor
+    public func clearStatusMessage(in conversationID: UUID) {
+        guard statusBuffer.clear(conversationID: conversationID) else { return }
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
     }
 

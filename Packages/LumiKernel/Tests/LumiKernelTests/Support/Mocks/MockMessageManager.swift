@@ -99,4 +99,10 @@ final class MockMessageManager: MessageManaging, @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }
         storage.removeValue(forKey: conversationID)
     }
+
+    @MainActor
+    func clearStatusMessage(in conversationID: UUID) {
+        // Mock 不模拟 status 缓冲;status 在测试里直接走 insertMessage 存储,
+        // 故此处与 clearMessages 等效(清掉该会话全部消息即可满足测试需要)。
+    }
 }

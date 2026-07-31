@@ -199,7 +199,6 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         displayRows = rowBuilder.build(
             persisted: persistedMessages,
             conversationID: selectedConversationID,
-            sender: kernel.messageSender,
             streaming: kernel.messageStreaming
         )
         let content = kernel.messageStreaming?.currentStreamingRow?.content

@@ -75,6 +75,14 @@ public protocol MessageManaging: ObservableObject, Sendable {
     @MainActor
     func clearMessages(in conversationID: UUID)
 
+    /// 清除指定对话的瞬时 status 消息(如"正在发送…")。
+    ///
+    /// status 是发送/回合期间的瞬时态,由发送方在结束 sending 时显式清除;
+    /// insert 任一非 status 消息时 manager 也会自动清除(保险)。本方法供
+    /// 取消等"不落新消息就要结束 sending"的场景使用。
+    @MainActor
+    func clearStatusMessage(in conversationID: UUID)
+
     /// 获取指定消息
     func message(id: UUID, in conversationID: UUID) -> LumiChatMessage?
 
