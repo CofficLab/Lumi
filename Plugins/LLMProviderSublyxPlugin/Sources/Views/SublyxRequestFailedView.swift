@@ -8,7 +8,6 @@ struct SublyxRequestFailedView: View {
     private static let transportDetailsSeparator = "\n\n--- Request / Response Details ---\n"
 
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
 
     private var displayText: String {
         let raw = ((message.rawErrorDetail?.isEmpty == false) ? message.rawErrorDetail : message.content) ?? ""
@@ -16,7 +15,7 @@ struct SublyxRequestFailedView: View {
     }
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(NSLocalizedString("Sublyx request failed", bundle: .module, comment: ""))
                     .font(.appCallout)

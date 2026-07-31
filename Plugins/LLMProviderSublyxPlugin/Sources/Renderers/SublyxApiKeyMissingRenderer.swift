@@ -13,8 +13,8 @@ enum SublyxApiKeyMissingRenderer {
         canRender: { message in
             SublyxRenderKind.matchesApiKeyMissing(message)
         },
-        render: { message, showRawMessage in
-            SublyxApiKeyMissingView(message: message, showRawMessage: showRawMessage)
+        render: { message in
+            SublyxApiKeyMissingView(message: message)
         }
     )
 }
@@ -23,13 +23,12 @@ struct SublyxApiKeyMissingView: View {
     @LumiTheme private var theme
 
     let message: LumiChatMessage
-    @Binding var showRawMessage: Bool
 
     @State private var apiKey: String = ""
     @State private var isApiKeyVisible = false
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(LumiPluginLocalization.string("Sublyx API Key required", bundle: .module))
                     .font(.appCallout)

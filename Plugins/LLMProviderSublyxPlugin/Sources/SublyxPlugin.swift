@@ -22,7 +22,13 @@ public final class SublyxPlugin: LumiPlugin {
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
-    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
+        [
+            SublyxApiKeyMissingRenderer.item,
+            SublyxHttpErrorRenderer.item,
+            SublyxRequestFailedRenderer.item,
+        ]
+    }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }

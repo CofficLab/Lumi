@@ -12,8 +12,8 @@ enum SublyxRequestFailedRenderer {
         canRender: { message in
             SublyxRenderKind.matches(renderKind: SublyxRenderKind.requestFailed, message: message)
         },
-        render: { message, showRawMessage in
-            SublyxRequestFailedView(message: message, showRawMessage: showRawMessage)
+        render: { message in
+            SublyxRequestFailedView(message: message)
         }
     )
 }

@@ -9,7 +9,6 @@ struct SublyxHttpErrorView: View {
 
     let message: LumiChatMessage
     let statusCode: Int
-    @Binding var showRawMessage: Bool
 
     private var title: String {
         String(format: NSLocalizedString("Sublyx HTTP %lld", bundle: .module, comment: ""), statusCode)
@@ -27,7 +26,7 @@ struct SublyxHttpErrorView: View {
     }
 
     var body: some View {
-        ErrorMessageLayout(message: message, showRawMessage: $showRawMessage) {
+        ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.appCallout)
