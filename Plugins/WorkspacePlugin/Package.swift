@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "LayoutKernelPlugin",
+    name: "WorkspacePlugin",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "LayoutKernelPlugin", targets: ["LayoutKernelPlugin"]),
+        .library(name: "WorkspacePlugin", targets: ["WorkspacePlugin"]),
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
@@ -14,7 +14,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "LayoutKernelPlugin",
+            name: "WorkspacePlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

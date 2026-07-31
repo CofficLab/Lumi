@@ -51,7 +51,7 @@ import GoalTaskPlugin
 import HostsManagerPlugin
 import IdleTimePlugin
 import InputPlugin
-import LayoutKernelPlugin
+import WorkspacePlugin
 import LegacyDataPlugin
 import LLMProviderAiRouterPlugin
 import LLMProviderAliyunPlugin
@@ -183,7 +183,7 @@ public enum PluginService {
             // UI & Features
             ToolManagerPlugin(),
             ProjectsPlugin(),
-            LayoutKernelPlugin(),
+            WorkspacePlugin(),
             ConversationStorePlugin(),
             MessageStorePlugin(),
             MessageStreamingPlugin(),

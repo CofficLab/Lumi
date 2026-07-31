@@ -67,7 +67,7 @@
 
 ### 6. 核心服务插件 (5个) ✓ 100%完成
 - StoragePlugin
-- LayoutKernelPlugin
+- WorkspacePlugin
 - ChatKernelPlugin
 - EditorKernelPlugin
 - AgentToolPlugin

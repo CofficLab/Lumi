@@ -6,7 +6,7 @@ import SwiftUI
 
 /// 布局插件
 @MainActor
-public final class LayoutKernelPlugin: LumiPlugin, SuperLog {
+public final class WorkspacePlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout")
     public nonisolated static let emoji = "📐"
     nonisolated static let verbose = false

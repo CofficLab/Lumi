@@ -1,7 +1,7 @@
 import Foundation
 import LocalizationKit
 
-/// Runtime localization for LayoutKernelPlugin bundle.
+/// Runtime localization for WorkspacePlugin bundle.
 public enum LumiPluginLocalization {
     public static func string(
         _ key: String,

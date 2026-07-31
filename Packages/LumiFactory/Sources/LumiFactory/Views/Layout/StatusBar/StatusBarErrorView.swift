@@ -34,6 +34,6 @@ struct StatusBarErrorView: View {
         .onHover { hovering in
             isHovered = hovering
         }
-        .help("Workspace service is not registered. Please ensure LayoutKernelPlugin is loaded.")
+        .help("Workspace service is not registered. Please ensure WorkspacePlugin is loaded.")
     }
 }
