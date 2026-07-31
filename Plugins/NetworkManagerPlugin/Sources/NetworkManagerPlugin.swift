@@ -28,7 +28,7 @@ public final class NetworkManagerPlugin: LumiPlugin {
         }
         httpExchangeStore = exchangeStore
         NetworkService.shared.configureHTTPExchangeStore(exchangeStore)
-        kernel.registerService(NetworkProviding.self, NetworkProvider(exchangeStore: exchangeStore))
+        try kernel.registerService(NetworkProviding.self, NetworkProvider(exchangeStore: exchangeStore))
     }
 
     public func onReady(kernel: LumiKernel) async throws {}

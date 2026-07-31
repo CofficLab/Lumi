@@ -17,7 +17,7 @@ struct StorageServiceTests {
 
         // 3. 创建并注册存储服务
         let storage = StorageService(dataRootDirectory: tempDir)
-        kernel.registerStorage(storage)
+        try kernel.registerStorage(storage)
 
         // 4. 验证服务可用
         let resolved = kernel.storage

@@ -32,7 +32,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
 
     public func onBoot(kernel: LumiKernel) async throws {
         self.kernel = kernel
-        kernel.registerService(MenuBarPresenting.self, self)
+        try kernel.registerService(MenuBarPresenting.self, self)
     }
 
     public func onReady(kernel: LumiKernel) async throws {

@@ -20,7 +20,7 @@ public struct StorageOnBootHook {
     /// 执行 boot
     public func execute(_ kernel: LumiKernel) async throws {
         let storage = StorageService(dataRootDirectory: dataRootDirectory)
-        kernel.registerStorage(storage)
+        try kernel.registerStorage(storage)
         if Self.verbose {
             Self.logger.info("已注册 Storage 服务: \(self.dataRootDirectory.path)")
         }

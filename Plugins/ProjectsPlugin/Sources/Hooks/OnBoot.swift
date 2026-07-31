@@ -25,7 +25,7 @@ public struct ProjectsOnBootHook: SuperLog {
             store = nil
         }
         let projectService = ProjectService(store: store)
-        kernel.registerProject(projectService)
+        try kernel.registerProject(projectService)
 
         if Self.verbose {
             Self.logger.info("📂 Registered ProjectService")

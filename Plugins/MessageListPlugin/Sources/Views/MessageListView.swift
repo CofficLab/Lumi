@@ -168,7 +168,7 @@ struct MessageListView: View {
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .lumiMessageStreaming)) { note in
                     // 流式输出:全程不查库,只原地 patch 那一条临时行。
-                    handleStreaming(note, proxy: proxy)
+                    Task { await handleStreaming(note, proxy: proxy) }
                 }
             }
         }
@@ -250,9 +250,25 @@ struct MessageListView: View {
         guard activeConversationID == conversationID else { return }
         guard !latestPage.isEmpty else { return }
 
+        let latestIDs = Set(latestPage.map(\.id))
+
+        // 流式临时行不写库。判断它是否已"落库"——即最终消息是否已经进入数据库最近一页。
+        // - 尚未落库(还在流式):把它从 messages 摘出,合并后再挂回尾部(否则会被 overlap 覆盖丢失)。
+        // - 已落库:overlap 合并后的 latestPage 已包含同 id 的真实行,直接清掉 streamingMessageID,
+        //   让真实行生效——绝不能再 append,否则同一 id 出现两次,SwiftUI 会进入未定义状态。
+        var streamingRow: LumiChatMessage?
+        if let sid = streamingMessageID {
+            let alreadyPersisted = latestIDs.contains(sid)
+            if alreadyPersisted {
+                streamingMessageID = nil
+            } else if let idx = messages.firstIndex(where: { $0.id == sid }) {
+                streamingRow = messages[idx]
+                messages.remove(at: idx)
+            }
+        }
+
         // 合并:用最近一页覆盖尾部重叠区,保留头部更早的历史。
         // 找出当前 messages 中第一条属于 latestPage 的消息,从那里截断并拼接最新页。
-        let latestIDs = Set(latestPage.map(\.id))
         if let firstOverlapIndex = messages.firstIndex(where: { latestIDs.contains($0.id) }) {
             messages = Array(messages[..<firstOverlapIndex]) + latestPage
         } else if messages.isEmpty {
@@ -262,7 +278,16 @@ struct MessageListView: View {
         } else {
             // 无重叠(用户在翻很早的历史,最近一页与当前完全不交):不强行覆盖,避免破坏位置。
             // 仍提示有最新消息;不滚动(用户在上方)。
+            // 但仍需把摘出的临时行挂回,否则它会丢失。
+            if let row = streamingRow { messages.append(row) }
             return
+        }
+
+        // 把"尚未落库"的临时行挂回尾部(已落库的已在上方处理,不会走到这里)。
+        if let row = streamingRow {
+            // 兜底防御:确保不产生重复 id(理论上 latestIDs 不含它,但防御性编程)。
+            guard !messages.contains(where: { $0.id == row.id }) else { return }
+            messages.append(row)
         }
     }
 
@@ -274,7 +299,7 @@ struct MessageListView: View {
     /// - `start`:若属于当前会话,append 一条空临时行,记录其 id,滚到底。
     /// - `delta`:按 id 原地替换该行的 content/reasoningContent;仅当 isAtBottom 时滚到底。
     /// - `end`:清掉 streamingMessageID(临时行若存在则交由后续 messagesDidChange 覆盖)。
-    private func handleStreaming(_ note: Notification, proxy: ScrollViewProxy) {
+    private func handleStreaming(_ note: Notification, proxy: ScrollViewProxy) async {
         // 只处理当前会话的流式,避免 A 会话被 B 会话的输出打扰。
         guard let messageID = note.lumiStreamingMessageID,
               note.lumiConversationID == selectedConversationID,
@@ -286,6 +311,14 @@ struct MessageListView: View {
         case .start:
             // 防御:若已有同名 id 的临时行(异常重入),不重复 append。
             guard !messages.contains(where: { $0.id == messageID }) else { return }
+
+            // 关键:先把已落库的真实历史补齐到 messages,再 append 临时行。
+            // 修复"首轮 user 消息不显示":streaming start 往往比 user 消息的
+            // messagesDidChange → refreshTail 先到达(后者是 async Task,会晚执行)。
+            // 若直接 append 临时行,会盖住尚未进 messages 的 user 消息。
+            // 这里主动同步一次尾部,确保 user 消息等真实历史先就位,临时行只能排在它们后面。
+            await refreshTail()
+
             let placeholder = LumiChatMessage(
                 id: messageID,
                 conversationID: note.lumiConversationID ?? selectedConversationID!,
@@ -295,10 +328,8 @@ struct MessageListView: View {
             messages.append(placeholder)
             streamingMessageID = messageID
             // 等一帧让新行布局后再滚到底部。
-            Task {
-                try? await Task.sleep(nanoseconds: 30_000_000)
-                scrollToBottom(proxy: proxy, animated: false)
-            }
+            try? await Task.sleep(nanoseconds: 30_000_000)
+            scrollToBottom(proxy: proxy, animated: false)
 
         case .delta:
             guard messageID == streamingMessageID else { return }

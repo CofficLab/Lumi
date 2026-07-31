@@ -38,7 +38,7 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
         timer?.invalidate()
         timer = nil
         if Self.verbose {
-            self.logger.info("\(Self.t)🛑 Clipboard monitoring stopped")
+            Self.logger.info("\(Self.t)🛑 Clipboard monitoring stopped")
         }
     }
 

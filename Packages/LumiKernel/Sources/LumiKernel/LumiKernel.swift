@@ -39,11 +39,15 @@ public final class LumiKernelContainer: ObservableObject {
     // MARK: - Generic Service Registry
 
     /// Register service implementation
-    public func registerService<T>(_ type: T.Type, _ instance: T) {
-        services[ObjectIdentifier(type)] = instance
+    public func registerService<T>(_ type: T.Type, _ instance: T) throws {
+        let key = ObjectIdentifier(type)
+        if services[key] != nil {
+            throw LumiKernelError.serviceAlreadyRegistered(type: type)
+        }
+        services[key] = instance
 
         // Forward objectWillChange from ObservableObject services
-        subscribeToObjectWillChange(observable: instance, key: ObjectIdentifier(type))
+        subscribeToObjectWillChange(observable: instance, key: key)
     }
 
     /// Helper to subscribe to ObservableObject's objectWillChange

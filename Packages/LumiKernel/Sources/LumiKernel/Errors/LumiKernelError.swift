@@ -4,6 +4,7 @@ import Foundation
 public enum LumiKernelError: Error, LocalizedError {
     case pluginAlreadyRegistered(id: String)
     case pluginNotFound(id: String)
+    case serviceAlreadyRegistered(type: Any.Type)
     case missingRequiredServices([String])
     case serviceNotAvailable(service: String)
     case noActiveConversation
@@ -21,6 +22,9 @@ public enum LumiKernelError: Error, LocalizedError {
             return "Plugin '\(id)' is already registered"
         case .pluginNotFound(let id):
             return "Plugin '\(id)' not found"
+        case .serviceAlreadyRegistered(let type):
+            let typeName = String(reflecting: type)
+            return "Service '\(typeName)' is already registered"
         case .missingRequiredServices(let services):
             return "Missing required services: \(services.joined(separator: ", "))"
         case .serviceNotAvailable(let service):

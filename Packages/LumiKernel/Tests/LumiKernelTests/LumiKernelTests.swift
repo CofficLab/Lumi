@@ -74,7 +74,7 @@ struct LumiKernelTests {
     func testProjectServiceCurrentFile() async throws {
         let kernel = LumiKernel()
         let project = MockProjectService()
-        kernel.registerProject(project)
+        try kernel.registerProject(project)
 
         let fileURL = URL(fileURLWithPath: "/tmp/Project/Sources/Main.swift")
         kernel.project?.updateCurrentFile(fileURL)
@@ -89,7 +89,7 @@ struct LumiKernelTests {
     func testPluginManagerRegistersTypedEditorPlugins() async throws {
         let kernel = LumiKernel()
         let editor = MockEditorProvider()
-        kernel.registerEditor(editor)
+        try kernel.registerEditor(editor)
 
         let manager = BuiltinPluginManager()
         let swiftLanguage = MockEditorRuntimePlugin(id: "swift", name: "Swift", order: 20)
@@ -108,7 +108,7 @@ struct LumiKernelTests {
     func testPluginManagerWithdrawsDisabledEditorPluginsOnRebuild() async throws {
         let kernel = LumiKernel()
         let editor = MockEditorProvider()
-        kernel.registerEditor(editor)
+        try kernel.registerEditor(editor)
 
         let manager = BuiltinPluginManager()
         try await manager.initializePlugins([

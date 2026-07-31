@@ -14,10 +14,10 @@ struct EditorProviderPluginTests {
     func currentProjectFileOpensInEditor() async throws {
         let kernel = LumiKernel()
         let project = MockProjectService()
-        kernel.registerProject(project)
+        try kernel.registerProject(project)
 
         let editorService = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
-        kernel.registerService(EditorService.self, editorService)
+        try kernel.registerService(EditorService.self, editorService)
 
         let plugin = EditorProviderPlugin()
         try await plugin.onBoot(kernel: kernel)
@@ -48,7 +48,7 @@ struct EditorProviderPluginTests {
         kernel.registerThemeService(MockThemeService(themeRegistry: themeRegistry))
 
         let editorService = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
-        kernel.registerService(EditorService.self, editorService)
+        try kernel.registerService(EditorService.self, editorService)
 
         let plugin = EditorProviderPlugin()
         try await plugin.onBoot(kernel: kernel)

@@ -16,7 +16,7 @@ public struct EditorProviderOnBootHook: SuperLog {
     /// 注册调用方已创建的 provider 到内核。
     /// provider 的创建由 plugin 负责,以便其在 OnReady 阶段注入 EditorService。
     public func execute(_ provider: EditorProvider, kernel: LumiKernel) async throws {
-        kernel.registerEditor(provider)
+        try kernel.registerEditor(provider)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)EditorProviderPlugin: registered EditorProviding to kernel")

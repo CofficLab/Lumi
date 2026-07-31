@@ -47,7 +47,7 @@ public struct LayoutKernelOnBootHook: SuperLog {
             }
         }
 
-        kernel.registerLayout(manager)
+        try kernel.registerLayout(manager)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)Layout service registered successfully")
