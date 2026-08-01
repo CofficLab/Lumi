@@ -50,9 +50,6 @@ struct CoverArtPage: View {
                 viewModel.reloadCoverArtList()
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("lumi.currentProjectPathDidChange"))) { _ in
-            viewModel.reloadCoverArtList()
-        }
     }
 
     private var header: some View {

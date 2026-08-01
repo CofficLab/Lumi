@@ -433,23 +433,6 @@ public final class XcodeProjectStatusBarViewModel: ObservableObject, SuperLog {
             }
             .store(in: &cancellables)
 
-        NotificationCenter.default
-            .publisher(for: .currentProjectPathDidChange)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                guard let self else { return }
-                let path = notification.userInfo?["path"] as? String ?? ""
-                self.storeProjectPath = path
-                if path != (self.bridge.activeProjectPath ?? "") {
-                    self.clearSchemeDisplayState()
-                    self.buildContextStatus = .resolving
-                    self.buildContextStatusDescription = XcodeProjectStatusPresentation.localizedBuildContextStatusDescription(
-                        XcodeBuildContextProvider.BuildContextStatus.resolving.displayDescription
-                    )
-                }
-            }
-            .store(in: &cancellables)
-
         notificationCancellable = NotificationCenter.default
             .publisher(for: .lumiEditorProjectContextDidChange)
             .receive(on: DispatchQueue.main)

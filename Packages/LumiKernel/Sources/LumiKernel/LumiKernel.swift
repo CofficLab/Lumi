@@ -13,6 +13,7 @@ import SwiftUI
 /// All concrete implementations are injected via plugins.
 @MainActor
 public final class LumiKernelContainer: ObservableObject {
+
     // MARK: - Service Registry
 
     /// Service registry
