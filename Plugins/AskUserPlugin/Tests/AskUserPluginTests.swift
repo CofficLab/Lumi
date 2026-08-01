@@ -190,22 +190,40 @@ struct AskUserToolTests {
         #expect(result[1] == AskUserOption(label: "对象选项", description: "说明"))
     }
 
-    @Test("resolvedOptions skips options without a usable label")
+    @Test("resolvedOptions skips options with neither label nor description")
     func resolvedOptionsSkipsBadElements() {
-        // 非 string/object 元素、缺 label 的对象都被跳过，不导致整体回退。
+        // 非 string/object 元素、既无 label 又无 description 的对象被跳过；其余保留。
         let args: [String: LumiJSONValue] = ["options": .array([
             .int(123),
-            .object(["description": .string("缺 label")]),
+            .object(["description": .string("只有说明")]),
+            .object(["color": .string("无关字段")]),
             .string("有效选项"),
         ])]
         let result = AskUserTool.resolvedOptions(args, mode: "choice")
-        #expect(result == [AskUserOption(label: "有效选项")])
+        #expect(result == [AskUserOption(label: "只有说明"), AskUserOption(label: "有效选项")])
     }
 
-    @Test("resolvedOptions falls back to default when choice has empty options")
-    func resolvedOptionsChoiceFallback() {
+    @Test("resolvedOptions preserves description-only objects (no label)")
+    func resolvedOptionsForChoiceDescriptionOnly() {
+        // 回归测试：LLM 合理地只给 description（选项本身即一句话），必须保留而非丢弃。
+        let args: [String: LumiJSONValue] = ["options": .array([
+            .object(["description": .string("拆为两个独立提交，每个单主题")]),
+            .object(["description": .string("打包成一个提交（快但混合主题）")]),
+        ])]
+        let result = AskUserTool.resolvedOptions(args, mode: "choice")
+        #expect(result.count == 2)
+        // description 兜底为 label，且不重复作为副标题。
+        #expect(result[0].label == "拆为两个独立提交，每个单主题")
+        #expect(result[0].description == nil)
+        #expect(result[1].label == "打包成一个提交（快但混合主题）")
+        #expect(result[1].description == nil)
+    }
+
+    @Test("resolvedOptions returns empty (not default) when choice options all unparseable")
+    func resolvedOptionsChoiceNoFallback() {
+        // choice 解析失败时不再静默回退默认，由 execute 报错给 LLM 重试。
         let args: [String: LumiJSONValue] = ["options": .array([])]
-        #expect(AskUserTool.resolvedOptions(args, mode: "choice") == [AskUserOption(label: "是"), AskUserOption(label: "否")])
+        #expect(AskUserTool.resolvedOptions(args, mode: "choice") == [])
     }
 
     @Test("execute rejects missing mode")
@@ -230,6 +248,20 @@ struct AskUserToolTests {
     func executeRejectsChoiceWithoutOptions() async throws {
         let kernel = LumiKernel()
         let args: [String: LumiJSONValue] = ["question": .string("选哪个？"), "mode": .string("choice")]
+        let result = try await tool.execute(arguments: args, kernel: kernel)
+        #expect(result.hasPrefix("__ASK_USER_ERROR__"))
+        #expect(result.contains("mode=choice requires"))
+    }
+
+    @Test("execute rejects choice when all options are unparseable")
+    func executeRejectsChoiceWithOnlyBadOptions() async throws {
+        // 选项存在但全部无法解析（无 label/description）→ 报错给 LLM 重试，不偷换是/否。
+        let kernel = LumiKernel()
+        let args: [String: LumiJSONValue] = [
+            "question": .string("怎么提交？"),
+            "mode": .string("choice"),
+            "options": .array([.int(1), .object(["color": .string("red")])]),
+        ]
         let result = try await tool.execute(arguments: args, kernel: kernel)
         #expect(result.hasPrefix("__ASK_USER_ERROR__"))
         #expect(result.contains("mode=choice requires"))

@@ -166,11 +166,11 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
 
     /// 按 `mode` 归一化 `options`：
     /// - `yes_no` → 强制是/否（忽略传入的 options）
-    /// - `choice` → 用传入的 options（execute 已保证非空；兜底回退默认）
+    /// - `choice` → 用传入的 options（解析失败不回退默认，让 execute 报错给 LLM 重试）
     /// - `free_text` → 空数组（视图改用输入框）
     ///
-    /// choice 分支自己遍历数组，兼容两种形态：对象取 `{label, description?}`，
-    /// 字符串降级为 `{label}`。**关键：对象不再被静默丢弃**（旧 `stringArray` 会把对象过滤成 nil）。
+    /// choice 分支自己遍历数组，兼容多种形态。**关键：不再静默回退默认**——
+    /// 解析失败应当显式暴露，而不是偷换成是/否掩盖问题。
     static func resolvedOptions(_ arguments: [String: LumiJSONValue], mode: String) -> [AskUserOption] {
         switch mode {
         case "yes_no":
@@ -178,16 +178,18 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         case "free_text":
             return []
         case "choice":
-            let parsed = Self.parseOptions(arguments["options"])
-            return parsed.isEmpty ? defaultOptions : parsed
+            return Self.parseOptions(arguments["options"])
         default:
             return defaultOptions
         }
     }
 
     /// 解析 LLM 传入的 `options` 参数为 `[AskUserOption]`。
-    /// 兼容对象（`{label, description?}`）与裸字符串；其他类型被跳过并记录为解析失败。
-    /// 返回 nil / 空数组表示没有可用选项（由调用方决定是否回退默认）。
+    /// 宽容地兼容多种合理形态：
+    /// - 对象有 `label` → 用 label，附 description
+    /// - 对象只有 `description`（无 label）→ 用 description 作 label（常见于选项本身就是一句话）
+    /// - 裸字符串 → 降级为 `{label}`
+    /// - 都缺失 / 非 string/object → 跳过该元素
     static func parseOptions(_ value: LumiJSONValue?) -> [AskUserOption] {
         guard case .array(let values) = value else { return [] }
         var result: [AskUserOption] = []
@@ -195,10 +197,17 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         for element in values {
             switch element {
             case .object(let dict):
-                guard let label = dict.string("label"), !label.isEmpty else { continue }
-                result.append(AskUserOption(label: label, description: dict.string("description")))
+                let label = dict.string("label")?.takeIfNonEmpty
+                    ?? dict.string("description")?.takeIfNonEmpty
+                    ?? dict.string("value")?.takeIfNonEmpty
+                    ?? dict.string("text")?.takeIfNonEmpty
+                guard let label else { continue }
+                let description = dict.string("description")
+                // 当 label 本就来自 description 时，不再重复作为副标题。
+                let finalDescription = (description?.takeIfNonEmpty == label) ? nil : description?.takeIfNonEmpty
+                result.append(AskUserOption(label: label, description: finalDescription))
             case .string(let label):
-                if !label.isEmpty { result.append(AskUserOption(label: label)) }
+                if let nonEmpty = label.takeIfNonEmpty { result.append(AskUserOption(label: nonEmpty)) }
             default:
                 // int/double/bool/null 等无法映射为候选项，跳过。
                 continue
@@ -299,5 +308,13 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         let lowercased = question.lowercased()
         return chinesePatterns.contains { question.contains($0) }
             || englishPatterns.contains { lowercased.contains($0) }
+    }
+}
+
+private extension String {
+    /// 非空白字符串才返回，否则 nil。用于宽容解析候选项文本。
+    var takeIfNonEmpty: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
