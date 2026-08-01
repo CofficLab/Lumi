@@ -1,12 +1,25 @@
-import AppKit
-import Foundation
 import LumiKernel
 import LumiUI
-import ShellKit
+import os
+import SuperLogKit
 import SwiftUI
 
 /// 远程仓库状态栏视图
-public struct OpenRemoteStatusBarView: View {
+///
+/// 本视图仅负责：
+/// 1. 监听当前项目路径变化；
+/// 2. 委托 `RemoteRepositoryService` 解析远程 URL；
+/// 3. 委托 `URLOpeningService` 打开 URL。
+///
+/// 具体的 Git 探测 / shell 调用 / URL 格式化均在服务层完成。
+public struct OpenRemoteStatusBarView: View, SuperLog {
+    nonisolated public static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.open-remote.status"
+    )
+    nonisolated public static let emoji = "🌐"
+    nonisolated public static let verbose = false
+
     @LumiTheme private var theme: any LumiUITheme
     @StateObject private var observer: ProjectPathObserver
 
@@ -15,6 +28,7 @@ public struct OpenRemoteStatusBarView: View {
     @State private var lastResolvedPath: String = ""
 
     public init(project: any ProjectProviding) {
+        Self.logger.info("\(Self.i)statusBarView init, project=\(project.currentProject?.path ?? "nil")")
         self._observer = StateObject(wrappedValue: ProjectPathObserver(project: project))
     }
 
@@ -69,7 +83,7 @@ public struct OpenRemoteStatusBarView: View {
             id: "open-remote-status"
         ) {
             Button(action: {
-                openInBrowser()
+                URLOpeningService.shared.openInBrowser(url)
             }) {
                 HStack(spacing: 6) {
                     Image(systemName: "safari")
@@ -97,79 +111,53 @@ public struct OpenRemoteStatusBarView: View {
         .help(LumiPluginLocalization.string("无远程仓库", bundle: .module))
     }
 
+    /// 调度一次远程 URL 解析
+    ///
+    /// 由 `onAppear` / `onChange` / `didBecomeActiveNotification` 触发；
+    /// 同一路径连续触发会被去重，避免重复调 shell。
     private func updateRemoteURL() {
         let path = currentProjectPath
-        // 避免对同一路径重复解析
-        guard path != lastResolvedPath else { return }
+        guard path != lastResolvedPath else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)updateRemoteURL 跳过: 路径未变 \(path, privacy: .public)")
+            }
+            return
+        }
         lastResolvedPath = path
 
         guard !path.isEmpty else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)updateRemoteURL: 路径为空，清除远程地址")
+            }
             remoteURL = nil
             isLoading = false
             return
         }
 
+        if Self.verbose {
+            Self.logger.info("\(Self.t)updateRemoteURL 开始解析, path=\(path, privacy: .public)")
+        }
         isLoading = true
 
         Task {
-            let url = await fetchRemoteURL(for: path)
+            let url = await RemoteRepositoryService.shared.resolveRemoteURL(for: path)
 
-            // 仅当仍在解析同一路径时才应用结果
-            guard lastResolvedPath == path else { return }
+            guard lastResolvedPath == path else {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)updateRemoteURL 丢弃过期结果, 当前路径=\(self.lastResolvedPath, privacy: .public), 解析路径=\(path, privacy: .public)")
+                }
+                return
+            }
 
             remoteURL = url
             isLoading = false
+            if Self.verbose {
+                if let url {
+                    Self.logger.info("\(Self.t)updateRemoteURL 完成, remote=\(url.absoluteString, privacy: .public)")
+                } else {
+                    Self.logger.info("\(Self.t)updateRemoteURL 完成, remote=nil\(self.r("无远程仓库或非 git 仓库"))")
+                }
+            }
         }
-    }
-
-    private func fetchRemoteURL(for projectPath: String) async -> URL? {
-        let projectURL = URL(fileURLWithPath: projectPath)
-        let gitDir = projectURL.appendingPathComponent(".git", isDirectory: true)
-
-        // 检查是否是 Git 仓库
-        guard FileManager.default.fileExists(atPath: gitDir.path) else {
-            return nil
-        }
-
-        // 获取远程仓库地址
-        guard let remoteURLString = await runGit(args: ["remote", "get-url", "origin"], in: projectURL) else {
-            return nil
-        }
-
-        var formattedURL = remoteURLString.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // 转换 SSH 格式为 HTTPS 格式
-        // git@github.com:username/repo.git -> https://github.com/username/repo.git
-        if formattedURL.hasPrefix("git@") {
-            formattedURL = formattedURL.replacingOccurrences(of: ":", with: "/", range: formattedURL.range(of: ":"))
-            formattedURL = formattedURL.replacingOccurrences(of: "git@", with: "https://")
-        }
-
-        // 移除 .git 后缀
-        if formattedURL.hasSuffix(".git") {
-            formattedURL = String(formattedURL.dropLast(4))
-        }
-
-        return URL(string: formattedURL)
-    }
-
-    private func runGit(args: [String], in directory: URL) async -> String? {
-        let result = try? await ShellExecutor.execute(
-            executable: "/usr/bin/git",
-            arguments: args,
-            options: ShellOptions(
-                workingDirectory: directory.path,
-                environment: [
-                    "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-                ],
-                throwsOnError: false
-            )
-        )
-        return result?.exitCode == 0 ? result?.stdout : nil
-    }
-
-    private func openInBrowser() {
-        guard let url = remoteURL else { return }
-        NSWorkspace.shared.open(url)
     }
 }
