@@ -4,14 +4,14 @@ import SwiftUI
 
 struct ActivityBar: View {
     @Environment(\.openWindow) private var openWindow
-    var workspace: any WorkspaceProviding
+    @ObservedObject var kernel: LumiKernel
 
     private var containers: [ViewContainerItem] {
-        workspace.allViewContainers
+        kernel.workspace?.allViewContainers ?? []
     }
 
     private var activeID: String? {
-        workspace.activeViewContainerID
+        kernel.workspace?.activeViewContainerID
     }
 
     var body: some View {
@@ -22,7 +22,7 @@ struct ActivityBar: View {
                     label: container.title,
                     isActive: activeID == container.id
                 ) {
-                    workspace.activateContainer(id: container.id)
+                    kernel.workspace?.activateContainer(id: container.id)
                 }
             }
 
