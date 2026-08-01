@@ -80,9 +80,7 @@ struct CollapsibleToolStepGroup: View {
                     .foregroundColor(summaryColor)
                     .lineLimit(1)
 
-                Spacer(minLength: 4)
-
-                // chevron 指示展开/收起方向。
+                // chevron 紧贴摘要文字右侧(不再用 Spacer 推到行尾)。
                 Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
