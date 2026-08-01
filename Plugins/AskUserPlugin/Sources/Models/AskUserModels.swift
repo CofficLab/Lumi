@@ -8,7 +8,9 @@ public struct AskUserPendingResponse: Codable, Equatable {
     public let toolCallId: String
     public let question: String
     public let options: [String]
-    public let allowFreeInput: Bool
+    /// 交互模式：`"yes_no"` / `"choice"` / `"free_text"`。
+    /// 可选是为了兼容旧 payload（早期版本无此字段）；视图层会在 `nil` 时按 `options` 回退推断。
+    public let mode: String?
     public let conversationId: String
     public let verbosity: String
 
@@ -16,14 +18,14 @@ public struct AskUserPendingResponse: Codable, Equatable {
         toolCallId: String,
         question: String,
         options: [String],
-        allowFreeInput: Bool,
+        mode: String?,
         conversationId: String,
         verbosity: String
     ) {
         self.toolCallId = toolCallId
         self.question = question
         self.options = options
-        self.allowFreeInput = allowFreeInput
+        self.mode = mode
         self.conversationId = conversationId
         self.verbosity = verbosity
     }
