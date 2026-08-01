@@ -38,6 +38,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
                 systemImage: "cylinder.split.1x2",
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,
+                panelBodyVisibility: .unsupported,
                 panelBottomVisibility: .unsupported
             ) {
                 AnyView(DatabaseMainView())

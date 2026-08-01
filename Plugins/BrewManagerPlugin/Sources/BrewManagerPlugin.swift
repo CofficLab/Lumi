@@ -36,7 +36,11 @@ public final class BrewManagerPlugin: LumiPlugin, SuperLog {
             ViewContainerItem(
                 id: id,
                 title: name,
-                systemImage: "mug.fill"
+                systemImage: "mug.fill",
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
             ) {
                 BrewManagerView()
             },

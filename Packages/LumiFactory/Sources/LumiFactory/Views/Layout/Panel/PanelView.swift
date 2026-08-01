@@ -15,14 +15,16 @@ struct PanelView: View {
     }
 
     var body: some View {
-        VSplitView {
-            PanelHeaderView(layoutManager: layoutManager)
-                .frame(maxWidth: .infinity)
-            PanelBodyView(layoutManager: layoutManager)
-                .frame(maxWidth: .infinity)
-            PanelBottomView(layoutManager: layoutManager)
+        if self.layoutManager.isPanelHeaderVisible || self.layoutManager.isPanelBodyVisible || self.layoutManager.isPanelBottomVisible {
+            VSplitView {
+                PanelHeaderView(layoutManager: layoutManager)
+                    .frame(maxWidth: .infinity)
+                PanelBodyView(layoutManager: layoutManager)
+                    .frame(maxWidth: .infinity)
+                PanelBottomView(layoutManager: layoutManager)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
     }
 }

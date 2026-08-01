@@ -227,6 +227,8 @@ public struct LayoutSettingsView: View {
                 Divider().padding(.vertical, 8)
                 detailRow(title: "Panel Header", icon: "rectangle.topthird.inset.filled", value: visibilityText(container.panelHeaderVisibility))
                 Divider().padding(.vertical, 8)
+                detailRow(title: "Panel Body", icon: "rectangle.center.inset.filled", value: visibilityText(container.panelBodyVisibility))
+                Divider().padding(.vertical, 8)
                 detailRow(title: "Panel Bottom", icon: "rectangle.bottomthird.inset.filled", value: visibilityText(container.panelBottomVisibility))
             }
         }
@@ -256,6 +258,8 @@ public struct LayoutSettingsView: View {
                     detailRow(title: "Chat", icon: "rectangle.rightthird.inset.filled", value: boolText(overrides.isChatVisible))
                     Divider().padding(.vertical, 8)
                     detailRow(title: "Panel Header", icon: "rectangle.topthird.inset.filled", value: boolText(overrides.isPanelHeaderVisible))
+                    Divider().padding(.vertical, 8)
+                    detailRow(title: "Panel Body", icon: "rectangle.center.inset.filled", value: boolText(overrides.isPanelBodyVisible))
                     Divider().padding(.vertical, 8)
                     detailRow(title: "Panel Bottom", icon: "rectangle.bottomthird.inset.filled", value: boolText(overrides.isPanelBottomVisible))
                 }

@@ -100,6 +100,9 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     /// Panel Header 是否可见
     @Published public var isPanelHeaderVisible: Bool = true
 
+    /// Panel Body 是否可见
+    @Published public var isPanelBodyVisible: Bool = true
+
     /// 底部 Panel 底部是否可见
     @Published public var isPanelBottomVisible: Bool = true
 
@@ -278,6 +281,15 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         isPanelHeaderVisible = visible
         recordUserOverride(\.isPanelHeaderVisible, visible)
     }
+    public func setPanelBodyVisible(_ visible: Bool) {
+        let policy = currentViewContainer?.panelBodyVisibility ?? .visibleByDefault
+        guard policy.allowsUserVisibilityOverride else {
+            isPanelBodyVisible = policy.defaultIsVisible
+            return
+        }
+        isPanelBodyVisible = visible
+        recordUserOverride(\.isPanelBodyVisible, visible)
+    }
     public func setPanelBottomVisible(_ visible: Bool) {
         guard (currentViewContainer?.panelBottomVisibility ?? .visibleByDefault).allowsUserVisibilityOverride else { return }
         isPanelBottomVisible = visible
@@ -312,6 +324,9 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         isChatVisible = container.chatVisibility.resolvedVisibility(userOverride: user?.isChatVisible)
         isPanelHeaderVisible = container.panelHeaderVisibility.resolvedVisibility(
             userOverride: user?.isPanelHeaderVisible
+        )
+        isPanelBodyVisible = container.panelBodyVisibility.resolvedVisibility(
+            userOverride: user?.isPanelBodyVisible
         )
         isPanelBottomVisible = container.panelBottomVisibility.resolvedVisibility(userOverride: user?.isPanelBottomVisible)
     }

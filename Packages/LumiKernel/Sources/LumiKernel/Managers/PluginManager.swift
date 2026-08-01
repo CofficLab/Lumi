@@ -173,6 +173,7 @@ public final class PluginManager: ObservableObject {
                         railVisibility: container.railVisibility,
                         chatVisibility: container.chatVisibility,
                         panelHeaderVisibility: container.panelHeaderVisibility,
+                        panelBodyVisibility: container.panelBodyVisibility,
                         panelBottomVisibility: container.panelBottomVisibility,
                         content: makeView
                     )
@@ -184,6 +185,7 @@ public final class PluginManager: ObservableObject {
                         railVisibility: container.railVisibility,
                         chatVisibility: container.chatVisibility,
                         panelHeaderVisibility: container.panelHeaderVisibility,
+                        panelBodyVisibility: container.panelBodyVisibility,
                         panelBottomVisibility: container.panelBottomVisibility
                     )
                 }

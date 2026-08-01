@@ -64,17 +64,20 @@ public struct VisibilityFlags: Codable, Sendable {
     public var isRailVisible: Bool?
     public var isChatVisible: Bool?
     public var isPanelHeaderVisible: Bool?
+    public var isPanelBodyVisible: Bool?
     public var isPanelBottomVisible: Bool?
 
     public init(
         isRailVisible: Bool? = nil,
         isChatVisible: Bool? = nil,
         isPanelHeaderVisible: Bool? = nil,
+        isPanelBodyVisible: Bool? = nil,
         isPanelBottomVisible: Bool? = nil
     ) {
         self.isRailVisible = isRailVisible
         self.isChatVisible = isChatVisible
         self.isPanelHeaderVisible = isPanelHeaderVisible
+        self.isPanelBodyVisible = isPanelBodyVisible
         self.isPanelBottomVisible = isPanelBottomVisible
     }
 }

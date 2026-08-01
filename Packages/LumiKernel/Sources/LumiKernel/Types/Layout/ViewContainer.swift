@@ -63,6 +63,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
     public let railVisibility: ViewContainerVisibility
     public let chatVisibility: ViewContainerVisibility
     public let panelHeaderVisibility: ViewContainerVisibility
+    public let panelBodyVisibility: ViewContainerVisibility
     public let panelBottomVisibility: ViewContainerVisibility
 
     /// 公开初始化器（含视图内容）
@@ -73,6 +74,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         railVisibility: ViewContainerVisibility = .visibleByDefault,
         chatVisibility: ViewContainerVisibility = .visibleByDefault,
         panelHeaderVisibility: ViewContainerVisibility = .visibleByDefault,
+        panelBodyVisibility: ViewContainerVisibility = .visibleByDefault,
         panelBottomVisibility: ViewContainerVisibility = .visibleByDefault,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
@@ -83,6 +85,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.railVisibility = railVisibility
         self.chatVisibility = chatVisibility
         self.panelHeaderVisibility = panelHeaderVisibility
+        self.panelBodyVisibility = panelBodyVisibility
         self.panelBottomVisibility = panelBottomVisibility
         self.makeView = { AnyView(content()) }
     }
@@ -96,6 +99,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         railVisibility: ViewContainerVisibility = .visibleByDefault,
         chatVisibility: ViewContainerVisibility = .visibleByDefault,
         panelHeaderVisibility: ViewContainerVisibility = .visibleByDefault,
+        panelBodyVisibility: ViewContainerVisibility = .visibleByDefault,
         panelBottomVisibility: ViewContainerVisibility = .visibleByDefault,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
@@ -106,6 +110,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.railVisibility = railVisibility
         self.chatVisibility = chatVisibility
         self.panelHeaderVisibility = panelHeaderVisibility
+        self.panelBodyVisibility = panelBodyVisibility
         self.panelBottomVisibility = panelBottomVisibility
         self.makeView = { AnyView(content()) }
     }
@@ -118,6 +123,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         railVisibility: ViewContainerVisibility = .visibleByDefault,
         chatVisibility: ViewContainerVisibility = .visibleByDefault,
         panelHeaderVisibility: ViewContainerVisibility = .visibleByDefault,
+        panelBodyVisibility: ViewContainerVisibility = .visibleByDefault,
         panelBottomVisibility: ViewContainerVisibility = .visibleByDefault
     ) {
         self.id = id
@@ -127,6 +133,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.railVisibility = railVisibility
         self.chatVisibility = chatVisibility
         self.panelHeaderVisibility = panelHeaderVisibility
+        self.panelBodyVisibility = panelBodyVisibility
         self.panelBottomVisibility = panelBottomVisibility
         self.makeView = nil
     }
