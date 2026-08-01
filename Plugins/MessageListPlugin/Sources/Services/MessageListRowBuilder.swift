@@ -18,6 +18,11 @@ import LumiKernel
 /// 此外,**V1 (brief)** 模式下会剔除独立的 `.tool` 结果行 —— 其结果收入助手消息内联的
 /// 「可折叠工具步骤组」,避免重复展示;仅展示层过滤,持久化与 LLM 历史不受影响。
 ///
+/// V1 还会把**连续多条**「只含工具调用的助手消息」(`isToolExecutionOnly`)合并成
+/// **一条合成消息**(`renderKind == "tool-step-group"`),其 `toolCalls` 为各消息的平铺。
+/// 这样它们在 UI 上呈现为一个整体(一个气泡 / 一个可折叠步骤组),而不是 N 个独立行。
+/// 合成消息只在展示层生成,绝不落库、不进 LLM 历史。
+///
 /// - SeeAlso: `MessageListPaginationService`,负责真实消息的分页。
 @MainActor
 struct MessageListRowBuilder {
@@ -55,15 +60,74 @@ struct MessageListRowBuilder {
         let dropStatus = showStreamingRow
         // V1 下隐藏独立 `.tool` 结果行(结果收进步骤卡片,避免与内联展示重复)。
         let dropToolRows = verbosity == .brief
-        var rows = persisted.filter { message in
+        let filtered = persisted.filter { message in
             if dropStatus, message.role == .status { return false }
             if dropToolRows, message.role == .tool { return false }
             return true
         }
 
+        // 把连续的「只含工具调用的助手消息」合并成一条合成消息。
+        // V1 与 V2/V3 都合并:V1 走可折叠步骤组,V2/V3 走助手气泡(多个工具卡片聚在一起,
+        // 只剩一个消息头)。合成消息仅在展示层,不落库、不进 LLM 历史。
+        var rows = Self.mergeConsecutiveToolExecutionMessages(filtered)
+
         if showStreamingRow, let streamingRow {
             rows.append(streamingRow)
         }
         return rows
+    }
+
+    /// 把连续的 `isToolExecutionOnly` 助手消息合并成一条合成消息(`renderKind`
+    /// 标记为 `"tool-step-group"`,`toolCalls` 为各消息的平铺);其余消息原样保留。
+    ///
+    /// 单条此类消息也走合成路径(行为等价,仅多一个 renderKind 标记)。
+    /// 合成消息复用组内首条消息的 id/conversationID/createdAt,保证稳定。
+    private static func mergeConsecutiveToolExecutionMessages(
+        _ messages: [LumiChatMessage]
+    ) -> [LumiChatMessage] {
+        var result: [LumiChatMessage] = []
+        var currentGroup: [LumiChatMessage] = []
+
+        func flushGroup() {
+            guard !currentGroup.isEmpty else { return }
+            result.append(makeToolStepGroup(from: currentGroup))
+            currentGroup = []
+        }
+
+        for message in messages {
+            if message.isToolExecutionOnly {
+                currentGroup.append(message)
+            } else {
+                flushGroup()
+                result.append(message)
+            }
+        }
+        flushGroup()
+        return result
+    }
+
+    /// 由一组「只含工具调用的助手消息」构造合成展示消息。
+    ///
+    /// - 平铺所有消息的 `toolCalls`(忽略来自哪条消息)。
+    /// - `renderKind = "tool-step-group"` 让渲染器识别并走合并展示路径。
+    /// - 复用首条消息的 id/conversationID/createdAt 等,保证合成消息在 ForEach diff
+    ///   与 `lumiActiveToolGroupIDs` 匹配上稳定(组内成员不变 → id 不变)。
+    private static func makeToolStepGroup(from messages: [LumiChatMessage]) -> LumiChatMessage {
+        let head = messages.first
+            ?? LumiChatMessage(conversationID: UUID(), role: .assistant, content: "")
+        let allToolCalls = messages.flatMap { $0.toolCalls ?? [] }
+        return LumiChatMessage(
+            id: head.id,
+            conversationID: head.conversationID,
+            role: .assistant,
+            content: head.content,
+            createdAt: head.createdAt,
+            providerID: head.providerID,
+            modelName: head.modelName,
+            isError: head.isError,
+            renderKind: "tool-step-group",
+            metadata: head.metadata,
+            toolCalls: allToolCalls
+        )
     }
 }

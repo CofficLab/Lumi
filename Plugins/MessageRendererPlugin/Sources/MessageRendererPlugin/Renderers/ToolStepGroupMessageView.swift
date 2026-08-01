@@ -1,0 +1,27 @@
+import LumiKernel
+import SwiftUI
+
+/// 工具步骤组合成消息的渲染分发。
+///
+/// 数据层(`MessageListRowBuilder`)把连续多条「只含工具调用的助手消息」合并成一条
+/// `renderKind == "tool-step-group"` 的合成消息(其 `toolCalls` 为各消息的平铺)。
+/// 本视图按 verbosity 分流渲染:
+/// - **V1 (brief)**:走 `CollapsibleToolStepGroup`(进行中展开、结束后收起成一行摘要)。
+/// - **V2/V3**:复用现有 `AssistantMessageView` —— 多个工具卡片聚合在同一个助手气泡里,
+///   只剩一个消息头(而非之前的 N 个独立气泡)。
+struct ToolStepGroupMessageView: View {
+    let message: LumiChatMessage
+    let verbosity: LumiResponseVerbosity
+
+    var body: some View {
+        if verbosity == .brief {
+            CollapsibleToolStepGroup(
+                message: message,
+                toolCalls: message.toolCalls ?? [],
+                verbosity: verbosity
+            )
+        } else {
+            AssistantMessageView(message: message, verbosity: verbosity)
+        }
+    }
+}

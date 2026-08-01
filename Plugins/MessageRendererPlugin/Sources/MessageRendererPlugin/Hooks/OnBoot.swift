@@ -115,6 +115,21 @@ public struct MessageRendererOnBootHook {
             )
         )
 
+        // 工具步骤组合成消息(数据层把连续多条「只含工具调用的助手消息」合并成一条)。
+        // 优先级高于普通助手消息:V1 走可折叠步骤组,V2/V3 复用助手气泡(多个工具卡片聚在一起)。
+        manager.registerMessageRenderer(
+            LumiMessageRendererItem(
+                id: "core-tool-step-group",
+                order: base + 185,
+                canRender: { message in
+                    message.renderKind == "tool-step-group"
+                },
+                render: { message, verbosity in
+                    ToolStepGroupMessageView(message: message, verbosity: verbosity)
+                }
+            )
+        )
+
         // 系统消息
         manager.registerMessageRenderer(
             LumiMessageRendererItem(
