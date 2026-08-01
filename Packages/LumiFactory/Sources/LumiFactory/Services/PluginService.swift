@@ -298,7 +298,7 @@ public enum PluginService {
             AgentOpenInAntigravityPlugin(),
             AgentOpenInGitHubDesktopPlugin(),
             AgentOpenInGitOKPlugin(),
-            AgentOpenRemotePlugin(),
+            OpenRemotePlugin(),
         ]
 
         // StoragePlugin (requires initialization)
