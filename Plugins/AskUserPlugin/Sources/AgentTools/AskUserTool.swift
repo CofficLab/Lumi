@@ -26,7 +26,15 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
     public static let info = LumiAgentToolInfo(
         id: "ask_user",
         displayName: "Ask User",
-        description: "Ask the user a question and wait for their response. Supports yes/no, multiple choice, and free text input. Use when you need user decision instead of assuming intent."
+        description: """
+        Ask the user a question and wait for their response. Supports yes/no, multiple choice, and free text input. \
+        Use when you need user decision instead of assuming intent.
+        
+        IMPORTANT: Choose the right mode based on your question type:
+        - Yes/No: Only use the default mode (no options, no allow_free_input) when the question can be genuinely answered with 是 or 否. Example: "Should I continue building?"
+        - Multiple choice: Provide `options` when the answer must be one of specific choices. Example: options=["Debug", "Release", "Profile"].
+        - Free text: Set `allow_free_input: true` when the question is open-ended and cannot be answered with yes/no or a fixed set of options. Example: "What should I do next?", "How would you like to proceed?", "What branch should I create?". Do NOT use Yes/No mode for open-ended questions like "接下来怎么做?" — always use allow_free_input.
+        """
     )
 
     public init() {}
@@ -65,6 +73,14 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         if !hasOptions && Self.lookLikeMultipleChoice(question) {
             return Self.errorResult(
                 message: "Your question appears to require multiple options, but the options parameter was not provided. Please provide an options list."
+            )
+        }
+
+        // 检测是否是开放式问题但既没传 options 也没允许自由输入
+        let hasAllowFreeInput = arguments["allow_free_input"] != nil && Self.resolvedAllowFreeInput(arguments)
+        if !hasOptions && !hasAllowFreeInput && Self.lookLikeOpenEnded(question) {
+            return Self.errorResult(
+                message: "Your question appears to be open-ended (e.g., asking 'how', 'what next', 'why'), but allow_free_input was not enabled. Set allow_free_input to true for open-ended questions."
             )
         }
 
@@ -200,5 +216,22 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         let lowercased = question.lowercased()
         return chineseKeywords.contains { question.contains($0) }
             || englishKeywords.contains { lowercased.contains($0) }
+    }
+
+    /// 检测 question 是否是开放式问题（不能简单用是/否回答）。
+    /// 用于拦截 LLM 未传 `allow_free_input` 但问了开放式问题的情况。
+    static func lookLikeOpenEnded(_ question: String) -> Bool {
+        let chinesePatterns = [
+            "怎么办", "做什么", "怎么", "如何", "下一步", "接下来",
+            "为什么", "原因", "说明", "解释", "描述", "告诉我",
+        ]
+        let englishPatterns = [
+            "how", "what should", "what do", "what would", "why",
+            "explain", "describe", "tell me", "what's", "what is",
+        ]
+
+        let lowercased = question.lowercased()
+        return chinesePatterns.contains { question.contains($0) }
+            || englishPatterns.contains { lowercased.contains($0) }
     }
 }

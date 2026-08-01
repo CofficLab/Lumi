@@ -129,6 +129,31 @@ struct AskUserToolTests {
         #expect(!AskUserTool.lookLikeMultipleChoice("Do you want to proceed?"))
     }
 
+    @Test("lookLikeOpenEnded detects Chinese open-ended patterns")
+    func detectChineseOpenEnded() {
+        #expect(AskUserTool.lookLikeOpenEnded("接下来怎么走？"))
+        #expect(AskUserTool.lookLikeOpenEnded("打包脚本修完了，下一步怎么办？"))
+        #expect(AskUserTool.lookLikeOpenEnded("为什么要这样做？"))
+        #expect(AskUserTool.lookLikeOpenEnded("如何改进这个功能？"))
+        #expect(AskUserTool.lookLikeOpenEnded("告诉我你的想法"))
+    }
+
+    @Test("lookLikeOpenEnded detects English open-ended patterns")
+    func detectEnglishOpenEnded() {
+        #expect(AskUserTool.lookLikeOpenEnded("What should I do next?"))
+        #expect(AskUserTool.lookLikeOpenEnded("How would you like to proceed?"))
+        #expect(AskUserTool.lookLikeOpenEnded("Why does this happen?"))
+        #expect(AskUserTool.lookLikeOpenEnded("Explain the build process"))
+        #expect(AskUserTool.lookLikeOpenEnded("Tell me more"))
+    }
+
+    @Test("lookLikeOpenEnded returns false for yes/no questions")
+    func noFalsePositiveForYesNo() {
+        #expect(!AskUserTool.lookLikeOpenEnded("是否继续？"))
+        #expect(!AskUserTool.lookLikeOpenEnded("Should I continue?"))
+        #expect(!AskUserTool.lookLikeOpenEnded("Do you want to build?"))
+    }
+
     @Test("resolvedOptions returns default when missing")
     func resolvedOptionsDefaultsWhenMissing() {
         #expect(AskUserTool.resolvedOptions([:]) == ["是", "否"])
