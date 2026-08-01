@@ -44,6 +44,35 @@ import Testing
     #expect(renderer?.canRender(normalError) == false)
 }
 
+@MainActor
+@Test func providerAPIKeyAccessFailedRendererOnlyMatchesAccessFailures() {
+    let plugin = LLMProviderManagerPlugin()
+    let renderer = plugin.messageRenderers(kernel: LumiKernel()).first {
+        $0.id == LumiLLMProviderAPIKeyMessage.accessFailedRenderKind
+    }
+    let conversationID = UUID()
+    let accessFailure = LumiChatMessage(
+        conversationID: conversationID,
+        role: .error,
+        content: "",
+        providerID: "minimax-tokenplan",
+        isError: true,
+        rawErrorDetail: "Keychain read failed (OSStatus -25308)",
+        renderKind: LumiLLMProviderAPIKeyMessage.accessFailedRenderKind
+    )
+    let missing = LumiChatMessage(
+        conversationID: conversationID,
+        role: .error,
+        content: "",
+        providerID: "minimax-tokenplan",
+        isError: true,
+        renderKind: LumiLLMProviderAPIKeyMessage.renderKind
+    )
+
+    #expect(renderer?.canRender(accessFailure) == true)
+    #expect(renderer?.canRender(missing) == false)
+}
+
 // MARK: - ModelCheckState
 
 @Test func modelCheckStateDefaultsAreNotChecked() {
