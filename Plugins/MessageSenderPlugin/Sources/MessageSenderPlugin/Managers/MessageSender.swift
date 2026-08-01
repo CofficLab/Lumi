@@ -128,17 +128,10 @@ public final class MessageSender: MessageSending, SuperLog {
         } else if let selected = kernel?.conversations?.selectedConversationID {
             targetID = selected
         } else {
-            // No conversation selected - auto-create one with first message as title
-            let firstLine = trimmed.components(separatedBy: .newlines).first ?? trimmed
-            let maxLength = 40
-            let truncatedTitle = firstLine.count > maxLength
-                ? String(firstLine.prefix(maxLength)) + "..."
-                : firstLine
-
             if Self.verbose {
-                Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建新对话,标题=\"\(truncatedTitle)\"")
+                Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建无标题新对话")
             }
-            guard let newID = try? kernel?.conversations?.createConversation(title: truncatedTitle, projectPath: nil, providerID: nil, modelName: nil) else {
+            guard let newID = try? kernel?.conversations?.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil) else {
                 Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 创建对话失败")
                 throw LumiKernelError.noActiveConversation
             }
