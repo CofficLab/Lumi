@@ -69,7 +69,8 @@ final class AutoConversationTitleService: SuperLog {
             guard !title.isEmpty,
                   shouldApplyGeneratedTitle(
                       conversationID: conversationID,
-                      firstUserMessageContent: firstUserMessage.content
+                      firstUserMessageContent: firstUserMessage.content,
+                      generatedTitle: title
                   ) else {
                 return
             }
@@ -94,13 +95,32 @@ final class AutoConversationTitleService: SuperLog {
 
     private func shouldApplyGeneratedTitle(
         conversationID: UUID,
-        firstUserMessageContent: String
+        firstUserMessageContent: String,
+        generatedTitle: String? = nil
     ) -> Bool {
         guard let conversation = kernel?.conversations?.conversations.first(where: { $0.id == conversationID }) else {
             return false
         }
-        let currentTitle = conversation.displayTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        if currentTitle.isEmpty || !conversation.hasCustomTitle {
+        return Self.shouldApplyGeneratedTitle(
+            currentTitle: conversation.title,
+            hasCustomTitle: conversation.hasCustomTitle,
+            firstUserMessageContent: firstUserMessageContent,
+            generatedTitle: generatedTitle
+        )
+    }
+
+    nonisolated static func shouldApplyGeneratedTitle(
+        currentTitle: String?,
+        hasCustomTitle: Bool,
+        firstUserMessageContent: String,
+        generatedTitle: String?
+    ) -> Bool {
+        let currentTitle = currentTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let generatedTitle = generatedTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let generatedTitle, generatedTitle == currentTitle {
+            return false
+        }
+        if currentTitle.isEmpty || !hasCustomTitle {
             return true
         }
         return currentTitle == Self.placeholderTitle(forFirstUserMessage: firstUserMessageContent)

@@ -55,3 +55,14 @@ import Testing
 
     #expect(title == "abcdefghij klmnopqrstuvwxyzABCDEFGHIJKLM…")
 }
+
+@Test func autoTitleSkipsWhenGeneratedTitleMatchesCurrentTitle() {
+    let shouldApply = AutoConversationTitleService.shouldApplyGeneratedTitle(
+        currentTitle: "修复 SwiftData 分页",
+        hasCustomTitle: true,
+        firstUserMessageContent: "修复 SwiftData 分页",
+        generatedTitle: "修复 SwiftData 分页"
+    )
+
+    #expect(!shouldApply)
+}
