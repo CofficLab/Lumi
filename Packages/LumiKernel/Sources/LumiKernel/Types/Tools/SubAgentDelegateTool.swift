@@ -225,11 +225,6 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
         """
     }
 }
-
-public enum SubAgentError: Error, Sendable {
-    case missingArgument(String)
-}
-
 public struct SubAgentLoopResult: Sendable {
     public enum Status: Sendable {
         case completed

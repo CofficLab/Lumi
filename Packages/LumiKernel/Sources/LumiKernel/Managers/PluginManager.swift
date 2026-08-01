@@ -84,7 +84,7 @@ public final class PluginManager: ObservableObject {
     }
 
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {
-        // 可见性已在 LayoutState.activateContainer() 中自动应用
+        // 可见性已在 LayoutManager.activateContainer(id:) 中自动应用
         // 此处仅广播给插件（用于非可见性的副作用）
         for plugin in allPlugins {
             guard effectiveEnabled(for: plugin) else { continue }
@@ -293,19 +293,12 @@ public final class PluginManager: ObservableObject {
             }
         }
 
-        // Sync layout active section with registered view containers.
-        let containers = kernel.workspace?.allViewContainers ?? []
-        if let first = containers.first,
-           let layoutService = kernel.workspace,
-           layoutService.activeViewContainerID == nil {
-            layoutService.layoutState.activeViewContainerID = first.id
-        }
-
         // 容器注册完毕后，回填当前激活容器的可见性声明。
         // 持久化恢复（`LayoutPersistenceCoordinator.restore()`）发生在 `onReady` 阶段，
         // 此时容器还未注册，只能直接给 `activeViewContainerID` 赋值，绕过了
         // `activateContainer` → `onContainerActivated` 的可见性应用路径。
         // 因此启动/重建完成后必须在此处补一次 apply，否则 rail/chat 仍按默认值显示。
+        // （首容器的自动选中已下沉到 `registerViewContainer`。）
         if let containerID = kernel.workspace?.activeViewContainerID,
            let container = kernel.workspace?.viewContainer(id: containerID) {
             kernel.workspace?.applyVisibility(
