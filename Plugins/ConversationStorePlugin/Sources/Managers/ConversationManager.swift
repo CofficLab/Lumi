@@ -11,7 +11,7 @@ import os
 public final class ConversationManager: ObservableObject, ConversationManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
     nonisolated public static let emoji = "💬"
-    public static let verbose = false
+    public nonisolated static let verbose = false
 
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID?
@@ -433,44 +433,46 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
     /// 把所有「没有任何消息」的空对话关联项目更新为 `projectPath`。
     ///
-    /// 空判定以 `MessageManaging.messageCount(for:)` 为准（命中缓存优先）。
-    /// 整个流程在 `Task` 中异步执行：收集空对话 → 更新内存数组 → 持久化 → 广播刷新。
+    /// 空判定以「磁盘上是否存在消息」为准：一次批量查询拿到所有有消息的对话 ID，
+    /// 取差集得到空对话。整个计算在后台线程执行（SQLite 往返不阻塞 UI），
+    /// 仅最后的内存回写与通知回到主线程。
     private func reassignEmptyConversations(to projectPath: String, from oldProjectPath: String?) {
         let messageManager = kernel?.messageManager
         let snapshot = conversations
 
-        Task { @MainActor [weak self] in
-            guard let self else { return }
+        Task.detached(priority: .utility) { [weak self] in
+            let t0 = ContinuousClock.now
+            // 一次批量查询：所有「磁盘上有消息」的对话 ID 集合。
+            let havingMessages = messageManager?.conversationIDsHavingMessages() ?? []
+            // 空对话 = 快照中不在 havingMessages 里的对话。
+            let emptyIDs = snapshot.filter { !havingMessages.contains($0.id) }.map(\.id)
 
-            // 收集没有任何消息的空对话 ID
-            var emptyIDs: [UUID] = []
-            for conversation in snapshot {
-                let count = messageManager?.messageCount(for: conversation.id) ?? 0
-                if count == 0 {
-                    emptyIDs.append(conversation.id)
-                }
+            if Self.verbose {
+                let elapsed = ContinuousClock.now - t0
+                Self.logger.info("\(Self.t)⏱ reassignEmptyConversations 批量查询完成：\(snapshot.count) 个对话，\(emptyIDs.count) 个空，耗时 \(Self.ms(elapsed))ms（后台线程）")
             }
 
             guard !emptyIDs.isEmpty else { return }
 
-            // 更新内存数组对应项的 projectPath，并触发 @Published 刷新
-            var updated = false
-            let idSet = Set(emptyIDs)
-            for index in self.conversations.indices where idSet.contains(self.conversations[index].id) {
-                self.conversations[index].projectPath = projectPath
-                updated = true
-            }
-            guard updated else { return }
-            self.conversations = self.conversations
+            // 回写内存数组与持久化必须在主线程。
+            await MainActor.run {
+                guard let self else { return }
+                var updated = false
+                let idSet = Set(emptyIDs)
+                for index in self.conversations.indices where idSet.contains(self.conversations[index].id) {
+                    self.conversations[index].projectPath = projectPath
+                    updated = true
+                }
+                guard updated else { return }
+                self.conversations = self.conversations
 
-            // 持久化到数据库（批量、单次 save）
-            await self.store?.updateProjectPath(for: emptyIDs, projectPath: projectPath)
-
-            // 广播变更，让对话列表 UI 即时刷新
-            self.notifyConversationsChanged()
-
-            if Self.verbose {
-                Self.logger.info("\(Self.t)项目切换 \(oldProjectPath ?? "nil") → \(projectPath)：迁移 \(emptyIDs.count) 个空对话")
+                Task { @MainActor [weak self] in
+                    await self?.store?.updateProjectPath(for: emptyIDs, projectPath: projectPath)
+                    self?.notifyConversationsChanged()
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)项目切换 \(oldProjectPath ?? "nil") → \(projectPath)：迁移 \(emptyIDs.count) 个空对话")
+                    }
+                }
             }
         }
     }

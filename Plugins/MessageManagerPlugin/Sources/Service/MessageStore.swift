@@ -323,6 +323,21 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 一次性返回所有「在磁盘上至少有一条消息」的 conversationId 字符串集合。
+    ///
+    /// 用于批量判定空对话，避免对每个 conversation 单独 `messageCount`（N 次 SQLite
+    /// 往返）。单次 fetch 后在内存去重，与逐个 `messageCount == 0` 的空判定语义一致
+    /// （`messageCount` 不合并 pending 缓冲，只查磁盘）。
+    func conversationIDsHavingMessages() -> Set<String> {
+        locked {
+            let context = ModelContext(container)
+            var descriptor = FetchDescriptor<MessageModel>()
+            descriptor.propertiesToFetch = [\.conversationId]
+            guard let models = try? context.fetch(descriptor) else { return [] }
+            return Set(models.map(\.conversationId))
+        }
+    }
+
     /// Fetch a single message by ID
     func fetchMessage(id: UUID) -> LumiChatMessage? {
         locked {

@@ -157,6 +157,11 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
         store?.messageCount(conversationId: conversationID) ?? 0
     }
 
+    public nonisolated func conversationIDsHavingMessages() -> Set<UUID> {
+        guard let store else { return [] }
+        return Set(store.conversationIDsHavingMessages().compactMap { UUID(uuidString: $0) })
+    }
+
     public nonisolated func hasEarlierMessages(
         for conversationID: UUID,
         beforeMessageID: UUID?,
