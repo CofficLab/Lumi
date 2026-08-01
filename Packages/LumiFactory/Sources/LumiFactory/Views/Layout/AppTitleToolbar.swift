@@ -41,6 +41,14 @@ struct AppTitleToolbar: View {
             }
         }
         .foregroundStyle(theme.textPrimary)
+        #if DEBUG
+        // DEBUG 模式下叠加一层 warning 半透明色，提示当前为 Debug 构建。
+        // Release 构建下整段不参与编译，零成本零干扰。
+        .overlay(
+            Rectangle()
+                .fill(theme.warning.opacity(0.20))
+        )
+        #endif
     }
 
     private func toolbarGroup(_ items: [TitleToolbarItem]) -> some View {
