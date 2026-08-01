@@ -448,40 +448,39 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     private func reassignEmptyConversations(to projectPath: String, from oldProjectPath: String?) {
         let messageManager = kernel?.messageManager
         let snapshot = conversations
+        let store = store
 
-        Task.detached(priority: .utility) { [weak self] in
-            let t0 = ContinuousClock.now
-            // 一次批量查询：所有「磁盘上有消息」的对话 ID 集合。
-            let havingMessages = messageManager?.conversationIDsHavingMessages() ?? []
-            // 空对话 = 快照中不在 havingMessages 里的对话。
-            let emptyIDs = snapshot.filter { !havingMessages.contains($0.id) }.map(\.id)
+        Task { [weak self, messageManager, snapshot, store, projectPath, oldProjectPath] in
+            let emptyIDs = await Task.detached(priority: .utility) { [messageManager, snapshot] in
+                let t0 = ContinuousClock.now
+                // 一次批量查询：所有「磁盘上有消息」的对话 ID 集合。
+                let havingMessages = messageManager?.conversationIDsHavingMessages() ?? []
+                // 空对话 = 快照中不在 havingMessages 里的对话。
+                let emptyIDs = snapshot.filter { !havingMessages.contains($0.id) }.map(\.id)
 
-            if Self.verbose {
-                let elapsed = ContinuousClock.now - t0
-                Self.logger.info("\(Self.t)⏱ reassignEmptyConversations 批量查询完成：\(snapshot.count) 个对话，\(emptyIDs.count) 个空，耗时 \(Self.ms(elapsed))ms（后台线程）")
-            }
+                if Self.verbose {
+                    let elapsed = ContinuousClock.now - t0
+                    Self.logger.info("\(Self.t)⏱ reassignEmptyConversations 批量查询完成：\(snapshot.count) 个对话，\(emptyIDs.count) 个空，耗时 \(Self.ms(elapsed))ms（后台线程）")
+                }
+
+                return emptyIDs
+            }.value
 
             guard !emptyIDs.isEmpty else { return }
+            await store?.updateProjectPath(for: emptyIDs, projectPath: projectPath)
 
-            // 回写内存数组与持久化必须在主线程。
-            await MainActor.run {
-                guard let self else { return }
-                var updated = false
-                let idSet = Set(emptyIDs)
-                for index in self.conversations.indices where idSet.contains(self.conversations[index].id) {
-                    self.conversations[index].projectPath = projectPath
-                    updated = true
-                }
-                guard updated else { return }
-                self.conversations = self.conversations
-
-                Task { @MainActor [weak self] in
-                    await self?.store?.updateProjectPath(for: emptyIDs, projectPath: projectPath)
-                    self?.notifyConversationsChanged()
-                    if Self.verbose {
-                        Self.logger.info("\(Self.t)项目切换 \(oldProjectPath ?? "nil") → \(projectPath)：迁移 \(emptyIDs.count) 个空对话")
-                    }
-                }
+            guard let self else { return }
+            var updated = false
+            let idSet = Set(emptyIDs)
+            for index in self.conversations.indices where idSet.contains(self.conversations[index].id) {
+                self.conversations[index].projectPath = projectPath
+                updated = true
+            }
+            guard updated else { return }
+            self.conversations = self.conversations
+            self.notifyConversationsChanged()
+            if Self.verbose {
+                Self.logger.info("\(Self.t)项目切换 \(oldProjectPath ?? "nil") → \(projectPath)：迁移 \(emptyIDs.count) 个空对话")
             }
         }
     }
