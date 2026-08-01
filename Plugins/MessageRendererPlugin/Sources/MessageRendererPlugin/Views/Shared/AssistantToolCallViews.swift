@@ -270,11 +270,12 @@ struct ToolCallRowView: View {
                 resultButton
             }
         }
-        .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
-        .background(rowBackground)
-        .overlay(rowBorder)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .scaleEffect(isHovering ? 1.01 : 1)
+        .padding(EdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6))
+        // inline 风格:默认无背景/边框,完全融入正文列;仅在悬停时给一层极淡底色作交互提示,
+        // 不再用持续可见的卡片背景+描边(避免与简洁的对话风格冲突)。
+        .background(hoverBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .contentShape(Rectangle())
         .animation(.easeOut(duration: 0.12), value: isHovering)
         .onHover { hovering in
             isHovering = hovering
@@ -330,24 +331,10 @@ struct ToolCallRowView: View {
         }
     }
 
-    private var rowBackground: some View {
-        Group {
-            if isHovering {
-                visualState.isFailure ? theme.error.opacity(0.12) : Color.white.opacity(0.08)
-            } else {
-                visualState.isFailure ? theme.error.opacity(0.08) : theme.textSecondary.opacity(0.06)
-            }
-        }
-    }
-
-    private var rowBorder: some View {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .stroke(
-                visualState.isFailure
-                    ? theme.error.opacity(isHovering ? 0.45 : 0.28)
-                    : isHovering ? Color.white.opacity(0.12) : theme.textTertiary.opacity(0.06),
-                lineWidth: 1
-            )
+    /// 仅悬停时出现的一层极淡底色,提示该行可交互;默认透明以融入正文。
+    private var hoverBackground: Color {
+        guard isHovering else { return .clear }
+        return visualState.isFailure ? theme.error.opacity(0.10) : theme.textSecondary.opacity(0.06)
     }
 
     private func toggleParameterPopover() {
