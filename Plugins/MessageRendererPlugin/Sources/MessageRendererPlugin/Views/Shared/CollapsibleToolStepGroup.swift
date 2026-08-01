@@ -5,12 +5,12 @@ import SwiftUI
 
 /// V1 (brief) 模式下的「可折叠工具步骤组」(ChatGPT/Codex 风格)。
 ///
-/// 把一条助手消息内联的若干工具调用包成一个可折叠的整体:
-/// - **turn 进行中**(本组 id 在 `lumiActiveToolGroupIDs` 中)→ 默认**展开**,
-///   逐个工具只显示工具名(loading/失败以颜色区分),不带耗时与按钮,完全融入正文列。
-/// - **turn 结束** → 默认**收起**成一行摘要(`数量 + 总耗时`),点击可重新展开。
+/// 把一条助手消息内联的若干工具调用包成一个可折叠的整体,折叠/展开**互斥渲染**:
+/// - **展开**(turn 进行中,或用户手动展开)→ 只显示逐条工具名行(loading/失败以颜色区分),
+///   不再保留摘要表头,避免「执行了 N 个步骤」与下方逐条重复。
+/// - **收起**(turn 结束,默认)→ 只显示一行摘要(`数量 + 总耗时`),点击可重新展开。
 ///
-/// 用户随时可点击表头手动展开/收起任意步骤组;手动操作存于本地 `@State`,
+/// 用户随时可点击摘要行手动展开/收起;手动操作存于本地 `@State`,
 /// 当本组从"进行中"变为"已完成"(`isActive` 由 true→false)时清空覆盖,回归默认收起态。
 ///
 /// 展开态复用既有 `ToolCallRowView`(经 `ToolCallRowRendererRegistry` 优先走自定义渲染器),
@@ -44,16 +44,21 @@ struct CollapsibleToolStepGroup: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            summaryHeader
-
-            if !isCollapsed {
+        // 互斥渲染:展开时只显示工具名行(不再保留摘要表头,避免「执行了 N 个步骤」
+        // 与下方逐条工具名重复);收起时只显示一行摘要。
+        Group {
+            if isCollapsed {
+                summaryHeader
+                    .transition(.opacity)
+            } else {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(toolCalls) { toolCall in
                         toolCallRow(for: toolCall)
                     }
+
+                    // 展开态没有摘要表头,提供一个悬停可见的「收起」入口,便于回收。
+                    collapseHint
                 }
-                .padding(.top, 8)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
@@ -95,6 +100,27 @@ struct CollapsibleToolStepGroup: View {
         .onHover { hovering in
             isHovering = hovering
         }
+        .animation(.easeOut(duration: 0.12), value: isHovering)
+    }
+
+    /// 展开态下的「收起」入口:默认隐藏,悬停时显现;点击把组收起回摘要行。
+    private var collapseHint: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                userOverride = true
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "chevron.up")
+                    .font(.appMicro)
+                Text("收起")
+                    .font(.appMicro)
+            }
+            .foregroundColor(theme.textTertiary)
+            .opacity(isHovering ? 1 : 0)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
         .animation(.easeOut(duration: 0.12), value: isHovering)
     }
 
