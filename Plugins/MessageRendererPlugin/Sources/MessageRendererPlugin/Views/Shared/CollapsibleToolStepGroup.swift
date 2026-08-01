@@ -38,9 +38,19 @@ struct CollapsibleToolStepGroup: View {
         activeIDs.contains(message.id)
     }
 
-    /// 有效折叠态:用户覆盖优先,否则进行中展开、结束后收起。
+    /// 组内是否存在「正在等待用户作答」的交互式工具调用(如 ask_user)。
+    /// 这类调用挂起了 turn,其自定义交互 UI 必须始终可见 —— 即使 turn 已不在
+    /// 「running」态(挂起时 `isRunning` 为 false)。无论 verbosity 与折叠状态如何,
+    /// 都强制保持该组展开,把交互入口交给对应工具的渲染器。
+    private var hasAwaitingInteraction: Bool {
+        toolCalls.contains { $0.result?.turnControl.isSuspended == true }
+    }
+
+    /// 有效折叠态:用户覆盖优先;否则进行中展开、结束后收起。
+    /// 例外:存在等待用户作答的交互式调用时,强制展开(不可收起),保证交互入口可见。
     private var isCollapsed: Bool {
-        userOverride ?? !isActive
+        if hasAwaitingInteraction { return false }
+        return userOverride ?? !isActive
     }
 
     var body: some View {
