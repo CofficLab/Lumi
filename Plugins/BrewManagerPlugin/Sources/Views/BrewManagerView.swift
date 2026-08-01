@@ -46,17 +46,6 @@ struct BrewManagerView: View {
                     .cornerRadius(8)
             }
         }
-        .overlay {
-            if let errorMessage = viewModel.errorMessage {
-                BrewManagerErrorView(
-                    message: errorMessage,
-                    onDismiss: { viewModel.errorMessage = nil },
-                    onRetry: { viewModel.errorMessage = nil }
-                )
-                .transition(.opacity)
-                .accessibilityAddTraits(.isModal)
-            }
-        }
         .animation(.easeInOut(duration: 0.2), value: viewModel.errorMessage)
         .onReceive(NotificationCenter.default.publisher(for: .brewManagerRefreshRequested)) { _ in
             Task { await viewModel.refresh() }
@@ -79,68 +68,78 @@ struct BrewManagerView: View {
 
             // Content
             Group {
-                switch selectedTab {
-                case .installed:
-                    BrewInstalledContent(
-                        packages: viewModel.installedPackages,
-                        isLoading: viewModel.isLoading,
-                        onUninstall: { package in
-                            Task { await viewModel.uninstall(package: package) }
-                        },
-                        onBrowseSearch: { selectedTab = .search }
+                if let errorMessage = viewModel.errorMessage {
+                    BrewManagerErrorView(
+                        message: errorMessage,
+                        onDismiss: { viewModel.errorMessage = nil },
+                        onRetry: { viewModel.errorMessage = nil }
                     )
+                    .transition(.opacity)
+                    .accessibilityAddTraits(.isModal)
+                } else {
+                    switch selectedTab {
+                    case .installed:
+                        BrewInstalledContent(
+                            packages: viewModel.installedPackages,
+                            isLoading: viewModel.isLoading,
+                            onUninstall: { package in
+                                Task { await viewModel.uninstall(package: package) }
+                            },
+                            onBrowseSearch: { selectedTab = .search }
+                        )
 
-                case .updates:
-                    VStack {
-                        if !viewModel.outdatedPackages.isEmpty {
-                            HStack {
-                                Spacer()
-                                AppButton(LocalizedStringKey("Update All"), style: .primary, fillsWidth: true, action: { Task { await viewModel.upgradeAll() } })
-                                .padding()
+                    case .updates:
+                        VStack {
+                            if !viewModel.outdatedPackages.isEmpty {
+                                HStack {
+                                    Spacer()
+                                    AppButton(LocalizedStringKey("Update All"), style: .primary, fillsWidth: true, action: { Task { await viewModel.upgradeAll() } })
+                                    .padding()
+                                }
+                            }
+
+                            BrewListView(
+                                packages: viewModel.outdatedPackages,
+                                emptyMessage: LumiPluginLocalization.string("All packages are up to date", bundle: .module),
+                                actionButtonTitle: LumiPluginLocalization.string("Update", bundle: .module),
+                                actionButtonColor: Color(hex: "0A84FF")
+                            ) { package in
+                                Task { await viewModel.upgrade(package: package) }
                             }
                         }
 
-                        BrewListView(
-                            packages: viewModel.outdatedPackages,
-                            emptyMessage: LumiPluginLocalization.string("All packages are up to date", bundle: .module),
-                            actionButtonTitle: LumiPluginLocalization.string("Update", bundle: .module),
-                            actionButtonColor: Color(hex: "0A84FF")
-                        ) { package in
-                            Task { await viewModel.upgrade(package: package) }
-                        }
-                    }
+                    case .search:
+                        VStack {
+                            AppCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
+                                HStack {
+                                    GlassTextField(
+                                        title: LocalizedStringKey("Search"),
+                                        text: $viewModel.searchText,
+                                        placeholder: LocalizedStringKey("Search Homebrew packages...")
+                                    )
+                                    .onSubmit {
+                                        viewModel.performSearch()
+                                    }
 
-                case .search:
-                    VStack {
-                        AppCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
-                            HStack {
-                                GlassTextField(
-                                    title: LocalizedStringKey("Search"),
-                                    text: $viewModel.searchText,
-                                    placeholder: LocalizedStringKey("Search Homebrew packages...")
-                                )
-                                .onSubmit {
-                                    viewModel.performSearch()
-                                }
-
-                                if viewModel.isLoading {
-                                    ProgressView()
-                                        .controlSize(.small)
+                                    if viewModel.isLoading {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                    }
                                 }
                             }
-                        }
-                        .padding(.horizontal)
+                            .padding(.horizontal)
 
-                        BrewListView(
-                            packages: viewModel.searchResults,
-                            emptyMessage: viewModel.searchText.isEmpty ? LumiPluginLocalization.string("Enter keywords to start searching", bundle: .module) : LumiPluginLocalization.string("No related packages found", bundle: .module),
-                            actionButtonTitle: LumiPluginLocalization.string("Install", bundle: .module),
-                            actionButtonColor: Color(hex: "30D158"),
-                            showInstalledStatus: true
-                        ) { package in
-                            // 如果已安装则不显示安装按钮，或者显示为卸载/更新
-                            // 这里简化逻辑，只处理安装
-                            Task { await viewModel.install(package: package) }
+                            BrewListView(
+                                packages: viewModel.searchResults,
+                                emptyMessage: viewModel.searchText.isEmpty ? LumiPluginLocalization.string("Enter keywords to start searching", bundle: .module) : LumiPluginLocalization.string("No related packages found", bundle: .module),
+                                actionButtonTitle: LumiPluginLocalization.string("Install", bundle: .module),
+                                actionButtonColor: Color(hex: "30D158"),
+                                showInstalledStatus: true
+                            ) { package in
+                                // 如果已安装则不显示安装按钮，或者显示为卸载/更新
+                                // 这里简化逻辑，只处理安装
+                                Task { await viewModel.install(package: package) }
+                            }
                         }
                     }
                 }

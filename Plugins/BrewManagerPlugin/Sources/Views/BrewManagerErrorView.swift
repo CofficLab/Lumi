@@ -53,7 +53,6 @@ struct BrewManagerErrorView: View {
 
     private var content: some View {
         AppCard(
-            style: .subtle,
             cornerRadius: 20,
             padding: EdgeInsets(top: 32, leading: 28, bottom: 32, trailing: 28)
         ) {
