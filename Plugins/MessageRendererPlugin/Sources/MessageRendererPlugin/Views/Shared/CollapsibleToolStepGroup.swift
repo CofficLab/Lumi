@@ -7,14 +7,14 @@ import SwiftUI
 ///
 /// 把一条助手消息内联的若干工具调用包成一个可折叠的整体:
 /// - **turn 进行中**(本组 id 在 `lumiActiveToolGroupIDs` 中)→ 默认**展开**,
-///   逐个工具实时显示 loading → 完成(含耗时、参数/结果按钮)。
+///   逐个工具只显示工具名(loading/失败以颜色区分),不带耗时与按钮,完全融入正文列。
 /// - **turn 结束** → 默认**收起**成一行摘要(`数量 + 总耗时`),点击可重新展开。
 ///
 /// 用户随时可点击表头手动展开/收起任意步骤组;手动操作存于本地 `@State`,
 /// 当本组从"进行中"变为"已完成"(`isActive` 由 true→false)时清空覆盖,回归默认收起态。
 ///
 /// 展开态复用既有 `ToolCallRowView`(经 `ToolCallRowRendererRegistry` 优先走自定义渲染器),
-/// 但**强制显示详情**(耗时、参数/结果按钮)——这是 V1 步骤组与旧 V1 纯文本行的关键区别。
+/// 传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮,保持 V1 的 inline 极简风格。
 struct CollapsibleToolStepGroup: View {
     @LumiTheme private var theme
 
@@ -139,7 +139,9 @@ struct CollapsibleToolStepGroup: View {
                 message: message,
                 toolCall: toolCall,
                 verbosity: verbosity,
-                showsDetails: true,
+                // V1 展开态只显示工具名(+ loading/失败颜色),不带耗时与参数/结果按钮,
+                // 以完全融入正文列。
+                showsDetails: false,
                 parameterPopoverToolCallID: $parameterPopoverToolCallID,
                 resultPopoverToolCallID: $resultPopoverToolCallID
             )
