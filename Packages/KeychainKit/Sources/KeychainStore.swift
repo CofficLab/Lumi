@@ -30,22 +30,35 @@ public final class KeychainStore: @unchecked Sendable {
 
     /// Read a string value from Keychain.
     public func string(forKey key: String) -> String? {
+        try? stringReportingErrors(forKey: key)
+    }
+
+    /// Read a string value while preserving Keychain failures.
+    ///
+    /// A `nil` result means only that the item does not exist. Transient and
+    /// unexpected Security framework failures are thrown with their OSStatus.
+    public func stringReportingErrors(forKey key: String) throws -> String? {
         guard !key.isEmpty else { return nil }
 
         for attempt in 0..<Self.maxTransientAttempts {
             let result = backend.read(service: service, account: key)
             switch classifyKeychainResult(status: result.status, data: result.data) {
             case .found(let data):
-                return String(data: data, encoding: .utf8)
-            case .missing, .unexpected:
+                guard let value = String(data: data, encoding: .utf8) else {
+                    throw KeychainStoreError.invalidStringData
+                }
+                return value
+            case .missing:
                 return nil
-            case .transientFailure:
+            case .unexpected(let status):
+                throw KeychainStoreError.readFailed(status)
+            case .transientFailure(let status):
                 // Don't sleep on last attempt
                 if attempt < Self.maxTransientAttempts - 1 {
                     sleeper(Self.transientRetryDelayNanoseconds(for: attempt))
                     continue
                 }
-                return nil
+                throw KeychainStoreError.readFailed(status)
             }
         }
         return nil
@@ -72,10 +85,16 @@ public final class KeychainStore: @unchecked Sendable {
 
     /// Reads from Keychain, migrating a legacy UserDefaults value when present.
     public func loadMigratingLegacyUserDefaults(forKey key: String) -> String? {
+        try? loadMigratingLegacyUserDefaultsReportingErrors(forKey: key)
+    }
+
+    /// Reads and migrates a legacy value without collapsing Keychain failures
+    /// into a missing item.
+    public func loadMigratingLegacyUserDefaultsReportingErrors(forKey key: String) throws -> String? {
         guard !key.isEmpty else { return nil }
 
         // 1. Current Keychain
-        if let keychainValue = string(forKey: key)?
+        if let keychainValue = try stringReportingErrors(forKey: key)?
             .trimmingCharacters(in: .whitespacesAndNewlines),
            !keychainValue.isEmpty {
             return keychainValue
