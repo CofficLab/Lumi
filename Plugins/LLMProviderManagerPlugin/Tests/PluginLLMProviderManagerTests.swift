@@ -242,6 +242,45 @@ import Testing
     #expect(!state.isChecking(providerId: info.id))
 }
 
+// MARK: - Direct Send
+
+@MainActor
+@Test func sendDirectUsesSelectedProviderAndModelByDefault() async throws {
+    let manager = LLMProviderManager()
+    try manager.registerLLMProvider(MockLLMProvider())
+    manager.selectModel(providerID: MockLLMProvider.info.id, model: "mock-model-b")
+
+    let response = try await manager.sendDirect(
+        LumiLLMRequest(
+            messages: [LumiChatMessage(conversationID: UUID(), role: .user, content: "title this")],
+            model: "ignored"
+        ),
+        providerID: nil,
+        model: nil
+    )
+
+    #expect(response.content == "model=mock-model-b;messages=1")
+}
+
+@MainActor
+@Test func generateTextUsesExplicitProviderAndModel() async throws {
+    let manager = LLMProviderManager()
+    try manager.registerLLMProvider(MockLLMProvider())
+    try manager.registerLLMProvider(MockOtherLLMProvider())
+    manager.selectModel(providerID: MockLLMProvider.info.id, model: "mock-model-b")
+
+    let text = try await manager.generateText(
+        LumiLLMRequest(
+            messages: [LumiChatMessage(conversationID: UUID(), role: .user, content: "title this")],
+            model: "ignored"
+        ),
+        providerID: "mock-other",
+        model: "other-fast"
+    )
+
+    #expect(text == "model=other-fast;messages=1")
+}
+
 // MARK: - Mock LLM Provider
 
 private struct MockLLMProvider: LumiLLMProvider {
@@ -256,7 +295,9 @@ private struct MockLLMProvider: LumiLLMProvider {
 
     let resultForModel: @Sendable (String) -> LumiModelAvailabilityResult
 
-    init(resultForModel: @escaping @Sendable (String) -> LumiModelAvailabilityResult = { _ in .available }) {
+    init(
+        resultForModel: @escaping @Sendable (String) -> LumiModelAvailabilityResult = { _ in .available }
+    ) {
         self.resultForModel = resultForModel
     }
 
@@ -267,7 +308,11 @@ private struct MockLLMProvider: LumiLLMProvider {
     func removeApiKey() {}
 
     func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
-        LumiChatMessage(conversationID: UUID(), role: .assistant, content: "ok")
+        LumiChatMessage(
+            conversationID: UUID(),
+            role: .assistant,
+            content: "model=\(request.model);messages=\(request.messages.count)"
+        )
     }
 
     func sendStreaming(
@@ -279,6 +324,63 @@ private struct MockLLMProvider: LumiLLMProvider {
 
     func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         resultForModel(model)
+    }
+
+    func providerStatus() -> LumiLLMProviderStatus? {
+        nil
+    }
+
+    func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
+        .nonRetryable
+    }
+
+    func errorRenderKind(for error: Error) -> String? {
+        nil
+    }
+
+    func makeErrorMessage(
+        conversationID: UUID,
+        request: LumiLLMRequest,
+        error: Error,
+        disposition: LumiLLMErrorDisposition
+    ) -> LumiChatMessage {
+        LumiChatMessage(conversationID: conversationID, role: .assistant, content: "error")
+    }
+}
+
+private struct MockOtherLLMProvider: LumiLLMProvider {
+    static let info = LumiLLMProviderInfo(
+        id: "mock-other",
+        displayName: "Mock Other",
+        description: "other mock",
+        defaultModel: "other-default",
+        availableModels: ["other-default", "other-fast"],
+        websiteURL: URL(string: "https://example.com")!
+    )
+
+    func lumiResolveAPIKey() throws -> String { "" }
+    func hasApiKey() -> Bool { false }
+    func getApiKey() -> String { "" }
+    func setApiKey(_ apiKey: String) {}
+    func removeApiKey() {}
+
+    func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
+        LumiChatMessage(
+            conversationID: UUID(),
+            role: .assistant,
+            content: "model=\(request.model);messages=\(request.messages.count)"
+        )
+    }
+
+    func sendStreaming(
+        _ request: LumiLLMRequest,
+        onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
+    ) async throws -> LumiChatMessage {
+        try await send(request)
+    }
+
+    func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        .available
     }
 
     func providerStatus() -> LumiLLMProviderStatus? {
