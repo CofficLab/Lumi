@@ -47,6 +47,7 @@ struct AppTitleToolbar: View {
         .overlay(
             Rectangle()
                 .fill(theme.warning.opacity(0.20))
+                .allowsHitTesting(false)
         )
         #endif
     }

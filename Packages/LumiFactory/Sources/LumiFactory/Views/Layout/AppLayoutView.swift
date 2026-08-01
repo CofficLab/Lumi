@@ -85,6 +85,13 @@ struct AppLayoutView: View {
             HSplitView {
                 RailView(kernel: kernel)
                     .frame(minWidth: 180, idealWidth: 240, maxWidth: 400)
+                    .overlay(alignment: .trailing) {
+                        Rectangle()
+                            .fill(theme.divider)
+                            .frame(width: 1)
+                            .shadow(color: .red.opacity(0.64), radius: 3, x: 2)
+                            .allowsHitTesting(false)
+                    }
                 mainSplitContent(layoutManager)
             }
         } else {
