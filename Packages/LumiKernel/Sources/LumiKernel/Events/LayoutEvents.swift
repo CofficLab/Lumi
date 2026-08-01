@@ -1,8 +1,6 @@
 import Foundation
 import SwiftUI
 
-// MARK: - Layout Notification Names
-
 extension Notification.Name {
     /// 当前激活的视图容器已变更
     /// object: nil

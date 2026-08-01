@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - Provider State NotificationCenter Extensions
-
 public extension NotificationCenter {
     static func postSelectedRemoteProviderIDDidChange(providerID: String?) {
         NotificationCenter.default.post(name: .lumiSelectedRemoteProviderIDDidChange, object: nil, userInfo: ["providerID": providerID as Any])
