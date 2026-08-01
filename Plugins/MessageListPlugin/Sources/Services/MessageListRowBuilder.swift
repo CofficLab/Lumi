@@ -15,6 +15,9 @@ import LumiKernel
 ///
 /// 即:status 只在 `.sending` 窗口显示,流式实质内容一来就退场。
 ///
+/// 此外,**V1 (brief)** 模式下会剔除独立的 `.tool` 结果行 —— 其结果收入助手消息内联的
+/// 「可折叠工具步骤组」,避免重复展示;仅展示层过滤,持久化与 LLM 历史不受影响。
+///
 /// - SeeAlso: `MessageListPaginationService`,负责真实消息的分页。
 @MainActor
 struct MessageListRowBuilder {
@@ -26,10 +29,14 @@ struct MessageListRowBuilder {
     ///   - conversationID: 当前会话;若为 `nil` 则只返回真实消息(无会话 → 流式行无展示意义)。
     ///   - streaming: 流式服务 —— 读取临时行 + 当前阶段。可能为 `nil`(尚未就绪);
     ///     `nil` 等价于"无流式进行"。
+    ///   - verbosity: 当前会话的响应详细程度。V1 (brief) 下隐藏独立的 `.tool` 结果行
+    ///     —— 其结果已收入助手消息内联的「可折叠工具步骤组」(展开后可查看);
+    ///     这里仅做展示层过滤,不影响持久化与发送给 LLM 的历史。
     func build(
         persisted: [LumiChatMessage],
         conversationID: UUID?,
-        streaming: (any MessageStreaming)?
+        streaming: (any MessageStreaming)?,
+        verbosity: LumiResponseVerbosity
     ) -> [LumiChatMessage] {
         guard let conversationID else { return persisted }
 
@@ -46,9 +53,13 @@ struct MessageListRowBuilder {
         // 流式行一旦实质展示(thinking/generating),status 就退场(由流式行承载)。
         // 仅 .sending 阶段保留 status。
         let dropStatus = showStreamingRow
-        var rows = dropStatus
-            ? persisted.filter { $0.role != .status }
-            : persisted
+        // V1 下隐藏独立 `.tool` 结果行(结果收进步骤卡片,避免与内联展示重复)。
+        let dropToolRows = verbosity == .brief
+        var rows = persisted.filter { message in
+            if dropStatus, message.role == .status { return false }
+            if dropToolRows, message.role == .tool { return false }
+            return true
+        }
 
         if showStreamingRow, let streamingRow {
             rows.append(streamingRow)
