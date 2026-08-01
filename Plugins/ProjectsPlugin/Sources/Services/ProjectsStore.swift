@@ -24,10 +24,11 @@ public final class ProjectsStore: SuperLog {
 
     // MARK: - Constants
 
-    private static let settingsDirectoryName = "settings"
-    private static let projectsFileName = "projects.json"
-    private static let currentProjectFileName = "current-project.json"
-    private static let openedFilesFileName = "project-opened-files.json"
+    // 文件名常量与写入逻辑均无并发风险（纯值/纯函数），标记 nonisolated 以支持后台写入。
+    private nonisolated static let settingsDirectoryName = "settings"
+    private nonisolated static let projectsFileName = "projects.json"
+    private nonisolated static let currentProjectFileName = "current-project.json"
+    private nonisolated static let openedFilesFileName = "project-opened-files.json"
     private static let maxProjectsCount = 500
 
     // MARK: - Properties
@@ -72,7 +73,10 @@ public final class ProjectsStore: SuperLog {
     // MARK: - Save
 
     /// 保存所有项目和当前项目
-    public func save(projects: [ProjectEntry], currentProject: ProjectEntry?) {
+    ///
+    /// 标记为 `nonisolated`：仅依赖不可变的 `settingsDirectory` 与静态写入逻辑，
+    /// 无共享可变状态，因此可在后台线程执行，避免阻塞 UI。
+    public nonisolated func save(projects: [ProjectEntry], currentProject: ProjectEntry?) {
         try? FileManager.default.createDirectory(
             at: settingsDirectory,
             withIntermediateDirectories: true,
@@ -173,15 +177,15 @@ public final class ProjectsStore: SuperLog {
 
     // MARK: - Private
 
-    private var projectsFileURL: URL {
+    private nonisolated var projectsFileURL: URL {
         settingsDirectory.appendingPathComponent(Self.projectsFileName, isDirectory: false)
     }
 
-    private var currentProjectFileURL: URL {
+    private nonisolated var currentProjectFileURL: URL {
         settingsDirectory.appendingPathComponent(Self.currentProjectFileName, isDirectory: false)
     }
 
-    private var openedFilesFileURL: URL {
+    private nonisolated var openedFilesFileURL: URL {
         settingsDirectory.appendingPathComponent(Self.openedFilesFileName, isDirectory: false)
     }
 
@@ -208,7 +212,7 @@ public final class ProjectsStore: SuperLog {
         return try? JSONDecoder().decode(String.self, from: data)
     }
 
-    private static func write<Value: Encodable>(_ value: Value, to fileURL: URL) {
+    private nonisolated static func write<Value: Encodable>(_ value: Value, to fileURL: URL) {
         guard let data = try? JSONEncoder().encode(value) else {
             return
         }
