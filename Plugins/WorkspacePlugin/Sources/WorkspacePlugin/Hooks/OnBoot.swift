@@ -29,8 +29,6 @@ public struct LayoutKernelOnBootHook: SuperLog {
             }
             manager.isChatVisible = info.chatSectionVisible
             manager.isRailVisible = info.railVisible
-            manager.isContentVisible = info.contentVisible
-            manager.isPanelVisible = info.panelVisible
             manager.isPanelBottomVisible = info.panelBottomVisible
             // 恢复每个容器上次的 rail/bottom tab 选中（不发送通知，静默灌入内存）。
             for (containerID, railTabID) in info.activeRailTabIDs {

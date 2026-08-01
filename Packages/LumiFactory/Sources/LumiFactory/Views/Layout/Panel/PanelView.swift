@@ -14,21 +14,15 @@ struct PanelView: View {
         self.layoutManager = layoutManager
     }
 
-    private var isPanelVisible: Bool {
-        layoutManager.isPanelVisible
-    }
-
     var body: some View {
-        if isPanelVisible {
-            VSplitView {
-                PanelHeaderView(layoutManager: layoutManager)
-                    .frame(maxWidth: .infinity)
-                PanelBodyView(layoutManager: layoutManager)
-                    .frame(maxWidth: .infinity)
-                PanelBottomView(layoutManager: layoutManager)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
+        VSplitView {
+            PanelHeaderView(layoutManager: layoutManager)
+                .frame(maxWidth: .infinity)
+            PanelBodyView(layoutManager: layoutManager)
+                .frame(maxWidth: .infinity)
+            PanelBottomView(layoutManager: layoutManager)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
     }
 }

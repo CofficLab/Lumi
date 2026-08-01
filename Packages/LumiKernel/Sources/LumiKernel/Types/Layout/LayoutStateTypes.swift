@@ -5,8 +5,6 @@ public struct LayoutStateInfo: Sendable, Codable {
     public var activeViewContainerID: String?
     public var chatSectionVisible: Bool
     public var railVisible: Bool
-    public var contentVisible: Bool
-    public var panelVisible: Bool
     public var panelBottomVisible: Bool
 
     /// 每个 ViewContainer 上次选中的侧边栏 Rail Tab（键为容器 ID，值为 tab ID）
@@ -21,8 +19,6 @@ public struct LayoutStateInfo: Sendable, Codable {
         activeViewContainerID: String? = nil,
         chatSectionVisible: Bool = true,
         railVisible: Bool = true,
-        contentVisible: Bool = true,
-        panelVisible: Bool = true,
         panelBottomVisible: Bool = true,
         activeRailTabIDs: [String: String] = [:],
         activeBottomTabIDs: [String: String] = [:],
@@ -31,8 +27,6 @@ public struct LayoutStateInfo: Sendable, Codable {
         self.activeViewContainerID = activeViewContainerID
         self.chatSectionVisible = chatSectionVisible
         self.railVisible = railVisible
-        self.contentVisible = contentVisible
-        self.panelVisible = panelVisible
         self.panelBottomVisible = panelBottomVisible
         self.activeRailTabIDs = activeRailTabIDs
         self.activeBottomTabIDs = activeBottomTabIDs
@@ -45,8 +39,6 @@ public struct LayoutStateInfo: Sendable, Codable {
         case activeViewContainerID
         case chatSectionVisible
         case railVisible
-        case contentVisible
-        case panelVisible
         case panelBottomVisible
         case activeRailTabIDs
         case activeBottomTabIDs
@@ -58,8 +50,6 @@ public struct LayoutStateInfo: Sendable, Codable {
         self.activeViewContainerID = try c.decodeIfPresent(String.self, forKey: .activeViewContainerID)
         self.chatSectionVisible = try c.decodeIfPresent(Bool.self, forKey: .chatSectionVisible) ?? true
         self.railVisible = try c.decodeIfPresent(Bool.self, forKey: .railVisible) ?? true
-        self.contentVisible = try c.decodeIfPresent(Bool.self, forKey: .contentVisible) ?? true
-        self.panelVisible = try c.decodeIfPresent(Bool.self, forKey: .panelVisible) ?? true
         self.panelBottomVisible = try c.decodeIfPresent(Bool.self, forKey: .panelBottomVisible) ?? true
         self.activeRailTabIDs = try c.decodeIfPresent([String: String].self, forKey: .activeRailTabIDs) ?? [:]
         self.activeBottomTabIDs = try c.decodeIfPresent([String: String].self, forKey: .activeBottomTabIDs) ?? [:]
@@ -73,23 +63,17 @@ public struct LayoutStateInfo: Sendable, Codable {
 public struct VisibilityFlags: Codable, Sendable {
     public var isRailVisible: Bool?
     public var isChatVisible: Bool?
-    public var isContentVisible: Bool?
-    public var isPanelVisible: Bool?
     public var isPanelHeaderVisible: Bool?
     public var isPanelBottomVisible: Bool?
 
     public init(
         isRailVisible: Bool? = nil,
         isChatVisible: Bool? = nil,
-        isContentVisible: Bool? = nil,
-        isPanelVisible: Bool? = nil,
         isPanelHeaderVisible: Bool? = nil,
         isPanelBottomVisible: Bool? = nil
     ) {
         self.isRailVisible = isRailVisible
         self.isChatVisible = isChatVisible
-        self.isContentVisible = isContentVisible
-        self.isPanelVisible = isPanelVisible
         self.isPanelHeaderVisible = isPanelHeaderVisible
         self.isPanelBottomVisible = isPanelBottomVisible
     }
@@ -97,4 +81,3 @@ public struct VisibilityFlags: Codable, Sendable {
 
 /// 布局状态现已内联进 `LayoutManager`（`WorkspaceProviding` 的实现类），
 /// 不再有独立的 `LayoutState` 类。本文件仅保留供持久化/设置视图使用的轻量 DTO。
-

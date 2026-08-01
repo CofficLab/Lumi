@@ -30,7 +30,7 @@ public final class DockerManagerPlugin: LumiPlugin {
                 id: id,
                 title: "Docker",
                 systemImage: "shippingbox",
-                isPanelHeaderVisible: false
+                panelHeaderVisibility: .unsupported
             ) {
                 DockerImagesView()
             },

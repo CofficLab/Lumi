@@ -170,12 +170,10 @@ public final class PluginManager: ObservableObject {
                         id: container.id,
                         title: container.title,
                         systemImage: container.systemImage,
-                        isRailVisible: container.isRailVisible,
-                        isChatVisible: container.isChatVisible,
-                        isContentVisible: container.isContentVisible,
-                        isPanelVisible: container.isPanelVisible,
-                        isPanelHeaderVisible: container.isPanelHeaderVisible,
-                        isPanelBottomVisible: container.isPanelBottomVisible,
+                        railVisibility: container.railVisibility,
+                        chatVisibility: container.chatVisibility,
+                        panelHeaderVisibility: container.panelHeaderVisibility,
+                        panelBottomVisibility: container.panelBottomVisibility,
                         content: makeView
                     )
                 } else {
@@ -183,12 +181,10 @@ public final class PluginManager: ObservableObject {
                         id: container.id,
                         title: container.title,
                         systemImage: container.systemImage,
-                        isRailVisible: container.isRailVisible,
-                        isChatVisible: container.isChatVisible,
-                        isContentVisible: container.isContentVisible,
-                        isPanelVisible: container.isPanelVisible,
-                        isPanelHeaderVisible: container.isPanelHeaderVisible,
-                        isPanelBottomVisible: container.isPanelBottomVisible
+                        railVisibility: container.railVisibility,
+                        chatVisibility: container.chatVisibility,
+                        panelHeaderVisibility: container.panelHeaderVisibility,
+                        panelBottomVisibility: container.panelBottomVisibility
                     )
                 }
                 var containerWithOrder = viewContainer
@@ -299,14 +295,8 @@ public final class PluginManager: ObservableObject {
         // `activateContainer` → `onContainerActivated` 的可见性应用路径。
         // 因此启动/重建完成后必须在此处补一次 apply，否则 rail/chat 仍按默认值显示。
         // （首容器的自动选中已下沉到 `registerViewContainer`。）
-        if let containerID = kernel.workspace?.activeViewContainerID,
-           let container = kernel.workspace?.viewContainer(id: containerID) {
-            kernel.workspace?.applyVisibility(
-                rail: container.isRailVisible,
-                chat: container.isChatVisible,
-                content: container.isContentVisible,
-                panel: container.isPanelVisible
-            )
+        if let containerID = kernel.workspace?.activeViewContainerID {
+            kernel.workspace?.applyContainerVisibility(for: containerID)
         }
 
     }

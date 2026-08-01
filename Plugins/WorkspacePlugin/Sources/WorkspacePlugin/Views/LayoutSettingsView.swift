@@ -217,22 +217,31 @@ public struct LayoutSettingsView: View {
         }
     }
 
-    /// 容器注册时静态声明的可见性（ViewContainerItem 上的 Bool?）。
+    /// 容器注册时静态声明的可见性策略。
     private func visibilityDeclaredSection(_ container: ViewContainerItem) -> some View {
         AppSettingsSection(title: "Visibility (Declared)", subtitle: "容器注册时声明的默认可见性") {
             VStack(spacing: 0) {
-                detailRow(title: "Rail", icon: "sidebar.left", value: boolText(container.isRailVisible))
+                detailRow(title: "Rail", icon: "sidebar.left", value: visibilityText(container.railVisibility))
                 Divider().padding(.vertical, 8)
-                detailRow(title: "Chat", icon: "rectangle.rightthird.inset.filled", value: boolText(container.isChatVisible))
+                detailRow(title: "Chat", icon: "rectangle.rightthird.inset.filled", value: visibilityText(container.chatVisibility))
                 Divider().padding(.vertical, 8)
-                detailRow(title: "Content", icon: "rectangle.split.3x1", value: boolText(container.isContentVisible))
+                detailRow(title: "Panel Header", icon: "rectangle.topthird.inset.filled", value: visibilityText(container.panelHeaderVisibility))
                 Divider().padding(.vertical, 8)
-                detailRow(title: "Panel", icon: "rectangle.inset.filled", value: boolText(container.isPanelVisible))
-                Divider().padding(.vertical, 8)
-                detailRow(title: "Panel Header", icon: "rectangle.topthird.inset.filled", value: boolText(container.isPanelHeaderVisible))
-                Divider().padding(.vertical, 8)
-                detailRow(title: "Panel Bottom", icon: "rectangle.bottomthird.inset.filled", value: boolText(container.isPanelBottomVisible))
+                detailRow(title: "Panel Bottom", icon: "rectangle.bottomthird.inset.filled", value: visibilityText(container.panelBottomVisibility))
             }
+        }
+    }
+
+    private func visibilityText(_ visibility: ViewContainerVisibility) -> String {
+        switch visibility {
+        case .unsupported:
+            "Unsupported"
+        case .hiddenByDefault:
+            "Supported, hidden by default"
+        case .visibleByDefault:
+            "Supported, visible by default"
+        case .alwaysVisible:
+            "Supported, always visible"
         }
     }
 
@@ -245,10 +254,6 @@ public struct LayoutSettingsView: View {
                     detailRow(title: "Rail", icon: "sidebar.left", value: boolText(overrides.isRailVisible))
                     Divider().padding(.vertical, 8)
                     detailRow(title: "Chat", icon: "rectangle.rightthird.inset.filled", value: boolText(overrides.isChatVisible))
-                    Divider().padding(.vertical, 8)
-                    detailRow(title: "Content", icon: "rectangle.split.3x1", value: boolText(overrides.isContentVisible))
-                    Divider().padding(.vertical, 8)
-                    detailRow(title: "Panel", icon: "rectangle.inset.filled", value: boolText(overrides.isPanelVisible))
                     Divider().padding(.vertical, 8)
                     detailRow(title: "Panel Header", icon: "rectangle.topthird.inset.filled", value: boolText(overrides.isPanelHeaderVisible))
                     Divider().padding(.vertical, 8)

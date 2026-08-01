@@ -51,12 +51,10 @@ public final class TerminalPlugin: LumiPlugin {
                 id: id,
                 title: name,
                 systemImage: "terminal",
-                isRailVisible: false,
-                isChatVisible: false,
-                isContentVisible: true,
-                isPanelVisible: true,
-                isPanelHeaderVisible: false,
-                isPanelBottomVisible: false
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
             ) {
                 TerminalMainView(projectProvider: kernel.project)
             }

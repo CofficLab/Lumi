@@ -20,8 +20,6 @@ public protocol WorkspaceProviding: ObservableObject {
 
     var isRailVisible: Bool { get }
     var isChatVisible: Bool { get }
-    var isContentVisible: Bool { get }
-    var isPanelVisible: Bool { get }
     var isPanelHeaderVisible: Bool { get }
     var isPanelBottomVisible: Bool { get }
 
@@ -29,13 +27,12 @@ public protocol WorkspaceProviding: ObservableObject {
 
     func setRailVisible(_ visible: Bool)
     func setChatVisible(_ visible: Bool)
-    func setContentVisible(_ visible: Bool)
-    func setPanelVisible(_ visible: Bool)
     func setPanelHeaderVisible(_ visible: Bool)
     func setPanelBottomVisible(_ visible: Bool)
 
     func activateContainer(id: String)
-    func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?)
+    /// 将容器声明的可见性策略及已持久化的用户覆盖解析到当前运行时布局。
+    func applyContainerVisibility(for id: String)
     func addContainerObserver(_ observer: @escaping (String) -> Void)
 
     // MARK: - View Containers

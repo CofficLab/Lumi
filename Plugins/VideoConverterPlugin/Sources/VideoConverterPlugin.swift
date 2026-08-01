@@ -37,12 +37,10 @@ public final class VideoConverterPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: VideoConverterLocalization.string("Video Converter"),
                 systemImage: "video",
-                isRailVisible: false,
-                isChatVisible: false,
-                isContentVisible: true,
-                isPanelVisible: true,
-                isPanelHeaderVisible: false,
-                isPanelBottomVisible: false
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
             ) {
                 VideoConverterMainView()
             },

@@ -9,7 +9,6 @@ struct AppLayoutView: View {
     private let layoutManager: (any WorkspaceProviding)?
 
     @State private var isRailVisible: Bool = true
-    @State private var isContentVisible: Bool = true
     @State private var isChatVisible: Bool = true
 
     init(kernel: LumiKernel) {
@@ -64,7 +63,6 @@ struct AppLayoutView: View {
         }
         .onAppear {
             isRailVisible = layoutManager.isRailVisible
-            isContentVisible = layoutManager.isContentVisible
             isChatVisible = layoutManager.isChatVisible
         }
     }

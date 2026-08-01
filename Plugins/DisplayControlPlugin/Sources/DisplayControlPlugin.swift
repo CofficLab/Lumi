@@ -30,12 +30,10 @@ public final class DisplayControlPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: "Display Control",
                 systemImage: "display",
-                isRailVisible: false,
-                isChatVisible: false,
-                isContentVisible: true,
-                isPanelVisible: true,
-                isPanelHeaderVisible: false,
-                isPanelBottomVisible: false
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
             ) {
                 DisplayControlView()
             },

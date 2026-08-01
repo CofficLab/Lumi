@@ -36,11 +36,9 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
                 id: "database-manager",
                 title: "Database",
                 systemImage: "cylinder.split.1x2",
-                isRailVisible: false,
-                isChatVisible: false,
-                isContentVisible: false,
-                isPanelVisible: true,
-                isPanelBottomVisible: false
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
             ) {
                 AnyView(DatabaseMainView())
             }

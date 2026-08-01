@@ -48,7 +48,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
                 id: id,
                 title: "Menu Bar Manager",
                 systemImage: "menubar.rectangle",
-                isPanelHeaderVisible: false
+                panelHeaderVisibility: .unsupported
             ) {
                 MenuBarSettingsView()
             },

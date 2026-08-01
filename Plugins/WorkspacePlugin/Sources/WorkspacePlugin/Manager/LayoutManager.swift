@@ -21,7 +21,7 @@ import SwiftUI
 public final class LayoutManager: WorkspaceProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout.service")
     nonisolated public static let emoji = "📐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - Persistence
 
@@ -97,22 +97,6 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         }
     }
 
-    /// 主内容区域是否可见
-    @Published public var isContentVisible: Bool = true {
-        didSet {
-            guard isContentVisible != oldValue else { return }
-            NotificationCenter.postContentVisibleDidChange(visible: isContentVisible)
-        }
-    }
-
-    /// 底部 Panel 是否可见
-    @Published public var isPanelVisible: Bool = true {
-        didSet {
-            guard isPanelVisible != oldValue else { return }
-            NotificationCenter.postPanelVisibleDidChange(visible: isPanelVisible)
-        }
-    }
-
     /// Panel Header 是否可见
     @Published public var isPanelHeaderVisible: Bool = true
 
@@ -124,7 +108,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     /// 用户手动调整过的可见性覆盖层（键为容器 ID）。
     ///
     /// 解析某容器可见性时的优先级：用户覆盖 > 容器静态声明 > 全局默认(true)。
-    /// 这里的值由 `setXxxVisible` / `applyVisibility` 在有激活容器时自动记录。
+    /// 这里的值由 `setXxxVisible` 在有激活容器时自动记录。
     @Published private var visibilityOverrides: [String: VisibilityFlags] = [:]
 
     /// 供持久化序列化使用的只读快照。
@@ -276,26 +260,26 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     // MARK: - Workspace Commands
 
     public func setRailVisible(_ visible: Bool) {
+        guard (currentViewContainer?.railVisibility ?? .visibleByDefault).allowsUserVisibilityOverride else { return }
         isRailVisible = visible
         recordUserOverride(\.isRailVisible, visible)
     }
     public func setChatVisible(_ visible: Bool) {
+        guard (currentViewContainer?.chatVisibility ?? .visibleByDefault).allowsUserVisibilityOverride else { return }
         isChatVisible = visible
         recordUserOverride(\.isChatVisible, visible)
     }
-    public func setContentVisible(_ visible: Bool) {
-        isContentVisible = visible
-        recordUserOverride(\.isContentVisible, visible)
-    }
-    public func setPanelVisible(_ visible: Bool) {
-        isPanelVisible = visible
-        recordUserOverride(\.isPanelVisible, visible)
-    }
     public func setPanelHeaderVisible(_ visible: Bool) {
+        let policy = currentViewContainer?.panelHeaderVisibility ?? .visibleByDefault
+        guard policy.allowsUserVisibilityOverride else {
+            isPanelHeaderVisible = policy.defaultIsVisible
+            return
+        }
         isPanelHeaderVisible = visible
         recordUserOverride(\.isPanelHeaderVisible, visible)
     }
     public func setPanelBottomVisible(_ visible: Bool) {
+        guard (currentViewContainer?.panelBottomVisibility ?? .visibleByDefault).allowsUserVisibilityOverride else { return }
         isPanelBottomVisible = visible
         recordUserOverride(\.isPanelBottomVisible, visible)
     }
@@ -305,9 +289,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             Self.logger.info("\(Self.t)[ActivityBarTrace] activateContainer requested=\(id, privacy: .public) active-before=\(self.activeViewContainerID ?? "nil", privacy: .public)")
         }
         activeViewContainerID = id
-        if let container = viewContainer(id: id) {
-            applyResolvedVisibility(for: id, container: container)
-        }
+        applyContainerVisibility(for: id)
         for observer in containerObservers {
             observer(id)
         }
@@ -318,44 +300,20 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         saveState()
     }
 
+    public func applyContainerVisibility(for id: String) {
+        guard let container = viewContainer(id: id) else { return }
+        applyResolvedVisibility(for: id, container: container)
+    }
+
     /// 解析某容器的可见性并应用到全局标志（当前激活容器的运行时视图）。
     private func applyResolvedVisibility(for id: String, container: ViewContainerItem) {
         let user = visibilityOverrides[id]
-        /// 优先级：用户覆盖 > 容器声明 > 全局默认(true)。
-        func resolve(_ userVal: Bool?, _ containerVal: Bool?) -> Bool {
-            userVal ?? containerVal ?? true
-        }
-        isRailVisible = resolve(user?.isRailVisible, container.isRailVisible)
-        isChatVisible = resolve(user?.isChatVisible, container.isChatVisible)
-        isContentVisible = resolve(user?.isContentVisible, container.isContentVisible)
-        isPanelVisible = resolve(user?.isPanelVisible, container.isPanelVisible)
-        isPanelHeaderVisible = resolve(user?.isPanelHeaderVisible, container.isPanelHeaderVisible)
-        isPanelBottomVisible = resolve(user?.isPanelBottomVisible, container.isPanelBottomVisible)
-    }
-
-    /// 批量应用可见性变更，并同步记录到当前激活容器的覆盖层（与 `setXxxVisible` 一致）。
-    public func applyVisibility(
-        rail: Bool?,
-        chat: Bool?,
-        content: Bool?,
-        panel: Bool?
-    ) {
-        if let rail {
-            isRailVisible = rail
-            recordUserOverride(\.isRailVisible, rail)
-        }
-        if let chat {
-            isChatVisible = chat
-            recordUserOverride(\.isChatVisible, chat)
-        }
-        if let content {
-            isContentVisible = content
-            recordUserOverride(\.isContentVisible, content)
-        }
-        if let panel {
-            isPanelVisible = panel
-            recordUserOverride(\.isPanelVisible, panel)
-        }
+        isRailVisible = container.railVisibility.resolvedVisibility(userOverride: user?.isRailVisible)
+        isChatVisible = container.chatVisibility.resolvedVisibility(userOverride: user?.isChatVisible)
+        isPanelHeaderVisible = container.panelHeaderVisibility.resolvedVisibility(
+            userOverride: user?.isPanelHeaderVisible
+        )
+        isPanelBottomVisible = container.panelBottomVisibility.resolvedVisibility(userOverride: user?.isPanelBottomVisible)
     }
 
     // MARK: - Rail Tabs (commands)
@@ -538,8 +496,6 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             activeViewContainerID: activeViewContainerID,
             chatSectionVisible: isChatVisible,
             railVisible: isRailVisible,
-            contentVisible: isContentVisible,
-            panelVisible: isPanelVisible,
             panelBottomVisible: isPanelBottomVisible,
             activeRailTabIDs: activeRailTabIDsDictionary,
             activeBottomTabIDs: activeBottomTabIDsDictionary,

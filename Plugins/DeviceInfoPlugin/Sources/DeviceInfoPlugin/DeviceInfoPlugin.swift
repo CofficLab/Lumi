@@ -40,12 +40,10 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: "Device Info",
                 systemImage: "macbook.and.iphone",
-                isRailVisible: false,
-                isChatVisible: false,
-                isContentVisible: true,
-                isPanelVisible: true,
-                isPanelHeaderVisible: false,
-                isPanelBottomVisible: false
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
             ) {
                 DeviceInfoView()
             },

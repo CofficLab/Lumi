@@ -37,11 +37,9 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: name,
                 systemImage: "internaldrive",
-                isRailVisible: false,
-                isChatVisible: false,
-                isContentVisible: true,
-                isPanelVisible: true,
-                isPanelHeaderVisible: false
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported
             ) {
                 DiskManagerView()
             },
