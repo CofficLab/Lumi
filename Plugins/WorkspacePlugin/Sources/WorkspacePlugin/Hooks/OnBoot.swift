@@ -25,22 +25,22 @@ public struct LayoutKernelOnBootHook: SuperLog {
                 Self.logger.info("\(Self.t)恢复布局: activeViewContainerID=\(info.activeViewContainerID ?? "nil")")
             }
             if let containerID = info.activeViewContainerID {
-                manager.layoutState.activeViewContainerID = containerID
+                manager.activeViewContainerID = containerID
             }
-            manager.layoutState.isChatVisible = info.chatSectionVisible
-            manager.layoutState.isRailVisible = info.railVisible
-            manager.layoutState.isContentVisible = info.contentVisible
-            manager.layoutState.isPanelVisible = info.panelVisible
-            manager.layoutState.isPanelBottomVisible = info.panelBottomVisible
+            manager.isChatVisible = info.chatSectionVisible
+            manager.isRailVisible = info.railVisible
+            manager.isContentVisible = info.contentVisible
+            manager.isPanelVisible = info.panelVisible
+            manager.isPanelBottomVisible = info.panelBottomVisible
             // 恢复每个容器上次的 rail/bottom tab 选中（不发送通知，静默灌入内存）。
             for (containerID, railTabID) in info.activeRailTabIDs {
-                manager.layoutState.restoreActiveRailTabID(railTabID, for: containerID)
+                manager.restoreActiveRailTabID(railTabID, for: containerID)
             }
             for (containerID, bottomTabID) in info.activeBottomTabIDs {
-                manager.layoutState.restoreActiveBottomTabID(bottomTabID, for: containerID)
+                manager.restoreActiveBottomTabID(bottomTabID, for: containerID)
             }
             // 恢复每个容器用户手动调整过的可见性覆盖。
-            manager.layoutState.restoreVisibilityOverrides(info.visibilityOverrides)
+            manager.restoreVisibilityOverrides(info.visibilityOverrides)
         } else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)无已保存布局，使用默认值")

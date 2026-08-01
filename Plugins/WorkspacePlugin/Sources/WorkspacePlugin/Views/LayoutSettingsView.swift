@@ -22,10 +22,6 @@ public struct LayoutSettingsView: View {
         self._kernel = ObservedObject(wrappedValue: kernel)
     }
 
-    private var layoutState: LayoutState? {
-        kernel.workspace?.layoutState
-    }
-
     private var containers: [ViewContainerItem] {
         kernel.workspace?.allViewContainers ?? []
     }
@@ -242,7 +238,7 @@ public struct LayoutSettingsView: View {
 
     /// 用户手动调整过、已持久化的可见性覆盖（visibilityOverrides）。
     private func visibilityOverrideSection(_ container: ViewContainerItem) -> some View {
-        let overrides = layoutState?.visibilityOverridesDictionary[container.id]
+        let overrides = kernel.workspace?.visibilityOverride(for: container.id)
         return AppSettingsSection(title: "Visibility (User Override)", subtitle: "用户手动调整后记忆的值，优先级最高") {
             if let overrides {
                 VStack(spacing: 0) {
@@ -267,7 +263,7 @@ public struct LayoutSettingsView: View {
     }
 
     private func tabsSection(_ container: ViewContainerItem) -> some View {
-        let state = layoutState
+        let state = kernel.workspace
         return AppSettingsSection(title: "Tabs", subtitle: "该容器上次选中的侧边栏 / 底部标签") {
             VStack(spacing: 0) {
                 detailRow(title: "Rail Tab", icon: "sidebar.left", value: state?.activeRailTabID(for: container.id) ?? "—", monospace: true)
@@ -278,7 +274,7 @@ public struct LayoutSettingsView: View {
     }
 
     private func dividersSection(_ container: ViewContainerItem) -> some View {
-        let state = layoutState
+        let state = kernel.workspace
         return AppSettingsSection(title: "Dividers", subtitle: "该容器的分栏位置（pt）") {
             VStack(spacing: 0) {
                 detailRow(title: "Rail Width", icon: "sidebar.left", value: dividerText(state?.storedRailDivider(for: container.id)))
