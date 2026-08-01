@@ -3,13 +3,12 @@ import LumiKernel
 import os
 import SuperLogKit
 
-/// 文件树 V2 视图
+/// 文件树视图
 ///
 /// 基于 NSCollectionView 的原生渲染实现，优化 LLM 流式响应期间的滚动性能。
-/// 对外暴露与 TreeView 相同的接口，便于无缝切换。
 ///
 /// 仅负责展示文件树;不承载其他协同行为。
-public struct TreeViewV2: View, SuperLog {
+public struct TreeView: View, SuperLog {
     public nonisolated static let emoji = "🌲"
     public nonisolated static var verbose: Bool { ProjectFileTreePlugin.verbose }
     nonisolated static let logger = ProjectFileTreePlugin.logger
@@ -18,6 +17,11 @@ public struct TreeViewV2: View, SuperLog {
 
     /// 当前项目路径缓存，用于驱动 SwiftUI 刷新。
     @State private var projectPath: String
+
+    /// 当前项目是否需要展示 Swift Package 依赖区域（随项目路径变化时重新计算）。
+    /// 缓存为 @State 而非 computed：避免每次 body 重算都触发一次
+    /// `shouldShowPackageDependencies`（内部含 `contentsOfDirectory`）的同步磁盘扫描。
+    @State private var showPackageDependencies: Bool = false
 
     /// 文件树多选状态
     @StateObject private var selectionState = SelectionState()
@@ -64,15 +68,6 @@ public struct TreeViewV2: View, SuperLog {
         .onDisappear(perform: onDisappear)
     }
 
-    // MARK: - Private Computed Properties
-
-    private var showPackageDependencies: Bool {
-        guard !projectPath.isEmpty else { return false }
-        return PackageDependencyResolver.shouldShowPackageDependencies(
-            projectRootURL: URL(fileURLWithPath: projectPath)
-        )
-    }
-
     // MARK: - Event Handlers
 
     private func handleExpansionChange(relativePath: String, isExpanded: Bool) {
@@ -94,6 +89,7 @@ public struct TreeViewV2: View, SuperLog {
         guard newProjectPath != projectPath else { return }
 
         projectPath = newProjectPath
+        recomputeShowPackageDependencies()
         coordinator.stop()
         coordinator.setProjectRootPath(newProjectPath)
         packageStore.setProjectRootPath(newProjectPath)
@@ -101,11 +97,24 @@ public struct TreeViewV2: View, SuperLog {
 
     private func onAppear() {
         syncProjectPathIfNeeded()
+        recomputeShowPackageDependencies()
         coordinator.setProjectRootPath(projectPath)
         packageStore.setProjectRootPath(projectPath)
         if Self.verbose {
             Self.logger.info("\(Self.t)出现，项目路径: \(projectPath)")
         }
+    }
+
+    /// 重新计算当前项目是否需要展示 Swift Package 依赖区域。
+    /// 仅在项目路径变化/视图出现时调用一次，避免在 body 中反复同步扫描磁盘。
+    private func recomputeShowPackageDependencies() {
+        guard !projectPath.isEmpty else {
+            showPackageDependencies = false
+            return
+        }
+        showPackageDependencies = PackageDependencyResolver.shouldShowPackageDependencies(
+            projectRootURL: URL(fileURLWithPath: projectPath)
+        )
     }
 
     private func onDisappear() {

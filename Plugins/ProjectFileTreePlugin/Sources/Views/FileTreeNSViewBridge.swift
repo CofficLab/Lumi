@@ -8,7 +8,7 @@ import SuperLogKit
 ///
 /// 将 FileTreeCollectionViewController 包装为 SwiftUI 视图。
 struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree-v2")
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-tree")
     private static let verbose = ProjectFileTreePlugin.verbose
     public nonisolated static let emoji: String = ""
 
