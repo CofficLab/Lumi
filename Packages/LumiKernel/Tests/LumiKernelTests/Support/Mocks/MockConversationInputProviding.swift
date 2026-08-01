@@ -36,8 +36,7 @@ final class MockConversationInputProviding: ConversationInputProviding {
         let paths = fileURLs.map { $0.standardizedFileURL.path }
         guard !paths.isEmpty else { return }
 
-        let referenceBlock = (["Files to add to conversation:"] + paths.map { "- \($0)" })
-            .joined(separator: "\n")
+        let referenceBlock = paths.joined(separator: "\n")
         if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             text = referenceBlock
         } else {

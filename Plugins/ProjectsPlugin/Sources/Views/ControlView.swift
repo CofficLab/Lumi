@@ -2,7 +2,7 @@ import LumiUI
 import LumiKernel
 import SwiftUI
 
-struct ProjectControlView: View {
+struct ControlView: View {
     @LumiTheme private var theme: any LumiUITheme
     @ObservedObject private var viewModel: ProjectsViewModel
     @State private var isPopoverPresented = false
@@ -31,7 +31,7 @@ struct ProjectControlView: View {
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            ProjectsPopoverView(viewModel: viewModel)
+            PopoverView(viewModel: viewModel)
         }
     }
 }

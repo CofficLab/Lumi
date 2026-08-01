@@ -2,12 +2,12 @@ import LumiUI
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct ProjectsPopoverView: View {
+struct PopoverView: View {
     @ObservedObject var viewModel: ProjectsViewModel
     @State private var isImporterPresented = false
 
     var body: some View {
-        ProjectListView(viewModel: viewModel, isImporterPresented: $isImporterPresented)
+        ListView(viewModel: viewModel, isImporterPresented: $isImporterPresented)
             .frame(width: 320)
             .frame(minHeight: 220, maxHeight: 420)
             .fileImporter(

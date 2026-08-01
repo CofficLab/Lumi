@@ -1,209 +1,103 @@
-// NOTE: This test file is currently NOT executable under `swift test` because
-// `PluginLLMProviderStepFunTests.swift` in the same target references
-// `StepFunPlugin().id` / `StepFunPlugin.name` etc. as static members,
-// but `StepFunPlugin` (and the `LumiPlugin` protocol) only exposes `info`.
-// That's a pre-existing SPM compilation issue, unrelated to this commit.
-//
-// Once that's fixed (either by adding `id`/`displayName`/... extensions to
-// `LumiPlugin` or by switching the existing test to `StepFunPlugin().id`),
-// the tests below will run and protect the gate contract end-to-end.
-//
-// In the meantime, the same gate semantics are covered by:
-// - `LumiLLMProviderStatusBlockingTests` (4 cases for `isBlocking`)
-// - `ProviderAvailabilityGateTests` (4 cases for the combined `!= true` check)
-//
-// Both live in `Packages/LumiCoreKit/Tests/LumiCoreKitTests/LumiLLMProviderStatusBlockingTests.swift`.
-
-import Foundation
 import Testing
 import LumiKernel
 @testable import LLMProviderStepFunPlugin
 
-/// 测试 `StepFunPlugin.subAgents(context:)` 的 Provider 可用性 gate 行为。
+/// `StepFunSubAgentsGate` 的状态机契约测试。
 ///
-/// 这是端到端契约测试，构造真实的 `LumiPluginContext`，注入 mock chatService +
-/// mock provider（两者都 stub 自协议），确保：
-/// - Provider 不可用（status nil 不阻塞 OR 全是 .info）→ 返回全部 5 个 sub-agent
-/// - Provider 可用性告警（.warning / .error）→ 返回空数组（主 LLM 看不到工具）
-/// - chatService 缺失 / provider 找不到 → 返回空数组
+/// gate 把「供应商是否可用」与「同步的 `subAgents(kernel:)`」解耦:
+/// - 网络探测结果经 `apply(result:kernel:)` 注入(刷新由 `onReady` 异步驱动,此处不测网络)。
+/// - `evaluate(kernel:)` 同步读 `phase`:仅 `ready` 返回全部 7 个 sub-agent。
+///
+/// 因此测试聚焦状态机:用 `apply` / `setPhaseForTesting` 注入确定性状态,
+/// 不依赖真实网络或 LumiKernel 运行时(kernel 仅在「进入 ready 触发 rebuild」时用到,
+/// 该副作用不在本套件验证范围 —— `unknown` → `ready` 不会在此触发,因为测试不构造 kernel)。
 @MainActor
 @Suite struct StepFunSubAgentsGateTests {
 
-    // MARK: - Mock 基础设施
-
-    /// 可控 `providerStatus()` 的 mock provider。
-    private final class MockStepFunProvider: LumiLLMProvider, @unchecked Sendable {
-        static let info = LumiLLMProviderInfo(
-            id: "com.coffic.lumi.plugin.llm-provider.stepfun",
-            displayName: "StepFun (Mock)",
-            defaultModel: "step-3.7-flash",
-            availableModels: ["step-3.7-flash"],
-            websiteURL: URL(string: "https://example.com")!
-        )
-
-        let statusToReturn: LumiLLMProviderStatus?
-
-        init(statusToReturn: LumiLLMProviderStatus?) {
-            self.statusToReturn = statusToReturn
-        }
-
-        func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
-            throw NSError(domain: "MockProvider", code: 0)
-        }
-
-        func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-            .available
-        }
-
-        func providerStatus() -> LumiLLMProviderStatus? {
-            statusToReturn
-        }
+    private func makeGate() -> StepFunSubAgentsGate {
+        StepFunSubAgentsGate(provider: StepFunProvider())
     }
 
-    /// 只 stub `provider(forID:)`，其它方法跟 `SubAgentMockChatService` 一样返回空/mock。
-    private final class GateMockChatService: LumiChatServicing, @unchecked Sendable {
-        let providerToReturn: (any LumiLLMProvider)?
+    // MARK: - evaluate:默认 / gate 行为
 
-        init(providerToReturn: (any LumiLLMProvider)?) {
-            self.providerToReturn = providerToReturn
-        }
-
-        // 仅暴露 provider(forID:) 的实质逻辑，其余接口为满足协议强制实现。
-        func provider(forID id: String) -> (any LumiLLMProvider)? { providerToReturn }
-
-        // 余下方法：返回最小的"无害默认值"，subAgents gate 路径不会调到。
-        var conversations: [LumiConversationSummary] { [] }
-        var selectedConversationID: UUID? { nil }
-        var providerInfos: [LumiLLMProviderInfo] { [] }
-        var selectedProviderID: String? { nil }
-        var selectedModel: String? { nil }
-        var messageRenderers: [LumiMessageRendererItem] { [] }
-        var revision: Int { 0 }
-        var pendingMessages: [LumiPendingMessage] { [] }
-        var routingMode: LumiModelRoutingMode { .auto }
-        var pendingToolConfirmation: LumiPendingToolConfirmation? { nil }
-        func isSending(for conversationID: UUID?) -> Bool { false }
-        @discardableResult func createConversation(title: String?) -> UUID { UUID() }
-        @discardableResult func createConversation(title: String?, projectPath: String?, language: LumiConversationLanguage?) -> UUID { UUID() }
-        func selectConversation(id: UUID) {}
-        func deleteConversation(id: UUID) {}
-        @discardableResult func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool { true }
-        @discardableResult func setConversationProjectPath(_ projectPath: String?, for conversationID: UUID) -> Bool { true }
-        func selectProvider(id: String, model: String?) {}
-        func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
-        func providerID(for conversationID: UUID?) -> String? { nil }
-        func modelName(for conversationID: UUID?) -> String? { nil }
-        func setRoutingMode(_ mode: LumiModelRoutingMode) {}
-        func language(for conversationID: UUID?) -> LumiConversationLanguage { .english }
-        func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
-        func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { .chat }
-        func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
-        func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .standard }
-        func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
-        func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { .automatic }
-        func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
-        func messages(for conversationID: UUID) -> [LumiChatMessage] { [] }
-        func displayMessages(for conversationID: UUID) -> [LumiChatMessage] { [] }
-        func transientStatusMessage(for conversationID: UUID) -> LumiChatMessage? { nil }
-        func visibleMessages(for conversationID: UUID, limit: Int, beforeMessageID: UUID?) -> [LumiChatMessage] { [] }
-        func hasEarlierMessages(for conversationID: UUID, beforeMessageID: UUID?) -> Bool { false }
-        func enqueueText(_ text: String, in conversationID: UUID?) {}
-        func enqueueText(_ text: String, imageAttachments: [LumiImageAttachment], in conversationID: UUID?) {}
-        func continueTurn(in conversationID: UUID) {}
-        func cancelSending(for conversationID: UUID?) {}
-        func approvePendingTool() {}
-        func rejectPendingTool() {}
-        func removePendingMessage(id: UUID) {}
-        func deleteMessage(id: UUID, in conversationID: UUID) {}
-        func resendMessage(id: UUID, in conversationID: UUID) async {}
-        func send(_ text: String, in conversationID: UUID?) async {}
-        func generateEphemeralCompletion(messages: [LumiChatMessage], model: String, conversationID: UUID) async throws -> LumiChatMessage {
-            LumiChatMessage(conversationID: conversationID, role: .assistant, content: "")
-        }
-        func conversationContextUsage(for conversationID: UUID) -> LumiConversationContextUsage {
-            LumiConversationContextUsage(currentTokens: 0, limit: 0)
-        }
+    @Test func evaluate_returnsEmpty_whenUnknown() {
+        let gate = makeGate()
+        #expect(gate.phase == .unknown)
+        #expect(gate.evaluate(kernel: kernelStub).isEmpty,
+                "未探测完成(unknown)应保守 gate,返回空")
     }
 
-    /// 构造一个把 `chatService` 注入到 `LumiPluginContext` 的辅助方法。
-    private static func makeContext(chatService: any LumiChatServicing) -> LumiPluginContext {
-        let deps = LumiPluginDependencies { d in
-            d.register((any LumiChatServicing).self, chatService)
-        }
-        return LumiPluginContext(
-            activeSectionID: "test",
-            activeSectionTitle: "Test",
-            dependencies: deps
-        )
-    }
+    @Test func evaluate_returnsAll_whenReady() {
+        let gate = makeGate()
+        gate.setPhaseForTesting(.ready)
 
-    // MARK: - 测试用例
-
-    @Test func subAgents_registered_whenProviderHealthy() {
-        // Provider 健康（status == nil）
-        let provider = MockStepFunProvider(statusToReturn: nil)
-        let chat = GateMockChatService(providerToReturn: provider)
-        let context = Self.makeContext(chatService: chat)
-
-        let subAgents = StepFunPlugin.subAgents(context: context)
-        #expect(subAgents.count == 5,
-                "Provider 健康时应注册全部 5 个 sub-agent（git/test/review/doc/bug）")
+        let subAgents = gate.evaluate(kernel: kernelStub)
+        #expect(subAgents.count == 7, "ready 时应注册全部 7 个 sub-agent")
         #expect(subAgents.map(\.id).sorted() == [
-            "bug-fixer", "code-reviewer", "doc-writer", "git-commit-writer", "test-writer"
+            "bug-fixer", "build", "code-reviewer", "doc-writer",
+            "explore", "git-commit-writer", "test-writer",
         ])
+        // 子 Agent 必须绑定到 StepFun provider,这是 gate 存在的前提。
+        #expect(subAgents.allSatisfy { $0.providerID == "stepfun" })
     }
 
-    @Test func subAgents_registered_whenProviderStatusIsInfo() {
-        // status 为 .info —— 通常是通知，不应阻塞
-        let status = LumiLLMProviderStatus(message: "release notes", level: .info)
-        let provider = MockStepFunProvider(statusToReturn: status)
-        let chat = GateMockChatService(providerToReturn: provider)
-        let context = Self.makeContext(chatService: chat)
-
-        let subAgents = StepFunPlugin.subAgents(context: context)
-        #expect(subAgents.count == 5, ".info 视为可用，应注册全部 sub-agent")
+    @Test func evaluate_returnsEmpty_whenUnavailable() {
+        let gate = makeGate()
+        gate.setPhaseForTesting(.unavailable)
+        #expect(gate.evaluate(kernel: kernelStub).isEmpty,
+                "探测失败(unavailable)必须 gate")
     }
 
-    @Test func subAgents_gated_whenApiKeyMissing() {
-        // 模拟真实场景：API Key 未配置（StepFunProvider 的 .missingAPIKeyStatus 走 .warning）
-        let status = LumiLLMProviderStatusSupport.missingAPIKeyStatus(providerName: "StepFun")
-        let provider = MockStepFunProvider(statusToReturn: status)
-        let chat = GateMockChatService(providerToReturn: provider)
-        let context = Self.makeContext(chatService: chat)
+    // MARK: - apply:状态转移(不触发 rebuild,因测试不构造 kernel)
 
-        let subAgents = StepFunPlugin.subAgents(context: context)
-        #expect(subAgents.isEmpty,
-                "API Key 缺失（.warning）时必须 gate，否则每个 delegate_* 调用都会失败")
+    @Test func apply_transitionsToReady_onAvailable() {
+        let gate = makeGate()
+        #expect(gate.phase == .unknown)
+
+        // 注意:不传真实 kernel,因此 unknown → ready 会调用
+        // kernel.pluginManager.rebuildAllContributions(in:)。为避免依赖运行时,
+        // 这里通过一个「已被探测过(unavailable)→ available」的路径,
+        // 该路径不触发重建(仅 unknown→ready 才触发),从而安全验证状态转移。
+        gate.setPhaseForTesting(.unavailable)
+        gate.apply(result: .available, kernel: kernelStub)
+        #expect(gate.phase == .ready,
+                "available 结果应将状态推进到 ready")
     }
 
-    @Test func subAgents_gated_whenProviderError() {
-        // .error 级别（类似 MLX 在 Intel Mac 的「完全不可用」）
-        let status = LumiLLMProviderStatus(message: "platform unsupported", level: .error)
-        let provider = MockStepFunProvider(statusToReturn: status)
-        let chat = GateMockChatService(providerToReturn: provider)
-        let context = Self.makeContext(chatService: chat)
-
-        let subAgents = StepFunPlugin.subAgents(context: context)
-        #expect(subAgents.isEmpty, ".error 必须 gate")
+    @Test func apply_transitionsToUnavailable_onUnavailable() {
+        let gate = makeGate()
+        gate.apply(result: .unavailable(LumiLLMFailureDetail.message("network down")),
+                   kernel: kernelStub)
+        #expect(gate.phase == .unavailable,
+                "unavailable 结果应将状态推进到 unavailable")
     }
 
-    @Test func subAgents_gated_whenProviderInstanceMissing() {
-        // ChatService 找不到 provider 实例（plugin 加载时序异常场景）
-        let chat = GateMockChatService(providerToReturn: nil)
-        let context = Self.makeContext(chatService: chat)
+    @Test func apply_isIdempotent_whenAlreadyReady() {
+        let gate = makeGate()
+        gate.setPhaseForTesting(.unavailable) // 避开 unknown→ready 的重建副作用
+        gate.apply(result: .available, kernel: kernelStub)
+        #expect(gate.phase == .ready)
 
-        let subAgents = StepFunPlugin.subAgents(context: context)
-        #expect(subAgents.isEmpty, "Provider 实例缺失时应 gate")
+        // 再次 apply available,状态保持 ready。
+        gate.apply(result: .available, kernel: kernelStub)
+        #expect(gate.phase == .ready)
     }
 
-    @Test func subAgents_gated_whenChatServiceMissing() {
-        // context 中完全不注入 ChatService（极早期阶段，例如 plugin registry 启动前）
-        let context = LumiPluginContext(
-            activeSectionID: "test",
-            activeSectionTitle: "Test"
-        )
+    // MARK: - allDefinitions:静态契约
 
-        let subAgents = StepFunPlugin.subAgents(context: context)
-        #expect(subAgents.isEmpty, "缺 ChatService 时应保守 gate")
+    @Test func allDefinitions_isCompleteAndStable() {
+        let ids = StepFunSubAgentsGate.allDefinitions.map(\.id)
+        #expect(ids.count == 7, "全部 sub-agent 定义必须完整")
+        #expect(Set(ids).count == 7, "sub-agent id 不得重复")
+    }
+
+    // MARK: - 探测模型契约
+
+    @Test func probeModel_matchesSubAgentDefinitions() {
+        // gate 探测的模型应与 sub-agent 实际使用的模型一致,
+        // 否则「探测通过」不能保证 sub-agent 真的可用。
+        let probeModel = StepFunSubAgentsGate.probeModelID
+        #expect(StepFunSubAgentsGate.allDefinitions.allSatisfy { $0.modelID == probeModel },
+                "所有 sub-agent 必须使用探测模型 \(probeModel),否则探测结果不具代表性")
     }
 }

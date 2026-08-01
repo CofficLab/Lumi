@@ -48,7 +48,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         // 3. 初始化同步协调器
         let coordinator = ProjectsSyncCoordinator(viewModel: viewModel)
         coordinator.kernel = kernel
-        ProjectsToolRuntimeBridge.syncCoordinator = coordinator
+        RuntimeBridge.syncCoordinator = coordinator
 
         if Self.verbose {
             Self.logger.info("📂 Initialized ProjectsSyncCoordinator")
@@ -57,7 +57,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         // 4. 设置 RuntimeBridge — 供 Agent 工具使用，并供
         //    `titleToolbarItems(kernel:)` 声明式访问 viewModel（在 onReady 之后
         //    由 BuiltinPluginManager.registerPluginUIContributions 收集）。
-        ProjectsToolRuntimeBridge.viewModel = viewModel
+        RuntimeBridge.viewModel = viewModel
 
         if Self.verbose {
             Self.logger.info("📂 Projects 插件 onReady 完成")
@@ -82,7 +82,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
-        guard let viewModel = ProjectsToolRuntimeBridge.viewModel else {
+        guard let viewModel = RuntimeBridge.viewModel else {
             return []
         }
 
@@ -93,8 +93,8 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
                 placement: .center,
                 order: 0
             ) {
-                ProjectControlView(viewModel: viewModel)
-            }
+                ControlView(viewModel: viewModel)
+            },
         ]
     }
 
@@ -110,7 +110,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
-        guard let viewModel = ProjectsToolRuntimeBridge.viewModel else {
+        guard let viewModel = RuntimeBridge.viewModel else {
             return []
         }
         return [
@@ -120,10 +120,11 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
                 systemImage: "folder",
                 order: order
             ) {
-                ProjectsSettingsView(viewModel: viewModel)
+                SettingsView(viewModel: viewModel)
             },
         ]
     }
+
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }

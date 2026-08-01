@@ -54,7 +54,7 @@ public struct ProjectsOnReadyHook {
         // 3. 初始化同步协调器
         let coordinator = ProjectsSyncCoordinator(viewModel: viewModel)
         coordinator.kernel = kernel
-        ProjectsToolRuntimeBridge.syncCoordinator = coordinator
+        RuntimeBridge.syncCoordinator = coordinator
 
         if Self.verbose {
             Self.logger.info("📂 Initialized ProjectsSyncCoordinator")
@@ -63,7 +63,7 @@ public struct ProjectsOnReadyHook {
         // 4. 设置 RuntimeBridge — 供 Agent 工具使用，并供
         //    `titleToolbarItems(kernel:)` 声明式访问 viewModel（在 onReady 之后
         //    由 BuiltinPluginManager.registerPluginUIContributions 收集）。
-        ProjectsToolRuntimeBridge.viewModel = viewModel
+        RuntimeBridge.viewModel = viewModel
 
         if Self.verbose {
             Self.logger.info("📂 Projects 插件 onReady 完成")

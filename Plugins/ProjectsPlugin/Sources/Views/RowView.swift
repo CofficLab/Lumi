@@ -1,7 +1,7 @@
 import LumiUI
 import SwiftUI
 
-struct ProjectRowView: View {
+struct RowView: View {
     let project: LumiProject
     let isSelected: Bool
     let select: () -> Void

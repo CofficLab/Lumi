@@ -9,7 +9,7 @@ import SwiftUI
 /// - 顶部右上角按钮可打开数据库目录（`store.settingsDirectory`）。
 /// - 下方左侧为项目列表，点击某个项目在右侧展示其详情信息。
 @MainActor
-public struct ProjectsSettingsView: View {
+public struct SettingsView: View {
     @ObservedObject private var viewModel: ProjectsViewModel
     @LumiTheme private var theme
 

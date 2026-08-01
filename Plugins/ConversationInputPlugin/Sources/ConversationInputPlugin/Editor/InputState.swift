@@ -80,9 +80,11 @@ final class InputState: ObservableObject, ConversationInputProviding {
         kernel.messageSender?.cancelCurrentRequest()
     }
 
+    /// 把文件路径列表拼接成可直接写入输入框的多行字符串。
+    ///
+    /// 需求变更:右键"添加到对话"时不再附加任何标题/前缀,直接以
+    /// 「一行一个绝对路径」的原始形式落到输入框,便于用户继续编辑与发送。
     private static func makeReferenceBlock(from paths: [String]) -> String {
-        var lines = ["Files to add to conversation:"]
-        lines.append(contentsOf: paths.map { "- \($0)" })
-        return lines.joined(separator: "\n")
+        paths.joined(separator: "\n")
     }
 }

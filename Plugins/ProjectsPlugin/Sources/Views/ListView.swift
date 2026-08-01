@@ -2,7 +2,7 @@ import LumiUI
 import SwiftUI
 import AppKit
 
-struct ProjectListView: View {
+struct ListView: View {
     @ObservedObject var viewModel: ProjectsViewModel
     @State private var searchText = ""
     @Binding var isImporterPresented: Bool
@@ -86,7 +86,7 @@ struct ProjectListView: View {
             ScrollView {
                 LazyVStack(spacing: 4) {
                     ForEach(filteredProjects) { project in
-                        ProjectRowView(
+                        RowView(
                             project: project,
                             isSelected: viewModel.currentProject?.path == project.path,
                             select: { viewModel.select(project) },
