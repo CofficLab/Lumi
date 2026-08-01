@@ -33,6 +33,37 @@ struct BrewManagerView: View {
     }
 
     var body: some View {
+        GeometryReader { geometry in
+            content
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+        }
+        .frame(minWidth: 420, idealWidth: 720, minHeight: 360, idealHeight: 520)
+        .overlay {
+            if viewModel.isLoading && selectedTab != .search {
+                ProgressView(LumiPluginLocalization.string("Processing...", bundle: .module))
+                    .padding()
+                    .background(Material.regularMaterial)
+                    .cornerRadius(8)
+            }
+        }
+        .overlay {
+            if let errorMessage = viewModel.errorMessage {
+                BrewManagerErrorView(
+                    message: errorMessage,
+                    onDismiss: { viewModel.errorMessage = nil },
+                    onRetry: { viewModel.errorMessage = nil }
+                )
+                .transition(.opacity)
+                .accessibilityAddTraits(.isModal)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: viewModel.errorMessage)
+        .onReceive(NotificationCenter.default.publisher(for: .brewManagerRefreshRequested)) { _ in
+            Task { await viewModel.refresh() }
+        }
+    }
+
+    private var content: some View {
         VStack(spacing: 0) {
             // Tab Picker
             AppCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
@@ -50,14 +81,14 @@ struct BrewManagerView: View {
             Group {
                 switch selectedTab {
                 case .installed:
-                    BrewListView(
+                    BrewInstalledContent(
                         packages: viewModel.installedPackages,
-                        emptyMessage: LumiPluginLocalization.string("No packages installed", bundle: .module),
-                        actionButtonTitle: LumiPluginLocalization.string("Uninstall", bundle: .module),
-                        actionButtonColor: Color(hex: "FF453A")
-                    ) { package in
-                        Task { await viewModel.uninstall(package: package) }
-                    }
+                        isLoading: viewModel.isLoading,
+                        onUninstall: { package in
+                            Task { await viewModel.uninstall(package: package) }
+                        },
+                        onBrowseSearch: { selectedTab = .search }
+                    )
 
                 case .updates:
                     VStack {
@@ -115,27 +146,31 @@ struct BrewManagerView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay {
-            if viewModel.isLoading && selectedTab != .search {
-                ProgressView(LumiPluginLocalization.string("Processing...", bundle: .module))
-                    .padding()
-                    .background(Material.regularMaterial)
-                    .cornerRadius(8)
-            }
-        }
-        .alert(LumiPluginLocalization.string("Error", bundle: .module), isPresented: Binding(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
-        )) {
-            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) { }
-        } message: {
-            Text(viewModel.errorMessage ?? "")
-        }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                AppButton(LocalizedStringKey("Refresh"), style: .secondary, fillsWidth: true, action: { Task { await viewModel.refresh() } })
-            }
+    }
+}
+
+/// Container for the "Installed" tab.
+///
+/// Routes to either the rich empty state (`BrewManagerEmptyView`) or the
+/// populated list (`BrewListView`). Kept private to this file since it is
+/// only used as the `.installed` branch of `BrewManagerView`.
+struct BrewInstalledContent: View {
+    let packages: [BrewPackage]
+    let isLoading: Bool
+    let onUninstall: (BrewPackage) -> Void
+    let onBrowseSearch: () -> Void
+
+    var body: some View {
+        if packages.isEmpty && !isLoading {
+            BrewManagerEmptyView(onBrowsePackages: onBrowseSearch)
+        } else {
+            BrewListView(
+                packages: packages,
+                emptyMessage: LumiPluginLocalization.string("No packages installed", bundle: .module),
+                actionButtonTitle: LumiPluginLocalization.string("Uninstall", bundle: .module),
+                actionButtonColor: Color(hex: "FF453A"),
+                action: onUninstall
+            )
         }
     }
 }
