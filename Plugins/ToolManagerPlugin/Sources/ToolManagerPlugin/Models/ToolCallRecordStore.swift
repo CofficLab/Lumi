@@ -207,6 +207,38 @@ actor ToolCallRecordStore {
         try? modelContext.save()
     }
 
+    /// 获取工具调用统计(按工具名聚合)。
+    func fetchToolStats() -> [ToolStats] {
+        let descriptor = FetchDescriptor<ToolCallRecordModel>(
+            sortBy: [SortDescriptor(\.toolName)]
+        )
+        guard let models = try? modelContext.fetch(descriptor) else { return [] }
+
+        // 按工具名聚合
+        var statsMap: [String: ToolStatsAccumulator] = [:]
+        for model in models {
+            var acc = statsMap[model.toolName] ?? ToolStatsAccumulator()
+            acc.totalCount += 1
+            if model.resultIsError {
+                acc.errorCount += 1
+            }
+            if let duration = model.duration {
+                acc.totalDuration += duration
+            }
+            statsMap[model.toolName] = acc
+        }
+
+        return statsMap.map { name, acc in
+            ToolStats(
+                toolName: name,
+                toolDisplayName: models.first(where: { $0.toolName == name })?.toolDisplayName ?? name,
+                totalCount: acc.totalCount,
+                errorCount: acc.errorCount,
+                averageDuration: acc.totalCount > 0 ? acc.totalDuration / Double(acc.totalCount) : 0
+            )
+        }.sorted { $0.totalCount > $1.totalCount }
+    }
+
     /// 获取每日工具调用统计。
     func fetchDailyCountSeries(days: Int = 14, endingAt date: Date = Date()) -> [DailyCountPoint] {
         guard days > 0 else { return [] }
@@ -260,4 +292,21 @@ struct DailyCountPoint: Identifiable, Sendable {
     public var id: Date { day }
     public let day: Date
     public let count: Int
+}
+
+/// 工具调用统计结果。
+struct ToolStats: Identifiable, Sendable {
+    public var id: String { toolName }
+    public let toolName: String
+    public let toolDisplayName: String
+    public let totalCount: Int
+    public let errorCount: Int
+    public let averageDuration: Double
+}
+
+/// 工具调用统计累加器(用于聚合计算)。
+private struct ToolStatsAccumulator {
+    var totalCount: Int = 0
+    var errorCount: Int = 0
+    var totalDuration: Double = 0
 }
