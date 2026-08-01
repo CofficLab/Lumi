@@ -36,12 +36,10 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: name,
                 systemImage: "chevron.left.forwardslash.chevron.right",
-                isRailVisible: true,
-                isChatVisible: true,
-                isContentVisible: true,
-                isPanelVisible: true,
-                isPanelHeaderVisible: true,
-                isPanelBottomVisible: true
+                railVisibility: .visibleByDefault,
+                chatVisibility: .visibleByDefault,
+                panelHeaderVisibility: .visibleByDefault,
+                panelBottomVisibility: .visibleByDefault
             ) {
                 EditorPanelHostView(kernel: kernel)
             }

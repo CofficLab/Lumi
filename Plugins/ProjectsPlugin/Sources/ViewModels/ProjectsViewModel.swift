@@ -67,8 +67,8 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         self.projects = updatedProjects
         self.currentProject = updatedProject
 
-        // 持久化
-        store.save(projects: projects, currentProject: currentProject)
+        // 持久化：写入是全量快照（atomic），下放到后台线程避免阻塞 UI。
+        persistAsync(projects: projects, currentProject: currentProject)
     }
 
     /// 添加项目
@@ -87,7 +87,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
             if currentProject == nil {
                 currentProject = projects.first
             }
-            store.save(projects: projects, currentProject: currentProject)
+            persistAsync(projects: projects, currentProject: currentProject)
         }
 
         return project
@@ -105,7 +105,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
             currentProject = projects.first
         }
 
-        store.save(projects: projects, currentProject: currentProject)
+        persistAsync(projects: projects, currentProject: currentProject)
     }
 
     /// 设置当前项目路径
@@ -119,7 +119,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         // 空/空白路径 → "无项目"态
         guard !trimmed.isEmpty else {
             currentProject = nil
-            store.save(projects: projects, currentProject: currentProject)
+            persistAsync(projects: projects, currentProject: currentProject)
             return
         }
 
@@ -150,5 +150,18 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     /// 便捷方法：通过 URL 添加并选项目
     public func addProject(url: URL) {
         _ = try? add(path: url.path, select: true)
+    }
+
+    // MARK: - Persistence
+
+    /// 将当前状态快照异步写入磁盘。
+    ///
+    /// 写入是全量快照（atomic），最终一致即可；放在后台线程执行以避免阻塞 UI。
+    /// 在主 actor 上捕获快照值与 store 引用后下放，规避跨 actor 访问。
+    private func persistAsync(projects: [ProjectEntry], currentProject: ProjectEntry?) {
+        let store = self.store
+        Task.detached(priority: .utility) {
+            store.save(projects: projects, currentProject: currentProject)
+        }
     }
 }

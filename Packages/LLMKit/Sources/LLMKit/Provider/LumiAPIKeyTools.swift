@@ -13,7 +13,16 @@ public enum LumiAPIKeyTools {
             throw LumiLLMProviderSupportError.missingAPIKey(displayName)
         }
 
-        let key = APIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: storageKey) ?? ""
+        let key: String
+        do {
+            key = try APIKeyStore.shared
+                .loadMigratingLegacyUserDefaultsReportingErrors(forKey: storageKey) ?? ""
+        } catch {
+            throw LumiLLMProviderSupportError.apiKeyAccessFailed(
+                provider: displayName,
+                details: error.localizedDescription
+            )
+        }
         if key.isEmpty {
             throw LumiLLMProviderSupportError.missingAPIKey(displayName)
         }

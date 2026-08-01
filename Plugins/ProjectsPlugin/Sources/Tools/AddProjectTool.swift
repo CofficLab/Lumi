@@ -29,7 +29,7 @@ struct AddProjectTool: LumiAgentTool, SuperLog {
     }
 
     func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
-        guard let viewModel = await MainActor.run(body: { ProjectsToolRuntimeBridge.viewModel }) else {
+        guard let viewModel = await MainActor.run(body: { RuntimeBridge.viewModel }) else {
             return "Error: Projects view model is not available."
         }
 

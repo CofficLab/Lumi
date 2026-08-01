@@ -108,6 +108,14 @@ public extension SuperLog {
 
     /// 获取实现者的 i 字符串
     static var i: String { Self.onInit }
+
+    /// 把 `Duration` 转换为毫秒数值字符串（用于计时日志）。
+    /// 示例：12.34ms
+    static func ms(_ duration: Duration) -> String {
+        let components = duration.components
+        let totalMs = Double(components.seconds) * 1000 + Double(components.attoseconds) / 1e15
+        return String(format: "%.2f", totalMs)
+    }
 }
 
 /// Thread 类型的扩展，提供线程服务质量相关的功能

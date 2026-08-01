@@ -15,22 +15,24 @@ struct PanelBodyView: View {
     var body: some View {
         let container = layoutManager.currentViewContainer
 
-        Group {
-            if let container, let makeView = container.makeView {
-                makeView()
-                    .id(container.id)
-                    .frame(maxWidth: .infinity)
-            } else {
-                ZStack {
-                    theme.surface
-                    AppEmptyState(
-                        icon: "rectangle.center.inset.filled",
-                        title: "No content"
-                    )
-                    .padding(24)
+        if layoutManager.isPanelBodyVisible {
+            Group {
+                if let container, let makeView = container.makeView {
+                    makeView()
+                        .id(container.id)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    ZStack {
+                        theme.surface
+                        AppEmptyState(
+                            icon: "rectangle.center.inset.filled",
+                            title: "No content"
+                        )
+                        .padding(24)
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

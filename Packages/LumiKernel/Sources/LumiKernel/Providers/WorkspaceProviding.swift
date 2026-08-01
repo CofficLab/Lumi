@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import SwiftUI
 
@@ -8,12 +9,10 @@ import SwiftUI
 /// （标题栏工具栏、聊天分区、状态栏、面板、菜单栏、根覆盖层）。
 ///
 /// 合并自原 `LayoutProviding`（布局状态机）与 `UIManaging`（插件 UI 贡献注册表），
-/// 由 `LayoutManager` 实现。
+/// 由 `LayoutManager` 实现。布局状态直接内联在 `LayoutManager` 上，故本协议
+/// 不再暴露 `layoutState`——消费者通过下方的访问器读写。
 @MainActor
 public protocol WorkspaceProviding: ObservableObject {
-    /// 布局状态（包含 @Published 属性，用于视图绑定）
-    var layoutState: LayoutState { get }
-
     /// 持久化数据目录（供设置视图等消费者展示/打开数据目录用）。
     var settingsDirectory: URL { get }
 
@@ -21,22 +20,21 @@ public protocol WorkspaceProviding: ObservableObject {
 
     var isRailVisible: Bool { get }
     var isChatVisible: Bool { get }
-    var isContentVisible: Bool { get }
-    var isPanelVisible: Bool { get }
     var isPanelHeaderVisible: Bool { get }
+    var isPanelBodyVisible: Bool { get }
     var isPanelBottomVisible: Bool { get }
 
     // MARK: - Workspace Commands
 
     func setRailVisible(_ visible: Bool)
     func setChatVisible(_ visible: Bool)
-    func setContentVisible(_ visible: Bool)
-    func setPanelVisible(_ visible: Bool)
     func setPanelHeaderVisible(_ visible: Bool)
+    func setPanelBodyVisible(_ visible: Bool)
     func setPanelBottomVisible(_ visible: Bool)
 
     func activateContainer(id: String)
-    func applyVisibility(rail: Bool?, chat: Bool?, content: Bool?, panel: Bool?)
+    /// 将容器声明的可见性策略及已持久化的用户覆盖解析到当前运行时布局。
+    func applyContainerVisibility(for id: String)
     func addContainerObserver(_ observer: @escaping (String) -> Void)
 
     // MARK: - View Containers
@@ -86,6 +84,18 @@ public protocol WorkspaceProviding: ObservableObject {
 
     func bottomPanelDivider(for viewContainerID: String, fallback: CGFloat?) -> CGFloat
     func setBottomPanelDivider(_ position: CGFloat, for viewContainerID: String)
+
+    /// 持久化的 rail 宽度（无值时返回 nil，由调用方回退到默认值）。
+    func storedRailDivider(for viewContainerID: String) -> CGFloat?
+
+    /// 持久化的 chat 区宽度（无值时返回 nil，由调用方回退到默认值）。
+    func storedChatSectionDivider(for viewContainerID: String, layout: LumiChatSectionLayout) -> CGFloat?
+
+    /// 持久化的底部面板高度（无值时返回 nil，由调用方回退到默认值）。
+    func storedBottomPanelDivider(for viewContainerID: String) -> CGFloat?
+
+    /// 用户对某容器手动调整过的可见性覆盖（nil 表示未调整）。
+    func visibilityOverride(for containerID: String) -> VisibilityFlags?
 
     // MARK: - Title Toolbar
 

@@ -85,9 +85,6 @@ public struct GitCommitHistorySidebarView: View, SuperLog {
         .onApplicationDidBecomeActive {
             refresh("AppBecameActive")
         }
-        .onCurrentProjectDidChange { _, _ in
-            refresh("ProjectUpdated")
-        }
     }
 
     // MARK: - Commit List View

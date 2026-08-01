@@ -18,7 +18,7 @@ public struct AppDivider: View {
         case .vertical:
             Rectangle()
                 .fill(theme.divider)
-                .frame(width: 1)
+                .frame(width: 0.5)
         }
     }
 }

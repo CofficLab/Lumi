@@ -35,4 +35,10 @@ public final class APIKeyStore: @unchecked Sendable {
     public func loadMigratingLegacyUserDefaults(forKey key: String) -> String? {
         store.loadMigratingLegacyUserDefaults(forKey: key)
     }
+
+    /// Reads the key while preserving Keychain access failures. A `nil` result
+    /// means only that no key exists.
+    public func loadMigratingLegacyUserDefaultsReportingErrors(forKey key: String) throws -> String? {
+        try store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: key)
+    }
 }

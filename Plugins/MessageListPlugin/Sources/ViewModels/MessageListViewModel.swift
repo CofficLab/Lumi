@@ -50,6 +50,13 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// 内容未变时不发布,避免无意义的重估。
     @Published private(set) var tailStreamingContent: String?
 
+    /// V1 (brief) 模式下应**默认展开**的工具步骤组(助手消息 id)集合。
+    ///
+    /// 仅在当前 turn 进行中时,本轮(上一条最终回复之后)带工具调用的助手消息 id
+    /// 会被收录;turn 结束(或未开始)时为空集合 → 所有步骤组默认收起。
+    /// 由 View 经 `\.lumiActiveToolGroupIDs` Environment 注入渲染层。
+    @Published private(set) var activeStepGroupMessageIDs: Set<UUID> = []
+
     // MARK: - Dependencies & Internal State
 
     private let kernel: LumiKernel
@@ -196,14 +203,40 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// 重算展示行:真实消息 + 流式临时行 + 状态行。
     /// 切会话时其他会话的流式行会被 RowBuilder 按 conversationID 自动过滤。
     private func rebuildRows() {
+        let verbosity = self.verbosity
         displayRows = rowBuilder.build(
             persisted: persistedMessages,
             conversationID: selectedConversationID,
-            streaming: kernel.messageStreaming
+            streaming: kernel.messageStreaming,
+            verbosity: verbosity
         )
         let content = kernel.messageStreaming?.currentStreamingRow?.content
         if tailStreamingContent != content {
             tailStreamingContent = content
+        }
+        recomputeActiveStepGroups(verbosity: verbosity)
+    }
+
+    /// 计算 V1 下应默认展开的工具步骤组集合。
+    ///
+    /// 规则:仅当当前 turn 进行中(`agentTurnManager.isRunning(for:)`)时,取
+    /// **最后一条 turn 边界消息**(上一轮的最终回复)之后、带工具调用的助手消息 id。
+    /// turn 未进行中 → 空集合(全收起)。
+    ///
+    /// 依赖 `displayRows` 已是最新(`rebuildRows` 内先重算展示行再调用本方法)。
+    /// `rebuildRows` 已订阅 sender/streaming/messages 变化,覆盖了 turn 开始/结束、
+    /// 工具结果到达等所有翻转点 —— 因此这里轮询 `isRunning(for:)` 即可,无需额外订阅。
+    private func recomputeActiveStepGroups(verbosity: LumiResponseVerbosity) {
+        let conversationID = selectedConversationID
+        let isTurnActive = conversationID
+            .flatMap { kernel.agentTurnManager?.isRunning(for: $0) } ?? false
+        let activeIDs = ActiveStepGroupResolver.resolve(
+            displayRows: displayRows,
+            isTurnActive: isTurnActive,
+            verbosity: verbosity
+        )
+        if activeStepGroupMessageIDs != activeIDs {
+            activeStepGroupMessageIDs = activeIDs
         }
     }
 }

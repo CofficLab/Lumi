@@ -136,8 +136,11 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
             expandedPaths = store.expandedPaths(for: path)
             updateWatcher()
 
-            // 检测是否为 Git 仓库并启动首次 Git 状态刷新
-            isGitRepo = ProjectFileTreePlugin.gitStatusEnabled && GitAccessCoordinator.performSync { LibGit2.isGitRepository(at: path) }
+            // 乐观地假定是 Git 仓库并直接发起首次状态刷新；是否真的为 Git 仓库由
+            // `captureSnapshot` 在后台线程内判定（非仓库时返回 `.empty`）。
+            // 这里避免在主线程同步执行 `LibGit2.isGitRepository`（经 `performSync` =
+            // `queue.sync`）造成切换项目瞬间的主线程阻塞。
+            isGitRepo = ProjectFileTreePlugin.gitStatusEnabled
             if isGitRepo {
                 refreshGitStatus()
             }

@@ -36,7 +36,11 @@ public final class BrewManagerPlugin: LumiPlugin, SuperLog {
             ViewContainerItem(
                 id: id,
                 title: name,
-                systemImage: "mug.fill"
+                systemImage: "mug.fill",
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
             ) {
                 BrewManagerView()
             },
@@ -51,7 +55,18 @@ public final class BrewManagerPlugin: LumiPlugin, SuperLog {
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+        [
+            LumiTitleToolbarItem(
+                id: "\(id).refresh",
+                title: LumiPluginLocalization.string("Refresh", bundle: .module),
+                placement: .trailing,
+                order: 260
+            ) {
+                BrewRefreshButton(kernel: kernel, containerID: self.id)
+            },
+        ]
+    }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
@@ -65,7 +80,7 @@ public final class BrewManagerPlugin: LumiPlugin, SuperLog {
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
-        AnyView(BrewManagerAboutView())
+        AnyView(AboutView())
     }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
@@ -76,4 +91,32 @@ public final class BrewManagerPlugin: LumiPlugin, SuperLog {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
+}
+
+extension Notification.Name {
+    static let brewManagerRefreshRequested = Notification.Name("BrewManagerPlugin.refreshRequested")
+}
+
+private struct BrewRefreshButton: View {
+    let kernel: LumiKernel
+    let containerID: String
+
+    @State private var isVisible = false
+
+    var body: some View {
+        Group {
+            if isVisible {
+                AppIconButton(systemImage: "arrow.clockwise") {
+                    NotificationCenter.default.post(name: .brewManagerRefreshRequested, object: nil)
+                }
+                .help(LumiPluginLocalization.string("Refresh", bundle: .module))
+            }
+        }
+        .onAppear {
+            isVisible = kernel.workspace?.activeViewContainerID == containerID
+        }
+        .onActiveViewContainerIDDidChange { activeID in
+            isVisible = activeID == containerID
+        }
+    }
 }

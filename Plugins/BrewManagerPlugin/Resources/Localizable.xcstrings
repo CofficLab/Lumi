@@ -69,6 +69,9 @@
         }
       }
     },
+    "Browse Packages" : {
+
+    },
     "Cask" : {
       "localizations" : {
         "en" : {
@@ -102,6 +105,9 @@
           }
         }
       }
+    },
+    "Dismiss" : {
+
     },
     "Enter keywords to start searching" : {
       "localizations" : {
@@ -138,6 +144,7 @@
       }
     },
     "Error" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -376,6 +383,9 @@
         }
       }
     },
+    "Learn More" : {
+
+    },
     "Manage Homebrew packages and casks" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -480,6 +490,7 @@
       }
     },
     "OK" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -753,6 +764,9 @@
           }
         }
       }
+    },
+    "Retry" : {
+
     },
     "Search" : {
       "localizations" : {

@@ -31,7 +31,6 @@ import ConversationSpeedPlugin
 import ConversationStorePlugin
 import ConversationTitlePlugin
 import DatabaseManagerPlugin
-import DebugBadgePlugin
 import DeviceInfoPlugin
 import DiskManagerPlugin
 import DisplayControlPlugin
@@ -114,6 +113,7 @@ import SettingsPlugin
 import ShowImagePlugin
 import SkillPlugin
 import StoragePlugin
+import SubAgentProviderPlugin
 import TerminalPlugin
 import ThemeAuroraPlugin
 import ThemeAutumnPlugin
@@ -269,9 +269,10 @@ public enum PluginService {
             ConversationForkPlugin(),
             AgentTurnNotificationPlugin(),
             AppUpdatePlugin(),
-            DebugBadgePlugin(),
             // User interaction
             AskUserPlugin(),
+            // Built-in provider-agnostic sub-agents (Explore / Code Review / Bug Fixer / Test Writer)
+            SubAgentProviderPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),
@@ -298,7 +299,7 @@ public enum PluginService {
             AgentOpenInAntigravityPlugin(),
             AgentOpenInGitHubDesktopPlugin(),
             AgentOpenInGitOKPlugin(),
-            AgentOpenRemotePlugin(),
+            OpenRemotePlugin(),
         ]
 
         // StoragePlugin (requires initialization)

@@ -22,7 +22,7 @@ public struct GitDiffTool: LumiAgentTool, SuperLog {
             "properties": .object([
                 "path": .object([
                     "type": .string("string"),
-                    "description": .string("Git repository path, defaults to current working directory"),
+                    "description": .string("Git repository path, defaults to the current project directory"),
                 ]),
                 "staged": .object([
                     "type": .string("boolean"),
@@ -55,12 +55,13 @@ public struct GitDiffTool: LumiAgentTool, SuperLog {
 
         do {
             // 验证路径是否在允许的范围内
-            let validatedPath = try GitService.validatePath(path, allowedDirectories: kernel.allowedDirectories)
+            let validatedPath = try GitService.validatePath(path, currentProjectPath: kernel.currentProjectPath, allowedDirectories: kernel.allowedDirectories)
+            let target = try resolveDiffTarget(path: validatedPath, file: file)
 
             let diff = try await GitService.shared.getDiff(
-                path: validatedPath,
+                path: target.repositoryPath,
                 staged: staged,
-                file: file
+                file: target.file
             )
             return formatDiff(diff)
         } catch {
@@ -85,5 +86,27 @@ public struct GitDiffTool: LumiAgentTool, SuperLog {
         output += "```diff\n\(diff.content)\n```"
 
         return output
+    }
+
+    private func resolveDiffTarget(
+        path: String,
+        file: String?
+    ) throws -> (repositoryPath: String, file: String?) {
+        let repositoryPath = try GitService.repositoryRoot(containing: path)
+        if let file, !file.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return (
+                repositoryPath,
+                GitService.relativePath(file, fromRepositoryRoot: repositoryPath) ?? file
+            )
+        }
+
+        var isDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
+           isDirectory.boolValue {
+            return (repositoryPath, nil)
+        }
+
+        let relativeFile = GitService.relativePath(path, fromRepositoryRoot: repositoryPath)
+        return (repositoryPath, relativeFile?.isEmpty == true ? nil : relativeFile)
     }
 }

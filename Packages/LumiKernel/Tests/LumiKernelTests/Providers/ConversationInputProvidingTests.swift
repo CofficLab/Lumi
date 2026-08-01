@@ -52,9 +52,8 @@ struct ConversationInputProvidingTests {
         kernel.conversationInput?.addToConversation(fileURLs: [fileA, fileB], windowId: nil)
 
         #expect(input.text == """
-        Files to add to conversation:
-        - /tmp/A.swift
-        - /tmp/B.swift
+        /tmp/A.swift
+        /tmp/B.swift
         """)
         #expect(input.isInputFocused == true)
     }

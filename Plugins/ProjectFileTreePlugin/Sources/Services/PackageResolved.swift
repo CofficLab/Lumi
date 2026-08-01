@@ -19,7 +19,7 @@ public enum PackageResolved {
         guard let root = object as? [String: Any] else { return [] }
 
         if let pins = root["pins"] as? [[String: Any]] {
-            return pins.compactMap(parseV2Pin(_:))
+            return pins.compactMap(parseCurrentPin(_:))
         }
 
         if let object = root["object"] as? [String: Any],
@@ -30,7 +30,7 @@ public enum PackageResolved {
         return []
     }
 
-    private static func parseV2Pin(_ pin: [String: Any]) -> ResolvedPackagePin? {
+    private static func parseCurrentPin(_ pin: [String: Any]) -> ResolvedPackagePin? {
         guard let identity = pin["identity"] as? String else { return nil }
         let location = (pin["location"] as? String) ?? identity
         let state = pin["state"] as? [String: Any] ?? [:]

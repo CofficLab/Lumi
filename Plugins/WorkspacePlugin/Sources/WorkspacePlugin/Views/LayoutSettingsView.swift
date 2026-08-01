@@ -22,10 +22,6 @@ public struct LayoutSettingsView: View {
         self._kernel = ObservedObject(wrappedValue: kernel)
     }
 
-    private var layoutState: LayoutState? {
-        kernel.workspace?.layoutState
-    }
-
     private var containers: [ViewContainerItem] {
         kernel.workspace?.allViewContainers ?? []
     }
@@ -221,28 +217,39 @@ public struct LayoutSettingsView: View {
         }
     }
 
-    /// 容器注册时静态声明的可见性（ViewContainerItem 上的 Bool?）。
+    /// 容器注册时静态声明的可见性策略。
     private func visibilityDeclaredSection(_ container: ViewContainerItem) -> some View {
         AppSettingsSection(title: "Visibility (Declared)", subtitle: "容器注册时声明的默认可见性") {
             VStack(spacing: 0) {
-                detailRow(title: "Rail", icon: "sidebar.left", value: boolText(container.isRailVisible))
+                detailRow(title: "Rail", icon: "sidebar.left", value: visibilityText(container.railVisibility))
                 Divider().padding(.vertical, 8)
-                detailRow(title: "Chat", icon: "rectangle.rightthird.inset.filled", value: boolText(container.isChatVisible))
+                detailRow(title: "Chat", icon: "rectangle.rightthird.inset.filled", value: visibilityText(container.chatVisibility))
                 Divider().padding(.vertical, 8)
-                detailRow(title: "Content", icon: "rectangle.split.3x1", value: boolText(container.isContentVisible))
+                detailRow(title: "Panel Header", icon: "rectangle.topthird.inset.filled", value: visibilityText(container.panelHeaderVisibility))
                 Divider().padding(.vertical, 8)
-                detailRow(title: "Panel", icon: "rectangle.inset.filled", value: boolText(container.isPanelVisible))
+                detailRow(title: "Panel Body", icon: "rectangle.center.inset.filled", value: visibilityText(container.panelBodyVisibility))
                 Divider().padding(.vertical, 8)
-                detailRow(title: "Panel Header", icon: "rectangle.topthird.inset.filled", value: boolText(container.isPanelHeaderVisible))
-                Divider().padding(.vertical, 8)
-                detailRow(title: "Panel Bottom", icon: "rectangle.bottomthird.inset.filled", value: boolText(container.isPanelBottomVisible))
+                detailRow(title: "Panel Bottom", icon: "rectangle.bottomthird.inset.filled", value: visibilityText(container.panelBottomVisibility))
             }
+        }
+    }
+
+    private func visibilityText(_ visibility: ViewContainerVisibility) -> String {
+        switch visibility {
+        case .unsupported:
+            "Unsupported"
+        case .hiddenByDefault:
+            "Supported, hidden by default"
+        case .visibleByDefault:
+            "Supported, visible by default"
+        case .alwaysVisible:
+            "Supported, always visible"
         }
     }
 
     /// 用户手动调整过、已持久化的可见性覆盖（visibilityOverrides）。
     private func visibilityOverrideSection(_ container: ViewContainerItem) -> some View {
-        let overrides = layoutState?.visibilityOverridesDictionary[container.id]
+        let overrides = kernel.workspace?.visibilityOverride(for: container.id)
         return AppSettingsSection(title: "Visibility (User Override)", subtitle: "用户手动调整后记忆的值，优先级最高") {
             if let overrides {
                 VStack(spacing: 0) {
@@ -250,11 +257,9 @@ public struct LayoutSettingsView: View {
                     Divider().padding(.vertical, 8)
                     detailRow(title: "Chat", icon: "rectangle.rightthird.inset.filled", value: boolText(overrides.isChatVisible))
                     Divider().padding(.vertical, 8)
-                    detailRow(title: "Content", icon: "rectangle.split.3x1", value: boolText(overrides.isContentVisible))
-                    Divider().padding(.vertical, 8)
-                    detailRow(title: "Panel", icon: "rectangle.inset.filled", value: boolText(overrides.isPanelVisible))
-                    Divider().padding(.vertical, 8)
                     detailRow(title: "Panel Header", icon: "rectangle.topthird.inset.filled", value: boolText(overrides.isPanelHeaderVisible))
+                    Divider().padding(.vertical, 8)
+                    detailRow(title: "Panel Body", icon: "rectangle.center.inset.filled", value: boolText(overrides.isPanelBodyVisible))
                     Divider().padding(.vertical, 8)
                     detailRow(title: "Panel Bottom", icon: "rectangle.bottomthird.inset.filled", value: boolText(overrides.isPanelBottomVisible))
                 }
@@ -267,7 +272,7 @@ public struct LayoutSettingsView: View {
     }
 
     private func tabsSection(_ container: ViewContainerItem) -> some View {
-        let state = layoutState
+        let state = kernel.workspace
         return AppSettingsSection(title: "Tabs", subtitle: "该容器上次选中的侧边栏 / 底部标签") {
             VStack(spacing: 0) {
                 detailRow(title: "Rail Tab", icon: "sidebar.left", value: state?.activeRailTabID(for: container.id) ?? "—", monospace: true)
@@ -278,7 +283,7 @@ public struct LayoutSettingsView: View {
     }
 
     private func dividersSection(_ container: ViewContainerItem) -> some View {
-        let state = layoutState
+        let state = kernel.workspace
         return AppSettingsSection(title: "Dividers", subtitle: "该容器的分栏位置（pt）") {
             VStack(spacing: 0) {
                 detailRow(title: "Rail Width", icon: "sidebar.left", value: dividerText(state?.storedRailDivider(for: container.id)))

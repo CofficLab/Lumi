@@ -31,12 +31,10 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: "Clipboard",
                 systemImage: "doc.on.clipboard",
-                isRailVisible: false,
-                isChatVisible: false,
-                isContentVisible: true,
-                isPanelVisible: true,
-                isPanelHeaderVisible: false,
-                isPanelBottomVisible: false
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
             ) {
                 ClipboardHistoryView()
             },

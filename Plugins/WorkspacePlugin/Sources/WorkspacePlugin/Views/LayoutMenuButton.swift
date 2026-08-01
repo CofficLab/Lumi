@@ -36,17 +36,6 @@ public struct LayoutMenuButton: View {
                     title: LumiPluginLocalization.string("Right Sidebar")
                 )
 
-                Divider()
-                    .padding(.vertical, 4)
-
-                LayoutPopoverToggle(
-                    isOn: Binding(
-                        get: { layoutManager?.isPanelVisible ?? true },
-                        set: { layoutManager?.setPanelVisible($0) }
-                    ),
-                    icon: "rectangle.inset.filled",
-                    title: LumiPluginLocalization.string("Bottom Panel")
-                )
             }
             .padding(12)
             .frame(minWidth: 180, alignment: .leading)
@@ -59,5 +48,4 @@ public struct LayoutMenuButton: View {
         .help(LumiPluginLocalization.string("Layout"))
     }
 }
-
 

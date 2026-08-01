@@ -37,6 +37,12 @@ public protocol MessageManaging: ObservableObject, Sendable {
     /// 列表、徽标等轻量 UI 应使用此方法，避免为了计数加载整段消息正文或附件。
     func messageCount(for conversationID: UUID) -> Int
 
+    /// 一次性返回所有「在磁盘上至少有一条消息」的对话 ID 集合。
+    ///
+    /// 用于批量判定空对话，避免对每个对话单独 `messageCount`（N 次 SQLite 往返，
+    /// 在对话数量大时会显著阻塞）。默认实现退化为逐个查询，具体实现应提供批量版本。
+    func conversationIDsHavingMessages() -> Set<UUID>
+
     /// 指定消息之前是否还有更早的消息。
     ///
     /// - Parameter includesToolMessages: 与 `messagePage` 的同名参数一致，默认不把
@@ -111,6 +117,12 @@ public protocol MessageManaging: ObservableObject, Sendable {
 }
 
 public extension MessageManaging {
+    /// 默认实现：退化为逐个查询。具体实现（如基于 SwiftData 的 store）应覆盖为批量查询。
+    func conversationIDsHavingMessages() -> Set<UUID> {
+        // 默认无对话，避免 mock/未实现时误判。具体实现应覆盖。
+        return []
+    }
+
     /// 默认不包含工具消息的便捷重载（多数 UI 场景）。
     func messagePage(
         for conversationID: UUID,

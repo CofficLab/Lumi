@@ -8,6 +8,10 @@ public final class ToolManagerService: ToolManaging {
     /// Kernel 引用，用于在执行工具时直接传递给工具
     public weak var kernel: LumiKernel?
 
+    /// 工具调用记录存储(后台异步写入，不影响主流程)。
+    /// 由 OnBoot 钩子初始化。
+    var recordStore: ToolCallRecordStore?
+
     /// 已注册的工具
     private var registeredTools: [String: any LumiAgentTool] = [:]
 
@@ -111,6 +115,7 @@ public final class ToolManagerService: ToolManaging {
         }
 
         let startedAt = Date()
+        let createdAt = Date()
         guard let kernel else {
             return LumiToolResult(
                 content: "Tool execution failed: kernel is not configured",
@@ -125,26 +130,151 @@ public final class ToolManagerService: ToolManaging {
             toolName: toolCall.name,
             currentProjectPath: currentProjectPath
         )
+
+        // 预先解码参数(失败时用于日志记录)
+        let arguments: [String: LumiJSONValue]
         do {
-            let arguments = try Self.decodeArguments(toolCall.arguments)
-            let executionResult = try await kernel.withToolExecutionContextState(executionState) {
-                try await tool.executeResult(arguments: arguments, kernel: kernel)
-            }
-            let images = executionState.collectImages()
-            let duration = Date().timeIntervalSince(startedAt)
-            return LumiToolResult(
-                content: executionResult.content,
-                duration: duration,
-                isError: executionResult.isError,
-                imageAttachments: images,
-                turnControl: executionResult.turnControl
-            )
+            arguments = try Self.decodeArguments(toolCall.arguments)
         } catch {
+            // 记录解码失败
+            logToolCall(
+                toolName: tool.name,
+                toolDisplayName: toolCall.name,
+                conversationID: conversationID,
+                createdAt: createdAt,
+                startedAt: startedAt,
+                completedAt: Date(),
+                duration: Date().timeIntervalSince(startedAt),
+                argumentsJSON: toolCall.arguments,
+                resultContent: "Failed to decode arguments: \(error.localizedDescription)",
+                resultIsError: true,
+                riskLevel: "unknown",
+                turnControl: nil
+            )
             return LumiToolResult(
                 content: "Tool execution failed: \(error.localizedDescription)",
                 duration: Date().timeIntervalSince(startedAt),
                 isError: true
             )
+        }
+
+        let executionResult: LumiToolExecutionResult
+        let duration: TimeInterval
+
+        do {
+            let result = try await kernel.withToolExecutionContextState(executionState) {
+                try await tool.executeResult(arguments: arguments, kernel: kernel)
+            }
+            executionResult = result
+            duration = Date().timeIntervalSince(startedAt)
+        } catch {
+            // 记录失败的调用
+            logToolCall(
+                toolName: tool.name,
+                toolDisplayName: tool.displayDescription(arguments: arguments),
+                conversationID: conversationID,
+                createdAt: createdAt,
+                startedAt: startedAt,
+                completedAt: Date(),
+                duration: Date().timeIntervalSince(startedAt),
+                argumentsJSON: Self.encodeArguments(arguments),
+                resultContent: error.localizedDescription,
+                resultIsError: true,
+                riskLevel: tool.riskLevel(arguments: arguments, kernel: kernel).rawValue,
+                turnControl: nil
+            )
+            return LumiToolResult(
+                content: "Tool execution failed: \(error.localizedDescription)",
+                duration: Date().timeIntervalSince(startedAt),
+                isError: true
+            )
+        }
+
+        let images = executionState.collectImages()
+        let result = LumiToolResult(
+            content: executionResult.content,
+            duration: duration,
+            isError: executionResult.isError,
+            imageAttachments: images,
+            turnControl: executionResult.turnControl
+        )
+
+        // 记录成功的调用(后台异步，不阻塞主流程)
+        logToolCall(
+            toolName: tool.name,
+            toolDisplayName: tool.displayDescription(arguments: arguments),
+            conversationID: conversationID,
+            createdAt: createdAt,
+            startedAt: startedAt,
+            completedAt: Date(),
+            duration: duration,
+            argumentsJSON: Self.encodeArguments(arguments),
+            resultContent: executionResult.content,
+            resultIsError: executionResult.isError,
+            riskLevel: tool.riskLevel(arguments: arguments, kernel: kernel).rawValue,
+            turnControl: Self.encodeTurnControl(executionResult.turnControl)
+        )
+
+        return result
+    }
+
+    // MARK: - Tool Call Logging
+
+    /// 后台异步记录工具调用，不阻塞主流程。
+    private func logToolCall(
+        toolName: String,
+        toolDisplayName: String,
+        conversationID: UUID,
+        createdAt: Date,
+        startedAt: Date,
+        completedAt: Date?,
+        duration: TimeInterval?,
+        argumentsJSON: String,
+        resultContent: String,
+        resultIsError: Bool,
+        riskLevel: String,
+        turnControl: String?
+    ) {
+        // 捕获必要的信息到值类型，避免引用 kernel 等复杂对象
+        let store = recordStore
+
+        // 后台异步记录，不 await，不阻塞
+        Task {
+            await store?.record(
+                toolName: toolName,
+                toolDisplayName: toolDisplayName,
+                conversationID: conversationID,
+                createdAt: createdAt,
+                startedAt: startedAt,
+                completedAt: completedAt,
+                duration: duration,
+                argumentsJSON: argumentsJSON,
+                resultContent: resultContent,
+                resultIsError: resultIsError,
+                riskLevel: riskLevel,
+                turnControl: turnControl
+            )
+        }
+    }
+
+    /// 将参数字典编码为 JSON 字符串。
+    private static func encodeArguments(_ arguments: [String: LumiJSONValue]) -> String {
+        guard let data = try? JSONEncoder().encode(arguments),
+              let string = String(data: data, encoding: .utf8) else {
+            return "{}"
+        }
+        return string
+    }
+
+    /// 将 TurnControl 编码为字符串。
+    private static func encodeTurnControl(_ control: AgentTurnControl) -> String? {
+        switch control {
+        case .continueTurn:
+            return nil
+        case .suspend(let suspension):
+            return "suspend:\(suspension.suspensionID)"
+        case .resumed(let suspension, let answer):
+            return "resumed:\(suspension.suspensionID):\(answer.prefix(100))"
         }
     }
 }

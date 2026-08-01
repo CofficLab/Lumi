@@ -4,17 +4,17 @@ import os
 import SuperLogKit
 import SwiftUI
 
-/// 项目文件树插件(V2)
+/// 项目文件树插件
 ///
-/// 在 RailView 中贡献 "Explorer V2" 标签,托管基于 NSCollectionView 的文件树
-/// (TreeViewV2)。提供文件浏览、Git 状态徽标、拖放、增删改、多选等完整能力。
+/// 在 RailView 中贡献 "Explorer" 标签,托管基于 NSCollectionView 的文件树
+/// (TreeView)。提供文件浏览、Git 状态徽标、拖放、增删改、多选等完整能力。
 @MainActor
 public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-file-tree")
     public nonisolated static let emoji = "🌲"
     public nonisolated static let verbose = false
 
-    // MARK: - 功能开关(供 V2 内部视图/服务读取)
+    // MARK: - 功能开关
 
     /// 是否启用 Git 状态徽标(基于 libgit2)。
     public nonisolated static let gitStatusEnabled = true
@@ -38,11 +38,11 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "explorer-v2",
-                title: "Explorer V2",
+                id: "explorer",
+                title: "Explorer",
                 systemImage: "square.grid.2x2.fill"
             ) {
-                TreeViewV2(kernel: kernel)
+                TreeView(kernel: kernel)
             }
         ]
     }

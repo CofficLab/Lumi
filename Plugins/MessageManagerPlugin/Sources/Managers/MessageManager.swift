@@ -157,6 +157,11 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
         store?.messageCount(conversationId: conversationID) ?? 0
     }
 
+    public nonisolated func conversationIDsHavingMessages() -> Set<UUID> {
+        guard let store else { return [] }
+        return Set(store.conversationIDsHavingMessages().compactMap { UUID(uuidString: $0) })
+    }
+
     public nonisolated func hasEarlierMessages(
         for conversationID: UUID,
         beforeMessageID: UUID?,
@@ -255,6 +260,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
         do {
             try store?.insertMessage(message)
             dequeuePending(id: message.id, conversationID: conversationID)
+            if message.role == .user {
+                postMessageSavedNotification(message: message, conversationID: conversationID)
+            }
         } catch {
             if Self.verbose {
                 Self.logger.error("\(Self.t)Failed to persist message eagerly: \(error)")
@@ -277,6 +285,20 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
                 }
             }
         }
+    }
+
+    @MainActor
+    private func postMessageSavedNotification(message: LumiChatMessage, conversationID: UUID) {
+        let userInfo: [AnyHashable: Any] = [
+            LumiMessageSavedNotification.conversationIDKey: conversationID,
+            LumiMessageSavedNotification.messageIDKey: message.id,
+            LumiMessageSavedNotification.roleKey: message.role.rawValue,
+        ]
+        NotificationCenter.default.post(
+            name: .lumiMessageSaved,
+            object: nil,
+            userInfo: userInfo
+        )
     }
 
     @MainActor

@@ -70,6 +70,39 @@ struct MessageManagerWriteBehindTests {
         #expect(store.fetchMessages(conversationId: conversationID).count == 1)
     }
 
+    @Test("user 消息落盘成功后发 saved 通知")
+    func userMessagePostsSavedNotificationAfterPersistence() async throws {
+        let (store, directory) = try installTemporaryStore()
+        defer {
+            MessageStoreRuntimeBridge.shared.store = nil
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let (manager, _) = makeManager()
+        let conversationID = UUID()
+        let msg = LumiChatMessage(
+            conversationID: conversationID, role: .user,
+            content: "hi", createdAt: Date()
+        )
+        let capture = MessageSavedNotificationCapture()
+        let observer = NotificationCenter.default.addObserver(
+            forName: .lumiMessageSaved,
+            object: nil,
+            queue: nil
+        ) { notification in
+            capture.record(notification)
+        }
+        defer {
+            NotificationCenter.default.removeObserver(observer)
+        }
+
+        manager.insertMessage(msg, to: conversationID)
+
+        #expect(store.fetchMessages(conversationId: conversationID).contains { $0.id == msg.id })
+        #expect(capture.conversationID == conversationID)
+        #expect(capture.messageID == msg.id)
+        #expect(capture.role == LumiChatMessageRole.user.rawValue)
+    }
+
     @Test("assistant 消息最终落盘(等后台队列完成后)")
     func assistantEventuallyPersisted() async throws {
         let (store, directory) = try installTemporaryStore()
@@ -253,5 +286,32 @@ struct MessageManagerStatusMessageTests {
         let statuses = page.filter { $0.role == .status }
         #expect(statuses.count == 1)
         #expect(statuses.first?.content == "第二")
+    }
+}
+
+private final class MessageSavedNotificationCapture: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedConversationID: UUID?
+    private var storedMessageID: UUID?
+    private var storedRole: String?
+
+    var conversationID: UUID? {
+        lock.withLock { storedConversationID }
+    }
+
+    var messageID: UUID? {
+        lock.withLock { storedMessageID }
+    }
+
+    var role: String? {
+        lock.withLock { storedRole }
+    }
+
+    func record(_ notification: Notification) {
+        lock.withLock {
+            storedConversationID = notification.userInfo?[LumiMessageSavedNotification.conversationIDKey] as? UUID
+            storedMessageID = notification.userInfo?[LumiMessageSavedNotification.messageIDKey] as? UUID
+            storedRole = notification.userInfo?[LumiMessageSavedNotification.roleKey] as? String
+        }
     }
 }

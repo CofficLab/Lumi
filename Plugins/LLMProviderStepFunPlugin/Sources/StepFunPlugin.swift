@@ -13,24 +13,51 @@ public final class StepFunPlugin: LumiPlugin {
 
     public init() {}
 
+    /// 子 Agent 依赖 StepFun 模型,因此它们的生命周期绑定到这个 provider 实例。
+    ///
+    /// 持有单例(而非每次 `llmProviders(kernel:)` 都新建)有两个原因:
+    /// 1. `StepFunSubAgentsGate` 需要复用同一个 provider 去做可用性探测,且需共享它的
+    ///    `AvailabilityDiskCache`,避免探测/注册两条路径各持一个 provider、缓存分裂。
+    /// 2. boot 时序里 `registerAgentTools`(调 `subAgents`)早于 `registerLLMProviders`,
+    ///    provider 不在 kernel registry 中 —— 持有自己的实例,gate 在任何时点都能探测。
+    ///
+    /// 用 `private var` + 懒初始化(而非 `private let`),因为初始化 provider 需要 kernel,
+    /// 而构造 plugin 时尚拿不到 kernel。
+    private var provider: StepFunProvider?
+    private var gate: StepFunSubAgentsGate?
+
+    /// 懒构造 provider + gate(幂等,首次调用时创建)。
+    private func ensureProvider(kernel: LumiKernel) -> StepFunProvider {
+        if let provider { return provider }
+        let instance = StepFunProvider(apiService: LLMAPIService(kernel: kernel))
+        provider = instance
+        gate = StepFunSubAgentsGate(provider: instance)
+        return instance
+    }
+
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: LumiKernel) async throws {
+        // 确保 provider/gate 就绪,然后异步探测供应商可用性。
+        // 用 Task 包裹,绝不阻塞 kernel 启动;探测完成后由 gate 自行触发一次
+        // `rebuildAllContributions` 让框架重新收集 sub-agent(若此时已 ready)。
+        _ = ensureProvider(kernel: kernel)
+        guard let gate else { return }
+        Task { @MainActor in
+            await gate.refresh(kernel: kernel)
+        }
+    }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [StepFunProvider(apiService: LLMAPIService(kernel: kernel))]
+        [ensureProvider(kernel: kernel)]
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] {
-        [
-            ExploreAgent.definition,
-            BuildAgent.definition,
-            BugFixerAgent.definition,
-            CodeReviewAgent.definition,
-            TestWriterAgent.definition,
-            DocWriterAgent.definition,
-            GitCommitWriterAgent.definition,
-        ]
+        // 同步 gate:仅当探测通过(ready)才返回全部 sub-agent。
+        // 走 ensureProvider 保证 gate 已构造(它只构造对象、不触发网络,同步安全)。
+        _ = ensureProvider(kernel: kernel)
+        guard let gate else { return [] }
+        return gate.evaluate()
     }
 
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {

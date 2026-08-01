@@ -13,6 +13,7 @@ import SwiftUI
 /// All concrete implementations are injected via plugins.
 @MainActor
 public final class LumiKernelContainer: ObservableObject {
+
     // MARK: - Service Registry
 
     /// Service registry
@@ -176,14 +177,8 @@ public final class LumiKernelContainer: ObservableObject {
         //    — 从 WorkspaceProviding 获取 activeViewContainerID,
         //    — 再从 WorkspaceProviding 获取该容器的 rail/chat/content/panel 可见性,
         //    — 最后更新到 WorkspaceProviding 的状态中。
-        if let containerID = workspace?.activeViewContainerID,
-           let container = workspace?.viewContainer(id: containerID) {
-            workspace?.applyVisibility(
-                rail: container.isRailVisible,
-                chat: container.isChatVisible,
-                content: container.isContentVisible,
-                panel: container.isPanelVisible
-            )
+        if let containerID = workspace?.activeViewContainerID {
+            workspace?.applyContainerVisibility(for: containerID)
         }
 
         // 9. 将工作区服务中已收集的菜单栏视图交给展示层

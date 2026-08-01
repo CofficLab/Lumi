@@ -60,8 +60,7 @@ public final class VerbosityPlugin: LumiPlugin {
         [
             ChatSectionToolbarBarItem(id: id) {
                 VerbosityToolbarView(kernel: kernel)
-            }
+            },
         ]
     }
-
 }

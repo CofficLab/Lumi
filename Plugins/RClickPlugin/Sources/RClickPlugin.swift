@@ -32,7 +32,7 @@ public final class RClickPlugin: LumiPlugin {
                 id: id,
                 title: "Right Click",
                 systemImage: "cursorarrow.click.2",
-                isPanelHeaderVisible: false
+                panelHeaderVisibility: .unsupported
             ) {
                 RClickSettingsView()
             },

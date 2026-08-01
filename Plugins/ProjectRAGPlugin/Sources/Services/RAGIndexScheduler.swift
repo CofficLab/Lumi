@@ -173,7 +173,6 @@ final class RAGIndexScheduler: SuperLog {
 
     private func installInterruptionObservers() {
         let names: [Notification.Name] = [
-            .currentProjectPathDidChange,
             NSApplication.didBecomeActiveNotification,
         ]
         observers = names.map { name in

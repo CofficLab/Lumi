@@ -72,6 +72,32 @@ public protocol LLMProviderManaging: AnyObject {
     /// - Throws: `LumiKernelError.llmProviderUnavailable` 当内核未注册任何 provider 时
     /// - Throws: `LumiKernelError.invalidProviderOrModel` 当没有选中的 provider 或 model 时
     func sendToSelectedProvider(_ request: LumiLLMRequest) async throws -> LumiChatMessage
+
+    /// 发送一条不进入 AgentTurnRunner 的直接 LLM 请求。
+    ///
+    /// 此接口用于标题生成、摘要、分类等内部轻量任务：
+    /// - 不写入 MessageStore；
+    /// - 不触发 `willSendToLLM`；
+    /// - 不自动附带工具；
+    /// - 不发送 turn/message 通知；
+    /// - 只返回 provider 结果。
+    ///
+    /// - Parameters:
+    ///   - request: LLM 请求。实现会使用解析后的 model 重建请求。
+    ///   - providerID: 指定 provider；传 `nil` 时使用当前选中 provider，若没有则使用第一个已注册 provider。
+    ///   - model: 指定模型；传 `nil` 时使用当前选中模型（仅当 provider 也是当前选中 provider），否则使用 provider 默认模型。
+    func sendDirect(
+        _ request: LumiLLMRequest,
+        providerID: String?,
+        model: String?
+    ) async throws -> LumiChatMessage
+
+    /// 发送直接 LLM 请求并返回文本内容。
+    func generateText(
+        _ request: LumiLLMRequest,
+        providerID: String?,
+        model: String?
+    ) async throws -> String
 }
 
 public extension LLMProviderManaging {
@@ -85,5 +111,13 @@ public extension LLMProviderManaging {
         for provider in providers {
             try registerLLMProvider(provider)
         }
+    }
+
+    func generateText(
+        _ request: LumiLLMRequest,
+        providerID: String? = nil,
+        model: String? = nil
+    ) async throws -> String {
+        try await sendDirect(request, providerID: providerID, model: model).content
     }
 }

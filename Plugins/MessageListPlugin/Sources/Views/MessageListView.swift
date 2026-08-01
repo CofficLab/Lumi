@@ -92,14 +92,17 @@ struct MessageListView: View {
                                 verbosity: viewModel.verbosity
                             )
                             .id(message.id)
-                            .padding(.horizontal, 6)
+                            .padding(.horizontal, 16)
                             .padding(.vertical, 4)
                         }
 
                         // 底部锚点:通过它的几何位置判断 isAtBottom。
                         bottomAnchor
+                            .padding(.bottom, 24)
                     }
                     .padding(.vertical, 4)
+                    // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
+                    .environment(\.lumiActiveToolGroupIDs, viewModel.activeStepGroupMessageIDs)
                 }
                 .onPreferenceChange(MessageListBottomAnchorPositionKey.self) { bottomMaxY in
                     let viewMaxY = viewport.frame(in: .global).maxY

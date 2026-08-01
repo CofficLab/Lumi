@@ -14,7 +14,7 @@ import LumiUI
 /// 依赖最小化:原本从 `LumiCoreAccessing` 同时拉项目状态和宿主布局状态;
 /// 现在切到 `ProjectProviding`,只关心"当前项目"。原有的
 /// "激活左侧 Commit History sidebar"逻辑由宿主侧在挂载时主动调用
-/// `LayoutState.activateViewContainer(id:)` 完成,不再由本视图越权操作宿主布局。
+/// `WorkspaceProviding.activateContainer(id:)` 完成,不再由本视图越权操作宿主布局。
 public struct GitCommitDetailView: View, SuperLog {
 
     // MARK: - 属性

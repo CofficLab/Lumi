@@ -363,7 +363,66 @@ public final class GitService: @unchecked Sendable, SuperLog {
         return resolvedPath
     }
 
+    public static func validatePath(
+        _ path: String?,
+        currentProjectPath: String?,
+        allowedDirectories: [String]
+    ) throws -> String {
+        let effectivePath = Self.effectivePath(path, currentProjectPath: currentProjectPath)
+        return try validatePath(effectivePath, allowedDirectories: allowedDirectories)
+    }
+
+    public static func repositoryRoot(containing path: String) throws -> String {
+        var candidate = repositorySearchStart(for: path)
+        while true {
+            if FileManager.default.fileExists(atPath: URL(fileURLWithPath: candidate).appendingPathComponent(".git").path) {
+                return candidate
+            }
+
+            let parent = URL(fileURLWithPath: candidate).deletingLastPathComponent().path
+            guard parent != candidate else {
+                throw GitServiceError.repositoryNotGit(path: path)
+            }
+            candidate = parent
+        }
+    }
+
+    public static func relativePath(
+        _ path: String,
+        fromRepositoryRoot repositoryRoot: String
+    ) -> String? {
+        let resolvedPath = Self.resolvePath(path)
+        let resolvedRepositoryRoot = Self.resolvePath(repositoryRoot)
+        if resolvedPath == resolvedRepositoryRoot {
+            return ""
+        }
+        let prefix = resolvedRepositoryRoot + "/"
+        guard resolvedPath.hasPrefix(prefix) else {
+            return nil
+        }
+        return String(resolvedPath.dropFirst(prefix.count))
+    }
+
     // MARK: - Helper
+
+    private static func effectivePath(_ path: String?, currentProjectPath: String?) -> String? {
+        let trimmedPath = path?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let trimmedPath, !trimmedPath.isEmpty {
+            return trimmedPath
+        }
+        let trimmedProjectPath = currentProjectPath?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedProjectPath?.isEmpty == false ? trimmedProjectPath : nil
+    }
+
+    private static func repositorySearchStart(for path: String) -> String {
+        var isDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) {
+            return isDirectory.boolValue
+                ? path
+                : URL(fileURLWithPath: path).deletingLastPathComponent().path
+        }
+        return URL(fileURLWithPath: path).deletingLastPathComponent().path
+    }
 
     private static func resolvePath(_ path: String?) -> String {
         let rawPath = path ?? FileManager.default.currentDirectoryPath

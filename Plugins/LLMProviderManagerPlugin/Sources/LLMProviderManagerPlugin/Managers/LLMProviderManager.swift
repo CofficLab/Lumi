@@ -196,6 +196,77 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
         return try await provider.send(selectedRequest)
     }
 
+    public func sendDirect(
+        _ request: LumiLLMRequest,
+        providerID: String?,
+        model: String?
+    ) async throws -> LumiChatMessage {
+        let resolved = try resolveDirectProvider(providerID: providerID)
+        let resolvedModel = resolveDirectModel(
+            requestedModel: model,
+            providerID: resolved.providerID,
+            provider: resolved.provider
+        )
+        if Self.verbose {
+            Self.logger.info("\(Self.t)sendDirect ➡️ provider=\(resolved.providerID), model=\(resolvedModel), messages=\(request.messages.count), tools=\(request.tools.count)")
+        }
+        let directRequest = LumiLLMRequest(
+            messages: request.messages,
+            model: resolvedModel,
+            tools: request.tools,
+            imageAttachments: request.imageAttachments,
+            fileAttachments: request.fileAttachments,
+            generationOptions: request.generationOptions
+        )
+        return try await resolved.provider.send(directRequest)
+    }
+
+    private func resolveDirectProvider(
+        providerID requestedProviderID: String?
+    ) throws -> (providerID: String, provider: any LumiLLMProvider) {
+        let normalizedProviderID = requestedProviderID?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let normalizedProviderID, !normalizedProviderID.isEmpty {
+            guard let provider = llmProviders[normalizedProviderID] else {
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)sendDirect ➡️ 指定 provider 不存在 id=\(normalizedProviderID)")
+                }
+                throw LumiKernelError.invalidProviderOrModel
+            }
+            return (normalizedProviderID, provider)
+        }
+
+        if let selectedProviderID = _selectedProviderID,
+           let provider = llmProviders[selectedProviderID] {
+            return (selectedProviderID, provider)
+        }
+
+        guard let firstProviderID = llmProviderOrder.first,
+              let provider = llmProviders[firstProviderID] else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)sendDirect ➡️ 没有可用的 LLM provider")
+            }
+            throw LumiKernelError.llmProviderUnavailable
+        }
+        return (firstProviderID, provider)
+    }
+
+    private func resolveDirectModel(
+        requestedModel: String?,
+        providerID: String,
+        provider: any LumiLLMProvider
+    ) -> String {
+        let normalizedModel = requestedModel?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let normalizedModel, !normalizedModel.isEmpty {
+            return normalizedModel
+        }
+        if providerID == _selectedProviderID,
+           let selectedModel = _selectedModel?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !selectedModel.isEmpty {
+            return selectedModel
+        }
+        return type(of: provider).info.defaultModel
+    }
+
     // MARK: - LumiLLMProviderSettingsContributing
 
     /// 由 LLM Provider 插件贡献的 provider 详情视图项。

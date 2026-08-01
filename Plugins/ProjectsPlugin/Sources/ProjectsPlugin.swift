@@ -22,46 +22,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     }
 
     public func onReady(kernel: LumiKernel) async throws {
-        // 1. 初始化存储
-        guard let storage = kernel.storage else {
-            Self.logger.error("📂 Storage service not available，跳过 Projects 插件初始化")
-            return
-        }
-        let storageDirectory = storage.pluginDataDirectory(for: "Projects")
-        let store = ProjectsStore(pluginDirectory: storageDirectory)
-
-        if Self.verbose {
-            Self.logger.info("📂 Initialized ProjectsStore")
-        }
-
-        // 迁移 v4 历史项目(必须在 ViewModel 初始化之前完成 —— ViewModel init 时会
-        // loadProjects,此时 projects.json 应已含合并后的数据)。幂等 + 吞错。
-        ProjectsLegacyMigration(currentDataRootDirectory: storage.dataRootDirectory, store: store).run()
-
-        // 2. 初始化 ViewModel
-        let viewModel = ProjectsViewModel(store: store)
-
-        if Self.verbose {
-            Self.logger.info("📂 Initialized ProjectsViewModel")
-        }
-
-        // 3. 初始化同步协调器
-        let coordinator = ProjectsSyncCoordinator(viewModel: viewModel)
-        coordinator.kernel = kernel
-        ProjectsToolRuntimeBridge.syncCoordinator = coordinator
-
-        if Self.verbose {
-            Self.logger.info("📂 Initialized ProjectsSyncCoordinator")
-        }
-
-        // 4. 设置 RuntimeBridge — 供 Agent 工具使用，并供
-        //    `titleToolbarItems(kernel:)` 声明式访问 viewModel（在 onReady 之后
-        //    由 BuiltinPluginManager.registerPluginUIContributions 收集）。
-        ProjectsToolRuntimeBridge.viewModel = viewModel
-
-        if Self.verbose {
-            Self.logger.info("📂 Projects 插件 onReady 完成")
-        }
+        try await ProjectsOnReadyHook(pluginID: id).execute(kernel)
     }
 
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
@@ -82,7 +43,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
-        guard let viewModel = ProjectsToolRuntimeBridge.viewModel else {
+        guard let viewModel = RuntimeBridge.viewModel else {
             return []
         }
 
@@ -93,8 +54,8 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
                 placement: .center,
                 order: 0
             ) {
-                ProjectControlView(viewModel: viewModel)
-            }
+                ControlView(viewModel: viewModel)
+            },
         ]
     }
 
@@ -110,7 +71,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
-        guard let viewModel = ProjectsToolRuntimeBridge.viewModel else {
+        guard let viewModel = RuntimeBridge.viewModel else {
             return []
         }
         return [
@@ -120,10 +81,11 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
                 systemImage: "folder",
                 order: order
             ) {
-                ProjectsSettingsView(viewModel: viewModel)
+                SettingsView(viewModel: viewModel)
             },
         ]
     }
+
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }

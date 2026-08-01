@@ -1,8 +1,6 @@
 import Foundation
 import SwiftUI
 
-// MARK: - Layout Notification Names
-
 extension Notification.Name {
     /// 当前激活的视图容器已变更
     /// object: nil
@@ -33,16 +31,6 @@ extension Notification.Name {
     /// object: nil
     /// userInfo: ["visible": Bool]
     public static let railVisibleDidChange = Notification.Name("RailVisibleDidChange")
-
-    /// 主内容区域可见性已变更
-    /// object: nil
-    /// userInfo: ["visible": Bool]
-    public static let contentVisibleDidChange = Notification.Name("ContentVisibleDidChange")
-
-    /// Panel 可见性已变更
-    /// object: nil
-    /// userInfo: ["visible": Bool]
-    public static let panelVisibleDidChange = Notification.Name("PanelVisibleDidChange")
 
     /// 侧边栏 Rail divider 位置已变更
     /// object: nil
@@ -106,22 +94,6 @@ extension NotificationCenter {
     public static func postRailVisibleDidChange(visible: Bool) {
         NotificationCenter.default.post(
             name: .railVisibleDidChange,
-            object: nil,
-            userInfo: ["visible": visible]
-        )
-    }
-
-    public static func postContentVisibleDidChange(visible: Bool) {
-        NotificationCenter.default.post(
-            name: .contentVisibleDidChange,
-            object: nil,
-            userInfo: ["visible": visible]
-        )
-    }
-
-    public static func postPanelVisibleDidChange(visible: Bool) {
-        NotificationCenter.default.post(
-            name: .panelVisibleDidChange,
             object: nil,
             userInfo: ["visible": visible]
         )
@@ -219,22 +191,6 @@ public extension View {
     /// 监听 Rail 可见性变更
     func onRailVisibleDidChange(perform action: @escaping (Bool) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .railVisibleDidChange)) { notification in
-            guard let visible = notification.userInfo?["visible"] as? Bool else { return }
-            action(visible)
-        }
-    }
-
-    /// 监听主内容区域可见性变更
-    func onContentVisibleDidChange(perform action: @escaping (Bool) -> Void) -> some View {
-        self.onReceive(NotificationCenter.default.publisher(for: .contentVisibleDidChange)) { notification in
-            guard let visible = notification.userInfo?["visible"] as? Bool else { return }
-            action(visible)
-        }
-    }
-
-    /// 监听 Panel 可见性变更
-    func onPanelVisibleDidChange(perform action: @escaping (Bool) -> Void) -> some View {
-        self.onReceive(NotificationCenter.default.publisher(for: .panelVisibleDidChange)) { notification in
             guard let visible = notification.userInfo?["visible"] as? Bool else { return }
             action(visible)
         }

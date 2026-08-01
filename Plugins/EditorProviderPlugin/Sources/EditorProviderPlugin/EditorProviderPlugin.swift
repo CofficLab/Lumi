@@ -29,7 +29,6 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
     /// 持有 provider 实例,以便在 OnReady 阶段注入 EditorService。
     /// OnBoot 阶段创建并注册;此时 EditorService 可能尚未注册(EditorKernelPlugin 同为 order=1,无先后保证)。
     private var editorProvider: EditorProvider?
-    private var kernelObservation: AnyCancellable?
     private var projectObservation: AnyCancellable?
     private var projectSyncTask: Task<Void, Never>?
     private var lastSyncedProjectFilePath: String?
@@ -57,7 +56,9 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)EditorProviderPlugin: attached EditorService to EditorProvider")
             }
-            bindKernelProjectObservation(kernel: kernel)
+            // 只订阅 project 的 objectWillChange（精确信号）。
+            // 不再额外订阅 kernel.objectWillChange：它是转发所有 service 变更的全局总线，
+            // project 的变更会作为其子集被转发，订阅两者只会带来重复触发与噪声。
             bindProjectCurrentFileObservation(kernel: kernel)
             scheduleProjectCurrentFileSync(kernel: kernel)
         } else {
@@ -96,13 +97,6 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 
     // MARK: - Project Sync
-
-    private func bindKernelProjectObservation(kernel: LumiKernel) {
-        kernelObservation?.cancel()
-        kernelObservation = kernel.objectWillChange.sink { [weak self] _ in
-            self?.scheduleProjectCurrentFileSync(kernel: kernel)
-        }
-    }
 
     private func bindProjectCurrentFileObservation(kernel: LumiKernel) {
         projectObservation?.cancel()

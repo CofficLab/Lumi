@@ -9,7 +9,6 @@ struct AppLayoutView: View {
     private let layoutManager: (any WorkspaceProviding)?
 
     @State private var isRailVisible: Bool = true
-    @State private var isContentVisible: Bool = true
     @State private var isChatVisible: Bool = true
 
     init(kernel: LumiKernel) {
@@ -34,7 +33,7 @@ struct AppLayoutView: View {
             AppDivider()
 
             HStack(spacing: 0) {
-                ActivityBar(workspace: layoutManager)
+                ActivityBar(kernel: kernel)
                     .frame(maxHeight: .infinity)
                 AppDivider(.vertical)
 
@@ -64,7 +63,6 @@ struct AppLayoutView: View {
         }
         .onAppear {
             isRailVisible = layoutManager.isRailVisible
-            isContentVisible = layoutManager.isContentVisible
             isChatVisible = layoutManager.isChatVisible
         }
     }
@@ -79,22 +77,14 @@ struct AppLayoutView: View {
         isChatVisible && layoutManager.activeViewContainerID != nil
     }
 
-    private func viewContainerID(for layoutManager: any WorkspaceProviding) -> String {
-        layoutManager.activeViewContainerID ?? ""
-    }
-
     @ViewBuilder
     private func splitLayout(_ layoutManager: any WorkspaceProviding) -> some View {
         if showRail(for: layoutManager) {
             HSplitView {
                 RailView(kernel: kernel)
                     .frame(minWidth: 180, idealWidth: 240, maxWidth: 400)
-                    .background(
-                        SplitViewDividerPersistence.rail(
-                            layoutState: layoutManager.layoutState,
-                            viewContainerID: viewContainerID(for: layoutManager)
-                        )
-                    )
+                    // 必须挂在 HSplitView 左侧 pane，组件会直接识别原生可拖拽 divider。
+                    .appSplitDivider(.trailing)
                 mainSplitContent(layoutManager)
             }
         } else {
@@ -108,15 +98,9 @@ struct AppLayoutView: View {
             HSplitView {
                 PanelView(kernel: kernel, layoutManager: layoutManager)
                     .frame(minWidth: 280, maxWidth: .infinity)
+                    .appSplitDivider(.trailing)
                 ChatView(kernel: kernel)
                     .frame(minWidth: 280, idealWidth: 320, maxWidth: .infinity)
-                    .background(
-                        SplitViewDividerPersistence.chatSection(
-                            layoutState: layoutManager.layoutState,
-                            viewContainerID: viewContainerID(for: layoutManager),
-                            layout: .narrow
-                        )
-                    )
             }
         } else {
             PanelView(kernel: kernel, layoutManager: layoutManager)

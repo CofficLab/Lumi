@@ -48,10 +48,10 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: "App Manager",
                 systemImage: "apps.ipad",
-                isRailVisible: false,
-                isChatVisible: false,
-                isPanelHeaderVisible: false,
-                isPanelBottomVisible: false
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
             ) {
                 AppManagerView()
             },

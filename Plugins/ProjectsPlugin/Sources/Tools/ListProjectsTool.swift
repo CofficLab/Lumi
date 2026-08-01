@@ -32,7 +32,7 @@ struct ListProjectsTool: LumiAgentTool, SuperLog {
     func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let limit = min(arguments.int("limit") ?? 5, maxLimit)
 
-        guard let viewModel = await MainActor.run(body: { ProjectsToolRuntimeBridge.viewModel }) else {
+        guard let viewModel = await MainActor.run(body: { RuntimeBridge.viewModel }) else {
             return "Error: Projects view model is not available."
         }
 

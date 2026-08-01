@@ -36,7 +36,7 @@ public struct ProjectsOnBootHook: SuperLog {
             Self.logger.error("\(Self.t)ProjectService 注册后仍为 nil")
             return
         }
-        let viewModel = ProjectsToolRuntimeBridge.viewModel
+        let viewModel = RuntimeBridge.viewModel
         if let currentProject = viewModel?.currentProject {
             try await project.openProject(at: currentProject.path)
         }

@@ -4,8 +4,6 @@ import SwiftUI
 @MainActor
 enum AddToChat {
     private static let notificationName = Notification.Name("addToChat")
-    fileprivate static let projectPathDidChangeNotification = Notification.Name("lumi.currentProjectPathDidChange")
-    fileprivate static let projectPathUserInfoKey = "path"
     private static var lastPostedAtByKey: [String: Date] = [:]
     private static let dedupeInterval: TimeInterval = 1.5
     static var currentProjectPathProvider: (@MainActor () -> String)?
@@ -93,12 +91,6 @@ private struct AppStoreConnectAddToChatModifier: ViewModifier {
                     currentProjectPath = provider()
                 }
                 refreshLumiProjectGate()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: AddToChat.projectPathDidChangeNotification)) { notification in
-                if let path = notification.userInfo?[AddToChat.projectPathUserInfoKey] as? String {
-                    currentProjectPath = path
-                    refreshLumiProjectGate()
-                }
             }
             .contextMenu {
                 Button(AppStoreConnectLocalization.string("Add to Chat")) {

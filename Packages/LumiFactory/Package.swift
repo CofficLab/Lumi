@@ -155,10 +155,9 @@ let package = Package(
         .package(path: "../../Plugins/ConversationForkPlugin"),
         .package(path: "../../Plugins/AgentTurnNotificationPlugin"),
         .package(path: "../../Plugins/AppUpdatePlugin"),
-        // Debug utilities
-        .package(path: "../../Plugins/DebugBadgePlugin"),
         // User interaction
         .package(path: "../../Plugins/AskUserPlugin"),
+        .package(path: "../../Plugins/SubAgentProviderPlugin"),
     ],
     targets: [
         .target(
@@ -311,8 +310,8 @@ let package = Package(
                 .product(name: "ConversationForkPlugin", package: "ConversationForkPlugin"),
                 .product(name: "AgentTurnNotificationPlugin", package: "AgentTurnNotificationPlugin"),
                 .product(name: "AppUpdatePlugin", package: "AppUpdatePlugin"),
-                .product(name: "DebugBadgePlugin", package: "DebugBadgePlugin"),
                 .product(name: "AskUserPlugin", package: "AskUserPlugin"),
+                .product(name: "SubAgentProviderPlugin", package: "SubAgentProviderPlugin"),
             ],
             resources: [
                 .process("Resources")

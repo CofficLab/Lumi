@@ -32,7 +32,7 @@ public final class InputPlugin: LumiPlugin {
                 id: id,
                 title: "Input Manager",
                 systemImage: "keyboard",
-                isPanelHeaderVisible: false
+                panelHeaderVisibility: .unsupported
             ) {
                 InputSettingsView()
             },

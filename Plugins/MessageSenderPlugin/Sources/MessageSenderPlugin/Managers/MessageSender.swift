@@ -25,7 +25,7 @@ import SuperLogKit
 public final class MessageSender: MessageSending, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-send-manager.service")
     public nonisolated static let emoji = "📤"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     @Published internal(set) var sendingConversationIDs: Set<UUID> = []
     @Published internal(set) var pendingMessageQueues: [UUID: [LumiPendingMessage]] = [:]
@@ -128,17 +128,11 @@ public final class MessageSender: MessageSending, SuperLog {
         } else if let selected = kernel?.conversations?.selectedConversationID {
             targetID = selected
         } else {
-            // No conversation selected - auto-create one with first message as title
-            let firstLine = trimmed.components(separatedBy: .newlines).first ?? trimmed
-            let maxLength = 40
-            let truncatedTitle = firstLine.count > maxLength
-                ? String(firstLine.prefix(maxLength)) + "..."
-                : firstLine
-
+            let initialTitle = Self.placeholderTitle(forFirstUserMessage: trimmed)
             if Self.verbose {
-                Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建新对话,标题=\"\(truncatedTitle)\"")
+                Self.logger.info("\(Self.t)解析目标会话 ➡️ 没有选中对话,自动创建新对话 title=\(initialTitle)")
             }
-            guard let newID = try? kernel?.conversations?.createConversation(title: truncatedTitle, projectPath: nil, providerID: nil, modelName: nil) else {
+            guard let newID = try? kernel?.conversations?.createConversation(title: initialTitle, projectPath: nil, providerID: nil, modelName: nil) else {
                 Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 创建对话失败")
                 throw LumiKernelError.noActiveConversation
             }
@@ -338,6 +332,17 @@ public final class MessageSender: MessageSending, SuperLog {
             return UUID(uuidString: string)
         }
         return nil
+    }
+
+    private nonisolated static let placeholderTitleMaxLength = 40
+
+    private nonisolated static func placeholderTitle(forFirstUserMessage text: String) -> String {
+        let collapsed = text
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard collapsed.count > placeholderTitleMaxLength else { return collapsed }
+        let end = collapsed.index(collapsed.startIndex, offsetBy: placeholderTitleMaxLength)
+        return String(collapsed[..<end]) + "…"
     }
 
     private func runAgentTurn(in conversationID: UUID) async {

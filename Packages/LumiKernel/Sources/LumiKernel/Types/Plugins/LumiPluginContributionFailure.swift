@@ -7,7 +7,8 @@ import Foundation
 /// `AgentToolComponent.toolContributionFailures`,最终由 UI 在「设置 → 插件」详情页
 /// 以红色 banner 呈现给用户。
 ///
-/// 设计上放在 LumiKernel (内核最底层),与 `LumiToolRegistrationError` 同层;
+/// 设计上放在 LumiKernel (内核最底层),与
+/// `Errors/LumiPluginContributionFailureAggregate.swift` 配套;
 /// UI 层只需依赖 `errorDescription`,无需感知具体哪个贡献点失败。
 public struct LumiPluginContributionFailure: Sendable, Equatable {
     /// 失败插件的唯一标识(`LumiPluginInfo.id`)。
@@ -32,29 +33,5 @@ public struct LumiPluginContributionFailure: Sendable, Equatable {
         self.pluginDisplayName = pluginDisplayName
         self.contribution = contribution
         self.errorDescription = errorDescription
-    }
-}
-
-/// 启动期插件工具加载失败的聚合错误。
-///
-/// 当所有插件 lifecycle 完成后收集工具,若失败列表非空,
-/// 就把失败列表包装成本错误抛出,由启动层走 `CrashedView` 呈现——
-/// 启动期插件失败视为需要用户介入的硬条件(区别于运行期插件开关触发的
-/// 软失败,后者只走「设置 → 插件」详情页 banner)。
-///
-/// `localizedDescription` 会列出每个失败插件的显示名与错误描述,便于用户
-/// 定位是哪个插件、什么原因。
-public struct LumiPluginContributionFailureAggregate: LocalizedError {
-    public let failures: [LumiPluginContributionFailure]
-
-    public init(_ failures: [LumiPluginContributionFailure]) {
-        self.failures = failures
-    }
-
-    public var errorDescription: String? {
-        guard !failures.isEmpty else { return "Plugin contribution failures" }
-        return "Plugin contribution failures:\n" + failures.map { failure in
-            "- \(failure.pluginDisplayName) [\(failure.contribution)]: \(failure.errorDescription)"
-        }.joined(separator: "\n")
     }
 }

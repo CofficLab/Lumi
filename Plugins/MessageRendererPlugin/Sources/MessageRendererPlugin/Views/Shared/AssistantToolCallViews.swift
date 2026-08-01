@@ -49,7 +49,8 @@ struct ToolCallRowsView: View {
 
     var body: some View {
         if verbosity == .brief {
-            LumiInlineToolCallListView(toolCalls: toolCalls)
+            // V1:ChatGPT 风格的「可折叠工具步骤组」——进行中展开,完成后收起成一行摘要。
+            CollapsibleToolStepGroup(message: message, toolCalls: toolCalls, verbosity: verbosity)
         } else {
             lumiCardRows
         }
@@ -75,6 +76,7 @@ struct ToolCallRowsView: View {
                 message: message,
                 toolCall: toolCall,
                 verbosity: verbosity,
+                showsDetails: verbosity != .brief,
                 parameterPopoverToolCallID: $parameterPopoverToolCallID,
                 resultPopoverToolCallID: $resultPopoverToolCallID
             )
@@ -126,23 +128,75 @@ enum ToolCallBriefSummaryFormatter {
     }
 }
 
+/// V1「可折叠工具步骤组」折叠态摘要的纯逻辑(便于单元测试)。
+///
+/// 文案样式(用户选定:数量 + 总耗时):
+/// - 进行中:`执行中 · 已完成 k/N`(+ 已完成部分的耗时)
+/// - 全部完成:`执行了 N 个步骤 · <总耗时>`
+/// - 有失败:`执行了 N 个步骤(X 失败) · <总耗时>`
+enum ToolStepGroupSummary {
+    /// 组内任一调用仍在执行 → loading;否则任一失败 → failed;否则 completed。
+    static func aggregateState(for toolCalls: [LumiToolCall]) -> ToolCallResultVisualState {
+        if toolCalls.contains(where: { $0.result == nil }) {
+            return .loading
+        }
+        if toolCalls.contains(where: { $0.result?.isError == true }) {
+            return .failed
+        }
+        return .completed
+    }
+
+    /// 折叠态摘要文案。
+    static func summaryText(for toolCalls: [LumiToolCall]) -> String {
+        let total = toolCalls.count
+        let finished = toolCalls.filter { $0.result != nil }.count
+        let state = aggregateState(for: toolCalls)
+
+        if state == .loading {
+            let progress = "执行中 · 已完成 \(finished)/\(total)"
+            if let duration = totalDuration(for: toolCalls) {
+                return "\(progress) · \(MessageViewHelpers.formatDuration(duration))"
+            }
+            return progress
+        }
+
+        var parts = ["执行了 \(total) 个步骤"]
+        let failed = toolCalls.filter { $0.result?.isError == true }.count
+        if failed > 0 {
+            parts[0] = "执行了 \(total) 个步骤(\(failed) 失败)"
+        }
+        if let duration = totalDuration(for: toolCalls) {
+            parts.append(MessageViewHelpers.formatDuration(duration))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// 已完成工具的耗时之和(进行中仅统计已完成的部分);无任何耗时数据时为 nil。
+    static func totalDuration(for toolCalls: [LumiToolCall]) -> TimeInterval? {
+        let durations = toolCalls.compactMap { $0.result?.duration }
+        guard !durations.isEmpty else { return nil }
+        return durations.reduce(0, +)
+    }
+}
+
 // MARK: - ToolCallRowView
 
-private struct ToolCallRowView: View {
+/// 单个工具调用卡片行。供 `ToolCallRowsView`(V2/V3)与
+/// `CollapsibleToolStepGroup`(V1 展开态)共用,故为 internal。
+struct ToolCallRowView: View {
     @LumiTheme private var theme
 
     let message: LumiChatMessage
     let toolCall: LumiToolCall
     let verbosity: LumiResponseVerbosity
+    /// 是否显示执行时长与参数/结果按钮。
+    /// - 旧路径(ToolCallRowsView):V1 false / V2·V3 true。
+    /// - V1 可折叠步骤组展开态:强制 `true`,让用户在 brief 下也能查看耗时与结果。
+    let showsDetails: Bool
     @Binding var parameterPopoverToolCallID: String?
     @Binding var resultPopoverToolCallID: String?
 
     @State private var isHovering = false
-
-    /// V1 (brief) 只显示描述，V2/V3 显示更多详情
-    private var showsDetails: Bool {
-        verbosity != .brief
-    }
 
     private var isParametersPresented: Bool {
         parameterPopoverToolCallID == toolCall.id
@@ -216,12 +270,13 @@ private struct ToolCallRowView: View {
                 resultButton
             }
         }
-        .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
-        .background(rowBackground)
-        .overlay(rowBorder)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .scaleEffect(isHovering ? 1.01 : 1)
-        .animation(.easeOut(duration: 0.12), value: isHovering)
+        .modifier(ToolCallRowContainerModifier(
+            showsDetails: showsDetails,
+            isHovering: isHovering,
+            rowBackground: { AnyView(rowBackground) },
+            rowBorder: { AnyView(rowBorder) },
+            hoverBackground: hoverBackground
+        ))
         .onHover { hovering in
             isHovering = hovering
         }
@@ -276,6 +331,14 @@ private struct ToolCallRowView: View {
         }
     }
 
+    /// 仅悬停时出现的一层极淡底色,提示该行可交互;默认透明以融入正文。
+    /// 仅用于 V1(inline)。
+    private var hoverBackground: Color {
+        guard isHovering else { return .clear }
+        return visualState.isFailure ? theme.error.opacity(0.10) : theme.textSecondary.opacity(0.06)
+    }
+
+    /// V2/V3 的持续卡片背景。
     private var rowBackground: some View {
         Group {
             if isHovering {
@@ -286,6 +349,7 @@ private struct ToolCallRowView: View {
         }
     }
 
+    /// V2/V3 的持续卡片描边。
     private var rowBorder: some View {
         RoundedRectangle(cornerRadius: 16, style: .continuous)
             .stroke(
@@ -311,6 +375,37 @@ private struct ToolCallRowView: View {
             if !isPresented, selection.wrappedValue == toolCall.id {
                 selection.wrappedValue = nil
             }
+        }
+    }
+}
+
+/// 工具调用行的容器样式,按 `showsDetails` 分流,确保 V1 的 inline 改动
+/// 不会波及 V2/V3 的卡片外观。
+private struct ToolCallRowContainerModifier: ViewModifier {
+    let showsDetails: Bool
+    let isHovering: Bool
+    @ViewBuilder let rowBackground: () -> AnyView
+    @ViewBuilder let rowBorder: () -> AnyView
+    let hoverBackground: Color
+
+    func body(content: Content) -> some View {
+        if showsDetails {
+            // V2/V3:持续可见的卡片。
+            content
+                .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
+                .background(rowBackground())
+                .overlay(rowBorder())
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .scaleEffect(isHovering ? 1.01 : 1)
+                .animation(.easeOut(duration: 0.12), value: isHovering)
+        } else {
+            // V1:inline,默认无背景/描边,仅悬停时一层极淡底色。
+            content
+                .padding(EdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6))
+                .background(hoverBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(Rectangle())
+                .animation(.easeOut(duration: 0.12), value: isHovering)
         }
     }
 }

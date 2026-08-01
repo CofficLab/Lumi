@@ -1,8 +1,6 @@
 import Foundation
 import SwiftUI
 
-// MARK: - Kernel Event Names
-
 /// Kernel-level event names centralized in LumiKernel.
 ///
 /// 这些事件由内核统一发出，插件与 UI 层通过 NotificationCenter 订阅。

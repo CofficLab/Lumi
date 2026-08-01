@@ -107,9 +107,50 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
 
     @MainActor
     private func runDelegate(task: String, kernel: LumiKernel) async -> String {
-        guard let provider = providerResolver(definition.providerID) else {
-            return "Error: Provider '\(definition.providerID)' not available for sub-agent '\(definition.id)'."
+        // Resolve the provider + model that will power this sub-agent. Two paths:
+        //  - Inherits selected provider: read the host's active selection live.
+        //    If none is set, surface a clear error so the main agent can tell
+        //    the user to pick a model (preferably one that supports tool calls).
+        //  - Pinned provider: resolve by the definition's providerID/modelID.
+        let provider: any LumiLLMProvider
+        let providerID: String
+        let resolvedModel: String
+
+        if definition.inheritsSelectedProvider {
+            guard let manager = kernel.llmProvider,
+                  let selectedProviderID = manager.selectedProviderID,
+                  let selectedModelID = manager.selectedModel,
+                  !selectedProviderID.isEmpty,
+                  !selectedModelID.isEmpty,
+                  let resolved = manager.llmProvider(id: selectedProviderID)
+            else {
+                return "Error: No provider/model is currently selected. Sub-agent '\(definition.displayName)' runs on the host's active model, so please select a provider and model that supports tool calls, then retry."
+            }
+            provider = resolved
+            providerID = selectedProviderID
+            resolvedModel = selectedModelID
+        } else {
+            guard let resolved = providerResolver(definition.providerID) else {
+                return "Error: Provider '\(definition.providerID)' not available for sub-agent '\(definition.id)'."
+            }
+            provider = resolved
+            providerID = definition.providerID
+            resolvedModel = definition.modelID
         }
+
+        // Pre-check tool-calling capability. Sub-agents cannot function without
+        // function/tool calling; without this gate the loop silently "succeeds"
+        // with a placeholder message (e.g. "[tool_calls unavailable in this
+        // format]") returned by models that don't support tools. Fail fast and
+        // tell the main agent to pick a tool-capable model instead.
+        let supportsTools = kernel.llmProvider?
+            .providerInfo(id: providerID)?
+            .modelCapabilities[resolvedModel]?
+            .supportsTools == true
+        guard supportsTools else {
+            return "Error: Model '\(resolvedModel)' does not support tool/function calling, which sub-agent '\(definition.displayName)' requires. Please select a model that supports tool calls, then retry."
+        }
+
         let tools = resolveTools()
         let runner = SubAgentLoopRunner()
         let projectPath = kernel.project?.currentProject?.path
@@ -119,7 +160,7 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
         )
         let result = await runner.run(
             provider: provider,
-            model: definition.modelID,
+            model: resolvedModel,
             systemPrompt: contextualSystemPrompt,
             task: task,
             tools: tools,
@@ -184,11 +225,6 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
         """
     }
 }
-
-public enum SubAgentError: Error, Sendable {
-    case missingArgument(String)
-}
-
 public struct SubAgentLoopResult: Sendable {
     public enum Status: Sendable {
         case completed

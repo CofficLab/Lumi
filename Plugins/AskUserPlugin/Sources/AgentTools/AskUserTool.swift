@@ -11,7 +11,7 @@ import SuperLogKit
 ///
 /// ## 工作流程
 ///
-/// 1. LLM 调用 ask_user 工具
+/// 1. LLM 调用 ask_user 工具（必须显式传 `mode`）
 /// 2. 工具返回结构化的 `AgentTurnControl.suspend` + JSON payload
 /// 3. AgentTurnManager 记录暂停状态并结束当前 turn
 /// 4. UI 渲染选择界面，用户点击选项
@@ -26,7 +26,16 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
     public static let info = LumiAgentToolInfo(
         id: "ask_user",
         displayName: "Ask User",
-        description: "Ask the user a question and wait for their response. Supports yes/no, multiple choice, and free text input. Use when you need user decision instead of assuming intent."
+        description: """
+        Ask the user a question and wait for their response. Use when you need a user decision instead of assuming intent.
+
+        FIRST choose a `mode`, then fill the other parameters to match it:
+        - mode="yes_no": the question can be genuinely answered with 是 or 否. Do NOT pass options. Example: "继续构建?"
+        - mode="choice": the answer must be one of a fixed set. You MUST pass a non-empty `options` array. Example: options=["Debug", "Release", "Profile"].
+        - mode="free_text": the question is open-ended and cannot be answered by yes/no or a fixed set. Do NOT pass options. Example: "冲突如何处理?", "接下来怎么做?", "想用什么分支名?".
+
+        CRITICAL — do NOT use mode="yes_no" for open-ended questions (anything asking how/why/what-next/which-plan). Those MUST use mode="free_text" (single answer) or mode="choice" (you supply the candidates). A yes/no dialog rendered for an open-ended question is a bug.
+        """
     )
 
     public init() {}
@@ -41,17 +50,31 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
                     "type": .string("string"),
                     "description": .string("Question to ask the user (e.g.: Should I continue?)"),
                 ]),
+                "mode": .object([
+                    "type": .string("string"),
+                    "enum": .array([.string("yes_no"), .string("choice"), .string("free_text")]),
+                    "description": .string("REQUIRED interaction mode. yes_no = answerable with 是/否 (no options); choice = pick from a fixed set (must pass options); free_text = open-ended question (no options). Pick the mode that matches the question, not yes_no for everything."),
+                ]),
                 "options": .object([
                     "type": .string("array"),
-                    "items": .object(["type": .string("string")]),
-                    "description": .string("List of options for user to choose (e.g.: [\"OptionA\", \"OptionB\"]), defaults to Yes/No. Must be provided when the question is not a simple yes/no."),
-                ]),
-                "allow_free_input": .object([
-                    "type": .string("boolean"),
-                    "description": .string("Whether to allow free text input (default false)"),
+                    "items": .object([
+                        "type": .string("object"),
+                        "properties": .object([
+                            "label": .object([
+                                "type": .string("string"),
+                                "description": .string("Short button text; also the value returned as the user's answer."),
+                            ]),
+                            "description": .object([
+                                "type": .string("string"),
+                                "description": .string("Optional longer explanation shown under the label."),
+                            ]),
+                        ]),
+                        "required": .array([.string("label")]),
+                    ]),
+                    "description": .string("Required when mode=\"choice\". Each item is {label, description?} (bare strings also accepted). Ignored for yes_no / free_text."),
                 ]),
             ]),
-            "required": .array([.string("question")]),
+            "required": .array([.string("question"), .string("mode")]),
         ])
     }
 
@@ -60,24 +83,45 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
             return Self.errorResult(message: "question is required and cannot be empty")
         }
 
-        // 检测是否是多选场景但没传 options
-        let hasOptions = arguments["options"] != nil
-        if !hasOptions && Self.lookLikeMultipleChoice(question) {
+        // mode 是必填的强制函数：LLM 必须先声明意图，杜绝「偷懒默认 yes_no」。
+        let mode = Self.resolvedMode(arguments)
+        guard let resolvedMode = mode else {
             return Self.errorResult(
-                message: "Your question appears to require multiple options, but the options parameter was not provided. Please provide an options list."
+                message: "mode is required. Choose one of: yes_no (是/否), choice (pick from options), free_text (open-ended)."
             )
         }
 
-        let options = Self.resolvedOptions(arguments)
-        let allowFreeInput = Self.resolvedAllowFreeInput(arguments)
+        // mode=choice 必须带 options
+        let options = Self.resolvedOptions(arguments, mode: resolvedMode)
+        if resolvedMode == "choice" {
+            guard !options.isEmpty, arguments["options"] != nil else {
+                return Self.errorResult(
+                    message: "mode=choice requires a non-empty options array. Pass options=[...] with the candidates, or switch to free_text."
+                )
+            }
+        }
 
-        logInvocation(question: question, options: options, allowFreeInput: allowFreeInput)
+        // 交叉校验（安全网）：拦截「明明是开放/多选问题却选了 yes_no」的误用。
+        if resolvedMode == "yes_no" {
+            if Self.lookLikeOpenEnded(question) {
+                return Self.errorResult(
+                    message: "mode=yes_no does not match this open-ended question. Use mode=\"free_text\" instead."
+                )
+            }
+            if !options.isEmpty, Self.lookLikeMultipleChoice(question) {
+                return Self.errorResult(
+                    message: "mode=yes_no does not match a multiple-choice question. Use mode=\"choice\" with options=[...]."
+                )
+            }
+        }
+
+        logInvocation(question: question, mode: resolvedMode, options: options)
 
         let pendingResponse = Self.buildPendingResponse(
             kernel: kernel,
             question: question,
             options: options,
-            allowFreeInput: allowFreeInput
+            mode: resolvedMode
         )
 
         let payload = try Self.encodePendingPayload(pendingResponse)
@@ -112,20 +156,64 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         )
     }
 
-    // MARK: - Option Resolution
+    // MARK: - Mode & Option Resolution
 
-    /// 解析并归一化 `options` 参数。
-    /// 仅当 `options` 是非空字符串数组时才使用；其他情况都回退到 `defaultOptions`。
-    static func resolvedOptions(_ arguments: [String: LumiJSONValue]) -> [String] {
-        guard let array = arguments.stringArray("options"), !array.isEmpty else {
-            return defaultOptions
-        }
-        return array
+    /// 解析 `mode` 参数；只接受三个合法值，否则返回 nil（由 execute 报错）。
+    static func resolvedMode(_ arguments: [String: LumiJSONValue]) -> String? {
+        guard let raw = arguments.string("mode") else { return nil }
+        return allowedModes.contains(raw) ? raw : nil
     }
 
-    /// 解析 `allow_free_input` 参数；缺失或非 Bool 时默认为 `false`。
-    static func resolvedAllowFreeInput(_ arguments: [String: LumiJSONValue]) -> Bool {
-        arguments.bool("allow_free_input") ?? false
+    /// 按 `mode` 归一化 `options`：
+    /// - `yes_no` → 强制是/否（忽略传入的 options）
+    /// - `choice` → 用传入的 options（解析失败不回退默认，让 execute 报错给 LLM 重试）
+    /// - `free_text` → 空数组（视图改用输入框）
+    ///
+    /// choice 分支自己遍历数组，兼容多种形态。**关键：不再静默回退默认**——
+    /// 解析失败应当显式暴露，而不是偷换成是/否掩盖问题。
+    static func resolvedOptions(_ arguments: [String: LumiJSONValue], mode: String) -> [AskUserOption] {
+        switch mode {
+        case "yes_no":
+            return defaultOptions
+        case "free_text":
+            return []
+        case "choice":
+            return Self.parseOptions(arguments["options"])
+        default:
+            return defaultOptions
+        }
+    }
+
+    /// 解析 LLM 传入的 `options` 参数为 `[AskUserOption]`。
+    /// 宽容地兼容多种合理形态：
+    /// - 对象有 `label` → 用 label，附 description
+    /// - 对象只有 `description`（无 label）→ 用 description 作 label（常见于选项本身就是一句话）
+    /// - 裸字符串 → 降级为 `{label}`
+    /// - 都缺失 / 非 string/object → 跳过该元素
+    static func parseOptions(_ value: LumiJSONValue?) -> [AskUserOption] {
+        guard case .array(let values) = value else { return [] }
+        var result: [AskUserOption] = []
+        result.reserveCapacity(values.count)
+        for element in values {
+            switch element {
+            case .object(let dict):
+                let label = dict.string("label")?.takeIfNonEmpty
+                    ?? dict.string("description")?.takeIfNonEmpty
+                    ?? dict.string("value")?.takeIfNonEmpty
+                    ?? dict.string("text")?.takeIfNonEmpty
+                guard let label else { continue }
+                let description = dict.string("description")
+                // 当 label 本就来自 description 时，不再重复作为副标题。
+                let finalDescription = (description?.takeIfNonEmpty == label) ? nil : description?.takeIfNonEmpty
+                result.append(AskUserOption(label: label, description: finalDescription))
+            case .string(let label):
+                if let nonEmpty = label.takeIfNonEmpty { result.append(AskUserOption(label: nonEmpty)) }
+            default:
+                // int/double/bool/null 等无法映射为候选项，跳过。
+                continue
+            }
+        }
+        return result
     }
 
     // MARK: - Pending Response Building
@@ -134,14 +222,14 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
     static func buildPendingResponse(
         kernel: LumiKernel,
         question: String,
-        options: [String],
-        allowFreeInput: Bool
+        options: [AskUserOption],
+        mode: String
     ) -> AskUserPendingResponse {
         AskUserPendingResponse(
             toolCallId: kernel.toolCallID,
             question: question,
             options: options,
-            allowFreeInput: allowFreeInput,
+            mode: mode,
             conversationId: kernel.conversationID.uuidString,
             verbosity: kernel.verbosity ?? "standard"
         )
@@ -161,9 +249,9 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
 
     // MARK: - Logging
 
-    func logInvocation(question: String, options: [String], allowFreeInput: Bool) {
+    func logInvocation(question: String, mode: String, options: [AskUserOption]) {
         guard Self.verbose else { return }
-        Self.logger.info("\(Self.t) AskUser tool called: \(question) options=\(options) freeInput=\(allowFreeInput)")
+        Self.logger.info("\(Self.t) AskUser tool called: \(question) mode=\(mode) options=\(options)")
     }
 
     static func errorResult(message: String) -> String {
@@ -180,7 +268,10 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
     // MARK: - Constants
 
     /// 当用户没有提供 `options` 参数（或提供非法值）时使用的默认选项。
-    static let defaultOptions: [String] = ["是", "否"]
+    static let defaultOptions: [AskUserOption] = [AskUserOption(label: "是"), AskUserOption(label: "否")]
+
+    /// `mode` 参数允许的合法值集合。
+    static let allowedModes: [String] = ["yes_no", "choice", "free_text"]
 
     /// 所有 JSON 编解码共享一个 encoder，配置为 pretty-printed 以便人工检查日志。
     private static let jsonEncoder: JSONEncoder = {
@@ -200,5 +291,30 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         let lowercased = question.lowercased()
         return chineseKeywords.contains { question.contains($0) }
             || englishKeywords.contains { lowercased.contains($0) }
+    }
+
+    /// 检测 question 是否是开放式问题（不能简单用是/否回答）。
+    /// 用于拦截 LLM 未传 `allow_free_input` 但问了开放式问题的情况。
+    static func lookLikeOpenEnded(_ question: String) -> Bool {
+        let chinesePatterns = [
+            "怎么办", "做什么", "怎么", "如何", "下一步", "接下来",
+            "为什么", "原因", "说明", "解释", "描述", "告诉我",
+        ]
+        let englishPatterns = [
+            "how", "what should", "what do", "what would", "why",
+            "explain", "describe", "tell me", "what's", "what is",
+        ]
+
+        let lowercased = question.lowercased()
+        return chinesePatterns.contains { question.contains($0) }
+            || englishPatterns.contains { lowercased.contains($0) }
+    }
+}
+
+private extension String {
+    /// 非空白字符串才返回，否则 nil。用于宽容解析候选项文本。
+    var takeIfNonEmpty: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }

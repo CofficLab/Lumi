@@ -37,7 +37,6 @@ let package = Package(
                 "Contributors",
                 "Models",
                 "Services",
-                "Support",
                 "Tools",
                 "ViewModels",
                 "Views",
