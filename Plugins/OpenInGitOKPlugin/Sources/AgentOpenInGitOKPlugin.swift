@@ -89,9 +89,24 @@ public enum GitOKLauncher {
     /// GitOK 的 Bundle ID
     public static let bundleID = "com.yueyi.GitOK"
 
-    /// 检查 GitOK 是否已安装
-    public static func isInstalled() -> Bool {
-        return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) != nil
+    /// 安装状态缓存：`urlForApplication` 是 LaunchServices 查询，重复调用（例如每次视图出现）
+    /// 会带来不必要的主线程开销。安装状态在进程内基本恒定，缓存一次后复用即可。
+    /// 访问隔离在 MainActor（与所有调用方——视图的 onAppear——一致）。
+    @MainActor private static var installedCache: Bool?
+
+    /// 检查 GitOK 是否已安装（带进程级缓存）
+    @MainActor public static func isInstalled() -> Bool {
+        if let cached = installedCache {
+            return cached
+        }
+        let installed = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) != nil
+        installedCache = installed
+        return installed
+    }
+
+    /// 失效缓存（例如 App 重新激活、或用户手动刷新后，重新探测安装状态）。
+    @MainActor public static func invalidateInstalledCache() {
+        installedCache = nil
     }
 
     /// 在 GitOK 中打开项目
