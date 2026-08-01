@@ -11,7 +11,7 @@ import SuperLogKit
 ///
 /// ## 工作流程
 ///
-/// 1. LLM 调用 ask_user 工具
+/// 1. LLM 调用 ask_user 工具（必须显式传 `mode`）
 /// 2. 工具返回结构化的 `AgentTurnControl.suspend` + JSON payload
 /// 3. AgentTurnManager 记录暂停状态并结束当前 turn
 /// 4. UI 渲染选择界面，用户点击选项
@@ -27,13 +27,14 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         id: "ask_user",
         displayName: "Ask User",
         description: """
-        Ask the user a question and wait for their response. Supports yes/no, multiple choice, and free text input. \
-        Use when you need user decision instead of assuming intent.
-        
-        IMPORTANT: Choose the right mode based on your question type:
-        - Yes/No: Only use the default mode (no options, no allow_free_input) when the question can be genuinely answered with 是 or 否. Example: "Should I continue building?"
-        - Multiple choice: Provide `options` when the answer must be one of specific choices. Example: options=["Debug", "Release", "Profile"].
-        - Free text: Set `allow_free_input: true` when the question is open-ended and cannot be answered with yes/no or a fixed set of options. Example: "What should I do next?", "How would you like to proceed?", "What branch should I create?". Do NOT use Yes/No mode for open-ended questions like "接下来怎么做?" — always use allow_free_input.
+        Ask the user a question and wait for their response. Use when you need a user decision instead of assuming intent.
+
+        FIRST choose a `mode`, then fill the other parameters to match it:
+        - mode="yes_no": the question can be genuinely answered with 是 or 否. Do NOT pass options. Example: "继续构建?"
+        - mode="choice": the answer must be one of a fixed set. You MUST pass a non-empty `options` array. Example: options=["Debug", "Release", "Profile"].
+        - mode="free_text": the question is open-ended and cannot be answered by yes/no or a fixed set. Do NOT pass options. Example: "冲突如何处理?", "接下来怎么做?", "想用什么分支名?".
+
+        CRITICAL — do NOT use mode="yes_no" for open-ended questions (anything asking how/why/what-next/which-plan). Those MUST use mode="free_text" (single answer) or mode="choice" (you supply the candidates). A yes/no dialog rendered for an open-ended question is a bug.
         """
     )
 
@@ -49,17 +50,18 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
                     "type": .string("string"),
                     "description": .string("Question to ask the user (e.g.: Should I continue?)"),
                 ]),
+                "mode": .object([
+                    "type": .string("string"),
+                    "enum": .array([.string("yes_no"), .string("choice"), .string("free_text")]),
+                    "description": .string("REQUIRED interaction mode. yes_no = answerable with 是/否 (no options); choice = pick from a fixed set (must pass options); free_text = open-ended question (no options). Pick the mode that matches the question, not yes_no for everything."),
+                ]),
                 "options": .object([
                     "type": .string("array"),
                     "items": .object(["type": .string("string")]),
-                    "description": .string("List of options for user to choose (e.g.: [\"OptionA\", \"OptionB\"]), defaults to Yes/No. Must be provided when the question is not a simple yes/no."),
-                ]),
-                "allow_free_input": .object([
-                    "type": .string("boolean"),
-                    "description": .string("Whether to allow free text input (default false)"),
+                    "description": .string("Required when mode=\"choice\" (e.g.: [\"Debug\", \"Release\"]). Ignored for yes_no / free_text."),
                 ]),
             ]),
-            "required": .array([.string("question")]),
+            "required": .array([.string("question"), .string("mode")]),
         ])
     }
 
@@ -68,32 +70,45 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
             return Self.errorResult(message: "question is required and cannot be empty")
         }
 
-        // 检测是否是多选场景但没传 options
-        let hasOptions = arguments["options"] != nil
-        if !hasOptions && Self.lookLikeMultipleChoice(question) {
+        // mode 是必填的强制函数：LLM 必须先声明意图，杜绝「偷懒默认 yes_no」。
+        let mode = Self.resolvedMode(arguments)
+        guard let resolvedMode = mode else {
             return Self.errorResult(
-                message: "Your question appears to require multiple options, but the options parameter was not provided. Please provide an options list."
+                message: "mode is required. Choose one of: yes_no (是/否), choice (pick from options), free_text (open-ended)."
             )
         }
 
-        // 检测是否是开放式问题但既没传 options 也没允许自由输入
-        let hasAllowFreeInput = arguments["allow_free_input"] != nil && Self.resolvedAllowFreeInput(arguments)
-        if !hasOptions && !hasAllowFreeInput && Self.lookLikeOpenEnded(question) {
-            return Self.errorResult(
-                message: "Your question appears to be open-ended (e.g., asking 'how', 'what next', 'why'), but allow_free_input was not enabled. Set allow_free_input to true for open-ended questions."
-            )
+        // mode=choice 必须带 options
+        let options = Self.resolvedOptions(arguments, mode: resolvedMode)
+        if resolvedMode == "choice" {
+            guard !options.isEmpty, arguments["options"] != nil else {
+                return Self.errorResult(
+                    message: "mode=choice requires a non-empty options array. Pass options=[...] with the candidates, or switch to free_text."
+                )
+            }
         }
 
-        let options = Self.resolvedOptions(arguments)
-        let allowFreeInput = Self.resolvedAllowFreeInput(arguments)
+        // 交叉校验（安全网）：拦截「明明是开放/多选问题却选了 yes_no」的误用。
+        if resolvedMode == "yes_no" {
+            if Self.lookLikeOpenEnded(question) {
+                return Self.errorResult(
+                    message: "mode=yes_no does not match this open-ended question. Use mode=\"free_text\" instead."
+                )
+            }
+            if !options.isEmpty, Self.lookLikeMultipleChoice(question) {
+                return Self.errorResult(
+                    message: "mode=yes_no does not match a multiple-choice question. Use mode=\"choice\" with options=[...]."
+                )
+            }
+        }
 
-        logInvocation(question: question, options: options, allowFreeInput: allowFreeInput)
+        logInvocation(question: question, mode: resolvedMode, options: options)
 
         let pendingResponse = Self.buildPendingResponse(
             kernel: kernel,
             question: question,
             options: options,
-            allowFreeInput: allowFreeInput
+            mode: resolvedMode
         )
 
         let payload = try Self.encodePendingPayload(pendingResponse)
@@ -128,20 +143,32 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         )
     }
 
-    // MARK: - Option Resolution
+    // MARK: - Mode & Option Resolution
 
-    /// 解析并归一化 `options` 参数。
-    /// 仅当 `options` 是非空字符串数组时才使用；其他情况都回退到 `defaultOptions`。
-    static func resolvedOptions(_ arguments: [String: LumiJSONValue]) -> [String] {
-        guard let array = arguments.stringArray("options"), !array.isEmpty else {
-            return defaultOptions
-        }
-        return array
+    /// 解析 `mode` 参数；只接受三个合法值，否则返回 nil（由 execute 报错）。
+    static func resolvedMode(_ arguments: [String: LumiJSONValue]) -> String? {
+        guard let raw = arguments.string("mode") else { return nil }
+        return allowedModes.contains(raw) ? raw : nil
     }
 
-    /// 解析 `allow_free_input` 参数；缺失或非 Bool 时默认为 `false`。
-    static func resolvedAllowFreeInput(_ arguments: [String: LumiJSONValue]) -> Bool {
-        arguments.bool("allow_free_input") ?? false
+    /// 按 `mode` 归一化 `options`：
+    /// - `yes_no` → 强制 `["是", "否"]`（忽略传入的 options）
+    /// - `choice` → 用传入的非空 options（execute 已保证非空；兜底回退默认）
+    /// - `free_text` → 空数组（视图改用输入框）
+    static func resolvedOptions(_ arguments: [String: LumiJSONValue], mode: String) -> [String] {
+        switch mode {
+        case "yes_no":
+            return defaultOptions
+        case "free_text":
+            return []
+        case "choice":
+            if let array = arguments.stringArray("options"), !array.isEmpty {
+                return array
+            }
+            return defaultOptions
+        default:
+            return defaultOptions
+        }
     }
 
     // MARK: - Pending Response Building
@@ -151,13 +178,13 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         kernel: LumiKernel,
         question: String,
         options: [String],
-        allowFreeInput: Bool
+        mode: String
     ) -> AskUserPendingResponse {
         AskUserPendingResponse(
             toolCallId: kernel.toolCallID,
             question: question,
             options: options,
-            allowFreeInput: allowFreeInput,
+            mode: mode,
             conversationId: kernel.conversationID.uuidString,
             verbosity: kernel.verbosity ?? "standard"
         )
@@ -177,9 +204,9 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
 
     // MARK: - Logging
 
-    func logInvocation(question: String, options: [String], allowFreeInput: Bool) {
+    func logInvocation(question: String, mode: String, options: [String]) {
         guard Self.verbose else { return }
-        Self.logger.info("\(Self.t) AskUser tool called: \(question) options=\(options) freeInput=\(allowFreeInput)")
+        Self.logger.info("\(Self.t) AskUser tool called: \(question) mode=\(mode) options=\(options)")
     }
 
     static func errorResult(message: String) -> String {
@@ -197,6 +224,9 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
 
     /// 当用户没有提供 `options` 参数（或提供非法值）时使用的默认选项。
     static let defaultOptions: [String] = ["是", "否"]
+
+    /// `mode` 参数允许的合法值集合。
+    static let allowedModes: [String] = ["yes_no", "choice", "free_text"]
 
     /// 所有 JSON 编解码共享一个 encoder，配置为 pretty-printed 以便人工检查日志。
     private static let jsonEncoder: JSONEncoder = {

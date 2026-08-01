@@ -85,29 +85,148 @@ struct AskUserToolTests {
         #expect(properties["options"] != nil)
     }
 
-    @Test("input schema has allow_free_input property")
-    func schemaHasAllowFreeInputProperty() {
+    @Test("input schema has mode property")
+    func schemaHasModeProperty() {
         guard case .object(let top) = tool.inputSchema,
               case .object(let properties) = top["properties"] else {
             Issue.record("schema should be object with properties")
             return
         }
-        #expect(properties["allow_free_input"] != nil)
+        #expect(properties["mode"] != nil)
     }
 
-    @Test("input schema requires question")
-    func schemaRequiresQuestion() {
+    @Test("input schema requires question and mode")
+    func schemaRequiresQuestionAndMode() {
         guard case .object(let top) = tool.inputSchema,
               case .array(let required) = top["required"] else {
             Issue.record("schema should be object with required array")
             return
         }
         #expect(required.contains(.string("question")))
+        #expect(required.contains(.string("mode")))
     }
 
     @Test("default options are yes and no")
     func defaultOptionsAreYesNo() {
         #expect(AskUserTool.defaultOptions == ["是", "否"])
+    }
+
+    @Test("allowed modes are exactly yes_no/choice/free_text")
+    func allowedModesAreFixed() {
+        #expect(AskUserTool.allowedModes == ["yes_no", "choice", "free_text"])
+    }
+
+    @Test("resolvedMode returns nil when missing")
+    func resolvedModeNilWhenMissing() {
+        #expect(AskUserTool.resolvedMode([:]) == nil)
+    }
+
+    @Test("resolvedMode rejects unknown values")
+    func resolvedModeRejectsUnknown() {
+        let args: [String: LumiJSONValue] = ["mode": .string("yes")]
+        #expect(AskUserTool.resolvedMode(args) == nil)
+    }
+
+    @Test("resolvedMode accepts the three legal values")
+    func resolvedModeAcceptsLegal() {
+        for value in ["yes_no", "choice", "free_text"] {
+            #expect(AskUserTool.resolvedMode(["mode": .string(value)]) == value)
+        }
+    }
+
+    @Test("resolvedOptions forces yes/no for yes_no mode")
+    func resolvedOptionsForYesNo() {
+        // 即使误传 options，yes_no 也强制是/否
+        let args: [String: LumiJSONValue] = ["options": .array([.string("A"), .string("B")])]
+        #expect(AskUserTool.resolvedOptions(args, mode: "yes_no") == ["是", "否"])
+    }
+
+    @Test("resolvedOptions is empty for free_text mode")
+    func resolvedOptionsForFreeText() {
+        let args: [String: LumiJSONValue] = ["options": .array([.string("A")])]
+        #expect(AskUserTool.resolvedOptions(args, mode: "free_text") == [])
+    }
+
+    @Test("resolvedOptions uses provided array for choice mode")
+    func resolvedOptionsForChoice() {
+        let args: [String: LumiJSONValue] = ["options": .array([.string("红"), .string("蓝")])]
+        #expect(AskUserTool.resolvedOptions(args, mode: "choice") == ["红", "蓝"])
+    }
+
+    @Test("resolvedOptions falls back to default when choice has empty options")
+    func resolvedOptionsChoiceFallback() {
+        let args: [String: LumiJSONValue] = ["options": .array([])]
+        #expect(AskUserTool.resolvedOptions(args, mode: "choice") == ["是", "否"])
+    }
+
+    @Test("execute rejects missing mode")
+    func executeRejectsMissingMode() async throws {
+        let kernel = LumiKernel()
+        let args: [String: LumiJSONValue] = ["question": .string("继续？")]
+        let result = try await tool.execute(arguments: args, kernel: kernel)
+        #expect(result.hasPrefix("__ASK_USER_ERROR__"))
+        #expect(result.contains("mode is required"))
+    }
+
+    @Test("execute rejects unknown mode value")
+    func executeRejectsUnknownMode() async throws {
+        let kernel = LumiKernel()
+        let args: [String: LumiJSONValue] = ["question": .string("继续？"), "mode": .string("maybe")]
+        let result = try await tool.execute(arguments: args, kernel: kernel)
+        #expect(result.hasPrefix("__ASK_USER_ERROR__"))
+        #expect(result.contains("mode is required"))
+    }
+
+    @Test("execute rejects choice mode without options")
+    func executeRejectsChoiceWithoutOptions() async throws {
+        let kernel = LumiKernel()
+        let args: [String: LumiJSONValue] = ["question": .string("选哪个？"), "mode": .string("choice")]
+        let result = try await tool.execute(arguments: args, kernel: kernel)
+        #expect(result.hasPrefix("__ASK_USER_ERROR__"))
+        #expect(result.contains("mode=choice requires"))
+    }
+
+    @Test("execute rejects yes_no for open-ended question")
+    func executeRejectsYesNoForOpenEnded() async throws {
+        let kernel = LumiKernel()
+        let args: [String: LumiJSONValue] = ["question": .string("冲突如何处理？"), "mode": .string("yes_no")]
+        let result = try await tool.execute(arguments: args, kernel: kernel)
+        #expect(result.hasPrefix("__ASK_USER_ERROR__"))
+        #expect(result.contains("free_text"))
+    }
+
+    @Test("execute accepts yes_no for a real yes/no question")
+    func executeAcceptsYesNoQuestion() async throws {
+        let kernel = LumiKernel()
+        let state = LumiToolExecutionContextState(
+            conversationID: UUID(),
+            toolCallID: "call-1",
+            toolName: "ask_user",
+            verbosity: "standard"
+        )
+        let args: [String: LumiJSONValue] = ["question": .string("是否继续构建？"), "mode": .string("yes_no")]
+        let result = try await kernel.withToolExecutionContextState(state) {
+            try await tool.execute(arguments: args, kernel: kernel)
+        }
+        #expect(!result.hasPrefix("__ASK_USER_ERROR__"))
+        #expect(result.contains("\"mode\" : \"yes_no\""))
+    }
+
+    @Test("execute accepts free_text mode")
+    func executeAcceptsFreeText() async throws {
+        let kernel = LumiKernel()
+        let state = LumiToolExecutionContextState(
+            conversationID: UUID(),
+            toolCallID: "call-2",
+            toolName: "ask_user",
+            verbosity: "standard"
+        )
+        let args: [String: LumiJSONValue] = ["question": .string("接下来怎么做？"), "mode": .string("free_text")]
+        let result = try await kernel.withToolExecutionContextState(state) {
+            try await tool.execute(arguments: args, kernel: kernel)
+        }
+        #expect(!result.hasPrefix("__ASK_USER_ERROR__"))
+        #expect(result.contains("\"mode\" : \"free_text\""))
     }
 
     @Test("lookLikeMultipleChoice detects Chinese keywords")
@@ -154,48 +273,13 @@ struct AskUserToolTests {
         #expect(!AskUserTool.lookLikeOpenEnded("Do you want to build?"))
     }
 
-    @Test("resolvedOptions returns default when missing")
-    func resolvedOptionsDefaultsWhenMissing() {
-        #expect(AskUserTool.resolvedOptions([:]) == ["是", "否"])
-    }
-
-    @Test("resolvedOptions returns default when empty array")
-    func resolvedOptionsDefaultsWhenEmptyArray() {
-        let args: [String: LumiJSONValue] = ["options": .array([])]
-        #expect(AskUserTool.resolvedOptions(args) == ["是", "否"])
-    }
-
-    @Test("resolvedOptions returns provided options")
-    func resolvedOptionsReturnsProvided() {
-        let args: [String: LumiJSONValue] = ["options": .array([.string("红"), .string("蓝"), .string("绿")])]
-        #expect(AskUserTool.resolvedOptions(args) == ["红", "蓝", "绿"])
-    }
-
-    @Test("resolvedAllowFreeInput defaults to false")
-    func resolvedAllowFreeInputDefaultsFalse() {
-        #expect(AskUserTool.resolvedAllowFreeInput([:]) == false)
-    }
-
-    @Test("resolvedAllowFreeInput returns true when set")
-    func resolvedAllowFreeInputTrueWhenSet() {
-        let args: [String: LumiJSONValue] = ["allow_free_input": .bool(true)]
-        #expect(AskUserTool.resolvedAllowFreeInput(args) == true)
-    }
-
-    @Test("resolvedAllowFreeInput returns false for non-bool")
-    func resolvedAllowFreeInputFalseForNonBool() {
-        // A string that cannot be parsed as bool should return nil → fallback to false
-        let args: [String: LumiJSONValue] = ["allow_free_input": .string("yesplease")]
-        #expect(AskUserTool.resolvedAllowFreeInput(args) == false)
-    }
-
     @Test("encodePendingPayload produces pretty-printed JSON")
     func encodePendingPayloadIsPrettyPrinted() throws {
         let response = AskUserPendingResponse(
             toolCallId: "call-1",
             question: "继续？",
             options: ["是", "否"],
-            allowFreeInput: false,
+            mode: "yes_no",
             conversationId: "11111111-2222-3333-4444-555555555555",
             verbosity: "standard"
         )
@@ -211,7 +295,7 @@ struct AskUserToolTests {
             toolCallId: "call-rt",
             question: "Which?",
             options: ["A", "B"],
-            allowFreeInput: true,
+            mode: "choice",
             conversationId: UUID().uuidString,
             verbosity: "detailed"
         )
@@ -221,9 +305,21 @@ struct AskUserToolTests {
         #expect(decoded.toolCallId == original.toolCallId)
         #expect(decoded.question == original.question)
         #expect(decoded.options == original.options)
-        #expect(decoded.allowFreeInput == original.allowFreeInput)
+        #expect(decoded.mode == original.mode)
         #expect(decoded.conversationId == original.conversationId)
         #expect(decoded.verbosity == original.verbosity)
+    }
+
+    @Test("pending payload without mode decodes (backward compat)")
+    func pendingPayloadBackwardCompat() throws {
+        // 旧 payload（无 mode 字段）必须能 decode，mode 为 nil，视图按 options 回退。
+        let json = """
+        {"toolCallId":"c1","question":"Continue?","options":["是","否"],"conversationId":"\(UUID().uuidString)","verbosity":"standard"}
+        """
+        let data = json.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode(AskUserPendingResponse.self, from: data)
+        #expect(decoded.mode == nil)
+        #expect(decoded.options == ["是", "否"])
     }
 
     @Test("encodeErrorPayload contains error field")
@@ -288,7 +384,7 @@ struct AskUserRowRendererTests {
     @Test("parsePendingResponse decodes valid payload")
     func parseDecodesValid() {
         let payload = """
-        {"toolCallId":"c1","question":"Continue?","options":["是","否"],"allowFreeInput":false,"conversationId":"\(UUID().uuidString)","verbosity":"standard"}
+        {"toolCallId":"c1","question":"Continue?","options":["是","否"],"mode":"yes_no","conversationId":"\(UUID().uuidString)","verbosity":"standard"}
         """
         let result = AskUserRowRenderer.parsePendingResponse(from: payload)
         #expect(result != nil)
