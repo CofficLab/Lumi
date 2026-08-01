@@ -29,13 +29,10 @@ public extension View {
     ///
     /// The divider gets a subtle inset shadow, becomes more prominent on hover,
     /// and uses the matching resize cursor without intercepting native dragging.
-    /// - Parameter hoverSlop: Extra cursor/hover distance on each side of the visible divider.
-    ///   This expands only the feedback area; `NSSplitView` still owns drag handling.
-    func appSplitDivider(
-        _ edge: AppSplitDividerEdge,
-        hoverSlop: CGFloat = 6
-    ) -> some View {
-        modifier(AppSplitDividerModifier(edge: edge, hoverSlop: hoverSlop))
+    /// Hover feedback is limited to the native draggable area so the cursor never
+    /// advertises resizing where `NSSplitView` cannot begin a drag.
+    func appSplitDivider(_ edge: AppSplitDividerEdge) -> some View {
+        modifier(AppSplitDividerModifier(edge: edge))
     }
 }
 
@@ -44,14 +41,12 @@ private struct AppSplitDividerModifier: ViewModifier {
     @State private var isHovered = false
 
     let edge: AppSplitDividerEdge
-    let hoverSlop: CGFloat
 
     func body(content: Content) -> some View {
         content
             .background(
                 AppSplitDividerHoverCoordinator(
                     edge: edge,
-                    hoverSlop: hoverSlop,
                     isHovered: $isHovered
                 )
             )
@@ -100,11 +95,10 @@ private struct AppSplitDividerModifier: ViewModifier {
 
 private struct AppSplitDividerHoverCoordinator: NSViewRepresentable {
     let edge: AppSplitDividerEdge
-    let hoverSlop: CGFloat
     @Binding var isHovered: Bool
 
     func makeNSView(context: Context) -> AppSplitDividerHoverCoordinatorView {
-        let view = AppSplitDividerHoverCoordinatorView(edge: edge, hoverSlop: hoverSlop)
+        let view = AppSplitDividerHoverCoordinatorView(edge: edge)
         view.onHoverChanged = { hovering in
             isHovered = hovering
         }
@@ -113,7 +107,6 @@ private struct AppSplitDividerHoverCoordinator: NSViewRepresentable {
 
     func updateNSView(_ nsView: AppSplitDividerHoverCoordinatorView, context: Context) {
         nsView.edge = edge
-        nsView.hoverSlop = hoverSlop
         nsView.onHoverChanged = { hovering in
             isHovered = hovering
         }
@@ -128,17 +121,16 @@ private struct AppSplitDividerHoverCoordinator: NSViewRepresentable {
 @MainActor
 private final class AppSplitDividerHoverCoordinatorView: NSView {
     var edge: AppSplitDividerEdge
-    var hoverSlop: CGFloat
     var onHoverChanged: ((Bool) -> Void)?
 
     private weak var splitView: NSSplitView?
     private var dividerIndex: Int?
     private var trackingArea: NSTrackingArea?
     private var resizeObserver: NSObjectProtocol?
+    private var isOverNativeDivider = false
 
-    init(edge: AppSplitDividerEdge, hoverSlop: CGFloat) {
+    init(edge: AppSplitDividerEdge) {
         self.edge = edge
-        self.hoverSlop = hoverSlop
         super.init(frame: .zero)
     }
 
@@ -185,6 +177,7 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
 
     func detach() {
         onHoverChanged?(false)
+        isOverNativeDivider = false
         if let trackingArea, let splitView {
             splitView.removeTrackingArea(trackingArea)
         }
@@ -203,18 +196,22 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
 
     override func mouseEntered(with event: NSEvent) {
         super.mouseEntered(with: event)
-        onHoverChanged?(true)
-        resizeCursor?.set()
+        updateHoverState(for: event)
     }
 
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
-        onHoverChanged?(false)
+        updateHoverState(false)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        updateHoverState(for: event)
     }
 
     override func cursorUpdate(with event: NSEvent) {
         super.cursorUpdate(with: event)
-        resizeCursor?.set()
+        updateHoverState(for: event)
     }
 
     private var resizeCursor: NSCursor? {
@@ -224,19 +221,17 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
 
     private func refreshTrackingArea() {
         guard let splitView,
-              let dividerIndex,
-              let dividerRect = dividerRect(in: splitView, at: dividerIndex)
+              dividerIndex != nil
         else { return }
         if let trackingArea {
             splitView.removeTrackingArea(trackingArea)
         }
 
-        // Native divider thickness is commonly 1pt. Expand only the tracking area so users
-        // discover the resize affordance sooner, while NSSplitView retains drag ownership.
-        let expandedDividerRect = expandedDividerRect(dividerRect)
+        // Track the full split view, then use hitTest below to identify the exact native
+        // divider hit-area. This keeps the resize cursor and draggable region aligned.
         let newTrackingArea = NSTrackingArea(
-            rect: expandedDividerRect,
-            options: [.activeInKeyWindow, .cursorUpdate, .mouseEnteredAndExited],
+            rect: splitView.bounds,
+            options: [.activeInKeyWindow, .cursorUpdate, .mouseEnteredAndExited, .mouseMoved],
             owner: self,
             userInfo: nil
         )
@@ -263,32 +258,33 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
         return paneIndex
     }
 
-    private func dividerRect(in splitView: NSSplitView, at index: Int) -> NSRect? {
-        guard splitView.arrangedSubviews.indices.contains(index) else { return nil }
-        let pane = splitView.arrangedSubviews[index]
-        if splitView.isVertical {
-            return NSRect(
-                x: pane.frame.maxX,
-                y: splitView.bounds.minY,
-                width: splitView.dividerThickness,
-                height: splitView.bounds.height
-            )
-        } else {
-            return NSRect(
-                x: splitView.bounds.minX,
-                y: pane.frame.maxY,
-                width: splitView.bounds.width,
-                height: splitView.dividerThickness
-            )
+    private func updateHoverState(for event: NSEvent) {
+        guard let splitView else {
+            updateHoverState(false)
+            return
         }
+
+        let location = splitView.convert(event.locationInWindow, from: nil)
+        let hitView = splitView.hitTest(location)
+        let isOverPane = splitView.arrangedSubviews.contains { pane in
+            guard let hitView else { return false }
+            return hitView === pane || hitView.isDescendant(of: pane)
+        }
+        updateHoverState(!isOverPane)
     }
 
-    private func expandedDividerRect(_ rect: NSRect) -> NSRect {
-        let distance = max(0, hoverSlop)
-        if edge.expectsVerticalSplit {
-            return rect.insetBy(dx: -distance, dy: 0)
-        } else {
-            return rect.insetBy(dx: 0, dy: -distance)
+    private func updateHoverState(_ isHovered: Bool) {
+        guard isOverNativeDivider != isHovered else {
+            if isHovered {
+                resizeCursor?.set()
+            }
+            return
+        }
+
+        isOverNativeDivider = isHovered
+        onHoverChanged?(isHovered)
+        if isHovered {
+            resizeCursor?.set()
         }
     }
 }

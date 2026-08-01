@@ -85,8 +85,8 @@ struct AppLayoutView: View {
             HSplitView {
                 RailView(kernel: kernel)
                     .frame(minWidth: 180, idealWidth: 240, maxWidth: 400)
-                    // 必须挂在 HSplitView 左侧 pane；8pt 让 resize cursor 不必紧贴 1px divider。
-                    .appSplitDivider(.trailing, hoverSlop: 8)
+                    // 必须挂在 HSplitView 左侧 pane，组件会直接识别原生可拖拽 divider。
+                    .appSplitDivider(.trailing)
                 mainSplitContent(layoutManager)
             }
         } else {
@@ -100,7 +100,7 @@ struct AppLayoutView: View {
             HSplitView {
                 PanelView(kernel: kernel, layoutManager: layoutManager)
                     .frame(minWidth: 280, maxWidth: .infinity)
-                    .appSplitDivider(.trailing, hoverSlop: 8)
+                    .appSplitDivider(.trailing)
                 ChatView(kernel: kernel)
                     .frame(minWidth: 280, idealWidth: 320, maxWidth: .infinity)
             }
