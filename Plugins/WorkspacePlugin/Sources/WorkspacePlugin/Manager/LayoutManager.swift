@@ -21,7 +21,7 @@ import SwiftUI
 public final class LayoutManager: WorkspaceProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout.service")
     nonisolated public static let emoji = "📐"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // MARK: - Persistence
 
@@ -45,7 +45,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             guard activeViewContainerID != oldValue else { return }
             let value = activeViewContainerID
             if Self.verbose {
-                Self.logger.info("\(Self.t)activeViewContainerID → \(value ?? "nil")")
+                Self.logger.info("\(Self.t)[ActivityBarTrace] activeViewContainerID old=\(oldValue ?? "nil", privacy: .public) new=\(value ?? "nil", privacy: .public)")
             }
             NotificationCenter.postActiveViewContainerIDDidChange(containerID: value)
         }
@@ -301,12 +301,18 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     }
 
     public func activateContainer(id: String) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)[ActivityBarTrace] activateContainer requested=\(id, privacy: .public) active-before=\(self.activeViewContainerID ?? "nil", privacy: .public)")
+        }
         activeViewContainerID = id
         if let container = viewContainer(id: id) {
             applyResolvedVisibility(for: id, container: container)
         }
         for observer in containerObservers {
             observer(id)
+        }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)[ActivityBarTrace] activateContainer completed=\(id, privacy: .public) active-after=\(self.activeViewContainerID ?? "nil", privacy: .public)")
         }
         // 保存到磁盘
         saveState()

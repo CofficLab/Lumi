@@ -1,10 +1,17 @@
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 import SwiftUI
 
-struct ActivityBar: View {
+struct ActivityBar: View, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "ui.activity-bar")
+    nonisolated static let emoji = "📍"
+    nonisolated static let verbose = true
+
     @Environment(\.openWindow) private var openWindow
     @ObservedObject var kernel: LumiKernel
+    @State private var highlightedContainerID: String?
 
     var body: some View {
         VStack(spacing: 6) {
@@ -38,41 +45,17 @@ struct ActivityBar: View {
             AppActivityIconButton(
                 systemImage: container.systemImage,
                 label: container.title,
-                isActive: workspace.activeViewContainerID == container.id
+                isActive: highlightedContainerID == container.id
             ) {
+                highlightedContainerID = container.id
                 workspace.activateContainer(id: container.id)
             }
         }
-    }
-}
-
-// MARK: - 预览
-
-#if DEBUG
-    #Preview("ActivityBar - Normal") {
-        // 正常态预览需构造真实 kernel,这里仅展示错误分支
-        ActivityBarErrorPreview()
-            .frame(height: 400)
-    }
-
-    #Preview("ActivityBar - Workspace Unavailable") {
-        ActivityBarErrorPreview()
-            .frame(height: 400)
-    }
-
-    /// 包装一层让预览能编译通过(完整预览需真实 LumiKernel 注入,
-    /// 在单元测试或 LumiApp 启动窗口中查看)。
-    private struct ActivityBarErrorPreview: View {
-        var body: some View {
-            VStack(spacing: 6) {
-                ActivityBarErrorView()
-                Spacer()
-                AppIconButton(systemImage: "gearshape", size: .regular) {}
-                    .help("Settings")
-            }
-            .padding(.vertical, 8)
-            .frame(width: 48)
-            .background(Color.gray.opacity(0.15))
+        .onAppear {
+            highlightedContainerID = workspace.activeViewContainerID
+        }
+        .onActiveViewContainerIDDidChange { activeID in
+            highlightedContainerID = activeID
         }
     }
-#endif
+}
