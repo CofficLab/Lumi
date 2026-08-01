@@ -17,10 +17,10 @@ import Testing
 }
 
 @MainActor
-@Test func pluginRegistersTitleHintMiddleware() {
+@Test func pluginDoesNotInjectTitleHintMiddleware() {
     let middlewares = ConversationTitlePlugin.sendMiddlewares(lumiCore: ())
 
-    #expect(middlewares.count == 1)
+    #expect(middlewares.isEmpty)
 }
 
 @MainActor
@@ -28,4 +28,22 @@ import Testing
     let tools = ConversationTitlePlugin.agentTools(lumiCore: ())
 
     #expect(tools.map(\.name).contains("update_conversation_title"))
+}
+
+@Test func autoTitleNormalizerKeepsFirstCleanLine() {
+    let title = AutoConversationTitleService.normalizeTitle("""
+    "修复 SwiftData 分页"
+
+    说明：这是标题
+    """)
+
+    #expect(title == "修复 SwiftData 分页")
+}
+
+@Test func autoTitleNormalizerCapsLongTitles() {
+    let title = AutoConversationTitleService.normalizeTitle(
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    )
+
+    #expect(title == "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN")
 }

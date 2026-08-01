@@ -14,19 +14,21 @@ public final class ConversationTitlePlugin: LumiPlugin, SuperLog {
     public let name = "Conversation Title"
     public let order = 77
     public let policy: LumiPluginPolicy = .alwaysOn
+    private var autoTitleService: AutoConversationTitleService?
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
+        autoTitleService = AutoConversationTitleService(kernel: kernel)
         if Self.verbose {
             Self.logger.info("\(Self.t)Registered conversation title header")
         }
     }
 
     public func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
-        Self.sendMiddlewares(lumiCore: kernel) + messages
+        messages
     }
 
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
