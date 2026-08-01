@@ -114,6 +114,7 @@ import SettingsPlugin
 import ShowImagePlugin
 import SkillPlugin
 import StoragePlugin
+import SubAgentProviderPlugin
 import TerminalPlugin
 import ThemeAuroraPlugin
 import ThemeAutumnPlugin
@@ -272,6 +273,8 @@ public enum PluginService {
             DebugBadgePlugin(),
             // User interaction
             AskUserPlugin(),
+            // Built-in provider-agnostic sub-agents (Explore / Code Review / Bug Fixer / Test Writer)
+            SubAgentProviderPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

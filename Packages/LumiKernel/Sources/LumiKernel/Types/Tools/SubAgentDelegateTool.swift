@@ -107,9 +107,38 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
 
     @MainActor
     private func runDelegate(task: String, kernel: LumiKernel) async -> String {
-        guard let provider = providerResolver(definition.providerID) else {
-            return "Error: Provider '\(definition.providerID)' not available for sub-agent '\(definition.id)'."
+        // Resolve the provider + model that will power this sub-agent. Two paths:
+        //  - Inherits selected provider: read the host's active selection live.
+        //    If none is set, surface a clear error so the main agent can tell
+        //    the user to pick a model (preferably one that supports tool calls).
+        //  - Pinned provider: resolve by the definition's providerID/modelID.
+        let resolvedProvider: (any LumiLLMProvider)?
+        let resolvedModel: String
+
+        if definition.inheritsSelectedProvider {
+            guard let manager = kernel.llmProvider,
+                  let providerID = manager.selectedProviderID,
+                  let modelID = manager.selectedModel,
+                  !providerID.isEmpty,
+                  !modelID.isEmpty,
+                  let provider = manager.llmProvider(id: providerID)
+            else {
+                return "Error: No provider/model is currently selected. Sub-agent '\(definition.displayName)' runs on the host's active model, so please select a provider and model that supports tool calls, then retry."
+            }
+            resolvedProvider = provider
+            resolvedModel = modelID
+        } else {
+            guard let provider = providerResolver(definition.providerID) else {
+                return "Error: Provider '\(definition.providerID)' not available for sub-agent '\(definition.id)'."
+            }
+            resolvedProvider = provider
+            resolvedModel = definition.modelID
         }
+
+        guard let provider = resolvedProvider else {
+            return "Error: No provider could be resolved for sub-agent '\(definition.id)'."
+        }
+
         let tools = resolveTools()
         let runner = SubAgentLoopRunner()
         let projectPath = kernel.project?.currentProject?.path
@@ -119,7 +148,7 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
         )
         let result = await runner.run(
             provider: provider,
-            model: definition.modelID,
+            model: resolvedModel,
             systemPrompt: contextualSystemPrompt,
             task: task,
             tools: tools,
