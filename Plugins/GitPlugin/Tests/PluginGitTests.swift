@@ -1,12 +1,14 @@
+import Foundation
 import Testing
 @testable import GitPlugin
 
 @MainActor
 @Test func packageLoads() async throws {
-    #expect(GitPlugin().id == "GitPlugin")
-    #expect(GitPlugin.name.isEmpty == false)
-    #expect(GitPlugin().order == 11)
-    #expect(GitPlugin().category == .development)
+    let plugin = GitPlugin()
+    #expect(plugin.id == "com.coffic.lumi.plugin.git")
+    #expect(plugin.name.isEmpty == false)
+    #expect(plugin.order == 11)
+    #expect(plugin.category == .development)
 }
 
 @MainActor
@@ -53,6 +55,24 @@ import Testing
     #expect(throws: GitServiceError.self) {
         try GitService.validatePath("/tmp/Lumi-Other/Repo", allowedDirectories: [allowed])
     }
+}
+
+@MainActor
+@Test func validatePathUsesCurrentProjectPathWhenToolPathIsBlank() throws {
+    let projectURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lumi-git-path-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+    defer {
+        try? FileManager.default.removeItem(at: projectURL)
+    }
+
+    let resolved = try GitService.validatePath(
+        "",
+        currentProjectPath: projectURL.path,
+        allowedDirectories: [projectURL.path]
+    )
+
+    #expect(resolved == (try GitService.validatePath(projectURL.path, allowedDirectories: [])))
 }
 
 @MainActor

@@ -22,7 +22,7 @@ public struct GitStatusTool: LumiAgentTool, SuperLog {
             "properties": .object([
                 "path": .object([
                     "type": .string("string"),
-                    "description": .string("Git repository path, defaults to current working directory"),
+                    "description": .string("Git repository path, defaults to the current project directory"),
                 ]),
             ]),
         ])
@@ -45,7 +45,7 @@ public struct GitStatusTool: LumiAgentTool, SuperLog {
 
         do {
             // 验证路径是否在允许的范围内
-            let validatedPath = try GitService.validatePath(path, allowedDirectories: kernel.allowedDirectories)
+            let validatedPath = try GitService.validatePath(path, currentProjectPath: kernel.currentProjectPath, allowedDirectories: kernel.allowedDirectories)
 
             let status = try await GitService.shared.getStatus(path: validatedPath)
             return formatStatus(status)

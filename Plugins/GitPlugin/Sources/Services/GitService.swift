@@ -363,7 +363,25 @@ public final class GitService: @unchecked Sendable, SuperLog {
         return resolvedPath
     }
 
+    public static func validatePath(
+        _ path: String?,
+        currentProjectPath: String?,
+        allowedDirectories: [String]
+    ) throws -> String {
+        let effectivePath = Self.effectivePath(path, currentProjectPath: currentProjectPath)
+        return try validatePath(effectivePath, allowedDirectories: allowedDirectories)
+    }
+
     // MARK: - Helper
+
+    private static func effectivePath(_ path: String?, currentProjectPath: String?) -> String? {
+        let trimmedPath = path?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let trimmedPath, !trimmedPath.isEmpty {
+            return trimmedPath
+        }
+        let trimmedProjectPath = currentProjectPath?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedProjectPath?.isEmpty == false ? trimmedProjectPath : nil
+    }
 
     private static func resolvePath(_ path: String?) -> String {
         let rawPath = path ?? FileManager.default.currentDirectoryPath

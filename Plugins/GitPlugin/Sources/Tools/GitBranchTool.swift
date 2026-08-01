@@ -22,7 +22,7 @@ public struct GitBranchTool: LumiAgentTool, SuperLog {
             "properties": .object([
                 "path": .object([
                     "type": .string("string"),
-                    "description": .string("Git repository path, defaults to current working directory"),
+                    "description": .string("Git repository path, defaults to the current project directory"),
                 ]),
                 "action": .object([
                     "type": .string("string"),
@@ -70,7 +70,7 @@ public struct GitBranchTool: LumiAgentTool, SuperLog {
         }
 
         // 验证路径是否在允许的范围内
-        let validatedPath = try GitService.validatePath(path, allowedDirectories: kernel.allowedDirectories)
+        let validatedPath = try GitService.validatePath(path, currentProjectPath: kernel.currentProjectPath, allowedDirectories: kernel.allowedDirectories)
 
         switch action {
         case "list":
