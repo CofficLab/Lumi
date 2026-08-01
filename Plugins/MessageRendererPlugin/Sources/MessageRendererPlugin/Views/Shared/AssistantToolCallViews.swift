@@ -270,13 +270,13 @@ struct ToolCallRowView: View {
                 resultButton
             }
         }
-        .padding(EdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6))
-        // inline 风格:默认无背景/边框,完全融入正文列;仅在悬停时给一层极淡底色作交互提示,
-        // 不再用持续可见的卡片背景+描边(避免与简洁的对话风格冲突)。
-        .background(hoverBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .contentShape(Rectangle())
-        .animation(.easeOut(duration: 0.12), value: isHovering)
+        .modifier(ToolCallRowContainerModifier(
+            showsDetails: showsDetails,
+            isHovering: isHovering,
+            rowBackground: { AnyView(rowBackground) },
+            rowBorder: { AnyView(rowBorder) },
+            hoverBackground: hoverBackground
+        ))
         .onHover { hovering in
             isHovering = hovering
         }
@@ -332,9 +332,32 @@ struct ToolCallRowView: View {
     }
 
     /// 仅悬停时出现的一层极淡底色,提示该行可交互;默认透明以融入正文。
+    /// 仅用于 V1(inline)。
     private var hoverBackground: Color {
         guard isHovering else { return .clear }
         return visualState.isFailure ? theme.error.opacity(0.10) : theme.textSecondary.opacity(0.06)
+    }
+
+    /// V2/V3 的持续卡片背景。
+    private var rowBackground: some View {
+        Group {
+            if isHovering {
+                visualState.isFailure ? theme.error.opacity(0.12) : Color.white.opacity(0.08)
+            } else {
+                visualState.isFailure ? theme.error.opacity(0.08) : theme.textSecondary.opacity(0.06)
+            }
+        }
+    }
+
+    /// V2/V3 的持续卡片描边。
+    private var rowBorder: some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .stroke(
+                visualState.isFailure
+                    ? theme.error.opacity(isHovering ? 0.45 : 0.28)
+                    : isHovering ? Color.white.opacity(0.12) : theme.textTertiary.opacity(0.06),
+                lineWidth: 1
+            )
     }
 
     private func toggleParameterPopover() {
@@ -352,6 +375,37 @@ struct ToolCallRowView: View {
             if !isPresented, selection.wrappedValue == toolCall.id {
                 selection.wrappedValue = nil
             }
+        }
+    }
+}
+
+/// 工具调用行的容器样式,按 `showsDetails` 分流,确保 V1 的 inline 改动
+/// 不会波及 V2/V3 的卡片外观。
+private struct ToolCallRowContainerModifier: ViewModifier {
+    let showsDetails: Bool
+    let isHovering: Bool
+    @ViewBuilder let rowBackground: () -> AnyView
+    @ViewBuilder let rowBorder: () -> AnyView
+    let hoverBackground: Color
+
+    func body(content: Content) -> some View {
+        if showsDetails {
+            // V2/V3:持续可见的卡片。
+            content
+                .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
+                .background(rowBackground())
+                .overlay(rowBorder())
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .scaleEffect(isHovering ? 1.01 : 1)
+                .animation(.easeOut(duration: 0.12), value: isHovering)
+        } else {
+            // V1:inline,默认无背景/描边,仅悬停时一层极淡底色。
+            content
+                .padding(EdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6))
+                .background(hoverBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(Rectangle())
+                .animation(.easeOut(duration: 0.12), value: isHovering)
         }
     }
 }
