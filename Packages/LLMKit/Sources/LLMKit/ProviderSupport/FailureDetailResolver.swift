@@ -50,6 +50,10 @@ public enum LumiLLMFailureDetailResolver {
                     providerName
                 )
             )
+        case let .apiKeyAccessFailed(provider, details):
+            return .message(
+                "\(provider) API Key could not be read from macOS Keychain. \(details)"
+            )
         case .allEndpointsFailed:
             return .message(
                 LumiLLMProviderSupportLocalization.string("All provider endpoints failed.", locale: locale)

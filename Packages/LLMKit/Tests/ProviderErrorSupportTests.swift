@@ -35,4 +35,27 @@ final class ProviderErrorSupportTests: XCTestCase {
         XCTAssertEqual(message.renderKind, "provider-api-key-missing")
         XCTAssertTrue(LumiLLMProviderAPIKeyMessage.isMissingAPIKeyMessage(message))
     }
+
+    func testAPIKeyAccessFailureUsesDistinctRenderKindAndPreservesDetails() {
+        let request = LumiLLMRequest(messages: [], model: "test-model")
+        let error = LumiLLMProviderSupportError.apiKeyAccessFailed(
+            provider: "Test Provider",
+            details: "Keychain read failed (OSStatus -25308: User interaction is not allowed.)"
+        )
+
+        let message = LumiLLMProviderErrorSupport.makeErrorMessage(
+            providerID: "test-provider",
+            conversationID: UUID(),
+            request: request,
+            error: error,
+            disposition: error.llmErrorDisposition,
+            renderKind: "provider-request-failed"
+        )
+
+        XCTAssertEqual(message.renderKind, LumiLLMProviderAPIKeyMessage.accessFailedRenderKind)
+        XCTAssertTrue(LumiLLMProviderAPIKeyMessage.isAPIKeyAccessFailedMessage(message))
+        XCTAssertFalse(LumiLLMProviderAPIKeyMessage.isMissingAPIKeyMessage(message))
+        XCTAssertTrue(message.rawErrorDetail?.contains("OSStatus -25308") == true)
+        XCTAssertEqual(message.metadata[LumiLLMErrorMetadata.retryable], "true")
+    }
 }

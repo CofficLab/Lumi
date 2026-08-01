@@ -112,6 +112,8 @@ public enum LumiLLMProviderErrorSupport {
         let resolvedRenderKind: String?
         if case LumiLLMProviderSupportError.missingAPIKey = error {
             resolvedRenderKind = renderKind ?? LumiLLMProviderAPIKeyMessage.renderKind
+        } else if case LumiLLMProviderSupportError.apiKeyAccessFailed = error {
+            resolvedRenderKind = LumiLLMProviderAPIKeyMessage.accessFailedRenderKind
         } else {
             resolvedRenderKind = renderKind
         }
