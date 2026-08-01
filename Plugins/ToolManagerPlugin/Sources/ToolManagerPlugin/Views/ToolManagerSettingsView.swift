@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import LumiUI
 import LumiKernel
 
@@ -7,7 +8,7 @@ import LumiKernel
 /// 设计要点:
 /// - 视图持有 `kernel` 引用,在每次打开时实时从内核拉取工具列表
 /// - 从 ToolCallRecordStore 读取调用统计(调用次数、失败次数、平均耗时)
-/// - 统计与工具列表分离展示,避免 View 类型冲突
+/// - 右上角有「Open Data Directory」按钮可打开存储目录
 public struct ToolManagerSettingsView: View {
     let kernel: LumiKernel
 
@@ -26,39 +27,29 @@ public struct ToolManagerSettingsView: View {
     }
 
     public var body: some View {
-        PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("Tool Manager", bundle: .module),
-            subtitle: LumiPluginLocalization.string("Manage and inspect available agent tools", bundle: .module),
-            showHeader: false,
-            scrollsContent: false
-        ) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Spacer()
-                    Text(totalToolLabel)
-                        .font(.appCaption)
-                        .foregroundStyle(.secondary)
-                }
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 14) {
+                header
 
-                if isLoading {
-                    ProgressView(LumiPluginLocalization.string("Loading...", bundle: .module))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if groups.isEmpty {
-                    AppEmptyState(
-                        icon: "wrench.and.screwdriver",
-                        title: LumiPluginLocalization.string("No Tools Registered", bundle: .module),
-                        description: LumiPluginLocalization.string("No tools are currently registered in the kernel. Enable plugins to make tools available to the LLM.", bundle: .module)
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 24) {
-                            // 工具调用统计
-                            if !toolStats.isEmpty {
-                                toolStatsSection
-                            }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        // 工具调用统计
+                        if !toolStats.isEmpty {
+                            toolStatsSection
+                        }
 
-                            // 可用工具列表
+                        // 可用工具列表
+                        if isLoading {
+                            ProgressView(LumiPluginLocalization.string("Loading...", bundle: .module))
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else if groups.isEmpty {
+                            AppEmptyState(
+                                icon: "wrench.and.screwdriver",
+                                title: LumiPluginLocalization.string("No Tools Registered", bundle: .module),
+                                description: LumiPluginLocalization.string("No tools are currently registered in the kernel. Enable plugins to make tools available to the LLM.", bundle: .module)
+                            )
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
                             ForEach(displayedGroups, id: \.pluginID) { group in
                                 pluginSection(pluginID: group.pluginID, tools: group.tools)
                             }
@@ -73,16 +64,34 @@ public struct ToolManagerSettingsView: View {
                                     }
                             }
                         }
-                        .padding(.bottom, 8)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.bottom, 8)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .task {
             await reload()
         }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Label(totalToolLabel, systemImage: "wrench.and.screwdriver")
+            Spacer()
+            AppButton(
+                LumiPluginLocalization.string("Open Data Directory", bundle: .module),
+                systemImage: "folder",
+                size: .small
+            ) {
+                openDataDirectory()
+            }
+        }
+        .font(.appCaption)
+        .foregroundStyle(.secondary)
     }
 
     // MARK: - Sections
@@ -111,7 +120,7 @@ public struct ToolManagerSettingsView: View {
         if isLoading {
             return LumiPluginLocalization.string("Loading...", bundle: .module)
         }
-        return "\(totalToolCount) tools"
+        return "\(totalToolCount) " + LumiPluginLocalization.string("tools", bundle: .module)
     }
 
     private var displayedGroups: [(pluginID: String, tools: [any LumiAgentTool])] {
@@ -172,6 +181,15 @@ public struct ToolManagerSettingsView: View {
             toolStats = await service.recordStore?.fetchToolStats() ?? []
         }
         isLoadingStats = false
+    }
+
+    // MARK: - Actions
+
+    private func openDataDirectory() {
+        guard let storage = kernel.storage else { return }
+        let url = storage.pluginDataDirectory(for: "ToolManager")
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(url)
     }
 }
 
