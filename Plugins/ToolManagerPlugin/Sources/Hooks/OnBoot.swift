@@ -17,6 +17,16 @@ public struct ToolManagerOnBootHook {
     public func execute(_ kernel: LumiKernel) async throws {
         let toolManagerService = ToolManagerService()
         toolManagerService.kernel = kernel
+
+        // 初始化工具调用记录存储(后台异步写入，不影响主流程)
+        if let storage = kernel.storage {
+            let databaseRootURL = storage.pluginDataDirectory(for: "ToolManager")
+            let store = ToolCallRecordStore(databaseRootURL: databaseRootURL)
+            // 启动后台定时刷新任务
+            store.startFlushTask()
+            toolManagerService.recordStore = store
+        }
+
         try kernel.registerToolManagerService(toolManagerService)
 
         if Self.verbose {
