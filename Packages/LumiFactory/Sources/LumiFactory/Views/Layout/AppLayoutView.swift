@@ -79,22 +79,12 @@ struct AppLayoutView: View {
         isChatVisible && layoutManager.activeViewContainerID != nil
     }
 
-    private func viewContainerID(for layoutManager: any WorkspaceProviding) -> String {
-        layoutManager.activeViewContainerID ?? ""
-    }
-
     @ViewBuilder
     private func splitLayout(_ layoutManager: any WorkspaceProviding) -> some View {
         if showRail(for: layoutManager) {
             HSplitView {
                 RailView(kernel: kernel)
                     .frame(minWidth: 180, idealWidth: 240, maxWidth: 400)
-                    .background(
-                        SplitViewDividerPersistence.rail(
-                            layoutState: layoutManager.layoutState,
-                            viewContainerID: viewContainerID(for: layoutManager)
-                        )
-                    )
                 mainSplitContent(layoutManager)
             }
         } else {
@@ -110,13 +100,6 @@ struct AppLayoutView: View {
                     .frame(minWidth: 280, maxWidth: .infinity)
                 ChatView(kernel: kernel)
                     .frame(minWidth: 280, idealWidth: 320, maxWidth: .infinity)
-                    .background(
-                        SplitViewDividerPersistence.chatSection(
-                            layoutState: layoutManager.layoutState,
-                            viewContainerID: viewContainerID(for: layoutManager),
-                            layout: .narrow
-                        )
-                    )
             }
         } else {
             PanelView(kernel: kernel, layoutManager: layoutManager)
