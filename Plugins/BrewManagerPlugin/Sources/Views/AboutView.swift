@@ -6,7 +6,7 @@ import SwiftUI
 
 /// Plugin about view for Brew Manager.
 /// Introduces the plugin's Homebrew package management capabilities.
-struct BrewManagerAboutView: View {
+struct AboutView: View {
     @LumiTheme private var theme
 
     var body: some View {
@@ -252,6 +252,6 @@ private struct RequirementsCard: View {
 }
 
 #Preview {
-    BrewManagerAboutView()
+    AboutView()
         .frame(width: 400, height: 800)
 }
