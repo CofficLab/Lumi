@@ -92,7 +92,7 @@ struct MessageListView: View {
                                 verbosity: viewModel.verbosity
                             )
                             .id(message.id)
-                            .padding(.horizontal, 6)
+                            .padding(.horizontal, 16)
                             .padding(.vertical, 4)
                         }
 
