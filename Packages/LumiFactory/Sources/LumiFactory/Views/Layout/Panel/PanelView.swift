@@ -21,6 +21,7 @@ struct PanelView: View {
                     .frame(maxWidth: .infinity)
                 PanelBodyView(layoutManager: layoutManager)
                     .frame(maxWidth: .infinity)
+                    .id(self.layoutManager.activeViewContainerID)
                 PanelBottomView(layoutManager: layoutManager)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
