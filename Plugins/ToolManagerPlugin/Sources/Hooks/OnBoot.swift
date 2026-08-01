@@ -19,8 +19,9 @@ public struct ToolManagerOnBootHook {
         toolManagerService.kernel = kernel
 
         // 初始化工具调用记录存储(后台异步写入，不影响主流程)
+        // 存储目录: kernel.storage.pluginDataDirectory(for: "ToolManager")
         if let storage = kernel.storage {
-            let databaseRootURL = storage.pluginDataDirectory(for: "ToolManager")
+            let databaseRootURL = await storage.pluginDataDirectory(for: "ToolManager")
             let store = ToolCallRecordStore(databaseRootURL: databaseRootURL)
             // 启动后台定时刷新任务
             store.startFlushTask()
