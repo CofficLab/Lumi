@@ -52,8 +52,12 @@ final class AutoConversationTitleService: SuperLog {
         }
 
         guard let kernel,
-              shouldGenerateTitle(conversationID: conversationID, messageID: messageID),
-              let firstUserMessage = firstUserMessage(in: conversationID) else {
+              let firstUserMessage = firstUserMessage(in: conversationID),
+              shouldGenerateTitle(
+                  conversationID: conversationID,
+                  messageID: messageID,
+                  firstUserMessage: firstUserMessage
+              ) else {
             return
         }
 
@@ -63,7 +67,10 @@ final class AutoConversationTitleService: SuperLog {
                 conversationID: conversationID
             )
             guard !title.isEmpty,
-                  shouldApplyGeneratedTitle(conversationID: conversationID) else {
+                  shouldApplyGeneratedTitle(
+                      conversationID: conversationID,
+                      firstUserMessageContent: firstUserMessage.content
+                  ) else {
                 return
             }
             _ = kernel.conversations?.updateConversationTitle(title, for: conversationID)
@@ -74,16 +81,29 @@ final class AutoConversationTitleService: SuperLog {
         }
     }
 
-    private func shouldGenerateTitle(conversationID: UUID, messageID: UUID) -> Bool {
-        shouldApplyGeneratedTitle(conversationID: conversationID)
-            && firstUserMessage(in: conversationID)?.id == messageID
+    private func shouldGenerateTitle(
+        conversationID: UUID,
+        messageID: UUID,
+        firstUserMessage: LumiChatMessage
+    ) -> Bool {
+        shouldApplyGeneratedTitle(
+            conversationID: conversationID,
+            firstUserMessageContent: firstUserMessage.content
+        ) && firstUserMessage.id == messageID
     }
 
-    private func shouldApplyGeneratedTitle(conversationID: UUID) -> Bool {
+    private func shouldApplyGeneratedTitle(
+        conversationID: UUID,
+        firstUserMessageContent: String
+    ) -> Bool {
         guard let conversation = kernel?.conversations?.conversations.first(where: { $0.id == conversationID }) else {
             return false
         }
-        return !conversation.hasCustomTitle
+        let currentTitle = conversation.displayTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if currentTitle.isEmpty || !conversation.hasCustomTitle {
+            return true
+        }
+        return currentTitle == Self.placeholderTitle(forFirstUserMessage: firstUserMessageContent)
     }
 
     private func firstUserMessage(in conversationID: UUID) -> LumiChatMessage? {
@@ -96,12 +116,10 @@ final class AutoConversationTitleService: SuperLog {
 
     private func generateTitle(for userMessage: String, conversationID: UUID) async throws -> String {
         guard let kernel,
-              let providerManager = kernel.llmProvider,
-              let provider = resolveProvider(for: conversationID, providerManager: providerManager) else {
+              let providerManager = kernel.llmProvider else {
             return ""
         }
 
-        let model = resolveModel(for: conversationID, provider: provider)
         let request = LumiLLMRequest(
             messages: [
                 LumiChatMessage(
@@ -115,36 +133,16 @@ final class AutoConversationTitleService: SuperLog {
                     content: userMessage
                 ),
             ],
-            model: model,
+            model: "",
             tools: []
         )
 
-        let response = try await provider.send(request)
-        return Self.normalizeTitle(response.content)
-    }
-
-    private func resolveProvider(
-        for conversationID: UUID,
-        providerManager: any LLMProviderManaging
-    ) -> (any LumiLLMProvider)? {
-        let conversationProviderID = kernel?.conversations?.providerID(for: conversationID)
-        if let conversationProviderID,
-           let provider = providerManager.llmProvider(id: conversationProviderID) {
-            return provider
-        }
-
-        if let selectedProviderID = providerManager.selectedProviderID,
-           let provider = providerManager.llmProvider(id: selectedProviderID) {
-            return provider
-        }
-
-        return providerManager.allLLMProviders().first
-    }
-
-    private func resolveModel(for conversationID: UUID, provider: any LumiLLMProvider) -> String {
-        kernel?.conversations?.modelName(for: conversationID)
-            ?? kernel?.llmProvider?.selectedModel
-            ?? type(of: provider).info.defaultModel
+        let title = try await providerManager.generateText(
+            request,
+            providerID: kernel.conversations?.providerID(for: conversationID),
+            model: kernel.conversations?.modelName(for: conversationID)
+        )
+        return Self.normalizeTitle(title)
     }
 
     private static let titlePrompt = """
@@ -156,6 +154,17 @@ final class AutoConversationTitleService: SuperLog {
     - Keep it short and specific.
     - Maximum 40 characters.
     """
+
+    private nonisolated static let placeholderTitleMaxLength = 40
+
+    nonisolated static func placeholderTitle(forFirstUserMessage text: String) -> String {
+        let collapsed = text
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard collapsed.count > placeholderTitleMaxLength else { return collapsed }
+        let end = collapsed.index(collapsed.startIndex, offsetBy: placeholderTitleMaxLength)
+        return String(collapsed[..<end]) + "…"
+    }
 
     nonisolated static func normalizeTitle(_ rawTitle: String) -> String {
         let firstLine = rawTitle

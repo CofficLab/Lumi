@@ -47,3 +47,11 @@ import Testing
 
     #expect(title == "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN")
 }
+
+@Test func autoTitlePlaceholderCollapsesAndTruncatesFirstMessage() {
+    let title = AutoConversationTitleService.placeholderTitle(
+        forFirstUserMessage: "  abcdefghij\nklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ  "
+    )
+
+    #expect(title == "abcdefghij klmnopqrstuvwxyzABCDEFGHIJKLM…")
+}
