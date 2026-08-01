@@ -57,8 +57,21 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
                 ]),
                 "options": .object([
                     "type": .string("array"),
-                    "items": .object(["type": .string("string")]),
-                    "description": .string("Required when mode=\"choice\" (e.g.: [\"Debug\", \"Release\"]). Ignored for yes_no / free_text."),
+                    "items": .object([
+                        "type": .string("object"),
+                        "properties": .object([
+                            "label": .object([
+                                "type": .string("string"),
+                                "description": .string("Short button text; also the value returned as the user's answer."),
+                            ]),
+                            "description": .object([
+                                "type": .string("string"),
+                                "description": .string("Optional longer explanation shown under the label."),
+                            ]),
+                        ]),
+                        "required": .array([.string("label")]),
+                    ]),
+                    "description": .string("Required when mode=\"choice\". Each item is {label, description?} (bare strings also accepted). Ignored for yes_no / free_text."),
                 ]),
             ]),
             "required": .array([.string("question"), .string("mode")]),
@@ -152,23 +165,46 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
     }
 
     /// 按 `mode` 归一化 `options`：
-    /// - `yes_no` → 强制 `["是", "否"]`（忽略传入的 options）
-    /// - `choice` → 用传入的非空 options（execute 已保证非空；兜底回退默认）
+    /// - `yes_no` → 强制是/否（忽略传入的 options）
+    /// - `choice` → 用传入的 options（execute 已保证非空；兜底回退默认）
     /// - `free_text` → 空数组（视图改用输入框）
-    static func resolvedOptions(_ arguments: [String: LumiJSONValue], mode: String) -> [String] {
+    ///
+    /// choice 分支自己遍历数组，兼容两种形态：对象取 `{label, description?}`，
+    /// 字符串降级为 `{label}`。**关键：对象不再被静默丢弃**（旧 `stringArray` 会把对象过滤成 nil）。
+    static func resolvedOptions(_ arguments: [String: LumiJSONValue], mode: String) -> [AskUserOption] {
         switch mode {
         case "yes_no":
             return defaultOptions
         case "free_text":
             return []
         case "choice":
-            if let array = arguments.stringArray("options"), !array.isEmpty {
-                return array
-            }
-            return defaultOptions
+            let parsed = Self.parseOptions(arguments["options"])
+            return parsed.isEmpty ? defaultOptions : parsed
         default:
             return defaultOptions
         }
+    }
+
+    /// 解析 LLM 传入的 `options` 参数为 `[AskUserOption]`。
+    /// 兼容对象（`{label, description?}`）与裸字符串；其他类型被跳过并记录为解析失败。
+    /// 返回 nil / 空数组表示没有可用选项（由调用方决定是否回退默认）。
+    static func parseOptions(_ value: LumiJSONValue?) -> [AskUserOption] {
+        guard case .array(let values) = value else { return [] }
+        var result: [AskUserOption] = []
+        result.reserveCapacity(values.count)
+        for element in values {
+            switch element {
+            case .object(let dict):
+                guard let label = dict.string("label"), !label.isEmpty else { continue }
+                result.append(AskUserOption(label: label, description: dict.string("description")))
+            case .string(let label):
+                if !label.isEmpty { result.append(AskUserOption(label: label)) }
+            default:
+                // int/double/bool/null 等无法映射为候选项，跳过。
+                continue
+            }
+        }
+        return result
     }
 
     // MARK: - Pending Response Building
@@ -177,7 +213,7 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
     static func buildPendingResponse(
         kernel: LumiKernel,
         question: String,
-        options: [String],
+        options: [AskUserOption],
         mode: String
     ) -> AskUserPendingResponse {
         AskUserPendingResponse(
@@ -204,7 +240,7 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
 
     // MARK: - Logging
 
-    func logInvocation(question: String, mode: String, options: [String]) {
+    func logInvocation(question: String, mode: String, options: [AskUserOption]) {
         guard Self.verbose else { return }
         Self.logger.info("\(Self.t) AskUser tool called: \(question) mode=\(mode) options=\(options)")
     }
@@ -223,7 +259,7 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
     // MARK: - Constants
 
     /// 当用户没有提供 `options` 参数（或提供非法值）时使用的默认选项。
-    static let defaultOptions: [String] = ["是", "否"]
+    static let defaultOptions: [AskUserOption] = [AskUserOption(label: "是"), AskUserOption(label: "否")]
 
     /// `mode` 参数允许的合法值集合。
     static let allowedModes: [String] = ["yes_no", "choice", "free_text"]

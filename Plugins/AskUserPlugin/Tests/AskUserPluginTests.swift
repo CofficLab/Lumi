@@ -108,7 +108,7 @@ struct AskUserToolTests {
 
     @Test("default options are yes and no")
     func defaultOptionsAreYesNo() {
-        #expect(AskUserTool.defaultOptions == ["是", "否"])
+        #expect(AskUserTool.defaultOptions == [AskUserOption(label: "是"), AskUserOption(label: "否")])
     }
 
     @Test("allowed modes are exactly yes_no/choice/free_text")
@@ -138,7 +138,7 @@ struct AskUserToolTests {
     func resolvedOptionsForYesNo() {
         // 即使误传 options，yes_no 也强制是/否
         let args: [String: LumiJSONValue] = ["options": .array([.string("A"), .string("B")])]
-        #expect(AskUserTool.resolvedOptions(args, mode: "yes_no") == ["是", "否"])
+        #expect(AskUserTool.resolvedOptions(args, mode: "yes_no") == [AskUserOption(label: "是"), AskUserOption(label: "否")])
     }
 
     @Test("resolvedOptions is empty for free_text mode")
@@ -147,16 +147,65 @@ struct AskUserToolTests {
         #expect(AskUserTool.resolvedOptions(args, mode: "free_text") == [])
     }
 
-    @Test("resolvedOptions uses provided array for choice mode")
+    @Test("resolvedOptions uses provided strings for choice mode")
     func resolvedOptionsForChoice() {
         let args: [String: LumiJSONValue] = ["options": .array([.string("红"), .string("蓝")])]
-        #expect(AskUserTool.resolvedOptions(args, mode: "choice") == ["红", "蓝"])
+        #expect(AskUserTool.resolvedOptions(args, mode: "choice") == [AskUserOption(label: "红"), AskUserOption(label: "蓝")])
+    }
+
+    @Test("resolvedOptions preserves structured objects with descriptions for choice mode")
+    func resolvedOptionsForChoiceStructured() {
+        // 回归测试：LLM 返回带 label+description 的对象数组，必须全部保留（旧实现会静默丢弃）。
+        let args: [String: LumiJSONValue] = ["options": .array([
+            .object([
+                "label": .string("保留徽章+整栏底色"),
+                "description": .string("右上角加 DEBUG 文字，整栏换成 warning 底色"),
+            ]),
+            .object([
+                "label": .string("仅整栏换底色"),
+                "description": .string("去掉徽章，只换背景色"),
+            ]),
+            .object([
+                "label": .string("仅顶部细色条"),
+            ]),
+        ])]
+        let result = AskUserTool.resolvedOptions(args, mode: "choice")
+        #expect(result.count == 3)
+        #expect(result[0].label == "保留徽章+整栏底色")
+        #expect(result[0].description == "右上角加 DEBUG 文字，整栏换成 warning 底色")
+        #expect(result[1].label == "仅整栏换底色")
+        #expect(result[2].label == "仅顶部细色条")
+        #expect(result[2].description == nil)
+    }
+
+    @Test("resolvedOptions accepts mixed string and object array for choice mode")
+    func resolvedOptionsForChoiceMixed() {
+        let args: [String: LumiJSONValue] = ["options": .array([
+            .string("裸字符串选项"),
+            .object(["label": .string("对象选项"), "description": .string("说明")]),
+        ])]
+        let result = AskUserTool.resolvedOptions(args, mode: "choice")
+        #expect(result.count == 2)
+        #expect(result[0] == AskUserOption(label: "裸字符串选项"))
+        #expect(result[1] == AskUserOption(label: "对象选项", description: "说明"))
+    }
+
+    @Test("resolvedOptions skips options without a usable label")
+    func resolvedOptionsSkipsBadElements() {
+        // 非 string/object 元素、缺 label 的对象都被跳过，不导致整体回退。
+        let args: [String: LumiJSONValue] = ["options": .array([
+            .int(123),
+            .object(["description": .string("缺 label")]),
+            .string("有效选项"),
+        ])]
+        let result = AskUserTool.resolvedOptions(args, mode: "choice")
+        #expect(result == [AskUserOption(label: "有效选项")])
     }
 
     @Test("resolvedOptions falls back to default when choice has empty options")
     func resolvedOptionsChoiceFallback() {
         let args: [String: LumiJSONValue] = ["options": .array([])]
-        #expect(AskUserTool.resolvedOptions(args, mode: "choice") == ["是", "否"])
+        #expect(AskUserTool.resolvedOptions(args, mode: "choice") == [AskUserOption(label: "是"), AskUserOption(label: "否")])
     }
 
     @Test("execute rejects missing mode")
@@ -278,7 +327,7 @@ struct AskUserToolTests {
         let response = AskUserPendingResponse(
             toolCallId: "call-1",
             question: "继续？",
-            options: ["是", "否"],
+            options: [AskUserOption(label: "是"), AskUserOption(label: "否")],
             mode: "yes_no",
             conversationId: "11111111-2222-3333-4444-555555555555",
             verbosity: "standard"
@@ -294,7 +343,7 @@ struct AskUserToolTests {
         let original = AskUserPendingResponse(
             toolCallId: "call-rt",
             question: "Which?",
-            options: ["A", "B"],
+            options: [AskUserOption(label: "A"), AskUserOption(label: "B", description: "second")],
             mode: "choice",
             conversationId: UUID().uuidString,
             verbosity: "detailed"
@@ -319,7 +368,23 @@ struct AskUserToolTests {
         let data = json.data(using: .utf8)!
         let decoded = try JSONDecoder().decode(AskUserPendingResponse.self, from: data)
         #expect(decoded.mode == nil)
-        #expect(decoded.options == ["是", "否"])
+        #expect(decoded.options == [AskUserOption(label: "是"), AskUserOption(label: "否")])
+    }
+
+    @Test("AskUserOption encodes as bare string when description is nil")
+    func optionEncodesAsBareString() throws {
+        // 无 description 时编码为裸字符串，保持与旧 wire 格式一致。
+        let encoded = try JSONEncoder().encode(AskUserOption(label: "是"))
+        // 应为 JSON 字符串 "是"，而非对象
+        #expect(String(decoding: encoded, as: UTF8.self) == "\"是\"")
+    }
+
+    @Test("AskUserOption encodes as object when description is present")
+    func optionEncodesAsObject() throws {
+        let encoded = try JSONEncoder().encode(AskUserOption(label: "方案A", description: "说明"))
+        let json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: String])
+        #expect(json["label"] == "方案A")
+        #expect(json["description"] == "说明")
     }
 
     @Test("encodeErrorPayload contains error field")

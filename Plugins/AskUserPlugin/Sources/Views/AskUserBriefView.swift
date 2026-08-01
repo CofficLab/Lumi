@@ -60,40 +60,47 @@ public struct AskUserBriefView: View {
     }
 
     /// 选项按钮：是/否 用绿/红高亮，其余候选项平铺为蓝色按钮（不再折叠到「其他」下拉）。
-    /// 用 VStack+HStack 让候选项在装不下时折行，比固定 HStack 更稳。
     @ViewBuilder
     private var optionsButtons: some View {
         // 候选项通常不多（2-4 个）；单行排列，SwiftUI 负责布局。
         HStack(spacing: 8) {
-            ForEach(response.options, id: \.self) { option in
+            ForEach(response.options) { option in
                 optionButton(option)
             }
         }
     }
 
     @ViewBuilder
-    private func optionButton(_ option: String) -> some View {
+    private func optionButton(_ option: AskUserOption) -> some View {
         let color: Color = {
-            if option == "是" { return .green }
-            if option == "否" { return .red }
+            if option.label == "是" { return .green }
+            if option.label == "否" { return .red }
             return .blue
         }()
         Button {
-            submitAnswer(option)
+            submitAnswer(option.label)
         } label: {
-            Text(option)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(color)
-                )
+            VStack(spacing: 2) {
+                Text(option.label)
+                    .font(.system(size: 13, weight: .medium))
+                if let description = option.description {
+                    Text(description)
+                        .font(.system(size: 10))
+                        .opacity(0.9)
+                        .lineLimit(1)
+                }
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(color)
+            )
         }
         .buttonStyle(.plain)
         .disabled(responded)
-        .opacity(responded && selectedAnswer != option ? 0.55 : 1)
+        .opacity(responded && selectedAnswer != option.label ? 0.55 : 1)
     }
 
     /// 自由输入行（mode == free_text）。

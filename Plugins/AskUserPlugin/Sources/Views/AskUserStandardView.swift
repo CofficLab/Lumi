@@ -73,28 +73,36 @@ public struct AskUserStandardView: View {
     /// 选项列表；回答后仅禁用，避免用户误以为问题消失。
     private var optionsList: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(response.options, id: \.self) { option in
+            ForEach(response.options) { option in
                 Button {
-                    submitAnswer(option)
+                    submitAnswer(option.label)
                 } label: {
-                    HStack {
-                        Text(option)
-                            .font(.system(size: 13))
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(option.label)
+                                .font(.system(size: 13))
+                            if let description = option.description {
+                                Text(description)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(2)
+                            }
+                        }
                         Spacer()
-                        Image(systemName: selectedAnswer == option ? "checkmark.circle.fill" : "chevron.right")
+                        Image(systemName: selectedAnswer == option.label ? "checkmark.circle.fill" : "chevron.right")
                             .font(.system(size: 10))
-                            .foregroundColor(selectedAnswer == option ? .green : .secondary)
+                            .foregroundColor(selectedAnswer == option.label ? .green : .secondary)
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(selectedAnswer == option ? Color.green.opacity(0.12) : Color(white: 0.95))
+                            .fill(selectedAnswer == option.label ? Color.green.opacity(0.12) : Color(white: 0.95))
                     )
                 }
                 .buttonStyle(.plain)
                 .disabled(responded)
-                .opacity(responded && selectedAnswer != option ? 0.55 : 1)
+                .opacity(responded && selectedAnswer != option.label ? 0.55 : 1)
             }
         }
     }
