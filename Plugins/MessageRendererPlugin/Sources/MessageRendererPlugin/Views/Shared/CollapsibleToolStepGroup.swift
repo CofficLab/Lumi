@@ -30,6 +30,9 @@ struct CollapsibleToolStepGroup: View {
     /// 用户的手动展开/收起覆盖;`nil` 表示沿用默认(由 `isActive` 决定)。
     @State private var userOverride: Bool?
 
+    /// 表头悬停态;仅用于显隐 chevron。
+    @State private var isHovering = false
+
     /// 本组是否属于"当前正在进行的 turn" → 默认展开。
     private var isActive: Bool {
         activeIDs.contains(message.id)
@@ -80,14 +83,19 @@ struct CollapsibleToolStepGroup: View {
                     .foregroundColor(summaryColor)
                     .lineLimit(1)
 
-                // chevron 紧贴摘要文字右侧(不再用 Spacer 推到行尾)。
+                // chevron 紧贴摘要文字右侧(不再用 Spacer 推到行尾);默认隐藏,悬停时显现。
                 Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
+                    .opacity(isHovering ? 1 : 0)
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .animation(.easeOut(duration: 0.12), value: isHovering)
     }
 
     private var statusIcon: some View {
