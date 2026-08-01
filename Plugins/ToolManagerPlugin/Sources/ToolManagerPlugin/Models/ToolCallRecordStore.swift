@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import LumiKernel
+import SuperLogKit
 import os
 
 /// 工具调用记录的纯数据副本,用于在 SwiftUI 视图中展示,
@@ -42,8 +43,10 @@ struct ToolCallRecordDTO: Identifiable, Sendable {
 /// 存储目录: `storage.pluginDataDirectory(for: "ToolManager")`。
 ///
 /// 记录为后台异步操作,不影响主流程性能。
-actor ToolCallRecordStore {
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "ToolCallRecordStore")
+actor ToolCallRecordStore: SuperLog {
+    nonisolated static let emoji = "💾"
+    nonisolated static let verbose: Bool = false
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-manager.records")
 
     private let modelContainer: ModelContainer
     private let modelContext: ModelContext
@@ -70,9 +73,11 @@ actor ToolCallRecordStore {
         let container: ModelContainer
         do {
             container = try ModelContainer(for: schema, configurations: [configuration])
-            Self.logger.info("ToolCallRecordStore 已初始化: \(storeURL.path)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)初始化完成,数据库位于 \(storeURL.path)")
+            }
         } catch {
-            Self.logger.error("创建 ToolCallRecordStore 失败,回退到内存容器: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)创建失败,回退到内存容器：\(error.localizedDescription)")
             container = (try? ModelContainer(for: ToolCallRecordModel.self)) ?? (try! ModelContainer())
         }
         self.modelContainer = container
@@ -284,9 +289,11 @@ actor ToolCallRecordStore {
 
         do {
             try modelContext.save()
-            Self.logger.debug("ToolCallRecordStore: 刷新 \(recordsToSave.count) 条记录")
+            if Self.verbose {
+                Self.logger.debug("\(Self.t)刷新 \(recordsToSave.count) 条记录")
+            }
         } catch {
-            Self.logger.error("ToolCallRecordStore: 保存失败: \(error.localizedDescription)")
+            Self.logger.error("\(Self.t)保存失败：\(error.localizedDescription)")
         }
     }
 }
