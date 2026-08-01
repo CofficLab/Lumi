@@ -11,7 +11,7 @@ import SwiftUI
 /// 在状态栏添加图标，点击后在浏览器中打开当前项目的远程仓库地址。
 /// 当前项目路径由内核的 `ProjectProviding` 提供（响应式）。
 @MainActor
-public final class AgentOpenRemotePlugin: LumiPlugin {
+public final class OpenRemotePlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.open-remote")
 
     public let id = "com.coffic.lumi.plugin.open-remote"
