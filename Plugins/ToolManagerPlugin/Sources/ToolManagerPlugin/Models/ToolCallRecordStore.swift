@@ -56,6 +56,9 @@ actor ToolCallRecordStore {
 
     /// - Parameter databaseRootURL: 数据库根目录(`pluginDataDirectory(for:)` 的返回值)。
     init(databaseRootURL: URL) {
+        // 确保目录存在
+        try? FileManager.default.createDirectory(at: databaseRootURL, withIntermediateDirectories: true)
+
         let schema = Schema([ToolCallRecordModel.self])
         let storeURL = databaseRootURL.appendingPathComponent("tool_calls.sqlite", isDirectory: false)
         let configuration = ModelConfiguration(
@@ -67,6 +70,7 @@ actor ToolCallRecordStore {
         let container: ModelContainer
         do {
             container = try ModelContainer(for: schema, configurations: [configuration])
+            Self.logger.info("ToolCallRecordStore 已初始化: \(storeURL.path)")
         } catch {
             Self.logger.error("创建 ToolCallRecordStore 失败,回退到内存容器: \(error.localizedDescription)")
             container = (try? ModelContainer(for: ToolCallRecordModel.self)) ?? (try! ModelContainer())
