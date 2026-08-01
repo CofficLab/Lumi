@@ -100,6 +100,12 @@ final class FileTreeDataSource: SuperLog {
     /// 数据变化回调
     var onItemsChanged: (([CollectionItem]) -> Void)?
 
+    /// 后台重建任务的版本号，用于丢弃过期的遍历结果（快速切换项目时）。
+    private var rebuildGeneration: Int = 0
+
+    /// 正在进行中的后台重建任务。
+    private var rebuildTask: Task<Void, Never>?
+
     /// 使用默认依赖的初始化（保持向后兼容）
     init() {
         self.fileSystemReader = DefaultFileSystemReader()
@@ -120,7 +126,8 @@ final class FileTreeDataSource: SuperLog {
         projectRootPath = path
         expandedPaths = expandedPathStore.expandedPaths(for: path)
         isPackageExpanded = FileTreeSettings.shared.isPackageDependencySectionExpanded(for: path)
-        rebuildItems()
+        // 切换项目时立即清空，避免短暂显示上一个项目的文件树残留。
+        rebuildItems(clearImmediately: true)
     }
 
     /// 设置软件包依赖列表，追加到文件树末尾
@@ -145,17 +152,62 @@ final class FileTreeDataSource: SuperLog {
 
     // MARK: - Internal
 
-    private func rebuildItems() {
+    /// 重建节点列表。
+    ///
+    /// 文件系统遍历（`expandDirectory`）是磁盘 I/O 密集型操作，在主线程同步执行会
+    /// 阻塞 UI（尤其在大项目或深展开层级时）。这里将其下放到后台线程，主线程只负责
+    /// 启动任务与最终回写结果。
+    ///
+    /// - Parameter clearImmediately: 为 true 时（如切换项目）立即清空并通知一次，
+    ///   让视图先进入空态，避免短暂显示上一个项目的残留树；为 false 时（如展开/折叠、
+    ///   手动刷新）保留旧列表直到新结果就绪，避免闪烁。
+    private func rebuildItems(clearImmediately: Bool = false) {
         guard !projectRootPath.isEmpty else {
+            rebuildTask?.cancel()
             items = []
             onItemsChanged?(items)
             return
         }
+
+        if clearImmediately {
+            items = []
+            onItemsChanged?(items)
+        }
+
+        // 递增版本号，使任何在途的后台遍历结果作废。
+        rebuildGeneration += 1
+        let generation = rebuildGeneration
+
+        // 快照重建所需的不可变输入（`fileSystemReader` 为 Sendable）。
         let rootURL = URL(fileURLWithPath: projectRootPath)
-        let fileItems = expandDirectory(rootURL, depth: 0)
-        let packageItems = buildPackageItems(from: cachedDependencies)
-        items = fileItems.map { .file($0) } + packageItems
-        onItemsChanged?(items)
+        let snapshotExpandedPaths = expandedPaths
+        let snapshotProjectRootPath = projectRootPath
+        let snapshotCachedDependencies = cachedDependencies
+        let snapshotIsPackageExpanded = isPackageExpanded
+        let reader = fileSystemReader
+
+        rebuildTask?.cancel()
+        rebuildTask = Task { @MainActor [weak self] in
+            // 磁盘遍历在后台线程执行。
+            let fileItems = await Task.detached(priority: .userInitiated) {
+                Self.expandDirectory(
+                    rootURL, depth: 0,
+                    projectRootPath: snapshotProjectRootPath,
+                    expandedPaths: snapshotExpandedPaths,
+                    fileSystemReader: reader
+                )
+            }.value
+
+            guard let self, !Task.isCancelled, self.rebuildGeneration == generation else { return }
+
+            let packageItems = Self.buildPackageItems(
+                from: snapshotCachedDependencies,
+                isPackageExpanded: snapshotIsPackageExpanded,
+                projectRootPath: snapshotProjectRootPath
+            )
+            self.items = fileItems.map { .file($0) } + packageItems
+            self.onItemsChanged?(self.items)
+        }
     }
 
     /// 仅重建软件包依赖部分（不重新扫描文件系统）
@@ -168,13 +220,21 @@ final class FileTreeDataSource: SuperLog {
         }) ?? items.count
 
         var newItems = Array(items.prefix(fileCount))
-        newItems.append(contentsOf: buildPackageItems(from: cachedDependencies))
+        newItems.append(contentsOf: Self.buildPackageItems(
+            from: cachedDependencies,
+            isPackageExpanded: isPackageExpanded,
+            projectRootPath: projectRootPath
+        ))
         items = newItems
         onItemsChanged?(items)
     }
 
     /// 根据当前依赖数据和展开状态，构建 PackageHeader + PackageDependency 节点
-    private func buildPackageItems(from dependencies: [PackageDependency]) -> [CollectionItem] {
+    private static func buildPackageItems(
+        from dependencies: [PackageDependency],
+        isPackageExpanded: Bool,
+        projectRootPath: String
+    ) -> [CollectionItem] {
         let header = PackageHeaderItem(
             isExpanded: isPackageExpanded,
             dependencyCount: dependencies.count,
@@ -192,7 +252,16 @@ final class FileTreeDataSource: SuperLog {
     }
 
     /// 递归展开目录，返回扁平化的可见节点列表
-    private func expandDirectory(_ url: URL, depth: Int) -> [FileTreeNodeItem] {
+    ///
+    /// `nonisolated`：仅依赖传入的快照值与 Sendable 的 `fileSystemReader`，
+    /// 不触碰 `self` 的可变状态，因此可在后台线程执行磁盘遍历。
+    private nonisolated static func expandDirectory(
+        _ url: URL,
+        depth: Int,
+        projectRootPath: String,
+        expandedPaths: Set<String>,
+        fileSystemReader: FileSystemReading
+    ) -> [FileTreeNodeItem] {
         var result: [FileTreeNodeItem] = []
         let relativePath = PathFormatter.expansionPath(for: url, projectRootPath: projectRootPath)
         // 根节点始终展开，避免文件树为空
@@ -214,7 +283,12 @@ final class FileTreeDataSource: SuperLog {
                 )
                 let sorted = fileSystemReader.sortAndFilter(children)
                 for childURL in sorted {
-                    result.append(contentsOf: expandDirectory(childURL, depth: depth + 1))
+                    result.append(contentsOf: expandDirectory(
+                        childURL, depth: depth + 1,
+                        projectRootPath: projectRootPath,
+                        expandedPaths: expandedPaths,
+                        fileSystemReader: fileSystemReader
+                    ))
                 }
             } catch {
                 Self.logger.warning("\(Self.t)无法展开目录 \(url.lastPathComponent): \(error.localizedDescription)")
@@ -268,7 +342,12 @@ final class FileTreeDataSource: SuperLog {
         }
 
         if fileItem.isExpanded {
-            let newChildren = expandDirectory(url, depth: fileItem.depth)
+            let newChildren = Self.expandDirectory(
+                url, depth: fileItem.depth,
+                projectRootPath: projectRootPath,
+                expandedPaths: expandedPaths,
+                fileSystemReader: fileSystemReader
+            )
             let newItems: [CollectionItem] = newChildren.map { .file($0) }
             items.replaceSubrange(index..<endIndex, with: newItems)
         } else {

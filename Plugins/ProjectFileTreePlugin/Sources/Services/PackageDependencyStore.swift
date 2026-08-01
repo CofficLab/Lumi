@@ -28,14 +28,15 @@ public final class PackageDependencyStore: ObservableObject, SuperLog {
         diagnostic = nil
         isLoading = false
         refreshTask?.cancel()
-        guard shouldResolve(for: path) else { return }
+        // 不在主线程同步判定 shouldResolve（内部含 contentsOfDirectory），
+        // 交由 refresh() 在后台线程内判定。
         refresh()
     }
 
     public func refresh() {
         refreshTask?.cancel()
         let path = projectRootPath
-        guard shouldResolve(for: path) else {
+        guard !path.isEmpty else {
             dependencies = []
             diagnostic = nil
             isLoading = false
@@ -44,20 +45,19 @@ public final class PackageDependencyStore: ObservableObject, SuperLog {
 
         isLoading = true
         refreshTask = Task { @MainActor [weak self] in
+            // 在后台线程同时判定「是否需要解析」与「执行解析」，避免主线程磁盘扫描。
             let result = await Task.detached(priority: .utility) {
-                PackageDependencyResolver.resolve(projectRootURL: URL(fileURLWithPath: path))
+                guard PackageDependencyResolver.shouldShowPackageDependencies(
+                    projectRootURL: URL(fileURLWithPath: path)
+                ) else {
+                    return [PackageDependency]()
+                }
+                return PackageDependencyResolver.resolve(projectRootURL: URL(fileURLWithPath: path))
             }.value
             guard let self, !Task.isCancelled, self.projectRootPath == path else { return }
             self.dependencies = result
             self.diagnostic = result.isEmpty ? "No Swift package dependencies found." : nil
             self.isLoading = false
         }
-    }
-
-    private func shouldResolve(for path: String) -> Bool {
-        guard !path.isEmpty else { return false }
-        return PackageDependencyResolver.shouldShowPackageDependencies(
-            projectRootURL: URL(fileURLWithPath: path)
-        )
     }
 }

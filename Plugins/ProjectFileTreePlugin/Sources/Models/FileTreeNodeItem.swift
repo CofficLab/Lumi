@@ -6,7 +6,7 @@ import LumiUI
 ///
 /// 仅存储渲染所需的只读信息，不包含业务逻辑。
 /// 用于 NSCollectionView 的 DiffableDataSource。
-public struct FileTreeNodeItem: Hashable {
+public struct FileTreeNodeItem: Hashable, Sendable {
     /// 文件/目录的完整路径
     public let url: URL
     /// 缩进层级（0 = 根目录）
@@ -84,7 +84,7 @@ public struct FileTreeNodeItem: Hashable {
 /// 文件图标元数据
 ///
 /// 预计算图标所需的文件信息，避免在 Cell 中重复解析。
-public struct FileTreeIconMetadata {
+public struct FileTreeIconMetadata: Sendable {
     public let fileName: String
     public let fileExtension: String
     public let isDirectory: Bool
