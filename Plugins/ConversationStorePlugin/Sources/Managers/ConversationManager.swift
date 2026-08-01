@@ -131,10 +131,10 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         // 如果未指定 modelName，则自动使用当前选中的模型
         let effectiveModelName = modelName ?? kernel?.llmProvider?.selectedModel
         // 继承上一个对话的设置（详细程度、推理强度、语言、自动化程度）
-        let effectiveVerbosity = verbosity ?? self.verbosity(for: selectedConversationID)
-        let effectiveReasoningEffort = reasoningEffort ?? self.reasoningEffort(for: selectedConversationID)
-        let effectiveLanguage = language ?? self.language(for: selectedConversationID)
-        let effectiveAutomationLevel = automationLevel ?? self.automationLevel(for: selectedConversationID)
+        let effectiveVerbosity = self.verbosity(for: selectedConversationID)
+        let effectiveReasoningEffort = self.reasoningEffort(for: selectedConversationID)
+        let effectiveLanguage = self.language(for: selectedConversationID)
+        let effectiveAutomationLevel = self.automationLevel(for: selectedConversationID)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)创建对话：\(normalizedTitle ?? "nil"), 项目：\(effectiveProjectPath ?? "nil"), 供应商：\(effectiveProviderID ?? "nil"), 模型：\(effectiveModelName ?? "nil"), 详细程度：\(effectiveVerbosity.rawValue)")
