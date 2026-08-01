@@ -76,6 +76,15 @@ import Testing
 }
 
 @MainActor
+@Test func gitServiceFindsRepositoryRootForFilePath() throws {
+    let filePath = URL(fileURLWithPath: #filePath).path
+    let root = try GitService.repositoryRoot(containing: filePath)
+    let relative = GitService.relativePath(filePath, fromRepositoryRoot: root)
+
+    #expect(relative == "Plugins/GitPlugin/Tests/PluginGitTests.swift")
+}
+
+@MainActor
 @Test func validateBranchNameAcceptsCommonGitNames() throws {
     try GitBranchService.validateBranchName("feature/editor-refresh")
     try GitBranchService.validateBranchName("bugfix/issue-123")
