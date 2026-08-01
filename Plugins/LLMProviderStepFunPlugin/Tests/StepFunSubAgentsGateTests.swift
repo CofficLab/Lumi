@@ -18,12 +18,16 @@ import LumiKernel
         StepFunSubAgentsGate(provider: StepFunProvider())
     }
 
+    /// 空内核:`toolManager` 为 nil,故 `rebuildAllContributions` 是 no-op,
+    /// 可安全用于触发「unknown → ready」的重建路径,无需真实服务装配。
+    private let kernel = LumiKernel()
+
     // MARK: - evaluate:默认 / gate 行为
 
     @Test func evaluate_returnsEmpty_whenUnknown() {
         let gate = makeGate()
         #expect(gate.phase == .unknown)
-        #expect(gate.evaluate(kernel: kernelStub).isEmpty,
+        #expect(gate.evaluate().isEmpty,
                 "未探测完成(unknown)应保守 gate,返回空")
     }
 
@@ -31,10 +35,10 @@ import LumiKernel
         let gate = makeGate()
         gate.setPhaseForTesting(.ready)
 
-        let subAgents = gate.evaluate(kernel: kernelStub)
+        let subAgents = gate.evaluate()
         #expect(subAgents.count == 7, "ready 时应注册全部 7 个 sub-agent")
         #expect(subAgents.map(\.id).sorted() == [
-            "bug-fixer", "build", "code-reviewer", "doc-writer",
+            "bug-fixer", "builder", "code-reviewer", "doc-writer",
             "explore", "git-commit-writer", "test-writer",
         ])
         // 子 Agent 必须绑定到 StepFun provider,这是 gate 存在的前提。
@@ -44,7 +48,7 @@ import LumiKernel
     @Test func evaluate_returnsEmpty_whenUnavailable() {
         let gate = makeGate()
         gate.setPhaseForTesting(.unavailable)
-        #expect(gate.evaluate(kernel: kernelStub).isEmpty,
+        #expect(gate.evaluate().isEmpty,
                 "探测失败(unavailable)必须 gate")
     }
 
@@ -59,7 +63,7 @@ import LumiKernel
         // 这里通过一个「已被探测过(unavailable)→ available」的路径,
         // 该路径不触发重建(仅 unknown→ready 才触发),从而安全验证状态转移。
         gate.setPhaseForTesting(.unavailable)
-        gate.apply(result: .available, kernel: kernelStub)
+        gate.apply(result: .available, kernel: kernel)
         #expect(gate.phase == .ready,
                 "available 结果应将状态推进到 ready")
     }
@@ -67,7 +71,7 @@ import LumiKernel
     @Test func apply_transitionsToUnavailable_onUnavailable() {
         let gate = makeGate()
         gate.apply(result: .unavailable(LumiLLMFailureDetail.message("network down")),
-                   kernel: kernelStub)
+                   kernel: kernel)
         #expect(gate.phase == .unavailable,
                 "unavailable 结果应将状态推进到 unavailable")
     }
@@ -75,11 +79,11 @@ import LumiKernel
     @Test func apply_isIdempotent_whenAlreadyReady() {
         let gate = makeGate()
         gate.setPhaseForTesting(.unavailable) // 避开 unknown→ready 的重建副作用
-        gate.apply(result: .available, kernel: kernelStub)
+        gate.apply(result: .available, kernel: kernel)
         #expect(gate.phase == .ready)
 
         // 再次 apply available,状态保持 ready。
-        gate.apply(result: .available, kernel: kernelStub)
+        gate.apply(result: .available, kernel: kernel)
         #expect(gate.phase == .ready)
     }
 

@@ -1,17 +1,20 @@
 import Testing
+import LumiKernel
 @testable import LLMProviderStepFunPlugin
 
 @MainActor
 struct PluginLLMProviderStepFunTests {
     @Test func pluginMetadata() {
-        #expect(StepFunPlugin().id.isEmpty == false)
-        #expect(StepFunPlugin.name.isEmpty == false)
-        #expect(StepFunPlugin().category == .llmProvider)
+        let plugin = StepFunPlugin()
+        #expect(plugin.id.isEmpty == false)
+        #expect(plugin.name.isEmpty == false)
+        #expect(plugin.category == .llmProvider)
     }
 
     @Test func providerMetadata() {
-        #expect(StepFunProvider.id.isEmpty == false)
-        #expect(StepFunProvider.name.isEmpty == false)
-        #expect(StepFunProvider.defaultModel.isEmpty == false)
+        let info = StepFunProvider.info
+        #expect(info.id.isEmpty == false)
+        #expect(info.displayName.isEmpty == false)
+        #expect(info.defaultModel.isEmpty == false)
     }
 }

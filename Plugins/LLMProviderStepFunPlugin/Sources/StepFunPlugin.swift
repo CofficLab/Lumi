@@ -57,7 +57,7 @@ public final class StepFunPlugin: LumiPlugin {
         // 走 ensureProvider 保证 gate 已构造(它只构造对象、不触发网络,同步安全)。
         _ = ensureProvider(kernel: kernel)
         guard let gate else { return [] }
-        return gate.evaluate(kernel: kernel)
+        return gate.evaluate()
     }
 
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
