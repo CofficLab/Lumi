@@ -12,6 +12,8 @@ enum OnboardingPluginRuntimeBridge {
         let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
         return appSupport.appendingPathComponent(bundleID, isDirectory: true)
     }()
+
+    static let pluginName = "Onboarding"
 }
 
 @MainActor
@@ -19,7 +21,8 @@ public extension OnboardingPlugin {
     static func bootstrapFromLumiCoreIfNeeded(kernel: LumiKernel) {
         guard !didBootstrapFromLumiCore else { return }
         if let storage = kernel.storage {
-            OnboardingPluginRuntimeBridge.pluginDirectory = storage.pluginDataDirectory(for: "Onboarding")
+            OnboardingPluginRuntimeBridge.pluginDirectory =
+                storage.pluginDataDirectory(for: OnboardingPluginRuntimeBridge.pluginName)
         }
         didBootstrapFromLumiCore = true
     }
