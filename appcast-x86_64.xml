@@ -3,37 +3,34 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.6.2</title>
-            <pubDate>Sun, 02 Aug 2026 11:19:42 +0000</pubDate>
-            <sparkle:version>511</sparkle:version>
-            <sparkle:shortVersionString>5.6.2</sparkle:shortVersionString>
+            <title>5.6.3</title>
+            <pubDate>Sun, 02 Aug 2026 16:23:28 +0000</pubDate>
+            <sparkle:version>512</sparkle:version>
+            <sparkle:shortVersionString>5.6.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.6.2</h2>
-<h3>Changes since v5.6.1</h3>
+            <description><![CDATA[<h2>Release v5.6.3</h2>
+<h3>Changes since v5.6.2</h3>
 <ul>
-<li>feat(agentturnrunner): resume incomplete tool-call batches after suspension</li>
-<li>feat(caffeinate): make duration &amp; quick action sections self-contained</li>
-<li>feat(caffeinate): track display-off request and toggle via menu bar popup</li>
-<li>feat(conversation): add attention indicators for unread conversations</li>
-<li>feat(conversation): expose isLoadingConversations via ConversationManaging</li>
-<li>feat(conversation): pulse attention dot while agent turn is running</li>
-<li>feat(conversationlist): show project path before updated time with divider</li>
-<li>feat(llmkit): merge tool results and forward reasoning for anthropic adapter</li>
-<li>feat(logo): expose menu-bar highlight state on logo services</li>
-<li>feat(lumifactory): apply themed appearance and bridge window background</li>
-<li>feat(lumifactory): render panel bottom divider via appSplitDivider</li>
-<li>feat(menubar): apply themed background and close popover on app resign active</li>
-<li>feat(menubar): close popover on space change and outside clicks</li>
-<li>feat(menubar): expose color scheme parameter on popup view</li>
-<li>feat(menubar): highlight menu bar logo while caffeinate is active</li>
-<li>feat(menubar): make MenuBarPopupView sections self-contained and reuse shared MenuBarActionRow</li>
-<li>feat(menubar): observe system appearance and sync popover scheme</li>
-<li>feat(messagelist): add turn activity snapshot</li>
-<li>feat(messagelist): aggregate tool activity by turn</li>
-<li>feat(messagelist): identify turn activity rows</li>
+<li>feat(browserplugin): add BrowserAgentTool to agentTools</li>
+<li>feat(ConversationInputPlugin): attach image files as base64 when dragged into composer</li>
+<li>feat(MiniMaxVideoTool): route all network requests through kernel's NetworkProviding</li>
+<li>feat(NetworkManagerPlugin): add download tool and split HTTPLogTools into individual files</li>
+<li>feat(NetworkManagerPlugin): add searchPage and searchCount to HTTPExchangeStore</li>
+<li>feat(NetworkManagerPlugin): skip inline rendering for large HTTP body payloads</li>
+<li>fix(deepseek): remove duplicate/deprecated files after refactor</li>
+<li>fix(LLMProvider): inject plugin data directory via storage API in onBoot</li>
+<li>fix(NetworkManagerPlugin): center code block with GeometryReader and add missing localizations</li>
+<li>fix(OnboardingPlugin): delay ViewModel creation until onReady to use correct storage directory</li>
+<li>refactor(deepseek): add Anthropic protocol support and restructure provider architecture</li>
+<li>refactor(deepseek): move pure data types into a Models directory</li>
+<li>refactor(MiniMaxVideoTool): return download URL instead of downloading video binary</li>
+<li>refactor(networkmanager): drop auto-refresh on HTTP exchange settings</li>
+<li>refactor(NetworkManagerPlugin): replace fixed-directory download with NSSavePanel text export for large payloads</li>
+<li>refactor(toolmanager): extract usage statistics into its own settings tab</li>
+<li>trash:  delete unnecessary code or files</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.6.2</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.6.2/Lumi_5.6.2_x86_64.dmg" length="42658642" type="application/octet-stream" sparkle:edSignature="LgTGZD9dJQSukSAi9j5k2ljNmWzMzEFxlANc+KQ/UGBfFmVc41fk+ub2TKRCZKCPXyCiLQqXeUJt+zXOmMAwAA=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.6.3</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.6.3/Lumi_5.6.3_x86_64.dmg" length="43628993" type="application/octet-stream" sparkle:edSignature="vWRUFytbJdpuEdC+Ok6uMNR6iMbYBnjzznIPyHYFjVyCLKCuGnPHYiIrmAroQn2E8xdAE+gPhAYsBjdsREM+CQ=="/>
         </item>
     </channel>
 </rss>
