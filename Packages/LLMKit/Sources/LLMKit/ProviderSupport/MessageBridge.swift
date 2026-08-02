@@ -46,6 +46,7 @@ public enum LumiVisionMessageSupport: SuperLog {
                 ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             },
             toolCallID: message.toolCallID,
+            reasoningContent: message.reasoningContent,
             images: messageImages(from: message.metadata)
         )
     }

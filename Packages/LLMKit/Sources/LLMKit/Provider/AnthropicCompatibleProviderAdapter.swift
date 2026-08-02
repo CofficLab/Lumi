@@ -53,9 +53,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             ? systemPrompt
             : systemParts.joined(separator: "\n\n")
 
-        let conversationMessages = messages
-            .filter { $0.role != .system }
-            .map { transformMessage($0) }
+        let conversationMessages = transformMessages(
+            messages.filter { $0.role != .system }
+        )
 
         var body: [String: Any] = [
             "model": model,
@@ -406,6 +406,11 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
             var content: [[String: Any]] = []
 
+            if let reasoningContent = message.reasoningContent,
+               !reasoningContent.isEmpty {
+                content.append(["type": "thinking", "thinking": reasoningContent])
+            }
+
             if !message.content.isEmpty {
                 content.append(["type": "text", "text": message.content])
             }
@@ -421,6 +426,17 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                 content.append(["type": "tool_use", "id": tc.id, "name": tc.name, "input": inputObject])
             }
 
+            return ["role": "assistant", "content": content]
+        }
+
+        if let reasoningContent = message.reasoningContent,
+           !reasoningContent.isEmpty {
+            var content: [[String: Any]] = [
+                ["type": "thinking", "thinking": reasoningContent],
+            ]
+            if !message.content.isEmpty {
+                content.append(["type": "text", "text": message.content])
+            }
             return ["role": "assistant", "content": content]
         }
 
@@ -447,6 +463,61 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             "description": tool.toolDescription,
             "input_schema": tool.inputSchema,
         ]
+    }
+
+    /// Builds an Anthropic message history with the stricter turn shape expected
+    /// by MiniMax: all tool results for one assistant tool-use turn are sent in
+    /// a single following user message.
+    private func transformMessages(_ messages: [ChatMessage]) -> [[String: Any]] {
+        var output: [[String: Any]] = []
+        var index = 0
+
+        while index < messages.count {
+            let message = messages[index]
+
+            if message.role == .tool, message.toolCallID != nil {
+                var resultBlocks: [[String: Any]] = []
+                while index < messages.count {
+                    let resultMessage = messages[index]
+                    guard resultMessage.role == .tool,
+                          resultMessage.toolCallID != nil,
+                          let content = transformMessage(resultMessage)["content"] as? [[String: Any]]
+                    else { break }
+                    resultBlocks.append(contentsOf: content)
+                    index += 1
+                }
+                output.append(["role": "user", "content": resultBlocks])
+                continue
+            }
+
+            // Recover from an interrupted tool turn. Sending a trailing
+            // assistant tool_use without a matching tool_result is rejected by
+            // MiniMax with error 2013. Add an explicit error result so the
+            // history remains structurally valid and the model can retry it.
+            if index == messages.count - 1,
+               message.role == .assistant,
+               let toolCalls = message.toolCalls,
+               !toolCalls.isEmpty {
+                output.append(transformMessage(message))
+                output.append([
+                    "role": "user",
+                    "content": toolCalls.map { toolCall in
+                        [
+                            "type": "tool_result",
+                            "tool_use_id": toolCall.id,
+                            "content": "Tool execution was interrupted before a result was recorded.",
+                            "is_error": true,
+                        ] as [String: Any]
+                    },
+                ])
+                break
+            }
+
+            output.append(transformMessage(message))
+            index += 1
+        }
+
+        return output
     }
 
 }
