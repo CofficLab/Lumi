@@ -51,6 +51,11 @@ public class NetworkService: SuperLog, ObservableObject {
     public func configureHTTPExchangeStore(_ store: HTTPExchangeStore?) {
         exchangeStore = store
     }
+
+    /// 获取当前配置的 HTTPExchangeStore 实例
+    public var currentExchangeStore: HTTPExchangeStore? {
+        exchangeStore
+    }
     
     public func startMonitoring() {
         subscribersCount += 1
