@@ -234,12 +234,20 @@ public final class OnboardingPluginStore: SuperLog {
 public struct OnboardingRootOverlay<Content: View>: View {
     public let content: Content
 
-    @StateObject private var viewModel = OnboardingPluginViewModel()
-
     /// Aggregated onboarding pages from all enabled plugins, injected via
     /// `RootView`'s environment. Falls back to OnboardingPlugin's own pages
     /// when the environment value is empty (e.g., in previews).
     @Environment(\.onboardingPages) private var environmentPages
+
+    // MARK: - ViewModel
+
+    /// 使用 RuntimeBridge 中的 viewModel，确保在 onBoot/onReady 阶段初始化
+    /// 这样可以保证使用正确的 storage 目录，而不是 fallback 到 Application Support
+    ///
+    /// 注意：不能直接 `@StateObject var viewModel = OnboardingPluginViewModel()`
+    /// 因为 OnboardingPluginStore.init(pluginId:) 会立即创建目录。
+    /// 必须延迟到 onAppear 时再创建 fallback，此时 kernel.storage 已注入正确路径。
+    @State private var viewModel: OnboardingPluginViewModel?
 
     // MARK: - 页面聚合
 
@@ -253,10 +261,32 @@ public struct OnboardingRootOverlay<Content: View>: View {
     }
 
     public var body: some View {
-        content
-            .onAppear {
-                viewModel.presentIfNeededOnLaunch()
+        Group {
+            if let viewModel {
+                OnboardingPresentedContent(content: content, viewModel: viewModel, pages: pages)
+            } else {
+                content
             }
+        }
+            .onAppear {
+                // 延迟创建 viewModel，避免在 View 属性初始化阶段就创建 Store 并触发 prepareDirectories()
+                if viewModel == nil {
+                    viewModel = OnboardingPluginRuntimeBridge.viewModel ?? OnboardingPluginViewModel()
+                }
+                viewModel?.presentIfNeededOnLaunch()
+            }
+    }
+}
+
+/// Keeps the delayed ViewModel creation in the root overlay while ensuring
+/// sheet presentation observes the ViewModel's @Published state.
+private struct OnboardingPresentedContent<Content: View>: View {
+    let content: Content
+    @ObservedObject var viewModel: OnboardingPluginViewModel
+    let pages: [OnboardingPageView]
+
+    var body: some View {
+        content
             .onReceive(NotificationCenter.default.publisher(for: .lumiShowOnboarding)) { notification in
                 let forceReset = notification.userInfo?[LumiOnboardingNotification.resetKey] as? Bool ?? false
                 viewModel.show(forceReset: forceReset)

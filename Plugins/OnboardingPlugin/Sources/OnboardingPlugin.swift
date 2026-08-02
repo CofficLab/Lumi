@@ -14,7 +14,9 @@ public final class OnboardingPlugin: LumiPlugin {
         OnboardingPlugin.bootstrapFromLumiCoreIfNeeded(kernel: kernel)
     }
 
-    public func onReady(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: LumiKernel) async throws {
+        OnboardingPlugin.initializeViewModel(kernel: kernel)
+    }
 
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] {
         [
