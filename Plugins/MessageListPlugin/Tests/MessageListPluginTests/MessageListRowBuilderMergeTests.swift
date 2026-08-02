@@ -124,6 +124,29 @@ struct MessageListRowBuilderMergeTests {
         #expect(rows[1].turnID == turnID)
     }
 
+    @Test("同一 Turn 被正文隔开时仍合并为一个活动行")
+    func sameTurnToolMessagesAcrossTextRemainOneActivityRow() throws {
+        let turnID = UUID()
+        let first = toolExec(id: UUID(), calls: ["first"], turnID: turnID)
+        let text = LumiChatMessage(
+            id: UUID(), conversationID: conversation, role: .assistant, content: "阶段说明"
+        )
+        let second = toolExec(id: UUID(), calls: ["second"], turnID: turnID)
+
+        let rows = builder.build(
+            persisted: [first, text, second],
+            conversationID: conversation,
+            streaming: nil,
+            verbosity: .brief
+        )
+
+        #expect(rows.count == 2)
+        let activity = try #require(rows.first { $0.turnID == turnID })
+        #expect(activity.renderKind == "turn-activity")
+        #expect(activity.toolCalls?.map(\.id) == ["first", "second"])
+        #expect(rows.contains { $0.content == "阶段说明" })
+    }
+
     @Test("V1:剔除独立 .tool 结果行")
     func v1DropsToolResultRows() {
         let assistant = toolExec(id: UUID(), calls: ["a"])

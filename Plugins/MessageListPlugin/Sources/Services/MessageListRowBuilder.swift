@@ -89,6 +89,8 @@ struct MessageListRowBuilder {
         var result: [LumiChatMessage] = []
         var currentGroup: [LumiChatMessage] = []
         var currentTurnID: UUID?
+        var turnGroups: [UUID: [LumiChatMessage]] = [:]
+        var turnGroupIndices: [UUID: Int] = [:]
 
         func flushGroup() {
             guard !currentGroup.isEmpty else { return }
@@ -99,11 +101,23 @@ struct MessageListRowBuilder {
 
         for message in messages {
             if message.isToolExecutionOnly {
-                if !currentGroup.isEmpty, currentTurnID != message.turnID {
+                if let turnID = message.turnID {
                     flushGroup()
+                    turnGroups[turnID, default: []].append(message)
+                    let group = turnGroups[turnID] ?? []
+                    if let index = turnGroupIndices[turnID] {
+                        result[index] = makeToolStepGroup(from: group)
+                    } else {
+                        turnGroupIndices[turnID] = result.count
+                        result.append(makeToolStepGroup(from: group))
+                    }
+                } else {
+                    if !currentGroup.isEmpty, currentTurnID != nil {
+                        flushGroup()
+                    }
+                    currentGroup.append(message)
+                    currentTurnID = nil
                 }
-                currentGroup.append(message)
-                currentTurnID = currentTurnID ?? message.turnID
             } else {
                 flushGroup()
                 result.append(message)
