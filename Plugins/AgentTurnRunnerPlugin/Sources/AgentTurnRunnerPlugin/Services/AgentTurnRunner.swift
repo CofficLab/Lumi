@@ -234,6 +234,20 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 return
             }
 
+            // Resume any incomplete tool-call batch before asking the LLM for a
+            // new response. A single assistant message may contain multiple
+            // calls, and a suspended call leaves later calls without results.
+            if let pendingAssistantMessage = incompleteToolCallMessage(in: conversationID) {
+                let suspended = await executePendingToolCalls(
+                    in: pendingAssistantMessage,
+                    conversationID: conversationID
+                )
+                if suspended {
+                    return
+                }
+                continue
+            }
+
             if Self.verbose {
                 Self.logger.info("\(Self.t)开始 LLM 调用...")
             }
@@ -391,8 +405,10 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 return
             }
 
-            // Execute each tool call
-            for toolCall in toolCalls {
+            // Execute the initial batch in order. A suspension stops this loop;
+            // a later resume continues the same assistant message through
+            // `executePendingToolCalls` before another LLM request is made.
+            for toolCall in toolCalls where toolCall.result == nil {
                 try? Task.checkCancellation()
 
                 if cancelledConversations.contains(conversationID) {
@@ -472,7 +488,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                     Self.logger.info("\(Self.t)工具执行完成: \(toolCall.name), isError=\(result.isError)")
                 }
 
-                // 工具通过结构化控制信号请求暂停：写入 suspension 后停止当前 turn。
+                // 工具通过结构化控制信号请求暂停：写入当前 suspension，
+                // 当前批次中尚未执行的调用由恢复路径继续处理。
                 if case let .suspend(suspension) = result.turnControl {
                     if Self.verbose {
                         Self.logger.info("\(Self.t)工具请求暂停（\(toolCall.name)），等待外部恢复")
@@ -485,6 +502,96 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
             // Continue loop with new tool results in message history
         }
+    }
+
+    /// Finds the latest assistant tool-call message that still has an
+    /// unexecuted call. The message itself is the durable queue state: calls
+    /// with a result are complete, while calls without one are still queued.
+    private func incompleteToolCallMessage(in conversationID: UUID) -> LumiChatMessage? {
+        let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
+        return messages.reversed().first { message in
+            message.role == .assistant
+                && message.toolCalls?.contains(where: { $0.result == nil }) == true
+        }
+    }
+
+    /// Continues an interrupted assistant tool-call batch in order. This path
+    /// is used after resuming a suspended call, so already completed calls are
+    /// skipped and the next queued call can suspend independently.
+    ///
+    /// - Returns: `true` when the batch suspended again for user input.
+    private func executePendingToolCalls(
+        in assistantMessage: LumiChatMessage,
+        conversationID: UUID
+    ) async -> Bool {
+        guard let kernel,
+              let toolManager = kernel.toolManager,
+              let toolCalls = assistantMessage.toolCalls
+        else {
+            Self.logger.error("\(Self.t)ToolManager 不可用，无法继续工具批次")
+            failedConversations.insert(conversationID)
+            return false
+        }
+
+        for toolCall in toolCalls where toolCall.result == nil {
+            try? Task.checkCancellation()
+            if cancelledConversations.contains(conversationID) {
+                return false
+            }
+
+            insertStatusMessage(
+                conversationID: conversationID,
+                content: String(localized: "status.executing-tool", defaultValue: "正在执行: \(toolCall.name)…")
+            )
+
+            var result = await toolManager.execute(toolCall, conversationID: conversationID)
+            if case let .suspend(suspension) = result.turnControl,
+               suspension.toolCallID == nil {
+                let boundSuspension = AgentTurnSuspension(
+                    suspensionID: suspension.suspensionID,
+                    conversationID: suspension.conversationID,
+                    toolCallID: toolCall.id,
+                    kind: suspension.kind,
+                    payload: suspension.payload
+                )
+                result = LumiToolResult(
+                    content: result.content,
+                    duration: result.duration,
+                    isError: result.isError,
+                    imageAttachments: result.imageAttachments,
+                    turnControl: .suspend(boundSuspension)
+                )
+            }
+
+            kernel.messageManager?.updateToolCallResult(
+                result,
+                toolCallID: toolCall.id,
+                assistantMessageID: assistantMessage.id,
+                in: conversationID
+            )
+
+            let toolResultMessage = LumiChatMessage(
+                conversationID: conversationID,
+                role: .tool,
+                content: result.content,
+                isError: result.isError,
+                metadata: LumiImageAttachmentMetadata.encode(result.imageAttachments),
+                toolCallID: toolCall.id
+            )
+            kernel.messageManager?.insertMessage(toolResultMessage, to: conversationID)
+            postMessageSavedNotification(message: toolResultMessage, conversationID: conversationID)
+
+            if case let .suspend(suspension) = result.turnControl {
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)工具请求暂停（\(toolCall.name)），等待批次中的下一个调用")
+                }
+                suspensions[conversationID] = suspension
+                awaitingConversations.insert(conversationID)
+                return true
+            }
+        }
+
+        return false
     }
 
     /// Rebuilds a suspension from the persisted assistant tool-call result.
