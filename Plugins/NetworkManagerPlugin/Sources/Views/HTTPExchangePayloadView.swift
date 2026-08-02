@@ -45,15 +45,19 @@ struct HTTPExchangePayloadView: View {
     }
 
     private func codeBlock(_ text: String) -> some View {
-        ScrollView([.horizontal, .vertical]) {
-            Text(text)
-                .font(.system(.callout, design: .monospaced))
-                .foregroundStyle(theme.textPrimary)
-                .textSelection(.enabled)
-                // Keep the intrinsic code width so large, mostly unbroken JSON
-                // is measured correctly inside the bidirectional scroll view.
-                .fixedSize(horizontal: true, vertical: true)
-                .padding(10)
+        GeometryReader { proxy in
+            ScrollView([.horizontal, .vertical]) {
+                Text(text)
+                    .font(.system(.callout, design: .monospaced))
+                    .foregroundStyle(theme.textPrimary)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: true, vertical: true)
+                    .padding(10)
+                    // A bidirectional ScrollView centers content that is
+                    // narrower than its viewport unless its content has a
+                    // viewport-sized minimum width.
+                    .frame(minWidth: proxy.size.width, alignment: .leading)
+            }
         }
         .frame(minHeight: 70, maxHeight: 260)
         .background(theme.textSecondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
