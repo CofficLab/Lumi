@@ -10,13 +10,13 @@ struct PluginLLMProviderDeepSeekTests {
         #expect(plugin.id.isEmpty == false)
         #expect(plugin.name.isEmpty == false)
         #expect(plugin.category == .llmProvider)
-        #expect(plugin.llmProviders(kernel: LumiKernel()).first is DeepSeekProvider)
+        #expect(plugin.llmProviders(kernel: LumiKernel()).first is DeepSeekOpenAIProvider)
     }
 
     @Test func providerMetadata() {
-        #expect(DeepSeekProvider.info.id.isEmpty == false)
-        #expect(DeepSeekProvider.info.displayName.isEmpty == false)
-        #expect(DeepSeekProvider.info.defaultModel.isEmpty == false)
+        #expect(DeepSeekOpenAIProvider.info.id.isEmpty == false)
+        #expect(DeepSeekOpenAIProvider.info.displayName.isEmpty == false)
+        #expect(DeepSeekOpenAIProvider.info.defaultModel.isEmpty == false)
     }
 
     @Test func parsesDeepSeekCacheUsage() {

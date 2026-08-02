@@ -17,7 +17,10 @@ public final class DeepSeekPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [DeepSeekProvider(network: kernel.network)]
+        [
+            DeepSeekOpenAIProvider(network: kernel.network),
+            DeepSeekAnthropicProvider(network: kernel.network),
+        ]
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

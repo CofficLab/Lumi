@@ -71,6 +71,7 @@
       }
     },
     "DeepSeek AI" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
