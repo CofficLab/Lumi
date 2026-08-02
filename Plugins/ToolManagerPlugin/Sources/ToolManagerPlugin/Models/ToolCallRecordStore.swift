@@ -6,21 +6,21 @@ import os
 
 /// 工具调用记录的纯数据副本,用于在 SwiftUI 视图中展示,
 /// 与 SwiftData actor 隔离,避免跨 actor 传递 managed 对象。
-struct ToolCallRecordDTO: Identifiable, Sendable {
-    let id: String
-    let toolName: String
-    let toolDisplayName: String
-    let turnID: UUID?
-    let conversationID: String
-    let createdAt: Date
-    let startedAt: Date
-    let completedAt: Date?
-    let duration: Double?
-    let argumentsJSON: String
-    let resultContent: String
-    let resultIsError: Bool
-    let riskLevel: String
-    let turnControl: String?
+public struct ToolCallRecordDTO: Identifiable, Sendable {
+    public let id: String
+    public let toolName: String
+    public let toolDisplayName: String
+    public let turnID: UUID?
+    public let conversationID: String
+    public let createdAt: Date
+    public let startedAt: Date
+    public let completedAt: Date?
+    public let duration: Double?
+    public let argumentsJSON: String
+    public let resultContent: String
+    public let resultIsError: Bool
+    public let riskLevel: String
+    public let turnControl: String?
 
     init(from model: ToolCallRecordModel) {
         self.id = model.id
@@ -45,13 +45,16 @@ struct ToolCallRecordDTO: Identifiable, Sendable {
 /// 存储目录: `storage.pluginDataDirectory(for: "ToolManager")`。
 ///
 /// 记录为后台异步操作,不影响主流程性能。
-actor ToolCallRecordStore: SuperLog {
-    nonisolated static let emoji = "💾"
-    nonisolated static let verbose: Bool = false
+public actor ToolCallRecordStore: SuperLog {
+    nonisolated public static let emoji = "💾"
+    nonisolated public static let verbose: Bool = false
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-manager.records")
 
     private let modelContainer: ModelContainer
     private let modelContext: ModelContext
+
+    /// 数据库根目录,允许 SwiftUI 视图在主线程上读取以打开 Finder。
+    nonisolated public let directory: URL
 
     /// 批量写入缓冲区,减少 IO 操作。
     private var pendingRecords: [ToolCallRecordModel] = []
@@ -60,9 +63,11 @@ actor ToolCallRecordStore: SuperLog {
     private var flushTask: Task<Void, Never>?
 
     /// - Parameter databaseRootURL: 数据库根目录(`pluginDataDirectory(for:)` 的返回值)。
-    init(databaseRootURL: URL) {
+    public init(databaseRootURL: URL) {
         // 确保目录存在
         try? FileManager.default.createDirectory(at: databaseRootURL, withIntermediateDirectories: true)
+
+        self.directory = databaseRootURL
 
         let schema = Schema([ToolCallRecordModel.self])
         let storeURL = databaseRootURL.appendingPathComponent("tool_calls.sqlite", isDirectory: false)
@@ -88,7 +93,7 @@ actor ToolCallRecordStore: SuperLog {
     }
 
     /// 初始化后启动定时刷新任务(由外部调用以避免 actor 初始化问题)。
-    func startFlushTask() {
+    public func startFlushTask() {
         flushTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 秒
@@ -143,7 +148,7 @@ actor ToolCallRecordStore: SuperLog {
     }
 
     /// Fetch 一页记录。
-    func fetchPage(
+    public func fetchPage(
         limit: Int,
         beforeCreatedAt: Date? = nil,
         beforeID: String? = nil
@@ -174,7 +179,7 @@ actor ToolCallRecordStore: SuperLog {
     }
 
     /// 获取某会话的所有记录。
-    func fetchRecords(for conversationID: UUID) -> [ToolCallRecordDTO] {
+    public func fetchRecords(for conversationID: UUID) -> [ToolCallRecordDTO] {
         let descriptor = FetchDescriptor<ToolCallRecordModel>(
             predicate: #Predicate<ToolCallRecordModel> {
                 $0.conversationID == conversationID.uuidString
@@ -200,7 +205,7 @@ actor ToolCallRecordStore: SuperLog {
     }
 
     /// 记录总数。
-    func count() -> Int {
+    public func count() -> Int {
         (try? modelContext.fetchCount(FetchDescriptor<ToolCallRecordModel>())) ?? 0
     }
 
@@ -235,7 +240,7 @@ actor ToolCallRecordStore: SuperLog {
     }
 
     /// 获取工具调用统计(按工具名聚合)。
-    func fetchToolStats() -> [ToolStats] {
+    public func fetchToolStats() -> [ToolStats] {
         let descriptor = FetchDescriptor<ToolCallRecordModel>(
             sortBy: [SortDescriptor(\.toolName)]
         )
@@ -317,14 +322,14 @@ actor ToolCallRecordStore: SuperLog {
 }
 
 /// 每日统计点。
-struct DailyCountPoint: Identifiable, Sendable {
+public struct DailyCountPoint: Identifiable, Sendable {
     public var id: Date { day }
     public let day: Date
     public let count: Int
 }
 
 /// 工具调用统计结果。
-struct ToolStats: Identifiable, Sendable {
+public struct ToolStats: Identifiable, Sendable {
     public var id: String { toolName }
     public let toolName: String
     public let toolDisplayName: String

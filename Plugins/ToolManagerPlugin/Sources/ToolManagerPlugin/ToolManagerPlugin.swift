@@ -20,6 +20,10 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     public let order = 30
     public let policy: LumiPluginPolicy = .alwaysOn
 
+    /// 设置页「执行日志」Tab 需要的 store 引用,由 onBoot 阶段持有,
+    /// 在 settingsTabItems 里透传给对应的 SwiftUI 视图。
+    private var toolCallRecordStore: ToolCallRecordStore?
+
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
@@ -34,6 +38,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
             // 启动后台定时刷新任务
             await store.startFlushTask()
             toolManagerService.recordStore = store
+            self.toolCallRecordStore = store
         }
 
         try kernel.registerToolManagerService(toolManagerService)
@@ -77,6 +82,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        let store = toolCallRecordStore
         return [
             SettingsTabItem(
                 id: "\(id).tools",
@@ -84,7 +90,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
                 systemImage: "wrench.and.screwdriver",
                 order: 6
             ) {
-                ToolManagerSettingsView(kernel: kernel)
+                ToolManagerSettingsView(kernel: kernel, toolCallRecordStore: store)
             },
         ]
     }
