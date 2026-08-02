@@ -3,6 +3,8 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
+let stepFunPluginDataDirectoryName = "LLMProviderStepFunPlugin"
+
 @MainActor
 public final class StepFunPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.stepfun"
@@ -35,7 +37,14 @@ public final class StepFunPlugin: LumiPlugin {
         return instance
     }
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            AvailabilityDiskCacheDirectoryResolver.set(
+                pluginName: stepFunPluginDataDirectoryName,
+                directory: storage.pluginDataDirectory(for: stepFunPluginDataDirectoryName)
+            )
+        }
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
         // 确保 provider/gate 就绪,然后异步探测供应商可用性。
