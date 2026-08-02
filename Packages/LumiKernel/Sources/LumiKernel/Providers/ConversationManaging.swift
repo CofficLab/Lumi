@@ -17,6 +17,11 @@ public protocol ConversationManaging: ObservableObject {
     /// 当前选中对话的标题
     var currentTitle: String { get }
 
+    /// Whether the initial conversation list is still being loaded.
+    ///
+    /// Implementations that load synchronously can use the default value.
+    var isLoadingConversations: Bool { get }
+
     /// 数据存储目录
     var dataDirectory: URL { get }
 
@@ -98,6 +103,8 @@ public protocol ConversationManaging: ObservableObject {
 }
 
 public extension ConversationManaging {
+    var isLoadingConversations: Bool { false }
+
     /// 按更新时间倒序排序
     var sortedConversations: [LumiConversationSummary] {
         conversations.sorted { lhs, rhs in

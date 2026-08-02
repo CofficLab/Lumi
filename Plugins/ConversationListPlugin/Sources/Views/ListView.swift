@@ -38,7 +38,7 @@ public struct ListView: View {
 
     private var listContent: some View {
         ScrollView {
-            LazyVStack(spacing: 4) {
+            VStack(spacing: 4) {
                 ForEach(conversations, id: \.id) { conversation in
                     ItemView(
                         conversation: conversation,
@@ -55,9 +55,10 @@ public struct ListView: View {
     }
 
     private func reload() async {
-        conversations = await MainActor.run {
-            svc.sortedConversations
+        let snapshot = await MainActor.run {
+            (svc.sortedConversations, svc.isLoadingConversations)
         }
-        isLoading = false
+        conversations = snapshot.0
+        isLoading = snapshot.1
     }
 }
