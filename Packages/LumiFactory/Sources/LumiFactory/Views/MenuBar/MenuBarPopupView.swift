@@ -63,6 +63,6 @@ struct MenuBarPopupView: View {
                 action: onQuit
             )
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
 }
