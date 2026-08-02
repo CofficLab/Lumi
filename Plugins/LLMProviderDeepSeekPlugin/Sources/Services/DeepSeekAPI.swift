@@ -74,25 +74,6 @@ enum DeepSeekTransportError: LocalizedError {
     }
 }
 
-struct DeepSeekEvent: Sendable {
-    let content: String?
-    let reasoning: String?
-    let toolDeltas: [DeepSeekToolDelta]
-    let stopReason: String?
-    let done: Bool
-    let error: String?
-    let inputTokens: Int?
-    let outputTokens: Int?
-    let cacheHitTokens: Int?
-    let cacheTotalInputTokens: Int?
-}
-
-struct DeepSeekToolDelta: Sendable {
-    let id: String?
-    let name: String?
-    let arguments: String
-}
-
 enum DeepSeekEventParser {
     static func parse(_ data: Data) -> [DeepSeekEvent] {
         let text = String(decoding: data, as: UTF8.self)

@@ -193,23 +193,3 @@ public final class DeepSeekProvider: LumiLLMProvider, @unchecked Sendable {
         )
     }
 }
-
-enum DeepSeekProviderError: LocalizedError, LumiLLMErrorDispositionProviding {
-    case invalidRequest(String)
-    case invalidResponse(String)
-    case api(String)
-
-    var errorDescription: String? {
-        switch self {
-        case let .invalidRequest(value), let .invalidResponse(value), let .api(value): value
-        }
-    }
-
-    var statusCode: Int? { nil }
-    var llmErrorDisposition: LumiLLMErrorDisposition {
-        switch self {
-        case .api: .retryable()
-        case .invalidRequest, .invalidResponse: .nonRetryable
-        }
-    }
-}
