@@ -30,7 +30,7 @@ struct MenuBarPopupView: View {
             appActionsSection
         }
         .frame(width: 300)
-        .background(.regularMaterial)
+        .background(Color(nsColor: .windowBackgroundColor))
         .preferredColorScheme(SystemAppearanceResolver.effectiveColorScheme)
     }
 
