@@ -17,7 +17,14 @@ public final class AliyunPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            AvailabilityDiskCacheDirectoryResolver.set(
+                pluginName: "LLMProviderAliyun",
+                directory: storage.pluginDataDirectory(for: "LLMProviderAliyun")
+            )
+        }
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 

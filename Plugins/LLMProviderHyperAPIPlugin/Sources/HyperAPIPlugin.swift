@@ -13,7 +13,14 @@ public final class HyperAPIPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            AvailabilityDiskCacheDirectoryResolver.set(
+                pluginName: "LLMProviderHyperAPIPlugin",
+                directory: storage.pluginDataDirectory(for: "LLMProviderHyperAPIPlugin")
+            )
+        }
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 
