@@ -71,20 +71,21 @@ public struct ItemView: View {
                     .truncationMode(.tail)
                 }
                 
-                HStack {
-                    Text(conversation.updatedAt.relativeTime)
-                        .font(.footnote)
-                        .foregroundColor(theme.textTertiary)
-                    
-                    Spacer()
-                    
+                HStack(spacing: 4) {
                     if let projectPath = conversation.projectPath {
                         Text(URL(fileURLWithPath: projectPath).lastPathComponent)
                             .font(.footnote)
                             .foregroundColor(theme.textTertiary)
                             .lineLimit(1)
                             .truncationMode(.tail)
+
+                        Text("·")
+                            .foregroundColor(theme.textTertiary)
                     }
+
+                    Text(conversation.updatedAt.relativeTime)
+                        .font(.footnote)
+                        .foregroundColor(theme.textTertiary)
                 }
             }
 
