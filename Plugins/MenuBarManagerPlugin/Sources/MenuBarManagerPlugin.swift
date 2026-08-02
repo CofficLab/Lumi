@@ -307,21 +307,33 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
                 object: nil,
                 queue: .main
             ) { [weak self] _ in
-                Task { @MainActor in
-                    self?.refreshMenuBarSystemAppearance()
-                }
-                Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 50_000_000)
-                    self?.refreshMenuBarSystemAppearance()
-                }
+                self?.scheduleAppearanceRefresh()
+                self?.scheduleDelayedAppearanceRefresh()
             }
         }
 
         guard applicationAppearanceObservation == nil else { return }
         applicationAppearanceObservation = NSApplication.shared.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
-            Task { @MainActor in
-                self?.refreshMenuBarSystemAppearance()
-            }
+            self?.scheduleAppearanceRefresh()
+        }
+    }
+
+    /// Hops to the main actor and runs a single appearance refresh.
+    /// Marked `nonisolated` so non-isolated observer closures can call it
+    /// without tripping Swift 6 strict-concurrency's "sending 'self' risks
+    /// causing data races" diagnostic.
+    private nonisolated func scheduleAppearanceRefresh() {
+        Task { @MainActor [weak self] in
+            self?.refreshMenuBarSystemAppearance()
+        }
+    }
+
+    /// Hops to the main actor, waits ~50ms, then runs an appearance refresh.
+    /// Same `nonisolated` rationale as `scheduleAppearanceRefresh()`.
+    private nonisolated func scheduleDelayedAppearanceRefresh() {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            self?.refreshMenuBarSystemAppearance()
         }
     }
 
