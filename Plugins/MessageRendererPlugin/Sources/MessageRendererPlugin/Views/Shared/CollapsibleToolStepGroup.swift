@@ -50,12 +50,13 @@ struct CollapsibleToolStepGroup: View {
             summaryHeader
 
             if !isCollapsed {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 10) {
                     ForEach(toolCalls) { toolCall in
                         toolCallRow(for: toolCall)
                     }
                 }
                 .padding(.top, 8)
+                .padding(.bottom, 4)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
@@ -84,6 +85,7 @@ struct CollapsibleToolStepGroup: View {
                     .foregroundColor(theme.textTertiary)
                     .opacity(isHovering ? 1 : 0)
             }
+            .padding(.vertical, 5)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
