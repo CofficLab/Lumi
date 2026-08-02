@@ -362,6 +362,7 @@ public struct HTTPExchangeSettingsView: View {
     }()
 }
 
+@MainActor
 private struct HTTPExchangePayloadView: View {
     @LumiTheme private var theme
 
