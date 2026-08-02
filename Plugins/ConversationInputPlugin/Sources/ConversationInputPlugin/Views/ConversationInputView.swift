@@ -26,6 +26,7 @@ struct ConversationInputView: View, SuperLog {
 
                 ComposerView(
                     inputState: inputState,
+                    kernel: kernel,
                     onSend: { inputState.send(kernel: kernel) }
                 )
             }
