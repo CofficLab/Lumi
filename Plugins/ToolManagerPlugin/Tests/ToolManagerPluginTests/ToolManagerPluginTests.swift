@@ -464,6 +464,52 @@ struct ToolManagerPluginTests {
         #expect(AgentToolError.executionFailed(name: "echo", reason: "boom").localizedDescription.contains("boom"))
     }
 
+    @Test("tool call records can be queried by agent turn")
+    func toolCallRecordsByTurn() async throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = ToolCallRecordStore(databaseRootURL: directory)
+        let conversationID = UUID()
+        let turnID = UUID()
+        let otherTurnID = UUID()
+        let now = Date()
+
+        await store.record(
+            toolName: "read_file",
+            toolDisplayName: "读取文件",
+            turnID: turnID,
+            conversationID: conversationID,
+            createdAt: now,
+            startedAt: now,
+            completedAt: now.addingTimeInterval(0.1),
+            duration: 0.1,
+            argumentsJSON: "{}",
+            resultContent: "first",
+            resultIsError: false,
+            riskLevel: "low"
+        )
+        await store.record(
+            toolName: "shell",
+            toolDisplayName: "运行命令",
+            turnID: otherTurnID,
+            conversationID: conversationID,
+            createdAt: now,
+            startedAt: now,
+            completedAt: now,
+            duration: 0,
+            argumentsJSON: "{}",
+            resultContent: "other",
+            resultIsError: false,
+            riskLevel: "low"
+        )
+
+        let records = await store.fetchRecords(forTurnID: turnID)
+        #expect(records.count == 1)
+        #expect(records.first?.toolName == "read_file")
+        #expect(records.first?.turnID == turnID)
+    }
+
     private func temporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("lumi-tool-tests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

@@ -10,6 +10,7 @@ struct ToolCallRecordDTO: Identifiable, Sendable {
     let id: String
     let toolName: String
     let toolDisplayName: String
+    let turnID: UUID?
     let conversationID: String
     let createdAt: Date
     let startedAt: Date
@@ -25,6 +26,7 @@ struct ToolCallRecordDTO: Identifiable, Sendable {
         self.id = model.id
         self.toolName = model.toolName
         self.toolDisplayName = model.toolDisplayName
+        self.turnID = model.turnID.flatMap(UUID.init(uuidString:))
         self.conversationID = model.conversationID
         self.createdAt = model.createdAt
         self.startedAt = model.startedAt
@@ -101,6 +103,7 @@ actor ToolCallRecordStore: SuperLog {
     func record(
         toolName: String,
         toolDisplayName: String,
+        turnID: UUID? = nil,
         conversationID: UUID,
         createdAt: Date,
         startedAt: Date,
@@ -116,6 +119,7 @@ actor ToolCallRecordStore: SuperLog {
             id: UUID().uuidString,
             toolName: toolName,
             toolDisplayName: toolDisplayName,
+            turnID: turnID?.uuidString,
             conversationID: conversationID.uuidString,
             createdAt: createdAt,
             startedAt: startedAt,
@@ -176,6 +180,20 @@ actor ToolCallRecordStore: SuperLog {
                 $0.conversationID == conversationID.uuidString
             },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        guard let models = try? modelContext.fetch(descriptor) else { return [] }
+        return models.map { ToolCallRecordDTO(from: $0) }
+    }
+
+    /// 获取某个 AgentTurn 的全部工具调用,按开始时间升序返回。
+    func fetchRecords(forTurnID turnID: UUID) -> [ToolCallRecordDTO] {
+        flush()
+        let turnIDString = turnID.uuidString
+        let descriptor = FetchDescriptor<ToolCallRecordModel>(
+            predicate: #Predicate<ToolCallRecordModel> {
+                $0.turnID == turnIDString
+            },
+            sortBy: [SortDescriptor(\.startedAt, order: .forward)]
         )
         guard let models = try? modelContext.fetch(descriptor) else { return [] }
         return models.map { ToolCallRecordDTO(from: $0) }

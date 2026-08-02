@@ -33,9 +33,14 @@ public protocol AgentTurnManaging: AnyObject {
 
     /// Compatibility query for callers that only need to know whether work is active.
     func isRunning(for conversationID: UUID) -> Bool
+
+    /// The identifier of the currently active turn, if one exists.
+    func currentTurnID(for conversationID: UUID) -> UUID?
 }
 
 public extension AgentTurnManaging {
+    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+
     func resumeTurn(
         in conversationID: UUID,
         request: AgentTurnResumeRequest

@@ -42,6 +42,10 @@ extension LumiKernelContainer {
         return state.toolName
     }
 
+    public nonisolated var turnID: UUID? {
+        activeToolExecutionState?.turnID
+    }
+
     public nonisolated var currentProjectPath: String? {
         activeToolExecutionState?.currentProjectPath
     }

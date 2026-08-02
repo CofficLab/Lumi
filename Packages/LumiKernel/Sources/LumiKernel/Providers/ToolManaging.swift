@@ -44,12 +44,24 @@ public protocol ToolManaging: AnyObject {
     func displayDescription(for toolCall: LumiToolCall) -> String?
 
     /// Execute a tool call and return the result
-    func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult
+    func execute(
+        _ toolCall: LumiToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> LumiToolResult
+
+    /// Query all persisted tool calls belonging to an agent turn.
+    func toolCalls(for turnID: UUID) async -> [LumiToolCallRecord]
 }
 
 // MARK: - Default registration
 
 public extension ToolManaging {
+    /// Backward-compatible execution entry point for callers outside the agent loop.
+    func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult {
+        await execute(toolCall, conversationID: conversationID, turnID: nil)
+    }
+
     /// The plugin id used for tools registered without an explicit owner.
     static var builtInPluginID: String { "Built-in" }
 
