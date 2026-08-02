@@ -40,16 +40,14 @@ struct CaffeinateMenuBarPopupView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 第一区块：时间选项
+            // 第一区块:时间选项(self-contained,自带 padding)
             durationSection
 
             Divider()
-                .padding(.horizontal, 12)
 
-            // 第二区块：快捷菜单
+            // 第二区块:快捷菜单(self-contained,自带 padding)
             quickActionsSection
         }
-        .padding(.vertical, 8)
         .onAppear {
             manager.configure(kernel: kernel)
         }
@@ -74,12 +72,16 @@ struct CaffeinateMenuBarPopupView: View {
                 )
             }
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     // MARK: - 快捷菜单区块
 
     private var quickActionsSection: some View {
+        // MenuBarActionRow 自身带水平 padding(.horizontal, 12),
+        // 因此区块无需再额外施加水平 padding,与 NetworkMenuBarPopupView
+        // 中的 miniTrendView 风格一致。
         VStack(spacing: 0) {
             MenuBarActionRow(
                 title: LumiPluginLocalization.string("Prevent sleep & Keep screen on", bundle: .module),
@@ -121,7 +123,7 @@ struct CaffeinateMenuBarPopupView: View {
                 }
             )
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
 
     // MARK: - 辅助方法
