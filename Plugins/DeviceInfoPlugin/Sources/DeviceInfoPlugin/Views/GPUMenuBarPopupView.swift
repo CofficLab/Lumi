@@ -53,7 +53,7 @@ struct GPUMenuBarPopupView: View {
             }
             .frame(height: 6)
         }
-        .padding()
+        .padding(10)
     }
 
     // MARK: - Mini Trend View

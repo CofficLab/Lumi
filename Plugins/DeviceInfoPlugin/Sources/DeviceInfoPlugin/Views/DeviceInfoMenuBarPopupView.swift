@@ -88,7 +88,7 @@ public struct DeviceInfoMenuBarPopupView: View {
                 }
             }
         }
-        .padding()
+        .padding(10)
     }
 
     // MARK: - Top Processes View

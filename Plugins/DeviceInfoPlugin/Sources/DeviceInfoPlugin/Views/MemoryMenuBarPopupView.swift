@@ -41,6 +41,6 @@ public struct MemoryMenuBarPopupView: View {
             }
             .frame(height: 6)
         }
-        .padding()
+        .padding(10)
     }
 }
