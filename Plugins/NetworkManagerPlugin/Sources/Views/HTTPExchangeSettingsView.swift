@@ -74,9 +74,6 @@ public struct HTTPExchangeSettingsView: View {
         .task {
             await reloadAsync()
         }
-        .onReceive(NotificationCenter.default.publisher(for: HTTPExchangeStore.didChangeNotification)) { _ in
-            Task { await reloadAsync() }
-        }
         .alert(
             LumiPluginLocalization.string("Export failed", bundle: .module),
             isPresented: Binding(
