@@ -72,10 +72,11 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
 
         // Prefer a manager-owned child turn. If the installed manager does not
         // support child work, retain the synchronous behavior for compatibility.
+        let parentTurnID = kernel.turnID
         guard providerResolver(definition.providerID) != nil,
               let manager = kernel.agentTurnManager
         else {
-            return LumiToolExecutionResult(content: await runDelegate(task: task, kernel: kernel))
+            return LumiToolExecutionResult(content: await runDelegate(task: task, kernel: kernel, turnID: parentTurnID))
         }
 
         let suspensionID = UUID().uuidString
@@ -86,11 +87,11 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
             guard let kernel else {
                 return "Error: parent kernel was released before sub-agent completion."
             }
-            return await self.runDelegate(task: task, kernel: kernel)
+            return await self.runDelegate(task: task, kernel: kernel, turnID: parentTurnID)
         }
 
         guard accepted else {
-            return LumiToolExecutionResult(content: await runDelegate(task: task, kernel: kernel))
+            return LumiToolExecutionResult(content: await runDelegate(task: task, kernel: kernel, turnID: parentTurnID))
         }
 
         let suspension = AgentTurnSuspension(
@@ -106,7 +107,7 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
     }
 
     @MainActor
-    private func runDelegate(task: String, kernel: LumiKernel) async -> String {
+    private func runDelegate(task: String, kernel: LumiKernel, turnID: UUID? = nil) async -> String {
         // Resolve the provider + model that will power this sub-agent. Two paths:
         //  - Inherits selected provider: read the host's active selection live.
         //    If none is set, surface a clear error so the main agent can tell
@@ -166,6 +167,7 @@ public struct SubAgentDelegateTool: LumiAgentTool, @unchecked Sendable {
             tools: tools,
             toolService: executionToolService,
             conversationID: kernel.conversationID,
+            turnID: turnID,
             maxTurns: definition.maxTurns
         )
         return formatResult(result)
@@ -256,6 +258,7 @@ public struct SubAgentLoopRunner {
         tools: [any LumiAgentTool],
         toolService: any ToolManaging,
         conversationID: UUID,
+        turnID: UUID? = nil,
         maxTurns: Int = 10
     ) async -> SubAgentLoopResult {
         let start = Date()
@@ -331,7 +334,11 @@ public struct SubAgentLoopRunner {
 
             for toolCall in toolCalls {
                 try? Task.checkCancellation()
-                let result = await toolService.execute(toolCall, conversationID: conversationID)
+                let result = await toolService.execute(
+                    toolCall,
+                    conversationID: conversationID,
+                    turnID: turnID
+                )
                 messages.append(LumiChatMessage(
                     conversationID: conversationID,
                     role: .tool,

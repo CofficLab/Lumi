@@ -78,8 +78,8 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                 }
                 self.updateCurrentTitle()
                 self.persistSelectedConversationID()
-                self.notifyConversationsChanged()
                 self.isLoadingConversations = false
+                self.notifyConversationsChanged()
 
                 if Self.verbose {
                     Self.logger.info("\(Self.t)Loaded \(loaded.count) conversations")

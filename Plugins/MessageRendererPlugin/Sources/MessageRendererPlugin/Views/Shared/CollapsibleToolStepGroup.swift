@@ -6,9 +6,7 @@ import SwiftUI
 /// V1 (brief) 模式下的「可折叠工具步骤组」(ChatGPT/Codex 风格)。
 ///
 /// 把一条助手消息内联的若干工具调用包成一个可折叠的整体:
-/// - **turn 进行中**(本组 id 在 `lumiActiveToolGroupIDs` 中)→ 默认**展开**,
-///   逐个工具只显示工具名(loading/失败以颜色区分),不带耗时与按钮,完全融入正文列。
-/// - **turn 结束** → 默认**收起**成一行摘要(`数量 + 总耗时`),点击可重新展开。
+/// - 所有状态下都默认**收起**成一行摘要(`数量 + 总耗时`),点击可重新展开。
 ///
 /// 用户随时可点击表头手动展开/收起任意步骤组;手动操作存于本地 `@State`,
 /// 当本组从"进行中"变为"已完成"(`isActive` 由 true→false)时清空覆盖,回归默认收起态。
@@ -17,12 +15,11 @@ import SwiftUI
 /// 传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮,保持 V1 的 inline 极简风格。
 struct CollapsibleToolStepGroup: View {
     @LumiTheme private var theme
+    @Environment(\.lumiTurnActivitySummaries) private var turnActivitySummaries
 
     let message: LumiChatMessage
     let toolCalls: [LumiToolCall]
     let verbosity: LumiResponseVerbosity
-
-    @Environment(\.lumiActiveToolGroupIDs) private var activeIDs
 
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
@@ -32,11 +29,6 @@ struct CollapsibleToolStepGroup: View {
 
     /// 表头悬停态;仅用于显隐 chevron。
     @State private var isHovering = false
-
-    /// 本组是否属于"当前正在进行的 turn" → 默认展开。
-    private var isActive: Bool {
-        activeIDs.contains(message.id)
-    }
 
     /// 组内是否存在「正在等待用户作答」的交互式工具调用(如 ask_user)。
     /// 这类调用挂起了 turn,其自定义交互 UI 必须始终可见 —— 即使 turn 已不在
@@ -50,7 +42,7 @@ struct CollapsibleToolStepGroup: View {
     /// 例外:存在等待用户作答的交互式调用时,强制展开(不可收起),保证交互入口可见。
     private var isCollapsed: Bool {
         if hasAwaitingInteraction { return false }
-        return userOverride ?? !isActive
+        return userOverride ?? true
     }
 
     var body: some View {
@@ -58,23 +50,17 @@ struct CollapsibleToolStepGroup: View {
             summaryHeader
 
             if !isCollapsed {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 10) {
                     ForEach(toolCalls) { toolCall in
                         toolCallRow(for: toolCall)
                     }
                 }
                 .padding(.top, 8)
+                .padding(.bottom, 4)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .animation(.easeInOut(duration: 0.2), value: isCollapsed)
-        // turn 结束(isActive true→false):清空手动覆盖,自动收起。
-        // 注意:用户在结束后仍可再次手动点开(此时 isActive 已为 false,userOverride 重新赋值)。
-        .onChange(of: isActive) { _, active in
-            if !active, userOverride != nil {
-                userOverride = nil
-            }
-        }
     }
 
     // MARK: - Header (折叠态/展开态共用的一行摘要)
@@ -99,6 +85,7 @@ struct CollapsibleToolStepGroup: View {
                     .foregroundColor(theme.textTertiary)
                     .opacity(isHovering ? 1 : 0)
             }
+            .padding(.vertical, 5)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -134,7 +121,12 @@ struct CollapsibleToolStepGroup: View {
     /// - 进行中:`执行中 · 已完成 k/N`
     /// - 全部完成:`执行了 N 个步骤 · <总耗时>`(有失败则追加 `· X 失败`)
     private var summaryText: String {
-        ToolStepGroupSummary.summaryText(for: toolCalls)
+        if let turnID = message.turnID,
+           let summary = turnActivitySummaries[turnID],
+           summary.totalCount > 0 {
+            return ToolStepGroupSummary.summaryText(for: summary)
+        }
+        return ToolStepGroupSummary.summaryText(for: toolCalls)
     }
 
     // MARK: - Expanded rows

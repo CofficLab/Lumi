@@ -11,11 +11,11 @@ struct MessageEmptyStateView: View {
                 .font(.system(size: 48, weight: .light))
                 .foregroundColor(theme.textSecondary.opacity(0.5))
 
-            Text("No messages yet")
+            Text(LumiPluginLocalization.string("No messages yet", bundle: .module))
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(theme.textPrimary)
 
-            Text("Start the conversation by sending a message.")
+            Text(LumiPluginLocalization.string("Start the conversation by sending a message.", bundle: .module))
                 .font(.body)
                 .foregroundColor(theme.textSecondary)
                 .multilineTextAlignment(.center)

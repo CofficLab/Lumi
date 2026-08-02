@@ -11,11 +11,11 @@ struct NoConversationSelectedView: View {
                 .font(.system(size: 48, weight: .light))
                 .foregroundColor(theme.textSecondary.opacity(0.5))
 
-            Text("No conversation selected")
+            Text(LumiPluginLocalization.string("No conversation selected", bundle: .module))
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(theme.textPrimary)
 
-            Text("Type a message and press Enter to start a new conversation.")
+            Text(LumiPluginLocalization.string("Type a message and press Enter to start a new conversation.", bundle: .module))
                 .font(.body)
                 .foregroundColor(theme.textSecondary)
                 .multilineTextAlignment(.center)

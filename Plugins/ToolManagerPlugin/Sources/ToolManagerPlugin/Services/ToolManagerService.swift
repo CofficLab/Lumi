@@ -122,7 +122,11 @@ public final class ToolManagerService: ToolManaging {
         return description.isEmpty ? nil : description
     }
 
-    public func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult {
+    public func execute(
+        _ toolCall: LumiToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> LumiToolResult {
         guard let tool = registeredTools[toolCall.name] else {
             return LumiToolResult(content: "Tool not found: \(toolCall.name)", isError: true)
         }
@@ -137,10 +141,12 @@ public final class ToolManagerService: ToolManaging {
             )
         }
         let currentProjectPath = kernel.project?.currentProject?.path
+        let resolvedTurnID = turnID ?? kernel.turnID
         let executionState = LumiToolExecutionContextState(
             conversationID: conversationID,
             toolCallID: toolCall.id,
             toolName: toolCall.name,
+            turnID: resolvedTurnID,
             currentProjectPath: currentProjectPath
         )
 
@@ -153,6 +159,7 @@ public final class ToolManagerService: ToolManaging {
             logToolCall(
                 toolName: tool.name,
                 toolDisplayName: toolCall.name,
+                turnID: resolvedTurnID,
                 conversationID: conversationID,
                 createdAt: createdAt,
                 startedAt: startedAt,
@@ -185,6 +192,7 @@ public final class ToolManagerService: ToolManaging {
             logToolCall(
                 toolName: tool.name,
                 toolDisplayName: tool.displayDescription(arguments: arguments),
+                turnID: resolvedTurnID,
                 conversationID: conversationID,
                 createdAt: createdAt,
                 startedAt: startedAt,
@@ -216,6 +224,7 @@ public final class ToolManagerService: ToolManaging {
         logToolCall(
             toolName: tool.name,
             toolDisplayName: tool.displayDescription(arguments: arguments),
+            turnID: resolvedTurnID,
             conversationID: conversationID,
             createdAt: createdAt,
             startedAt: startedAt,
@@ -231,12 +240,35 @@ public final class ToolManagerService: ToolManaging {
         return result
     }
 
+    public func toolCalls(for turnID: UUID) async -> [LumiToolCallRecord] {
+        guard let records = await recordStore?.fetchRecords(forTurnID: turnID) else { return [] }
+        return records.map {
+            LumiToolCallRecord(
+                id: $0.id,
+                turnID: $0.turnID,
+                toolName: $0.toolName,
+                toolDisplayName: $0.toolDisplayName,
+                conversationID: UUID(uuidString: $0.conversationID) ?? UUID(),
+                createdAt: $0.createdAt,
+                startedAt: $0.startedAt,
+                completedAt: $0.completedAt,
+                duration: $0.duration,
+                argumentsJSON: $0.argumentsJSON,
+                resultContent: $0.resultContent,
+                resultIsError: $0.resultIsError,
+                riskLevel: $0.riskLevel,
+                turnControl: $0.turnControl
+            )
+        }
+    }
+
     // MARK: - Tool Call Logging
 
     /// 后台异步记录工具调用，不阻塞主流程。
     private func logToolCall(
         toolName: String,
         toolDisplayName: String,
+        turnID: UUID?,
         conversationID: UUID,
         createdAt: Date,
         startedAt: Date,
@@ -254,8 +286,9 @@ public final class ToolManagerService: ToolManaging {
         // 后台异步记录，不 await，不阻塞
         Task {
             await store?.record(
-                toolName: toolName,
-                toolDisplayName: toolDisplayName,
+            toolName: toolName,
+            toolDisplayName: toolDisplayName,
+            turnID: turnID,
                 conversationID: conversationID,
                 createdAt: createdAt,
                 startedAt: startedAt,
@@ -266,6 +299,13 @@ public final class ToolManagerService: ToolManaging {
                 resultIsError: resultIsError,
                 riskLevel: riskLevel,
                 turnControl: turnControl
+            )
+            NotificationCenter.default.post(
+                name: .lumiToolActivityDidChange,
+                object: nil,
+                userInfo: [
+                    "conversationID": conversationID
+                ]
             )
         }
     }

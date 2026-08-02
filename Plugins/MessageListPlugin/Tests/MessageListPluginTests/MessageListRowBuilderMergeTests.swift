@@ -88,6 +88,65 @@ struct MessageListRowBuilderMergeTests {
         #expect(merged.toolCalls?.map(\.id) == ["a", "b"])
     }
 
+    @Test("带 turnID 的工具消息合并成 Turn 活动行")
+    func turnMessagesBecomeActivityRow() throws {
+        let turnID = UUID()
+        let m1 = toolExec(id: UUID(), calls: ["a"], turnID: turnID)
+        let m2 = toolExec(id: UUID(), calls: ["b"], turnID: turnID)
+        let rows = builder.build(
+            persisted: [m1, m2],
+            conversationID: conversation,
+            streaming: nil,
+            verbosity: .brief
+        )
+
+        let merged = try #require(rows.first)
+        #expect(merged.renderKind == "turn-activity")
+        #expect(merged.turnID == turnID)
+        #expect(merged.toolCalls?.map(\.id) == ["a", "b"])
+    }
+
+    @Test("历史工具消息不会吞掉新 Turn 的 turnID")
+    func legacyMessageDoesNotMergeWithTurnMessage() {
+        let turnID = UUID()
+        let legacy = toolExec(id: UUID(), calls: ["legacy"])
+        let current = toolExec(id: UUID(), calls: ["current"], turnID: turnID)
+        let rows = builder.build(
+            persisted: [legacy, current],
+            conversationID: conversation,
+            streaming: nil,
+            verbosity: .brief
+        )
+
+        #expect(rows.count == 2)
+        #expect(rows[0].renderKind == "tool-step-group")
+        #expect(rows[1].renderKind == "turn-activity")
+        #expect(rows[1].turnID == turnID)
+    }
+
+    @Test("同一 Turn 被正文隔开时仍合并为一个活动行")
+    func sameTurnToolMessagesAcrossTextRemainOneActivityRow() throws {
+        let turnID = UUID()
+        let first = toolExec(id: UUID(), calls: ["first"], turnID: turnID)
+        let text = LumiChatMessage(
+            id: UUID(), conversationID: conversation, role: .assistant, content: "阶段说明"
+        )
+        let second = toolExec(id: UUID(), calls: ["second"], turnID: turnID)
+
+        let rows = builder.build(
+            persisted: [first, text, second],
+            conversationID: conversation,
+            streaming: nil,
+            verbosity: .brief
+        )
+
+        #expect(rows.count == 2)
+        let activity = try #require(rows.first { $0.turnID == turnID })
+        #expect(activity.renderKind == "turn-activity")
+        #expect(activity.toolCalls?.map(\.id) == ["first", "second"])
+        #expect(rows.contains { $0.content == "阶段说明" })
+    }
+
     @Test("V1:剔除独立 .tool 结果行")
     func v1DropsToolResultRows() {
         let assistant = toolExec(id: UUID(), calls: ["a"])
@@ -123,11 +182,11 @@ struct MessageListRowBuilderMergeTests {
     // MARK: - Helper
 
     /// 构造一条 `isToolExecutionOnly` 的助手消息(content = "...",带工具调用)。
-    private func toolExec(id: UUID, calls: [String]) -> LumiChatMessage {
+    private func toolExec(id: UUID, calls: [String], turnID: UUID? = nil) -> LumiChatMessage {
         let toolCalls = calls.map { LumiToolCall(id: $0, name: "tool_\($0)", arguments: "{}") }
         return LumiChatMessage(
             id: id, conversationID: conversation, role: .assistant,
-            content: "...", toolCalls: toolCalls
+            content: "...", turnID: turnID, toolCalls: toolCalls
         )
     }
 }

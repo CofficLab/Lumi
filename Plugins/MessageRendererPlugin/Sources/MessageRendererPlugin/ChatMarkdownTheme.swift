@@ -14,6 +14,8 @@ enum ChatMarkdownTheme {
                 }
             },
             bodyFont: .system(size: 14),
+            // 列表需要比普通块间距更松,避免连续条目粘成一团。
+            listItemSpacing: 8,
             textColor: theme.textPrimary,
             secondaryTextColor: theme.textSecondary
         )

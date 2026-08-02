@@ -33,6 +33,7 @@ public final class LumiToolExecutionContextState: @unchecked Sendable {
     public typealias CancellationHandler = @Sendable () -> Void
 
     public let conversationID: UUID
+    public let turnID: UUID?
     public let toolCallID: String
     public let toolName: String
     public let currentProjectPath: String?
@@ -47,12 +48,14 @@ public final class LumiToolExecutionContextState: @unchecked Sendable {
         conversationID: UUID,
         toolCallID: String,
         toolName: String,
+        turnID: UUID? = nil,
         currentProjectPath: String? = nil,
         allowedDirectories: [String] = [],
         language: LumiLanguagePreference = .english,
         verbosity: String? = nil
     ) {
         self.conversationID = conversationID
+        self.turnID = turnID
         self.toolCallID = toolCallID
         self.toolName = toolName
         self.currentProjectPath = currentProjectPath

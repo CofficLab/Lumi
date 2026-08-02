@@ -1,7 +1,4 @@
 import Foundation
-import LLMKit
-import LumiKernel
-import LumiKernel
 import LumiKernel
 
 enum AvailabilityService {
@@ -16,15 +13,13 @@ enum AvailabilityService {
             return cached.result
         }
 
-        let result = await LumiOpenAICompatibleAvailability.chatPing(
-            model: model,
-            adapter: provider.internalAdapter,
-            apiService: provider.internalApiService,
-            buildRequest: { url, apiKey in
-                provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
-            },
-            resolveAPIKey: { try provider.lumiResolveAPIKey() }
-        )
+        let result: LumiModelAvailabilityResult
+        do {
+            try await provider.ping(model: model)
+            result = .available
+        } catch {
+            result = .unavailable(.message(error.localizedDescription))
+        }
         cache.write(model: model, result: result, timestamp: Date())
         return result
     }

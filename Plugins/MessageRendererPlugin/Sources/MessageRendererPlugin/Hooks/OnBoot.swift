@@ -122,7 +122,7 @@ public struct MessageRendererOnBootHook {
                 id: "core-tool-step-group",
                 order: base + 185,
                 canRender: { message in
-                    message.renderKind == "tool-step-group"
+                    message.renderKind == "tool-step-group" || message.renderKind == "turn-activity"
                 },
                 render: { message, verbosity in
                     ToolStepGroupMessageView(message: message, verbosity: verbosity)

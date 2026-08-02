@@ -34,6 +34,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     private var awaitingConversations: Set<UUID> = []
     private var suspensions: [UUID: AgentTurnSuspension] = [:]
     private var turnStates: [UUID: AgentTurnState] = [:]
+    private var turnIDs: [UUID: UUID] = [:]
+    private var resumingTurnIDs: Set<UUID> = []
     private var failedConversations: Set<UUID> = []
     private var pendingChildWorks: [UUID: [String: AgentTurnChildWork]] = [:]
     private var activeChildWorks: [UUID: Task<Void, Never>] = [:]
@@ -65,6 +67,14 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         // Clear cancellation flag for this conversation
         cancelledConversations.remove(conversationID)
         failedConversations.remove(conversationID)
+        let turnID: UUID
+        if resumingTurnIDs.remove(conversationID) != nil,
+           let existingTurnID = turnIDs[conversationID] {
+            turnID = existingTurnID
+        } else {
+            turnID = UUID()
+            turnIDs[conversationID] = turnID
+        }
         turnStates[conversationID] = .running
 
         let task = Task { [weak self] in
@@ -151,6 +161,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
         suspensions.removeValue(forKey: conversationID)
         turnStates[conversationID] = .running
+        resumingTurnIDs.insert(conversationID)
         return try await runTurn(in: conversationID)
     }
 
@@ -181,6 +192,10 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
     public func isRunning(for conversationID: UUID) -> Bool {
         activeTurnTasks[conversationID] != nil
+    }
+
+    public func currentTurnID(for conversationID: UUID) -> UUID? {
+        turnIDs[conversationID]
     }
 
     private func startChildWorkIfNeeded(for conversationID: UUID) {
@@ -223,6 +238,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     // MARK: - Turn Loop
 
     private func executeTurnLoop(conversationID: UUID) async {
+        let turnID = turnIDs[conversationID]
         while !cancelledConversations.contains(conversationID) {
             try? Task.checkCancellation()
 
@@ -387,6 +403,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
             // Resolve user-facing descriptions before persisting the assistant message.
             // The UI must not need to look up tools or execute tool formatting logic.
+            assistantMessage.turnID = turnID
             if let toolManager = kernel.toolManager,
                let toolCalls = assistantMessage.toolCalls {
                 assistantMessage.toolCalls = toolCalls.map { toolCall in
@@ -447,7 +464,11 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                     continue
                 }
 
-                var result = await toolManager.execute(toolCall, conversationID: conversationID)
+                var result = await toolManager.execute(
+                    toolCall,
+                    conversationID: conversationID,
+                    turnID: turnID
+                )
                 // Tool implementations do not receive the outer tool-call ID.
                 // Bind it here before persisting a suspension so a system-owned
                 // child completion can resume the exact parent tool call.
@@ -491,6 +512,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                     conversationID: conversationID,
                     role: .tool,
                     content: result.content,
+                    turnID: turnID,
                     isError: result.isError,
                     metadata: toolMetadata,
                     toolCallID: toolCall.id
@@ -561,7 +583,11 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 )
             )
 
-            var result = await toolManager.execute(toolCall, conversationID: conversationID)
+            var result = await toolManager.execute(
+                toolCall,
+                conversationID: conversationID,
+                turnID: turnIDs[conversationID]
+            )
             if case let .suspend(suspension) = result.turnControl,
                suspension.toolCallID == nil {
                 let boundSuspension = AgentTurnSuspension(
@@ -591,6 +617,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 conversationID: conversationID,
                 role: .tool,
                 content: result.content,
+                turnID: turnIDs[conversationID],
                 isError: result.isError,
                 metadata: LumiImageAttachmentMetadata.encode(result.imageAttachments),
                 toolCallID: toolCall.id

@@ -5,6 +5,9 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
     public let conversationID: UUID
     public let role: LumiChatMessageRole
     public var content: String
+    /// The AgentTurn that produced this message, when the message belongs to a turn.
+    /// Optional for backward-compatible decoding of historical messages.
+    public var turnID: UUID?
     public let createdAt: Date
     public var providerID: String?
     public var modelName: String?
@@ -26,6 +29,7 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         conversationID: UUID,
         role: LumiChatMessageRole,
         content: String,
+        turnID: UUID? = nil,
         createdAt: Date = Date(),
         providerID: String? = nil,
         modelName: String? = nil,
@@ -46,6 +50,7 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.conversationID = conversationID
         self.role = role
         self.content = content
+        self.turnID = turnID
         self.createdAt = createdAt
         self.providerID = providerID
         self.modelName = modelName
@@ -61,6 +66,52 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.latencyMs = latencyMs
         self.timeToFirstTokenMs = timeToFirstTokenMs
         self.streamingDurationMs = streamingDurationMs
+    }
+
+    /// Binary/source compatibility initializer for callers built before turn tracking.
+    public init(
+        id: UUID = UUID(),
+        conversationID: UUID,
+        role: LumiChatMessageRole,
+        content: String,
+        createdAt: Date = Date(),
+        providerID: String? = nil,
+        modelName: String? = nil,
+        isError: Bool = false,
+        rawErrorDetail: String? = nil,
+        renderKind: String? = nil,
+        metadata: [String: String] = [:],
+        toolCalls: [LumiToolCall]? = nil,
+        toolCallID: String? = nil,
+        reasoningContent: String? = nil,
+        inputTokenCount: Int? = nil,
+        outputTokenCount: Int? = nil,
+        latencyMs: Double? = nil,
+        timeToFirstTokenMs: Double? = nil,
+        streamingDurationMs: Double? = nil
+    ) {
+        self.init(
+            id: id,
+            conversationID: conversationID,
+            role: role,
+            content: content,
+            turnID: nil,
+            createdAt: createdAt,
+            providerID: providerID,
+            modelName: modelName,
+            isError: isError,
+            rawErrorDetail: rawErrorDetail,
+            renderKind: renderKind,
+            metadata: metadata,
+            toolCalls: toolCalls,
+            toolCallID: toolCallID,
+            reasoningContent: reasoningContent,
+            inputTokenCount: inputTokenCount,
+            outputTokenCount: outputTokenCount,
+            latencyMs: latencyMs,
+            timeToFirstTokenMs: timeToFirstTokenMs,
+            streamingDurationMs: streamingDurationMs
+        )
     }
 }
 

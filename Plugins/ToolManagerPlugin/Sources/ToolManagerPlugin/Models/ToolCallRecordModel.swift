@@ -10,6 +10,8 @@ final class ToolCallRecordModel {
     @Attribute(.unique) var id: String
     var toolName: String
     var toolDisplayName: String
+    /// Optional for lightweight migration of records created before turn tracking.
+    var turnID: String?
     var conversationID: String
     var createdAt: Date
     var startedAt: Date
@@ -25,6 +27,7 @@ final class ToolCallRecordModel {
         id: String,
         toolName: String,
         toolDisplayName: String,
+        turnID: String? = nil,
         conversationID: String,
         createdAt: Date,
         startedAt: Date,
@@ -39,6 +42,7 @@ final class ToolCallRecordModel {
         self.id = id
         self.toolName = toolName
         self.toolDisplayName = toolDisplayName
+        self.turnID = turnID
         self.conversationID = conversationID
         self.createdAt = createdAt
         self.startedAt = startedAt

@@ -8,9 +8,13 @@ import LumiKernel
 /// 设计要点:
 /// - 视图持有 `kernel` 引用,在每次打开时实时从内核拉取工具列表
 /// - 从 ToolCallRecordStore 读取调用统计(调用次数、失败次数、平均耗时)
+/// - 顶部左侧 AppTabBar：Tools(原界面) / Execution Log(双栏日志，跟 NetworkManager 的 HTTP 日志对齐)
 /// - 右上角有「Open Data Directory」按钮可打开存储目录
 public struct ToolManagerSettingsView: View {
     let kernel: LumiKernel
+    let toolCallRecordStore: ToolCallRecordStore?
+
+    @State private var selectedTabID: ToolSettingsTab = .tools
 
     @State private var groups: [(pluginID: String, tools: [any LumiAgentTool])] = []
     @State private var pluginDisplayNames: [String: String] = [:]
@@ -22,52 +26,40 @@ public struct ToolManagerSettingsView: View {
 
     private let toolPageSize = 100
 
-    public init(kernel: LumiKernel) {
+    enum ToolSettingsTab: String, Identifiable {
+        case tools
+        case executionLog
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .tools: LumiPluginLocalization.string("Tools", bundle: .module)
+            case .executionLog: LumiPluginLocalization.string("Execution Log", bundle: .module)
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .tools: "wrench.and.screwdriver"
+            case .executionLog: "list.bullet.rectangle.portrait"
+            }
+        }
+    }
+
+    public init(
+        kernel: LumiKernel,
+        toolCallRecordStore: ToolCallRecordStore? = nil
+    ) {
         self.kernel = kernel
+        self.toolCallRecordStore = toolCallRecordStore
     }
 
     public var body: some View {
         AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
-            VStack(alignment: .leading, spacing: 14) {
-                header
-
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        // 工具调用统计
-                        if !toolStats.isEmpty {
-                            toolStatsSection
-                        }
-
-                        // 可用工具列表
-                        if isLoading {
-                            ProgressView(LumiPluginLocalization.string("Loading...", bundle: .module))
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        } else if groups.isEmpty {
-                            AppEmptyState(
-                                icon: "wrench.and.screwdriver",
-                                title: LumiPluginLocalization.string("No Tools Registered", bundle: .module),
-                                description: LumiPluginLocalization.string("No tools are currently registered in the kernel. Enable plugins to make tools available to the LLM.", bundle: .module)
-                            )
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        } else {
-                            ForEach(displayedGroups, id: \.pluginID) { group in
-                                pluginSection(pluginID: group.pluginID, tools: group.tools)
-                            }
-
-                            if visibleToolLimit < totalToolCount {
-                                ProgressView()
-                                    .controlSize(.small)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                                    .onAppear {
-                                        visibleToolLimit += toolPageSize
-                                    }
-                            }
-                        }
-                    }
-                    .padding(.bottom, 8)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack(alignment: .leading, spacing: 12) {
+                tabBar
+                contentArea
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
@@ -76,9 +68,111 @@ public struct ToolManagerSettingsView: View {
         }
     }
 
+    // MARK: - Tab Bar
+
+    private var tabBar: some View {
+        AppTabBar(
+            tabs: availableTabs,
+            selectedTab: Binding(
+                get: { selectedTabID.rawValue },
+                set: { newValue in
+                    if let next = ToolSettingsTab(rawValue: newValue) {
+                        selectedTabID = next
+                    }
+                }
+            )
+        )
+    }
+
+    private var availableTabs: [AppTabBar.Tab] {
+        var tabs: [AppTabBar.Tab] = [
+            AppTabBar.Tab(
+                title: ToolSettingsTab.tools.title,
+                icon: ToolSettingsTab.tools.icon,
+                id: ToolSettingsTab.tools.rawValue
+            )
+        ]
+        if toolCallRecordStore != nil {
+            tabs.append(
+                AppTabBar.Tab(
+                    title: ToolSettingsTab.executionLog.title,
+                    icon: ToolSettingsTab.executionLog.icon,
+                    id: ToolSettingsTab.executionLog.rawValue
+                )
+            )
+        }
+        return tabs
+    }
+
+    // MARK: - Content
+
+    @ViewBuilder
+    private var contentArea: some View {
+        switch selectedTabID {
+        case .tools:
+            toolsContent
+        case .executionLog:
+            if let toolCallRecordStore {
+                ToolCallLogSettingsView(store: toolCallRecordStore)
+            } else {
+                AppEmptyState(
+                    icon: "list.bullet.rectangle.portrait",
+                    title: LumiPluginLocalization.string("Execution Log unavailable", bundle: .module),
+                    description: LumiPluginLocalization.string("Lumi storage is not configured, so tool call records cannot be persisted.", bundle: .module)
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
+
+    private var toolsContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            toolsHeader
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // 工具调用统计
+                    if !toolStats.isEmpty {
+                        toolStatsSection
+                    }
+
+                    // 可用工具列表
+                    if isLoading {
+                        ProgressView(LumiPluginLocalization.string("Loading...", bundle: .module))
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if groups.isEmpty {
+                        AppEmptyState(
+                            icon: "wrench.and.screwdriver",
+                            title: LumiPluginLocalization.string("No Tools Registered", bundle: .module),
+                            description: LumiPluginLocalization.string("No tools are currently registered in the kernel. Enable plugins to make tools available to the LLM.", bundle: .module)
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        ForEach(displayedGroups, id: \.pluginID) { group in
+                            pluginSection(pluginID: group.pluginID, tools: group.tools)
+                        }
+
+                        if visibleToolLimit < totalToolCount {
+                            ProgressView()
+                                .controlSize(.small)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .onAppear {
+                                    visibleToolLimit += toolPageSize
+                                }
+                        }
+                    }
+                }
+                .padding(.bottom, 8)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
     // MARK: - Header
 
-    private var header: some View {
+    private var toolsHeader: some View {
         HStack(spacing: 10) {
             Label(totalToolLabel, systemImage: "wrench.and.screwdriver")
             Spacer()

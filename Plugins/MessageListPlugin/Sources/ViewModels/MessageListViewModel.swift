@@ -52,10 +52,12 @@ final class MessageListViewModel: ObservableObject, SuperLog {
 
     /// V1 (brief) 模式下应**默认展开**的工具步骤组(助手消息 id)集合。
     ///
-    /// 仅在当前 turn 进行中时,本轮(上一条最终回复之后)带工具调用的助手消息 id
-    /// 会被收录;turn 结束(或未开始)时为空集合 → 所有步骤组默认收起。
+    /// 当前策略是所有步骤组默认收起,因此该集合保持为空。
     /// 由 View 经 `\.lumiActiveToolGroupIDs` Environment 注入渲染层。
     @Published private(set) var activeStepGroupMessageIDs: Set<UUID> = []
+
+    /// ToolManager-backed summaries keyed by AgentTurn ID.
+    @Published private(set) var turnActivitySummaries: [UUID: LumiTurnActivitySummary] = [:]
 
     // MARK: - Dependencies & Internal State
 
@@ -66,6 +68,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// 切换会话时记录的目标会话,用于丢弃过期的后台读结果。
     private var activeConversationID: UUID?
     private var cancellables: Set<AnyCancellable> = []
+    private var didBindToolActivityNotifications = false
     /// 流式/发送服务是否都已绑定;服务后于本 viewmodel 就绪时由 `activate` 重试绑定。
     private var didBindServices = false
 
@@ -96,6 +99,22 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         kernel.messageRendererManager?.renderer(for: message)
     }
 
+    /// Loads the display snapshot for one AgentTurn.
+    ///
+    /// ToolManager owns persistence and filtering; the message-list layer only
+    /// combines those records with the current AgentTurn lifecycle state.
+    func turnActivity(for turnID: UUID, conversationID: UUID) async -> LumiTurnActivity? {
+        guard let toolManager = kernel.toolManager else { return nil }
+        let records = await toolManager.toolCalls(for: turnID)
+        let state = kernel.agentTurnManager?.state(for: conversationID) ?? .idle
+        return TurnActivityBuilder.build(
+            turnID: turnID,
+            conversationID: conversationID,
+            state: state,
+            toolCalls: records
+        )
+    }
+
     // MARK: - Lifecycle
 
     /// 切换/进入会话:绑定服务订阅(幂等),记录目标会话,加载最近一页。
@@ -104,6 +123,11 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         activeConversationID = conversationID
         isLoading = true
         await loadFirstPage(conversationID: conversationID)
+        if let conversationID {
+            await refreshTurnActivitySummaries(conversationID: conversationID)
+        } else {
+            turnActivitySummaries = [:]
+        }
     }
 
     // MARK: - Pagination
@@ -151,6 +175,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         if let hasEarlier = result.hasEarlierMessages {
             hasEarlierMessages = hasEarlier
         }
+        await refreshTurnActivitySummaries(conversationID: conversationID)
     }
 
     // MARK: - Private
@@ -174,12 +199,63 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         isLoading = false
     }
 
+    /// Refreshes only the turns represented by the current message window.
+    /// ToolManager remains the source of truth for counts and durations; messages
+    /// still provide the expandable tool rows.
+    private func refreshTurnActivitySummaries(conversationID: UUID) async {
+        guard let toolManager = kernel.toolManager else {
+            turnActivitySummaries = [:]
+            return
+        }
+        let turnIDs = Set(
+            persistedMessages
+                .filter { $0.conversationID == conversationID }
+                .compactMap(\.turnID)
+        )
+        guard !turnIDs.isEmpty else {
+            turnActivitySummaries = [:]
+            return
+        }
+
+        var summaries: [UUID: LumiTurnActivitySummary] = [:]
+        for turnID in turnIDs {
+            let records = await toolManager.toolCalls(for: turnID)
+            let durations = records.compactMap(\.duration)
+            summaries[turnID] = LumiTurnActivitySummary(
+                turnID: turnID,
+                totalCount: records.count,
+                completedCount: records.filter { $0.completedAt != nil }.count,
+                failedCount: records.filter(\.resultIsError).count,
+                totalDuration: durations.isEmpty ? nil : durations.reduce(0, +)
+            )
+        }
+        guard activeConversationID == conversationID else { return }
+        turnActivitySummaries = summaries
+    }
+
     /// 订阅流式/发送服务的窄播(绕开 kernel 全局广播),变化时重算展示行。
     ///
     /// `receive(on:)` 让 sink 在属性写入完成后异步执行
     /// (objectWillChange 在 willSet 触发,同步读取会拿到旧值)。
     /// 幂等:两个服务都绑定后不再重复;任一尚未就绪时由下次 `activate` 重试。
     private func bindServicesIfNeeded() {
+        if !didBindToolActivityNotifications {
+            NotificationCenter.default.publisher(for: .lumiToolActivityDidChange)
+                .compactMap { notification in
+                    notification.userInfo?["conversationID"] as? UUID
+                }
+                .filter { [weak self] conversationID in
+                    self?.selectedConversationID == conversationID
+                }
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] conversationID in
+                    guard let self else { return }
+                    Task { await self.refreshTurnActivitySummaries(conversationID: conversationID) }
+                }
+                .store(in: &cancellables)
+            didBindToolActivityNotifications = true
+        }
+
         guard !didBindServices else { return }
         if let streaming = kernel.messageStreaming {
             streaming.objectWillChange
@@ -214,7 +290,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         if tailStreamingContent != content {
             tailStreamingContent = content
         }
-        recomputeActiveStepGroups(verbosity: verbosity)
+        recomputeActiveStepGroups()
     }
 
     /// 计算 V1 下应默认展开的工具步骤组集合。
@@ -224,17 +300,8 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// turn 未进行中 → 空集合(全收起)。
     ///
     /// 依赖 `displayRows` 已是最新(`rebuildRows` 内先重算展示行再调用本方法)。
-    /// `rebuildRows` 已订阅 sender/streaming/messages 变化,覆盖了 turn 开始/结束、
-    /// 工具结果到达等所有翻转点 —— 因此这里轮询 `isRunning(for:)` 即可,无需额外订阅。
-    private func recomputeActiveStepGroups(verbosity: LumiResponseVerbosity) {
-        let conversationID = selectedConversationID
-        let isTurnActive = conversationID
-            .flatMap { kernel.agentTurnManager?.isRunning(for: $0) } ?? false
-        let activeIDs = ActiveStepGroupResolver.resolve(
-            displayRows: displayRows,
-            isTurnActive: isTurnActive,
-            verbosity: verbosity
-        )
+    private func recomputeActiveStepGroups() {
+        let activeIDs: Set<UUID> = []
         if activeStepGroupMessageIDs != activeIDs {
             activeStepGroupMessageIDs = activeIDs
         }
