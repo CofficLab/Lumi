@@ -27,6 +27,9 @@ struct CaffeinateMenuBarPopupView: View {
     /// 当前生效的快捷操作，由 manager 的真实状态推导，确保重新打开弹窗时对号仍然正确
     private var activeAction: QuickActionType? {
         guard manager.isActive else { return nil }
+        if manager.isDisplayOffRequested {
+            return .turnOffDisplay
+        }
         switch manager.mode {
         case .systemAndDisplay:
             return .systemAndDisplay
@@ -108,12 +111,13 @@ struct CaffeinateMenuBarPopupView: View {
                 title: LumiPluginLocalization.string("Prevent sleep & Turn off screen", bundle: .module),
                 icon: "power",
                 color: Color(hex: "7C6FFF"),
-                showCheckmark: false, // 瞬时操作，不显示对号
+                isSelected: activeAction == .turnOffDisplay,
                 action: {
-                    // 立即关闭屏幕，并切换到"允许关闭"模式
-                    // activateAndTurnOffDisplay 内部已将 mode 设为 .systemOnly，
-                    // activeAction 由 manager 状态推导，对号会自动出现，无需手动赋值
-                    manager.activateAndTurnOffDisplay(duration: selectedDuration)
+                    if activeAction == .turnOffDisplay {
+                        manager.deactivate()
+                    } else {
+                        manager.activateAndTurnOffDisplay(duration: selectedDuration)
+                    }
                 }
             )
         }
@@ -134,6 +138,10 @@ struct CaffeinateMenuBarPopupView: View {
     }
 
     private func activateAction(_ action: QuickActionType) {
+        if manager.isActive {
+            manager.deactivate()
+        }
+
         switch action {
         case .systemAndDisplay:
             manager.activate(mode: .systemAndDisplay, duration: selectedDuration)

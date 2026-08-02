@@ -29,6 +29,9 @@ final class CaffeinateManager: SuperLog {
 
     private(set) var mode: SleepMode = .systemAndDisplay
 
+    /// Whether the current activation was requested with the immediate display-off action.
+    private(set) var isDisplayOffRequested = false
+
     /// IOKit assertion ID
     private var assertionID: IOPMAssertionID = 0
 
@@ -116,8 +119,11 @@ final class CaffeinateManager: SuperLog {
         }
         activate(mode: .systemOnly, duration: duration)
 
+        guard isActive else { return }
+
         // 2. Turn off display
         turnOffDisplay()
+        isDisplayOffRequested = true
     }
 
     private func turnOffDisplay() {
@@ -144,6 +150,7 @@ final class CaffeinateManager: SuperLog {
         }
 
         self.mode = mode
+        isDisplayOffRequested = false
         let reason = "User prevented sleep via Lumi" as NSString
 
         let systemResult = IOPMAssertionCreateWithName(
@@ -220,6 +227,7 @@ final class CaffeinateManager: SuperLog {
 
         if systemResult == kIOReturnSuccess && displayResult == kIOReturnSuccess {
             isActive = false
+            isDisplayOffRequested = false
             CaffeinatePlugin.logger.info("[LogoHighlight] caffeinate deactivation succeeded")
             updateLogoHighlight(false)
             startTime = nil
