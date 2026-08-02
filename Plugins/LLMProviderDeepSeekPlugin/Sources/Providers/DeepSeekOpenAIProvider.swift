@@ -2,7 +2,7 @@ import Foundation
 import KeychainKit
 import LumiKernel
 
-public final class DeepSeekProvider: LumiLLMProvider, @unchecked Sendable {
+public final class DeepSeekOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(
         id: "deepseek",
         displayName: LumiPluginLocalization.string("DeepSeek", bundle: .module),
@@ -24,13 +24,13 @@ public final class DeepSeekProvider: LumiLLMProvider, @unchecked Sendable {
         apiKeyStorageKey: "DevAssistant_ApiKey_DeepSeek"
     )
 
-    private let apiService: DeepSeekAPIService
+    private let apiService: DeepSeekOpenAIService
 
     public init(
         baseURL: String = "https://api.deepseek.com/v1/chat/completions",
         network: (any NetworkProviding)? = nil
     ) {
-        self.apiService = DeepSeekAPIService(baseURL: baseURL, network: network)
+        self.apiService = DeepSeekOpenAIService(baseURL: baseURL, network: network)
     }
 
     // MARK: - LumiLLMProvider Protocol
@@ -74,24 +74,35 @@ public final class DeepSeekProvider: LumiLLMProvider, @unchecked Sendable {
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
         guard let conversationID = request.messages.first?.conversationID else {
-            throw DeepSeekProviderError.invalidRequest("Conversation is empty")
+            throw DeepSeekOpenAIProviderError.invalidRequest("Conversation is empty")
         }
         let body = DeepSeekRequestBuilder.body(for: request)
         guard let url = URL(string: apiService.baseURL) else {
-            throw DeepSeekProviderError.invalidRequest("Invalid DeepSeek URL")
+            throw DeepSeekOpenAIProviderError.invalidRequest("Invalid DeepSeek URL")
         }
         var httpRequest = URLRequest(url: url)
         httpRequest.httpMethod = "POST"
         httpRequest.setValue("Bearer \(try lumiResolveAPIKey())", forHTTPHeaderField: "Authorization")
         httpRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let state = DeepSeekStreamState()
+        let requestStartedAt = Date()
+        let collector = DeepSeekChatMessageCollector(
+            message: DeepSeekChatMessage.assembling(
+                conversationID: conversationID,
+                providerID: Self.info.id,
+                modelName: request.model,
+                requestStartedAt: requestStartedAt,
+                streamingStartedAt: nil
+            )
+        )
+
         try await apiService.send(request: httpRequest, body: body) { event in
+            // 协议层错误：标记消息为错误并停止消费。
             if let error = event.error {
-                await state.setError(error)
+                collector.mutate { $0.isError = true; $0.rawErrorDetail = error }
                 return false
             }
-            await state.append(event)
+            collector.mutate { $0.merge(event) }
             if let content = event.content, !content.isEmpty {
                 await onChunk(LumiStreamChunk(content: content, eventTitle: "生成中"))
             }
@@ -99,43 +110,26 @@ public final class DeepSeekProvider: LumiLLMProvider, @unchecked Sendable {
                 await onChunk(LumiStreamChunk(content: reasoning, isThinking: true, eventTitle: "思考中"))
             }
             if event.done {
-                await state.saveTool()
+                collector.mutate { $0.finalize() }
                 await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束"))
                 return false
             }
             return true
         }
 
-        if let error = await state.error { throw DeepSeekProviderError.api(error) }
-        await state.saveTool()
-        let toolCalls = await state.toolCalls
-        let content = await state.content
-        guard !content.isEmpty || !toolCalls.isEmpty else {
-            throw DeepSeekProviderError.invalidResponse("DeepSeek returned an empty response")
+        let message = collector.snapshot()
+        if message.isError {
+            throw DeepSeekOpenAIProviderError.api(message.rawErrorDetail ?? "DeepSeek returned an error")
         }
-        let metadata = MessageTokenMetadata.metadata(
-            inputTokens: await state.inputTokens,
-            outputTokens: await state.outputTokens,
-            cachedInputTokens: await state.cacheHitTokens,
-            cacheTotalInputTokens: await state.cacheTotalInputTokens
-        )
-        var finalMetadata = metadata
-        if let stopReason = await state.stopReason { finalMetadata["stopReason"] = stopReason }
-        return LumiChatMessage(
-            conversationID: conversationID,
-            role: .assistant,
-            content: content,
-            providerID: Self.info.id,
-            modelName: request.model,
-            metadata: finalMetadata,
-            toolCalls: toolCalls.isEmpty ? nil : toolCalls,
-            reasoningContent: (await state.reasoning).isEmpty ? nil : await state.reasoning
-        )
+        if message.content.isEmpty && (message.toolCalls?.isEmpty ?? true) {
+            throw DeepSeekOpenAIProviderError.invalidResponse("DeepSeek returned an empty response")
+        }
+        return message.toLumiChatMessage()
     }
 
     func ping(model: String) async throws {
         guard let url = URL(string: apiService.baseURL) else {
-            throw DeepSeekProviderError.invalidRequest("Invalid DeepSeek URL")
+            throw DeepSeekOpenAIProviderError.invalidRequest("Invalid DeepSeek URL")
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -161,7 +155,7 @@ public final class DeepSeekProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
-        if let error = error as? DeepSeekProviderError {
+        if let error = error as? DeepSeekOpenAIProviderError {
             return error.llmErrorDisposition
         }
         return context.attempt < context.maxAttempts
@@ -180,7 +174,7 @@ public final class DeepSeekProvider: LumiLLMProvider, @unchecked Sendable {
         disposition: LumiLLMErrorDisposition
     ) -> LumiChatMessage {
         var metadata = disposition.metadataEntries
-        if let error = error as? DeepSeekProviderError, let status = error.statusCode {
+        if let error = error as? DeepSeekOpenAIProviderError, let status = error.statusCode {
             metadata["httpStatusCode"] = String(status)
         }
         return LumiChatMessage(
@@ -191,25 +185,5 @@ public final class DeepSeekProvider: LumiLLMProvider, @unchecked Sendable {
             rawErrorDetail: error.localizedDescription,
             metadata: metadata
         )
-    }
-}
-
-enum DeepSeekProviderError: LocalizedError, LumiLLMErrorDispositionProviding {
-    case invalidRequest(String)
-    case invalidResponse(String)
-    case api(String)
-
-    var errorDescription: String? {
-        switch self {
-        case let .invalidRequest(value), let .invalidResponse(value), let .api(value): value
-        }
-    }
-
-    var statusCode: Int? { nil }
-    var llmErrorDisposition: LumiLLMErrorDisposition {
-        switch self {
-        case .api: .retryable()
-        case .invalidRequest, .invalidResponse: .nonRetryable
-        }
     }
 }

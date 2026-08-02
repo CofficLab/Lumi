@@ -13,7 +13,14 @@ public final class MiniMaxPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            AvailabilityDiskCacheDirectoryResolver.set(
+                pluginName: "LLMProviderMiniMax",
+                directory: storage.pluginDataDirectory(for: "LLMProviderMiniMax")
+            )
+        }
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 
@@ -69,4 +76,18 @@ public final class MiniMaxPlugin: LumiPlugin {
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        let apiKeyProvider: @Sendable () -> String? = {
+            APIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: "DevAssistant_ApiKey_MiniMax")
+        }
+        if let network = kernel.network {
+            let client = MiniMaxVideoClient(network: network, apiKeyProvider: apiKeyProvider)
+            return [MiniMaxVideoTool(client: client)]
+        } else {
+            // 网络能力未注册时,降级到普通 HTTPClient（理论上不会发生）
+            let client = MiniMaxVideoClient(apiKeyProvider: apiKeyProvider)
+            return [MiniMaxVideoTool(client: client)]
+        }
+    }
 }

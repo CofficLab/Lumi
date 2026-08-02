@@ -72,6 +72,7 @@ public final class NetworkManagerPlugin: LumiPlugin {
             GetHTTPSlowRequestsTool(),
             GetHTTPFailedRequestsTool(),
             GetHTTPDomainLogTool(),
+            DownloadFileTool(),
         ]
     }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }

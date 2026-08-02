@@ -9,9 +9,12 @@ private final class MockMiniMaxVideoClient: MiniMaxVideoClientProtocol, @uncheck
     var shouldFail = false
     var failAtStep: FailStep = .submit
     var generateCallCount = 0
+    var downloadURL: URL = URL(string: "https://example.com/video.mp4")!
+    var fileName: String = "test_video.mp4"
+    var byteCount: Int64? = 2048
 
     enum FailStep {
-        case submit, poll, retrieve, download
+        case submit, poll, retrieve
     }
 
     func generate(
@@ -43,18 +46,15 @@ private final class MockMiniMaxVideoClient: MiniMaxVideoClientProtocol, @uncheck
                 throw MiniMaxVideoError.taskFailed(message: "Task generation failed")
             case .retrieve:
                 throw MiniMaxVideoError.missingDownloadURL
-            case .download:
-                throw MiniMaxVideoError.downloadFailed(message: "Network error")
             }
         }
 
-        // Return mock video data
-        let mockVideoData = Data(repeating: 0x00, count: 2048)
+        // Return mock video asset (download URL only, no binary download)
         return MiniMaxVideoGeneratedAsset(
-            videoData: mockVideoData,
-            mimeType: "video/mp4",
-            fileName: "test_video.mp4",
-            byteCount: 2048
+            downloadURL: downloadURL,
+            fileName: fileName,
+            byteCount: byteCount,
+            mimeType: "video/mp4"
         )
     }
 }
@@ -64,6 +64,7 @@ private final class MockMiniMaxVideoClient: MiniMaxVideoClientProtocol, @uncheck
 struct MiniMaxVideoToolTests {
 
     @Test("Tool should return error when prompt is empty")
+    @MainActor
     func testEmptyPrompt() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
@@ -94,6 +95,7 @@ struct MiniMaxVideoToolTests {
     }
 
     @Test("Tool should handle missing prompt")
+    @MainActor
     func testMissingPrompt() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
@@ -123,6 +125,7 @@ struct MiniMaxVideoToolTests {
     }
 
     @Test("Tool should successfully generate video with default parameters")
+    @MainActor
     func testSuccessfulGenerationWithDefaults() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
@@ -151,16 +154,18 @@ struct MiniMaxVideoToolTests {
         #expect(result.contains("6 seconds"))
         #expect(result.contains("768P"))
         #expect(result.contains("2.0 KB"))
+        #expect(result.contains("Download link"))
+        #expect(result.contains("24 hours"))
+        #expect(result.contains("https://example.com/video.mp4"))
         #expect(mockClient.generateCallCount == 1)
 
-        // Verify image attachment was added
+        // Verify NO image/video attachment is pushed (links only, no download)
         let attachments = context.collectImages()
-        #expect(attachments.count == 1)
-        #expect(attachments.first?.mimeType == "video/mp4")
-        #expect(attachments.first?.fileName == "test_video.mp4")
+        #expect(attachments.isEmpty)
     }
 
     @Test("Tool should handle custom parameters")
+    @MainActor
     func testCustomParameters() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
@@ -196,6 +201,7 @@ struct MiniMaxVideoToolTests {
     }
 
     @Test("Tool should handle API error at submit step")
+    @MainActor
     func testSubmitError() async throws {
         let mockClient = MockMiniMaxVideoClient()
         mockClient.shouldFail = true
@@ -228,6 +234,7 @@ struct MiniMaxVideoToolTests {
     }
 
     @Test("Tool should handle task failure at poll step")
+    @MainActor
     func testPollError() async throws {
         let mockClient = MockMiniMaxVideoClient()
         mockClient.shouldFail = true
@@ -260,6 +267,7 @@ struct MiniMaxVideoToolTests {
     }
 
     @Test("Tool should handle cancellation")
+    @MainActor
     func testCancellation() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
@@ -280,9 +288,8 @@ struct MiniMaxVideoToolTests {
         ]
 
         // Start task
-        let kernel = LumiKernel()
-        let task = Task {
-            return try await kernel.withToolExecutionContextState(context) {
+        let task = Task { @MainActor in
+            try await kernel.withToolExecutionContextState(context) {
                 try await tool.execute(arguments: arguments, kernel: kernel)
             }
         }
@@ -292,13 +299,14 @@ struct MiniMaxVideoToolTests {
         context.cancel()
 
         // Wait for task completion
-        let result: String = try await task.value
+        let result = try await task.value
 
         #expect(result.contains("cancelled"))
         #expect(mockClient.generateCallCount == 1)
     }
 
     @Test("Tool should format byte count correctly")
+    @MainActor
     func testByteCountFormatting() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
@@ -324,5 +332,35 @@ struct MiniMaxVideoToolTests {
 
         // Mock returns 2048 bytes, should display as 2.0 KB
         #expect(result.contains("2.0 KB"))
+    }
+
+    @Test("Tool should display Unknown size when byteCount is nil")
+    @MainActor
+    func testByteCountNil() async throws {
+        let mockClient = MockMiniMaxVideoClient()
+        mockClient.byteCount = nil
+        let tool = MiniMaxVideoTool(client: mockClient)
+        let kernel = LumiKernel()
+
+        let context = LumiToolExecutionContextState(
+            conversationID: UUID(),
+            toolCallID: "test-call-9",
+            toolName: "minimax_generate_video",
+            currentProjectPath: nil,
+            allowedDirectories: [],
+            language: .english,
+            verbosity: nil
+        )
+
+        let arguments: [String: LumiJSONValue] = [
+            "prompt": .string("A test")
+        ]
+
+        let result = try await kernel.withToolExecutionContextState(context) {
+            try await tool.execute(arguments: arguments, kernel: kernel)
+        }
+
+        #expect(result.contains("Unknown"))
+        #expect(result.contains("Download link"))
     }
 }

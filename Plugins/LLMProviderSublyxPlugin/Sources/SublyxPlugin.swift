@@ -13,7 +13,14 @@ public final class SublyxPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            AvailabilityDiskCacheDirectoryResolver.set(
+                pluginName: "LLMProviderSublyxPlugin",
+                directory: storage.pluginDataDirectory(for: "LLMProviderSublyxPlugin")
+            )
+        }
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 

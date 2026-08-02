@@ -18,18 +18,22 @@ public protocol MiniMaxVideoClientProtocol: Sendable {
 }
 
 /// 视频生成最终交付物。
+///
+/// 注意：自此次重构起，客户端**不再下载**完整的 mp4 二进制，
+/// 仅返回 MiniMax 给出的 24 小时有效的下载链接。
+/// 这样可以避免 10–50 MB 的视频数据占用 LLM 上下文 token 与带宽。
 public struct MiniMaxVideoGeneratedAsset: Equatable, Sendable {
-    public let videoData: Data
-    public let mimeType: String
+    /// MiniMax 提供的下载链接（24 小时内有效）。
+    public let downloadURL: URL
+    /// 推荐用于下载的文件名（来自 MiniMax，或回退到默认值）。
     public let fileName: String
-    public let byteCount: Int64
-
-    public var base64Data: String {
-        videoData.base64EncodedString()
-    }
+    /// MiniMax 报告的字节数（可能为 nil）。
+    public let byteCount: Int64?
+    /// 下载链接的 MIME 类型（一般 `video/mp4`）。
+    public let mimeType: String
 }
 
-/// MiniMax 视频生成客户端：submit → poll → retrieveFile → download 四步交付链。
+/// MiniMax 视频生成客户端：submit → poll → retrieveFile 三步交付链。
 ///
 /// - 可注入 `HTTPClient` 和 API Key provider，便于单测。
 /// - 每个步骤都允许 `shouldContinue()` 检查（基于 `Task.isCancelled`）。
@@ -93,15 +97,13 @@ public final class MiniMaxVideoClient: MiniMaxVideoClientProtocol, @unchecked Se
             apiKey: apiKey,
             shouldContinue: shouldContinue
         )
-        let videoData = try await download(
-            downloadURL: fileInfo.downloadURL,
-            shouldContinue: shouldContinue
-        )
+        // 注意：不再调用 download(...) 直接拉取 mp4 二进制（10–50MB）。
+        // MiniMax 提供的 downloadURL 在 24 小时内有效，工具会把链接回传给调用方。
         return MiniMaxVideoGeneratedAsset(
-            videoData: videoData,
-            mimeType: MiniMaxVideoConstants.videoMimeType,
+            downloadURL: fileInfo.downloadURL,
             fileName: fileInfo.fileName,
-            byteCount: Int64(videoData.count)
+            byteCount: fileInfo.byteCount,
+            mimeType: MiniMaxVideoConstants.videoMimeType
         )
     }
 
@@ -252,33 +254,6 @@ public final class MiniMaxVideoClient: MiniMaxVideoClientProtocol, @unchecked Se
             fileName: response.preferredFilename(),
             byteCount: response.byteCount()
         )
-    }
-
-    // MARK: - Step 4: Download
-
-    private func download(
-        downloadURL: URL,
-        shouldContinue: @escaping @Sendable () async -> Bool
-    ) async throws -> Data {
-        try await checkContinue(shouldContinue)
-
-        var request = URLRequest(url: downloadURL)
-        request.httpMethod = "GET"
-        request.setValue(MiniMaxVideoConstants.videoMimeType, forHTTPHeaderField: "Accept")
-
-        let data: Data
-        do {
-            data = try await sendData(request: request)
-        } catch let error as HTTPClientError {
-            throw mapHTTPClientError(error)
-        }
-
-        guard data.count >= 1024 else {
-            throw MiniMaxVideoError.downloadFailed(
-                message: "Downloaded payload too small (\(data.count) bytes)"
-            )
-        }
-        return data
     }
 
     // MARK: - Helpers

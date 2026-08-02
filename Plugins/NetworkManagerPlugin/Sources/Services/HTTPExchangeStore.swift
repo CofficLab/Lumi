@@ -97,6 +97,115 @@ public final class HTTPExchangeStore {
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    /// Search HTTP exchanges with optional filters.
+    ///
+    /// The keyset cursor (`beforeStartedAt`) is applied via SwiftData predicate
+    /// to keep the page boundary stable, while the remaining filters
+    /// (URL keyword, method, status code) are evaluated in Swift. This avoids
+    /// the `#Predicate` macro's restrictions on combining optional conditions
+    /// and keeps the call site simple. The window is sized generously so that
+    /// after in-memory filtering we still have a full page.
+    public func searchPage(
+        limit: Int,
+        beforeStartedAt: Date? = nil,
+        urlContains: String? = nil,
+        method: String? = nil,
+        statusCode: Int? = nil
+    ) -> [HTTPExchangeRecord] {
+        guard let context = self.context, limit > 0 else { return [] }
+
+        // A coarse over-fetch window lets the in-memory filter still produce
+        // up to `limit` results even when only a fraction of the database
+        // matches. 4× is a pragmatic balance between fetch cost and pagination
+        // granularity.
+        let windowSize = max(limit * 4, limit)
+        let normalizedURL = urlContains?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedMethod = method?.uppercased()
+
+        let cursor = beforeStartedAt
+        let rawRecords: [HTTPExchangeRecord]
+        if let cursor {
+            let descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                predicate: #Predicate<HTTPExchangeRecord> { $0.startedAt < cursor },
+                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+            )
+            var bounded = descriptor
+            bounded.fetchLimit = windowSize
+            rawRecords = (try? context.fetch(bounded)) ?? []
+        } else {
+            var descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+            )
+            descriptor.fetchLimit = windowSize
+            rawRecords = (try? context.fetch(descriptor)) ?? []
+        }
+
+        let filtered = rawRecords.filter { record in
+            if let normalizedURL, !normalizedURL.isEmpty {
+                if !record.requestURL.localizedCaseInsensitiveContains(normalizedURL),
+                   !(record.errorDescription?.localizedCaseInsensitiveContains(normalizedURL) ?? false) {
+                    return false
+                }
+            }
+            if let normalizedMethod {
+                if record.requestMethod.uppercased() != normalizedMethod { return false }
+            }
+            if let statusCode {
+                if record.responseStatusCode != statusCode { return false }
+            }
+            return true
+        }
+
+        return Array(filtered.prefix(limit))
+    }
+
+    /// Count HTTP exchanges matching the same filters as `searchPage`.
+    ///
+    /// Uses `fetchCount` with the same keyset cursor to avoid materializing
+    /// bodies, then filters in Swift. Result is only an approximation when
+    /// filters are active and the underlying table is large.
+    public func searchCount(
+        urlContains: String? = nil,
+        method: String? = nil,
+        statusCode: Int? = nil
+    ) -> Int {
+        guard let context = self.context else { return 0 }
+
+        let normalizedURL = urlContains?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedMethod = method?.uppercased()
+        let isFiltered = (normalizedURL?.isEmpty == false)
+            || normalizedMethod != nil
+            || statusCode != nil
+
+        if !isFiltered {
+            return (try? context.fetchCount(FetchDescriptor<HTTPExchangeRecord>())) ?? 0
+        }
+
+        // Fetch IDs only to keep this cheap; fall back to full scan for filtered counts.
+        var descriptor = FetchDescriptor<HTTPExchangeRecord>(
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        // Cap to a reasonable upper bound so an unfiltered count query
+        // doesn't scan unbounded history just to render a label.
+        descriptor.fetchLimit = 5_000
+        let records = (try? context.fetch(descriptor)) ?? []
+        return records.filter { record in
+            if let normalizedURL, !normalizedURL.isEmpty {
+                if !record.requestURL.localizedCaseInsensitiveContains(normalizedURL),
+                   !(record.errorDescription?.localizedCaseInsensitiveContains(normalizedURL) ?? false) {
+                    return false
+                }
+            }
+            if let normalizedMethod, record.requestMethod.uppercased() != normalizedMethod {
+                return false
+            }
+            if let statusCode, record.responseStatusCode != statusCode {
+                return false
+            }
+            return true
+        }.count
+    }
+
     /// Count stored exchanges without materializing request or response bodies.
     public func count() -> Int {
         guard let context = self.context else { return 0 }

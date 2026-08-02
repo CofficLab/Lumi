@@ -13,7 +13,14 @@ public final class ZhipuPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            AvailabilityDiskCacheDirectoryResolver.set(
+                pluginName: "LLMProviderZhipuPlugin",
+                directory: storage.pluginDataDirectory(for: "LLMProviderZhipuPlugin")
+            )
+        }
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 

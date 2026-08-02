@@ -38,7 +38,7 @@ struct PluginLLMProviderMiniMaxTests {
 
     @Test func providerMetadata() {
         #expect(MiniMaxTokenPlanProvider.info.id == "minimax-tokenplan")
-        #expect(MiniMaxTokenPlanProvider.info.name.isEmpty == false)
+        #expect(MiniMaxTokenPlanProvider.info.displayName.isEmpty == false)
         #expect(MiniMaxTokenPlanProvider.info.defaultModel == "MiniMax-M2.7")
         #expect(MiniMaxTokenPlanProvider.apiKeyHelpURL != nil)
         #expect(MiniMaxTokenPlanProvider.info.availableModels.contains("MiniMax-M3"))
@@ -98,7 +98,7 @@ struct PluginLLMProviderMiniMaxTests {
     @Test func buildRequestUsesAnthropicCompatibleHeaders() {
         let provider = MiniMaxTokenPlanProvider()
         let url = URL(string: "https://api.minimax.chat/anthropic/v1/messages")!
-        let request = provider.buildRequest(url: url, apiKey: "minimax-test-key")
+        let request = provider.internalAdapter.buildRequest(url: url, apiKey: "minimax-test-key")
 
         #expect(request.value(forHTTPHeaderField: "x-api-key") == "minimax-test-key")
         #expect(request.value(forHTTPHeaderField: "anthropic-version") == "2023-06-01")
@@ -130,7 +130,7 @@ struct PluginLLMProviderMiniMaxTests {
 
     @Test func errorMessageMapsMissingAPIKey() {
         let message = makeMessage(
-            for: LumiLLMProviderSupportError.missingAPIKey(MiniMaxTokenPlanProvider.info.name)
+            for: LumiLLMProviderSupportError.missingAPIKey(MiniMaxTokenPlanProvider.info.displayName)
         )
 
         #expect(message.renderKind == MiniMaxRenderKind.apiKeyMissing)
@@ -166,7 +166,7 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(AvailabilityService.isUnsupportedModelError(error))
 
         let mapped = AvailabilityService.mapUnsupportedModelResult(
-            .unavailable(LLMFailureDetailResolver.resolve(from: error))
+            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
         )
 
         guard case .unavailable(let failure) = mapped else {

@@ -1,10 +1,12 @@
 import Foundation
 import LumiKernel
+import SwiftUI
 
 /// OnboardingPlugin 的运行时桥接:持有 Storage service 解析出的插件目录,
 /// 供 `OnboardingPluginStore` 读取。
 enum OnboardingPluginRuntimeBridge {
     nonisolated(unsafe) static var pluginDirectory: URL?
+    nonisolated(unsafe) static var viewModel: OnboardingPluginViewModel?
 
     static let fallbackRootDirectory: URL = {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
@@ -25,6 +27,19 @@ public extension OnboardingPlugin {
                 storage.pluginDataDirectory(for: OnboardingPluginRuntimeBridge.pluginName)
         }
         didBootstrapFromLumiCore = true
+    }
+
+    static func initializeViewModel(kernel: LumiKernel) {
+        guard OnboardingPluginRuntimeBridge.viewModel == nil else { return }
+        let store: OnboardingPluginStore
+        if let storage = kernel.storage {
+            let pluginDirectory = storage.pluginDataDirectory(for: OnboardingPluginRuntimeBridge.pluginName)
+            let settingsDirectory = pluginDirectory.appendingPathComponent("settings", isDirectory: true)
+            store = OnboardingPluginStore(settingsDirectory: settingsDirectory)
+        } else {
+            store = OnboardingPluginStore(pluginId: OnboardingPluginRuntimeBridge.pluginName)
+        }
+        OnboardingPluginRuntimeBridge.viewModel = OnboardingPluginViewModel(store: store)
     }
 }
 

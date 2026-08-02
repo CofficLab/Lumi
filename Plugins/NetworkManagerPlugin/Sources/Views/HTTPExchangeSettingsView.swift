@@ -3,6 +3,10 @@ import Foundation
 import LumiUI
 import SwiftUI
 
+/// Bodies larger than this are shown as a download prompt instead of
+/// being decoded and rendered inline, to avoid blocking the main thread.
+private let largePayloadByteThreshold = 32 * 1024  // 32 KB
+
 @MainActor
 public struct HTTPExchangeSettingsView: View {
     private let store: HTTPExchangeStore
@@ -73,9 +77,6 @@ public struct HTTPExchangeSettingsView: View {
         }
         .task {
             await reloadAsync()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: HTTPExchangeStore.didChangeNotification)) { _ in
-            Task { await reloadAsync() }
         }
         .alert(
             LumiPluginLocalization.string("Export failed", bundle: .module),
@@ -221,9 +222,27 @@ public struct HTTPExchangeSettingsView: View {
                 }
             }
 
-            payloadSection(title: LumiPluginLocalization.string("Request Headers", bundle: .module), subtitle: LumiPluginLocalization.string("Raw header fields sent with the request", bundle: .module), data: record.requestHeadersJSON, fallback: "{}")
-            payloadSection(title: LumiPluginLocalization.string("Request Body", bundle: .module), subtitle: String(format: LumiPluginLocalization.string("Original request body bytes (%@)", bundle: .module), byteCount(record.requestBody)), data: record.requestBody, fallback: "<empty>")
-            payloadSection(title: LumiPluginLocalization.string("Request Options", bundle: .module), subtitle: LumiPluginLocalization.string("URLRequest transport options captured at send time", bundle: .module), data: record.requestDetailsJSON, fallback: "{}")
+            payloadSection(
+                title: LumiPluginLocalization.string("Request Headers", bundle: .module),
+                subtitle: LumiPluginLocalization.string("Raw header fields sent with the request", bundle: .module),
+                data: record.requestHeadersJSON,
+                fallback: "{}"
+            )
+            payloadSection(
+                title: LumiPluginLocalization.string("Request Body", bundle: .module),
+                subtitle: String(format: LumiPluginLocalization.string("Original request body bytes (%@)", bundle: .module), byteCount(record.requestBody)),
+                data: record.requestBody,
+                fallback: "<empty>",
+                bodyKind: .request,
+                recordID: record.id,
+                mimeType: nil
+            )
+            payloadSection(
+                title: LumiPluginLocalization.string("Request Options", bundle: .module),
+                subtitle: LumiPluginLocalization.string("URLRequest transport options captured at send time", bundle: .module),
+                data: record.requestDetailsJSON,
+                fallback: "{}"
+            )
         }
     }
 
@@ -247,8 +266,21 @@ public struct HTTPExchangeSettingsView: View {
                 }
             }
 
-            payloadSection(title: LumiPluginLocalization.string("Response Headers", bundle: .module), subtitle: LumiPluginLocalization.string("Raw header fields received from the server", bundle: .module), data: record.responseHeadersJSON, fallback: "<no response headers>")
-            payloadSection(title: LumiPluginLocalization.string("Response Body", bundle: .module), subtitle: String(format: LumiPluginLocalization.string("Original response body bytes (%@)", bundle: .module), byteCount(record.responseBody)), data: record.responseBody, fallback: "<empty>")
+            payloadSection(
+                title: LumiPluginLocalization.string("Response Headers", bundle: .module),
+                subtitle: LumiPluginLocalization.string("Raw header fields received from the server", bundle: .module),
+                data: record.responseHeadersJSON,
+                fallback: "<no response headers>"
+            )
+            payloadSection(
+                title: LumiPluginLocalization.string("Response Body", bundle: .module),
+                subtitle: String(format: LumiPluginLocalization.string("Original response body bytes (%@)", bundle: .module), byteCount(record.responseBody)),
+                data: record.responseBody,
+                fallback: "<empty>",
+                bodyKind: .response,
+                recordID: record.id,
+                mimeType: record.responseMIMEType
+            )
             errorSection(for: record)
         }
     }
@@ -284,9 +316,43 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
-    private func payloadSection(title: String, subtitle: String, data: Data?, fallback: String) -> some View {
+    /// Renders a simple payload section with the normal inline renderer.
+    /// Used for headers and options which are always small.
+    @ViewBuilder
+    private func payloadSection(
+        title: String,
+        subtitle: String,
+        data: Data?,
+        fallback: String
+    ) -> some View {
         AppSettingsSection(title: title, subtitle: subtitle) {
             HTTPExchangePayloadView(data: data, fallback: fallback)
+        }
+    }
+
+    /// Renders a payload section, routing to `HTTPExchangeLargePayloadView` when
+    /// the data exceeds `largePayloadByteThreshold` to avoid expensive inline rendering.
+    @ViewBuilder
+    private func payloadSection(
+        title: String,
+        subtitle: String,
+        data: Data?,
+        fallback: String,
+        bodyKind: HTTPExchangeLargePayloadView.BodyKind,
+        recordID: UUID,
+        mimeType: String?
+    ) -> some View {
+        AppSettingsSection(title: title, subtitle: subtitle) {
+            if let data, data.count > largePayloadByteThreshold {
+                HTTPExchangeLargePayloadView(
+                    bodyKind: bodyKind,
+                    bodyData: data,
+                    mimeType: mimeType,
+                    recordID: recordID
+                )
+            } else {
+                HTTPExchangePayloadView(data: data, fallback: fallback)
+            }
         }
     }
 
@@ -392,62 +458,6 @@ public struct HTTPExchangeSettingsView: View {
 }
 
 @MainActor
-private struct HTTPExchangePayloadView: View {
-    @LumiTheme private var theme
-
-    let data: Data?
-    let fallback: String
-
-    @State private var renderedText: String?
-
-    var body: some View {
-        Group {
-            if let renderedText {
-                codeBlock(renderedText)
-            } else {
-                HStack(spacing: 8) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("Loading payload…")
-                        .font(.appCaption)
-                        .foregroundStyle(theme.textSecondary)
-                }
-                .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
-            }
-        }
-        .task(id: data) {
-            await renderPayload()
-        }
-    }
-
-    private func renderPayload() async {
-        guard let data else {
-            renderedText = fallback
-            return
-        }
-
-        let rendered = await Task.detached(priority: .utility) {
-            HTTPExchangeExportFormatter.text(data)
-        }.value
-        renderedText = rendered
-    }
-
-    private func codeBlock(_ text: String) -> some View {
-        ScrollView([.horizontal, .vertical]) {
-            Text(text)
-                .font(.system(.callout, design: .monospaced))
-                .foregroundStyle(theme.textPrimary)
-                .textSelection(.enabled)
-                // Keep the intrinsic code width so large, mostly unbroken JSON
-                // is measured correctly inside the bidirectional scroll view.
-                .fixedSize(horizontal: true, vertical: true)
-                .padding(10)
-        }
-        .frame(minHeight: 70, maxHeight: 260)
-        .background(theme.textSecondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-    }
-}
-
 private struct HTTPExchangeDetailView: View {
     private enum DetailTab: String {
         case request

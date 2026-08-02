@@ -12,12 +12,22 @@ public final class DeepSeekPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            AvailabilityDiskCacheDirectoryResolver.set(
+                pluginName: "LLMProviderDeepSeekPlugin",
+                directory: storage.pluginDataDirectory(for: "LLMProviderDeepSeekPlugin")
+            )
+        }
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [DeepSeekProvider(network: kernel.network)]
+        [
+            DeepSeekOpenAIProvider(network: kernel.network),
+            DeepSeekAnthropicProvider(network: kernel.network),
+        ]
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

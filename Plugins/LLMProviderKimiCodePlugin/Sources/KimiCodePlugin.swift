@@ -13,7 +13,18 @@ public final class KimiCodePlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        if let storage = kernel.storage {
+            AvailabilityDiskCacheDirectoryResolver.set(
+                pluginName: "LLMProviderKimiCodePlugin-OpenAI",
+                directory: storage.pluginDataDirectory(for: "LLMProviderKimiCodePlugin")
+            )
+            AvailabilityDiskCacheDirectoryResolver.set(
+                pluginName: "LLMProviderKimiCodePlugin-Anthropic",
+                directory: storage.pluginDataDirectory(for: "LLMProviderKimiCodePlugin")
+            )
+        }
+    }
 
     public func onReady(kernel: LumiKernel) async throws {}
 

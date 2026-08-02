@@ -3,13 +3,13 @@ import LumiKernel
 import LumiKernel
 import LLMKit
 
-/// MiniMax 视频生成工具：通过 MiniMax API 生成视频并返回 mp4 文件。
+/// MiniMax 视频生成工具：通过 MiniMax API 生成视频，并把下载链接（24 小时有效）返回给调用方，
+/// 不再下载完整的 mp4 二进制。
 ///
-/// 四步流程：
+/// 三步流程：
 /// 1. 提交视频生成任务（获取 task_id）
 /// 2. 轮询任务状态（最多 3 分钟）
 /// 3. 获取下载链接（24 小时有效）
-/// 4. 下载视频文件（10–50 MB mp4）
 ///
 /// - Tool ID: `minimax_generate_video`
 /// - Emoji: 🎬
@@ -20,7 +20,7 @@ public struct MiniMaxVideoTool: LumiAgentTool {
         id: "minimax_generate_video",
         displayName: LumiPluginLocalization.string("MiniMax Video", bundle: .module),
         description: LumiPluginLocalization.string(
-            "Generate a video clip using MiniMax AI. Supports text-to-video (6–10 seconds, 720P–1080P). Returns a video file attachment.",
+            "Generate a video clip using MiniMax AI. Supports text-to-video (6–10 seconds, 720P–1080P). Returns a temporary download URL (valid for 24 hours) instead of downloading the binary.",
             bundle: .module
         )
     )
@@ -119,7 +119,7 @@ public struct MiniMaxVideoTool: LumiAgentTool {
             !kernel.isCancelled
         }
 
-        // 3. 调用 client 执行四步交付链
+        // 3. 调用 client 执行三步交付链（提交 → 轮询 → 拿下载链接）
         do {
             let asset = try await client.generate(
                 prompt: prompt,
@@ -135,16 +135,8 @@ public struct MiniMaxVideoTool: LumiAgentTool {
 
             try kernel.checkCancellation()
 
-            // 4. 通过 kernel.attachImage() 回传视频
-            kernel.attachImage(
-                LumiImageAttachment(
-                    mimeType: asset.mimeType,
-                    base64Data: asset.base64Data,
-                    fileName: asset.fileName
-                )
-            )
-
-            // 5. 返回 Markdown 元信息
+            // 4. 不再下载视频二进制；把 MiniMax 返回的下载链接直接展示给用户。
+            //    该链接由 MiniMax 提供，24 小时内有效。
             return formatResult(
                 asset: asset,
                 model: model,
@@ -170,7 +162,8 @@ public struct MiniMaxVideoTool: LumiAgentTool {
         resolution: String,
         prompt: String
     ) -> String {
-        let sizeDesc = formatByteCount(asset.byteCount)
+        let sizeDesc = asset.byteCount.map(formatByteCount) ?? "Unknown"
+        let urlString = asset.downloadURL.absoluteString
         return """
         ## 🎬 Video Generated
 
@@ -181,7 +174,13 @@ public struct MiniMaxVideoTool: LumiAgentTool {
         - **File Name:** \(asset.fileName)
         - **File Size:** \(sizeDesc)
 
-        The video (video/mp4) is attached and can be viewed directly.
+        **Download link** (video/mp4, valid for **24 hours**):
+
+        [\(asset.fileName)](\(urlString))
+
+        > \(urlString)
+
+        Click the link above to view or download the generated video in your browser.
         """
     }
 
