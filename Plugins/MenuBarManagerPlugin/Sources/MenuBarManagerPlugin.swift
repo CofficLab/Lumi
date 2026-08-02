@@ -28,6 +28,9 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     private var popover: NSPopover?
     private var workspaceObservation: AnyCancellable?
     private var applicationResignActiveObservation: AnyCancellable?
+    private var systemAppearanceObservation: NSObjectProtocol?
+    private var applicationAppearanceObservation: NSKeyValueObservation?
+    private var menuBarColorScheme: ColorScheme = SystemAppearanceResolver.effectiveColorScheme
 
     public init() {}
 
@@ -133,6 +136,11 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         workspaceObservation = nil
         applicationResignActiveObservation?.cancel()
         applicationResignActiveObservation = nil
+        if let systemAppearanceObservation {
+            DistributedNotificationCenter.default().removeObserver(systemAppearanceObservation)
+        }
+        systemAppearanceObservation = nil
+        applicationAppearanceObservation = nil
 
         popover?.close()
         popover = nil
@@ -184,16 +192,11 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         popover.behavior = .transient
         popover.animates = true
         popover.contentSize = NSSize(width: 280, height: 1)
-        popover.contentViewController = NSHostingController(
-            rootView: MenuBarPopupView(
-                popupItems: presentedMenuBarPopupItems,
-                onShowMainWindow: { [weak self] in self?.showMainWindow() },
-                onCheckForUpdates: { [weak self] in self?.checkForUpdates() },
-                onQuit: { [weak self] in self?.quitApp() }
-            )
-        )
+        popover.contentViewController = makePopupHostingController()
         self.popover = popover
         startObservingApplicationResignActiveIfNeeded()
+        startObservingSystemAppearanceChangesIfNeeded()
+        syncPopoverWindowAppearance()
     }
 
     private func updateMenuBarPresentation() {
@@ -202,18 +205,24 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         hostingView?.rootView = MenuBarIconView(contentItems: presentedMenuBarContentItems)
 
         if let popover {
-            popover.contentViewController = NSHostingController(
-                rootView: MenuBarPopupView(
-                    popupItems: presentedMenuBarPopupItems,
-                    onShowMainWindow: { [weak self] in self?.showMainWindow() },
-                    onCheckForUpdates: { [weak self] in self?.checkForUpdates() },
-                    onQuit: { [weak self] in self?.quitApp() }
-                )
-            )
+            popover.contentViewController = makePopupHostingController()
             popover.contentSize = popover.contentViewController?.view.fittingSize ?? NSSize(width: 280, height: 1)
+            syncPopoverWindowAppearance()
         }
 
         button.needsDisplay = true
+    }
+
+    private func makePopupHostingController() -> NSHostingController<MenuBarPopupView> {
+        NSHostingController(
+            rootView: MenuBarPopupView(
+                colorScheme: menuBarColorScheme,
+                popupItems: presentedMenuBarPopupItems,
+                onShowMainWindow: { [weak self] in self?.showMainWindow() },
+                onCheckForUpdates: { [weak self] in self?.checkForUpdates() },
+                onQuit: { [weak self] in self?.quitApp() }
+            )
+        )
     }
 
     private func startObservingWorkspaceChangesIfNeeded() {
@@ -242,6 +251,55 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
             }
     }
 
+    private func startObservingSystemAppearanceChangesIfNeeded() {
+        if systemAppearanceObservation == nil {
+            systemAppearanceObservation = DistributedNotificationCenter.default().addObserver(
+                forName: Notification.Name("AppleInterfaceThemeChangedNotification"),
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.refreshMenuBarSystemAppearance()
+                }
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 50_000_000)
+                    self?.refreshMenuBarSystemAppearance()
+                }
+            }
+        }
+
+        guard applicationAppearanceObservation == nil else { return }
+        applicationAppearanceObservation = NSApplication.shared.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor in
+                self?.refreshMenuBarSystemAppearance()
+            }
+        }
+    }
+
+    private func refreshMenuBarSystemAppearance() {
+        let latestScheme = SystemAppearanceResolver.effectiveColorScheme
+        guard latestScheme != menuBarColorScheme else {
+            syncPopoverWindowAppearance()
+            return
+        }
+
+        menuBarColorScheme = latestScheme
+        if let popover {
+            popover.contentViewController = makePopupHostingController()
+            popover.contentSize = popover.contentViewController?.view.fittingSize ?? NSSize(width: 280, height: 1)
+        }
+        syncPopoverWindowAppearance()
+    }
+
+    private func syncPopoverWindowAppearance() {
+        guard let view = popover?.contentViewController?.view else { return }
+        let appearanceName: NSAppearance.Name = menuBarColorScheme == .dark ? .darkAqua : .aqua
+        let appearance = NSAppearance(named: appearanceName)
+        view.appearance = appearance
+        view.window?.appearance = appearance
+        view.needsDisplay = true
+    }
+
     private func refreshFromKernel() {
         guard let kernel else { return }
         refreshMenuBar(
@@ -261,7 +319,9 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         }
 
         NSApp.activate(ignoringOtherApps: true)
+        refreshMenuBarSystemAppearance()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        syncPopoverWindowAppearance()
         popover.contentViewController?.view.window?.makeKey()
     }
 
