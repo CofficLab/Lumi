@@ -16,6 +16,7 @@ public struct HTTPExchangeSettingsView: View {
     @State private var totalRecordCount: Int?
     @State private var selectedRecordID: UUID?
     @State private var dailyCountSeries = HTTPExchangeDailyCountSeries(points: [])
+    @State private var exportErrorMessage: String?
 
     private let pageSize = 40
 
@@ -75,6 +76,17 @@ public struct HTTPExchangeSettingsView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: HTTPExchangeStore.didChangeNotification)) { _ in
             Task { await reloadAsync() }
+        }
+        .alert(
+            LumiPluginLocalization.string("Export failed", bundle: .module),
+            isPresented: Binding(
+                get: { exportErrorMessage != nil },
+                set: { if !$0 { exportErrorMessage = nil } }
+            )
+        ) {
+            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
+        } message: {
+            Text(exportErrorMessage ?? "")
         }
     }
 
@@ -181,6 +193,8 @@ public struct HTTPExchangeSettingsView: View {
                 requestTab(for: selectedRecord)
             } response: {
                 responseTab(for: selectedRecord)
+            } export: {
+                export(record: selectedRecord)
             }
         } else {
             AppEmptyState(
@@ -354,6 +368,21 @@ public struct HTTPExchangeSettingsView: View {
         Self.dateFormatter.string(from: date)
     }
 
+    private func export(record: HTTPExchangeRecord) {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.canCreateDirectories = true
+        panel.nameFieldStringValue = "http-exchange-\(record.id.uuidString.prefix(8)).md"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        do {
+            try HTTPExchangeExportFormatter.document(for: record)
+                .write(to: url, atomically: true, encoding: .utf8)
+        } catch {
+            exportErrorMessage = error.localizedDescription
+        }
+    }
+
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -386,7 +415,7 @@ private struct HTTPExchangePayloadView: View {
                 .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
             }
         }
-        .task {
+        .task(id: data) {
             await renderPayload()
         }
     }
@@ -398,7 +427,7 @@ private struct HTTPExchangePayloadView: View {
         }
 
         let rendered = await Task.detached(priority: .utility) {
-            HTTPExchangePayloadFormatter.text(data)
+            HTTPExchangeExportFormatter.text(data)
         }.value
         renderedText = rendered
     }
@@ -409,23 +438,13 @@ private struct HTTPExchangePayloadView: View {
                 .font(.system(.callout, design: .monospaced))
                 .foregroundStyle(theme.textPrimary)
                 .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                // Keep the intrinsic code width so large, mostly unbroken JSON
+                // is measured correctly inside the bidirectional scroll view.
+                .fixedSize(horizontal: true, vertical: true)
                 .padding(10)
         }
         .frame(minHeight: 70, maxHeight: 260)
         .background(theme.textSecondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-    }
-}
-
-private enum HTTPExchangePayloadFormatter {
-    static func text(_ data: Data) -> String {
-        if let json = try? JSONSerialization.jsonObject(with: data),
-           let prettyData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
-           let pretty = String(data: prettyData, encoding: .utf8) {
-            return pretty
-        }
-        if let text = String(data: data, encoding: .utf8) { return text }
-        return data.map { String(format: "%02x", $0) }.joined(separator: " ")
     }
 }
 
@@ -454,30 +473,43 @@ private struct HTTPExchangeDetailView: View {
     let recordID: UUID
     private let request: AnyView
     private let response: AnyView
+    private let export: () -> Void
     @State private var selectedTab: DetailTab = .request
 
     init<Request: View, Response: View>(
         recordID: UUID,
         @ViewBuilder request: () -> Request,
-        @ViewBuilder response: () -> Response
+        @ViewBuilder response: () -> Response,
+        export: @escaping () -> Void
     ) {
         self.recordID = recordID
         self.request = AnyView(request())
         self.response = AnyView(response())
+        self.export = export
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            AppTabBar(
-                tabs: [
-                    AppTabBar.Tab(title: DetailTab.request.title, icon: DetailTab.request.icon, id: DetailTab.request.rawValue),
-                    AppTabBar.Tab(title: DetailTab.response.title, icon: DetailTab.response.icon, id: DetailTab.response.rawValue),
-                ],
-                selectedTab: Binding(
-                    get: { selectedTab.rawValue },
-                    set: { selectedTab = DetailTab(rawValue: $0) ?? .request }
+            HStack(spacing: 8) {
+                AppTabBar(
+                    tabs: [
+                        AppTabBar.Tab(title: DetailTab.request.title, icon: DetailTab.request.icon, id: DetailTab.request.rawValue),
+                        AppTabBar.Tab(title: DetailTab.response.title, icon: DetailTab.response.icon, id: DetailTab.response.rawValue),
+                    ],
+                    selectedTab: Binding(
+                        get: { selectedTab.rawValue },
+                        set: { selectedTab = DetailTab(rawValue: $0) ?? .request }
+                    )
                 )
-            )
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                AppButton(
+                    LumiPluginLocalization.string("Export", bundle: .module),
+                    systemImage: "square.and.arrow.down",
+                    size: .small,
+                    action: export
+                )
+            }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
 
