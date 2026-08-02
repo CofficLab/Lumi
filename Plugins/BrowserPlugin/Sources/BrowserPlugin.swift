@@ -31,6 +31,12 @@ public final class BrowserPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [BrowserAgentTool()]
+    }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
