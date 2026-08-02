@@ -1,15 +1,13 @@
-import SwiftUI
-import LLMKit
-import LumiKernel
 import LumiKernel
 import LumiUI
+import SwiftUI
 
 @MainActor
 public final class DeepSeekPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.deepseek"
     public let name = "DeepSeek"
     public let order = 92
-	public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
@@ -18,13 +16,9 @@ public final class DeepSeekPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [DeepSeekProvider(apiService: LLMAPIService(kernel: kernel))]
+        [DeepSeekProvider(network: kernel.network)]
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
