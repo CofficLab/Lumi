@@ -14,8 +14,11 @@ public final class ConversationListPlugin: LumiPlugin {
 
     public static let verbose = false
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
+    public let attentionStore: ConversationAttentionStore
 
-    public init() {}
+    public init() {
+        attentionStore = ConversationAttentionStore()
+    }
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
@@ -31,13 +34,14 @@ public final class ConversationListPlugin: LumiPlugin {
     }
 
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
-        [
+        let attentionStore = self.attentionStore
+        return [
             PanelRailTabItem(
                 id: "chats",
                 title: "Chats",
                 systemImage: "message.fill"
             ) {
-                ListView(kernel: kernel)
+                ListView(kernel: kernel, attentionStore: attentionStore)
             },
         ]
     }
@@ -48,14 +52,15 @@ public final class ConversationListPlugin: LumiPlugin {
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
-        [
+        let attentionStore = self.attentionStore
+        return [
             LumiTitleToolbarItem(
                 id: "\(id).conversation-list",
                 title: "Chats",
                 placement: .trailing,
                 order: 200
             ) {
-                ToolbarButton(kernel: kernel)
+                ToolbarButton(kernel: kernel, attentionStore: attentionStore)
             },
         ]
     }
@@ -78,7 +83,13 @@ public final class ConversationListPlugin: LumiPlugin {
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
-    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {
+        if kernel.conversations?.selectedConversationID == conversationID {
+            attentionStore.markRead(conversationID: conversationID)
+        } else {
+            attentionStore.markNeedsAttention(conversationID: conversationID)
+        }
+    }
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}

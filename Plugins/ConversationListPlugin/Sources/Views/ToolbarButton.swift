@@ -8,6 +8,7 @@ import SwiftUI
 /// 流程自然略过它（参考 `ConversationNewPlugin.NewChatButton` 的模式）。
 struct ToolbarButton: View {
     let kernel: LumiKernel
+    let attentionStore: ConversationAttentionStore
     @State private var isPresented = false
 
     /// ChatSection 是否可见；不可见时整个按钮不渲染。
@@ -22,7 +23,7 @@ struct ToolbarButton: View {
                     isPresented.toggle()
                 }
                 .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-                    ListView(kernel: kernel)
+                    ListView(kernel: kernel, attentionStore: attentionStore)
                         .frame(width: 300, height: 480)
                 }
             }

@@ -9,19 +9,27 @@ public struct ItemView: View {
     public let conversation: LumiConversationSummary
     public let svc: any ConversationManaging
     public let kernel: LumiKernel
+    @ObservedObject private var attentionStore: ConversationAttentionStore
 
     @State private var isSelected: Bool = false
 
-    public init(conversation: LumiConversationSummary, svc: any ConversationManaging, kernel: LumiKernel) {
+    public init(
+        conversation: LumiConversationSummary,
+        svc: any ConversationManaging,
+        kernel: LumiKernel,
+        attentionStore: ConversationAttentionStore
+    ) {
         self.conversation = conversation
         self.svc = svc
         self.kernel = kernel
+        self.attentionStore = attentionStore
     }
 
     public var body: some View {
         AppListRow(isSelected: isSelected, action: {
             self.isSelected = true
             svc.selectConversation(id: conversation.id)
+            attentionStore.markRead(conversationID: conversation.id)
         }) {
             content
         }
@@ -30,6 +38,9 @@ public struct ItemView: View {
         }
         .onLumiConversationsDidChange {
             isSelected = svc.selectedConversationID == conversation.id
+            if isSelected {
+                attentionStore.markRead(conversationID: conversation.id)
+            }
         }
     }
 
@@ -78,6 +89,17 @@ public struct ItemView: View {
             }
 
             Spacer()
+        }
+        .overlay(alignment: .topTrailing) {
+            if attentionStore.needsAttention(for: conversation.id) && !isSelected {
+                Circle()
+                    .fill(Color.accentColor)
+                    .frame(width: 6, height: 6)
+                    .padding(.top, 3)
+                    .padding(.trailing, 2)
+                    .allowsHitTesting(false)
+                    .accessibilityLabel("Needs attention")
+            }
         }
         .contextMenu {
             Button(role: .destructive) {
