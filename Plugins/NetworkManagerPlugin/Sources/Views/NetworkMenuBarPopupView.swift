@@ -38,7 +38,7 @@ public struct NetworkMenuBarPopupView: View {
                     .foregroundColor(.primary)
                     .frame(alignment: .leading)
             }
-            .frame(width: 100, alignment: .leading)
+            .frame(alignment: .leading)
 
             Spacer()
 
@@ -58,7 +58,7 @@ public struct NetworkMenuBarPopupView: View {
                     .foregroundColor(.primary)
                     .frame(alignment: .leading)
             }
-            .frame(width: 100, alignment: .leading)
+            .frame(alignment: .leading)
         }
         .padding(10)
     }
