@@ -7,8 +7,7 @@ import LumiKernel
 ///
 /// 设计要点:
 /// - 视图持有 `kernel` 引用,在每次打开时实时从内核拉取工具列表
-/// - 从 ToolCallRecordStore 读取调用统计(调用次数、失败次数、平均耗时)
-/// - 顶部左侧 AppTabBar：Tools(原界面) / Execution Log(双栏日志，跟 NetworkManager 的 HTTP 日志对齐)
+/// - 顶部左侧 AppTabBar：Tools(工具列表) / Execution Log(双栏日志，跟 NetworkManager 的 HTTP 日志对齐) / Usage Statistics(工具调用统计)
 /// - 右上角有「Open Data Directory」按钮可打开存储目录
 public struct ToolManagerSettingsView: View {
     let kernel: LumiKernel
@@ -21,14 +20,13 @@ public struct ToolManagerSettingsView: View {
     @State private var isLoading = true
     @State private var isReloading = false
     @State private var visibleToolLimit = 100
-    @State private var toolStats: [ToolStats] = []
-    @State private var isLoadingStats = false
 
     private let toolPageSize = 100
 
     enum ToolSettingsTab: String, Identifiable {
         case tools
         case executionLog
+        case toolStats
 
         var id: String { rawValue }
 
@@ -36,6 +34,7 @@ public struct ToolManagerSettingsView: View {
             switch self {
             case .tools: LumiPluginLocalization.string("Tools", bundle: .module)
             case .executionLog: LumiPluginLocalization.string("Execution Log", bundle: .module)
+            case .toolStats: LumiPluginLocalization.string("Usage Statistics", bundle: .module)
             }
         }
 
@@ -43,6 +42,7 @@ public struct ToolManagerSettingsView: View {
             switch self {
             case .tools: "wrench.and.screwdriver"
             case .executionLog: "list.bullet.rectangle.portrait"
+            case .toolStats: "chart.bar.xaxis"
             }
         }
     }
@@ -100,6 +100,13 @@ public struct ToolManagerSettingsView: View {
                     id: ToolSettingsTab.executionLog.rawValue
                 )
             )
+            tabs.append(
+                AppTabBar.Tab(
+                    title: ToolSettingsTab.toolStats.title,
+                    icon: ToolSettingsTab.toolStats.icon,
+                    id: ToolSettingsTab.toolStats.rawValue
+                )
+            )
         }
         return tabs
     }
@@ -122,6 +129,11 @@ public struct ToolManagerSettingsView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+        case .toolStats:
+            ToolCallStatsSettingsView(
+                kernel: kernel,
+                toolCallRecordStore: toolCallRecordStore
+            )
         }
     }
 
@@ -131,11 +143,6 @@ public struct ToolManagerSettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // 工具调用统计
-                    if !toolStats.isEmpty {
-                        toolStatsSection
-                    }
-
                     // 可用工具列表
                     if isLoading {
                         ProgressView(LumiPluginLocalization.string("Loading...", bundle: .module))
@@ -188,22 +195,6 @@ public struct ToolManagerSettingsView: View {
         .foregroundStyle(.secondary)
     }
 
-    // MARK: - Sections
-
-    private var toolStatsSection: some View {
-        AppSettingSection(title: LumiPluginLocalization.string("Usage Statistics", bundle: .module)) {
-            VStack(spacing: 0) {
-                ForEach(toolStats) { stat in
-                    ToolStatsRowView(stats: stat)
-                    if stat.id != toolStats.last?.id {
-                        Divider()
-                            .padding(.leading, 44)
-                    }
-                }
-            }
-        }
-    }
-
     // MARK: - Computed Properties
 
     private var totalToolCount: Int {
@@ -246,13 +237,12 @@ public struct ToolManagerSettingsView: View {
 
     // MARK: - Data Loading
 
-    /// 实时从内核读取工具分组、插件显示名和调用统计。
+    /// 实时从内核读取工具分组和插件显示名。
     @MainActor
     private func reload() async {
         guard !isReloading else { return }
         isReloading = true
         isLoading = true
-        isLoadingStats = true
         defer {
             isReloading = false
             isLoading = false
@@ -269,12 +259,6 @@ public struct ToolManagerSettingsView: View {
         }
         pluginDisplayNames = names
         visibleToolLimit = toolPageSize
-
-        // 读取调用统计
-        if let service = kernel.toolManager as? ToolManagerService {
-            toolStats = await service.recordStore?.fetchToolStats() ?? []
-        }
-        isLoadingStats = false
     }
 
     // MARK: - Actions
@@ -284,83 +268,5 @@ public struct ToolManagerSettingsView: View {
         let url = storage.pluginDataDirectory(for: "ToolManager")
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         NSWorkspace.shared.open(url)
-    }
-}
-
-// MARK: - ToolStatsRowView
-
-/// 展示单个工具调用统计的行视图。
-struct ToolStatsRowView: View {
-    let stats: ToolStats
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "wrench.and.screwdriver")
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
-                .frame(width: 24)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(stats.toolDisplayName)
-                    .font(.appBody)
-                    .lineLimit(1)
-
-                Text(stats.toolName)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
-            Spacer()
-
-            HStack(spacing: 16) {
-                // 调用次数
-                statBadge(
-                    value: "\(stats.totalCount)",
-                    label: "calls",
-                    color: .blue
-                )
-
-                // 失败次数
-                if stats.errorCount > 0 {
-                    statBadge(
-                        value: "\(stats.errorCount)",
-                        label: "errors",
-                        color: .red
-                    )
-                }
-
-                // 平均耗时
-                statBadge(
-                    value: formatDuration(stats.averageDuration),
-                    label: "avg",
-                    color: .secondary
-                )
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-    }
-
-    private func statBadge(value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 1) {
-            Text(value)
-                .font(.system(size: 13, weight: .medium, design: .monospaced))
-                .foregroundStyle(color)
-
-            Text(label)
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private func formatDuration(_ seconds: Double) -> String {
-        if seconds < 1 {
-            return String(format: "%.0fms", seconds * 1000)
-        } else if seconds < 60 {
-            return String(format: "%.1fs", seconds)
-        } else {
-            return String(format: "%.0fm", seconds / 60)
-        }
     }
 }
