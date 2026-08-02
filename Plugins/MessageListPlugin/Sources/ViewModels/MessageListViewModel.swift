@@ -95,6 +95,22 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         kernel.messageRendererManager?.renderer(for: message)
     }
 
+    /// Loads the display snapshot for one AgentTurn.
+    ///
+    /// ToolManager owns persistence and filtering; the message-list layer only
+    /// combines those records with the current AgentTurn lifecycle state.
+    func turnActivity(for turnID: UUID, conversationID: UUID) async -> LumiTurnActivity? {
+        guard let toolManager = kernel.toolManager else { return nil }
+        let records = await toolManager.toolCalls(for: turnID)
+        let state = kernel.agentTurnManager?.state(for: conversationID) ?? .idle
+        return TurnActivityBuilder.build(
+            turnID: turnID,
+            conversationID: conversationID,
+            state: state,
+            toolCalls: records
+        )
+    }
+
     // MARK: - Lifecycle
 
     /// 切换/进入会话:绑定服务订阅(幂等),记录目标会话,加载最近一页。
