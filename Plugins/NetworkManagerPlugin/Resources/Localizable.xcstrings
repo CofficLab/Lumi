@@ -383,6 +383,7 @@
       }
     },
     "Download failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2099,6 +2100,7 @@
       }
     },
     "Reveal in Finder" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

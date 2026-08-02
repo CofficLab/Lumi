@@ -24,7 +24,7 @@ struct HTTPExchangePayloadView: View {
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
-                .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
+                .frame(maxWidth: .infinity, minHeight: 100, alignment: .leading)
             }
         }
         .task(id: data) {
@@ -59,7 +59,7 @@ struct HTTPExchangePayloadView: View {
                     .frame(minWidth: proxy.size.width, alignment: .leading)
             }
         }
-        .frame(minHeight: 70, maxHeight: 260)
+        .frame(minHeight: 100, maxHeight: 360)
         .background(theme.textSecondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 }

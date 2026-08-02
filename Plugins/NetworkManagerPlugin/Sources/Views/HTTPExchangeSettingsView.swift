@@ -235,8 +235,7 @@ public struct HTTPExchangeSettingsView: View {
                 fallback: "<empty>",
                 bodyKind: .request,
                 recordID: record.id,
-                mimeType: nil,
-                dataDirectory: store.directory
+                mimeType: nil
             )
             payloadSection(
                 title: LumiPluginLocalization.string("Request Options", bundle: .module),
@@ -280,8 +279,7 @@ public struct HTTPExchangeSettingsView: View {
                 fallback: "<empty>",
                 bodyKind: .response,
                 recordID: record.id,
-                mimeType: record.responseMIMEType,
-                dataDirectory: store.directory
+                mimeType: record.responseMIMEType
             )
             errorSection(for: record)
         }
@@ -342,8 +340,7 @@ public struct HTTPExchangeSettingsView: View {
         fallback: String,
         bodyKind: HTTPExchangeLargePayloadView.BodyKind,
         recordID: UUID,
-        mimeType: String?,
-        dataDirectory: URL
+        mimeType: String?
     ) -> some View {
         AppSettingsSection(title: title, subtitle: subtitle) {
             if let data, data.count > largePayloadByteThreshold {
@@ -351,8 +348,7 @@ public struct HTTPExchangeSettingsView: View {
                     bodyKind: bodyKind,
                     bodyData: data,
                     mimeType: mimeType,
-                    recordID: recordID,
-                    dataDirectoryURL: dataDirectory
+                    recordID: recordID
                 )
             } else {
                 HTTPExchangePayloadView(data: data, fallback: fallback)

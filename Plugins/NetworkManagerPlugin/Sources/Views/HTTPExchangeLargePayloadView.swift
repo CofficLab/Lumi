@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Shown instead of `HTTPExchangePayloadView` when a body exceeds the
 /// `largePayloadByteThreshold`. Displays size + MIME type metadata and
-/// offers "Download Body" and "Reveal in Finder" actions without rendering
+/// offers a text export action without rendering
 /// the raw bytes.
 struct HTTPExchangeLargePayloadView: View {
     @LumiTheme private var theme
@@ -19,9 +19,8 @@ struct HTTPExchangeLargePayloadView: View {
     let bodyData: Data?
     let mimeType: String?
     let recordID: UUID
-    let dataDirectoryURL: URL
 
-    @State private var downloadError: String?
+    @State private var exportError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -46,30 +45,23 @@ struct HTTPExchangeLargePayloadView: View {
                     systemImage: "arrow.down.doc",
                     size: .small
                 ) {
-                    downloadBody()
+                    exportBodyAsText()
                 }
-
-                AppButton(
-                    LumiPluginLocalization.string("Reveal in Finder", bundle: .module),
-                    systemImage: "folder",
-                    size: .small,
-                    action: { NSWorkspace.shared.open(dataDirectoryURL) }
-                )
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
         .padding(12)
         .background(theme.textSecondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         .alert(
-            LumiPluginLocalization.string("Download failed", bundle: .module),
+            LumiPluginLocalization.string("Export failed", bundle: .module),
             isPresented: Binding(
-                get: { downloadError != nil },
-                set: { if !$0 { downloadError = nil } }
+                get: { exportError != nil },
+                set: { if !$0 { exportError = nil } }
             )
         ) {
             Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
         } message: {
-            Text(downloadError ?? "")
+            Text(exportError ?? "")
         }
     }
 
@@ -88,25 +80,24 @@ struct HTTPExchangeLargePayloadView: View {
         .background(theme.textSecondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
     }
 
-    private func downloadBody() {
+    private func exportBodyAsText() {
         guard let bodyData, !bodyData.isEmpty else {
-            downloadError = LumiPluginLocalization.string("No body data to save.", bundle: .module)
+            exportError = LumiPluginLocalization.string("No body data to save.", bundle: .module)
             return
         }
 
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.canCreateDirectories = true
+        let shortID = String(recordID.uuidString.prefix(8))
+        panel.nameFieldStringValue = "body-" + bodyKind.rawValue + "-" + shortID + ".txt"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
         do {
-            let url = try HTTPExchangeBodyFileWriter.savePanelAndWrite(
-                body: bodyData,
-                recordID: recordID,
-                kind: HTTPExchangeBodyFileWriter.BodyKind(rawValue: bodyKind.rawValue) ?? .response,
-                mimeType: mimeType
-            )
-            NSWorkspace.shared.activateFileViewerSelecting([url])
+            try HTTPExchangeExportFormatter.text(bodyData)
+                .write(to: url, atomically: true, encoding: .utf8)
         } catch {
-            // "Cancelled" is silently ignored.
-            if error.localizedDescription != "Cancelled" {
-                downloadError = error.localizedDescription
-            }
+            exportError = error.localizedDescription
         }
     }
 }
