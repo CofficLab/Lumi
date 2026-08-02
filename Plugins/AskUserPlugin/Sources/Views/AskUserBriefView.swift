@@ -1,6 +1,7 @@
 import AgentToolKit
 import Foundation
 import LumiKernel
+import LumiUI
 import SwiftUI
 
 /// AskUser 简洁模式视图
@@ -10,6 +11,8 @@ import SwiftUI
 /// - `free_text`: 问题 + 输入框 + 提交按钮
 /// - `yes_no` / `choice` / 旧 payload: 问题 + 选项按钮（候选项全部平铺，不再折叠到下拉）
 public struct AskUserBriefView: View {
+    @LumiTheme private var theme
+
     let response: AskUserPendingResponse
     let toolCall: ToolCall
 
@@ -38,7 +41,7 @@ public struct AskUserBriefView: View {
             // 问题文本
             Text(response.question)
                 .font(.system(size: 14))
-                .foregroundColor(.primary)
+                .foregroundColor(theme.textPrimary)
 
             if isFreeText {
                 freeTextInput
@@ -49,13 +52,13 @@ public struct AskUserBriefView: View {
             if responded {
                 Text("已回答：\(selectedAnswer ?? freeInputText)")
                     .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(theme.textSecondary)
             }
         }
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(Color(white: 0.98))
+                .fill(theme.surface)
         )
     }
 
@@ -90,7 +93,7 @@ public struct AskUserBriefView: View {
                         .lineLimit(1)
                 }
             }
-            .foregroundColor(.white)
+            .foregroundColor(theme.textPrimary.isLightColor ? .black : .white)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .background(
@@ -113,11 +116,11 @@ public struct AskUserBriefView: View {
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(Color(white: 0.98))
+                        .fill(theme.elevatedSurface)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    .stroke(theme.divider, lineWidth: 1)
                 )
 
             Button {
@@ -126,9 +129,9 @@ public struct AskUserBriefView: View {
             } label: {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 14))
-                    .foregroundColor(.white)
+                    .foregroundColor(theme.textPrimary.isLightColor ? .black : .white)
                     .padding(8)
-                    .background(Circle().fill(Color.blue))
+                    .background(Circle().fill(theme.primary))
             }
             .buttonStyle(.plain)
             .disabled(responded || freeInputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
