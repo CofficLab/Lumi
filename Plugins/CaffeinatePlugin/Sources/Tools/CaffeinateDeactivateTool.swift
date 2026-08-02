@@ -30,6 +30,7 @@ struct CaffeinateDeactivateTool: LumiAgentTool, SuperLog {
     @MainActor
     func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let manager = CaffeinateManager.shared
+        manager.configure(kernel: kernel)
 
         guard manager.isActive else {
             return """

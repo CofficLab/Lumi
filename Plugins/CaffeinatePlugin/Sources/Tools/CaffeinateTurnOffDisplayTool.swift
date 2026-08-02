@@ -44,6 +44,7 @@ struct CaffeinateTurnOffDisplayTool: LumiAgentTool, SuperLog {
         }
 
         let manager = CaffeinateManager.shared
+        manager.configure(kernel: kernel)
 
         if manager.isActive {
             manager.deactivate()

@@ -58,6 +58,7 @@ struct CaffeinateActivateTool: LumiAgentTool, SuperLog {
         }
 
         let manager = CaffeinateManager.shared
+        manager.configure(kernel: kernel)
 
         if manager.isActive {
             // Already active — deactivate first, then reactivate with new params

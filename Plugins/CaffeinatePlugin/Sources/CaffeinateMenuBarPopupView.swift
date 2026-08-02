@@ -1,9 +1,11 @@
 import LumiUI
 import SwiftUI
 import LocalizationKit
+import LumiKernel
 
 /// 防休眠插件的菜单栏弹窗视图
 struct CaffeinateMenuBarPopupView: View {
+    let kernel: LumiKernel
     @State private var manager = CaffeinateManager.shared
     @State private var selectedDuration: TimeInterval = 0
 
@@ -45,6 +47,9 @@ struct CaffeinateMenuBarPopupView: View {
             quickActionsSection
         }
         .padding(.vertical, 8)
+        .onAppear {
+            manager.configure(kernel: kernel)
+        }
     }
 
     // MARK: - 时间选择区块

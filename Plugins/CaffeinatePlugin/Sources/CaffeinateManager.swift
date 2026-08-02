@@ -1,5 +1,6 @@
 import Foundation
 import IOKit.pwr_mgt
+import LumiKernel
 import Observation
 import SuperLogKit
 import LocalizationKit
@@ -36,6 +37,8 @@ final class CaffeinateManager: SuperLog {
     /// Timer (used for timed mode)
     private var timer: Timer?
 
+    private weak var kernel: LumiKernel?
+
     // MARK: - Initialization
 
     private init() {
@@ -44,6 +47,56 @@ final class CaffeinateManager: SuperLog {
                 CaffeinatePlugin.logger.info("\(self.t)CaffeinateManager initialized")
             }
         }
+    }
+
+    func configure(kernel: LumiKernel) {
+        self.kernel = kernel
+        CaffeinatePlugin.logger.info(
+            "[LogoHighlight] configure isActive=\(self.isActive) logoPresent=\(kernel.logo != nil)"
+        )
+        synchronizeLogoHighlight()
+    }
+
+    private func synchronizeLogoHighlight() {
+        guard let kernel else {
+            CaffeinatePlugin.logger.error("[LogoHighlight] synchronize skipped: kernel is nil")
+            return
+        }
+        guard let logo = kernel.logo else {
+            CaffeinatePlugin.logger.error("[LogoHighlight] synchronize skipped: logo service is nil")
+            return
+        }
+        guard logo.isLogoHighlighted != isActive else {
+            CaffeinatePlugin.logger.info(
+                "[LogoHighlight] synchronize no-op state=\(logo.isLogoHighlighted)"
+            )
+            return
+        }
+        CaffeinatePlugin.logger.info(
+            "[LogoHighlight] synchronize logoState \(logo.isLogoHighlighted) -> \(self.isActive)"
+        )
+        logo.setLogoHighlighted(isActive)
+    }
+
+    private func updateLogoHighlight(_ highlighted: Bool) {
+        guard let kernel else {
+            CaffeinatePlugin.logger.error("[LogoHighlight] update skipped: kernel is nil target=\(highlighted)")
+            return
+        }
+        guard let logo = kernel.logo else {
+            CaffeinatePlugin.logger.error("[LogoHighlight] update skipped: logo service is nil target=\(highlighted)")
+            return
+        }
+        guard logo.isLogoHighlighted != highlighted else {
+            CaffeinatePlugin.logger.info(
+                "[LogoHighlight] update no-op state=\(logo.isLogoHighlighted) target=\(highlighted)"
+            )
+            return
+        }
+        CaffeinatePlugin.logger.info(
+            "[LogoHighlight] update logoState \(logo.isLogoHighlighted) -> \(highlighted)"
+        )
+        logo.setLogoHighlighted(highlighted)
     }
 
     // MARK: - Public Methods
@@ -114,6 +167,8 @@ final class CaffeinateManager: SuperLog {
 
         if systemResult == kIOReturnSuccess && displayResult == kIOReturnSuccess {
             isActive = true
+            CaffeinatePlugin.logger.info("[LogoHighlight] caffeinate activation succeeded mode=\(mode.rawValue)")
+            updateLogoHighlight(true)
             startTime = Date()
             self.duration = duration
 
@@ -165,6 +220,8 @@ final class CaffeinateManager: SuperLog {
 
         if systemResult == kIOReturnSuccess && displayResult == kIOReturnSuccess {
             isActive = false
+            CaffeinatePlugin.logger.info("[LogoHighlight] caffeinate deactivation succeeded")
+            updateLogoHighlight(false)
             startTime = nil
             duration = 0
             assertionID = 0
