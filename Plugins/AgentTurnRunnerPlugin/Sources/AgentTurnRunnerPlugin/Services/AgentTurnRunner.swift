@@ -403,6 +403,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
             // Resolve user-facing descriptions before persisting the assistant message.
             // The UI must not need to look up tools or execute tool formatting logic.
+            assistantMessage.turnID = turnID
             if let toolManager = kernel.toolManager,
                let toolCalls = assistantMessage.toolCalls {
                 assistantMessage.toolCalls = toolCalls.map { toolCall in
@@ -511,6 +512,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                     conversationID: conversationID,
                     role: .tool,
                     content: result.content,
+                    turnID: turnID,
                     isError: result.isError,
                     metadata: toolMetadata,
                     toolCallID: toolCall.id
@@ -615,6 +617,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 conversationID: conversationID,
                 role: .tool,
                 content: result.content,
+                turnID: turnIDs[conversationID],
                 isError: result.isError,
                 metadata: LumiImageAttachmentMetadata.encode(result.imageAttachments),
                 toolCallID: toolCall.id

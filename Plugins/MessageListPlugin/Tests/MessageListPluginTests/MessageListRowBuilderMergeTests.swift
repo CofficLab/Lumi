@@ -88,6 +88,24 @@ struct MessageListRowBuilderMergeTests {
         #expect(merged.toolCalls?.map(\.id) == ["a", "b"])
     }
 
+    @Test("带 turnID 的工具消息合并成 Turn 活动行")
+    func turnMessagesBecomeActivityRow() throws {
+        let turnID = UUID()
+        let m1 = toolExec(id: UUID(), calls: ["a"], turnID: turnID)
+        let m2 = toolExec(id: UUID(), calls: ["b"], turnID: turnID)
+        let rows = builder.build(
+            persisted: [m1, m2],
+            conversationID: conversation,
+            streaming: nil,
+            verbosity: .brief
+        )
+
+        let merged = try #require(rows.first)
+        #expect(merged.renderKind == "turn-activity")
+        #expect(merged.turnID == turnID)
+        #expect(merged.toolCalls?.map(\.id) == ["a", "b"])
+    }
+
     @Test("V1:剔除独立 .tool 结果行")
     func v1DropsToolResultRows() {
         let assistant = toolExec(id: UUID(), calls: ["a"])
@@ -123,11 +141,11 @@ struct MessageListRowBuilderMergeTests {
     // MARK: - Helper
 
     /// 构造一条 `isToolExecutionOnly` 的助手消息(content = "...",带工具调用)。
-    private func toolExec(id: UUID, calls: [String]) -> LumiChatMessage {
+    private func toolExec(id: UUID, calls: [String], turnID: UUID? = nil) -> LumiChatMessage {
         let toolCalls = calls.map { LumiToolCall(id: $0, name: "tool_\($0)", arguments: "{}") }
         return LumiChatMessage(
             id: id, conversationID: conversation, role: .assistant,
-            content: "...", toolCalls: toolCalls
+            content: "...", turnID: turnID, toolCalls: toolCalls
         )
     }
 }

@@ -77,8 +77,9 @@ struct MessageListRowBuilder {
         return rows
     }
 
-    /// 把连续的 `isToolExecutionOnly` 助手消息合并成一条合成消息(`renderKind`
-    /// 标记为 `"tool-step-group"`,`toolCalls` 为各消息的平铺);其余消息原样保留。
+    /// 把同一 Turn 中连续的 `isToolExecutionOnly` 助手消息合并成一条活动消息。
+    /// 新消息使用 `renderKind == "turn-activity"`;没有 turnID 的历史消息继续使用
+    /// `"tool-step-group"`,保持旧数据的展示兼容。
     ///
     /// 单条此类消息也走合成路径(行为等价,仅多一个 renderKind 标记)。
     /// 合成消息复用组内首条消息的 id/conversationID/createdAt,保证稳定。
@@ -87,16 +88,25 @@ struct MessageListRowBuilder {
     ) -> [LumiChatMessage] {
         var result: [LumiChatMessage] = []
         var currentGroup: [LumiChatMessage] = []
+        var currentTurnID: UUID?
 
         func flushGroup() {
             guard !currentGroup.isEmpty else { return }
             result.append(makeToolStepGroup(from: currentGroup))
             currentGroup = []
+            currentTurnID = nil
         }
 
         for message in messages {
             if message.isToolExecutionOnly {
+                if !currentGroup.isEmpty,
+                   let currentTurnID,
+                   let messageTurnID = message.turnID,
+                   currentTurnID != messageTurnID {
+                    flushGroup()
+                }
                 currentGroup.append(message)
+                currentTurnID = currentTurnID ?? message.turnID
             } else {
                 flushGroup()
                 result.append(message)
@@ -109,7 +119,8 @@ struct MessageListRowBuilder {
     /// 由一组「只含工具调用的助手消息」构造合成展示消息。
     ///
     /// - 平铺所有消息的 `toolCalls`(忽略来自哪条消息)。
-    /// - `renderKind = "tool-step-group"` 让渲染器识别并走合并展示路径。
+    /// - 新 Turn 消息使用 `renderKind = "turn-activity"` 让渲染器识别活动行。
+    /// - 没有 turnID 的历史消息继续使用 `"tool-step-group"`。
     /// - 复用首条消息的 id/conversationID/createdAt 等,保证合成消息在 ForEach diff
     ///   与 `lumiActiveToolGroupIDs` 匹配上稳定(组内成员不变 → id 不变)。
     private static func makeToolStepGroup(from messages: [LumiChatMessage]) -> LumiChatMessage {
@@ -121,11 +132,12 @@ struct MessageListRowBuilder {
             conversationID: head.conversationID,
             role: .assistant,
             content: head.content,
+            turnID: head.turnID,
             createdAt: head.createdAt,
             providerID: head.providerID,
             modelName: head.modelName,
             isError: head.isError,
-            renderKind: "tool-step-group",
+            renderKind: head.turnID == nil ? "tool-step-group" : "turn-activity",
             metadata: head.metadata,
             toolCalls: allToolCalls
         )
