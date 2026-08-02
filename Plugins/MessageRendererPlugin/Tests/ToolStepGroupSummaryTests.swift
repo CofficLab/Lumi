@@ -110,6 +110,6 @@ struct ToolStepGroupSummaryTests {
     // MARK: - Helper
 
     private func call(_ id: String, result: LumiToolResult?) -> LumiToolCall {
-        LumiToolCall(id: id, name: "tool_\(id)", arguments: "{}", result: result, displayName: nil)
+        LumiToolCall(id: id, name: "tool_\(id)", arguments: "{}", result: result, displayDescription: nil)
     }
 }

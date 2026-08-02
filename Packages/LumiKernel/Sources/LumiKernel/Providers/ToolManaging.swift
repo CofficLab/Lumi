@@ -40,6 +40,9 @@ public protocol ToolManaging: AnyObject {
     /// Find a tool by name
     func tool(named name: String) -> (any LumiAgentTool)?
 
+    /// Resolve the user-facing description for a tool call.
+    func displayDescription(for toolCall: LumiToolCall) -> String?
+
     /// Execute a tool call and return the result
     func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult
 }

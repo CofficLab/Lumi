@@ -82,20 +82,22 @@ public struct LumiToolCall: Codable, Equatable, Sendable, Identifiable {
     public let name: String
     public let arguments: String
     public var result: LumiToolResult?
-    public var displayName: String?
+    /// 面向用户的操作描述，由对应的 `LumiAgentTool` 根据参数生成。
+    /// 这是持久化的展示快照，UI 不应直接展示 `name`。
+    public var displayDescription: String?
 
     public init(
         id: String,
         name: String,
         arguments: String,
         result: LumiToolResult? = nil,
-        displayName: String? = nil
+        displayDescription: String? = nil
     ) {
         self.id = id
         self.name = name
         self.arguments = arguments
         self.result = result
-        self.displayName = displayName
+        self.displayDescription = displayDescription
     }
 }
 

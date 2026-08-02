@@ -120,11 +120,8 @@ enum ToolCallBriefSummaryFormatter {
     }
 
     static func title(for toolCall: LumiToolCall) -> String {
-        let title = toolCall.displayName?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let title, !title.isEmpty {
-            return title
-        }
-        return toolCall.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let description = toolCall.displayDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return description.flatMap { $0.isEmpty ? nil : $0 } ?? "执行工具"
     }
 }
 
@@ -210,14 +207,11 @@ struct ToolCallRowView: View {
         toolCall.result == nil
     }
 
-    /// 动作行展示文案：优先用工具生成的语义化描述，并根据执行状态加上
+    /// 动作行展示文案：使用工具生成的语义化描述，并根据执行状态加上
     /// 「正在…/已完成」前缀，读起来更接近自然语言。
-    /// 仅当存在语义化描述时加前缀，避免给原始工具名（如 run_command）生硬拼接。
     private var actionTitle: String {
-        if let displayName = toolCall.displayName {
-            return isLoadingResult ? "正在\(displayName)…" : displayName
-        }
-        return toolCall.name
+        let description = toolCall.displayDescription ?? "执行工具"
+        return isLoadingResult ? "正在\(description)…" : description
     }
 
     private var visualState: ToolCallResultVisualState {
@@ -295,8 +289,9 @@ struct ToolCallRowView: View {
         .help(LumiPluginLocalization.string("调用参数", bundle: .module))
         .popover(isPresented: popoverBinding(selection: $parameterPopoverToolCallID), arrowEdge: .bottom) {
             ToolDetailPopoverView(
-                title: "\(toolCall.name) · 调用参数",
-                systemImage: "slider.horizontal.3"
+                title: "调用参数",
+                systemImage: "slider.horizontal.3",
+                trailingTitle: toolCall.name
             ) {
                 ToolCallArgumentsView(toolCall: toolCall)
             }
@@ -417,6 +412,7 @@ private struct ToolDetailPopoverView<Content: View>: View {
 
     let title: String
     let systemImage: String
+    var trailingTitle: String?
     var isError = false
     @ViewBuilder let content: Content
 
@@ -430,6 +426,16 @@ private struct ToolDetailPopoverView<Content: View>: View {
                 Text(title)
                     .font(.appCallout)
                     .foregroundColor(isError ? theme.error : theme.textPrimary)
+
+                Spacer(minLength: 12)
+
+                if let trailingTitle {
+                    Text(trailingTitle)
+                        .font(.appMicro)
+                        .foregroundColor(theme.textTertiary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
             }
 
             content

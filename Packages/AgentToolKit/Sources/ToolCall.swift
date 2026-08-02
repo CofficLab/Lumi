@@ -20,10 +20,8 @@ public struct ToolCall: Codable, Sendable, Equatable {
     /// 工具执行结果（与调用存放在同一记录中）
     public var result: ToolCallResult?
 
-    /// 面向用户的操作描述（由工具自身根据参数生成，如 "编辑 Foo.swift"）
-    ///
-    /// `nil` 表示未提供描述，UI 层应回退到显示 `name`。
-    public var displayName: String?
+    /// 面向用户的操作描述（由工具自身根据参数生成，如 "编辑 Foo.swift"）。
+    public var displayDescription: String?
 
     /// 是否已有执行结果
     public var hasResult: Bool { result != nil }
@@ -34,18 +32,18 @@ public struct ToolCall: Codable, Sendable, Equatable {
         arguments: String,
         authorizationState: ToolCallAuthorizationState = .pendingAuthorization,
         result: ToolCallResult? = nil,
-        displayName: String? = nil
+        displayDescription: String? = nil
     ) {
         self.id = id
         self.name = name
         self.arguments = arguments
         self.authorizationState = authorizationState
         self.result = result
-        self.displayName = displayName
+        self.displayDescription = displayDescription
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, arguments, authorizationState, result, displayName
+        case id, name, arguments, authorizationState, result, displayDescription
     }
 
     public init(from decoder: Decoder) throws {
@@ -57,7 +55,7 @@ public struct ToolCall: Codable, Sendable, Equatable {
             try c.decodeIfPresent(ToolCallAuthorizationState.self, forKey: .authorizationState)
             ?? .pendingAuthorization
         result = try c.decodeIfPresent(ToolCallResult.self, forKey: .result)
-        displayName = try c.decodeIfPresent(String.self, forKey: .displayName)
+        displayDescription = try c.decodeIfPresent(String.self, forKey: .displayDescription)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -71,8 +69,8 @@ public struct ToolCall: Codable, Sendable, Equatable {
         if let result {
             try c.encode(result, forKey: .result)
         }
-        if let displayName {
-            try c.encode(displayName, forKey: .displayName)
+        if let displayDescription {
+            try c.encode(displayDescription, forKey: .displayDescription)
         }
     }
 }

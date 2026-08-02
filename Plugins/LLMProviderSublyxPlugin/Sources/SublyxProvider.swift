@@ -263,7 +263,7 @@ public final class SublyxProvider: LumiLLMProvider, SuperLog, @unchecked Sendabl
                 name: originalName,
                 arguments: toolCall.arguments,
                 result: toolCall.result,
-                displayName: toolCall.displayName
+                displayDescription: toolCall.displayDescription
             )
         }
         

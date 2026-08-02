@@ -1035,7 +1035,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "正在执行: %@…"
+            "value" : "正在%@…"
           }
         }
       }

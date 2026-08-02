@@ -348,7 +348,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             )
             let streamingStore = kernel.messageStreaming
             await streamingStore?.startStreaming(conversationID: conversationID)
-            let assistantMessage: LumiChatMessage
+            var assistantMessage: LumiChatMessage
             do {
                 if Self.verbose {
                     let metrics = Self.messageMetrics(preparedMessages)
@@ -383,6 +383,17 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 postMessageSavedNotification(message: errorMessage, conversationID: conversationID)
                 failedConversations.insert(conversationID)
                 return
+            }
+
+            // Resolve user-facing descriptions before persisting the assistant message.
+            // The UI must not need to look up tools or execute tool formatting logic.
+            if let toolManager = kernel.toolManager,
+               let toolCalls = assistantMessage.toolCalls {
+                assistantMessage.toolCalls = toolCalls.map { toolCall in
+                    var enriched = toolCall
+                    enriched.displayDescription = toolManager.displayDescription(for: toolCall)
+                    return enriched
+                }
             }
 
             // Append assistant message to history.
@@ -424,7 +435,10 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 // insert 时 MessageManager 自动清除此 status;下一个工具再 insert 新的。
                 insertStatusMessage(
                     conversationID: conversationID,
-                    content: String(localized: "status.executing-tool", defaultValue: "正在执行: \(toolCall.name)…")
+                    content: String(
+                        localized: "status.executing-tool",
+                        defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
+                    )
                 )
 
                 // Execute tool
@@ -541,7 +555,10 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
             insertStatusMessage(
                 conversationID: conversationID,
-                content: String(localized: "status.executing-tool", defaultValue: "正在执行: \(toolCall.name)…")
+                content: String(
+                    localized: "status.executing-tool",
+                    defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
+                )
             )
 
             var result = await toolManager.execute(toolCall, conversationID: conversationID)

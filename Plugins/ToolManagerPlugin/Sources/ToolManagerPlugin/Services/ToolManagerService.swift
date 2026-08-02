@@ -109,6 +109,19 @@ public final class ToolManagerService: ToolManaging {
         registeredTools[name]
     }
 
+    public func displayDescription(for toolCall: LumiToolCall) -> String? {
+        guard let tool = registeredTools[toolCall.name],
+              let data = toolCall.arguments.data(using: .utf8),
+              let arguments = try? JSONDecoder().decode([String: LumiJSONValue].self, from: data)
+        else {
+            return nil
+        }
+
+        let description = tool.displayDescription(arguments: arguments)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return description.isEmpty ? nil : description
+    }
+
     public func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult {
         guard let tool = registeredTools[toolCall.name] else {
             return LumiToolResult(content: "Tool not found: \(toolCall.name)", isError: true)
