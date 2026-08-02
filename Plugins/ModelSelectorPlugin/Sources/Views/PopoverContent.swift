@@ -39,7 +39,7 @@ struct PopoverContent: View {
                 selectedProviderID: $selectedProviderID,
                 onClose: { isPresented = false }
             )
-            .frame(width: 260)
+            .frame(width: 300)
 
             Divider()
 
