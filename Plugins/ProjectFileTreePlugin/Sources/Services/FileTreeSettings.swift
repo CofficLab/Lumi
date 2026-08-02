@@ -23,7 +23,7 @@ public final class FileTreeSettings: @unchecked Sendable {
     private init() {
         let root = ProjectFileTreePluginRuntimeBridge.pluginDirectory
             ?? ProjectFileTreePluginRuntimeBridge.fallbackRootDirectory
-                .appendingPathComponent("ProjectFileTree", isDirectory: true)
+                .appendingPathComponent(ProjectFileTreePluginRuntimeBridge.pluginName, isDirectory: true)
         self.store = FileTreeStore(directory: root)
     }
 

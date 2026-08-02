@@ -1,9 +1,11 @@
 import LumiUI
 import SwiftUI
 import LocalizationKit
+import LumiKernel
 
 /// 防休眠插件的菜单栏弹窗视图
 struct CaffeinateMenuBarPopupView: View {
+    let kernel: LumiKernel
     @State private var manager = CaffeinateManager.shared
     @State private var selectedDuration: TimeInterval = 0
 
@@ -25,6 +27,9 @@ struct CaffeinateMenuBarPopupView: View {
     /// 当前生效的快捷操作，由 manager 的真实状态推导，确保重新打开弹窗时对号仍然正确
     private var activeAction: QuickActionType? {
         guard manager.isActive else { return nil }
+        if manager.isDisplayOffRequested {
+            return .turnOffDisplay
+        }
         switch manager.mode {
         case .systemAndDisplay:
             return .systemAndDisplay
@@ -35,16 +40,17 @@ struct CaffeinateMenuBarPopupView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 第一区块：时间选项
+            // 第一区块:时间选项(self-contained,自带 padding)
             durationSection
 
-            GlassDivider()
-                .padding(.horizontal, 12)
+            Divider()
 
-            // 第二区块：快捷菜单
+            // 第二区块:快捷菜单(self-contained,自带 padding)
             quickActionsSection
         }
-        .padding(.vertical, 8)
+        .onAppear {
+            manager.configure(kernel: kernel)
+        }
     }
 
     // MARK: - 时间选择区块
@@ -66,12 +72,16 @@ struct CaffeinateMenuBarPopupView: View {
                 )
             }
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     // MARK: - 快捷菜单区块
 
     private var quickActionsSection: some View {
+        // MenuBarActionRow 自身带水平 padding(.horizontal, 12),
+        // 因此区块无需再额外施加水平 padding,与 NetworkMenuBarPopupView
+        // 中的 miniTrendView 风格一致。
         VStack(spacing: 0) {
             MenuBarActionRow(
                 title: LumiPluginLocalization.string("Prevent sleep & Keep screen on", bundle: .module),
@@ -83,36 +93,37 @@ struct CaffeinateMenuBarPopupView: View {
                 }
             )
 
-            GlassDivider()
+            Divider()
                 .padding(.leading, 36)
 
             MenuBarActionRow(
                 title: LumiPluginLocalization.string("Prevent sleep & Allow screen off", bundle: .module),
                 icon: "moon.fill",
-                color: Color(hex: "0A84FF"),
+                color: .blue,
                 isSelected: activeAction == .systemOnly,
                 action: {
                     toggleAction(.systemOnly)
                 }
             )
 
-            GlassDivider()
+            Divider()
                 .padding(.leading, 36)
 
             MenuBarActionRow(
                 title: LumiPluginLocalization.string("Prevent sleep & Turn off screen", bundle: .module),
                 icon: "power",
                 color: Color(hex: "7C6FFF"),
-                showCheckmark: false, // 瞬时操作，不显示对号
+                isSelected: activeAction == .turnOffDisplay,
                 action: {
-                    // 立即关闭屏幕，并切换到"允许关闭"模式
-                    // activateAndTurnOffDisplay 内部已将 mode 设为 .systemOnly，
-                    // activeAction 由 manager 状态推导，对号会自动出现，无需手动赋值
-                    manager.activateAndTurnOffDisplay(duration: selectedDuration)
+                    if activeAction == .turnOffDisplay {
+                        manager.deactivate()
+                    } else {
+                        manager.activateAndTurnOffDisplay(duration: selectedDuration)
+                    }
                 }
             )
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
 
     // MARK: - 辅助方法
@@ -129,6 +140,10 @@ struct CaffeinateMenuBarPopupView: View {
     }
 
     private func activateAction(_ action: QuickActionType) {
+        if manager.isActive {
+            manager.deactivate()
+        }
+
         switch action {
         case .systemAndDisplay:
             manager.activate(mode: .systemAndDisplay, duration: selectedDuration)
@@ -151,10 +166,10 @@ private struct DurationButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 10))
-                .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .foregroundColor(isSelected ? .white : .secondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(isSelected ? Color(hex: "7C6FFF") : Color(hex: "98989E").opacity(0.2))
+                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.16))
                 .cornerRadius(3)
         }
         .buttonStyle(.plain)

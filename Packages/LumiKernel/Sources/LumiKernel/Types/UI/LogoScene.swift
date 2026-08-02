@@ -9,6 +9,8 @@ public enum LogoScene: String, CaseIterable, Sendable {
     case about
     /// 系统菜单栏图标：恒为单色模板图（由系统统一着色），无动画。
     case statusBar
+    /// 系统菜单栏图标：Logo 当前处于需要提醒用户的高亮状态。
+    case statusBarHighlighted
     case custom
 }
 

@@ -7,6 +7,7 @@ import SwiftUI
 /// 显示在 chat 工具栏的 Goal 按钮（Verbosity 按钮右侧），点击展示当前对话的所有 Goal 列表。
 struct GoalToolbarButton: View {
     @StateObject private var viewModel: GoalToolbarViewModel
+    @LumiUI.LumiTheme private var theme: any LumiUITheme
     @State private var isPopoverPresented = false
 
     private var goalCount: Int {
@@ -26,6 +27,7 @@ struct GoalToolbarButton: View {
         } label: {
             Image(systemName: "target")
                 .font(.system(size: 14, weight: .medium))
+                .foregroundColor(theme.textSecondary)
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
@@ -163,6 +165,7 @@ private struct GoalPopoverContent: View {
 // MARK: - Goal Row View
 
 private struct GoalRowView: View {
+    @LumiTheme private var theme
     let item: GoalListItem
     @State private var isExpanded = false
 
@@ -250,25 +253,19 @@ private struct GoalRowView: View {
                         Image(systemName: task.statusSystemImage)
                             .font(.system(size: 8, weight: .semibold))
                             .foregroundStyle(task.statusColor)
-                            .frame(width: 10)
+                            .frame(width: 12)
 
                         Text(task.title)
                             .font(.caption)
-                            .lineLimit(2)
-
-                        if let group = task.parallelGroup {
-                            Text("[\(group)]")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.secondary)
-                        }
+                            .lineLimit(1)
+                            .truncationMode(.tail)
 
                         Spacer()
                     }
                 }
             }
         }
-        .padding(12)
-        .background(Color.secondary.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(8)
+        .background(theme.textPrimary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
     }
 }

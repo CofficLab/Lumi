@@ -35,6 +35,13 @@ struct SettingsView: View {
         }
         .frame(minWidth: 720, minHeight: 520)
         .background(theme.background)
+        // Settings contains native/system semantic colors (for example
+        // `.background`, `.secondary`, and GroupBox). Keep those controls in
+        // sync with fixed light/dark app themes as well as the custom surfaces.
+        .appThemedAppearance()
+        .background {
+            ThemeWindowAppearanceBridge()
+        }
         .ignoresSafeArea()
         .onAppear {
             // 首次进入若无选中,选第一个标签(按 order 最前者)。

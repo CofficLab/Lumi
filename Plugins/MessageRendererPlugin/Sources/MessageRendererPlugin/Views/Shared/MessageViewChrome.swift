@@ -64,6 +64,7 @@ struct MessageViewChrome<Content: View>: View {
                 messageBody
             }
         }
+        .appThemedAppearance()
     }
 
     @ViewBuilder
@@ -176,5 +177,9 @@ struct ThinkingPopoverContent: View {
         }
         .frame(width: 420)
         .frame(maxHeight: 360)
+        .appThemedAppearance()
+        .background {
+            ThemeWindowAppearanceBridge()
+        }
     }
 }

@@ -26,7 +26,7 @@ public final class CaffeinatePlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // Register services here
+        CaffeinateManager.shared.configure(kernel: kernel)
     }
 
 
@@ -39,7 +39,7 @@ public final class CaffeinatePlugin: LumiPlugin, SuperLog {
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] {
         [
             MenuBarPopupItem(id: "\(id).popup", order: order) {
-                CaffeinateMenuBarPopupView()
+                CaffeinateMenuBarPopupView(kernel: kernel)
             },
         ]
     }

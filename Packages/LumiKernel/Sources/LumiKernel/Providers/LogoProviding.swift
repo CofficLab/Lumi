@@ -9,6 +9,12 @@ import SwiftUI
 /// 负责管理 Logo 项的注册和查询。
 @MainActor
 public protocol LogoProviding: ObservableObject {
+    /// Whether the currently displayed Logo should use its highlighted status-bar presentation.
+    var isLogoHighlighted: Bool { get }
+
+    /// Changes the highlighted state used by status-bar Logo consumers.
+    func setLogoHighlighted(_ highlighted: Bool)
+
     /// 所有已注册的 Logo 项
     var allLogoItems: [LogoItem] { get }
 

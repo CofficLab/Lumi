@@ -12,9 +12,11 @@ struct SmartLightLogoView: View {
                 switch scene {
                 case .general, .appIcon, .about, .custom:
                     SmartLightAnimatedLogoView(size: size)
-                case .statusBar:
-                    // Menu bar icon rendered as monochrome template image (tinted by system), always monochrome, no active state.
-                    SmartLightMonochromeLogoView(size: size)
+                case .statusBar, .statusBarHighlighted:
+                    SmartLightMonochromeLogoView(
+                        size: size,
+                        isHighlighted: scene == .statusBarHighlighted
+                    )
                 }
             }
             .frame(width: size, height: size)

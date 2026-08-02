@@ -8,11 +8,13 @@ public struct ListView: View {
     @State private var isLoading = true
     let svc: any ConversationManaging
     let kernel: LumiKernel
+    let attentionStore: ConversationAttentionStore
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: LumiKernel, attentionStore: ConversationAttentionStore) {
         precondition(kernel.conversations != nil, "kernel.conversations is nil")
         self.svc = kernel.conversations!
         self.kernel = kernel
+        self.attentionStore = attentionStore
     }
 
     public var body: some View {
@@ -38,7 +40,12 @@ public struct ListView: View {
         ScrollView {
             LazyVStack(spacing: 4) {
                 ForEach(conversations, id: \.id) { conversation in
-                    ItemView(conversation: conversation, svc: svc, kernel: kernel)
+                    ItemView(
+                        conversation: conversation,
+                        svc: svc,
+                        kernel: kernel,
+                        attentionStore: attentionStore
+                    )
                 }
             }
             .padding(.horizontal, 8)

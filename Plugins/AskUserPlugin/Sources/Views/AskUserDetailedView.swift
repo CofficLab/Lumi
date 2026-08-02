@@ -1,10 +1,13 @@
 import AgentToolKit
 import Foundation
 import LumiKernel
+import LumiUI
 import SwiftUI
 
 /// AskUser 详细模式视图
 public struct AskUserDetailedView: View {
+    @LumiTheme private var theme
+
     let response: AskUserPendingResponse
     let toolCall: ToolCall
 
@@ -26,34 +29,34 @@ public struct AskUserDetailedView: View {
             HStack(spacing: 8) {
                 Image(systemName: "questionmark.circle.fill")
                     .font(.system(size: 18))
-                    .foregroundColor(.blue)
+                    .foregroundColor(theme.primary)
                 Text(response.question)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.primary)
+                    .foregroundColor(theme.textPrimary)
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
                     Image(systemName: "tag.fill")
                         .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(theme.textSecondary)
                     Text("ToolCall ID: \(response.toolCallId)")
                         .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(theme.textSecondary)
                 }
                 HStack(spacing: 4) {
                     Image(systemName: "bubble.left.fill")
                         .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(theme.textSecondary)
                     Text("Conversation: \(response.conversationId)")
                         .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(theme.textSecondary)
                 }
             }
             .padding(8)
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(Color(white: 0.97))
+                    .fill(theme.elevatedSurface)
             )
 
             // 选项始终保留；回答后仅禁用。
@@ -69,20 +72,20 @@ public struct AskUserDetailedView: View {
                                 if let description = option.description {
                                     Text(description)
                                         .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(theme.textSecondary)
                                         .lineLimit(2)
                                 }
                             }
                             Spacer()
                             Image(systemName: selectedAnswer == option.label ? "checkmark.circle.fill" : "chevron.right")
                                 .font(.system(size: 10))
-                                .foregroundColor(selectedAnswer == option.label ? .green : .secondary)
+                                .foregroundColor(selectedAnswer == option.label ? theme.success : theme.textSecondary)
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(selectedAnswer == option.label ? Color.green.opacity(0.12) : Color(white: 0.95))
+                                .fill(selectedAnswer == option.label ? theme.success.opacity(0.12) : theme.elevatedSurface)
                         )
                     }
                     .buttonStyle(.plain)
@@ -97,7 +100,7 @@ public struct AskUserDetailedView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("或者输入自定义回答：")
                     .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(theme.textSecondary)
 
                 HStack(spacing: 8) {
                     TextField("输入回答...", text: $freeInputText)
@@ -107,11 +110,11 @@ public struct AskUserDetailedView: View {
                         .padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(Color(white: 0.98))
+                                .fill(theme.elevatedSurface)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 6)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            .stroke(theme.divider, lineWidth: 1)
                         )
 
                     Button {
@@ -121,9 +124,9 @@ public struct AskUserDetailedView: View {
                     } label: {
                         Image(systemName: "paperplane.fill")
                             .font(.system(size: 14))
-                            .foregroundColor(.white)
+                            .foregroundColor(theme.textPrimary.isLightColor ? .black : .white)
                             .padding(8)
-                            .background(Circle().fill(Color.blue))
+                            .background(Circle().fill(theme.primary))
                     }
                     .buttonStyle(.plain)
                     .disabled(responded || freeInputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -132,16 +135,16 @@ public struct AskUserDetailedView: View {
 
             Text(responded ? "已回答：\(selectedAnswer ?? freeInputText)" : "选择预设选项或输入自定义回答")
                 .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                .foregroundColor(theme.textSecondary)
         }
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(Color(white: 0.98))
+                .fill(theme.surface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.blue.opacity(0.5), lineWidth: 1.5)
+                .stroke(theme.primary.opacity(0.5), lineWidth: 1.5)
         )
     }
 

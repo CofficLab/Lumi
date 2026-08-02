@@ -357,6 +357,17 @@ struct ToolManagerPluginTests {
         #expect(failure.content.contains("boom"))
     }
 
+    @Test("service resolves a user-facing tool description from call arguments")
+    func serviceResolvesDisplayDescription() {
+        let service = ToolManagerService()
+        service.add(TestTool(name: "echo"), pluginID: "tests")
+
+        let call = LumiToolCall(id: "description", name: "echo", arguments: "{}")
+        #expect(service.displayDescription(for: call) == "Test")
+        #expect(service.displayDescription(for: LumiToolCall(id: "missing", name: "missing", arguments: "{}")) == nil)
+        #expect(service.displayDescription(for: LumiToolCall(id: "invalid", name: "echo", arguments: "not-json")) == nil)
+    }
+
     @Test("service returns images attached through execution context")
     func servicePreservesImages() async {
         let service = ToolManagerService()
@@ -522,6 +533,10 @@ private struct TestTool: LumiAgentTool {
             )
         }
         return "echoed"
+    }
+
+    func displayDescription(arguments: [String: LumiJSONValue]) -> String {
+        "Test"
     }
 }
 

@@ -184,6 +184,69 @@ final class AnthropicCompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(content[1]["name"] as? String, "read_file")
     }
 
+    func testBuildRequestBodyCombinesConsecutiveToolResults() throws {
+        let body = try makeAdapter().buildRequestBody(
+            messages: [
+                ChatMessage(role: .user, content: "Run both"),
+                ChatMessage(
+                    role: .assistant,
+                    content: "",
+                    toolCalls: [
+                        ToolCall(id: "call_1", name: "first", arguments: "{}"),
+                        ToolCall(id: "call_2", name: "second", arguments: "{}"),
+                    ]
+                ),
+                ChatMessage(role: .tool, content: "one", toolCallID: "call_1"),
+                ChatMessage(role: .tool, content: "two", toolCallID: "call_2"),
+            ],
+            model: "MiniMax-M2.7",
+            tools: nil,
+            systemPrompt: ""
+        )
+
+        let messages = try XCTUnwrap(body["messages"] as? [[String: Any]])
+        XCTAssertEqual(messages.count, 3)
+        XCTAssertEqual(messages[2]["role"] as? String, "user")
+        let results = try XCTUnwrap(messages[2]["content"] as? [[String: Any]])
+        XCTAssertEqual(results.count, 2)
+        XCTAssertEqual(results.map { $0["tool_use_id"] as? String }, ["call_1", "call_2"])
+    }
+
+    func testBuildRequestBodyDropsUnresolvedTrailingToolUse() throws {
+        let body = try makeAdapter().buildRequestBody(
+            messages: [
+                ChatMessage(role: .user, content: "Continue"),
+                ChatMessage(
+                    role: .assistant,
+                    content: "I will continue.",
+                    toolCalls: [ToolCall(id: "call_pending", name: "commit", arguments: "{}")]
+                ),
+            ],
+            model: "MiniMax-M2.7",
+            tools: nil,
+            systemPrompt: ""
+        )
+
+        let messages = try XCTUnwrap(body["messages"] as? [[String: Any]])
+        XCTAssertEqual(messages.count, 3)
+        let assistantContent = try XCTUnwrap(messages[1]["content"] as? [[String: Any]])
+        XCTAssertEqual(assistantContent[0]["type"] as? String, "text")
+        XCTAssertEqual(assistantContent[1]["type"] as? String, "tool_use")
+        let resultContent = try XCTUnwrap(messages[2]["content"] as? [[String: Any]])
+        XCTAssertEqual(resultContent[0]["tool_use_id"] as? String, "call_pending")
+        XCTAssertEqual(resultContent[0]["is_error"] as? Bool, true)
+    }
+
+    func testTransformAssistantMessageIncludesReasoningHistory() throws {
+        let message = makeAdapter().transformMessage(
+            ChatMessage(role: .assistant, content: "Answer", reasoningContent: "Think")
+        )
+
+        let content = try XCTUnwrap(message["content"] as? [[String: Any]])
+        XCTAssertEqual(content.map { $0["type"] as? String }, ["thinking", "text"])
+        XCTAssertEqual(content[0]["thinking"] as? String, "Think")
+    }
+
     func testParseResponseReturnsContentAndToolCalls() throws {
         let adapter = makeAdapter()
         let data = Data(

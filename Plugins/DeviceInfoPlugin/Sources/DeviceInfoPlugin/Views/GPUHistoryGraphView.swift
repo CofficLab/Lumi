@@ -2,8 +2,6 @@ import SwiftUI
 import LumiUI
 
 struct GPUHistoryGraphView: View {
-    @LumiTheme private var theme
-
     let dataPoints: [GPUDataPoint]
     let timeRange: GPUTimeRange
 
@@ -33,8 +31,8 @@ struct GPUHistoryGraphView: View {
                             GPUGraphArea(data: dataPoints.map { $0.usage }, maxValue: maxValue)
                                 .fill(LinearGradient(
                                     gradient: Gradient(colors: [
-                                        theme.info.opacity(0.5),
-                                        theme.info.opacity(0.1),
+                                        Color.blue.opacity(0.5),
+                                        Color.blue.opacity(0.1),
                                     ]),
                                     startPoint: .top,
                                     endPoint: .bottom
@@ -42,11 +40,11 @@ struct GPUHistoryGraphView: View {
 
                             // Usage Line
                             GPUGraphLine(data: dataPoints.map { $0.usage }, maxValue: maxValue)
-                                .stroke(theme.info, lineWidth: 1.5)
+                                .stroke(.blue, lineWidth: 1.5)
                         } else {
                             Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                                 .font(.caption)
-                                .foregroundColor(theme.textSecondary)
+                                .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
 
@@ -57,7 +55,7 @@ struct GPUHistoryGraphView: View {
                                 path.addLine(to: CGPoint(x: hoverLocation.x, y: geometry.size.height))
                             }
                             .stroke(
-                                theme.textPrimary.opacity(0.3),
+                                Color.primary.opacity(0.3),
                                 style: StrokeStyle(lineWidth: 1, dash: [4, 4])
                             )
 
@@ -95,16 +93,16 @@ struct GPUHistoryGraphView: View {
 
                 ForEach(0..<5, id: \.self) { index in
                     if index > 0 {
-                        Text(formatYValue(for: index))
-                            .font(.system(size: 9))
-                            .foregroundColor(theme.textTertiary)
+                            Text(formatYValue(for: index))
+                                .font(.system(size: 9))
+                                .foregroundColor(.secondary)
                             .frame(height: geometry.size.height / 5, alignment: .trailing)
                     }
                 }
 
                 Text(verbatim: LumiPluginLocalization.string("0", bundle: .module))
                     .font(.system(size: 9))
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
             }
             .padding(.trailing, 4)
         }
@@ -121,7 +119,7 @@ struct GPUHistoryGraphView: View {
                     if let firstPoint = dataPoints.first {
                         Text(formatXAxisDate(firstPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(theme.textTertiary)
+                            .foregroundColor(.secondary)
                     }
 
                     Spacer()
@@ -129,7 +127,7 @@ struct GPUHistoryGraphView: View {
                     if let lastPoint = dataPoints.last {
                         Text(formatXAxisDate(lastPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(theme.textTertiary)
+                            .foregroundColor(.secondary)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -147,7 +145,7 @@ struct GPUHistoryGraphView: View {
                     path.move(to: CGPoint(x: 0, y: y))
                     path.addLine(to: CGPoint(x: size.width, y: y))
                 }
-                .stroke(theme.textTertiary.opacity(0.15), lineWidth: 0.5)
+                .stroke(Color.secondary.opacity(0.15), lineWidth: 0.5)
             }
         }
     }
@@ -242,8 +240,6 @@ struct GPUGraphArea: Shape {
 // MARK: - Tooltip
 
 struct GPUTooltipView: View {
-    @LumiTheme private var theme
-
     let point: GPUDataPoint
     let timeRange: GPUTimeRange
 
@@ -251,15 +247,15 @@ struct GPUTooltipView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(formatDate(point.timestamp))
                 .font(.system(size: 10, weight: .bold))
-                .foregroundColor(theme.textPrimary)
+                .foregroundColor(.primary)
 
             HStack(spacing: 4) {
                 Circle()
-                    .fill(theme.info)
+                    .fill(.blue)
                     .frame(width: 6, height: 6)
                 Text("\(Int(point.usage))%")
                     .font(.system(size: 10))
-                    .foregroundColor(theme.textSecondary)
+                    .foregroundColor(.secondary)
             }
         }
         .padding(6)

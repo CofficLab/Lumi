@@ -2,8 +2,6 @@ import LumiUI
 import SwiftUI
 
 public struct MemoryMenuBarPopupView: View {
-    @LumiTheme private var theme
-
     @StateObject private var viewModel = MemoryManagerViewModel()
 
     public var body: some View {
@@ -17,7 +15,7 @@ public struct MemoryMenuBarPopupView: View {
             HStack {
                 Text(LumiPluginLocalization.string("Memory", bundle: .module))
                     .font(.system(size: 11))
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
 
                 Spacer()
 
@@ -28,12 +26,12 @@ public struct MemoryMenuBarPopupView: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(theme.textTertiary.opacity(0.2))
+                        .fill(Color.secondary.opacity(0.2))
 
                     RoundedRectangle(cornerRadius: 3)
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [theme.primary, theme.info]),
+                                gradient: Gradient(colors: [.accentColor, .blue]),
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -43,6 +41,6 @@ public struct MemoryMenuBarPopupView: View {
             }
             .frame(height: 6)
         }
-        .padding()
+        .padding(10)
     }
 }

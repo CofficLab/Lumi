@@ -5,7 +5,7 @@ import LumiKernel
 import LumiKernel
 
 enum AvailabilityService {
-    private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderStepFunPlugin")
+    private static let cache = AvailabilityDiskCache(pluginName: stepFunPluginDataDirectoryName)
 
     static func checkAvailability(
         provider: StepFunProvider,

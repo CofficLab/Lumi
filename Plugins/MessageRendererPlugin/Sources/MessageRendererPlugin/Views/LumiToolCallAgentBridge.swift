@@ -20,7 +20,7 @@ extension LumiToolCall {
                     interactionState: Self.interactionState(for: lumiResult.turnControl)
                 )
             },
-            displayName: displayName
+            displayDescription: displayDescription
         )
     }
 

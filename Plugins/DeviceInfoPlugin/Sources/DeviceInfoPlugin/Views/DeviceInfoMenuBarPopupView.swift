@@ -7,8 +7,6 @@ import Combine
 public struct DeviceInfoMenuBarPopupView: View {
     // MARK: - Properties
 
-    @LumiTheme private var theme
-
     @StateObject private var viewModel = CPUManagerViewModel()
 
     // MARK: - Body
@@ -32,7 +30,7 @@ public struct DeviceInfoMenuBarPopupView: View {
             HStack {
                 Text(LumiPluginLocalization.string("CPU Usage", bundle: .module))
                     .font(.system(size: 11))
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
 
                 Spacer()
 
@@ -46,7 +44,7 @@ public struct DeviceInfoMenuBarPopupView: View {
                 ZStack(alignment: .leading) {
                     // 背景条
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(theme.textTertiary.opacity(0.2))
+                        .fill(Color.secondary.opacity(0.2))
 
                     // 进度条
                     RoundedRectangle(cornerRadius: 3)
@@ -66,31 +64,31 @@ public struct DeviceInfoMenuBarPopupView: View {
             HStack(spacing: 8) {
                 HStack(spacing: 3) {
                     Circle()
-                        .fill(theme.success)
+                        .fill(.green)
                         .frame(width: 6, height: 6)
                     Text(String(format: LumiPluginLocalization.string("User %.0f%%", bundle: .module), viewModel.userUsage))
                         .font(.system(size: 9))
-                        .foregroundColor(theme.textTertiary)
+                        .foregroundColor(.secondary)
                 }
                 HStack(spacing: 3) {
                     Circle()
-                        .fill(theme.warning)
+                        .fill(.orange)
                         .frame(width: 6, height: 6)
                     Text(String(format: LumiPluginLocalization.string("Sys %.0f%%", bundle: .module), viewModel.systemUsage))
                         .font(.system(size: 9))
-                        .foregroundColor(theme.textTertiary)
+                        .foregroundColor(.secondary)
                 }
                 HStack(spacing: 3) {
                     Circle()
-                        .fill(theme.textTertiary.opacity(0.4))
+                        .fill(Color.secondary.opacity(0.4))
                         .frame(width: 6, height: 6)
                     Text(String(format: LumiPluginLocalization.string("Idle %.0f%%", bundle: .module), viewModel.idleUsage))
                         .font(.system(size: 9))
-                        .foregroundColor(theme.textTertiary)
+                        .foregroundColor(.secondary)
                 }
             }
         }
-        .padding()
+        .padding(10)
     }
 
     // MARK: - Top Processes View
@@ -103,9 +101,8 @@ public struct DeviceInfoMenuBarPopupView: View {
 
     private var cpuColor: Color {
         let value = viewModel.cpuUsage
-        if value < 60 { return theme.success }
-        if value < 85 { return theme.warning }
-        return theme.error
+        if value < 60 { return .green }
+        if value < 85 { return .orange }
+        return .red
     }
 }
-

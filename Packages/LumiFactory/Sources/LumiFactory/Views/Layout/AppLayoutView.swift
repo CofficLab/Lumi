@@ -53,6 +53,10 @@ struct AppLayoutView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.background)
+        .appThemedAppearance()
+        .background {
+            ThemeWindowAppearanceBridge()
+        }
         .environmentObject(AppThemeVM.shared)
         .ignoresSafeArea()
         .onRailVisibleDidChange { visible in

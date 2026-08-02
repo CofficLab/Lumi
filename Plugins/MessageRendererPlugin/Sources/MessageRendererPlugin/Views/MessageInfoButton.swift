@@ -172,7 +172,7 @@ struct MessageInfoPopoverContent: View {
     @ViewBuilder
     private func toolCallSummary(index: Int, toolCall: LumiToolCall) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            infoRow("#\(index) 名称", value: toolCall.displayName ?? toolCall.name)
+            infoRow("#\(index) 操作", value: toolCall.displayDescription ?? "执行工具")
             infoRow("ID", value: toolCall.id, isMono: true)
             infoRow("参数", value: "\(toolCall.arguments.count) 字符")
             infoRow("结果", value: toolCallResultSummary(toolCall))

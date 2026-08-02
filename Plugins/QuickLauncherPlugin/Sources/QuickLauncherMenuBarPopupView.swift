@@ -32,11 +32,11 @@ private struct AppIconButton: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 13))
-                .foregroundColor(Color(hex: "0A84FF"))
+                .foregroundColor(.accentColor)
                 .frame(width: 28, height: 28)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(isHovering ? Color(hex: "0A84FF").opacity(0.15) : Color.adaptive(light: "F2F2F7", dark: "1C1C1E"))
+                        .fill(isHovering ? Color.accentColor.opacity(0.15) : Color.secondary.opacity(0.12))
                 )
         }
         .buttonStyle(.plain)

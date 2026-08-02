@@ -11,7 +11,7 @@ public struct ProcessNetworkListView: View {
             HStack {
                 Text(LumiPluginLocalization.string("Process Monitor", bundle: .module))
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                    .foregroundColor(.primary)
 
                 Spacer()
 
@@ -49,22 +49,22 @@ public struct ProcessNetworkListView: View {
                         .frame(width: availableWidth * 0.2, alignment: .trailing)
                 }
                 .font(.caption)
-                .foregroundColor(Color(hex: "98989E"))
+                .foregroundColor(.secondary)
                 .padding(.horizontal, horizontalPadding)
                 .padding(.trailing, scrollBarWidth) // Extra padding to align with list (avoid scrollbar)
                 .padding(.vertical, 6)
-                .background(Color.white.opacity(0.08))
+                .background(Color.secondary.opacity(0.06))
             }
             .frame(height: 28)
 
-            GlassDivider()
+            Divider()
 
             // List
             if viewModel.filteredProcesses.isEmpty {
                 VStack {
                     Spacer()
                     Text(LumiPluginLocalization.string("No active processes", bundle: .module))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .foregroundColor(.secondary)
                     Spacer()
                 }
                 .frame(maxHeight: .infinity)

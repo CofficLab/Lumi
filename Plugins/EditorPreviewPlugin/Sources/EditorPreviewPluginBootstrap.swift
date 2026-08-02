@@ -16,3 +16,11 @@ enum EditorPreviewPluginRuntimeBridge {
     /// plugin 名,与 EditorPreviewStorage.pluginName 一致。
     static let pluginName = "EditorPreviewPlugin"
 }
+
+@MainActor
+public extension EditorPreviewBottomPanelPlugin {
+    static func bootstrapFromLumiCoreIfNeeded(kernel: LumiKernel) {
+        EditorPreviewPluginRuntimeBridge.pluginDirectory =
+            kernel.storage?.pluginDataDirectory(for: EditorPreviewPluginRuntimeBridge.pluginName)
+    }
+}

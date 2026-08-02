@@ -1,6 +1,7 @@
 import AgentToolKit
 import Foundation
 import LumiKernel
+import LumiUI
 import SwiftUI
 
 /// AskUser 标准模式视图
@@ -8,6 +9,8 @@ import SwiftUI
 /// 显示问题文本、选项按钮和图标，平衡信息量和视觉简洁度。
 /// 用于 verbosity == "standard" 的情况。
 public struct AskUserStandardView: View {
+    @LumiTheme private var theme
+
     let response: AskUserPendingResponse
     let toolCall: ToolCall
 
@@ -37,10 +40,10 @@ public struct AskUserStandardView: View {
             HStack(spacing: 8) {
                 Image(systemName: "questionmark.circle.fill")
                     .font(.system(size: 16))
-                    .foregroundColor(.blue)
+                    .foregroundColor(theme.primary)
                 Text(response.question)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.primary)
+                    .foregroundColor(theme.textPrimary)
             }
 
             if isFreeText {
@@ -52,21 +55,21 @@ public struct AskUserStandardView: View {
             if responded {
                 Text("已回答：\(selectedAnswer ?? freeInputText)")
                     .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(theme.textSecondary)
             } else {
                 Text(isFreeText ? "输入回答后提交" : "点击选项回答问题")
                     .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(theme.textSecondary)
             }
         }
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(Color(white: 0.98))
+                .fill(theme.surface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                .stroke(theme.primary.opacity(0.3), lineWidth: 1)
         )
     }
 
@@ -84,20 +87,20 @@ public struct AskUserStandardView: View {
                             if let description = option.description {
                                 Text(description)
                                     .font(.system(size: 11))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(theme.textSecondary)
                                     .lineLimit(2)
                             }
                         }
                         Spacer()
                         Image(systemName: selectedAnswer == option.label ? "checkmark.circle.fill" : "chevron.right")
                             .font(.system(size: 10))
-                            .foregroundColor(selectedAnswer == option.label ? .green : .secondary)
+                            .foregroundColor(selectedAnswer == option.label ? theme.success : theme.textSecondary)
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(selectedAnswer == option.label ? Color.green.opacity(0.12) : Color(white: 0.95))
+                            .fill(selectedAnswer == option.label ? theme.success.opacity(0.12) : theme.elevatedSurface)
                     )
                 }
                 .buttonStyle(.plain)
@@ -117,11 +120,11 @@ public struct AskUserStandardView: View {
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(Color(white: 0.98))
+                        .fill(theme.elevatedSurface)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    .stroke(theme.divider, lineWidth: 1)
                 )
 
             Button {
@@ -130,9 +133,9 @@ public struct AskUserStandardView: View {
             } label: {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 14))
-                    .foregroundColor(.white)
+                    .foregroundColor(theme.textPrimary.isLightColor ? .black : .white)
                     .padding(8)
-                    .background(Circle().fill(Color.blue))
+                    .background(Circle().fill(theme.primary))
             }
             .buttonStyle(.plain)
             .disabled(responded || freeInputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

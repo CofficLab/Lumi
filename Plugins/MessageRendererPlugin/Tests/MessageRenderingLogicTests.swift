@@ -200,8 +200,8 @@ import LumiKernel
 
     @Test func joinsMultipleToolCallsIntoOneInlineSummary() {
         let calls = [
-            LumiToolCall(id: "1", name: "read_files", arguments: "{}", displayName: "Read files"),
-            LumiToolCall(id: "2", name: "apply_patch", arguments: "{}", displayName: "Edit applied"),
+            LumiToolCall(id: "1", name: "read_files", arguments: "{}", displayDescription: "Read files"),
+            LumiToolCall(id: "2", name: "apply_patch", arguments: "{}", displayDescription: "Edit applied"),
         ]
 
         #expect(
@@ -210,21 +210,21 @@ import LumiKernel
         )
     }
 
-    @Test func fallsBackToToolNameWhenDisplayNameIsMissingOrBlank() {
+    @Test func usesOnlyUserFacingDescriptions() {
         let calls = [
-            LumiToolCall(id: "1", name: "read_files", arguments: "{}", displayName: ""),
-            LumiToolCall(id: "2", name: "apply_patch", arguments: "{}", displayName: nil),
+            LumiToolCall(id: "1", name: "read_files", arguments: "{}", displayDescription: ""),
+            LumiToolCall(id: "2", name: "apply_patch", arguments: "{}", displayDescription: nil),
         ]
 
         #expect(
             ToolCallBriefSummaryFormatter.summaryText(for: calls)
-                == "read_files  ·  apply_patch"
+                == "执行工具  ·  执行工具"
         )
     }
 
     @Test func trimsWhitespaceFromTitles() {
         let calls = [
-            LumiToolCall(id: "1", name: "read_files", arguments: "{}", displayName: "  Read files  "),
+            LumiToolCall(id: "1", name: "read_files", arguments: "{}", displayDescription: "  Read files  "),
         ]
 
         #expect(ToolCallBriefSummaryFormatter.summaryText(for: calls) == "Read files")

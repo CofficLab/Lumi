@@ -24,18 +24,18 @@ public struct ProcessRow: View {
                 } else {
                     Image(systemName: "gearshape")
                         .frame(width: 24, height: 24)
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .foregroundColor(.secondary)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(process.name)
                         .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
-                        .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
+                        .foregroundColor(.primary)
 
                     Text(LumiPluginLocalization.string("PID: \(process.id)", bundle: .module))
                         .font(.system(size: 10))
-                        .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                        .foregroundColor(.secondary)
                 }
             }
             .frame(width: availableWidth * 0.50, alignment: .leading)
@@ -68,11 +68,11 @@ public struct SpeedText: View {
 
     public var color: Color {
         if speed >= thresholdRed {
-            return Color(hex: "FF453A")
+            return .red
         } else if speed >= thresholdOrange {
-            return Color(hex: "FF9F0A")
+            return .orange
         } else {
-            return Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
+            return .primary
         }
     }
 

@@ -2,8 +2,6 @@ import LumiUI
 import SwiftUI
 
 struct GPUHistoryDetailView: View {
-    @LumiTheme private var theme
-
     @ObservedObject private var historyService = GPUHistoryService.shared
     @StateObject private var viewModel = GPUManagerViewModel()
     @State private var selectedRange: GPUTimeRange = .hour1
@@ -13,7 +11,7 @@ struct GPUHistoryDetailView: View {
             HStack {
                 Text(LumiPluginLocalization.string("GPU Usage Trend", bundle: .module))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
 
                 Spacer()
 
@@ -30,12 +28,13 @@ struct GPUHistoryDetailView: View {
             .padding(.horizontal, 12)
             .padding(.top, 12)
 
-            AppCard(cornerRadius: 0, padding: EdgeInsets(), showShadow: false) {
+            VStack(spacing: 0) {
                 GPUHistoryGraphView(
                     dataPoints: historyService.getData(for: selectedRange),
                     timeRange: selectedRange
                 )
             }
+            .background(Color.secondary.opacity(0.06))
             .frame(height: 180)
 
             // GPU detail metrics cards
@@ -43,51 +42,62 @@ struct GPUHistoryDetailView: View {
                 GPUMetricCard(
                     title: LumiPluginLocalization.string("Utilization", bundle: .module),
                     value: viewModel.utilizationString,
-                    color: viewModel.utilizationColor
+                    color: statusColor(for: viewModel.utilization)
                 )
 
                 GPUMetricCard(
                     title: LumiPluginLocalization.string("Memory", bundle: .module),
                     value: viewModel.usedMemory,
                     subtitle: viewModel.totalMemory,
-                    color: viewModel.memoryColor
+                    color: statusColor(for: viewModel.memoryUsagePercentage)
                 )
 
                 GPUMetricCard(
                     title: LumiPluginLocalization.string("Renderer", bundle: .module),
                     value: viewModel.rendererUtilizationString,
-                    color: theme.info
+                    color: .blue
                 )
 
                 GPUMetricCard(
                     title: LumiPluginLocalization.string("Tiler", bundle: .module),
                     value: viewModel.tilerUtilizationString,
-                    color: theme.warning
+                    color: .orange
                 )
 
                 GPUMetricCard(
                     title: LumiPluginLocalization.string("Temperature", bundle: .module),
                     value: viewModel.temperatureString,
-                    color: viewModel.temperatureColor
+                    color: temperatureColor
                 )
 
                 GPUMetricCard(
                     title: LumiPluginLocalization.string("Model", bundle: .module),
                     value: viewModel.modelName,
-                    color: theme.textTertiary
+                    color: .secondary
                 )
             }
             .padding(.horizontal, 12)
             .padding(.bottom, 12)
         }
     }
+
+    private func statusColor(for value: Double) -> Color {
+        if value < 60 { return .green }
+        if value < 85 { return .orange }
+        return .red
+    }
+
+    private var temperatureColor: Color {
+        guard viewModel.gpuService.temperature > 0 else { return .secondary }
+        if viewModel.gpuService.temperature < 60 { return .green }
+        if viewModel.gpuService.temperature < 80 { return .orange }
+        return .red
+    }
 }
 
 // MARK: - Metric Card
 
 private struct GPUMetricCard: View {
-    @LumiTheme private var theme
-
     let title: String
     let value: String
     var subtitle: String? = nil
@@ -97,30 +107,23 @@ private struct GPUMetricCard: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.system(size: 10))
-                .foregroundColor(theme.textTertiary)
+                .foregroundColor(.secondary)
 
             Text(value)
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                .foregroundColor(theme.textPrimary)
+                .foregroundColor(.primary)
                 .lineLimit(1)
 
             if let subtitle {
                 Text(subtitle)
                     .font(.system(size: 10))
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
             }
         }
         .padding(8)
-        .background(theme.textTertiary.opacity(0.06))
+        .background(Color.secondary.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }
 
 // MARK: - Color Extension
-
-extension GPUManagerViewModel {
-    var temperatureColor: Color {
-        guard gpuService.temperature > 0 else { return currentTheme.textTertiary }
-        return MetricStatus.gpuTemperature(gpuService.temperature).themeColor
-    }
-}

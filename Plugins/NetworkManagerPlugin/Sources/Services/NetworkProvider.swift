@@ -4,8 +4,8 @@ import LumiKernel
 /// 基于 URLSession 的 NetworkProviding 实现
 @MainActor
 public final class NetworkProvider: NetworkProviding {
-    private let session: URLSession
-    private let exchangeStore: HTTPExchangeStore?
+    public let session: URLSession
+    public let exchangeStore: HTTPExchangeStore?
 
     public init(session: URLSession = .shared, exchangeStore: HTTPExchangeStore? = nil) {
         self.session = session

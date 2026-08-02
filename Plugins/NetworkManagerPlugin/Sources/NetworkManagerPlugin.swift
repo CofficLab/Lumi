@@ -61,6 +61,19 @@ public final class NetworkManagerPlugin: LumiPlugin {
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
+
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            ListHTTPExchangesTool(),
+            GetHTTPSummaryTool(),
+            GetHTTPExchangeDetailTool(),
+            GetHTTPSlowRequestsTool(),
+            GetHTTPFailedRequestsTool(),
+            GetHTTPDomainLogTool(),
+        ]
+    }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }

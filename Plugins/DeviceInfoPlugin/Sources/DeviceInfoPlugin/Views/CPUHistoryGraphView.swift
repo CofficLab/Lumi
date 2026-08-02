@@ -4,8 +4,6 @@ import AppKit
 import LumiUI
 
 struct CPUHistoryGraphView: View {
-    @LumiTheme private var theme
-
     let dataPoints: [CPUDataPoint]
     let timeRange: CPUTimeRange
 
@@ -38,15 +36,15 @@ struct CPUHistoryGraphView: View {
                         if !dataPoints.isEmpty {
                             // Usage Area
                             CPUGraphArea(data: dataPoints.map { $0.usage }, maxValue: maxValue)
-                                .fill(LinearGradient(gradient: Gradient(colors: [theme.info.opacity(0.5), theme.info.opacity(0.1)]), startPoint: .top, endPoint: .bottom))
+                                .fill(LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.5), Color.blue.opacity(0.1)]), startPoint: .top, endPoint: .bottom))
 
                             // Usage Line
                             CPUGraphLine(data: dataPoints.map { $0.usage }, maxValue: maxValue)
-                                .stroke(theme.info, lineWidth: 1.5)
+                                .stroke(.blue, lineWidth: 1.5)
                         } else {
                             Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                                 .font(.caption)
-                                .foregroundColor(theme.textSecondary)
+                                .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
 
@@ -57,7 +55,7 @@ struct CPUHistoryGraphView: View {
                                 path.move(to: CGPoint(x: hoverLocation.x, y: 0))
                                 path.addLine(to: CGPoint(x: hoverLocation.x, y: geometry.size.height))
                             }
-                            .stroke(theme.textPrimary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            .stroke(Color.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
                             // Tooltip
                             CPUTooltipView(point: point, timeRange: timeRange)
@@ -95,9 +93,9 @@ struct CPUHistoryGraphView: View {
                 // Y 轴标签（从上到下，5 个刻度）
                 ForEach(0..<5, id: \.self) { index in
                     if index > 0 {
-                        Text(formatYValue(for: index))
-                            .font(.system(size: 9))
-                            .foregroundColor(theme.textTertiary)
+                            Text(formatYValue(for: index))
+                                .font(.system(size: 9))
+                            .foregroundColor(.secondary)
                             .frame(height: geometry.size.height / 5, alignment: .trailing)
                     }
                 }
@@ -105,7 +103,7 @@ struct CPUHistoryGraphView: View {
                 // 底部 0 标签
                 Text(verbatim: LumiPluginLocalization.string("0", bundle: .module))
                     .font(.system(size: 9))
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
             }
             .padding(.trailing, 4)
         }
@@ -123,7 +121,7 @@ struct CPUHistoryGraphView: View {
                     if let firstPoint = dataPoints.first {
                         Text(formatXAxisDate(firstPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(theme.textTertiary)
+                            .foregroundColor(.secondary)
                     }
 
                     Spacer()
@@ -132,7 +130,7 @@ struct CPUHistoryGraphView: View {
                     if let lastPoint = dataPoints.last {
                         Text(formatXAxisDate(lastPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(theme.textTertiary)
+                            .foregroundColor(.secondary)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -151,7 +149,7 @@ struct CPUHistoryGraphView: View {
                     path.move(to: CGPoint(x: 0, y: y))
                     path.addLine(to: CGPoint(x: size.width, y: y))
                 }
-                .stroke(theme.textTertiary.opacity(0.15), lineWidth: 0.5)
+                .stroke(Color.secondary.opacity(0.15), lineWidth: 0.5)
             }
         }
     }
@@ -247,8 +245,6 @@ struct CPUGraphArea: Shape {
 // MARK: - Tooltip
 
 struct CPUTooltipView: View {
-    @LumiTheme private var theme
-
     let point: CPUDataPoint
     let timeRange: CPUTimeRange
 
@@ -256,15 +252,15 @@ struct CPUTooltipView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(formatDate(point.timestamp))
                 .font(.system(size: 10, weight: .bold))
-                .foregroundColor(theme.textPrimary)
+                .foregroundColor(.primary)
 
             HStack(spacing: 4) {
                 Circle()
-                    .fill(theme.info)
+                    .fill(.blue)
                     .frame(width: 6, height: 6)
                 Text("\(Int(point.usage))%")
                     .font(.system(size: 10))
-                    .foregroundColor(theme.textSecondary)
+                    .foregroundColor(.secondary)
             }
         }
         .padding(6)
