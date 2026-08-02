@@ -28,8 +28,11 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     private var popover: NSPopover?
     private var workspaceObservation: AnyCancellable?
     private var applicationResignActiveObservation: AnyCancellable?
+    private var activeSpaceChangeObservation: AnyCancellable?
+    private var popoverCloseObservation: AnyCancellable?
     private var systemAppearanceObservation: NSObjectProtocol?
     private var applicationAppearanceObservation: NSKeyValueObservation?
+    private var globalMouseDownMonitor: Any?
     private var menuBarColorScheme: ColorScheme = SystemAppearanceResolver.effectiveColorScheme
 
     public init() {}
@@ -136,6 +139,11 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         workspaceObservation = nil
         applicationResignActiveObservation?.cancel()
         applicationResignActiveObservation = nil
+        activeSpaceChangeObservation?.cancel()
+        activeSpaceChangeObservation = nil
+        popoverCloseObservation?.cancel()
+        popoverCloseObservation = nil
+        stopMonitoringOutsideClicks()
         if let systemAppearanceObservation {
             DistributedNotificationCenter.default().removeObserver(systemAppearanceObservation)
         }
@@ -195,6 +203,8 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         popover.contentViewController = makePopupHostingController()
         self.popover = popover
         startObservingApplicationResignActiveIfNeeded()
+        startObservingActiveSpaceChangesIfNeeded()
+        startObservingPopoverCloseIfNeeded(popover)
         startObservingSystemAppearanceChangesIfNeeded()
         syncPopoverWindowAppearance()
     }
@@ -251,6 +261,45 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
             }
     }
 
+    private func startObservingActiveSpaceChangesIfNeeded() {
+        guard activeSpaceChangeObservation == nil else { return }
+
+        activeSpaceChangeObservation = NSWorkspace.shared.notificationCenter
+            .publisher(for: NSWorkspace.activeSpaceDidChangeNotification)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.popover?.performClose(nil)
+            }
+    }
+
+    private func startObservingPopoverCloseIfNeeded(_ popover: NSPopover) {
+        guard popoverCloseObservation == nil else { return }
+
+        popoverCloseObservation = NotificationCenter.default
+            .publisher(for: NSPopover.didCloseNotification, object: popover)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.stopMonitoringOutsideClicks()
+            }
+    }
+
+    private func startMonitoringOutsideClicks() {
+        guard globalMouseDownMonitor == nil else { return }
+
+        globalMouseDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            Task { @MainActor in
+                self?.popover?.performClose(nil)
+            }
+        }
+    }
+
+    private func stopMonitoringOutsideClicks() {
+        if let globalMouseDownMonitor {
+            NSEvent.removeMonitor(globalMouseDownMonitor)
+            self.globalMouseDownMonitor = nil
+        }
+    }
+
     private func startObservingSystemAppearanceChangesIfNeeded() {
         if systemAppearanceObservation == nil {
             systemAppearanceObservation = DistributedNotificationCenter.default().addObserver(
@@ -300,6 +349,17 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         view.needsDisplay = true
     }
 
+    private func configurePopoverWindowForMenuBarSpace() {
+        guard let window = popover?.contentViewController?.view.window else { return }
+        window.collectionBehavior = window.collectionBehavior.union([
+            .canJoinAllSpaces,
+            .fullScreenAuxiliary,
+            .transient,
+        ])
+        window.level = .popUpMenu
+        window.orderFrontRegardless()
+    }
+
     private func refreshFromKernel() {
         guard let kernel else { return }
         refreshMenuBar(
@@ -310,7 +370,8 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
 
     @objc
     private func togglePopover(_ sender: Any?) {
-        guard let statusItem, let button = statusItem.button else { return }
+        let clickedButton = sender as? NSStatusBarButton
+        guard let button = clickedButton ?? statusItem?.button else { return }
         guard let popover else { return }
 
         if popover.isShown {
@@ -318,11 +379,11 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
             return
         }
 
-        NSApp.activate(ignoringOtherApps: true)
         refreshMenuBarSystemAppearance()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        configurePopoverWindowForMenuBarSpace()
         syncPopoverWindowAppearance()
-        popover.contentViewController?.view.window?.makeKey()
+        startMonitoringOutsideClicks()
     }
 
     private func showMainWindow() {
