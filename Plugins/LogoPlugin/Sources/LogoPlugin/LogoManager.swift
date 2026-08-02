@@ -14,12 +14,22 @@ public final class LogoManager: LogoProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.logo")
     public nonisolated static let emoji = "🖼️"
     nonisolated static let verbose = false
+    @Published public private(set) var isLogoHighlighted = false
     public private(set) var allLogoItems: [LogoItem] = []
 
     private var logoItems: [String: LogoItem] = [:]
     private var logoItemOrder: [String] = []
 
     public init() {}
+
+    public func setLogoHighlighted(_ highlighted: Bool) {
+        guard isLogoHighlighted != highlighted else {
+            Self.logger.info("[LogoHighlight] LogoManager no-op state=\(self.isLogoHighlighted)")
+            return
+        }
+        Self.logger.info("[LogoHighlight] LogoManager state \(self.isLogoHighlighted) -> \(highlighted)")
+        isLogoHighlighted = highlighted
+    }
 
     public func registerLogoItem(_ item: LogoItem) {
         if Self.verbose {
