@@ -56,6 +56,9 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// 由 View 经 `\.lumiActiveToolGroupIDs` Environment 注入渲染层。
     @Published private(set) var activeStepGroupMessageIDs: Set<UUID> = []
 
+    /// ToolManager-backed summaries keyed by AgentTurn ID.
+    @Published private(set) var turnActivitySummaries: [UUID: LumiTurnActivitySummary] = [:]
+
     // MARK: - Dependencies & Internal State
 
     private let kernel: LumiKernel
@@ -65,6 +68,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// 切换会话时记录的目标会话,用于丢弃过期的后台读结果。
     private var activeConversationID: UUID?
     private var cancellables: Set<AnyCancellable> = []
+    private var didBindToolActivityNotifications = false
     /// 流式/发送服务是否都已绑定;服务后于本 viewmodel 就绪时由 `activate` 重试绑定。
     private var didBindServices = false
 
@@ -119,6 +123,11 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         activeConversationID = conversationID
         isLoading = true
         await loadFirstPage(conversationID: conversationID)
+        if let conversationID {
+            await refreshTurnActivitySummaries(conversationID: conversationID)
+        } else {
+            turnActivitySummaries = [:]
+        }
     }
 
     // MARK: - Pagination
@@ -166,6 +175,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         if let hasEarlier = result.hasEarlierMessages {
             hasEarlierMessages = hasEarlier
         }
+        await refreshTurnActivitySummaries(conversationID: conversationID)
     }
 
     // MARK: - Private
@@ -189,12 +199,63 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         isLoading = false
     }
 
+    /// Refreshes only the turns represented by the current message window.
+    /// ToolManager remains the source of truth for counts and durations; messages
+    /// still provide the expandable tool rows.
+    private func refreshTurnActivitySummaries(conversationID: UUID) async {
+        guard let toolManager = kernel.toolManager else {
+            turnActivitySummaries = [:]
+            return
+        }
+        let turnIDs = Set(
+            persistedMessages
+                .filter { $0.conversationID == conversationID }
+                .compactMap(\.turnID)
+        )
+        guard !turnIDs.isEmpty else {
+            turnActivitySummaries = [:]
+            return
+        }
+
+        var summaries: [UUID: LumiTurnActivitySummary] = [:]
+        for turnID in turnIDs {
+            let records = await toolManager.toolCalls(for: turnID)
+            let durations = records.compactMap(\.duration)
+            summaries[turnID] = LumiTurnActivitySummary(
+                turnID: turnID,
+                totalCount: records.count,
+                completedCount: records.filter { $0.completedAt != nil }.count,
+                failedCount: records.filter(\.resultIsError).count,
+                totalDuration: durations.isEmpty ? nil : durations.reduce(0, +)
+            )
+        }
+        guard activeConversationID == conversationID else { return }
+        turnActivitySummaries = summaries
+    }
+
     /// 订阅流式/发送服务的窄播(绕开 kernel 全局广播),变化时重算展示行。
     ///
     /// `receive(on:)` 让 sink 在属性写入完成后异步执行
     /// (objectWillChange 在 willSet 触发,同步读取会拿到旧值)。
     /// 幂等:两个服务都绑定后不再重复;任一尚未就绪时由下次 `activate` 重试。
     private func bindServicesIfNeeded() {
+        if !didBindToolActivityNotifications {
+            NotificationCenter.default.publisher(for: .lumiToolActivityDidChange)
+                .compactMap { notification in
+                    notification.userInfo?["conversationID"] as? UUID
+                }
+                .filter { [weak self] conversationID in
+                    self?.selectedConversationID == conversationID
+                }
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] conversationID in
+                    guard let self else { return }
+                    Task { await self.refreshTurnActivitySummaries(conversationID: conversationID) }
+                }
+                .store(in: &cancellables)
+            didBindToolActivityNotifications = true
+        }
+
         guard !didBindServices else { return }
         if let streaming = kernel.messageStreaming {
             streaming.objectWillChange

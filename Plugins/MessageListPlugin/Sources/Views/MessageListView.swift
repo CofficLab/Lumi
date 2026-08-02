@@ -103,6 +103,7 @@ struct MessageListView: View {
                     .padding(.vertical, 4)
                     // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
                     .environment(\.lumiActiveToolGroupIDs, viewModel.activeStepGroupMessageIDs)
+                    .environment(\.lumiTurnActivitySummaries, viewModel.turnActivitySummaries)
                 }
                 .onPreferenceChange(MessageListBottomAnchorPositionKey.self) { bottomMaxY in
                     let viewMaxY = viewport.frame(in: .global).maxY

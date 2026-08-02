@@ -132,6 +132,17 @@ enum ToolCallBriefSummaryFormatter {
 /// - 全部完成:`执行了 N 个步骤 · <总耗时>`
 /// - 有失败:`执行了 N 个步骤(X 失败) · <总耗时>`
 enum ToolStepGroupSummary {
+    static func summaryText(for summary: LumiTurnActivitySummary) -> String {
+        var parts = ["执行了 \(summary.totalCount) 个步骤"]
+        if summary.failedCount > 0 {
+            parts[0] += "(\(summary.failedCount) 失败)"
+        }
+        if let duration = summary.totalDuration {
+            parts.append(MessageViewHelpers.formatDuration(duration))
+        }
+        return parts.joined(separator: " · ")
+    }
+
     /// 组内任一调用仍在执行 → loading;否则任一失败 → failed;否则 completed。
     static func aggregateState(for toolCalls: [LumiToolCall]) -> ToolCallResultVisualState {
         if toolCalls.contains(where: { $0.result == nil }) {

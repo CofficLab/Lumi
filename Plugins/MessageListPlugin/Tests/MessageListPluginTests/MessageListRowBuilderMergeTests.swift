@@ -106,6 +106,24 @@ struct MessageListRowBuilderMergeTests {
         #expect(merged.toolCalls?.map(\.id) == ["a", "b"])
     }
 
+    @Test("历史工具消息不会吞掉新 Turn 的 turnID")
+    func legacyMessageDoesNotMergeWithTurnMessage() {
+        let turnID = UUID()
+        let legacy = toolExec(id: UUID(), calls: ["legacy"])
+        let current = toolExec(id: UUID(), calls: ["current"], turnID: turnID)
+        let rows = builder.build(
+            persisted: [legacy, current],
+            conversationID: conversation,
+            streaming: nil,
+            verbosity: .brief
+        )
+
+        #expect(rows.count == 2)
+        #expect(rows[0].renderKind == "tool-step-group")
+        #expect(rows[1].renderKind == "turn-activity")
+        #expect(rows[1].turnID == turnID)
+    }
+
     @Test("V1:剔除独立 .tool 结果行")
     func v1DropsToolResultRows() {
         let assistant = toolExec(id: UUID(), calls: ["a"])

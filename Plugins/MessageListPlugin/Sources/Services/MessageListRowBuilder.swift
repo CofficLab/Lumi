@@ -99,10 +99,7 @@ struct MessageListRowBuilder {
 
         for message in messages {
             if message.isToolExecutionOnly {
-                if !currentGroup.isEmpty,
-                   let currentTurnID,
-                   let messageTurnID = message.turnID,
-                   currentTurnID != messageTurnID {
+                if !currentGroup.isEmpty, currentTurnID != message.turnID {
                     flushGroup()
                 }
                 currentGroup.append(message)

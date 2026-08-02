@@ -300,6 +300,13 @@ public final class ToolManagerService: ToolManaging {
                 riskLevel: riskLevel,
                 turnControl: turnControl
             )
+            NotificationCenter.default.post(
+                name: .lumiToolActivityDidChange,
+                object: nil,
+                userInfo: [
+                    "conversationID": conversationID
+                ]
+            )
         }
     }
 

@@ -15,6 +15,7 @@ import SwiftUI
 /// 传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮,保持 V1 的 inline 极简风格。
 struct CollapsibleToolStepGroup: View {
     @LumiTheme private var theme
+    @Environment(\.lumiTurnActivitySummaries) private var turnActivitySummaries
 
     let message: LumiChatMessage
     let toolCalls: [LumiToolCall]
@@ -118,7 +119,12 @@ struct CollapsibleToolStepGroup: View {
     /// - 进行中:`执行中 · 已完成 k/N`
     /// - 全部完成:`执行了 N 个步骤 · <总耗时>`(有失败则追加 `· X 失败`)
     private var summaryText: String {
-        ToolStepGroupSummary.summaryText(for: toolCalls)
+        if let turnID = message.turnID,
+           let summary = turnActivitySummaries[turnID],
+           summary.totalCount > 0 {
+            return ToolStepGroupSummary.summaryText(for: summary)
+        }
+        return ToolStepGroupSummary.summaryText(for: toolCalls)
     }
 
     // MARK: - Expanded rows
