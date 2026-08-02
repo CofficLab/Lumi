@@ -2694,7 +2694,39 @@
       }
     },
     "No renderer for message: %@" : {
-
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No renderer for message: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到消息渲染器：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到訊息渲染器：%@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到訊息渲染器：%@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到訊息渲染器：%@"
+          }
+        }
+      }
     },
     "OK" : {
       "extractionState" : "stale",
@@ -4239,7 +4271,39 @@
       }
     },
     "Start the conversation by sending a message." : {
-
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start the conversation by sending a message."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始对话，从发送一条消息开始。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始對話，從傳送一則訊息開始。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始對話，從傳送一則訊息開始。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始對話，從傳送一則訊息開始。"
+          }
+        }
+      }
     },
     "Status" : {
       "extractionState" : "stale",

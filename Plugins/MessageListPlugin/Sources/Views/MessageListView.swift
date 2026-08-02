@@ -75,7 +75,7 @@ struct MessageListView: View {
                                 if viewModel.isLoadingEarlier {
                                     ProgressView().controlSize(.small)
                                 } else {
-                                    Text("Load earlier messages")
+                                    Text(LumiPluginLocalization.string("Load earlier messages", bundle: .module))
                                         .font(.appCaption)
                                         .foregroundColor(theme.textSecondary)
                                 }

@@ -21,7 +21,7 @@ struct MessageLoadingView: View {
                 value: isBreathing
             )
             .onAppear { isBreathing = true }
-            .accessibilityLabel(Text("Loading messages…", bundle: .module))
+            .accessibilityLabel(Text(LumiPluginLocalization.string("Loading messages…", bundle: .module)))
     }
 }
 
