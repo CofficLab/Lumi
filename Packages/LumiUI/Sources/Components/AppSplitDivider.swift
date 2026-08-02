@@ -77,7 +77,7 @@ private struct AppSplitDividerModifier: ViewModifier {
         case .bottom:
             ZStack(alignment: .bottom) {
                 LinearGradient(
-                    colors: [.clear, .black.opacity(isHovered ? 0.22 : 0.14)],
+                    colors: [.clear, .black.opacity(isHovered ? 0.1 : 0.04)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -85,7 +85,7 @@ private struct AppSplitDividerModifier: ViewModifier {
 
                 Rectangle()
                     .fill(theme.divider)
-                    .frame(height: isHovered ? 2 : 1)
+                    .frame(height: isHovered ? 0.4 : 0.2)
                     .allowsHitTesting(false)
             }
             .frame(height: 8)
