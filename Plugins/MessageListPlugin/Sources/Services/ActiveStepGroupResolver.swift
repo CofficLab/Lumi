@@ -5,10 +5,7 @@ import LumiKernel
 ///
 /// 从视图模型抽出为独立类型,便于单元测试(无需构造 kernel / AgentTurnManaging)。
 ///
-/// 规则:
-/// 1. turn 未进行中(`isTurnActive == false`)或非 brief 模式 → 空集合(全部收起)。
-/// 2. turn 进行中:取**最后一条 turn 边界消息**(上一轮最终回复 / turn-completed 标记)
-///    之后、带工具调用的助手消息 id。
+/// 规则:所有步骤组都默认收起。用户可以通过点击摘要行手动展开。
 ///
 /// 详见 `MessageListViewModel.recomputeActiveStepGroups`。
 enum ActiveStepGroupResolver {
@@ -23,20 +20,7 @@ enum ActiveStepGroupResolver {
         isTurnActive: Bool,
         verbosity: LumiResponseVerbosity
     ) -> Set<UUID> {
-        guard verbosity == .brief, isTurnActive else { return [] }
-
-        // 找最后一条 turn 边界(上一轮最终回复 / turn-completed 标记)的下标。
-        let lastBoundaryIndex = displayRows.lastIndex(where: { isTurnBoundary($0) }) ?? -1
-        return Set(
-            displayRows
-                .dropFirst(lastBoundaryIndex + 1)
-                .compactMap { message -> UUID? in
-                    guard message.role == .assistant,
-                          !(message.toolCalls ?? []).isEmpty
-                    else { return nil }
-                    return message.id
-                }
-        )
+        []
     }
 
     /// 判断一条消息是否构成"turn 边界"(其后的工具调用组属于新一轮 turn)。

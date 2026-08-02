@@ -29,8 +29,8 @@ struct ActiveStepGroupResolverTests {
         #expect(ids.isEmpty)
     }
 
-    @Test("turn 进行中、无前置最终回复 → 取全部工具型助手消息(首条 turn 场景)")
-    func allToolGroupsActiveWhenNoBoundary() {
+    @Test("turn 进行中也默认收起全部步骤组")
+    func allToolGroupsAreCollapsedByDefault() {
         let id1 = UUID()
         let id2 = UUID()
         let rows = [
@@ -40,13 +40,13 @@ struct ActiveStepGroupResolverTests {
         let ids = ActiveStepGroupResolver.resolve(
             displayRows: rows, isTurnActive: true, verbosity: .brief
         )
-        #expect(ids == [id1, id2])
+        #expect(ids.isEmpty)
     }
 
     // MARK: - 多轮 / 边界
 
-    @Test("最终回复到达后,其后的工具组才算 active;之前的收起")
-    func onlyGroupsAfterLastBoundaryAreActive() {
+    @Test("历史和当前 turn 的步骤组都默认收起")
+    func allStepGroupsAreCollapsedRegardlessOfTurnBoundary() {
         // 历史 turn:assistant(工具组) + 最终回复
         let oldGroup = UUID()
         let oldFinalReply = assistantFinalReply(id: UUID(), text: "已完成上一次任务")
@@ -61,7 +61,7 @@ struct ActiveStepGroupResolverTests {
         let ids = ActiveStepGroupResolver.resolve(
             displayRows: rows, isTurnActive: true, verbosity: .brief
         )
-        #expect(ids == [currentGroup])
+        #expect(ids.isEmpty)
     }
 
     @Test("无工具调用的助手消息不算步骤组(被忽略)")
@@ -94,7 +94,7 @@ struct ActiveStepGroupResolverTests {
         let ids = ActiveStepGroupResolver.resolve(
             displayRows: rows, isTurnActive: true, verbosity: .brief
         )
-        #expect(ids == [afterGroup])
+        #expect(ids.isEmpty)
     }
 
     // MARK: - isTurnBoundary
