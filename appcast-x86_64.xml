@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.6.1</title>
-            <pubDate>Sat, 01 Aug 2026 16:13:17 +0000</pubDate>
-            <sparkle:version>510</sparkle:version>
-            <sparkle:shortVersionString>5.6.1</sparkle:shortVersionString>
+            <title>5.6.2</title>
+            <pubDate>Sun, 02 Aug 2026 11:19:42 +0000</pubDate>
+            <sparkle:version>511</sparkle:version>
+            <sparkle:shortVersionString>5.6.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.6.1</h2>
-<h3>Changes since v5.6.0</h3>
+            <description><![CDATA[<h2>Release v5.6.2</h2>
+<h3>Changes since v5.6.1</h3>
 <ul>
-<li>docs(GitPlugin): reference WorkspaceProviding in commit detail view</li>
-<li>docs(plans): update session plan</li>
-<li>feat(ActivityBar): add local highlight state and trace layout container activation</li>
-<li>feat(ActivityBar): show error state when workspace is unavailable</li>
-<li>feat(AskUserPlugin): make mode a required ask_user parameter</li>
-<li>feat(AskUserPlugin): render free-text input for mode=free_text</li>
-<li>feat(BrewManagerPlugin): add dedicated error view for brew operations</li>
-<li>feat(BrewManagerPlugin): add empty state view for the Installed tab</li>
-<li>feat(BrewManagerPlugin): add refresh toolbar item and rename about view</li>
-<li>feat(BrewManagerPlugin): replace tab content with error view on failure</li>
-<li>feat(conversation): inherit settings from previous conversation when creating new one</li>
-<li>feat(ConversationListPlugin): hide toolbar button when chat section is hidden</li>
-<li>feat(ConversationTitlePlugin): derive placeholder title from first message</li>
-<li>feat(ConversationTitlePlugin): generate titles via background service</li>
-<li>feat(GitPlugin): fall back to current project path when tool path is empty</li>
-<li>feat(GitPlugin): resolve file and subdirectory paths to repository root in GitDiffTool</li>
-<li>feat(KeychainKit): report read failures instead of collapsing them to missing</li>
-<li>feat(layout): hover-aware rail divider with refined AppDivider width</li>
-<li>feat(LLMKit): distinguish API key access failures from missing keys</li>
-<li>feat(LLMProviderManagerPlugin): add sendDirect / generateText for non-turn LLM calls</li>
+<li>feat(agentturnrunner): resume incomplete tool-call batches after suspension</li>
+<li>feat(caffeinate): make duration &amp; quick action sections self-contained</li>
+<li>feat(caffeinate): track display-off request and toggle via menu bar popup</li>
+<li>feat(conversation): add attention indicators for unread conversations</li>
+<li>feat(conversation): expose isLoadingConversations via ConversationManaging</li>
+<li>feat(conversation): pulse attention dot while agent turn is running</li>
+<li>feat(conversationlist): show project path before updated time with divider</li>
+<li>feat(llmkit): merge tool results and forward reasoning for anthropic adapter</li>
+<li>feat(logo): expose menu-bar highlight state on logo services</li>
+<li>feat(lumifactory): apply themed appearance and bridge window background</li>
+<li>feat(lumifactory): render panel bottom divider via appSplitDivider</li>
+<li>feat(menubar): apply themed background and close popover on app resign active</li>
+<li>feat(menubar): close popover on space change and outside clicks</li>
+<li>feat(menubar): expose color scheme parameter on popup view</li>
+<li>feat(menubar): highlight menu bar logo while caffeinate is active</li>
+<li>feat(menubar): make MenuBarPopupView sections self-contained and reuse shared MenuBarActionRow</li>
+<li>feat(menubar): observe system appearance and sync popover scheme</li>
+<li>feat(messagelist): add turn activity snapshot</li>
+<li>feat(messagelist): aggregate tool activity by turn</li>
+<li>feat(messagelist): identify turn activity rows</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.6.1</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.6.1/Lumi_5.6.1_x86_64.dmg" length="42052036" type="application/octet-stream" sparkle:edSignature="sgPTWom6QG9pVCdfMKvWoBd3BDyfhsJDKKiIopYynyRmtGRdedGBsc3ns9mRLqQsCBZXnGs8BlkiEvUEx9YxDg=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.6.2</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.6.2/Lumi_5.6.2_x86_64.dmg" length="42658642" type="application/octet-stream" sparkle:edSignature="LgTGZD9dJQSukSAi9j5k2ljNmWzMzEFxlANc+KQ/UGBfFmVc41fk+ub2TKRCZKCPXyCiLQqXeUJt+zXOmMAwAA=="/>
         </item>
     </channel>
 </rss>
