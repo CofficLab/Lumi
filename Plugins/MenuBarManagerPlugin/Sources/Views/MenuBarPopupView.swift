@@ -6,6 +6,7 @@ import SwiftUI
 /// 点击状态栏图标弹出的菜单:列出所有 `LumiMenuBarPopupItem`,
 /// 并在底部提供「打开 Lumi / 检查更新 / 退出」操作行。
 struct MenuBarPopupView: View {
+    let colorScheme: ColorScheme
     let popupItems: [LumiMenuBarPopupItem]
     let onShowMainWindow: () -> Void
     let onCheckForUpdates: () -> Void
@@ -40,7 +41,7 @@ struct MenuBarPopupView: View {
         .frame(width: 280)
         .padding(.vertical, 6)
         .background(Color(nsColor: .windowBackgroundColor))
-        .preferredColorScheme(SystemAppearanceResolver.effectiveColorScheme)
+        .preferredColorScheme(colorScheme)
     }
 }
 
