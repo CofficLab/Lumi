@@ -16,13 +16,17 @@ struct PanelView: View {
 
     var body: some View {
         if self.layoutManager.isPanelHeaderVisible || self.layoutManager.isPanelBodyVisible || self.layoutManager.isPanelBottomVisible {
-            VSplitView {
+            VStack {
                 PanelHeaderView(layoutManager: layoutManager)
                     .frame(maxWidth: .infinity)
-                PanelBodyView(layoutManager: layoutManager)
-                    .frame(maxWidth: .infinity)
-                    .id(self.layoutManager.activeViewContainerID)
-                PanelBottomView(layoutManager: layoutManager)
+                
+                VSplitView {
+                    PanelBodyView(layoutManager: layoutManager)
+                        .frame(maxWidth: .infinity)
+                        .id(self.layoutManager.activeViewContainerID)
+                        .appSplitDivider(.bottom)
+                    PanelBottomView(layoutManager: layoutManager)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
