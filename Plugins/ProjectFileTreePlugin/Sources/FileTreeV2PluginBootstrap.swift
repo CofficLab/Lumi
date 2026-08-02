@@ -5,6 +5,8 @@ import Foundation
 enum ProjectFileTreePluginRuntimeBridge {
     nonisolated(unsafe) static var pluginDirectory: URL?
 
+    static let pluginName = "ProjectFileTree"
+
     static let fallbackRootDirectory: URL = {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
