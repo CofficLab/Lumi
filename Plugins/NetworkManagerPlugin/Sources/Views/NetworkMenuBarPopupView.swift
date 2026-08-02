@@ -6,8 +6,6 @@ import LumiKernel
 public struct NetworkMenuBarPopupView: View {
     // MARK: - Properties
 
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-
     @ObservedObject private var viewModel = NetworkManagerViewModel.shared
     @ObservedObject private var historyService = NetworkHistoryService.shared
 
@@ -33,18 +31,18 @@ public struct NetworkMenuBarPopupView: View {
             HStack(spacing: 6) {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.appMicro)
-                    .foregroundColor(theme.success)
+                    .foregroundColor(.green)
 
                 Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.downloadSpeed))
                     .font(.appBodyEmphasized)
-                    .foregroundColor(theme.textPrimary)
+                    .foregroundColor(.primary)
                     .frame(alignment: .leading)
             }
             .frame(width: 100, alignment: .leading)
 
             Spacer()
 
-            GlassDivider()
+            Divider()
                 .frame(height: 24)
 
             Spacer()
@@ -53,11 +51,11 @@ public struct NetworkMenuBarPopupView: View {
             HStack(spacing: 6) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.appMicro)
-                    .foregroundColor(theme.error)
+                    .foregroundColor(.red)
 
                 Text(SpeedFormatter.formatForStatusBar(viewModel.networkState.uploadSpeed))
                     .font(.appBodyEmphasized)
-                    .foregroundColor(theme.textPrimary)
+                    .foregroundColor(.primary)
                     .frame(alignment: .leading)
             }
             .frame(width: 100, alignment: .leading)
@@ -79,11 +77,11 @@ public struct NetworkMenuBarPopupView: View {
             HStack(spacing: 4) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.appMicro)
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
 
                 Text(LumiPluginLocalization.string("Last 60 seconds", bundle: .module))
                     .font(.appMicro)
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
 
                 Spacer()
 
@@ -91,20 +89,20 @@ public struct NetworkMenuBarPopupView: View {
                 HStack(spacing: 6) {
                     HStack(spacing: 3) {
                         Circle()
-                            .fill(theme.success.opacity(0.8))
+                            .fill(Color.green.opacity(0.8))
                             .frame(width: 5, height: 5)
                         Text(LumiPluginLocalization.string("Down", bundle: .module))
                             .font(.appMicro)
-                            .foregroundColor(theme.textTertiary)
+                            .foregroundColor(.secondary)
                     }
 
                     HStack(spacing: 3) {
                         Circle()
-                            .fill(theme.error.opacity(0.8))
+                            .fill(Color.red.opacity(0.8))
                             .frame(width: 5, height: 5)
                         Text(LumiPluginLocalization.string("Up", bundle: .module))
                             .font(.appMicro)
-                            .foregroundColor(theme.textTertiary)
+                            .foregroundColor(.secondary)
                     }
                 }
             }
@@ -120,7 +118,7 @@ public struct NetworkMenuBarPopupView: View {
                             path.move(to: CGPoint(x: 0, y: y))
                             path.addLine(to: CGPoint(x: geometry.size.width, y: y))
                         }
-                        .stroke(theme.textTertiary.opacity(0.1), lineWidth: 1)
+                        .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
                     }
 
                     // Download area
@@ -132,8 +130,8 @@ public struct NetworkMenuBarPopupView: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    theme.success.opacity(0.4),
-                                    theme.success.opacity(0.05),
+                                    Color.green.opacity(0.4),
+                                    Color.green.opacity(0.05),
                                 ]),
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -145,7 +143,7 @@ public struct NetworkMenuBarPopupView: View {
                             data: recentData.map(\.downloadSpeed),
                             maxValue: maxSpeed
                         )
-                        .stroke(theme.success.opacity(0.8), lineWidth: 1.2)
+                        .stroke(Color.green.opacity(0.8), lineWidth: 1.2)
 
                         // Upload area
                         MiniGraphArea(
@@ -155,8 +153,8 @@ public struct NetworkMenuBarPopupView: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    theme.error.opacity(0.4),
-                                    theme.error.opacity(0.05),
+                                    Color.red.opacity(0.4),
+                                    Color.red.opacity(0.05),
                                 ]),
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -168,11 +166,11 @@ public struct NetworkMenuBarPopupView: View {
                             data: recentData.map(\.uploadSpeed),
                             maxValue: maxSpeed
                         )
-                        .stroke(theme.error.opacity(0.8), lineWidth: 1.2)
+                        .stroke(Color.red.opacity(0.8), lineWidth: 1.2)
                     } else {
                         Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                             .font(.appMicro)
-                            .foregroundColor(theme.textTertiary)
+                            .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
@@ -181,15 +179,13 @@ public struct NetworkMenuBarPopupView: View {
             .padding(.horizontal, 12)
         }
         .padding(.vertical, 8)
-        .appSurface(style: .subtle)
+        .background(Color.secondary.opacity(0.06))
     }
 }
 
 // MARK: - Process Row View
 
 public struct ProcessRowView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-
     public let process: NetworkProcess
 
     public var body: some View {
@@ -204,19 +200,19 @@ public struct ProcessRowView: View {
             } else {
                 Image(systemName: "app")
                     .font(.appCaption)
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
             }
 
             // Process name
             VStack(alignment: .leading, spacing: 2) {
                 Text(process.name)
                     .font(.appCaption)
-                    .foregroundColor(theme.textPrimary)
+                    .foregroundColor(.primary)
                     .lineLimit(1)
 
                 Text(LumiPluginLocalization.string("PID: \(process.id)", bundle: .module))
                     .font(.appMicro)
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
             }
 
             Spacer()
@@ -228,11 +224,11 @@ public struct ProcessRowView: View {
                     HStack(spacing: 2) {
                         Image(systemName: "arrow.down.circle.fill")
                             .font(.appMicro)
-                            .foregroundColor(theme.success)
+                            .foregroundColor(.green)
 
                         Text(SpeedFormatter.formatForStatusBar(process.downloadSpeed))
                             .font(.appMicro)
-                            .foregroundColor(theme.textSecondary)
+                            .foregroundColor(.secondary)
                     }
                 }
 
@@ -241,11 +237,11 @@ public struct ProcessRowView: View {
                     HStack(spacing: 2) {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.appMicro)
-                            .foregroundColor(theme.error)
+                            .foregroundColor(.red)
 
                         Text(SpeedFormatter.formatForStatusBar(process.uploadSpeed))
                             .font(.appMicro)
-                            .foregroundColor(theme.textSecondary)
+                            .foregroundColor(.secondary)
                     }
                 }
             }

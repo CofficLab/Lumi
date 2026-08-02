@@ -3,8 +3,6 @@ import AppKit
 import LumiUI
 
 struct TopProcessesView: View {
-    @LumiTheme private var theme
-
     // MARK: - Properties
 
     let processes: [ProcessMetric]
@@ -44,11 +42,11 @@ struct TopProcessesView: View {
             HStack(spacing: 4) {
                 Image(systemName: "chart.bar.fill")
                     .font(.system(size: 10))
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
 
                 Text(LumiPluginLocalization.string("Top Processes", bundle: .module))
                     .font(.system(size: 10))
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
             }
             .padding(.horizontal, 12)
             .padding(.bottom, 6)
@@ -56,7 +54,7 @@ struct TopProcessesView: View {
             if processes.isEmpty {
                 Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                     .font(.system(size: 10))
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 4)
             } else {
@@ -68,7 +66,7 @@ struct TopProcessesView: View {
             }
         }
         .padding(.vertical, 8)
-        .background(theme.textTertiary.opacity(0.06))
+        .background(Color.secondary.opacity(0.06))
     }
 
     // MARK: - 私有方法
@@ -85,7 +83,7 @@ struct TopProcessesView: View {
             // 进程名
             Text(process.name)
                 .font(.system(size: 11))
-                .foregroundColor(theme.textPrimary)
+                .foregroundColor(.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -93,17 +91,17 @@ struct TopProcessesView: View {
             // CPU%
             Text("\(displayProcess.cpuShare)%")
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(theme.info)
+                .foregroundColor(.blue)
                 .frame(width: 36, alignment: .trailing)
 
             // 进度条
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(theme.textTertiary.opacity(0.2))
+                        .fill(Color.secondary.opacity(0.2))
 
                     Capsule()
-                        .fill(theme.info.opacity(0.7))
+                        .fill(Color.blue.opacity(0.7))
                         .frame(width: geometry.size.width * min(Double(displayProcess.cpuShare) / 100.0, 1.0))
                 }
             }

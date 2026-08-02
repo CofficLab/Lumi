@@ -4,8 +4,6 @@ import LumiUI
 import SwiftUI
 
 struct MenuBarPopupView: View {
-    @LumiTheme private var theme
-
     let popupItems: [LumiMenuBarPopupItem]
     let onShowMainWindow: () -> Void
     let onCheckForUpdates: () -> Void
@@ -21,18 +19,19 @@ struct MenuBarPopupView: View {
                             .fixedSize(horizontal: false, vertical: true)
 
                         if item.id != popupItems.last?.id {
-                            GlassDivider()
+                            Divider()
                         }
                     }
                 }
 
-                GlassDivider()
+                Divider()
             }
 
             appActionsSection
         }
         .frame(width: 300)
-        .appSurface(style: .popover, cornerRadius: 0)
+        .background(.regularMaterial)
+        .preferredColorScheme(SystemAppearanceResolver.effectiveColorScheme)
     }
 
     private var appActionsSection: some View {
@@ -40,27 +39,27 @@ struct MenuBarPopupView: View {
             MenuBarActionRow(
                 title: LumiLocalization.string("Open Lumi", bundle: .module),
                 icon: "macwindow",
-                color: theme.primary,
+                color: .accentColor,
                 action: onShowMainWindow
             )
 
-            GlassDivider()
+            Divider()
                 .padding(.leading, 36)
 
             MenuBarActionRow(
                 title: LumiLocalization.string("Check for Updates", bundle: .module),
                 icon: "arrow.down.circle",
-                color: theme.primary,
+                color: .accentColor,
                 action: onCheckForUpdates
             )
 
-            GlassDivider()
+            Divider()
                 .padding(.leading, 36)
 
             MenuBarActionRow(
                 title: LumiLocalization.string("Quit Lumi", bundle: .module),
                 icon: "power",
-                color: theme.error,
+                color: .red,
                 action: onQuit
             )
         }

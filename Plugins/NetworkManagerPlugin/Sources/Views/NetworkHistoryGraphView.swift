@@ -30,31 +30,31 @@ public struct NetworkHistoryGraphView: View {
                             GraphArea(data: dataPoints.map { $0.downloadSpeed }, maxValue: maxValue)
                                 .fill(
                                     LinearGradient(
-                                        gradient: Gradient(colors: [Color(hex: "30D158").opacity(0.5), Color(hex: "30D158").opacity(0.1)]),
+                                        gradient: Gradient(colors: [Color.green.opacity(0.5), Color.green.opacity(0.1)]),
                                         startPoint: .top,
                                         endPoint: .bottom
                                     )
                                 )
 
                             GraphLine(data: dataPoints.map { $0.downloadSpeed }, maxValue: maxValue)
-                                .stroke(Color(hex: "30D158"), lineWidth: 1.5)
+                                .stroke(.green, lineWidth: 1.5)
 
                             // Upload Graph (Red)
                             GraphArea(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
                                 .fill(
                                     LinearGradient(
-                                        gradient: Gradient(colors: [Color(hex: "FF453A").opacity(0.5), Color(hex: "FF453A").opacity(0.1)]),
+                                        gradient: Gradient(colors: [Color.red.opacity(0.5), Color.red.opacity(0.1)]),
                                         startPoint: .top,
                                         endPoint: .bottom
                                     )
                                 )
 
                             GraphLine(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
-                                .stroke(Color(hex: "FF453A"), lineWidth: 1.5)
+                                .stroke(.red, lineWidth: 1.5)
                         } else {
                             Text(LumiPluginLocalization.string("Collecting data...", bundle: .module))
                                 .font(.caption)
-                                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                                .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
 
@@ -65,7 +65,7 @@ public struct NetworkHistoryGraphView: View {
                                 path.move(to: CGPoint(x: hoverLocation.x, y: 0))
                                 path.addLine(to: CGPoint(x: hoverLocation.x, y: geometry.size.height))
                             }
-                            .stroke(Color.adaptive(light: "1C1C1E", dark: "FFFFFF").opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            .stroke(Color.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
                             // Info Tooltip
                             TooltipView(point: point, timeRange: timeRange)
@@ -105,7 +105,7 @@ public struct NetworkHistoryGraphView: View {
                     if index > 0 {
                         Text(formatYValue(for: index))
                             .font(.system(size: 9))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .foregroundColor(.secondary)
                             .frame(height: geometry.size.height / 5, alignment: .trailing)
                     }
                 }
@@ -113,7 +113,7 @@ public struct NetworkHistoryGraphView: View {
                 // 底部 0 标签
                 Text(verbatim: LumiPluginLocalization.string("0", bundle: .module))
                     .font(.system(size: 9))
-                    .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                    .foregroundColor(.secondary)
             }
             .padding(.trailing, 4)
         }
@@ -131,7 +131,7 @@ public struct NetworkHistoryGraphView: View {
                     if let firstPoint = dataPoints.first {
                         Text(formatXAxisDate(firstPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .foregroundColor(.secondary)
                     }
 
                     Spacer()
@@ -140,7 +140,7 @@ public struct NetworkHistoryGraphView: View {
                     if let lastPoint = dataPoints.last {
                         Text(formatXAxisDate(lastPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                            .foregroundColor(.secondary)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -159,7 +159,7 @@ public struct NetworkHistoryGraphView: View {
                     path.move(to: CGPoint(x: 0, y: y))
                     path.addLine(to: CGPoint(x: size.width, y: y))
                 }
-                .stroke(Color(hex: "98989E").opacity(0.2), lineWidth: 0.5)
+                .stroke(Color.secondary.opacity(0.2), lineWidth: 0.5)
             }
         }
     }
@@ -223,18 +223,18 @@ public struct TooltipView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(formatDate(point.timestamp))
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .foregroundColor(.secondary)
 
             HStack(spacing: 8) {
                 HStack(spacing: 4) {
-                    Circle().fill(Color(hex: "30D158")).frame(width: 6, height: 6)
+                    Circle().fill(.green).frame(width: 6, height: 6)
                     Text(point.downloadSpeed.formattedNetworkSpeed())
                         .font(.system(size: 11, weight: .bold))
                         .monospacedDigit()
                 }
 
                 HStack(spacing: 4) {
-                    Circle().fill(Color(hex: "FF453A")).frame(width: 6, height: 6)
+                    Circle().fill(.red).frame(width: 6, height: 6)
                     Text(point.uploadSpeed.formattedNetworkSpeed())
                         .font(.system(size: 11, weight: .bold))
                         .monospacedDigit()

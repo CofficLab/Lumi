@@ -3,7 +3,6 @@ import SwiftUI
 
 struct DisplayMenuBarPopupView: View {
     @Environment(\.locale) private var locale
-    @LumiTheme private var theme
     @StateObject private var service = DisplayService.shared
 
     var body: some View {
@@ -12,20 +11,20 @@ struct DisplayMenuBarPopupView: View {
             HStack(spacing: 6) {
                 Image(systemName: "display")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(theme.primary)
+                    .foregroundStyle(Color.accentColor)
                 Text(verbatim: L("Displays"))
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Text("\(service.displays.count)")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundColor(theme.textSecondary)
+                    .foregroundStyle(.secondary)
             }
 
             if service.displays.isEmpty {
                 Text(verbatim: L("No displays detected"))
                     .font(.system(size: 10))
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundStyle(.tertiary)
                     .onAppear { service.refresh() }
             } else {
                 ForEach(service.displays) { display in
@@ -44,10 +43,10 @@ struct DisplayMenuBarPopupView: View {
             HStack(spacing: 4) {
                 Image(systemName: display.isBuiltIn ? "laptopcomputer" : "desktopcomputer")
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(theme.textSecondary)
+                    .foregroundStyle(.secondary)
                 Text(display.name)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(theme.textPrimary)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                 Spacer()
             }
@@ -81,7 +80,7 @@ struct DisplayMenuBarPopupView: View {
         HStack(spacing: 4) {
             Image(systemName: icon)
                 .font(.system(size: 8, weight: .semibold))
-                .foregroundColor(theme.textSecondary)
+                .foregroundStyle(.secondary)
                 .frame(width: 12)
 
             Slider(value: value, in: 0...100, step: 1)
@@ -90,7 +89,7 @@ struct DisplayMenuBarPopupView: View {
             Text("\(Int(value.wrappedValue.rounded()))%")
                 .font(.system(size: 9, weight: .semibold, design: .rounded))
                 .monospacedDigit()
-                .foregroundColor(theme.textSecondary)
+                .foregroundStyle(.secondary)
                 .frame(width: 28, alignment: .trailing)
         }
     }

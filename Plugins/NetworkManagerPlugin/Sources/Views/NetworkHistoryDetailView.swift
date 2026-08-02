@@ -13,7 +13,7 @@ public struct NetworkHistoryDetailView: View {
             HStack {
                 Text(LumiPluginLocalization.string("History Trend", bundle: .module))
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(hex: "98989E"))
+                    .foregroundColor(.secondary)
 
                 Spacer()
 
@@ -35,9 +35,9 @@ public struct NetworkHistoryDetailView: View {
                 timeRange: selectedRange
             )
             .frame(height: 140)
-            .background(Color.white.opacity(0.08))
+            .background(Color.secondary.opacity(0.06))
 
-            GlassDivider()
+            Divider()
 
             // Process Monitor
             ProcessNetworkListView(viewModel: viewModel)

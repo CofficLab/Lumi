@@ -2,8 +2,6 @@ import SwiftUI
 
 /// 菜单栏弹窗操作行，与防休眠等插件快捷菜单样式一致。
 public struct MenuBarActionRow: View {
-    @LumiTheme private var theme
-
     private let titleKey: LocalizedStringKey?
     private let titleText: String?
     let icon: String
@@ -60,7 +58,7 @@ public struct MenuBarActionRow: View {
             HStack(spacing: 10) {
                 Image(systemName: icon)
                     .font(.system(size: 11))
-                    .foregroundColor(isHovering ? theme.textPrimary : color)
+                    .foregroundColor(isHovering ? .primary : color)
                     .frame(width: 18)
 
                 Group {
@@ -71,14 +69,14 @@ public struct MenuBarActionRow: View {
                     }
                 }
                 .font(.system(size: 11))
-                .foregroundColor(isHovering ? theme.textPrimary : theme.textSecondary)
+                .foregroundColor(isHovering ? .primary : .secondary)
 
                 Spacer()
 
                 if shouldShowCheckmark {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(isHovering ? theme.textPrimary : color)
+                        .foregroundColor(isHovering ? .primary : color)
                 }
             }
             .padding(.horizontal, 12)
@@ -88,7 +86,7 @@ public struct MenuBarActionRow: View {
         .buttonStyle(.plain)
         .background(
             Rectangle()
-                .fill(isHovering ? theme.primary.opacity(0.18) : Color.clear)
+                .fill(isHovering ? Color.accentColor.opacity(0.16) : Color.clear)
         )
         .onHover { hovering in
             isHovering = hovering

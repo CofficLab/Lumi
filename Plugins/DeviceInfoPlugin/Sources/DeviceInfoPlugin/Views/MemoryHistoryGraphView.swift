@@ -4,8 +4,6 @@ import SwiftUI
 import LumiUI
 
 struct MemoryHistoryGraphView: View {
-    @LumiTheme private var theme
-
     let dataPoints: [MemoryDataPoint]
     let timeRange: MemoryTimeRange
 
@@ -31,8 +29,8 @@ struct MemoryHistoryGraphView: View {
                                 .fill(
                                     LinearGradient(
                                         gradient: Gradient(colors: [
-                                            theme.primary.opacity(0.5),
-                                            theme.primary.opacity(0.1),
+                                            Color.accentColor.opacity(0.5),
+                                            Color.accentColor.opacity(0.1),
                                         ]),
                                         startPoint: .top,
                                         endPoint: .bottom
@@ -40,11 +38,11 @@ struct MemoryHistoryGraphView: View {
                                 )
 
                             MemoryGraphLine(data: dataPoints.map { $0.usagePercentage }, maxValue: maxValue)
-                                .stroke(theme.primary, lineWidth: 1.5)
+                                .stroke(Color.accentColor, lineWidth: 1.5)
                         } else {
                             Text(LumiPluginLocalization.string("Collecting...", bundle: .module))
                                 .font(.caption)
-                                .foregroundColor(theme.textSecondary)
+                                .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
 
@@ -53,7 +51,7 @@ struct MemoryHistoryGraphView: View {
                                 path.move(to: CGPoint(x: hoverLocation.x, y: 0))
                                 path.addLine(to: CGPoint(x: hoverLocation.x, y: geometry.size.height))
                             }
-                            .stroke(theme.textPrimary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            .stroke(Color.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
                             MemoryTooltipView(point: point, timeRange: timeRange)
                                 .position(x: clampedX(hoverLocation.x, width: geometry.size.width), y: 40)
@@ -88,16 +86,16 @@ struct MemoryHistoryGraphView: View {
 
                 ForEach(0 ..< 5, id: \.self) { index in
                     if index > 0 {
-                        Text(formatYValue(for: index))
-                            .font(.system(size: 9))
-                            .foregroundColor(theme.textTertiary)
+                            Text(formatYValue(for: index))
+                                .font(.system(size: 9))
+                            .foregroundColor(.secondary)
                             .frame(height: geometry.size.height / 5, alignment: .trailing)
                     }
                 }
 
                 Text(verbatim: LumiPluginLocalization.string("0", bundle: .module))
                     .font(.system(size: 9))
-                    .foregroundColor(theme.textTertiary)
+                    .foregroundColor(.secondary)
             }
             .padding(.trailing, 4)
         }
@@ -114,7 +112,7 @@ struct MemoryHistoryGraphView: View {
                     if let firstPoint = dataPoints.first {
                         Text(formatXAxisDate(firstPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(theme.textTertiary)
+                            .foregroundColor(.secondary)
                     }
 
                     Spacer()
@@ -122,7 +120,7 @@ struct MemoryHistoryGraphView: View {
                     if let lastPoint = dataPoints.last {
                         Text(formatXAxisDate(lastPoint.timestamp))
                             .font(.system(size: 9))
-                            .foregroundColor(theme.textTertiary)
+                            .foregroundColor(.secondary)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -140,7 +138,7 @@ struct MemoryHistoryGraphView: View {
                     path.move(to: CGPoint(x: 0, y: y))
                     path.addLine(to: CGPoint(x: size.width, y: y))
                 }
-                .stroke(theme.textTertiary.opacity(0.15), lineWidth: 0.5)
+                .stroke(Color.secondary.opacity(0.15), lineWidth: 0.5)
             }
         }
     }
@@ -215,8 +213,6 @@ struct MemoryGraphArea: Shape {
 }
 
 struct MemoryTooltipView: View {
-    @LumiTheme private var theme
-
     let point: MemoryDataPoint
     let timeRange: MemoryTimeRange
 
@@ -224,15 +220,15 @@ struct MemoryTooltipView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(formatDate(point.timestamp))
                 .font(.system(size: 10, weight: .bold))
-                .foregroundColor(theme.textPrimary)
+                .foregroundColor(.primary)
 
             HStack(spacing: 4) {
                 Circle()
-                    .fill(theme.primary)
+                    .fill(Color.accentColor)
                     .frame(width: 6, height: 6)
                 Text("\(ByteCountFormatter.string(fromByteCount: Int64(point.usedBytes), countStyle: .memory)) (\(Int(point.usagePercentage))%)")
                     .font(.system(size: 10))
-                    .foregroundColor(theme.textSecondary)
+                    .foregroundColor(.secondary)
             }
         }
         .padding(6)
