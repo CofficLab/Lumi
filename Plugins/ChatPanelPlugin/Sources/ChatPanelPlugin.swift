@@ -26,7 +26,7 @@ public final class ChatPanelPlugin: LumiPlugin {
                 title: name,
                 systemImage: "bubble.left.and.bubble.right.fill",
                 railVisibility: .visibleByDefault,
-                chatVisibility: .visibleByDefault,
+                chatVisibility: .alwaysVisible,
                 panelHeaderVisibility: .unsupported,
                 panelBodyVisibility: .unsupported,
                 panelBottomVisibility: .unsupported
