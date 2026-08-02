@@ -4,6 +4,8 @@ import LocalizationKit
 
 /// 防休眠插件的菜单栏弹窗视图
 struct CaffeinateMenuBarPopupView: View {
+    @LumiTheme private var theme
+
     @State private var manager = CaffeinateManager.shared
     @State private var selectedDuration: TimeInterval = 0
 
@@ -56,6 +58,10 @@ struct CaffeinateMenuBarPopupView: View {
                 DurationButton(
                     title: option.title,
                     isSelected: selectedDuration == option.value,
+                    selectedBackground: theme.primary,
+                    selectedForeground: theme.primary.isLightColor ? theme.textPrimary : .white,
+                    unselectedBackground: theme.textTertiary.opacity(0.18),
+                    unselectedForeground: theme.textSecondary,
                     action: {
                         selectedDuration = option.value
                         // 如果防休眠正在运行，重新计时
@@ -145,16 +151,20 @@ struct CaffeinateMenuBarPopupView: View {
 private struct DurationButton: View {
     let title: String
     let isSelected: Bool
+    let selectedBackground: Color
+    let selectedForeground: Color
+    let unselectedBackground: Color
+    let unselectedForeground: Color
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 10))
-                .foregroundColor(isSelected ? Color.adaptive(light: "1C1C1E", dark: "FFFFFF") : Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
+                .foregroundColor(isSelected ? selectedForeground : unselectedForeground)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(isSelected ? Color(hex: "7C6FFF") : Color(hex: "98989E").opacity(0.2))
+                .background(isSelected ? selectedBackground : unselectedBackground)
                 .cornerRadius(3)
         }
         .buttonStyle(.plain)
