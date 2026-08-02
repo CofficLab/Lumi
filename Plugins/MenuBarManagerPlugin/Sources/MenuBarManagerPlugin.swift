@@ -27,6 +27,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     private var hostingView: MenuBarHostingView<MenuBarIconView>?
     private var popover: NSPopover?
     private var workspaceObservation: AnyCancellable?
+    private var applicationResignActiveObservation: AnyCancellable?
 
     public init() {}
 
@@ -130,6 +131,8 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         presentedMenuBarPopupItems.removeAll()
         workspaceObservation?.cancel()
         workspaceObservation = nil
+        applicationResignActiveObservation?.cancel()
+        applicationResignActiveObservation = nil
 
         popover?.close()
         popover = nil
@@ -190,6 +193,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
             )
         )
         self.popover = popover
+        startObservingApplicationResignActiveIfNeeded()
     }
 
     private func updateMenuBarPresentation() {
@@ -227,6 +231,17 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
             }
     }
 
+    private func startObservingApplicationResignActiveIfNeeded() {
+        guard applicationResignActiveObservation == nil else { return }
+
+        applicationResignActiveObservation = NotificationCenter.default
+            .publisher(for: NSApplication.didResignActiveNotification, object: NSApp)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.popover?.performClose(nil)
+            }
+    }
+
     private func refreshFromKernel() {
         guard let kernel else { return }
         refreshMenuBar(
@@ -247,6 +262,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
 
         NSApp.activate(ignoringOtherApps: true)
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        popover.contentViewController?.view.window?.makeKey()
     }
 
     private func showMainWindow() {

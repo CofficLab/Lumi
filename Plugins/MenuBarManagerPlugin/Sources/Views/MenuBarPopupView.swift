@@ -1,4 +1,6 @@
+import AppKit
 import LumiKernel
+import LumiUI
 import SwiftUI
 
 /// 点击状态栏图标弹出的菜单:列出所有 `LumiMenuBarPopupItem`,
@@ -37,6 +39,8 @@ struct MenuBarPopupView: View {
         }
         .frame(width: 280)
         .padding(.vertical, 6)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .preferredColorScheme(SystemAppearanceResolver.effectiveColorScheme)
     }
 }
 
