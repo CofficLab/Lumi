@@ -21,6 +21,7 @@ public final class ProjectsSyncCoordinator: SuperLog {
     public weak var kernel: LumiKernel? {
         didSet {
             guard kernel != nil, oldValue == nil else { return }
+            observeKernelChanges()
             performInitialSync()
         }
     }
@@ -68,6 +69,40 @@ public final class ProjectsSyncCoordinator: SuperLog {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    // MARK: - Kernel → ViewModel
+
+    /// 外部入口（例如将目录拖到 Lumi Dock 图标）会直接更新 Kernel 项目。
+    /// 监听 Kernel 的 objectWillChange，并在本轮属性更新完成后读取最新项目，
+    /// 通过 ViewModel 的 intent 统一完成添加、选中和磁盘持久化。
+    private func observeKernelChanges() {
+        guard let project = kernel?.project else { return }
+
+        project.objectWillChange
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    // ObservableObjectPublisher 在 @Published 属性写入前发出。
+                    await Task.yield()
+                    self?.syncFromKernel()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func syncFromKernel() {
+        guard !isSyncingFromCoordinator,
+              let projectPath = kernel?.project?.currentProject?.path,
+              !projectPath.isEmpty
+        else { return }
+
+        let currentViewModelPath = viewModel.currentProject?.path
+        guard currentViewModelPath != projectPath else { return }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)同步 Kernel 当前项目到 Projects: \(projectPath)")
+        }
+        viewModel.setCurrentProjectPath(projectPath)
     }
 
     private func syncToKernel() async {
