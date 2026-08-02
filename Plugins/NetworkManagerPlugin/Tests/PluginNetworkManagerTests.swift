@@ -122,6 +122,38 @@ import Foundation
     #expect(series.points.last?.count == 0)
 }
 
+@Test func httpExchangeExportIncludesRequestResponseAndErrorDetails() {
+    let record = HTTPExchangeRecord(
+        startedAt: Date(timeIntervalSince1970: 0),
+        requestMethod: "POST",
+        requestURL: "https://example.com/api",
+        requestHeadersJSON: Data("{\"Authorization\":\"Bearer test\"}".utf8),
+        requestBody: Data("{\"prompt\":\"hello\"}".utf8),
+        requestDetailsJSON: Data("{\"timeout\":30}".utf8)
+    )
+    record.responseStatusCode = 201
+    record.responseHeadersJSON = Data("{\"content-type\":\"application/json\"}".utf8)
+    record.responseBody = Data("{\"ok\":true}".utf8)
+    record.duration = 1.25
+    record.errorDescription = "server warning"
+    record.errorDomain = "Test"
+    record.errorCode = 7
+    record.errorDetailsJSON = Data("{\"retryable\":true}".utf8)
+
+    let document = HTTPExchangeExportFormatter.document(for: record)
+
+    #expect(document.contains("POST"))
+    #expect(document.contains("https://example.com/api"))
+    #expect(document.contains("\"prompt\""))
+    #expect(document.contains("hello"))
+    #expect(document.contains("201"))
+    #expect(document.contains("\"ok\""))
+    #expect(document.contains("true"))
+    #expect(document.contains("server warning"))
+    #expect(document.contains("Test"))
+    #expect(document.contains("retryable"))
+}
+
 private actor PublicIPFetcherStub {
     private(set) var count = 0
     private let values: [String]
