@@ -342,7 +342,7 @@ struct ToolCallRowView: View {
     private var rowBackground: some View {
         Group {
             if isHovering {
-                visualState.isFailure ? theme.error.opacity(0.12) : Color.white.opacity(0.08)
+                visualState.isFailure ? theme.error.opacity(0.12) : theme.textPrimary.opacity(0.08)
             } else {
                 visualState.isFailure ? theme.error.opacity(0.08) : theme.textSecondary.opacity(0.06)
             }
@@ -355,7 +355,7 @@ struct ToolCallRowView: View {
             .stroke(
                 visualState.isFailure
                     ? theme.error.opacity(isHovering ? 0.45 : 0.28)
-                    : isHovering ? Color.white.opacity(0.12) : theme.textTertiary.opacity(0.06),
+                    : isHovering ? theme.textPrimary.opacity(0.12) : theme.textTertiary.opacity(0.06),
                 lineWidth: 1
             )
     }
@@ -436,7 +436,11 @@ private struct ToolDetailPopoverView<Content: View>: View {
         }
         .padding(12)
         .frame(width: 520)
-        .background(Material.regularMaterial)
+        .appSurface(style: .popover, cornerRadius: 0, borderColor: theme.divider)
+        .appThemedAppearance()
+        .background {
+            ThemeWindowAppearanceBridge()
+        }
     }
 }
 
