@@ -22,7 +22,9 @@ public final class EditorKernelPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.editor-kernel"
-    public let name = "Editor Kernel Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Editor Kernel Plugin", bundle: .module)
+    }
     public let order = 1
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
 
