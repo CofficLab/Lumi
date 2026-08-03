@@ -5,18 +5,18 @@ import os
 import SuperLogKit
 import SwiftUI
 
-/// Conversation Store Plugin
+/// Conversation Manager Plugin
 ///
 /// Implements ConversationManaging protocol with SwiftData persistence.
 @MainActor
-public final class ConversationStorePlugin: LumiPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
+public final class ConversationManagerPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
     public nonisolated static let emoji = "💬"
     public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.conversation-store"
     public var name: String {
-        LumiPluginLocalization.string("Conversation Store", bundle: .module)
+        LumiPluginLocalization.string("Conversation Manager", bundle: .module)
     }
     public let order = 7
     public let policy: LumiPluginPolicy = .alwaysOn

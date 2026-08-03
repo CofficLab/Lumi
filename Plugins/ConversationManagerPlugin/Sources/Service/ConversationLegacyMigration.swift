@@ -21,7 +21,7 @@ import os
 /// - **marker 时机**:迁移成功才写(绝不在迁移前写,防崩了误以为迁完)。
 @MainActor
 public struct ConversationLegacyMigration: SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
     nonisolated public static let emoji = "💬"
     static let verbose: Bool = false
 
