@@ -13,7 +13,9 @@ import SwiftUI
 @MainActor
 public final class PluginManagerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.plugin-manager"
-    public let name = "Plugin Manager"
+    public var name: String {
+        LumiPluginLocalization.string("Plugin Manager", bundle: .module)
+    }
     public let order = 90
     public let policy: LumiPluginPolicy = .alwaysOn
 
