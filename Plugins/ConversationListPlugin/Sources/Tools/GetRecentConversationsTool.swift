@@ -1,9 +1,7 @@
 import Foundation
 import LumiKernel
 
-// MARK: - Get Recent Conversations
-
-struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
+struct GetRecentConversationsTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
         id: "get_recent_conversations",
         displayName: LumiPluginLocalization.string("Get Recent Conversations", bundle: .module),
@@ -25,10 +23,10 @@ struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
                     "type": .string("integer"),
                     "description": .string("Number of conversations to return (default 5, max 20)"),
                     "minimum": .int(1),
-                    "maximum": .int(20)
-                ])
+                    "maximum": .int(20),
+                ]),
             ]),
-            "required": .array([])
+            "required": .array([]),
         ])
     }
 
@@ -46,13 +44,17 @@ struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
     func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let limit = min(max(arguments["limit"]?.intValue ?? 5, 1), 20)
 
-        let (allCount, recentConversations) = await MainActor.run { () -> (Int, [ConversationInfo]) in
-            guard let svc = kernel.conversations else {
-                return (0, [])
-            }
-            let all = svc.conversations
-            let recent = Array(all.prefix(limit))
-
+        let recent = await Task { @MainActor in
+            await kernel.conversations?.fetchConversationPage(
+                limit: limit,
+                beforeUpdatedAt: nil,
+                beforeID: nil
+            ) ?? []
+        }.value
+        let allCount = await Task { @MainActor in
+            await kernel.conversations?.conversationCount(projectPath: nil) ?? 0
+        }.value
+        let recentConversations = await MainActor.run { () -> [ConversationInfo] in
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
 
@@ -73,7 +75,7 @@ struct GetRecentConversationsLumiTool: LumiAgentTool, @unchecked Sendable {
                     created: created
                 )
             }
-            return (all.count, infos)
+            return infos
         }
 
         if recentConversations.isEmpty {

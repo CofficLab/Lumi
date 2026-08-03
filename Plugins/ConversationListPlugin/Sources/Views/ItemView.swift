@@ -7,40 +7,33 @@ public struct ItemView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     public let conversation: LumiConversationSummary
-    public let svc: any ConversationManaging
-    @ObservedObject private var kernel: LumiKernel
-    @ObservedObject private var attentionStore: ConversationAttentionStore
-
-    @State private var isSelected: Bool = false
+    let isSelected: Bool
+    let isActive: Bool
+    let needsAttention: Bool
+    let onSelect: () -> Void
+    let onDelete: () -> Void
 
     public init(
         conversation: LumiConversationSummary,
-        svc: any ConversationManaging,
-        kernel: LumiKernel,
-        attentionStore: ConversationAttentionStore
+        isSelected: Bool,
+        isActive: Bool,
+        needsAttention: Bool,
+        onSelect: @escaping () -> Void,
+        onDelete: @escaping () -> Void
     ) {
         self.conversation = conversation
-        self.svc = svc
-        self.kernel = kernel
-        self.attentionStore = attentionStore
+        self.isSelected = isSelected
+        self.isActive = isActive
+        self.needsAttention = needsAttention
+        self.onSelect = onSelect
+        self.onDelete = onDelete
     }
 
     public var body: some View {
         AppListRow(isSelected: isSelected, action: {
-            self.isSelected = true
-            svc.selectConversation(id: conversation.id)
-            attentionStore.markRead(conversationID: conversation.id)
+            onSelect()
         }) {
             content
-        }
-        .onAppear {
-            isSelected = svc.selectedConversationID == conversation.id
-        }
-        .onLumiConversationsDidChange {
-            isSelected = svc.selectedConversationID == conversation.id
-            if isSelected {
-                attentionStore.markRead(conversationID: conversation.id)
-            }
         }
     }
 
@@ -95,14 +88,14 @@ public struct ItemView: View {
             if !isSelected {
                 if isActive {
                     pulsingAttentionDot
-                } else if attentionStore.needsAttention(for: conversation.id) {
+                } else if needsAttention {
                     attentionDot
                 }
             }
         }
         .contextMenu {
             Button(role: .destructive) {
-                svc.deleteConversation(id: conversation.id)
+                onDelete()
             } label: {
                 Label(LumiPluginLocalization.string("Delete", bundle: .module), systemImage: "trash")
             }
@@ -141,9 +134,5 @@ public struct ItemView: View {
         Circle()
             .fill(Color.accentColor)
             .frame(width: 6, height: 6)
-    }
-
-    private var isActive: Bool {
-        kernel.agentTurnManager?.isRunning(for: conversation.id) == true
     }
 }
