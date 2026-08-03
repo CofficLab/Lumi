@@ -108,6 +108,14 @@ final class MLXTestHelper {
     #expect(MLXLumiPlugin().name.isEmpty == false)
 }
 
+@Test @MainActor
+func mlxPluginRegistersTheLocalModelSettingsView() {
+    let items = MLXLumiPlugin().llmProviderSettingsItems(kernel: LumiKernel())
+
+    #expect(items.count == 1)
+    #expect(items.first?.providerID == "mlx")
+}
+
 // MARK: - MLXModels Tests
 
 @Test func modelCacheDirectoryStaysInsideModelsCacheRoot() throws {

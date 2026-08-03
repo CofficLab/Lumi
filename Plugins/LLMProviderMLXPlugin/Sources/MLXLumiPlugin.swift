@@ -51,7 +51,18 @@ public final class MLXLumiPlugin: LumiPlugin {
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
-    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    /// 注册 MLX 专属设置页。
+    ///
+    /// 4.x 时代这项能力通过 `llmProviderSettingsViews` 提供；当前设置页消费
+    /// `LLMProviderSettingsItem`，迁移时若继续返回空数组，MLX 仍能正常对话，
+    /// 但“设置 → 本地供应商”里不会出现模型下载、暂停/恢复和缓存管理界面。
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] {
+        [
+            LLMProviderSettingsItem(providerID: "mlx") { _ in
+                MLXLocalProviderSettingsView()
+            },
+        ]
+    }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
