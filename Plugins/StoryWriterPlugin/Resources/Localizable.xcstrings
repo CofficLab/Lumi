@@ -1,0 +1,252 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "Story Writer": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Story Writer" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "故事创作" } }
+      }
+    },
+    "A two-pane workspace for crafting stories with AI assistance.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "A two-pane workspace for crafting stories with AI assistance." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "一个用于在 AI 协助下创作故事的两栏工作台。" } }
+      }
+    },
+    "New Story": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "New Story" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "新建故事" } }
+      }
+    },
+    "Import Markdown": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Import Markdown" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "导入 Markdown" } }
+      }
+    },
+    "Export": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Export" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "导出" } }
+      }
+    },
+    "Delete": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "删除" } }
+      }
+    },
+    "Rename": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Rename" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "重命名" } }
+      }
+    },
+    "Add Chapter": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add Chapter" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "新增章节" } }
+      }
+    },
+    "Add Character": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add Character" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "新增角色" } }
+      }
+    },
+    "Outline": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Outline" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "大纲" } }
+      }
+    },
+    "Chapters": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Chapters" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "章节" } }
+      }
+    },
+    "Characters": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Characters" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "角色" } }
+      }
+    },
+    "Word Count": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Word Count" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "字数" } }
+      }
+    },
+    "Target": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Target" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "目标" } }
+      }
+    },
+    "Status": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Status" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "状态" } }
+      }
+    },
+    "Draft": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Draft" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "草稿" } }
+      }
+    },
+    "In Progress": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "In Progress" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "进行中" } }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Done" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "完成" } }
+      }
+    },
+    "Save": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Save" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "保存" } }
+      }
+    },
+    "Saved": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Saved" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已保存" } }
+      }
+    },
+    "Story Title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Story Title" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "故事标题" } }
+      }
+    },
+    "Synopsis": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Synopsis" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "简介" } }
+      }
+    },
+    "Character Name": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Character Name" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "角色名" } }
+      }
+    },
+    "Role": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Role" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "定位" } }
+      }
+    },
+    "Personality": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Personality" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "性格" } }
+      }
+    },
+    "Notes": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Notes" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "备注" } }
+      }
+    },
+    "No story selected": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No story selected" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未选择故事" } }
+      }
+    },
+    "Create or import a story to get started.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Create or import a story to get started." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "新建或导入一个故事以开始。" } }
+      }
+    },
+    "Untitled Story": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Untitled Story" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未命名故事" } }
+      }
+    },
+    "Confirm Delete": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Confirm Delete" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "确认删除" } }
+      }
+    },
+    "Are you sure you want to delete this item? This cannot be undone.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Are you sure you want to delete this item? This cannot be undone." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "确定要删除此项吗？此操作不可撤销。" } }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Cancel" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "取消" } }
+      }
+    },
+    "Last edited": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Last edited" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "最近编辑" } }
+      }
+    },
+    "No chapter content yet.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No chapter content yet." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "章节还没有内容。" } }
+      }
+    },
+    "Story": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Story" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "故事" } }
+      }
+    },
+    "Auto-save": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Auto-save" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "自动保存" } }
+      }
+    },
+    "Refresh": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Refresh" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "刷新" } }
+      }
+    },
+    "Chapter": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Chapter" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "章节" } }
+      }
+    },
+    "Character": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Character" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "角色" } }
+      }
+    },
+    "Export as Markdown": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Export as Markdown" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "导出为 Markdown" } }
+      }
+    },
+    "Import Failed": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Import Failed" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "导入失败" } }
+      }
+    }
+  }
+}
