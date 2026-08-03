@@ -5,7 +5,9 @@ import SwiftUI
 @MainActor
 public final class ConversationReasoningPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-reasoning"
-    public let name = "Conversation Reasoning"
+    public var name: String {
+        LumiPluginLocalization.string("Conversation Reasoning", bundle: .module)
+    }
     public let order = 81
     public let policy: LumiPluginPolicy = .alwaysOn
 
