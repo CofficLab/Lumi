@@ -21,7 +21,7 @@ public final class SubAgentProviderPlugin: LumiPlugin {
     public let order = 220
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = """
     Provides built-in general-purpose sub-agents (Explore, Code Review, Bug Fixer, Test \
     Writer) that run on the host's currently selected provider and model, so delegation is \
