@@ -7,7 +7,12 @@ import SwiftUI
 /// Plugin about view for Disk Manager.
 /// Introduces the plugin's disk analysis and cleanup capabilities.
 struct DiskManagerAboutView: View {
+    @Environment(\.locale) private var locale
     @LumiTheme private var theme
+
+    private func L(_ key: String) -> String {
+        PluginDiskManagerLocalization.string(key, locale: locale)
+    }
 
     var body: some View {
         ScrollView {
@@ -15,68 +20,68 @@ struct DiskManagerAboutView: View {
                 // Feature Highlights
                 FeatureHighlight(
                     icon: "chart.pie.fill",
-                    title: PluginDiskManagerLocalization.string("Disk Usage Overview"),
-                    description: PluginDiskManagerLocalization.string("View total, used, and available disk space at a glance. Monitor storage health and identify space consumption patterns.")
+                    title: L("Disk Usage Overview"),
+                    description: L("View total, used, and available disk space at a glance. Monitor storage health and identify space consumption patterns.")
                 )
 
                 FeatureHighlight(
                     icon: "doc.fill",
-                    title: PluginDiskManagerLocalization.string("Large File Scanner"),
-                    description: PluginDiskManagerLocalization.string("Discover large files consuming your disk space. Scan any directory to find files sorted by size for easy cleanup.")
+                    title: L("Large File Scanner"),
+                    description: L("Discover large files consuming your disk space. Scan any directory to find files sorted by size for easy cleanup.")
                 )
 
                 FeatureHighlight(
                     icon: "folder.fill",
-                    title: PluginDiskManagerLocalization.string("Directory Analysis"),
-                    description: PluginDiskManagerLocalization.string("Visualize directory size breakdowns with interactive tree views. Identify which folders are taking up the most space.")
+                    title: L("Directory Analysis"),
+                    description: L("Visualize directory size breakdowns with interactive tree views. Identify which folders are taking up the most space.")
                 )
 
                 FeatureHighlight(
                     icon: "trash.fill",
-                    title: PluginDiskManagerLocalization.string("Cache Cleanup"),
-                    description: PluginDiskManagerLocalization.string("Clean up system caches to free up disk space. Safely remove temporary files without affecting system stability.")
+                    title: L("Cache Cleanup"),
+                    description: L("Clean up system caches to free up disk space. Safely remove temporary files without affecting system stability.")
                 )
 
                 FeatureHighlight(
                     icon: "hammer.fill",
-                    title: PluginDiskManagerLocalization.string("Xcode Cleanup"),
-                    description: PluginDiskManagerLocalization.string("Free up significant space by removing Xcode-derived data, old simulators, build products, and archives.")
+                    title: L("Xcode Cleanup"),
+                    description: L("Free up significant space by removing Xcode-derived data, old simulators, build products, and archives.")
                 )
 
                 FeatureHighlight(
                     icon: "folder.badge.gearshape",
-                    title: PluginDiskManagerLocalization.string("Project Cleanup"),
-                    description: PluginDiskManagerLocalization.string("Scan project directories for removable build artifacts like DerivedData, build folders, and CocoaPods caches.")
+                    title: L("Project Cleanup"),
+                    description: L("Scan project directories for removable build artifacts like DerivedData, build folders, and CocoaPods caches.")
                 )
 
                 FeatureHighlight(
                     icon: "magnifyingglass",
-                    title: PluginDiskManagerLocalization.string("Finder Integration"),
-                    description: PluginDiskManagerLocalization.string("Quickly reveal scanned files in Finder for easy inspection. Navigate to any discovered file or folder with one click.")
+                    title: L("Finder Integration"),
+                    description: L("Quickly reveal scanned files in Finder for easy inspection. Navigate to any discovered file or folder with one click.")
                 )
 
                 // Cleanup Categories
                 CleanupCategoriesCard(
-                    title: PluginDiskManagerLocalization.string("Cleanup Categories"),
+                    title: L("Cleanup Categories"),
                     categories: [
-                        (PluginDiskManagerLocalization.string("System Cache"), PluginDiskManagerLocalization.string("Temporary system files")),
-                        (PluginDiskManagerLocalization.string("User Cache"), PluginDiskManagerLocalization.string("Application cache data")),
-                        (PluginDiskManagerLocalization.string("Xcode DerivedData"), PluginDiskManagerLocalization.string("Build intermediates")),
-                        (PluginDiskManagerLocalization.string("Xcode Archives"), PluginDiskManagerLocalization.string("Archived builds")),
-                        (PluginDiskManagerLocalization.string("Xcode Simulators"), PluginDiskManagerLocalization.string("Old device simulators")),
-                        (PluginDiskManagerLocalization.string("Project Build"), PluginDiskManagerLocalization.string("Build folders and artifacts")),
-                        (PluginDiskManagerLocalization.string("CocoaPods"), PluginDiskManagerLocalization.string("Pod caches and builds")),
-                        (PluginDiskManagerLocalization.string("Swift Package"), PluginDiskManagerLocalization.string("SPM build caches"))
+                        (L("System Cache"), L("Temporary system files")),
+                        (L("User Cache"), L("Application cache data")),
+                        (L("Xcode DerivedData"), L("Build intermediates")),
+                        (L("Xcode Archives"), L("Archived builds")),
+                        (L("Xcode Simulators"), L("Old device simulators")),
+                        (L("Project Build"), L("Build folders and artifacts")),
+                        (L("CocoaPods"), L("Pod caches and builds")),
+                        (L("Swift Package"), L("SPM build caches"))
                     ]
                 )
 
                 // Requirements
                 RequirementsCard(
-                    title: PluginDiskManagerLocalization.string("Requirements"),
+                    title: L("Requirements"),
                     items: [
-                        PluginDiskManagerLocalization.string("macOS 14.0 or later"),
-                        PluginDiskManagerLocalization.string("Swift 6.0 or later"),
-                        PluginDiskManagerLocalization.string("Full disk access permission (for full scan)")
+                        L("macOS 14.0 or later"),
+                        L("Swift 6.0 or later"),
+                        L("Full disk access permission (for full scan)")
                     ]
                 )
 
@@ -207,7 +212,12 @@ private struct RequirementsCard: View {
 // MARK: - Safety Note Card
 
 private struct SafetyNoteCard: View {
+    @Environment(\.locale) private var locale
     @LumiTheme private var theme
+
+    private func L(_ key: String) -> String {
+        PluginDiskManagerLocalization.string(key, locale: locale)
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -221,11 +231,11 @@ private struct SafetyNoteCard: View {
                 )
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(PluginDiskManagerLocalization.string("Safety First"))
+                Text(L("Safety First"))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(theme.textPrimary)
 
-                Text(PluginDiskManagerLocalization.string("Cache cleanup only removes safe, regenerable files. System files and user documents are never affected."))
+                Text(L("Cache cleanup only removes safe, regenerable files. System files and user documents are never affected."))
                     .font(.system(size: 13))
                     .foregroundColor(theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
