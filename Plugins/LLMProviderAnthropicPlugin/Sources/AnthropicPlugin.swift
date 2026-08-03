@@ -7,7 +7,9 @@ import LumiUI
 @MainActor
 public final class AnthropicPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.anthropic"
-    public let name = "Anthropic"
+    public var name: String {
+        LumiPluginLocalization.string("Anthropic", bundle: .module)
+    }
     public let order = 104
 	public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

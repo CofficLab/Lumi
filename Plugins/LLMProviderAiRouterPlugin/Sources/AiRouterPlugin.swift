@@ -7,7 +7,9 @@ import LumiUI
 @MainActor
 public final class AiRouterPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.airouter"
-    public let name = "AiRouter"
+    public var name: String {
+        LumiPluginLocalization.string("AiRouter", bundle: .module)
+    }
     public let order = 91
 	public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }
