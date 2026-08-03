@@ -10,7 +10,7 @@ public final class LogoCofficPlugin: LumiPlugin {
 	public let policy: LumiPluginPolicy = .alwaysOn
 
     public let category: LumiPluginCategory = .general
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription: String = "咖啡主题 Logo，提供动画咖啡杯图标"
 
     public init() {}
