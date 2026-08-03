@@ -26,7 +26,8 @@ let package = Package(
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit")
             ],
-            path: "Sources/LogoPlugin"
+            path: "Sources/LogoPlugin",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         )
     ]
 )
