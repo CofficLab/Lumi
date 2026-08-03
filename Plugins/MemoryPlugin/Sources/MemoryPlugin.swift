@@ -20,7 +20,7 @@ public final class MemoryPlugin: LumiPlugin {
     public let order = 4
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Agent memory system for persistent context across conversations."
 
     public init() {}
