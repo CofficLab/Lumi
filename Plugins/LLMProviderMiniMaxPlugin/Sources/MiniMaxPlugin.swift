@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class MiniMaxPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.minimax"
-    public let name = "MiniMax"
+    public var name: String {
+        LumiPluginLocalization.string("MiniMax", bundle: .module)
+    }
     public let order = 104
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }
@@ -32,7 +34,10 @@ public final class MiniMaxPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [MiniMaxTokenPlanProvider(apiService: LLMAPIService(kernel: kernel))]
+        [
+            MiniMaxOpenAIProvider(network: kernel.network),
+            MiniMaxAnthropicProvider(network: kernel.network),
+        ]
     }
 
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

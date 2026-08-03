@@ -374,6 +374,7 @@
 
     },
     "MiniMax Token Plan (Anthropic-compatible)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -408,6 +409,7 @@
       }
     },
     "MiniMax TokenPlan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -828,6 +830,9 @@
 
     },
     "无法获取配额信息" : {
+
+    },
+    "无限" : {
 
     },
     "模型:" : {

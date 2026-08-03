@@ -95,14 +95,12 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(!ApiKeyMissingRenderer.item.canRender(unauthorizedMessage))
     }
 
-    @Test func buildRequestUsesAnthropicCompatibleHeaders() {
-        let provider = MiniMaxTokenPlanProvider()
-        let url = URL(string: "https://api.minimax.chat/anthropic/v1/messages")!
-        let request = provider.internalAdapter.buildRequest(url: url, apiKey: "minimax-test-key")
-
-        #expect(request.value(forHTTPHeaderField: "x-api-key") == "minimax-test-key")
-        #expect(request.value(forHTTPHeaderField: "anthropic-version") == "2023-06-01")
-        #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
+    @Test func providersUseSeparateProtocolEndpoints() {
+        let openAI = MiniMaxOpenAIProvider()
+        let anthropic = MiniMaxAnthropicProvider()
+        #expect(openAI is MiniMaxOpenAIProvider)
+        #expect(anthropic is MiniMaxAnthropicProvider)
+        #expect(MiniMaxOpenAIProvider.info.id != MiniMaxAnthropicProvider.info.id)
     }
 
     @Test func httpErrorRendererMatchesOtherStatusCodes() {

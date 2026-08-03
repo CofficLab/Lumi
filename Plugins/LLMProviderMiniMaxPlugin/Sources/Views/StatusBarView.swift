@@ -61,8 +61,11 @@ struct StatusBarView: View {
     }
     
     /// 成功视图
-    private func successView(_ data: TokenPlanData) -> some View {
-        StatusBarHoverContainer(
+    private func successView(_ plans: [TokenPlanData]) -> some View {
+        // 选择最紧张的模型（剩余百分比最小的）用于状态栏显示
+        let criticalPlan = plans.min(by: { $0.remainingPercent < $1.remainingPercent }) ?? plans[0]
+        
+        return StatusBarHoverContainer(
             detailView: TokenPlanDetailView(status: tokenPlanStatus, onRefresh: {
                 refreshTokenPlan()
             }),
@@ -72,7 +75,7 @@ struct StatusBarView: View {
                 Image(systemName: "chart.bar.fill")
                     .font(.appMicroEmphasized)
                 
-                Text(data.statusText)
+                Text(criticalPlan.statusText)
                     .font(.appMicro)
             }
             .padding(.horizontal, 8)

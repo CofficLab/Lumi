@@ -4,8 +4,9 @@ LLM provider plugin for Lumi. Integrates **MiniMax Token Plan** (the unified sub
 
 ## Features
 
-- **LLM Provider** — registers MiniMax Token Plan in the model selector
-- **Anthropic-compatible API** — talks to `https://api.minimaxi.com/anthropic` via `AnthropicCompatibleLumiProvider`
+- **LLM Providers** — registers independent OpenAI-compatible and Anthropic-compatible MiniMax providers
+- **OpenAI-compatible API** — talks to `https://api.minimaxi.com/v1/chat/completions`
+- **Anthropic-compatible API** — talks to `https://api.minimax.chat/anthropic/v1/messages`
 - **Error renderers** — provider-specific UI for API Key missing, HTTP 401/403, and other request failures
 - **Streaming support** — SSE streaming for real-time token output
 - **Settings integration** — API key configuration via Lumi settings
@@ -22,7 +23,7 @@ The Token Plan bundle currently includes:
 | `MiniMax-M2` | ✅ | ❌ | Older generation model |
 | `MiniMax-Text-01` | ❌ | ❌ | Long-context text model (4M tokens) |
 
-International users can switch the endpoint to `https://api.minimax.io/anthropic` via the `additionalHeaders` field — same Anthropic-compatible contract.
+The two protocol implementations have separate request builders and SSE parsers, so protocol-specific MiniMax behavior can be adjusted without changing the other provider.
 
 ## Error render kinds
 

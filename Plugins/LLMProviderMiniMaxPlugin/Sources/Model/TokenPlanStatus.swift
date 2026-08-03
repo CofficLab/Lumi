@@ -3,7 +3,7 @@ import Foundation
 /// MiniMax Token Plan 配额状态
 enum TokenPlanStatus: Sendable {
     case loading
-    case success(TokenPlanData)
+    case success([TokenPlanData])
     case authError
     case unavailable
 }
