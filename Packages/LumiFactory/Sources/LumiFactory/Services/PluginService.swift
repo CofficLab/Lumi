@@ -27,6 +27,7 @@ import ConversationLanguagePlugin
 import ConversationListPlugin
 import ConversationMessageCountPlugin
 import ConversationContextSizePlugin
+import ConversationAgentTurnCountPlugin
 import ConversationNewPlugin
 import ConversationSpeedPlugin
 import ConversationManagerPlugin
@@ -209,6 +210,7 @@ public enum PluginService {
             PluginManagerPlugin(),
             ConversationMessageCountPlugin(),
             ConversationContextSizePlugin(),
+            ConversationAgentTurnCountPlugin(),
             SettingsPlugin(),
             LogoPlugin(),
             LogoCofficPlugin(),
