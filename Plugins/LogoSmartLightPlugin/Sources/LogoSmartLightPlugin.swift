@@ -9,7 +9,7 @@ public final class LogoSmartLightPlugin: LumiPlugin {
     public let order = 200
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .general
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription: String = "智能灯光主题 Logo，提供动画灯泡图标"
 
     public init() {}
