@@ -18,7 +18,7 @@ public final class CaffeinatePlugin: LumiPlugin, SuperLog {
     public let order = 1
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .system
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Prevent system sleep during long-running tasks."
 
     public init() {}
