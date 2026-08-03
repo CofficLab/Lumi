@@ -5,9 +5,6 @@ import SwiftUI
 /// 对话列表视图
 public struct ListView: View {
     private static let pageSize = 40
-    // DEBUG: keep the loading state visible while tuning the loading UI.
-    // Remove this delay before release.
-    private static let debugLoadingDelayNanoseconds: UInt64 = 1_500_000_000
 
     @State private var conversations: [LumiConversationSummary] = []
     @State private var isLoading = true
@@ -95,8 +92,6 @@ public struct ListView: View {
         if conversations.isEmpty {
             isLoading = true
         }
-
-        try? await Task.sleep(nanoseconds: Self.debugLoadingDelayNanoseconds)
 
         var snapshot: [LumiConversationSummary] = []
         var cursor: ConversationPageCursor?
