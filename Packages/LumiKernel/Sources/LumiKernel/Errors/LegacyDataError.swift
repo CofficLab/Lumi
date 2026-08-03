@@ -3,7 +3,7 @@ import Foundation
 /// 旧版本 (v4) 数据迁移相关的错误。
 ///
 /// 由 ``LegacyDataProviding`` 的实现抛出,在消费插件 (如
-/// `ConversationStorePlugin`) 的迁移逻辑中应被 `do/catch` 捕获并记录日志,
+/// `ConversationManagerPlugin`) 的迁移逻辑中应被 `do/catch` 捕获并记录日志,
 /// **绝不向上抛** —— 因为 `onReady` 是串行调度,抛错会阻塞后续所有插件的
 /// 初始化。
 public enum LegacyDataError: Error, LocalizedError {

@@ -368,23 +368,15 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
             return
         }
 
-        guard var toolCalls = old.toolCalls else {
+        guard old.toolCalls != nil else {
             if Self.verbose {
                 Self.logger.warning("\(Self.t)updateToolCallResult: message has no toolCalls")
             }
             return
         }
 
-        // Update the specific tool call's result
-        for i in toolCalls.indices {
-            if toolCalls[i].id == toolCallID {
-                toolCalls[i].result = result
-                break
-            }
-        }
-
-        // Persist the rebuilt tool calls (incl. nested tool-result images)
-        store?.updateToolCalls(id: old.id, toolCalls: toolCalls)
+        // The result is persisted by ToolManager and resolved lazily by the UI.
+        // Do not write the potentially large result back into MessageModel.
 
         if Self.verbose {
             Self.logger.info("\(Self.t)updateToolCallResult ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(assistantMessageID.uuidString.prefix(8))…, toolCall=\(toolCallID)")

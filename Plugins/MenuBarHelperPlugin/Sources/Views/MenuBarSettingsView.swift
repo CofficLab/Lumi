@@ -6,6 +6,8 @@ public struct MenuBarSettingsView: View {
 
     @StateObject private var service = MenuBarManagerService.shared
 
+    public init() {}
+
     public var body: some View {
         PluginSettingsScaffold(
             title: LumiPluginLocalization.string("Menu Bar Manager", bundle: .module),
@@ -72,6 +74,12 @@ public struct MenuBarItemRow: View {
     public let item: MenuBarItem
     public let isHidden: Bool
     public let onToggle: () -> Void
+
+    public init(item: MenuBarItem, isHidden: Bool, onToggle: @escaping () -> Void) {
+        self.item = item
+        self.isHidden = isHidden
+        self.onToggle = onToggle
+    }
 
     public var body: some View {
         AppSettingsRow(verticalPadding: 6) {

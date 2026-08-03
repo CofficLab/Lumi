@@ -28,7 +28,7 @@ import ConversationMessageCountPlugin
 import ConversationContextSizePlugin
 import ConversationNewPlugin
 import ConversationSpeedPlugin
-import ConversationStorePlugin
+import ConversationManagerPlugin
 import ConversationTitlePlugin
 import DatabaseManagerPlugin
 import DeviceInfoPlugin
@@ -81,6 +81,7 @@ import LogoSmartLightPlugin
 import LumiKernel
 import MemoryPlugin
 import MenuBarManagerPlugin
+import MenuBarHelperPlugin
 import MessageListPlugin
 import MessageRendererPlugin
 import MessageStreamingPlugin
@@ -184,7 +185,7 @@ public enum PluginService {
             ToolManagerPlugin(),
             ProjectsPlugin(),
             WorkspacePlugin(),
-            ConversationStorePlugin(),
+            ConversationManagerPlugin(),
             MessageManagerPlugin(),
             MessageSenderPlugin(),
             MessageStreamingPlugin(),
@@ -244,6 +245,7 @@ public enum PluginService {
             InputPlugin(),
             IdleTimePlugin(),
             MenuBarManagerPlugin(),
+            MenuBarHelperPlugin(),
             CaffeinatePlugin(),
             AgentTempStoragePlugin(),
             AppIconDesignerPlugin(),

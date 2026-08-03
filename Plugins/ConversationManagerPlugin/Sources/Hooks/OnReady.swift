@@ -3,13 +3,13 @@ import LumiKernel
 import SuperLogKit
 import os
 
-/// ConversationStore 插件 OnReady 阶段钩子
+/// ConversationManager 插件 OnReady 阶段钩子
 ///
 /// 负责 onReady 阶段的所有注册逻辑:注册 ConversationManager、初始化 ConversationStore、
 /// 迁移 v4 历史会话、装载会话列表。**迁移以后台任务方式启动**,不阻塞 onReady 串行链。
 @MainActor
 public struct ConversationStoreOnReadyHook: SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
     nonisolated static let verbose = false
 
     public init() {}
@@ -63,10 +63,10 @@ public struct ConversationStoreOnReadyHook: SuperLog {
             }
 
             if Self.verbose {
-                Self.logger.info("\(Self.t)ConversationStorePlugin 启动完成，数据库路径: \(databaseRootURL.path)")
+                Self.logger.info("\(Self.t)ConversationManagerPlugin 启动完成，数据库路径: \(databaseRootURL.path)")
             }
         } catch {
-            throw ConversationStoreError.initializationFailed("ConversationStorePlugin 数据库初始化失败: \(error.localizedDescription)")
+            throw ConversationStoreError.initializationFailed("ConversationManagerPlugin 数据库初始化失败: \(error.localizedDescription)")
         }
     }
 }

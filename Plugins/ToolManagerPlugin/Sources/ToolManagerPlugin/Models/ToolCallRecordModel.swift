@@ -8,6 +8,9 @@ import SwiftData
 @Model
 final class ToolCallRecordModel {
     @Attribute(.unique) var id: String
+    /// The original `LumiToolCall.id`. Optional for lightweight migration of
+    /// records written before result lookup was introduced.
+    var toolCallID: String?
     var toolName: String
     var toolDisplayName: String
     /// Optional for lightweight migration of records created before turn tracking.
@@ -19,12 +22,15 @@ final class ToolCallRecordModel {
     var duration: Double?
     var argumentsJSON: String
     var resultContent: String
+    /// Full Codable result snapshot, when available. Optional for old records.
+    var resultJSON: String?
     var resultIsError: Bool
     var riskLevel: String
     var turnControl: String?
 
     init(
         id: String,
+        toolCallID: String? = nil,
         toolName: String,
         toolDisplayName: String,
         turnID: String? = nil,
@@ -35,11 +41,13 @@ final class ToolCallRecordModel {
         duration: Double? = nil,
         argumentsJSON: String,
         resultContent: String,
+        resultJSON: String? = nil,
         resultIsError: Bool,
         riskLevel: String,
         turnControl: String? = nil
     ) {
         self.id = id
+        self.toolCallID = toolCallID
         self.toolName = toolName
         self.toolDisplayName = toolDisplayName
         self.turnID = turnID
@@ -50,6 +58,7 @@ final class ToolCallRecordModel {
         self.duration = duration
         self.argumentsJSON = argumentsJSON
         self.resultContent = resultContent
+        self.resultJSON = resultJSON
         self.resultIsError = resultIsError
         self.riskLevel = riskLevel
         self.turnControl = turnControl

@@ -28,6 +28,9 @@ public final class ToolManagerService: ToolManaging {
     /// 已注册的子 Agent 定义，独立于可执行的 delegate 工具保存，供 UI 和调试查询。
     private var registeredSubAgents: [String: LumiSubAgentDefinition] = [:]
     private var subAgentOrder: [String] = []
+    /// Fast path for results produced during the current process. Persistence is
+    /// asynchronous, so the UI can resolve a freshly completed call immediately.
+    private var resultCache: [String: LumiToolResult] = [:]
 
     public init() {}
 
@@ -128,17 +131,21 @@ public final class ToolManagerService: ToolManaging {
         turnID: UUID?
     ) async -> LumiToolResult {
         guard let tool = registeredTools[toolCall.name] else {
-            return LumiToolResult(content: "Tool not found: \(toolCall.name)", isError: true)
+            let result = LumiToolResult(content: "Tool not found: \(toolCall.name)", isError: true)
+            resultCache[toolCall.id] = result
+            return result
         }
 
         let startedAt = Date()
         let createdAt = Date()
         guard let kernel else {
-            return LumiToolResult(
+            let result = LumiToolResult(
                 content: "Tool execution failed: kernel is not configured",
                 duration: Date().timeIntervalSince(startedAt),
                 isError: true
             )
+            resultCache[toolCall.id] = result
+            return result
         }
         let currentProjectPath = kernel.project?.currentProject?.path
         let resolvedTurnID = turnID ?? kernel.turnID
@@ -155,8 +162,15 @@ public final class ToolManagerService: ToolManaging {
         do {
             arguments = try Self.decodeArguments(toolCall.arguments)
         } catch {
+            let result = LumiToolResult(
+                content: "Tool execution failed: \(error.localizedDescription)",
+                duration: Date().timeIntervalSince(startedAt),
+                isError: true
+            )
+            resultCache[toolCall.id] = result
             // 记录解码失败
             logToolCall(
+                toolCallID: toolCall.id,
                 toolName: tool.name,
                 toolDisplayName: toolCall.name,
                 turnID: resolvedTurnID,
@@ -167,15 +181,12 @@ public final class ToolManagerService: ToolManaging {
                 duration: Date().timeIntervalSince(startedAt),
                 argumentsJSON: toolCall.arguments,
                 resultContent: "Failed to decode arguments: \(error.localizedDescription)",
+                result: result,
                 resultIsError: true,
                 riskLevel: "unknown",
                 turnControl: nil
             )
-            return LumiToolResult(
-                content: "Tool execution failed: \(error.localizedDescription)",
-                duration: Date().timeIntervalSince(startedAt),
-                isError: true
-            )
+            return result
         }
 
         let executionResult: LumiToolExecutionResult
@@ -188,8 +199,15 @@ public final class ToolManagerService: ToolManaging {
             executionResult = result
             duration = Date().timeIntervalSince(startedAt)
         } catch {
+            let result = LumiToolResult(
+                content: "Tool execution failed: \(error.localizedDescription)",
+                duration: Date().timeIntervalSince(startedAt),
+                isError: true
+            )
+            resultCache[toolCall.id] = result
             // 记录失败的调用
             logToolCall(
+                toolCallID: toolCall.id,
                 toolName: tool.name,
                 toolDisplayName: tool.displayDescription(arguments: arguments),
                 turnID: resolvedTurnID,
@@ -200,15 +218,12 @@ public final class ToolManagerService: ToolManaging {
                 duration: Date().timeIntervalSince(startedAt),
                 argumentsJSON: Self.encodeArguments(arguments),
                 resultContent: error.localizedDescription,
+                result: result,
                 resultIsError: true,
                 riskLevel: tool.riskLevel(arguments: arguments, kernel: kernel).rawValue,
                 turnControl: nil
             )
-            return LumiToolResult(
-                content: "Tool execution failed: \(error.localizedDescription)",
-                duration: Date().timeIntervalSince(startedAt),
-                isError: true
-            )
+            return result
         }
 
         let images = executionState.collectImages()
@@ -219,9 +234,11 @@ public final class ToolManagerService: ToolManaging {
             imageAttachments: images,
             turnControl: executionResult.turnControl
         )
+        resultCache[toolCall.id] = result
 
         // 记录成功的调用(后台异步，不阻塞主流程)
         logToolCall(
+            toolCallID: toolCall.id,
             toolName: tool.name,
             toolDisplayName: tool.displayDescription(arguments: arguments),
             turnID: resolvedTurnID,
@@ -232,6 +249,7 @@ public final class ToolManagerService: ToolManaging {
             duration: duration,
             argumentsJSON: Self.encodeArguments(arguments),
             resultContent: executionResult.content,
+            result: result,
             resultIsError: executionResult.isError,
             riskLevel: tool.riskLevel(arguments: arguments, kernel: kernel).rawValue,
             turnControl: Self.encodeTurnControl(executionResult.turnControl)
@@ -262,10 +280,35 @@ public final class ToolManagerService: ToolManaging {
         }
     }
 
+    /// Query one tool result by the original `LumiToolCall.id`.
+    public func toolCallResult(for toolCallID: String) async -> LumiToolResult? {
+        if let cached = resultCache[toolCallID] {
+            return cached
+        }
+        guard let record = await recordStore?.fetchRecord(forToolCallID: toolCallID) else {
+            return nil
+        }
+
+        if let resultJSON = record.resultJSON,
+           let data = resultJSON.data(using: .utf8),
+           let result = try? JSONDecoder().decode(LumiToolResult.self, from: data) {
+            return result
+        }
+
+        // Backward compatibility for records created before full result snapshots
+        // were added. These records can still provide their text result.
+        return LumiToolResult(
+            content: record.resultContent,
+            duration: record.duration,
+            isError: record.resultIsError
+        )
+    }
+
     // MARK: - Tool Call Logging
 
     /// 后台异步记录工具调用，不阻塞主流程。
     private func logToolCall(
+        toolCallID: String,
         toolName: String,
         toolDisplayName: String,
         turnID: UUID?,
@@ -276,6 +319,7 @@ public final class ToolManagerService: ToolManaging {
         duration: TimeInterval?,
         argumentsJSON: String,
         resultContent: String,
+        result: LumiToolResult,
         resultIsError: Bool,
         riskLevel: String,
         turnControl: String?
@@ -286,7 +330,8 @@ public final class ToolManagerService: ToolManaging {
         // 后台异步记录，不 await，不阻塞
         Task {
             await store?.record(
-            toolName: toolName,
+                toolCallID: toolCallID,
+                toolName: toolName,
             toolDisplayName: toolDisplayName,
             turnID: turnID,
                 conversationID: conversationID,
@@ -296,6 +341,7 @@ public final class ToolManagerService: ToolManaging {
                 duration: duration,
                 argumentsJSON: argumentsJSON,
                 resultContent: resultContent,
+                resultJSON: Self.encodeResult(result),
                 resultIsError: resultIsError,
                 riskLevel: riskLevel,
                 turnControl: turnControl
@@ -317,6 +363,11 @@ public final class ToolManagerService: ToolManaging {
             return "{}"
         }
         return string
+    }
+
+    private static func encodeResult(_ result: LumiToolResult) -> String? {
+        guard let data = try? JSONEncoder().encode(result) else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 
     /// 将 TurnControl 编码为字符串。

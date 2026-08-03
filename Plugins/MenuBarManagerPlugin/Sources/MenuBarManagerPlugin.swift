@@ -18,8 +18,9 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     public var name: String {
         LumiPluginLocalization.string("Menu Bar Manager", bundle: .module)
     }
+
     public let order = 300
-    public let policy: LumiPluginPolicy = .optIn
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     private weak var kernel: LumiKernel?
     private(set) public var isMenuBarPresented: Bool = false
@@ -46,25 +47,12 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
 
     public func onReady(kernel: LumiKernel) async throws {
         self.kernel = kernel
-        if let storage = kernel.storage {
-            MenuBarManagerPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
-        }
     }
 
+
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
-        [
-            ViewContainerItem(
-                id: id,
-                title: "Menu Bar Manager",
-                systemImage: "menubar.rectangle",
-                railVisibility: .unsupported,
-                chatVisibility: .unsupported,
-                panelHeaderVisibility: .unsupported,
-                panelBottomVisibility: .unsupported
-            ) {
-                MenuBarSettingsView()
-            },
-        ]
+        // The "Menu Bar Manager" view container is now provided by MenuBarHelperPlugin.
+        []
     }
 
 
@@ -428,12 +416,4 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
             return $0.order < $1.order
         }
     }
-}
-
-enum MenuBarManagerPluginRuntimeBridge {
-    nonisolated(unsafe) static var dataRootDirectory: URL?
-    static let fallbackRootDirectory: URL = {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: NSTemporaryDirectory())
-        return appSupport.appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.coffic.lumi", isDirectory: true)
-    }()
 }

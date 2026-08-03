@@ -26,9 +26,10 @@ struct ProviderSettingsPage<DetailContent: View>: View {
         kernel.resolveService((any LLMProviderManaging).self)
     }
 
-    private var providers: [LumiLLMProviderInfo] {
-        (llmProvider?.allLLMProviders().map { type(of: $0).info } ?? []).filter(isLocalProvider)
-    }
+    /// Loaded asynchronously so opening Settings can render its first frame before
+    /// provider metadata and plugin contributions are enumerated.
+    @State private var providers: [LumiLLMProviderInfo] = []
+    @State private var isLoadingProviders = true
 
     private var selectedProvider: LumiLLMProviderInfo? {
         providers.first { $0.id == selectedProviderID }
@@ -68,7 +69,9 @@ struct ProviderSettingsPage<DetailContent: View>: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .onAppear(perform: onAppear)
+        .task {
+            await loadProviders()
+        }
         .onChange(of: filteredProviders.map(\.id)) { _, ids in
             if !ids.contains(selectedProviderID) {
                 selectedProviderID = ids.first ?? ""
@@ -111,19 +114,29 @@ struct ProviderSettingsPage<DetailContent: View>: View {
 
             AppDivider()
 
-            ScrollView {
-                LazyVStack(spacing: 4) {
-                    ForEach(filteredProviders) { provider in
-                        providerListRow(provider)
-                    }
-                    if filteredProviders.isEmpty {
-                        AppEmptyState(icon: "magnifyingglass", title: "未找到供应商")
-                            .padding(.vertical, 32)
-                    }
+            if isLoadingProviders {
+                VStack(spacing: 10) {
+                    ProgressView()
+                    Text("正在加载供应商…")
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
                 }
-                .padding(8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(filteredProviders) { provider in
+                            providerListRow(provider)
+                        }
+                        if filteredProviders.isEmpty {
+                            AppEmptyState(icon: "magnifyingglass", title: "未找到供应商")
+                                .padding(.vertical, 32)
+                        }
+                    }
+                    .padding(8)
+                }
+                .frame(maxHeight: .infinity)
             }
-            .frame(maxHeight: .infinity)
         }
         .appSurface(style: .panel, cornerRadius: 0)
     }
@@ -161,7 +174,16 @@ struct ProviderSettingsPage<DetailContent: View>: View {
 
     @ViewBuilder
     private var providerDetailPane: some View {
-        if let provider = selectedProvider {
+        if isLoadingProviders {
+            VStack(spacing: 10) {
+                ProgressView()
+                Text("正在加载供应商…")
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .appSurface(style: .panel, cornerRadius: 0)
+        } else if let provider = selectedProvider {
             ScrollView {
                 detailContent(provider)
                     .padding(22)
@@ -178,7 +200,18 @@ struct ProviderSettingsPage<DetailContent: View>: View {
 
     // MARK: - Lifecycle
 
-    private func onAppear() {
+    @MainActor
+    private func loadProviders() async {
+        guard isLoadingProviders else { return }
+
+        // Let SwiftUI commit the loading view before enumerating plugin/provider
+        // contributions, which can be expensive on a freshly opened Settings tab.
+        await Task.yield()
+
+        let loadedProviders = (llmProvider?.allLLMProviders().map { type(of: $0).info } ?? [])
+            .filter(isLocalProvider)
+        providers = loadedProviders
+        isLoadingProviders = false
         loadSelectedProviderID()
         triggerAvailabilityCheck()
     }

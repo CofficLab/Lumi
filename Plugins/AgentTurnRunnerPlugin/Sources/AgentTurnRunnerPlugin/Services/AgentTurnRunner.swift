@@ -541,13 +541,21 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     }
 
     /// Finds the latest assistant tool-call message that still has an
-    /// unexecuted call. The message itself is the durable queue state: calls
-    /// with a result are complete, while calls without one are still queued.
+    /// unexecuted call. Tool results are no longer embedded in the assistant
+    /// message, so the durable completion marker is the separate `.tool`
+    /// message with the matching `toolCallID`.
     private func incompleteToolCallMessage(in conversationID: UUID) -> LumiChatMessage? {
         let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
+        let completedToolCallIDs = Set(
+            messages.compactMap { message in
+                message.role == .tool ? message.toolCallID : nil
+            }
+        )
         return messages.reversed().first { message in
             message.role == .assistant
-                && message.toolCalls?.contains(where: { $0.result == nil }) == true
+                && message.toolCalls?.contains(where: {
+                    $0.result == nil && !completedToolCallIDs.contains($0.id)
+                }) == true
         }
     }
 
@@ -569,7 +577,13 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             return false
         }
 
-        for toolCall in toolCalls where toolCall.result == nil {
+        var completedToolCallIDs = Set(
+            (kernel.messageManager?.messages(for: conversationID) ?? []).compactMap { message in
+                message.role == .tool ? message.toolCallID : nil
+            }
+        )
+
+        for toolCall in toolCalls where toolCall.result == nil && !completedToolCallIDs.contains(toolCall.id) {
             try? Task.checkCancellation()
             if cancelledConversations.contains(conversationID) {
                 return false
@@ -624,6 +638,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             )
             kernel.messageManager?.insertMessage(toolResultMessage, to: conversationID)
             postMessageSavedNotification(message: toolResultMessage, conversationID: conversationID)
+            completedToolCallIDs.insert(toolCall.id)
 
             if case let .suspend(suspension) = result.turnControl {
                 if Self.verbose {

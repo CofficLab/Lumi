@@ -64,6 +64,50 @@ struct TokenPlanData: Sendable {
     /// 本周剩余秒数
     let weeklyRemainsTime: Int64
 
+    // MARK: - 状态栏显示
+
+    /// 是否为视频模型
+    var isVideoModel: Bool {
+        modelName.lowercased().contains("video")
+    }
+
+    /// 是否为普通模型
+    var isGeneralModel: Bool {
+        modelName.lowercased().contains("general")
+    }
+
+    /// 格式化剩余时间文本（状态栏用）
+    ///
+    /// 格式: "X小时剩余" 或 "X分钟剩余"
+    var formattedRemainsTime: String {
+        Self.formatDurationCompact(remainsTime)
+    }
+
+    /// 状态栏显示文本
+    ///
+    /// 格式: "81% · 98% · 2"（普通模型时段剩余% · 普通模型周额度剩余% · 视频模型当天剩余次数）
+    static func statusBarText(from plans: [TokenPlanData]) -> String {
+        // 按模型类型分组
+        let generalPlans = plans.filter { $0.isGeneralModel }
+        let videoPlans = plans.filter { $0.isVideoModel }
+
+        var parts: [String] = []
+
+        // 普通模型：时段剩余百分比 + 周额度剩余百分比
+        if let general = generalPlans.first {
+            parts.append("\(general.remainingPercent)%")
+            parts.append("\(general.weeklyRemainingPercent)%")
+        }
+
+        // 视频模型：当天剩余次数
+        if let video = videoPlans.first {
+            let remainingCount = max(0, video.intervalTotal - video.intervalUsage)
+            parts.append("\(remainingCount)")
+        }
+
+        return parts.joined(separator: " · ")
+    }
+
     // MARK: - Derived
 
     /// 格式化状态栏显示文本
@@ -140,6 +184,21 @@ struct TokenPlanData: Sendable {
             return "\(minutes)分钟\(secs)秒"
         } else {
             return "\(secs)秒"
+        }
+    }
+
+    /// 秒数 → "X小时" / "X分钟" / "X秒"（紧凑格式，用于状态栏）
+    private static func formatDurationCompact(_ seconds: Int64) -> String {
+        guard seconds > 0 else { return "—" }
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+
+        if hours > 0 {
+            return "\(hours)小时剩余"
+        } else if minutes > 0 {
+            return "\(minutes)分钟剩余"
+        } else {
+            return "\(seconds)秒剩余"
         }
     }
 

@@ -46,7 +46,7 @@ public struct ConversationStoreSettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("Conversation Store", bundle: .module),
+            title: LumiPluginLocalization.string("Conversation Manager", bundle: .module),
             subtitle: LumiPluginLocalization.string("Browse and inspect stored conversations", bundle: .module),
             showHeader: false,
             scrollsContent: false

@@ -11,34 +11,34 @@ public class MenuBarManagerService: ObservableObject, SuperLog {
     public nonisolated static let emoji = "🍎"
     public nonisolated static let verbose: Bool = false
     public static let shared = MenuBarManagerService()
-    
+
     // MARK: - Published Properties
-    
+
     /// 是否已获得辅助功能权限
     @Published var isPermissionGranted: Bool = false
-    
+
     /// 菜单栏项列表 (模拟/实际获取)
     @Published var menuBarItems: [MenuBarItem] = []
-    
+
     /// 隐藏的菜单栏项
     @Published var hiddenItems: Set<String> = []
     private let settingsStore = MenuBarManagerPluginLocalStore()
     private let hiddenItemsKey = "MenuBarManager_HiddenItems"
-    
+
     // MARK: - Private Properties
-    
+
     private var monitor: Any?
-    
+
     // MARK: - Initialization
-    
+
     private init() {
         checkPermission()
         // 恢复保存的设置
         loadSettings()
     }
-    
+
     // MARK: - Public Methods
-    
+
     /// 检查辅助功能权限（如果已授权则异步刷新菜单栏项，避免阻塞主线程）。
     ///
     /// `AXIsProcessTrustedWithOptions` 同步获取权限状态本身极快，但 `refreshMenuBarItems()`
@@ -53,17 +53,17 @@ public class MenuBarManagerService: ObservableObject, SuperLog {
             refreshMenuBarItems()
         }
     }
-    
+
     /// 请求权限
     public func requestPermission() {
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         AXIsProcessTrustedWithOptions(options)
     }
-    
+
     /// 刷新菜单栏项
     public func refreshMenuBarItems() {
         guard isPermissionGranted else { return }
-        
+
         Task.detached(priority: .userInitiated) {
             let items = await self.fetchMenuBarItems()
             await MainActor.run {
@@ -71,7 +71,7 @@ public class MenuBarManagerService: ObservableObject, SuperLog {
             }
         }
     }
-    
+
     /// 切换项目的隐藏状态
     public func toggleItemVisibility(id: String) {
         if hiddenItems.contains(id) {
@@ -83,9 +83,9 @@ public class MenuBarManagerService: ObservableObject, SuperLog {
         // 这里应该触发实际的隐藏/显示逻辑
         updateMenuBarVisibility()
     }
-    
+
     // MARK: - Private Methods
-    
+
     public func startMonitoring() {
         guard monitor == nil else { return }
 
@@ -94,48 +94,48 @@ public class MenuBarManagerService: ObservableObject, SuperLog {
             self?.handleMouseMove(event)
         }
     }
-    
+
     public func stopMonitoring() {
         if let monitor = monitor {
             NSEvent.removeMonitor(monitor)
             self.monitor = nil
         }
     }
-    
+
     private func handleMouseMove(_ event: NSEvent) {
         // 获取鼠标位置（屏幕坐标，左下角为原点）
         let location = NSEvent.mouseLocation
         let screenHeight = NSScreen.main?.frame.height ?? 0
         let menuBarHeight: CGFloat = 24 // 标准菜单栏高度，刘海屏可能不同
-        
+
         // 检查是否在菜单栏区域
         if location.y > screenHeight - menuBarHeight {
             // 鼠标在菜单栏上
             // 这里可以触发"显示隐藏项"的逻辑
-            // if Self.verbose { MenuBarManagerPlugin.logger.info("\(Self.t)Mouse over menu bar") }
+            // if Self.verbose { MenuBarHelperPlugin.logger.info("\(Self.t)Mouse over menu bar") }
         }
     }
-    
+
     private func updateMenuBarVisibility() {
         // 实际应用中，这里需要通过 AXUIElement 或覆盖窗口来隐藏/显示图标
         // 由于这涉及复杂的系统交互，此处仅为逻辑演示
     }
 
-    
+
     /// 获取菜单栏项的具体实现
     private func fetchMenuBarItems() async -> [MenuBarItem] {
         // 这里需要通过 AXUIElement 获取系统菜单栏项
         // 由于这是一个复杂的操作，且依赖于系统版本，这里先做一个简化的实现框架
         // 实际实现需要遍历 SystemUIServer 或 ControlCenter 的 AX 树
-        
+
         var items: [MenuBarItem] = []
-        
+
         // 这是一个简化的逻辑，实际上需要更复杂的遍历
         // 为了演示，我们先添加一些模拟数据或者尝试获取最顶层的应用
-        
+
         // 尝试获取正在运行的应用作为"菜单栏项"的代理（实际上每个应用都有菜单栏图标）
         // 真正的菜单栏管理工具是通过 AX 获取 MenuBar 上的 Item
-        
+
         // 模拟数据用于展示 UI
         /*
         items = [
@@ -144,7 +144,7 @@ public class MenuBarManagerService: ObservableObject, SuperLog {
             MenuBarItem(id: "com.apple.spotlight", name: "Spotlight", icon: nil)
         ]
          */
-        
+
         // 尝试使用 CGWindowList 获取状态栏窗口
         if let windowInfoList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] {
             for info in windowInfoList {
@@ -157,17 +157,17 @@ public class MenuBarManagerService: ObservableObject, SuperLog {
                 }
             }
         }
-        
+
         return items
     }
-    
+
     private func saveSettings() {
         // 保存 hiddenItems 到插件目录
-        if !settingsStore.set(Array(hiddenItems), forKey: hiddenItemsKey), MenuBarManagerPlugin.verbose {
-            MenuBarManagerPlugin.logger.error("\(self.t)Failed to persist hidden menu bar items")
+        if !settingsStore.set(Array(hiddenItems), forKey: hiddenItemsKey), MenuBarHelperPlugin.verbose {
+            MenuBarHelperPlugin.logger.error("\(self.t)Failed to persist hidden menu bar items")
         }
     }
-    
+
     private func loadSettings() {
         settingsStore.migrateLegacyValueIfMissing(forKey: hiddenItemsKey)
         if let saved = settingsStore.array(forKey: hiddenItemsKey) as? [String] {
@@ -181,7 +181,7 @@ public struct MenuBarItem: Identifiable, Equatable, @unchecked Sendable {
     public let id: String
     public let name: String
     public let icon: NSImage?
-    
+
     public static func == (lhs: MenuBarItem, rhs: MenuBarItem) -> Bool {
         lhs.id == rhs.id
     }

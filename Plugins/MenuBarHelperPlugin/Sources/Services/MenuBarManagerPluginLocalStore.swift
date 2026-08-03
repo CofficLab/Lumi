@@ -3,7 +3,7 @@ import os
 import SuperLogKit
 
 public final class MenuBarManagerPluginLocalStore: SuperLog, @unchecked Sendable {
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menu-bar-manager.local-store")
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menu-bar-helper.local-store")
     private let fileManager = FileManager.default
     private let queue = DispatchQueue(label: "MenuBarManagerPluginLocalStore.queue", qos: .userInitiated)
     private let settingsDirectory: URL
@@ -11,8 +11,8 @@ public final class MenuBarManagerPluginLocalStore: SuperLog, @unchecked Sendable
     private let corruptSettingsFileURL: URL
 
     public convenience init() {
-        self.init(settingsDirectory: (MenuBarManagerPluginRuntimeBridge.dataRootDirectory ?? MenuBarManagerPluginRuntimeBridge.fallbackRootDirectory)
-            .appendingPathComponent("MenuBarManagerPlugin", isDirectory: true)
+        self.init(settingsDirectory: (MenuBarHelperPluginRuntimeBridge.dataRootDirectory ?? MenuBarHelperPluginRuntimeBridge.fallbackRootDirectory)
+            .appendingPathComponent("MenuBarHelperPlugin", isDirectory: true)
             .appendingPathComponent("settings", isDirectory: true))
     }
 
@@ -104,7 +104,7 @@ public final class MenuBarManagerPluginLocalStore: SuperLog, @unchecked Sendable
     }
 
     private func readLegacyObject(forKey key: String) -> Any? {
-        let legacyDir = (MenuBarManagerPluginRuntimeBridge.dataRootDirectory ?? MenuBarManagerPluginRuntimeBridge.fallbackRootDirectory)
+        let legacyDir = (MenuBarHelperPluginRuntimeBridge.dataRootDirectory ?? MenuBarHelperPluginRuntimeBridge.fallbackRootDirectory)
             .appendingPathComponent("app_settings", isDirectory: true)
         let legacyFile = legacyDir.appendingPathComponent(sanitize(key) + ".plist")
         guard fileManager.fileExists(atPath: legacyFile.path),

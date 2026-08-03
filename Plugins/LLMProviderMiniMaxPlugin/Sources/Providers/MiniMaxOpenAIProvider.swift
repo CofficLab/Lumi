@@ -2,6 +2,18 @@ import Foundation
 import LLMKit
 import LumiKernel
 
+private func emitMiniMaxTextSegments(
+    _ segments: MiniMaxTextSegments,
+    onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
+) async {
+    if !segments.content.isEmpty {
+        await onChunk(LumiStreamChunk(content: segments.content))
+    }
+    if !segments.thinking.isEmpty {
+        await onChunk(LumiStreamChunk(content: segments.thinking, isThinking: true, eventTitle: "思考中"))
+    }
+}
+
 public final class MiniMaxOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     public static let shortName = "MiniMax"
     public static let apiKeyHelpURL: String? = "https://platform.minimaxi.com/user-center/basic-information/Interface-key"
@@ -22,12 +34,15 @@ public final class MiniMaxOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         let state = MiniMaxMessageState(conversationID: conversationID, providerID: Self.info.id, model: request.model, started: Date())
         try await service.send(apiKey: try lumiResolveAPIKey(), body: body) { event in
             if let error = event.error { state.setError(error); return false }
-            state.append(event)
-            if let content = event.content, !content.isEmpty { await onChunk(LumiStreamChunk(content: content)) }
-            if let reasoning = event.reasoning, !reasoning.isEmpty { await onChunk(LumiStreamChunk(content: reasoning, isThinking: true, eventTitle: "思考中")) }
-            if event.done { state.finish(); await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束")); return false }
+            let segments = state.append(event)
+            await emitMiniMaxTextSegments(segments, onChunk: onChunk)
+            if event.done { await emitMiniMaxTextSegments(state.finish(), onChunk: onChunk); await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束")); return false }
             return true
         }
+        // MiniMax may close the SSE stream after the `tool_calls` frame without
+        // sending the optional OpenAI `[DONE]` sentinel. Flush the final tool
+        // call in both cases so the agent loop can execute it.
+        await emitMiniMaxTextSegments(state.finish(), onChunk: onChunk)
         let message = state.message()
         if let error = message.rawErrorDetail { throw MiniMaxProviderError.api(statusCode: nil, message: error) }
         if message.content.isEmpty && (message.toolCalls?.isEmpty ?? true) { throw MiniMaxProviderError.invalidResponse("MiniMax returned an empty response") }

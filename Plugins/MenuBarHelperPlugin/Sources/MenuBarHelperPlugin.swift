@@ -1,33 +1,58 @@
 import Foundation
 import LumiKernel
 import LumiUI
-import os
-import SuperLogKit
 import SwiftUI
+import os
 
-/// Conversation Store Plugin
+/// Menu Bar Helper Plugin
 ///
-/// Implements ConversationManaging protocol with SwiftData persistence.
+/// Provides the **Menu Bar Manager** ViewContainer (settings UI for managing
+/// menu bar item visibility). The companion `MenuBarManagerPlugin` still owns
+/// the NSStatusItem, popover, and logo content rendering.
 @MainActor
-public final class ConversationStorePlugin: LumiPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-store")
-    public nonisolated static let emoji = "💬"
-    public static let verbose = false
+public final class MenuBarHelperPlugin: LumiPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.menubar-helper")
+    nonisolated public static let verbose = false
 
-    public let id = "com.coffic.lumi.plugin.conversation-store"
+    public let id = "com.coffic.lumi.plugin.menubar-helper"
     public var name: String {
-        LumiPluginLocalization.string("Conversation Store", bundle: .module)
+        LumiPluginLocalization.string("Menu Bar Manager", bundle: .module)
     }
-    public let order = 7
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let order = 310
+    public let policy: LumiPluginPolicy = .optIn
+
+    private weak var kernel: LumiKernel?
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        self.kernel = kernel
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
-        try await ConversationStoreOnReadyHook().execute(kernel)
+        self.kernel = kernel
+        if let storage = kernel.storage {
+            MenuBarHelperPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
+        }
     }
+
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
+            ViewContainerItem(
+                id: id,
+                title: "Menu Bar Manager",
+                systemImage: "menubar.rectangle",
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
+            ) {
+                MenuBarSettingsView()
+            },
+        ]
+    }
+
+    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
@@ -38,40 +63,14 @@ public final class ConversationStorePlugin: LumiPlugin, SuperLog {
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
-    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
-        // 迁移状态栏项:状态栏显示静态图标,点击弹出 popover 详情。
-        // 迁移完成后由 OnReady 的 Task 调 unregisterStatusBarItem 移除。
-        [
-            StatusBarItem(
-                id: "\(id).migration.status",
-                title: "Conversation Migration",
-                systemImage: "bubble.left.and.bubble.right",
-                placement: .trailing,
-                statusBarView: {
-                    ConversationMigrationStatusBarView()
-                }
-            ),
-        ]
-    }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
-        [
-            SettingsTabItem(
-                id: "\(id).settings",
-                title: LumiPluginLocalization.string("Conversations", bundle: .module),
-                systemImage: "bubble.left.and.bubble.right",
-                order: order
-            ) {
-                ConversationStoreSettingsView(kernel: kernel)
-            },
-        ]
-    }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }

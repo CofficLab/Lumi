@@ -14,6 +14,7 @@ import SwiftUI
 /// 展开态复用既有 `ToolCallRowView`(经 `ToolCallRowRendererRegistry` 优先走自定义渲染器),
 /// 传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮,保持 V1 的 inline 极简风格。
 struct CollapsibleToolStepGroup: View {
+    let kernel: LumiKernel
     @LumiTheme private var theme
     @Environment(\.lumiTurnActivitySummaries) private var turnActivitySummaries
 
@@ -29,13 +30,19 @@ struct CollapsibleToolStepGroup: View {
 
     /// 表头悬停态;仅用于显隐 chevron。
     @State private var isHovering = false
+    @State private var resolvedToolCalls: [LumiToolCall]?
+    @State private var isLoadingResults = false
+
+    private var displayedToolCalls: [LumiToolCall] {
+        resolvedToolCalls ?? toolCalls
+    }
 
     /// 组内是否存在「正在等待用户作答」的交互式工具调用(如 ask_user)。
     /// 这类调用挂起了 turn,其自定义交互 UI 必须始终可见 —— 即使 turn 已不在
     /// 「running」态(挂起时 `isRunning` 为 false)。无论 verbosity 与折叠状态如何,
     /// 都强制保持该组展开,把交互入口交给对应工具的渲染器。
     private var hasAwaitingInteraction: Bool {
-        toolCalls.contains { $0.result?.turnControl.isSuspended == true }
+        displayedToolCalls.contains { $0.result?.turnControl.isSuspended == true }
     }
 
     /// 有效折叠态:用户覆盖优先;否则进行中展开、结束后收起。
@@ -51,7 +58,10 @@ struct CollapsibleToolStepGroup: View {
 
             if !isCollapsed {
                 VStack(alignment: .leading, spacing: 10) {
-                    ForEach(toolCalls) { toolCall in
+                    if isLoadingResults {
+                        ToolResultsLoadingView()
+                    }
+                    ForEach(displayedToolCalls) { toolCall in
                         toolCallRow(for: toolCall)
                     }
                 }
@@ -61,14 +71,25 @@ struct CollapsibleToolStepGroup: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: isCollapsed)
+        .task {
+            // Suspended interactive tools force the group open; load their result
+            // even though there is no header click to trigger the lazy lookup.
+            if !isCollapsed {
+                await resolveResults()
+            }
+        }
     }
 
     // MARK: - Header (折叠态/展开态共用的一行摘要)
 
     private var summaryHeader: some View {
         Button {
+            let willExpand = isCollapsed
             withAnimation(.easeInOut(duration: 0.2)) {
                 userOverride = !isCollapsed
+            }
+            if willExpand {
+                Task { await resolveResults() }
             }
         } label: {
             HStack(spacing: 6) {
@@ -114,7 +135,8 @@ struct CollapsibleToolStepGroup: View {
 
     /// 组内任一调用仍在执行 → loading;否则任一失败 → failed;否则 completed。
     private var aggregateState: ToolCallResultVisualState {
-        ToolStepGroupSummary.aggregateState(for: toolCalls)
+        if isLoadingResults { return .loading }
+        return ToolStepGroupSummary.aggregateState(for: displayedToolCalls)
     }
 
     /// 折叠态摘要文案(用户选定的"数量 + 总耗时"样式)。
@@ -126,7 +148,20 @@ struct CollapsibleToolStepGroup: View {
            summary.totalCount > 0 {
             return ToolStepGroupSummary.summaryText(for: summary)
         }
-        return ToolStepGroupSummary.summaryText(for: toolCalls)
+        return ToolStepGroupSummary.summaryText(for: displayedToolCalls)
+    }
+
+    @MainActor
+    private func resolveResults() async {
+        guard resolvedToolCalls == nil, let manager = kernel.toolManager else { return }
+        isLoadingResults = true
+        defer { isLoadingResults = false }
+
+        var resolved = toolCalls
+        for index in resolved.indices where resolved[index].result == nil {
+            resolved[index].result = await manager.toolCallResult(for: resolved[index].id)
+        }
+        resolvedToolCalls = resolved
     }
 
     // MARK: - Expanded rows
@@ -153,6 +188,17 @@ struct CollapsibleToolStepGroup: View {
                 parameterPopoverToolCallID: $parameterPopoverToolCallID,
                 resultPopoverToolCallID: $resultPopoverToolCallID
             )
+        }
+    }
+}
+
+private struct ToolResultsLoadingView: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            ProgressView().controlSize(.small)
+            Text("正在加载工具结果…")
+                .font(.appCaption)
+                .foregroundColor(.secondary)
         }
     }
 }

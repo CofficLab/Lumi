@@ -10,18 +10,20 @@ import SwiftUI
 /// - **V2/V3**:复用现有 `AssistantMessageView` —— 多个工具卡片聚合在同一个助手气泡里,
 ///   只剩一个消息头(而非之前的 N 个独立气泡)。
 struct ToolStepGroupMessageView: View {
+    let kernel: LumiKernel
     let message: LumiChatMessage
     let verbosity: LumiResponseVerbosity
 
     var body: some View {
         if verbosity == .brief {
             CollapsibleToolStepGroup(
+                kernel: kernel,
                 message: message,
                 toolCalls: message.toolCalls ?? [],
                 verbosity: verbosity
             )
         } else {
-            AssistantMessageView(message: message, verbosity: verbosity)
+            AssistantMessageView(kernel: kernel, message: message, verbosity: verbosity)
         }
     }
 }

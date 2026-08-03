@@ -1,7 +1,6 @@
 import SwiftUI
 import LLMKit
 import LumiKernel
-import LumiKernel
 import LumiUI
 
 @MainActor
@@ -15,7 +14,13 @@ public final class MLXLumiPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        // 把宿主 `kernel.storage` 计算出的 plugin 数据目录注入到 bridge,
+        // 让 `MLXModels.cacheRootDirectory` 走 `storage.pluginDataDirectory(for:)`
+        // 这条正路,而不是每次 fallback。与其它持久化插件(FileLog / EditorSwift /
+        // AppStoreConnect 等)遵循同一规律。
+        Self.bootstrapFromLumiCoreIfNeeded(kernel: kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
         if let network = kernel.network {
@@ -51,7 +56,18 @@ public final class MLXLumiPlugin: LumiPlugin {
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
-    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
+    /// 注册 MLX 专属设置页。
+    ///
+    /// 4.x 时代这项能力通过 `llmProviderSettingsViews` 提供；当前设置页消费
+    /// `LLMProviderSettingsItem`，迁移时若继续返回空数组，MLX 仍能正常对话，
+    /// 但“设置 → 本地供应商”里不会出现模型下载、暂停/恢复和缓存管理界面。
+    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] {
+        [
+            LLMProviderSettingsItem(providerID: "mlx") { _ in
+                MLXLocalProviderSettingsView()
+            },
+        ]
+    }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
