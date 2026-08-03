@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class EditorSymbolsPanelPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-symbols"
-    public let name = "Editor Symbols"
+    public var name: String {
+        LumiPluginLocalization.string("Editor Symbols", bundle: .module)
+    }
     public let order = 3
 	public let policy: LumiPluginPolicy = .disabled
 

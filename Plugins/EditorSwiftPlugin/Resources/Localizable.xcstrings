@@ -1,76 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    ": ": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ": "
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "："
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "："
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "："
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "："
-          }
-        }
-      }
-    },
-    "'%@' does not belong to any compilation target.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' does not belong to any compilation target."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 不属于任何编译目标。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 不屬於任何編譯目標。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 不屬於任何編譯目標。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "'%@' 不屬於任何編譯目標。"
-          }
-        }
-      }
-    },
     "\"%@\" is not bound to any compilation target. Cross-file semantic navigation may be unavailable.": {
       "extractionState": "stale",
       "localizations": {
@@ -247,6 +177,76 @@
         }
       }
     },
+    "'%@' does not belong to any compilation target.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "'%@' does not belong to any compilation target."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "'%@' 不属于任何编译目标。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "'%@' 不屬於任何編譯目標。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "'%@' 不屬於任何編譯目標。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "'%@' 不屬於任何編譯目標。"
+          }
+        }
+      }
+    },
+    ": ": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ": "
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
+          }
+        }
+      }
+    },
     "Available": {
       "extractionState": "stale",
       "localizations": {
@@ -317,41 +317,6 @@
         }
       }
     },
-    "Build and Run": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build and Run"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "构建并运行"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build and Run"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build and Run"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build and Run"
-          }
-        }
-      }
-    },
     "Build Context": {
       "extractionState": "stale",
       "localizations": {
@@ -383,76 +348,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "構建上下文"
-          }
-        }
-      }
-    },
-    "Build context and semantic index are ready.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build context and semantic index are ready."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "构建上下文与语义索引均已就绪。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build context and semantic index are ready."
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build context and semantic index are ready."
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build context and semantic index are ready."
-          }
-        }
-      }
-    },
-    "Build context is ready. Semantic indexing has not started.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build context is ready. Semantic indexing has not started."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "构建上下文已就绪，语义索引尚未开始。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build context is ready. Semantic indexing has not started."
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build context is ready. Semantic indexing has not started."
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build context is ready. Semantic indexing has not started."
           }
         }
       }
@@ -523,6 +418,127 @@
           "stringUnit": {
             "state": "translated",
             "value": "構建上下文不可用"
+          }
+        }
+      }
+    },
+    "Build Status": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build Status"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建状态"
+          }
+        }
+      }
+    },
+    "Build and Run": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build and Run"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建并运行"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build and Run"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build and Run"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build and Run"
+          }
+        }
+      }
+    },
+    "Build context and semantic index are ready.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build context and semantic index are ready."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建上下文与语义索引均已就绪。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build context and semantic index are ready."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build context and semantic index are ready."
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build context and semantic index are ready."
+          }
+        }
+      }
+    },
+    "Build context is ready. Semantic indexing has not started.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build context is ready. Semantic indexing has not started."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建上下文已就绪，语义索引尚未开始。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build context is ready. Semantic indexing has not started."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build context is ready. Semantic indexing has not started."
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build context is ready. Semantic indexing has not started."
           }
         }
       }
@@ -714,6 +730,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "代码操作"
+          }
+        }
+      }
+    },
+    "Code Completions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code Completions"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代码补全"
           }
         }
       }
@@ -1307,37 +1339,18 @@
         }
       }
     },
-    "File Not in Target": {
-      "extractionState": "stale",
+    "Error Navigation": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "File Not in Target"
+            "value": "Error Navigation"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件不在目标中"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文件不在目標中"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文件不在目標中"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "檔案不在目標中"
+            "value": "错误导航"
           }
         }
       }
@@ -1373,6 +1386,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "檔案未在項目中註冊"
+          }
+        }
+      }
+    },
+    "File Not in Target": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File Not in Target"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件不在目标中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件不在目標中"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件不在目標中"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檔案不在目標中"
           }
         }
       }
@@ -1756,6 +1804,57 @@
         }
       }
     },
+    "Keyword Hovers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyword Hovers"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关键字悬停"
+          }
+        }
+      }
+    },
+    "LSP Not Initialized": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP Not Initialized"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 未初始化"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 未初始化"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 未初始化"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LSP 未初始化"
+          }
+        }
+      }
+    },
     "Launched %@": {
       "extractionState": "stale",
       "localizations": {
@@ -1857,57 +1956,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在定位工作區..."
-          }
-        }
-      }
-    },
-    "LSP Not Initialized": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP Not Initialized"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP 未初始化"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP 未初始化"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP 未初始化"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "LSP 未初始化"
-          }
-        }
-      }
-    },
-    "macOS 14.0 or later": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS 14.0 or later"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS 14.0 或更高版本"
           }
         }
       }
@@ -2017,6 +2065,41 @@
         }
       }
     },
+    "Needs Sync": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs Sync"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要同步"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要同步"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要同步"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要同步"
+          }
+        }
+      }
+    },
     "Needs resync": {
       "extractionState": "stale",
       "localizations": {
@@ -2052,37 +2135,37 @@
         }
       }
     },
-    "Needs Sync": {
+    "No File Open": {
       "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Needs Sync"
+            "value": "No File Open"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "需要同步"
+            "value": "没有打开的文件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "需要同步"
+            "value": "沒有打開的文件"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "需要同步"
+            "value": "沒有打開的文件"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "需要同步"
+            "value": "沒有打開的檔案"
           }
         }
       }
@@ -2153,41 +2236,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "沒有可用的編輯器上下文快照。"
-          }
-        }
-      }
-    },
-    "No File Open": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No File Open"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "没有打开的文件"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "沒有打開的文件"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "沒有打開的文件"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "沒有打開的檔案"
           }
         }
       }
@@ -2437,6 +2485,22 @@
         }
       }
     },
+    "Package Support": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Package Support"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包支持"
+          }
+        }
+      }
+    },
     "Parses Swift files using tree-sitter grammar": {
       "localizations": {
         "en": {
@@ -2593,18 +2657,18 @@
         }
       }
     },
-    "Provides comprehensive Swift language support including syntax highlighting, keyword hovers, and semantic analysis.": {
+    "Provides Swift language support and tree-sitter highlighting.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Provides comprehensive Swift language support including syntax highlighting, keyword hovers, and semantic analysis."
+            "value": "Provides Swift language support and tree-sitter highlighting."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "提供全面的 Swift 语言支持，包括语法高亮、关键字悬停和语义分析。"
+            "value": "提供 Swift 语言支持和 tree-sitter 语法高亮。"
           }
         }
       }
@@ -2640,6 +2704,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "提供 Swift 語言支援、Xcode 專案識別、建置上下文與 sourcekit-lsp 整合。"
+          }
+        }
+      }
+    },
+    "Provides comprehensive Swift language support including syntax highlighting, keyword hovers, and semantic analysis.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides comprehensive Swift language support including syntax highlighting, keyword hovers, and semantic analysis."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供全面的 Swift 语言支持，包括语法高亮、关键字悬停和语义分析。"
           }
         }
       }
@@ -2988,6 +3068,22 @@
         }
       }
     },
+    "Run Swift builds directly from Lumi with real-time build output and error navigation.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run Swift builds directly from Lumi with real-time build output and error navigation."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接在 Lumi 中运行 Swift 构建，支持实时构建输出和错误导航。"
+          }
+        }
+      }
+    },
     "Run again": {
       "extractionState": "stale",
       "localizations": {
@@ -3124,22 +3220,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Run succeeded"
-          }
-        }
-      }
-    },
-    "Run Swift builds directly from Lumi with real-time build output and error navigation.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Run Swift builds directly from Lumi with real-time build output and error navigation."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "直接在 Lumi 中运行 Swift 构建，支持实时构建输出和错误导航。"
           }
         }
       }
@@ -3798,6 +3878,22 @@
         }
       }
     },
+    "Syntax Highlighting": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syntax Highlighting"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语法高亮"
+          }
+        }
+      }
+    },
     "Target platform for current editor semantic context": {
       "extractionState": "stale",
       "localizations": {
@@ -3829,6 +3925,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "當前編輯器語義上下文的目標平台"
+          }
+        }
+      }
+    },
+    "The current Xcode project context has not yet completed initialization.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current Xcode project context has not yet completed initialization."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前 Xcode 项目上下文尚未完成初始化。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前 Xcode 項目上下文尚未完成初始化。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前 Xcode 項目上下文尚未完成初始化。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前 Xcode 項目上下文尚未完成初始化。"
           }
         }
       }
@@ -3899,41 +4030,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "當前目標平台尚未解析。"
-          }
-        }
-      }
-    },
-    "The current Xcode project context has not yet completed initialization.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The current Xcode project context has not yet completed initialization."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前 Xcode 项目上下文尚未完成初始化。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前 Xcode 項目上下文尚未完成初始化。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前 Xcode 項目上下文尚未完成初始化。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前 Xcode 項目上下文尚未完成初始化。"
           }
         }
       }
@@ -4333,114 +4429,18 @@
         }
       }
     },
-    "Syntax Highlighting": {
+    "macOS 14.0 or later": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Syntax Highlighting"
+            "value": "macOS 14.0 or later"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "语法高亮"
-          }
-        }
-      }
-    },
-    "Keyword Hovers": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keyword Hovers"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "关键字悬停"
-          }
-        }
-      }
-    },
-    "Code Completions": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Code Completions"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "代码补全"
-          }
-        }
-      }
-    },
-    "Build Status": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build Status"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "构建状态"
-          }
-        }
-      }
-    },
-    "Error Navigation": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Error Navigation"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "错误导航"
-          }
-        }
-      }
-    },
-    "Package Support": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Package Support"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "包支持"
-          }
-        }
-      }
-    },
-    "Provides Swift language support and tree-sitter highlighting.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Provides Swift language support and tree-sitter highlighting."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供 Swift 语言支持和 tree-sitter 语法高亮。"
+            "value": "macOS 14.0 或更高版本"
           }
         }
       }
