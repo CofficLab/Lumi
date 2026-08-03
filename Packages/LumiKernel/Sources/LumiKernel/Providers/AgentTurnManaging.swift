@@ -44,6 +44,12 @@ public protocol AgentTurnManaging: AnyObject {
 
     /// The identifier of the currently active turn, if one exists.
     func currentTurnID(for conversationID: UUID) -> UUID?
+
+    /// Returns the number of currently running turns created by this conversation.
+    ///
+    /// This is intended for parent-conversation UI, such as a toolbar indicator
+    /// showing delegated Agent Turns.
+    func activeChildTurnCount(for parentConversationID: UUID) -> Int
 }
 
 public extension AgentTurnManaging {
@@ -52,6 +58,8 @@ public extension AgentTurnManaging {
     }
 
     func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+
+    func activeChildTurnCount(for parentConversationID: UUID) -> Int { 0 }
 
     func resumeTurn(
         in conversationID: UUID,

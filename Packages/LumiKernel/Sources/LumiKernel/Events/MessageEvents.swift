@@ -12,6 +12,7 @@ public extension Notification.Name {
     static let lumiMessageSaved = Notification.Name("lumi.messageSaved")
     static let lumiTurnCompleted = Notification.Name("lumi.turnCompleted")
     static let lumiTurnFinished = Notification.Name("lumi.turnFinished")
+    static let lumiTurnStarted = Notification.Name("lumi.turnStarted")
     static let lumiShowOnboarding = Notification.Name("Onboarding.Show")
     static let lumiResendMessage = Notification.Name("lumi.resendMessage")
 }
@@ -29,7 +30,14 @@ public enum LumiOnboardingNotification {
 }
 
 public enum LumiTurnFinishedNotification {
+    public static let turnIDKey = "turnID"
+    public static let parentConversationIDKey = "parentConversationID"
     public static let reasonKey = "reason"
+}
+
+public enum LumiTurnStartedNotification {
+    public static let turnIDKey = "turnID"
+    public static let parentConversationIDKey = "parentConversationID"
 }
 
 public extension LumiTurnEndReason {
