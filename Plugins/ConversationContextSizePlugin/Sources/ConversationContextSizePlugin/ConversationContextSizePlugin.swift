@@ -7,7 +7,9 @@ import SwiftUI
 @MainActor
 public final class ConversationContextSizePlugin: LumiPlugin {
     public let id = "com.coffic.conversation-context-size"
-    public let name = "Conversation Context Size"
+    public var name: String {
+        LumiPluginLocalization.string("Conversation Context Size", bundle: .module)
+    }
     public let order = 85
     public let policy: LumiPluginPolicy = .alwaysOn
 
