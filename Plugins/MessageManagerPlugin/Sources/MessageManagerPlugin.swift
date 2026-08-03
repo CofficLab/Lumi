@@ -8,7 +8,9 @@ import SwiftUI
 @MainActor
 public final class MessageManagerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.message-store"
-    public let name = "Message Store"
+    public var name: String {
+        LumiPluginLocalization.string("Message Store", bundle: .module)
+    }
     public let order = 62 // After ConversationStorePlugin
     public let policy: LumiPluginPolicy = .alwaysOn
 
