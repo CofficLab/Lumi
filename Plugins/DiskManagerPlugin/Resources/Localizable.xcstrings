@@ -3767,5 +3767,618 @@
       }
     }
   },
-  "version" : "1.1"
+  "Build folders and artifacts" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Build folders and artifacts"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "构建文件夹和产物"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "構建資料夾和產物"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "構建資料夾和產物"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "構建資料夾和產物"
+        }
+      }
+    }
+  },
+  "CocoaPods" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "CocoaPods"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "CocoaPods"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "CocoaPods"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "CocoaPods"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "CocoaPods"
+        }
+      }
+    }
+  },
+  "Full disk access permission (for full scan)" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Full disk access permission (for full scan)"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "完全磁盘访问权限（用于完整扫描）"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "完全磁碟存取權限（用於完整掃描）"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "完全磁碟存取權限（用於完整掃描）"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "完全磁碟存取權限（用於完整掃描）"
+        }
+      }
+    }
+  },
+  "macOS 14.0 or later" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "macOS 14.0 or later"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "macOS 14.0 或更高版本"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "macOS 14.0 或更高版本"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "macOS 14.0 或更高版本"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "macOS 14.0 或更高版本"
+        }
+      }
+    }
+  },
+  "Pod caches and builds" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Pod caches and builds"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Pod 缓存和构建产物"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Pod 快取和構建產物"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Pod 快取和構建產物"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Pod 快取和構建產物"
+        }
+      }
+    }
+  },
+  "SPM build caches" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "SPM build caches"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "SPM 构建缓存"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "SPM 構建快取"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "SPM 構建快取"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "SPM 構建快取"
+        }
+      }
+    }
+  },
+  "Swift 6.0 or later" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Swift 6.0 or later"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Swift 6.0 或更高版本"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Swift 6.0 或更高版本"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Swift 6.0 或更高版本"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Swift 6.0 或更高版本"
+        }
+      }
+    }
+  },
+  "System Cache" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "System Cache"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "系统缓存"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "系統快取"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "系統快取"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "系統快取"
+        }
+      }
+    }
+  },
+  "Temporary system files" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Temporary system files"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "临时系统文件"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "臨時系統檔案"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "臨時系統檔案"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "臨時系統檔案"
+        }
+      }
+    }
+  },
+  "User Cache" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "User Cache"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "用户缓存"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "使用者快取"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "使用者快取"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "使用者快取"
+        }
+      }
+    }
+  },
+  "Xcode Archives" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode Archives"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode 归档"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode 歸檔"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode 歸檔"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode 歸檔"
+        }
+      }
+    }
+  },
+  "Xcode DerivedData" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode DerivedData"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode DerivedData"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode DerivedData"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode DerivedData"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode DerivedData"
+        }
+      }
+    }
+  },
+  "Xcode Simulators" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode Simulators"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode 模拟器"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode 模擬器"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode 模擬器"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Xcode 模擬器"
+        }
+      }
+    }
+  },
+  "Application cache data" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Application cache data"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "应用程序缓存数据"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "應用程式快取資料"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "應用程式快取資料"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "應用程式快取資料"
+        }
+      }
+    }
+  },
+  "Archived builds" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Archived builds"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "归档构建"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "歸檔構建"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "歸檔構建"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "歸檔構建"
+        }
+      }
+    }
+  },
+  "Build intermediates" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Build intermediates"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "构建中间产物"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "構建中間產物"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "構建中間產物"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "構建中間產物"
+        }
+      }
+    }
+  },
+  "Old device simulators" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Old device simulators"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "旧设备模拟器"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "舊設備模擬器"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "舊設備模擬器"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "舊設備模擬器"
+        }
+      }
+    }
+  },
+  "Project Build" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Project Build"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "项目构建"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "專案構建"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "專案構建"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "專案構建"
+        }
+      }
+    }
+  }
+},
+"version" : "1.1"
 }

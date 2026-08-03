@@ -59,14 +59,14 @@ struct DiskManagerAboutView: View {
                 CleanupCategoriesCard(
                     title: PluginDiskManagerLocalization.string("Cleanup Categories"),
                     categories: [
-                        ("System Cache", "Temporary system files"),
-                        ("User Cache", "Application cache data"),
-                        ("Xcode DerivedData", "Build intermediates"),
-                        ("Xcode Archives", "Archived builds"),
-                        ("Xcode Simulators", "Old device simulators"),
-                        ("Project Build", "Build folders and artifacts"),
-                        ("CocoaPods", "Pod caches and builds"),
-                        ("Swift Package", "SPM build caches")
+                        (PluginDiskManagerLocalization.string("System Cache"), PluginDiskManagerLocalization.string("Temporary system files")),
+                        (PluginDiskManagerLocalization.string("User Cache"), PluginDiskManagerLocalization.string("Application cache data")),
+                        (PluginDiskManagerLocalization.string("Xcode DerivedData"), PluginDiskManagerLocalization.string("Build intermediates")),
+                        (PluginDiskManagerLocalization.string("Xcode Archives"), PluginDiskManagerLocalization.string("Archived builds")),
+                        (PluginDiskManagerLocalization.string("Xcode Simulators"), PluginDiskManagerLocalization.string("Old device simulators")),
+                        (PluginDiskManagerLocalization.string("Project Build"), PluginDiskManagerLocalization.string("Build folders and artifacts")),
+                        (PluginDiskManagerLocalization.string("CocoaPods"), PluginDiskManagerLocalization.string("Pod caches and builds")),
+                        (PluginDiskManagerLocalization.string("Swift Package"), PluginDiskManagerLocalization.string("SPM build caches"))
                     ]
                 )
 
@@ -74,9 +74,9 @@ struct DiskManagerAboutView: View {
                 RequirementsCard(
                     title: PluginDiskManagerLocalization.string("Requirements"),
                     items: [
-                        "macOS 14.0 or later",
-                        "Swift 6.0 or later",
-                        "Full disk access permission (for full scan)"
+                        PluginDiskManagerLocalization.string("macOS 14.0 or later"),
+                        PluginDiskManagerLocalization.string("Swift 6.0 or later"),
+                        PluginDiskManagerLocalization.string("Full disk access permission (for full scan)")
                     ]
                 )
 
