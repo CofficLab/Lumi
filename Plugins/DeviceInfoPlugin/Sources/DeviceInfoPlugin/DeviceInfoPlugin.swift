@@ -14,7 +14,9 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.device-info"
-    public let name = "Device Info Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Device Info Plugin", bundle: .module)
+    }
     public let order = 6
     public let policy: LumiPluginPolicy = .alwaysOn // 功能插件
 
