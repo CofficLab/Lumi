@@ -1016,7 +1016,6 @@
       }
     },
     "Unable to load conversations" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
