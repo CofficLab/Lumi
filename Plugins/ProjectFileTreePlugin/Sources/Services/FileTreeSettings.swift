@@ -16,7 +16,7 @@ public final class FileTreeSettings: @unchecked Sendable {
 
     // MARK: - Properties
 
-    private let store: FileTreeStore
+    private var store: FileTreeStore
 
     // MARK: - Initialization
 
@@ -25,6 +25,15 @@ public final class FileTreeSettings: @unchecked Sendable {
             ?? ProjectFileTreePluginRuntimeBridge.fallbackRootDirectory
                 .appendingPathComponent(ProjectFileTreePluginRuntimeBridge.pluginName, isDirectory: true)
         self.store = FileTreeStore(directory: root)
+    }
+
+    /// 注入 Storage service 返回的插件目录。
+    ///
+    /// `shared` 可能会在插件生命周期的 `onBoot` 之前被 UI 或其他静态对象触发，
+    /// 因此不能只在 init 时读取 RuntimeBridge；在 Storage 可用后必须重新绑定 Store。
+    public func configure(pluginDirectory: URL) {
+        ProjectFileTreePluginRuntimeBridge.pluginDirectory = pluginDirectory
+        store = FileTreeStore(directory: pluginDirectory)
     }
 
     // MARK: - Expanded Paths

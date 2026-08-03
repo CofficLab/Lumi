@@ -13,14 +13,14 @@ public final class PluginManager: ObservableObject {
 
     /// Kernel 引用
     weak var kernel: LumiKernelContainer?
+    private weak var runtimeKernel: LumiKernel?
 
     // Message renderer registry
     private var messageRenderers: [String: LumiMessageRendererItem] = [:]
     private var messageRendererOrder: [String] = []
 
-    // 插件启用状态覆盖只保留在内存中；磁盘持久化由 PluginManagerPlugin 负责。
+    // 运行时状态。
     private var enabledOverrides: [String: Bool] = [:]
-    private weak var enabledStatePersistence: (any PluginEnabledStatePersistence)?
 
     /// 插件启用状态变化时广播通知
     public func notifyEnabledPluginsDidChange() {
@@ -33,6 +33,7 @@ public final class PluginManager: ObservableObject {
 
     public func initializePlugins(_ plugins: [LumiPlugin], kernel: LumiKernel) async throws {
         self.kernel = kernel
+        self.runtimeKernel = kernel
 
         // 按 order 排序
         let sortedPlugins = plugins.sorted { $0.order < $1.order }
@@ -47,11 +48,12 @@ public final class PluginManager: ObservableObject {
         updateSortedPlugins()
     }
 
-    /// 注入由 PluginManagerPlugin 提供的持久化实现，并把已保存状态载入内存。
-    /// 必须在可配置插件启动前调用。
-    public func installEnabledStatePersistence(_ persistence: any PluginEnabledStatePersistence) {
-        enabledStatePersistence = persistence
-        enabledOverrides = persistence.loadPluginEnabledOverrides()
+    /// 应用由 PluginManagerPlugin 读取的持久化状态。
+    ///
+    /// PluginManager 只负责运行时决策，不关心状态来自文件、数据库还是云端。
+    /// 此方法必须在可配置插件启动前调用。
+    public func applyPersistedPluginStates(_ overrides: [String: Bool]) {
+        enabledOverrides = overrides
     }
 
     public func onBoot(kernel: LumiKernel) async throws {
@@ -555,30 +557,65 @@ public final class PluginManager: ObservableObject {
         allPlugins.reduce(0) { $0 + (effectiveEnabled(for: $1) ? 1 : 0) }
     }
 
-    /// 设置某个插件的启用状态(用户操作)。
+    /// 设置某个插件的运行时启用状态。
     ///
     /// 仅对可配置插件(`policy.isConfigurable`)生效;`alwaysOn` / `disabled` 为 no-op。
-    /// 更新后持久化覆盖值、驱动 SwiftUI 重渲染并广播 `.lumiEnabledPluginsDidChange`,
-    /// 从而触发 `LumiFactory` 重新注册 UI 贡献(禁用的插件贡献即时撤回)。
-    public func setPlugin(id: String, enabled: Bool) {
-        guard let plugin = plugin(id: id) else { return }
-        guard plugin.policy.isConfigurable else { return }
+    /// 持久化由 PluginManagerPlugin 在调用此方法前后负责。
+    @discardableResult
+    public func setPluginEnabled(id: String, enabled: Bool) async -> Bool {
+        guard let plugin = plugin(id: id), let runtimeKernel else { return false }
+        guard plugin.policy.isConfigurable else { return false }
         let current = effectiveEnabled(for: plugin)
-        guard current != enabled else { return }
+        guard current != enabled else { return false }
 
         enabledOverrides[id] = enabled
-        enabledStatePersistence?.savePluginEnabledOverride(enabled, for: id)
+
+        do {
+            if enabled {
+                try await plugin.onEnable(kernel: runtimeKernel)
+            } else {
+                try await plugin.onDisable(kernel: runtimeKernel)
+            }
+        } catch {
+            // Lifecycle failure must not leave the manager claiming a state that
+            // the plugin failed to enter.
+            enabledOverrides[id] = current
+            return false
+        }
+
         objectWillChange.send()
         notifyEnabledPluginsDidChange()
+        return true
     }
 
-    /// 清除某个插件的用户覆盖(回落到 policy 默认)。
-    public func resetPlugin(id: String) {
-        guard let plugin = plugin(id: id) else { return }
-        guard plugin.policy.isConfigurable else { return }
+    /// 清除某个插件的运行时覆盖(回落到 policy 默认)。
+    @discardableResult
+    public func resetPluginEnabledState(id: String) async -> Bool {
+        guard let plugin = plugin(id: id), let runtimeKernel else { return false }
+        guard plugin.policy.isConfigurable else { return false }
+        guard let override = enabledOverrides[id] else { return false }
+
+        let defaultEnabled = plugin.policy.enabledByDefault
+        guard override != defaultEnabled else {
+            enabledOverrides.removeValue(forKey: id)
+            return true
+        }
+
+        enabledOverrides[id] = defaultEnabled
+        do {
+            if defaultEnabled {
+                try await plugin.onEnable(kernel: runtimeKernel)
+            } else {
+                try await plugin.onDisable(kernel: runtimeKernel)
+            }
+        } catch {
+            enabledOverrides[id] = override
+            return false
+        }
+
         enabledOverrides.removeValue(forKey: id)
-        enabledStatePersistence?.clearPluginEnabledOverride(for: id)
         objectWillChange.send()
         notifyEnabledPluginsDidChange()
+        return true
     }
 }

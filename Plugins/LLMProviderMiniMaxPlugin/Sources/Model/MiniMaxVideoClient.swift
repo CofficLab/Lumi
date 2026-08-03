@@ -23,6 +23,10 @@ public protocol MiniMaxVideoClientProtocol: Sendable {
 /// 仅返回 MiniMax 给出的 24 小时有效的下载链接。
 /// 这样可以避免 10–50 MB 的视频数据占用 LLM 上下文 token 与带宽。
 public struct MiniMaxVideoGeneratedAsset: Equatable, Sendable {
+    /// MiniMax 任务 ID。
+    public let taskID: String
+    /// MiniMax 文件 ID。
+    public let fileID: String
     /// MiniMax 提供的下载链接（24 小时内有效）。
     public let downloadURL: URL
     /// 推荐用于下载的文件名（来自 MiniMax，或回退到默认值）。
@@ -100,6 +104,8 @@ public final class MiniMaxVideoClient: MiniMaxVideoClientProtocol, @unchecked Se
         // 注意：不再调用 download(...) 直接拉取 mp4 二进制（10–50MB）。
         // MiniMax 提供的 downloadURL 在 24 小时内有效，工具会把链接回传给调用方。
         return MiniMaxVideoGeneratedAsset(
+            taskID: taskID,
+            fileID: fileID,
             downloadURL: fileInfo.downloadURL,
             fileName: fileInfo.fileName,
             byteCount: fileInfo.byteCount,

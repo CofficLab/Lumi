@@ -11,6 +11,8 @@ public final class MiniMaxPlugin: LumiPlugin {
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }
 
+    private var videoRecordStore: MiniMaxVideoRecordStore?
+
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
@@ -19,6 +21,11 @@ public final class MiniMaxPlugin: LumiPlugin {
                 pluginName: "LLMProviderMiniMax",
                 directory: storage.pluginDataDirectory(for: "LLMProviderMiniMax")
             )
+
+            // 初始化视频记录存储
+            let databaseURL = storage.pluginDataDirectory(for: "LLMProviderMiniMax")
+                .appendingPathComponent("video_records", isDirectory: true)
+            videoRecordStore = MiniMaxVideoRecordStore(databaseRootURL: databaseURL)
         }
     }
 
@@ -63,7 +70,19 @@ public final class MiniMaxPlugin: LumiPlugin {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        guard let store = videoRecordStore else { return [] }
+        return [
+            SettingsTabItem(
+                id: "\(id).video-records",
+                title: "Video History",
+                systemImage: "video.circle",
+                order: order
+            ) {
+                VideoRecordsSettingsView(store: store)
+            },
+        ]
+    }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
@@ -81,13 +100,23 @@ public final class MiniMaxPlugin: LumiPlugin {
         let apiKeyProvider: @Sendable () -> String? = {
             APIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: "DevAssistant_ApiKey_MiniMax")
         }
+
+        var tools: [any LumiAgentTool]
+
         if let network = kernel.network {
             let client = MiniMaxVideoClient(network: network, apiKeyProvider: apiKeyProvider)
-            return [MiniMaxVideoTool(client: client)]
+            tools = [MiniMaxVideoTool(client: client, recordStore: videoRecordStore)]
         } else {
-            // 网络能力未注册时,降级到普通 HTTPClient（理论上不会发生）
             let client = MiniMaxVideoClient(apiKeyProvider: apiKeyProvider)
-            return [MiniMaxVideoTool(client: client)]
+            tools = [MiniMaxVideoTool(client: client, recordStore: videoRecordStore)]
         }
+
+        // 注册视频记录查询工具
+        if let store = videoRecordStore {
+            tools.append(MiniMaxListVideosTool(store: store))
+            tools.append(MiniMaxGetVideoTool(store: store))
+        }
+
+        return tools
     }
 }

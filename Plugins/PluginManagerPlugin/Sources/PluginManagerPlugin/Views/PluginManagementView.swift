@@ -299,7 +299,12 @@ private struct PluginSettingsDetailView: View {
         if plugin.policy.isConfigurable {
             Toggle(isOn: Binding(
                 get: { isEnabled },
-                set: { newValue in kernel.pluginManager.setPlugin(id: plugin.id, enabled: newValue) }
+                set: { newValue in
+                    Task { @MainActor in
+                        await kernel.pluginManager.plugin(ofType: PluginManagerPlugin.self)?
+                            .setPluginEnabled(kernel: kernel, id: plugin.id, enabled: newValue)
+                    }
+                }
             )) {
                 Text(PluginManagerText.string(PluginManagerText.enable))
                     .font(.appBody)

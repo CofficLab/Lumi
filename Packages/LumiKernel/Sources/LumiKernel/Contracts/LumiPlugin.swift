@@ -51,6 +51,18 @@ public protocol LumiPlugin: AnyObject {
     /// 在此方法中执行需要依赖其他服务的异步初始化逻辑。
     func onReady(kernel: LumiKernel) async throws
 
+    /// 运行时启用插件时调用。
+    ///
+    /// 这是与启动阶段 `onBoot` / `onReady` 分开的运行时生命周期；插件可以在这里
+    /// 启动监听器、任务或其他只在用户启用后才需要的资源。
+    func onEnable(kernel: LumiKernel) async throws
+
+    /// 运行时禁用插件时调用。
+    ///
+    /// 插件应在这里释放由 `onEnable` 创建的运行时资源。贡献的 UI、工具和 Provider
+    /// 会由 PluginManager 在生命周期回调完成后统一重建。
+    func onDisable(kernel: LumiKernel) async throws
+
     // MARK: - LLM / Agent Contributions
 
     /// 提供 LLM Provider 实现
@@ -180,6 +192,12 @@ public protocol LumiPlugin: AnyObject {
 // MARK: - Default Implementations
 
 public extension LumiPlugin {
+    /// 默认没有额外的运行时启用逻辑。
+    func onEnable(kernel: LumiKernel) async throws {}
+
+    /// 默认没有额外的运行时禁用逻辑。
+    func onDisable(kernel: LumiKernel) async throws {}
+
     /// LLM 发送前钩子的默认实现:不做任何修改,直接返回原 messages。
     /// 需要注入提示词的插件可重写此方法。
     @MainActor

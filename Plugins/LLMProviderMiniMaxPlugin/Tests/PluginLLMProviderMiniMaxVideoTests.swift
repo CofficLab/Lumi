@@ -51,6 +51,8 @@ private final class MockMiniMaxVideoClient: MiniMaxVideoClientProtocol, @uncheck
 
         // Return mock video asset (download URL only, no binary download)
         return MiniMaxVideoGeneratedAsset(
+            taskID: "mock-task-id",
+            fileID: "mock-file-id",
             downloadURL: downloadURL,
             fileName: fileName,
             byteCount: byteCount,
@@ -73,7 +75,7 @@ struct MiniMaxVideoToolTests {
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-1",
-            toolName: "minimax_generate_video",
+            toolName: "generate_video",
             currentProjectPath: nil,
             allowedDirectories: [],
             language: .english,
@@ -104,7 +106,7 @@ struct MiniMaxVideoToolTests {
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-2",
-            toolName: "minimax_generate_video",
+            toolName: "generate_video",
             currentProjectPath: nil,
             allowedDirectories: [],
             language: .english,
@@ -134,7 +136,7 @@ struct MiniMaxVideoToolTests {
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-3",
-            toolName: "minimax_generate_video",
+            toolName: "generate_video",
             currentProjectPath: nil,
             allowedDirectories: [],
             language: .english,
@@ -174,7 +176,7 @@ struct MiniMaxVideoToolTests {
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-4",
-            toolName: "minimax_generate_video",
+            toolName: "generate_video",
             currentProjectPath: nil,
             allowedDirectories: [],
             language: .english,
@@ -213,7 +215,7 @@ struct MiniMaxVideoToolTests {
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-5",
-            toolName: "minimax_generate_video",
+            toolName: "generate_video",
             currentProjectPath: nil,
             allowedDirectories: [],
             language: .english,
@@ -246,7 +248,7 @@ struct MiniMaxVideoToolTests {
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-6",
-            toolName: "minimax_generate_video",
+            toolName: "generate_video",
             currentProjectPath: nil,
             allowedDirectories: [],
             language: .english,
@@ -276,7 +278,7 @@ struct MiniMaxVideoToolTests {
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-7",
-            toolName: "minimax_generate_video",
+            toolName: "generate_video",
             currentProjectPath: nil,
             allowedDirectories: [],
             language: .english,
@@ -315,7 +317,7 @@ struct MiniMaxVideoToolTests {
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-8",
-            toolName: "minimax_generate_video",
+            toolName: "generate_video",
             currentProjectPath: nil,
             allowedDirectories: [],
             language: .english,
@@ -345,7 +347,7 @@ struct MiniMaxVideoToolTests {
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-call-9",
-            toolName: "minimax_generate_video",
+            toolName: "generate_video",
             currentProjectPath: nil,
             allowedDirectories: [],
             language: .english,

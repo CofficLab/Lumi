@@ -14,6 +14,9 @@
         }
       }
     },
+    "%lld records" : {
+
+    },
     "%lld%%" : {
 
     },
@@ -188,6 +191,9 @@
         }
       }
     },
+    "Expires in ~%lld hours" : {
+
+    },
     "Get API Key on MiniMax Open Platform" : {
       "localizations" : {
         "en" : {
@@ -255,6 +261,12 @@
           }
         }
       }
+    },
+    "Link expired" : {
+
+    },
+    "Loading..." : {
+
     },
     "MiniMax" : {
       "localizations" : {

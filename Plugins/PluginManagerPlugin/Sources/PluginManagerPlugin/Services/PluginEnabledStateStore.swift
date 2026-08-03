@@ -3,7 +3,7 @@ import LumiKernel
 
 /// Persists plugin enablement overrides inside PluginManagerPlugin's own data directory.
 @MainActor
-final class PluginEnabledStateStore: PluginEnabledStatePersistence {
+final class PluginEnabledStateStore {
     private static let filename = "plugin-enabled-overrides.plist"
     private static let legacyDefaultsKey = "com.coffic.lumi.pluginEnabledOverrides"
 

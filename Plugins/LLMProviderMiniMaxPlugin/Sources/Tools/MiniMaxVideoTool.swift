@@ -1,9 +1,8 @@
 import Foundation
 import LumiKernel
-import LumiKernel
 import LLMKit
 
-/// MiniMax 视频生成工具：通过 MiniMax API 生成视频，并把下载链接（24 小时有效）返回给调用方，
+/// 视频生成工具：通过 MiniMax API 生成视频，并把下载链接（24 小时有效）返回给调用方，
 /// 不再下载完整的 mp4 二进制。
 ///
 /// 三步流程：
@@ -11,14 +10,14 @@ import LLMKit
 /// 2. 轮询任务状态（最多 3 分钟）
 /// 3. 获取下载链接（24 小时有效）
 ///
-/// - Tool ID: `minimax_generate_video`
+/// - Tool ID: `generate_video`
 /// - Emoji: 🎬
 /// - Tags: `.network`, `"generative"`, `"expensive"`
 /// - API Key: 复用 TokenPlan 的 `DevAssistant_ApiKey_MiniMax`
 public struct MiniMaxVideoTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
-        id: "minimax_generate_video",
-        displayName: LumiPluginLocalization.string("MiniMax Video", bundle: .module),
+        id: "generate_video",
+        displayName: LumiPluginLocalization.string("Video", bundle: .module),
         description: LumiPluginLocalization.string(
             "Generate a video clip using MiniMax AI. Supports text-to-video (6–10 seconds, 720P–1080P). Returns a temporary download URL (valid for 24 hours) instead of downloading the binary.",
             bundle: .module
@@ -34,20 +33,23 @@ public struct MiniMaxVideoTool: LumiAgentTool {
     public nonisolated static let emoji = "🎬"
 
     private let client: any MiniMaxVideoClientProtocol
+    private let recordStore: MiniMaxVideoRecordStore?
 
     // MARK: - Init
 
-    public init(
+    init(
         client: any MiniMaxVideoClientProtocol = MiniMaxVideoClient(apiKeyProvider: {
             APIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: "DevAssistant_ApiKey_MiniMax")
-        })
+        }),
+        recordStore: MiniMaxVideoRecordStore? = nil
     ) {
         self.client = client
+        self.recordStore = recordStore
     }
 
     // MARK: - LumiAgentTool
 
-    public var name: String { "minimax_generate_video" }
+    public var name: String { "generate_video" }
 
     public var toolDescription: String { Self.info.description }
 
@@ -110,16 +112,27 @@ public struct MiniMaxVideoTool: LumiAgentTool {
         let model = arguments["model"]?.stringValue ?? MiniMaxVideoModel.defaultModel.rawValue
         let duration = intArgument(arguments["duration"]) ?? MiniMaxVideoDuration.defaultDuration.rawValue
         let resolution = arguments["resolution"]?.stringValue ?? MiniMaxVideoResolution.defaultResolution.rawValue
-        let promptOptimizer = arguments["prompt_optimizer"]?.boolValue
-        let fastPretreatment = arguments["fast_pretreatment"]?.boolValue
-        let aigcWatermark = arguments["aigc_watermark"]?.boolValue
+        let promptOptimizer = arguments["prompt_optimizer"]?.boolValue ?? false
+        let fastPretreatment = arguments["fast_pretreatment"]?.boolValue ?? false
+        let aigcWatermark = arguments["aigc_watermark"]?.boolValue ?? false
 
         // 2. 构建 shouldContinue 闭包（支持取消）
         let shouldContinue: @Sendable () async -> Bool = {
             !kernel.isCancelled
         }
 
-        // 3. 调用 client 执行三步交付链（提交 → 轮询 → 拿下载链接）
+        // 3. 插入 pending 记录
+        let recordID = await recordStore?.insertPendingRecord(
+            prompt: prompt,
+            model: model,
+            duration: duration,
+            resolution: resolution,
+            promptOptimizer: promptOptimizer,
+            fastPretreatment: fastPretreatment,
+            aigcWatermark: aigcWatermark
+        )
+
+        // 4. 调用 client 执行三步交付链（提交 → 轮询 → 拿下载链接）
         do {
             let asset = try await client.generate(
                 prompt: prompt,
@@ -135,7 +148,19 @@ public struct MiniMaxVideoTool: LumiAgentTool {
 
             try kernel.checkCancellation()
 
-            // 4. 不再下载视频二进制；把 MiniMax 返回的下载链接直接展示给用户。
+            // 5. 标记成功
+            if let recordID {
+                await recordStore?.markSuccess(
+                    recordID: recordID,
+                    taskID: asset.taskID,
+                    fileID: asset.fileID,
+                    downloadURL: asset.downloadURL.absoluteString,
+                    fileName: asset.fileName,
+                    byteCount: asset.byteCount
+                )
+            }
+
+            // 6. 不再下载视频二进制；把 MiniMax 返回的下载链接直接展示给用户。
             //    该链接由 MiniMax 提供，24 小时内有效。
             return formatResult(
                 asset: asset,
@@ -145,10 +170,19 @@ public struct MiniMaxVideoTool: LumiAgentTool {
                 prompt: prompt
             )
         } catch is CancellationError {
+            if let recordID {
+                await recordStore?.markCancelled(recordID: recordID, taskID: nil)
+            }
             throw CancellationError()
         } catch let error as MiniMaxVideoError {
+            if let recordID {
+                await recordStore?.markFailed(recordID: recordID, taskID: nil, errorMessage: error.localizedDescription)
+            }
             return formatError(error)
         } catch {
+            if let recordID {
+                await recordStore?.markFailed(recordID: recordID, taskID: nil, errorMessage: error.localizedDescription)
+            }
             return "**Error:** \(error.localizedDescription)"
         }
     }
