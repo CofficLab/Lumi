@@ -9,6 +9,7 @@ import os
 /// Uses in-memory array for sync access, persists to SQLite async via ConversationStore.
 @MainActor
 public final class ConversationManager: ObservableObject, ConversationManaging, SuperLog {
+    private static let initialPageSize = 40
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
     nonisolated public static let emoji = "💬"
     public nonisolated static let verbose = false
@@ -50,7 +51,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
     // MARK: - Load
 
-    /// Load conversations from store (called during boot)
+    /// Load a bounded recent cache from store (called during boot).
     public func loadConversations() {
         isLoadingConversations = true
         guard let store else {
@@ -63,12 +64,20 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
 
         // Synchronous load on MainActor - the store.fetchConversations is async but we await it
-        Task {
-            let loaded = await store.fetchConversations()
+        Task { @MainActor in
+            let persistedSelectedID = self.loadPersistedSelectedConversationID()
+            var loaded = await store.fetchConversationPage(limit: Self.initialPageSize)
+
+            if let persistedSelectedID,
+               !loaded.contains(where: { $0.id == persistedSelectedID }),
+               let selected = await store.fetchConversation(id: persistedSelectedID) {
+                loaded.append(selected)
+            }
+
             await MainActor.run {
                 self.conversations = loaded
                 if self.selectedConversationID == nil {
-                    self.selectedConversationID = self.loadPersistedSelectedConversationID()
+                    self.selectedConversationID = persistedSelectedID
                 }
 
                 // Restore selected conversation if it still exists
@@ -101,9 +110,28 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         ) ?? []
     }
 
+    public func fetchConversation(id: UUID) async -> LumiConversationSummary? {
+        if let cached = conversations.first(where: { $0.id == id }) {
+            return cached
+        }
+
+        guard let summary = await store?.fetchConversation(id: id) else {
+            return nil
+        }
+
+        await MainActor.run {
+            self.cache(summary)
+        }
+        return summary
+    }
+
     /// Count conversations without loading their summaries.
     public func conversationCount() async -> Int {
         await store?.conversationCount() ?? 0
+    }
+
+    public func conversationCount(projectPath: String?) async -> Int {
+        await store?.conversationCount(projectPath: projectPath) ?? 0
     }
 
     /// Fetch daily conversation counts without loading conversation summaries.
@@ -155,8 +183,8 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             projectPath: effectiveProjectPath
         )
 
-        // Add to in-memory list immediately
-        conversations.insert(conversation, at: 0)
+        // Add to the bounded in-memory cache immediately.
+        cache(conversation)
         selectedConversationID = id
         updateCurrentTitle()
         notifyConversationsChanged()
@@ -200,6 +228,30 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         // Touch the conversation to update its timestamp (async)
         Task {
             await store?.touchConversation(id: id)
+        }
+    }
+
+    private func cache(_ summary: LumiConversationSummary) {
+        if let index = conversations.firstIndex(where: { $0.id == summary.id }) {
+            conversations[index] = summary
+        } else {
+            conversations.append(summary)
+        }
+
+        guard conversations.count > Self.initialPageSize * 2 else { return }
+
+        let selectedID = selectedConversationID
+        let sorted = conversations.sorted { lhs, rhs in
+            lhs.updatedAt == rhs.updatedAt
+                ? lhs.createdAt > rhs.createdAt
+                : lhs.updatedAt > rhs.updatedAt
+        }
+        conversations = Array(sorted.prefix(Self.initialPageSize * 2))
+
+        if let selectedID,
+           !conversations.contains(where: { $0.id == selectedID }),
+           let selected = sorted.first(where: { $0.id == selectedID }) {
+            conversations.append(selected)
         }
     }
 

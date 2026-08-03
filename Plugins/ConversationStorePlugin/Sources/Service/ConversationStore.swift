@@ -170,23 +170,6 @@ public actor ConversationStore: SuperLog {
 
     // MARK: - Read
 
-    /// Fetch all conversations, sorted by updatedAt descending
-    func fetchConversations() -> [LumiConversationSummary] {
-        let context = ModelContext(container)
-
-        var descriptor = FetchDescriptor<ConversationModel>(
-            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
-        )
-
-        do {
-            let models = try context.fetch(descriptor)
-            return models.compactMap { $0.toLumiConversationSummary() }
-        } catch {
-            Self.logger.error("\(Self.t)查询对话失败：\(error.localizedDescription)")
-            return []
-        }
-    }
-
     /// Fetch one conversation page using a keyset cursor.
     ///
     /// The cursor is the last item from the previous page. Keyset pagination
@@ -243,6 +226,25 @@ public actor ConversationStore: SuperLog {
             return try context.fetchCount(descriptor)
         } catch {
             Self.logger.error("\(Self.t)统计对话数量失败：\(error.localizedDescription)")
+            return 0
+        }
+    }
+
+    func conversationCount(projectPath: String?) -> Int {
+        let context = ModelContext(container)
+        let descriptor: FetchDescriptor<ConversationModel>
+        if let projectPath {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> { $0.projectPath == projectPath }
+            )
+        } else {
+            descriptor = FetchDescriptor<ConversationModel>()
+        }
+
+        do {
+            return try context.fetchCount(descriptor)
+        } catch {
+            Self.logger.error("按项目统计对话失败：\(error.localizedDescription)")
             return 0
         }
     }
