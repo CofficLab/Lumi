@@ -35,6 +35,40 @@
         }
       }
     },
+    "AppUpdateStatusBar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AppUpdateStatusBar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用更新状态栏"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用更新状态栏"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用更新状态栏"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用更新状态栏"
+          }
+        }
+      }
+    },
     "Lumi %@ downloaded": {
       "localizations": {
         "en": {

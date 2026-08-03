@@ -14,7 +14,9 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "AppIconDesigner"
-    public let name = "AppIconDesigner"
+    public var name: String {
+        AppIconDesignerLocalization.string("AppIconDesigner")
+    }
     public let order = 79
     public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .agent

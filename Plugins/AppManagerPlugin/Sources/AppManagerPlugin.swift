@@ -17,7 +17,9 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.app-manager"
-    public let name = "App Manager"
+    public var name: String {
+        PluginAppManagerLocalization.string("App Manager")
+    }
     public let order = 242
 	public let policy: LumiPluginPolicy = .optIn
 

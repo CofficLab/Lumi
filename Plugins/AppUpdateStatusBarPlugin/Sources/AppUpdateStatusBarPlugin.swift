@@ -5,7 +5,9 @@ import LumiUI
 @MainActor
 public final class AppUpdateStatusBarPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.app-update-status-bar"
-    public let name = "AppUpdateStatusBar"
+    public var name: String {
+        LumiPluginLocalization.string("AppUpdateStatusBar", bundle: .module)
+    }
     public let order = 8
 	public let policy: LumiPluginPolicy = .disabled
     public var category: LumiPluginCategory { .general }

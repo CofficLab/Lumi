@@ -21,7 +21,9 @@ import SwiftUI
 @MainActor
 public final class AppUpdatePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.app-update"
-    public let name = "App Update"
+    public var name: String {
+        LumiPluginLocalization.string("App Update", bundle: .module)
+    }
     public let order = 50
     public let policy: LumiPluginPolicy = .alwaysOn
     public var pluginDescription: String {
