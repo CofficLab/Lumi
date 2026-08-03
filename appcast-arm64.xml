@@ -3,38 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.6.4</title>
-            <pubDate>Mon, 03 Aug 2026 10:01:03 +0000</pubDate>
-            <sparkle:version>513</sparkle:version>
-            <sparkle:shortVersionString>5.6.4</sparkle:shortVersionString>
+            <title>5.6.5</title>
+            <pubDate>Mon, 03 Aug 2026 12:52:22 +0000</pubDate>
+            <sparkle:version>514</sparkle:version>
+            <sparkle:shortVersionString>5.6.5</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.6.4</h2>
-<h3>Changes since v5.6.3</h3>
+            <description><![CDATA[<h2>Release v5.6.5</h2>
+<h3>Changes since v5.6.4</h3>
 <ul>
-<li>feat(ConversationManager): post a fine-grained notification when conversation title changes</li>
-<li>feat(ConversationManaging): add paginated fetch, single-ID fetch, and per-project count APIs</li>
-<li>feat(LumiUI): add shimmer effect modifier for skeleton loading views</li>
-<li>feat(MiniMaxPlugin): add video record persistence, query tools, and settings view</li>
-<li>feat(MiniMaxPlugin): move MiniMaxTokenPlanProvider to Providers directory</li>
-<li>feat(WindowMain): collect onboarding pages and inject via environment</li>
-<li>fix(command): prevent menu action failures and redundant rebuilds</li>
-<li>fix(ConversationListPlugin): coalesce reload requests during active reload</li>
-<li>fix(ConversationManager): notify list after persisting conversation to database</li>
-<li>fix(DeviceInfoPlugin): use Int64 for CPU state counters to prevent Int32 overflow on multi-core machines</li>
-<li>fix(DiskManagerPlugin): localize remaining hardcoded strings in about view</li>
-<li>fix(Open*): use Bundle.module for pluginAboutView localization in all Open plugins</li>
-<li>fix(Plugins): change policy from optIn to alwaysOn for ActivityHeatmap, Download, and IdleTime plugins</li>
-<li>refactor(ActivityPlugins): update plugin implementations</li>
-<li>refactor(AgentRulesPlugin): update plugin implementation</li>
-<li>refactor(AgentTempStoragePlugin): update plugin implementation</li>
-<li>refactor(AppIconDesignerPlugin): update plugin implementation</li>
-<li>refactor(AppPlugins): update plugin implementations</li>
-<li>refactor(AskUserPlugin): update plugin implementation</li>
-<li>refactor(BrewManagerPlugin): update plugin implementation</li>
+<li>docs: update cross-plugin comments referencing ConversationManagerPlugin</li>
+<li>feat(LLMProviderMiniMaxPlugin): unified status bar token plan display</li>
+<li>feat(MenuBarHelperPlugin): scaffold new plugin for menu bar settings UI</li>
+<li>feat(MenuBarManagerPlugin): enable menu bar icon by default</li>
+<li>feat(MessageRenderer): lazy-load tool results from ToolManager on demand</li>
+<li>feat(MiniMax): parse thinking tags and flush tool calls in streaming</li>
+<li>feat(ToolManager): add in-memory result cache for immediate UI resolution</li>
+<li>feat(ToolManagerPlugin): persist and lookup tool results by tool call ID</li>
+<li>feat(ToolManaging): add toolCallResult lookup by tool call ID</li>
+<li>fix(AgentTurnRunner): track completed tool calls via separate .tool messages</li>
+<li>fix(LLMProviderMLXPlugin): inject pluginSubdirectory via storage bridge on boot</li>
+<li>fix(LLMProviderMLXPlugin): register MLX local provider settings view</li>
+<li>i18n:  translate or localize content</li>
+<li>perf(LLMProviderManagerPlugin): defer provider loading after first frame</li>
+<li>refactor: rename ConversationStorePlugin SPM module to ConversationManagerPlugin</li>
+<li>refactor(ConversationManagerPlugin): rename main plugin class and update internal identifiers</li>
+<li>refactor(ConversationManagerPlugin): update user-facing display name and translations</li>
+<li>refactor(LLMProviderMiniMaxPlugin): drop labels from status bar token plan display</li>
+<li>refactor(MenuBarManagerPlugin): extract ViewContainer to MenuBarHelperPlugin</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.6.4</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.6.5</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.6.4/Lumi_5.6.4_arm64.dmg" length="40540638" type="application/octet-stream" sparkle:edSignature="UW5WdIM19KcDw4yRf3LxRl9JjcikofClnKBgh0b3LIXDHnthbmo5br1YMUOy4vIBcshpCYI/mThrLDj6fQ4fDQ=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.6.5/Lumi_5.6.5_arm64.dmg" length="41278033" type="application/octet-stream" sparkle:edSignature="whJ8mhi1Jpy+1/TuRHZ/MzBYD3814Z/7xm1r9MsiQWrlS23Ez6LDcdlUZ0o+rdtLO9By0JQSIIuX2ZXeF93XCQ=="/>
         </item>
     </channel>
 </rss>
