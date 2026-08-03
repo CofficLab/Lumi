@@ -38,9 +38,9 @@ public final class AgentOpenInAntigravityPlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
-                Text(name)
+                Text(LumiPluginLocalization.string("Open in Antigravity", bundle: .module))
                     .font(.title2.weight(.semibold))
-                Text("Open current project in Antigravity editor")
+                Text(LumiPluginLocalization.string("Open current project in Antigravity editor", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }

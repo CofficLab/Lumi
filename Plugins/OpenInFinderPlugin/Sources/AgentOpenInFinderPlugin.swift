@@ -38,9 +38,9 @@ public final class AgentOpenInFinderPlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
-                Text(name)
+                Text(LumiPluginLocalization.string("Open in Finder", bundle: .module))
                     .font(.title2.weight(.semibold))
-                Text("Open current project in Finder")
+                Text(LumiPluginLocalization.string("Open current project in Finder", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }

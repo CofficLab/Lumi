@@ -13,9 +13,9 @@ public struct OpenRemoteAboutView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(pluginName)
+            Text(LumiPluginLocalization.string(pluginName, bundle: .module))
                 .font(.title2.weight(.semibold))
-            Text("Displays a button in the header to open the current project's remote repository in browser")
+            Text(LumiPluginLocalization.string("Displays a button in the header to open the current project's remote repository in browser", bundle: .module))
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
         }
