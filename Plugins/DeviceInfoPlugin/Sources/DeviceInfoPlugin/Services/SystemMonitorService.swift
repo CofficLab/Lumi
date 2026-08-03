@@ -452,16 +452,19 @@ public final class SystemMonitorService: ObservableObject, SuperLog {
 
         // 简单采样：计算总体使用率（不依赖历史状态）
 
-        var totalIdle: Int32 = 0
-        var totalUsed: Int32 = 0
+        // CPU_STATE counters are Int32 per logical core. Summing them into an
+        // Int32 overflows quickly on machines with multiple cores because the
+        // counters are cumulative since boot.
+        var totalIdle: Int64 = 0
+        var totalUsed: Int64 = 0
         for i in 0..<Int(numCPUsU) {
             let baseIndex = i * Int(CPU_STATE_MAX)
             for j in 0..<Int(CPU_STATE_MAX) {
                 let value = cpuInfoU[baseIndex + j]
                 if j == Int(CPU_STATE_IDLE) {
-                    totalIdle += value
+                    totalIdle += Int64(value)
                 } else {
-                    totalUsed += value
+                    totalUsed += Int64(value)
                 }
             }
         }
