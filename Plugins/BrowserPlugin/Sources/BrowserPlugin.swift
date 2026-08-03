@@ -18,7 +18,7 @@ public final class BrowserPlugin: LumiPlugin, SuperLog {
     public let order = 102
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Control web browser for viewing and interacting with web pages."
 
     public init() {}
