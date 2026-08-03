@@ -8,6 +8,7 @@ import os
 /// 与 SwiftData actor 隔离,避免跨 actor 传递 managed 对象。
 public struct ToolCallRecordDTO: Identifiable, Sendable {
     public let id: String
+    public let toolCallID: String?
     public let toolName: String
     public let toolDisplayName: String
     public let turnID: UUID?
@@ -18,12 +19,14 @@ public struct ToolCallRecordDTO: Identifiable, Sendable {
     public let duration: Double?
     public let argumentsJSON: String
     public let resultContent: String
+    public let resultJSON: String?
     public let resultIsError: Bool
     public let riskLevel: String
     public let turnControl: String?
 
     init(from model: ToolCallRecordModel) {
         self.id = model.id
+        self.toolCallID = model.toolCallID
         self.toolName = model.toolName
         self.toolDisplayName = model.toolDisplayName
         self.turnID = model.turnID.flatMap(UUID.init(uuidString:))
@@ -34,6 +37,7 @@ public struct ToolCallRecordDTO: Identifiable, Sendable {
         self.duration = model.duration
         self.argumentsJSON = model.argumentsJSON
         self.resultContent = model.resultContent
+        self.resultJSON = model.resultJSON
         self.resultIsError = model.resultIsError
         self.riskLevel = model.riskLevel
         self.turnControl = model.turnControl
@@ -106,6 +110,7 @@ public actor ToolCallRecordStore: SuperLog {
 
     /// 记录一次工具调用(后台异步写入,不影响主流程)。
     func record(
+        toolCallID: String = "",
         toolName: String,
         toolDisplayName: String,
         turnID: UUID? = nil,
@@ -116,12 +121,14 @@ public actor ToolCallRecordStore: SuperLog {
         duration: Double?,
         argumentsJSON: String,
         resultContent: String,
+        resultJSON: String? = nil,
         resultIsError: Bool,
         riskLevel: String,
         turnControl: String? = nil
     ) {
         let model = ToolCallRecordModel(
             id: UUID().uuidString,
+            toolCallID: toolCallID,
             toolName: toolName,
             toolDisplayName: toolDisplayName,
             turnID: turnID?.uuidString,
@@ -132,6 +139,7 @@ public actor ToolCallRecordStore: SuperLog {
             duration: duration,
             argumentsJSON: argumentsJSON,
             resultContent: String(resultContent.prefix(10_000)), // 限制结果大小
+            resultJSON: resultJSON,
             resultIsError: resultIsError,
             riskLevel: riskLevel,
             turnControl: turnControl
@@ -145,6 +153,18 @@ public actor ToolCallRecordStore: SuperLog {
                 await self?.flush()
             }
         }
+    }
+
+    /// Fetch one persisted tool call by its original `LumiToolCall.id`.
+    public func fetchRecord(forToolCallID toolCallID: String) -> ToolCallRecordDTO? {
+        // A just-completed call may still be in the actor's write buffer.
+        flush()
+        let descriptor = FetchDescriptor<ToolCallRecordModel>(
+            predicate: #Predicate<ToolCallRecordModel> {
+                $0.toolCallID == toolCallID
+            }
+        )
+        return try? modelContext.fetch(descriptor).first.map(ToolCallRecordDTO.init(from:))
     }
 
     /// Fetch 一页记录。

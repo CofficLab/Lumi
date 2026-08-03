@@ -510,6 +510,40 @@ struct ToolManagerPluginTests {
         #expect(records.first?.turnID == turnID)
     }
 
+    @Test("tool call results can be queried by original call ID")
+    func toolCallResultByID() async throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = ToolCallRecordStore(databaseRootURL: directory)
+        let now = Date()
+        let result = LumiToolResult(content: "result", duration: 0.2, isError: false)
+        let resultJSON = String(
+            data: try JSONEncoder().encode(result),
+            encoding: .utf8
+        )
+
+        await store.record(
+            toolCallID: "call_lookup",
+            toolName: "read_file",
+            toolDisplayName: "读取文件",
+            conversationID: UUID(),
+            createdAt: now,
+            startedAt: now,
+            completedAt: now,
+            duration: 0.2,
+            argumentsJSON: "{}",
+            resultContent: result.content,
+            resultJSON: resultJSON,
+            resultIsError: false,
+            riskLevel: "low"
+        )
+
+        let record = await store.fetchRecord(forToolCallID: "call_lookup")
+        #expect(record?.toolCallID == "call_lookup")
+        #expect(record?.resultJSON == resultJSON)
+    }
+
     private func temporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("lumi-tool-tests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
