@@ -2,36 +2,36 @@
   "version": "1.0",
   "sourceLanguage": "en",
   "strings": {
-    "Conversation Store": {
+    "Conversation Manager": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Conversation Store"
+            "value": "Conversation Manager"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "会话存储"
+            "value": "会话管理"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "会话存储"
+            "value": "對話管理"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "会话存储"
+            "value": "對話管理"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "会话存储"
+            "value": "對話管理"
           }
         }
       }
