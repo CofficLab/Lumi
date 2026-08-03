@@ -19,7 +19,9 @@ public final class MessageSenderPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.message-sender"
-    public let name = "Message Sender"
+    public var name: String {
+        LumiPluginLocalization.string("Message Sender", bundle: .module)
+    }
     public let order = 63  // After MessageManagerPlugin (62)
     public let policy: LumiPluginPolicy = .alwaysOn
 
