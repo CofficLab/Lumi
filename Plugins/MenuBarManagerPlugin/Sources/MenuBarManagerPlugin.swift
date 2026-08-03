@@ -19,7 +19,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
         LumiPluginLocalization.string("Menu Bar Manager", bundle: .module)
     }
     public let order = 300
-    public let policy: LumiPluginPolicy = .optIn
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     private weak var kernel: LumiKernel?
     private(set) public var isMenuBarPresented: Bool = false
