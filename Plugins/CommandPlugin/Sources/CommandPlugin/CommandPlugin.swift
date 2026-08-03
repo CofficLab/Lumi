@@ -23,7 +23,7 @@ public final class CommandPlugin: LumiPlugin, SuperLog {
 
     // MARK: - State
 
-    private var commandService: DefaultCommandProviding?
+    private var commandService: CommandManager?
 
     // MARK: - Initialization
 

@@ -16,7 +16,7 @@ public struct CommandOnBootHook {
     /// 执行 boot
     public func execute(_ kernel: LumiKernel) async throws {
         // 1. 注册 CommandService（内核服务）
-        let commandServiceInstance = DefaultCommandProviding()
+        let commandServiceInstance = CommandManager()
         try kernel.registerCommandService(commandServiceInstance)
 
         // 2. 注册内置 Debug 菜单命令

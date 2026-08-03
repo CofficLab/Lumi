@@ -119,6 +119,11 @@ private final class CommandMenuInstaller {
     private var startTask: Task<Void, Never>?
     private var installedMenus: [String: NSMenuItem] = [:]
     private var actionTargets: [String: CommandActionTarget] = [:]
+    // Keep the menu alive while comparing it between polling iterations. A
+    // weak reference can become nil for an AppKit menu owned by SwiftUI,
+    // which would incorrectly force a full rebuild on every iteration.
+    private var installedMainMenu: NSMenu?
+    private var lastGroupsSignature: String?
 
     func start() {
         guard startTask == nil else { return }
@@ -133,10 +138,31 @@ private final class CommandMenuInstaller {
                     continue
                 }
 
-                self.rebuild(in: mainMenu, groups: command.allCommandGroups)
+                if self.installedMainMenu !== mainMenu {
+                    self.installedMainMenu = mainMenu
+                    self.installedMenus.removeAll()
+                    self.actionTargets.removeAll()
+                    self.lastGroupsSignature = nil
+                }
+
+                let groups = command.allCommandGroups
+                let signature = self.signature(for: groups)
+                if self.lastGroupsSignature != signature {
+                    self.rebuild(in: mainMenu, groups: groups)
+                    self.lastGroupsSignature = signature
+                }
                 try? await Task.sleep(nanoseconds: 250_000_000)
             }
         }
+    }
+
+    private func signature(for groups: [CommandMenuGroup]) -> String {
+        groups.map { group in
+            let items = group.items.map { item in
+                "\(item.id)=\(item.title)=\(String(describing: item.shortcut))=\(String(describing: item.modifiers))"
+            }.joined(separator: ";")
+            return "\(group.id)=\(group.name)=\(group.placement.rawValue)=[\(items)]"
+        }.joined(separator: "|")
     }
 
     private func rebuild(in mainMenu: NSMenu, groups: [CommandMenuGroup]) {
@@ -161,7 +187,7 @@ private final class CommandMenuInstaller {
                 let target = CommandActionTarget(action: item.action)
                 let menuItem = NSMenuItem(
                     title: item.title,
-                    action: #selector(CommandActionTarget.perform(_:)),
+                    action: #selector(CommandActionTarget.performAction(_:)),
                     keyEquivalent: ""
                 )
                 menuItem.target = target
@@ -186,7 +212,7 @@ private final class CommandActionTarget: NSObject {
         self.action = action
     }
 
-    @objc func perform(_ sender: Any?) {
+    @objc func performAction(_ sender: NSMenuItem) {
         action()
     }
 }
