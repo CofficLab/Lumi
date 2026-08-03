@@ -3,7 +3,7 @@ import SwiftUI
 
 /// 消息迁移进度状态
 ///
-/// 一个 `@MainActor ObservableObject` 单例,由后台迁移任务(`MessageLegacyMigration`)
+/// 一个 `@MainActor ObservableObject` 单例,由后台迁移任务(`MessageMigrationJob`)
 /// 在循环里更新,状态栏视图(`MessageMigrationStatusBarView`)通过 `@ObservedObject` 订阅,
 /// 进度变化时 UI 自动刷新。迁移完成(或未启动)时 `isActive` 为 false,状态栏项自动隐藏。
 @MainActor
@@ -35,7 +35,7 @@ public final class MessageMigrationProgressStore: ObservableObject {
 
     private init() {}
 
-    // MARK: - 由 MessageLegacyMigration 调用的更新方法
+    // MARK: - 由 MessageMigrationJob 调用的更新方法
 
     /// 标记迁移开始,初始化计数
     func start(totalConversations: Int) {

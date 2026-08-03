@@ -30,12 +30,9 @@ public struct MessageStoreOnReadyHook {
             let store = try MessageStore(databaseRootURL: databaseRootURL)
             MessageStoreRuntimeBridge.shared.store = store
 
-            // 后台启动 v4 历史消息迁移(不阻塞 onReady 串行链,App 立即可用)
-            //
-            // 迁移跑在 `Task { @MainActor in }` 里:`LegacyDataProviding` 协议是 @MainActor,
-            // 读 v4 旧库的 fetch 必须在主线程;`store` 现在是带锁的普通类,读写也在主线程。
+            // Job 在后台异步执行，不阻塞 onReady 串行链；后续 Job 可继续放入 Jobs 目录。
             let progress = MessageMigrationProgressStore.shared
-            let migration = MessageLegacyMigration(
+            let migrationJob = MessageMigrationJob(
                 kernel: kernel,
                 store: store,
                 progress: progress,
@@ -43,7 +40,8 @@ public struct MessageStoreOnReadyHook {
             )
             let itemID = "com.coffic.lumi.plugin.message-store.migration.status"
             Task { @MainActor in
-                migration.run()
+                try? await Task.sleep(nanoseconds: 1000000000)
+                await migrationJob.run()
                 // 迁移完成后移除状态栏项(完成后自动隐藏,符合"完成后不再占用状态栏"的设计)
                 if !progress.isActive {
                     kernel.workspace?.unregisterStatusBarItem(id: itemID)
