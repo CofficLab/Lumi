@@ -16,7 +16,9 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.conversation-input"
-    public let name = "Conversation Input"
+    public var name: String {
+        LumiPluginLocalization.string("Conversation Input", bundle: .module)
+    }
     public let order = 83
     public let policy: LumiPluginPolicy = .alwaysOn
 
