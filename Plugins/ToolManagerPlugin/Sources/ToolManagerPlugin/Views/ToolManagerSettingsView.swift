@@ -71,21 +71,23 @@ public struct ToolManagerSettingsView: View {
     // MARK: - Tab Bar
 
     private var tabBar: some View {
-        AppTabBar(
-            tabs: availableTabs,
-            selectedTab: Binding(
-                get: { selectedTabID.rawValue },
-                set: { newValue in
-                    if let next = ToolSettingsTab(rawValue: newValue) {
-                        selectedTabID = next
-                    }
+        HStack(spacing: 8) {
+            ForEach(availableTabs) { tab in
+                AppButton(
+                    tab.title,
+                    systemImage: tab.icon,
+                    style: selectedTabID.rawValue == tab.id ? .primary : .secondary,
+                    size: .small
+                ) {
+                    guard let next = ToolSettingsTab(rawValue: tab.id) else { return }
+                    selectedTabID = next
                 }
-            )
-        )
-        // The tools page contains a full-height ScrollView. Keep the tab bar
-        // above that content in the hit-test order so the other tabs remain
-        // clickable on macOS.
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+        // The tools page contains a full-height ScrollView. Keep these
+        // standalone buttons above that content in the hit-test order.
         .zIndex(1)
     }
 

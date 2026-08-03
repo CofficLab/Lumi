@@ -9,6 +9,23 @@ private let largePayloadByteThreshold = 32 * 1024  // 32 KB
 
 @MainActor
 public struct HTTPExchangeSettingsView: View {
+    private enum LogFilter: String, CaseIterable {
+        case all
+        case normal
+        case abnormal
+
+        var title: String {
+            switch self {
+            case .all:
+                LumiPluginLocalization.string("All", bundle: .module)
+            case .normal:
+                LumiPluginLocalization.string("Normal", bundle: .module)
+            case .abnormal:
+                LumiPluginLocalization.string("Abnormal", bundle: .module)
+            }
+        }
+    }
+
     private let store: HTTPExchangeStore
     @LumiTheme private var theme
 
@@ -19,6 +36,7 @@ public struct HTTPExchangeSettingsView: View {
     @State private var hasMoreRecords = true
     @State private var totalRecordCount: Int?
     @State private var selectedRecordID: UUID?
+    @State private var selectedFilter: LogFilter = .all
     @State private var dailyCountSeries = HTTPExchangeDailyCountSeries(points: [])
     @State private var exportErrorMessage: String?
 
@@ -31,6 +49,23 @@ public struct HTTPExchangeSettingsView: View {
     private var selectedRecord: HTTPExchangeRecord? {
         guard let selectedRecordID else { return nil }
         return records.first { $0.id == selectedRecordID }
+    }
+
+    private var filteredRecords: [HTTPExchangeRecord] {
+        switch selectedFilter {
+        case .all:
+            return records
+        case .normal:
+            return records.filter { record in
+                guard let statusCode = record.responseStatusCode else { return false }
+                return (200..<300).contains(statusCode)
+            }
+        case .abnormal:
+            return records.filter { record in
+                guard let statusCode = record.responseStatusCode else { return true }
+                return !(200..<300).contains(statusCode)
+            }
+        }
     }
 
     public var body: some View {
@@ -119,7 +154,9 @@ public struct HTTPExchangeSettingsView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            if isLoading && records.isEmpty {
+            filterTabs
+
+            if isLoading && filteredRecords.isEmpty {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.small)
@@ -128,19 +165,19 @@ public struct HTTPExchangeSettingsView: View {
                         .foregroundStyle(theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if records.isEmpty {
+            } else if filteredRecords.isEmpty {
                 AppEmptyState(
                     icon: "arrow.up.arrow.down.circle",
-                    title: LumiPluginLocalization.string("No HTTP exchanges", bundle: .module)
+                    title: LumiPluginLocalization.string("No matching HTTP exchanges", bundle: .module)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(records) { record in
+                        ForEach(filteredRecords) { record in
                             recordRow(record)
                                 .onAppear {
-                                    if record.id == records.last?.id {
+                                    if selectedFilter == .all, record.id == records.last?.id {
                                         Task { await loadMoreAsync() }
                                     }
                                 }
@@ -158,6 +195,27 @@ public struct HTTPExchangeSettingsView: View {
             }
         }
         .appSurface(style: .panel, cornerRadius: 0)
+    }
+
+    private var filterTabs: some View {
+        AppTabBar(
+            tabs: LogFilter.allCases.map {
+                AppTabBar.Tab(title: $0.title, id: $0.rawValue)
+            },
+            selectedTab: Binding(
+                get: { selectedFilter.rawValue },
+                set: { newValue in
+                    guard let filter = LogFilter(rawValue: newValue), filter != selectedFilter else { return }
+                    selectedFilter = filter
+                    if !filteredRecords.contains(where: { $0.id == selectedRecordID }) {
+                        selectedRecordID = filteredRecords.first?.id
+                    }
+                }
+            )
+        )
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func recordRow(_ record: HTTPExchangeRecord) -> some View {
@@ -379,20 +437,40 @@ public struct HTTPExchangeSettingsView: View {
         }
         await Task.yield()
 
-        let loadedRecords = store.fetchPage(limit: pageSize)
-        let total = store.count()
+        let loadedRecords: [HTTPExchangeRecord]
+        let total: Int
+        if selectedFilter == .all {
+            loadedRecords = store.fetchPage(limit: pageSize)
+            total = store.count()
+        } else {
+            let matchingRecords = store.fetchAll().filter { record in
+                switch selectedFilter {
+                case .all:
+                    return true
+                case .normal:
+                    guard let statusCode = record.responseStatusCode else { return false }
+                    return (200..<300).contains(statusCode)
+                case .abnormal:
+                    guard let statusCode = record.responseStatusCode else { return true }
+                    return !(200..<300).contains(statusCode)
+                }
+            }
+            loadedRecords = matchingRecords
+            total = matchingRecords.count
+        }
         let series = store.fetchDailyCountSeries()
         records = loadedRecords
         totalRecordCount = total
         dailyCountSeries = series
-        hasMoreRecords = loadedRecords.count == pageSize
-        if selectedRecordID == nil || !records.contains(where: { $0.id == selectedRecordID }) {
-            selectedRecordID = records.first?.id
+        hasMoreRecords = selectedFilter == .all && loadedRecords.count == pageSize
+        if selectedRecordID == nil || !filteredRecords.contains(where: { $0.id == selectedRecordID }) {
+            selectedRecordID = filteredRecords.first?.id
         }
     }
 
     private func loadMoreAsync() async {
-        guard !isLoading,
+        guard selectedFilter == .all,
+              !isLoading,
               !isLoadingMore,
               hasMoreRecords,
               let last = records.last else { return }
