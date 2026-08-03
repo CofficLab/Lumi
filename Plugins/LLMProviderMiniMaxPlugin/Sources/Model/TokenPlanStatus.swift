@@ -85,36 +85,27 @@ struct TokenPlanData: Sendable {
 
     /// 状态栏显示文本
     ///
-    /// 格式: "普通模型83% · 普通模型周额度98% · 视频模型当天剩余2次"
+    /// 格式: "81% · 98% · 2"（普通模型时段剩余% · 普通模型周额度剩余% · 视频模型当天剩余次数）
     static func statusBarText(from plans: [TokenPlanData]) -> String {
         // 按模型类型分组
         let generalPlans = plans.filter { $0.isGeneralModel }
         let videoPlans = plans.filter { $0.isVideoModel }
 
-        // 获取普通模型的时段剩余百分比（5小时窗口）。
-        // 状态栏应显示与详情面板一致的剩余百分比，而不是剩余时间。
-        var generalIntervalText = ""
+        var parts: [String] = []
+
+        // 普通模型：时段剩余百分比 + 周额度剩余百分比
         if let general = generalPlans.first {
-            generalIntervalText = "普通模型\(general.remainingPercent)%"
+            parts.append("\(general.remainingPercent)%")
+            parts.append("\(general.weeklyRemainingPercent)%")
         }
 
-        // 获取普通模型的周额度
-        var generalWeeklyText = ""
-        if let general = generalPlans.first {
-            generalWeeklyText = "普通模型周额度\(general.weeklyRemainingPercent)%"
-        }
-
-        // 获取视频模型的当天剩余次数
-        var videoIntervalText = ""
+        // 视频模型：当天剩余次数
         if let video = videoPlans.first {
             let remainingCount = max(0, video.intervalTotal - video.intervalUsage)
-            videoIntervalText = "视频模型当天剩余\(remainingCount)次"
+            parts.append("\(remainingCount)")
         }
 
-        // 组合显示
-        return [generalIntervalText, generalWeeklyText, videoIntervalText]
-            .filter { !$0.isEmpty }
-            .joined(separator: " · ")
+        return parts.joined(separator: " · ")
     }
 
     // MARK: - Derived
