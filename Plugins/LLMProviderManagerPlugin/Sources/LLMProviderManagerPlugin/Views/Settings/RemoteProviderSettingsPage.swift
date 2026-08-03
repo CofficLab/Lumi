@@ -3,12 +3,14 @@ import AppKit
 import LumiKernel
 import LumiUI
 import SwiftUI
+import LocalizationKit
 
 /// 远程（云端）供应商设置页面
 ///
 /// 展示非本地供应商列表，支持搜索、API Key 管理和模型查看。
 struct RemoteProviderSettingsPage: View {
     @LumiTheme private var theme
+    @Environment(\.locale) private var locale
     let kernel: LumiKernel
 
     @State private var selectedProviderID: String = ""
@@ -38,7 +40,7 @@ struct RemoteProviderSettingsPage: View {
     var body: some View {
         ProviderSettingsPage(
             kernel: kernel,
-            title: "Cloud Providers",
+            title: LumiPluginLocalization.string("Cloud Providers", bundle: .module, locale: locale),
             systemIcon: "cloud.fill",
             localizedProvidersKey: "%lld cloud providers",
             isLocalProvider: { !$0.isLocal },
@@ -71,7 +73,12 @@ struct RemoteProviderSettingsPage: View {
         .onAppear {
             loadAPIKey()
             loadProviderUsage()
-            reloadStats()
+            Task { @MainActor in
+                // Defer the conversation-wide statistics aggregation until after
+                // the provider settings page has rendered its loading state.
+                await Task.yield()
+                reloadStats()
+            }
         }
     }
 

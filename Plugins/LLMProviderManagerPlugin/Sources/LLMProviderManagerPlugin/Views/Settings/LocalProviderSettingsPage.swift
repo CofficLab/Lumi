@@ -2,12 +2,14 @@ import Foundation
 import LumiKernel
 import LumiUI
 import SwiftUI
+import LocalizationKit
 
 /// 本地供应商设置页面
 ///
 /// 展示本地运行的供应商列表，支持搜索和模型查看（无需 API Key）。
 struct LocalProviderSettingsPage: View {
     @LumiTheme private var theme
+    @Environment(\.locale) private var locale
     let kernel: LumiKernel
 
     @State private var selectedProviderID: String = ""
@@ -28,7 +30,7 @@ struct LocalProviderSettingsPage: View {
     var body: some View {
         ProviderSettingsPage(
             kernel: kernel,
-            title: "Local Providers",
+            title: LumiPluginLocalization.string("Local Providers", bundle: .module, locale: locale),
             systemIcon: "desktopcomputer",
             localizedProvidersKey: "%lld local providers",
             isLocalProvider: { $0.isLocal },
@@ -45,7 +47,12 @@ struct LocalProviderSettingsPage: View {
             }
         }
         .onAppear {
-            reloadStats()
+            Task { @MainActor in
+                // Defer the conversation-wide statistics aggregation until after
+                // the provider settings page has rendered its loading state.
+                await Task.yield()
+                reloadStats()
+            }
         }
     }
 
