@@ -1,8 +1,9 @@
-// swift-tools-version:5.9
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
     name: "GoalTaskPlugin",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
@@ -11,14 +12,21 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/LumiUI")
     ],
     targets: [
         .target(
             name: "GoalTaskPlugin",
-            dependencies: ["LumiKernel", "SuperLogKit", "LumiUI"],
-            path: "Sources"
+            dependencies: [
+                "LumiKernel",
+                "SuperLogKit",
+                "LumiUI",
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+            ],
+            path: "Sources",
+            resources: [.process("../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "GoalTaskPluginTests",
