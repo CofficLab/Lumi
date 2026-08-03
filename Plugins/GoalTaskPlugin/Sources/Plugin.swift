@@ -21,7 +21,7 @@ public final class Plugin: LumiPlugin, SuperLog {
     public let order = 91
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Goal and task management for multi-step objectives."
 
     /// 共享的 GoalStateManager 实例
