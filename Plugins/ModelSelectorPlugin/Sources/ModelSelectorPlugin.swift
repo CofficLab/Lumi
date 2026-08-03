@@ -5,7 +5,9 @@ import SwiftUI
 @MainActor
 public final class ModelSelectorPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.model-selector"
-    public let name = "Model Selector"
+    public var name: String {
+        LumiPluginLocalization.string("Model Selector", bundle: .module)
+    }
     public let order = 82
     public let policy: LumiPluginPolicy = .alwaysOn
 
