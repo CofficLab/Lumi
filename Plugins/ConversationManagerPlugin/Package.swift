@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "ConversationStorePlugin",
+    name: "ConversationManagerPlugin",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "ConversationStorePlugin", targets: ["ConversationStorePlugin"]),
+        .library(name: "ConversationManagerPlugin", targets: ["ConversationManagerPlugin"]),
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
@@ -15,7 +15,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "ConversationStorePlugin",
+            name: "ConversationManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),

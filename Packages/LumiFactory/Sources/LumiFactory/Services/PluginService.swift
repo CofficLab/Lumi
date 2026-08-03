@@ -28,7 +28,7 @@ import ConversationMessageCountPlugin
 import ConversationContextSizePlugin
 import ConversationNewPlugin
 import ConversationSpeedPlugin
-import ConversationStorePlugin
+import ConversationManagerPlugin
 import ConversationTitlePlugin
 import DatabaseManagerPlugin
 import DeviceInfoPlugin
@@ -184,7 +184,7 @@ public enum PluginService {
             ToolManagerPlugin(),
             ProjectsPlugin(),
             WorkspacePlugin(),
-            ConversationStorePlugin(),
+            ConversationManagerPlugin(),
             MessageManagerPlugin(),
             MessageSenderPlugin(),
             MessageStreamingPlugin(),
