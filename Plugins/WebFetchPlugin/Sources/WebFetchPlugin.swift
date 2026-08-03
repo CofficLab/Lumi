@@ -14,7 +14,9 @@ public final class WebFetchPlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "WebFetch"
-    public let name = "WebFetch"
+    public var name: String {
+        LumiPluginLocalization.string("WebFetch", bundle: .module)
+    }
     public let order = 100
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent

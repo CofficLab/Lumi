@@ -14,7 +14,9 @@ public final class WebSearchPlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "WebSearch"
-    public let name = "WebSearch"
+    public var name: String {
+        LumiPluginLocalization.string("WebSearch", bundle: .module)
+    }
     public let order = 101
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
