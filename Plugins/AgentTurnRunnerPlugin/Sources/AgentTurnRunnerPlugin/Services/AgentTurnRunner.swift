@@ -51,6 +51,53 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
     // MARK: - AgentTurnManaging
 
+    public func createTurn(_ request: AgentTurnCreationRequest) async throws -> AgentTurnHandle {
+        let task = request.task.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !task.isEmpty, let kernel else {
+            throw AgentTurnManagingError.invalidCreationRequest
+        }
+        guard let conversations = kernel.conversations else {
+            throw LumiKernelError.serviceNotAvailable(service: "Conversation")
+        }
+        guard let messageManager = kernel.messageManager else {
+            throw LumiKernelError.serviceNotAvailable(service: "Message")
+        }
+
+        let conversationID = try conversations.createConversation(
+            title: request.title,
+            projectPath: kernel.project?.currentProject?.path,
+            providerID: request.providerID,
+            modelName: request.modelID
+        )
+
+        if let systemPrompt = request.systemPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !systemPrompt.isEmpty {
+            messageManager.insertMessage(
+                LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .system,
+                    content: systemPrompt
+                ),
+                to: conversationID
+            )
+        }
+
+        messageManager.insertMessage(
+            LumiChatMessage(
+                conversationID: conversationID,
+                role: .user,
+                content: task
+            ),
+            to: conversationID
+        )
+
+        _ = try await runTurn(in: conversationID)
+        guard let turnID = currentTurnID(for: conversationID) else {
+            throw AgentTurnManagingError.turnFailed
+        }
+        return AgentTurnHandle(conversationID: conversationID, turnID: turnID)
+    }
+
     public func runTurn(in conversationID: UUID) async throws -> AgentTurnOutcome {
         if Self.verbose {
             Self.logger.info("\(Self.t)runTurn 开始 ➡️ conversationID=\(conversationID.uuidString.prefix(8))…")
@@ -124,6 +171,16 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         in conversationID: UUID,
         request: AgentTurnResumeRequest
     ) async throws -> AgentTurnOutcome {
+        // The suspended tool posts its message-change notification before the
+        // outer runTurn() has removed activeTurnTasks. A user can therefore
+        // answer while that task is still unwinding. Wait for that lifecycle
+        // to finish before starting the resumed turn; otherwise runTurn()
+        // treats the resume as a concurrent turn and returns .cancelled.
+        if let activeTask = activeTurnTasks[conversationID] {
+            await activeTask.value
+            activeTurnTasks.removeValue(forKey: conversationID)
+        }
+
         let suspension = suspensions[conversationID] ?? persistedSuspension(for: conversationID)
         guard let suspension,
               suspension.suspensionID == request.suspensionID,
@@ -289,14 +346,19 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             }
 
             let targetProvider: any LumiLLMProvider
-            if let selectedProviderID = kernel.llmProvider?.selectedProviderID,
-               let selectedProvider = kernel.llmProvider?.llmProvider(id: selectedProviderID) {
+            if let conversationProviderID = kernel.conversations?.providerID(for: conversationID),
+               let conversationProvider = kernel.llmProvider?.llmProvider(id: conversationProviderID) {
+                targetProvider = conversationProvider
+            } else if let selectedProviderID = kernel.llmProvider?.selectedProviderID,
+                      let selectedProvider = kernel.llmProvider?.llmProvider(id: selectedProviderID) {
                 targetProvider = selectedProvider
             } else {
                 targetProvider = provider
             }
 
-            let model = kernel.llmProvider?.selectedModel ?? type(of: targetProvider).info.defaultModel
+            let model = kernel.conversations?.modelName(for: conversationID)
+                ?? kernel.llmProvider?.selectedModel
+                ?? type(of: targetProvider).info.defaultModel
 
             // 抽取最近一条 user message 的图片附件(由 MessageSender 写入 metadata["imageAttachments"])。
             // 实现细节见 LumiKernel.LumiImageAttachmentMetadata.extract。
