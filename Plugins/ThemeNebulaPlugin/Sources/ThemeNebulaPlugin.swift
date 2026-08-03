@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class ThemeNebulaPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.nebula"
-    public let name = "Nebula Theme"
+    public var name: String {
+        LumiPluginLocalization.string("Nebula Theme", bundle: .module)
+    }
     public let order = 122
 	public let policy: LumiPluginPolicy = .alwaysOn
 
