@@ -14,12 +14,16 @@ public final class GitHubPlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "com.coffic.lumi.plugin.github"
-    public let name = "GitHub"
+    public var name: String {
+        LumiPluginLocalization.string("GitHub", bundle: .module)
+    }
     public let order = 16
     public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .beta
-    public let pluginDescription = "GitHub integration for issues, repos, and code search."
+    public var pluginDescription: String {
+        LumiPluginLocalization.string("GitHub integration for issues, repos, and code search.", bundle: .module)
+    }
 
     public init() {}
 

@@ -5,7 +5,9 @@ import SwiftUI
 @MainActor
 public final class FileLogPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.file-log"
-    public let name = "File Log"
+    public var name: String {
+        LumiPluginLocalization.string("File Log", bundle: .module)
+    }
     public let order = 1
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .system }

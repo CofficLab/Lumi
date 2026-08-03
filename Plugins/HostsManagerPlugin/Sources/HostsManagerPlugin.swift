@@ -17,7 +17,9 @@ public final class HostsManagerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.hosts-manager"
-    public let name = "Hosts Manager"
+    public var name: String {
+        LumiPluginLocalization.string("Hosts Manager", bundle: .module)
+    }
     public let order = 21
 	public let policy: LumiPluginPolicy = .disabled
 

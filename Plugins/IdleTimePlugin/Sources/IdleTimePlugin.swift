@@ -5,7 +5,9 @@ import LumiUI
 @MainActor
 public final class IdleTimePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.idle-time"
-    public let name = "Idle Time"
+    public var name: String {
+        LumiPluginLocalization.string("Idle Time", bundle: .module)
+    }
     public let order = 96
     public let policy: LumiPluginPolicy = .alwaysOn
     private var service: IdleTimeService?

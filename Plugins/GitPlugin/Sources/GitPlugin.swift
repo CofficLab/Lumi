@@ -15,7 +15,9 @@ public final class GitPlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "com.coffic.lumi.plugin.git"
-    public let name = "Git"
+    public var name: String {
+        LumiPluginLocalization.string("Git", bundle: .module)
+    }
     public let order = 11
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .development
