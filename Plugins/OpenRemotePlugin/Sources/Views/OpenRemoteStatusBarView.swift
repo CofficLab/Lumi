@@ -28,7 +28,6 @@ public struct OpenRemoteStatusBarView: View, SuperLog {
     @State private var lastResolvedPath: String = ""
 
     public init(project: any ProjectProviding) {
-        Self.logger.info("\(Self.i)statusBarView init, project=\(project.currentProject?.path ?? "nil")")
         self._observer = StateObject(wrappedValue: ProjectPathObserver(project: project))
     }
 
