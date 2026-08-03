@@ -9,7 +9,9 @@ import SwiftUI
 @MainActor
 public final class ConversationMessageCountPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-message-count"
-    public let name = "Conversation Message Count"
+    public var name: String {
+        LumiPluginLocalization.string("Conversation Message Count", bundle: .module)
+    }
     public let order = 84
     public let policy: LumiPluginPolicy = .alwaysOn
 
