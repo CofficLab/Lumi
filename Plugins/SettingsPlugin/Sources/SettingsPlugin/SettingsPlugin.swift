@@ -21,7 +21,9 @@ public final class SettingsPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.settings"
-    public let name = "Settings Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Settings Plugin", bundle: .module)
+    }
     public let order = 1
     public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，优先注册
 
