@@ -223,12 +223,6 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         selectedConversationID = id
         updateCurrentTitle()
         persistSelectedConversationID()
-        notifyConversationsChanged()
-
-        // Touch the conversation to update its timestamp (async)
-        Task {
-            await store?.touchConversation(id: id)
-        }
     }
 
     private func cache(_ summary: LumiConversationSummary) {
@@ -262,7 +256,6 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         selectedConversationID = nil
         updateCurrentTitle()
         persistSelectedConversationID()
-        notifyConversationsChanged()
     }
 
     public func deleteConversation(id: UUID) {
