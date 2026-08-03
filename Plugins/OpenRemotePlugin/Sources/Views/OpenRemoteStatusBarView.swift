@@ -18,7 +18,7 @@ public struct OpenRemoteStatusBarView: View, SuperLog {
         category: "plugin.open-remote.status"
     )
     nonisolated public static let emoji = "🌐"
-    nonisolated public static let verbose = true
+    nonisolated public static let verbose = false
 
     @LumiTheme private var theme: any LumiUITheme
     @StateObject private var observer: ProjectPathObserver
