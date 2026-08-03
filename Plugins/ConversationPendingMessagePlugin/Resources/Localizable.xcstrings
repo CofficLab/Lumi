@@ -1,0 +1,43 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Conversation Pending Messages" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversation Pending Messages"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会话待处理消息"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会话待处理消息"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会话待处理消息"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会话待处理消息"
+          }
+        }
+      }
+    },
+    "待发送消息 %lld" : {
+
+    }
+  },
+  "version" : "1.0"
+}

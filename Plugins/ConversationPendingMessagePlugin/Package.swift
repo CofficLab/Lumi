@@ -10,6 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI")
     ],
     targets: [
@@ -17,9 +18,11 @@ let package = Package(
             name: "ConversationPendingMessagePlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LumiUI", package: "LumiUI")
-            ],
+                .product(name: "LumiUI", package: "LumiUI"),
+                        .product(name: "LocalizationKit", package: "LocalizationKit"),
+],
             path: "Sources"
-        )
+        ,
+            resources: [.process("../Resources/Localizable.xcstrings")])
     ]
 )
