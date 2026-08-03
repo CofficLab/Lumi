@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class VerbosityPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.verbosity"
-    public let name = "Verbosity"
+    public var name: String {
+        LumiPluginLocalization.string("Verbosity", bundle: .module)
+    }
     public let order = 85
     public let policy: LumiPluginPolicy = .alwaysOn
 
