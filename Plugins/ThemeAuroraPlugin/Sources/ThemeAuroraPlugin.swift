@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class ThemeAuroraPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.aurora"
-    public let name = "Aurora Theme"
+    public var name: String {
+        LumiPluginLocalization.string("Aurora Theme", bundle: .module)
+    }
     public let order = 121
     public let policy: LumiPluginPolicy = .alwaysOn
 

@@ -21,7 +21,9 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     /// 是否启用拖放(文件移动)。
     public nonisolated static let dragAndDropEnabled = true
     public let id = "com.coffic.lumi.plugin.project-file-tree"
-    public let name = "Project File Tree"
+    public var name: String {
+        LumiPluginLocalization.string("Project File Tree", bundle: .module)
+    }
     public let order = 0
     public let policy: LumiPluginPolicy = .alwaysOn
 
@@ -29,8 +31,11 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {
         // 通过 Storage service 解析插件目录,供 FileTreeSettings 持久化展开状态。
-        ProjectFileTreePluginRuntimeBridge.pluginDirectory =
-            kernel.storage?.pluginDataDirectory(for: ProjectFileTreePluginRuntimeBridge.pluginName)
+        if let pluginDirectory = kernel.storage?.pluginDataDirectory(
+            for: ProjectFileTreePluginRuntimeBridge.pluginName
+        ) {
+            FileTreeSettings.shared.configure(pluginDirectory: pluginDirectory)
+        }
     }
 
     public func onReady(kernel: LumiKernel) async throws {}

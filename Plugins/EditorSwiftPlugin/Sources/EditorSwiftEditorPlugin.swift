@@ -11,7 +11,9 @@ public enum SwiftPluginLog {
 @MainActor
 public final class EditorSwiftEditorPlugin: EditorPlugin {
     public let id = "EditorSwift.language"
-    public let name = "Swift Language Support"
+    public var name: String {
+        LumiPluginLocalization.string("Swift Language Support", bundle: .module)
+    }
     public let order = 4
 
     public init() {}

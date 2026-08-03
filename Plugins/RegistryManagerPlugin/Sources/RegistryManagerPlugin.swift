@@ -17,7 +17,9 @@ public final class RegistryManagerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.registry-manager"
-    public let name = "Registry Manager"
+    public var name: String {
+        LumiPluginLocalization.string("Registry Manager", bundle: .module)
+    }
     public let order = 80
 	public let policy: LumiPluginPolicy = .disabled
 

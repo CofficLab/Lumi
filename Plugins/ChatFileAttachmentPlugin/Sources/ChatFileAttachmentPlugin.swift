@@ -16,7 +16,9 @@ import SwiftUI
 @MainActor
 public final class ChatFileAttachmentPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.chat-file-attachment"
-    public let name = "Chat File Attachment"
+    public var name: String {
+        LumiPluginLocalization.string("Chat File Attachment", bundle: .module)
+    }
     public let order = 81
     public let policy: LumiPluginPolicy = .alwaysOn
 

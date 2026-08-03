@@ -17,7 +17,9 @@ public final class QuickLauncherPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.quick-launcher"
-    public let name = "Quick Launcher"
+    public var name: String {
+        LumiPluginLocalization.string("Quick Launcher", bundle: .module)
+    }
     public let order = 8
 	public let policy: LumiPluginPolicy = .disabled
 

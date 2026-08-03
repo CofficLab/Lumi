@@ -17,7 +17,8 @@ public final class CADDesignerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.cad-designer"
-    public let name = "CAD Designer"
+    public var name: String { CADDesignerLocalization.string("CAD Designer") }
+    public var pluginDescription: String { CADDesignerLocalization.string("Design aluminum profile frames with 3D preview, BOM, and cut optimization.") }
     public let order = 80
     public let policy: LumiPluginPolicy = .optIn
 

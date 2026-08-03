@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class ThemeVscodePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.vscode"
-    public let name = "VS Code Theme"
+    public var name: String {
+        LumiPluginLocalization.string("VS Code Theme", bundle: .module)
+    }
     public let order = 129
     public let policy: LumiPluginPolicy = .alwaysOn
 

@@ -5,7 +5,9 @@ import LumiUI
 @MainActor
 public final class EditorChatPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-chat"
-    public let name = "Editor Chat"
+    public var name: String {
+        LumiPluginLocalization.string("Editor Chat", bundle: .module)
+    }
     public let order = 6
 	public let policy: LumiPluginPolicy = .disabled
 

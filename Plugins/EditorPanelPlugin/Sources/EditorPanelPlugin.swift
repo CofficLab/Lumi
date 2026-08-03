@@ -1,4 +1,5 @@
 import LumiKernel
+import LocalizationKit
 import LumiUI
 import os
 import SwiftUI
@@ -17,13 +18,15 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "LumiEditor"
-    public let name = "Code Editor"
+    public var name: String {
+        LumiPluginLocalization.string("Code Editor", bundle: .module)
+    }
     public let order = 277
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .development
     public let stage: LumiPluginStage = .beta
     public var pluginDescription: String {
-        "Display the content of the current project file."
+        LumiPluginLocalization.string("Display the content of the current project file.", bundle: .module)
     }
 
     public init() {}
@@ -49,9 +52,9 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
-                Text(name)
+                Text(LumiPluginLocalization.string("Code Editor", bundle: .module))
                     .font(.title2.weight(.semibold))
-                Text(pluginDescription)
+                Text(LumiPluginLocalization.string("Display the content of the current project file.", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }

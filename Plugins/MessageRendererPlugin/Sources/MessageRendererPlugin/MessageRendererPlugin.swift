@@ -7,7 +7,9 @@ public final class MessageRendererPlugin: LumiPlugin {
     public nonisolated static let baseOrder: Int = 10
 
     public let id = "CoreMessageRenderer"
-    public let name = "核心消息渲染器"
+    public var name: String {
+        LumiPluginLocalization.string("核心消息渲染器", bundle: .module)
+    }
     public let order = 10
     public let policy: LumiPluginPolicy = .alwaysOn
 

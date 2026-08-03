@@ -14,11 +14,13 @@ public final class ShowImagePlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "ShowImage"
-    public let name = "ShowImage"
+    public var name: String {
+        LumiPluginLocalization.string("ShowImage", bundle: .module)
+    }
     public let order = 97
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Display images in the conversation for visual content."
 
     public init() {}

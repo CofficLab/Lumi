@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class EditorOutlinePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-rail-outline"
-    public let name = "Editor Outline"
+    public var name: String {
+        LumiPluginLocalization.string("Editor Outline", bundle: .module)
+    }
     public let order = 1
 	public let policy: LumiPluginPolicy = .disabled
 

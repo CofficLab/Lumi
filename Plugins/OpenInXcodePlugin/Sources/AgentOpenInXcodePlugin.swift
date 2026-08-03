@@ -10,10 +10,12 @@ import SwiftUI
 @MainActor
 public final class AgentOpenInXcodePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-xcode"
-    public let name = "Open in Xcode"
+    public var name: String {
+        LumiPluginLocalization.string("Open in Xcode", bundle: .module)
+    }
     public let order = 95
     public let category: LumiPluginCategory = .open
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 
@@ -38,9 +40,9 @@ public final class AgentOpenInXcodePlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
-                Text(name)
+                Text(LumiPluginLocalization.string("Open in Xcode", bundle: .module))
                     .font(.title2.weight(.semibold))
-                Text("Displays a button in the header to open the current project in Xcode")
+                Text(LumiPluginLocalization.string("Displays a button in the header to open the current project in Xcode", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }

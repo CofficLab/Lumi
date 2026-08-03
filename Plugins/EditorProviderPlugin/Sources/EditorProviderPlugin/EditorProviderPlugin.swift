@@ -20,7 +20,9 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.editor-provider"
-    public let name = "Editor Provider Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Editor Provider Plugin", bundle: .module)
+    }
     public let order = 1
     public let policy: LumiPluginPolicy = .alwaysOn
 

@@ -9,6 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -19,7 +20,10 @@ let package = Package(
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
-            ]
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+            ],
+            path: ".",
+            resources: [.process("Resources/Localizable.xcstrings")]
         ),
     ]
 )

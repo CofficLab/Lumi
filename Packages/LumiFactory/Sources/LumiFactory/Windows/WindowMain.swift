@@ -89,10 +89,21 @@ public struct WindowMain: View, SuperLog {
     @ViewBuilder
     private func applyRootOverlays<V: View>(_ content: V, kernel: LumiKernel) -> some View {
         let overlays = kernel.workspace?.allRootOverlays ?? []
+        let onboardingPages = (kernel.onboarding?.allOnboardingPages ?? [])
+            .sorted { lhs, rhs in
+                if lhs.order != rhs.order { return lhs.order < rhs.order }
+                return false
+            }
+            .map { page in
+                OnboardingPageView(order: page.order, view: page.makeView())
+            }
+        let contentWithEnvironment = content
+            .environment(\.onboardingPages, onboardingPages)
+
         if overlays.isEmpty {
-            content
+            contentWithEnvironment
         } else {
-            overlays.reduce(AnyView(content)) { acc, item in
+            overlays.reduce(AnyView(contentWithEnvironment)) { acc, item in
                 item.apply(to: acc)
             }
         }

@@ -13,7 +13,9 @@ public final class DockerManagerPlugin: LumiPlugin {
     nonisolated public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.docker-manager"
-    public let name = "Docker"
+    public var name: String {
+        LumiPluginLocalization.string("Docker", bundle: .module)
+    }
     public let order = 50
 	public let policy: LumiPluginPolicy = .disabled
     public var category: LumiPluginCategory = .development

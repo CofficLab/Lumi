@@ -7,7 +7,9 @@ import LumiUI
 @MainActor
 public final class FreeModelPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.freemodel"
-    public let name = "FreeModel"
+    public var name: String {
+        LumiPluginLocalization.string("FreeModel", bundle: .module)
+    }
     public let order = 95
 	public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

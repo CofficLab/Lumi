@@ -5,11 +5,13 @@ import LumiUI
 @MainActor
 public final class AgentRulesPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.agent-rules"
-    public let name = "Agent Rules"
+    public var name: String {
+        LumiPluginLocalization.string("Agent Rules", bundle: .module)
+    }
     public let order = 50
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .general
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Manage rule documents in .agent/rules directory."
 
     public init() {}

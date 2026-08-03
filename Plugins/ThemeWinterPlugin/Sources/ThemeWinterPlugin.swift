@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class ThemeWinterPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.winter"
-    public let name = "Winter Theme"
+    public var name: String {
+        LumiPluginLocalization.string("Winter Theme", bundle: .module)
+    }
     public let order = 127
     public let policy: LumiPluginPolicy = .alwaysOn
 

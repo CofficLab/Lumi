@@ -1,8 +1,9 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
     name: "WorkspacePlugin",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "WorkspacePlugin", targets: ["WorkspacePlugin"]),
@@ -19,7 +20,9 @@ let package = Package(
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
-            ]
+            ],
+            path: "Sources",
+            resources: [.process("../Resources/Localizable.xcstrings")]
         ),
     ]
 )

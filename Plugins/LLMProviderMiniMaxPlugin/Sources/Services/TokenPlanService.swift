@@ -138,12 +138,15 @@ enum TokenPlanService: SuperLog {
             )
         }
 
-        guard let bestPlan = plans.min(by: { $0.remainingPercent < $1.remainingPercent }) else {
+        guard !plans.isEmpty else {
             if Self.verbose { Self.logger.error("\(Self.t)model_remains 解析为空，返回配额不可用 rawCount=\(modelRemains.count)") }
             return .unavailable
         }
 
-        if Self.verbose { Self.logger.info("\(Self.t)查询成功 模型=\(bestPlan.modelName) 剩余=\(bestPlan.remainingPercent)% 本周=\(bestPlan.weeklyRemainingPercent)%") }
-        return .success(bestPlan)
+        if Self.verbose { 
+            let modelNames = plans.map { $0.modelName }.joined(separator: ", ")
+            Self.logger.info("\(Self.t)查询成功 模型数量=\(plans.count) 模型列表=\(modelNames)") 
+        }
+        return .success(plans)
     }
 }

@@ -16,7 +16,9 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.tool-manager"
-    public let name = "ToolManager Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("ToolManager Plugin", bundle: .module)
+    }
     public let order = 30
     public let policy: LumiPluginPolicy = .alwaysOn
 

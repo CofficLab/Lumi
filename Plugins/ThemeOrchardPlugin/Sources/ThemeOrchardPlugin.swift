@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class ThemeOrchardPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.orchard"
-    public let name = "Orchard Theme"
+    public var name: String {
+        LumiPluginLocalization.string("Orchard Theme", bundle: .module)
+    }
     public let order = 128
 	public let policy: LumiPluginPolicy = .alwaysOn
 

@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class ThemeMidnightPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.midnight"
-    public let name = "Midnight Theme"
+    public var name: String {
+        LumiPluginLocalization.string("Midnight Theme", bundle: .module)
+    }
     public let order = 120
 	public let policy: LumiPluginPolicy = .alwaysOn
 

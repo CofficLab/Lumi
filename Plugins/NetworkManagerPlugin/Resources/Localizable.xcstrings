@@ -138,6 +138,22 @@
         }
       }
     },
+    "Abnormal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abnormal"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "异常"
+          }
+        }
+      }
+    },
     "Active Only" : {
       "localizations" : {
         "en" : {
@@ -168,6 +184,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "仅活动"
+          }
+        }
+      }
+    },
+    "All" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部"
           }
         }
       }
@@ -349,6 +381,7 @@
       }
     },
     "Download Body" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1207,6 +1240,7 @@
       }
     },
     "No body data to save." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1241,6 +1275,7 @@
       }
     },
     "No HTTP exchanges" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1275,7 +1310,6 @@
       }
     },
     "No matching HTTP exchanges" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1286,25 +1320,23 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无匹配的 HTTP 交换记录"
+            "value" : "没有匹配的 HTTP 日志"
           }
-        },
-        "zh-Hant" : {
+        }
+      }
+    },
+    "Normal" : {
+      "localizations" : {
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無符合的 HTTP 交換記錄"
+            "value" : "Normal"
           }
         },
-        "zh-HK" : {
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無符合的 HTTP 交換記錄"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無符合的 HTTP 交換記錄"
+            "value" : "正常"
           }
         }
       }
@@ -2273,6 +2305,7 @@
       }
     },
     "Size" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2477,6 +2510,7 @@
       }
     },
     "Type" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

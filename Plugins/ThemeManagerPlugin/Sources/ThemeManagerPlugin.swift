@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class ThemeManagerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme-manager"
-    public let name = "Theme Manager"
+    public var name: String {
+        LumiPluginLocalization.string("Theme Manager", bundle: .module)
+    }
     public let order = 22
     public let policy: LumiPluginPolicy = .alwaysOn
 

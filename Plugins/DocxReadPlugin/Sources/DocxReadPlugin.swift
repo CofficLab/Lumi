@@ -7,7 +7,9 @@ public final class DocxReadPlugin: LumiPlugin {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docx-read")
 
     public let id = "com.coffic.lumi.plugin.docx-read"
-    public let name = "Docx Read"
+    public var name: String {
+        LumiPluginLocalization.string("Docx Read", bundle: .module)
+    }
     public let order = 90
     public let policy: LumiPluginPolicy = .alwaysOn
 

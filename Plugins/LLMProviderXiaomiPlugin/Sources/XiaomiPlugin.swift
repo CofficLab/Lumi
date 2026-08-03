@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class XiaomiPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.xiaomi"
-    public let name = "Xiaomi"
+    public var name: String {
+        LumiPluginLocalization.string("Xiaomi", bundle: .module)
+    }
     public let order = 102
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

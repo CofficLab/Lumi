@@ -12,9 +12,14 @@ public final class SkillPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = os.Logger(subsystem: "com.coffic.lumi", category: "plugin.skill")
 
     public let id = "com.coffic.lumi.plugin.skill"
-    public let name = "Skills"
+    public var name: String {
+        LumiPluginLocalization.string("Skills", bundle: .module)
+    }
     public let order = 51
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let category: LumiPluginCategory = .general
+    public let stage: LumiPluginStage = .beta
+    public let pluginDescription = "Manage skills in .agent/skills directory."
 
     public init() {}
 
@@ -87,7 +92,18 @@ public final class SkillPlugin: LumiPlugin, SuperLog {
     public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
+    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        [
+            SettingsTabItem(
+                id: "\(id).settings",
+                title: LumiPluginLocalization.string("Skills", bundle: .module),
+                systemImage: "sparkles",
+                order: order
+            ) {
+                SkillSettingsView(projectProvider: kernel.project)
+            },
+        ]
+    }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }

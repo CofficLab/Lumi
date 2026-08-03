@@ -17,13 +17,15 @@ public final class CommandPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.command"
-    public let name = "Command Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Command Plugin", bundle: .module)
+    }
     public let order = 15
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件，优先注册
 
     // MARK: - State
 
-    private var commandService: DefaultCommandProviding?
+    private var commandService: CommandManager?
 
     // MARK: - Initialization
 

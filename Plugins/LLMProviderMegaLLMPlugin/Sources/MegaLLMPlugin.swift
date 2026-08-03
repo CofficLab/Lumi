@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class MegaLLMPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.megallm"
-    public let name = "MegaLLM"
+    public var name: String {
+        LumiPluginLocalization.string("MegaLLM", bundle: .module)
+    }
     public let order = 99
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

@@ -11,7 +11,9 @@ public final class EditorPreviewPlugin: LumiPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-preview")
 
     public let id = "EditorPreview"
-    public let name = "Inline Preview"
+    public var name: String {
+        LumiPluginLocalization.string("Inline Preview", bundle: .module)
+    }
     public let order = 84
 	public let policy: LumiPluginPolicy = .disabled
 

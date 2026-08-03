@@ -7,7 +7,9 @@ import LumiUI
 @MainActor
 public final class MLXLumiPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.mlx"
-    public let name = "MLX"
+    public var name: String {
+        LumiPluginLocalization.string("MLX", bundle: .module)
+    }
     public let order = 310
     public let policy: LumiPluginPolicy = .alwaysOn
 

@@ -17,9 +17,10 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.disk-manager"
-    public let name = "Disk Manager"
+    public var name: String { PluginDiskManagerLocalization.string("Disk Manager") }
+    public var pluginDescription: String { PluginDiskManagerLocalization.string("Disk space analysis and large file cleaning") }
     public let order = 250
-	public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     // MARK: - Initialization
 

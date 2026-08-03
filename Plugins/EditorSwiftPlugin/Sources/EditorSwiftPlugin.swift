@@ -1,15 +1,20 @@
 import SwiftUI
 import LumiKernel
+import LocalizationKit
 
 @MainActor
 public final class EditorSwiftPlugin: LumiPlugin {
     public let id = "EditorSwift"
-    public let name = "Swift Editor"
+    public var name: String {
+        LumiPluginLocalization.string("Swift Editor", bundle: .module)
+    }
     public let order = 4
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .development
     public let stage: LumiPluginStage = .beta
-    public let pluginDescription = "Provides Swift language support and tree-sitter highlighting."
+    public var pluginDescription: String {
+        LumiPluginLocalization.string("Provides Swift language support and tree-sitter highlighting.", bundle: .module)
+    }
 
     public init() {}
 

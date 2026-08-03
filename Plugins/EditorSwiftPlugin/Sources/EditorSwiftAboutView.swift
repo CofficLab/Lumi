@@ -1,3 +1,4 @@
+import LocalizationKit
 import LumiUI
 import SwiftUI
 import LumiKernel
@@ -6,6 +7,7 @@ import LumiKernel
 /// Introduces the plugin's Swift language support and tree-sitter highlighting capabilities.
 struct EditorSwiftAboutView: View {
     @LumiTheme private var theme
+    @Environment(\.locale) private var locale
 
     var body: some View {
         ScrollView {
@@ -13,76 +15,80 @@ struct EditorSwiftAboutView: View {
                 // Feature Highlights
                 FeatureHighlight(
                     icon: "swift",
-                    title: String(localized: "Swift Language Support"),
-                    description: String(localized: "Provides comprehensive Swift language support including syntax highlighting, keyword hovers, and semantic analysis.")
+                    title: L("Swift Language Support"),
+                    description: L("Provides comprehensive Swift language support including syntax highlighting, keyword hovers, and semantic analysis.")
                 )
 
                 FeatureHighlight(
                     icon: "textformat.abc",
-                    title: String(localized: "Tree-sitter Integration"),
-                    description: String(localized: "Uses tree-sitter for robust and fast syntax parsing, enabling accurate code structure understanding.")
+                    title: L("Tree-sitter Integration"),
+                    description: L("Uses tree-sitter for robust and fast syntax parsing, enabling accurate code structure understanding.")
                 )
 
                 FeatureHighlight(
                     icon: "xcode",
-                    title: String(localized: "Xcode Project Status"),
-                    description: String(localized: "Displays current Xcode project, scheme, and build configuration in the status bar for quick reference.")
+                    title: L("Xcode Project Status"),
+                    description: L("Displays current Xcode project, scheme, and build configuration in the status bar for quick reference.")
                 )
 
                 FeatureHighlight(
                     icon: "hammer.fill",
-                    title: String(localized: "Swift Build Integration"),
-                    description: String(localized: "Run Swift builds directly from Lumi with real-time build output and error navigation.")
+                    title: L("Swift Build Integration"),
+                    description: L("Run Swift builds directly from Lumi with real-time build output and error navigation.")
                 )
 
                 FeatureHighlight(
                     icon: "plus.circle.fill",
-                    title: String(localized: "Smart Completions"),
-                    description: String(localized: "Context-aware completions for Swift primitive types, keywords, and project symbols.")
+                    title: L("Smart Completions"),
+                    description: L("Context-aware completions for Swift primitive types, keywords, and project symbols.")
                 )
 
                 FeatureHighlight(
                     icon: "arrow.right.circle.fill",
-                    title: String(localized: "Code Actions"),
-                    description: String(localized: "Quick actions for Swift code selection, including run actions and context-specific operations.")
+                    title: L("Code Actions"),
+                    description: L("Quick actions for Swift code selection, including run actions and context-specific operations.")
                 )
 
                 // Supported Features
                 SupportedFeaturesCard(
-                    title: String(localized: "Supported Features"),
+                    title: L("Supported Features"),
                     features: [
-                        ("Syntax Highlighting", String(localized: "Full Swift syntax coloring")),
-                        ("Keyword Hovers", String(localized: "Documentation on hover")),
-                        ("Code Completions", String(localized: "Type-aware suggestions")),
-                        ("Build Status", String(localized: "Real-time build feedback")),
-                        ("Error Navigation", String(localized: "Jump to diagnostics")),
-                        ("Package Support", String(localized: "Swift Package Manager integration"))
+                        (L("Syntax Highlighting"), L("Full Swift syntax coloring")),
+                        (L("Keyword Hovers"), L("Documentation on hover")),
+                        (L("Code Completions"), L("Type-aware suggestions")),
+                        (L("Build Status"), L("Real-time build feedback")),
+                        (L("Error Navigation"), L("Jump to diagnostics")),
+                        (L("Package Support"), L("Swift Package Manager integration"))
                     ]
                 )
 
                 // How It Works
                 HowItWorksCard(
-                    title: String(localized: "How It Works"),
+                    title: L("How It Works"),
                     steps: [
-                        String(localized: "Parses Swift files using tree-sitter grammar"),
-                        String(localized: "Provides syntax highlighting and hovers"),
-                        String(localized: "Integrates with Xcode build system"),
-                        String(localized: "Displays project context in status bar")
+                        L("Parses Swift files using tree-sitter grammar"),
+                        L("Provides syntax highlighting and hovers"),
+                        L("Integrates with Xcode build system"),
+                        L("Displays project context in status bar")
                     ]
                 )
 
                 // Requirements
                 RequirementsCard(
-                    title: String(localized: "Requirements"),
+                    title: L("Requirements"),
                     items: [
-                        String(localized: "macOS 14.0 or later"),
-                        String(localized: "Xcode 15.0 or later (for build integration)"),
-                        String(localized: "Swift 5.9 or later")
+                        L("macOS 14.0 or later"),
+                        L("Xcode 15.0 or later (for build integration)"),
+                        L("Swift 5.9 or later")
                     ]
                 )
             }
             .padding()
         }
+    }
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
     }
 }
 

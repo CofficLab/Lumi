@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class EditorReferencesPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-references"
-    public let name = "Editor References"
+    public var name: String {
+        LumiPluginLocalization.string("Editor References", bundle: .module)
+    }
     public let order = 3
 	public let policy: LumiPluginPolicy = .disabled
 

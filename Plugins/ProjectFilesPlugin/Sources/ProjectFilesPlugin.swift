@@ -5,7 +5,9 @@ import SwiftUI
 @MainActor
 public final class ProjectFilesPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.project-files"
-    public let name = "Project Files"
+    public var name: String {
+        LumiPluginLocalization.string("Project Files", bundle: .module)
+    }
     public let order = 70
     public let policy: LumiPluginPolicy = .alwaysOn
 

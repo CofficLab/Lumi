@@ -17,7 +17,9 @@ public final class LogoPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.logo"
-    public let name = "Logo Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Logo Plugin", bundle: .module)
+    }
     public let order = 21
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件，优先注册
 

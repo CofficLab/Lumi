@@ -1,0 +1,83 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "[%@]" : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "⚠️ %@" : {
+
+    },
+    "Collapse" : {
+
+    },
+    "Expand" : {
+
+    },
+    "Goal" : {
+
+    },
+    "Goal & Tasks" : {
+
+    },
+    "Goal description" : {
+
+    },
+    "Goals" : {
+
+    },
+    "GoalTask" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GoalTask"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目标任务"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目标任务"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目标任务"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目标任务"
+          }
+        }
+      }
+    },
+    "No goals yet" : {
+
+    },
+    "Refresh" : {
+
+    }
+  },
+  "version" : "1.0"
+}

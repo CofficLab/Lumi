@@ -12,7 +12,9 @@ public final class WorkspacePlugin: LumiPlugin, SuperLog {
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.layout"
-    public let name = "Layout Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Layout Plugin", bundle: .module)
+    }
     public let order = 40
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
 

@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class LPgptPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.lpgpt"
-    public let name = "LPgpt"
+    public var name: String {
+        LumiPluginLocalization.string("LPgpt", bundle: .module)
+    }
     public let order = 98
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

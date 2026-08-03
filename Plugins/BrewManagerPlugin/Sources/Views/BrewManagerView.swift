@@ -93,7 +93,7 @@ struct BrewManagerView: View {
                             if !viewModel.outdatedPackages.isEmpty {
                                 HStack {
                                     Spacer()
-                                    AppButton(LocalizedStringKey("Update All"), style: .primary, fillsWidth: true, action: { Task { await viewModel.upgradeAll() } })
+                                    AppButton(LumiPluginLocalization.string("Update All", bundle: .module), style: .primary, fillsWidth: true, action: { Task { await viewModel.upgradeAll() } })
                                     .padding()
                                 }
                             }
@@ -113,9 +113,9 @@ struct BrewManagerView: View {
                             AppCard(padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
                                 HStack {
                                     GlassTextField(
-                                        title: LocalizedStringKey("Search"),
+                                        title: LumiPluginLocalization.string("Search", bundle: .module),
                                         text: $viewModel.searchText,
-                                        placeholder: LocalizedStringKey("Search Homebrew packages...")
+                                        placeholder: LumiPluginLocalization.string("Search Homebrew packages...", bundle: .module)
                                     )
                                     .onSubmit {
                                         viewModel.performSearch()
@@ -230,7 +230,7 @@ struct BrewPackageRow: View {
 
                         if showInstalledStatus {
                             if package.installedVersion != nil {
-                                Text("Installed", tableName: "BrewManager")
+                                Text(LumiPluginLocalization.string("Installed", bundle: .module))
                                     .font(.caption)
                                     .foregroundStyle(LinearGradient(colors: [Color(hex: "00D4FF"), Color(hex: "7C6FFF")], startPoint: .leading, endPoint: .trailing))
                             }
@@ -264,7 +264,7 @@ struct BrewPackageRow: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(Color(hex: "30D158"))
                 } else {
-                    AppButton(LocalizedStringKey(actionButtonTitle), style: .secondary, size: .small, action: action)
+                    AppButton(actionButtonTitle, style: .secondary, size: .small, action: action)
                         .foregroundColor(actionButtonColor)
                 }
             }

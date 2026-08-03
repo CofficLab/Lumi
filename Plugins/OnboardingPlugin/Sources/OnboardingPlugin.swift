@@ -1,10 +1,12 @@
-import SwiftUI
 import LumiKernel
+import SwiftUI
 
 @MainActor
 public final class OnboardingPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.onboarding"
-    public let name = "Onboarding"
+    public var name: String {
+        LumiPluginLocalization.string("Onboarding", bundle: .module)
+    }
     public let order = 10
     public let policy: LumiPluginPolicy = .alwaysOn
 
@@ -21,8 +23,8 @@ public final class OnboardingPlugin: LumiPlugin {
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] {
         [
             OnboardingPageItem(id: "onboarding-welcome") {
-                OnboardingWelcomePage()
-            }
+                PluginManagementPage()
+            },
         ]
     }
 
@@ -32,13 +34,11 @@ public final class OnboardingPlugin: LumiPlugin {
                 id: "onboarding-root-overlay",
                 order: 10,
                 wrap: { content in
-                    AnyView(OnboardingRootOverlay(content: content))
+                    AnyView(RootOverlay(content: content))
                 }
-            )
+            ),
         ]
     }
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

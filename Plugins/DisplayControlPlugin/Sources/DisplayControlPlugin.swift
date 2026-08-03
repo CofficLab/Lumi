@@ -14,9 +14,11 @@ public final class DisplayControlPlugin: LumiPlugin, SuperLog {
     static let verbose: Bool = false
 
     public let id = "com.coffic.lumi.plugin.display-control"
-    public let name = "Display Control"
+    public var name: String {
+        LumiPluginLocalization.string("Display Control", bundle: .module)
+    }
     public let order = 210
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 

@@ -10,7 +10,9 @@ public final class EditorPreviewBottomPanelPlugin: LumiPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-preview-bottom-panel")
 
     public let id = "com.coffic.lumi.plugin.editor-bottom-preview"
-    public let name = "Editor Preview"
+    public var name: String {
+        LumiPluginLocalization.string("Editor Preview", bundle: .module)
+    }
     public let order = 84
 	public let policy: LumiPluginPolicy = .alwaysOn
 

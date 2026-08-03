@@ -11,9 +11,11 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "DatabaseManagerPlugin")
 
     public let id = "com.coffic.lumi.plugin.database-manager"
-    public let name = "Database"
+    public var name: String {
+        LumiPluginLocalization.string("Database", bundle: .module)
+    }
     public let order = 750
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 

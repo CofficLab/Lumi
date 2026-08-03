@@ -15,9 +15,11 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     nonisolated public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.menubar-manager"
-    public let name = "Menu Bar Manager"
+    public var name: String {
+        LumiPluginLocalization.string("Menu Bar Manager", bundle: .module)
+    }
     public let order = 300
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
 
     private weak var kernel: LumiKernel?
     private(set) public var isMenuBarPresented: Bool = false

@@ -5,7 +5,9 @@ import SwiftUI
 @MainActor
 public final class DeepSeekPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.deepseek"
-    public let name = "DeepSeek"
+    public var name: String {
+        LumiPluginLocalization.string("DeepSeek", bundle: .module)
+    }
     public let order = 92
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

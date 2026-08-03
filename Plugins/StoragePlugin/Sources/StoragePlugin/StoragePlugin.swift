@@ -16,7 +16,9 @@ public final class StoragePlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.storage"
-    public let name = "Storage Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Storage Plugin", bundle: .module)
+    }
     public let order = 10
     public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，最先加载
 

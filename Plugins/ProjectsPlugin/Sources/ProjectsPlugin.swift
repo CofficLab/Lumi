@@ -11,7 +11,9 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.projects"
-    public let name = "Projects Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Projects Plugin", bundle: .module)
+    }
     public let order = 5
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
 

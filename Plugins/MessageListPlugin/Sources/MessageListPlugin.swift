@@ -7,7 +7,9 @@ import LumiKernel
 @MainActor
 public final class MessageListPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.message-list"
-    public let name = "Message List"
+    public var name: String {
+        LumiPluginLocalization.string("Message List", bundle: .module)
+    }
     public let order = 82
     public let policy: LumiPluginPolicy = .alwaysOn
 

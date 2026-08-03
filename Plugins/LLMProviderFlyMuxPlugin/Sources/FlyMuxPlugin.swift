@@ -7,7 +7,9 @@ import LumiUI
 @MainActor
 public final class FlyMuxPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.flymux"
-    public let name = "FlyMux"
+    public var name: String {
+        LumiPluginLocalization.string("FlyMux", bundle: .module)
+    }
     public let order = 94
 	public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

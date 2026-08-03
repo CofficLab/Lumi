@@ -10,7 +10,9 @@ public final class AliyunPlugin: LumiPlugin {
     public static let rendererOrder = 305
 
     public let id = "com.coffic.lumi.plugin.llm-provider.aliyun"
-    public let name = "阿里云 CodingPlan"
+    public var name: String {
+        LumiPluginLocalization.string("阿里云 CodingPlan", bundle: .module)
+    }
     public let order = 105
 	public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

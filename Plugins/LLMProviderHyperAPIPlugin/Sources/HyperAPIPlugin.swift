@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class HyperAPIPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.hyperapi"
-    public let name = "HyperAPI"
+    public var name: String {
+        LumiPluginLocalization.string("HyperAPI", bundle: .module)
+    }
     public let order = 97
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

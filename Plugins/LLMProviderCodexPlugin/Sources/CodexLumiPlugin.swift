@@ -6,7 +6,9 @@ import LumiUI
 @MainActor
 public final class CodexLumiPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.codex"
-    public let name = "Codex CLI"
+    public var name: String {
+        LumiPluginLocalization.string("Codex CLI", bundle: .module)
+    }
     public let order = 11
 	public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

@@ -128,6 +128,19 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
 
     // MARK: - Migration Import
 
+    /// Returns the IDs already stored in the database.
+    ///
+    /// Migration uses one snapshot for the whole import instead of fetching the
+    /// entire message table once per conversation.
+    func existingMessageIDs() throws -> Set<String> {
+        try locked {
+            let context = ModelContext(container)
+            let descriptor = FetchDescriptor<MessageModel>()
+            let models = try context.fetch(descriptor)
+            return Set(models.map(\.id))
+        }
+    }
+
     /// 批量导入历史消息(v4 迁移专用)
     ///
     /// 用于 v4 → v5 迁移:把 `LegacyDataProviding` 读出的 `LumiChatMessage` 批量写入
@@ -140,32 +153,42 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
     func importMessages(_ messages: [LumiChatMessage]) throws -> Int {
         guard !messages.isEmpty else { return 0 }
 
+        let existingIDs = try existingMessageIDs()
+        return try importMessages(messages, existingIDs: existingIDs).inserted
+    }
+
+    /// Imports a batch using a caller-owned existing-ID snapshot.
+    ///
+    /// The returned IDs must be merged into the caller's snapshot before the
+    /// next batch. This keeps deduplication correct without repeatedly scanning
+    /// the whole SQLite table.
+    func importMessages(
+        _ messages: [LumiChatMessage],
+        existingIDs: Set<String>
+    ) throws -> (inserted: Int, insertedIDs: Set<String>) {
+        guard !messages.isEmpty else { return (0, []) }
+
         return try locked {
             let context = ModelContext(container)
 
-            // 查出已存在的 id 集合,用于去重
-            let existingIDs: Set<String> = {
-                let descriptor = FetchDescriptor<MessageModel>()
-                let models = (try? context.fetch(descriptor)) ?? []
-                return Set(models.map { $0.id })
-            }()
-
             var inserted = 0
+            var insertedIDs = Set<String>()
             for message in messages {
                 let idString = message.id.uuidString
                 guard !existingIDs.contains(idString) else { continue }
                 context.insert(MessageModel.from(message: message))
+                insertedIDs.insert(idString)
                 inserted += 1
             }
 
-            guard inserted > 0 else { return 0 }
+            guard inserted > 0 else { return (0, []) }
 
             do {
                 try context.save()
                 if Self.verbose {
                     Self.logger.info("\(Self.t)迁移导入 \(inserted) 条历史消息")
                 }
-                return inserted
+                return (inserted, insertedIDs)
             } catch {
                 Self.logger.error("\(Self.t)迁移导入消息失败：\(error.localizedDescription)")
                 throw error

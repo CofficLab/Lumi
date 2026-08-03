@@ -7,7 +7,9 @@ import LumiUI
 @MainActor
 public final class FeifeimiaoPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.feifeimiao"
-    public let name = "Feifeimiao"
+    public var name: String {
+        LumiPluginLocalization.string("Feifeimiao", bundle: .module)
+    }
     public let order = 104
 	public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

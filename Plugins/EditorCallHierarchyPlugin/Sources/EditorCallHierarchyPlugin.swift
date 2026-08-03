@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class EditorCallHierarchyPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-call-hierarchy"
-    public let name = "Editor Call Hierarchy"
+    public var name: String {
+        LumiPluginLocalization.string("Editor Call Hierarchy", bundle: .module)
+    }
     public let order = 6
 	public let policy: LumiPluginPolicy = .disabled
 

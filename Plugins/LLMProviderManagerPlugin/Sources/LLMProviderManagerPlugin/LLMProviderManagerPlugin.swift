@@ -13,7 +13,9 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.llm-provider-manager"
-    public let name = "LLM Provider Manager"
+    public var name: String {
+        LumiPluginLocalization.string("LLM Provider Manager", bundle: .module)
+    }
     public let order = 10
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
 

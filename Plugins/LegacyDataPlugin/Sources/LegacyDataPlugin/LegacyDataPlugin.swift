@@ -20,7 +20,9 @@ public final class LegacyDataPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.legacy-data"
-    public let name = "Legacy Data Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Legacy Data Plugin", bundle: .module)
+    }
     /// 紧随 Storage(10)之后,远早于消费插件(ConversationStore=61, MessageStore=62)。
     /// onBoot 全量先于 onReady 执行,故消费插件 onReady 时本服务一定已注册。
     public let order = 11

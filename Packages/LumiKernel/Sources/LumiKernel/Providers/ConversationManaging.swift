@@ -22,6 +22,23 @@ public protocol ConversationManaging: ObservableObject {
     /// Implementations that load synchronously can use the default value.
     var isLoadingConversations: Bool { get }
 
+    /// Fetch one page of conversations ordered by most recently updated.
+    ///
+    /// The cursor is the last item from the previous page. Implementations
+    /// should use keyset pagination so callers do not need to load the full
+    /// conversation history into memory.
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?
+    ) async -> [LumiConversationSummary]
+
+    /// Fetch one conversation summary by ID without requiring the full list.
+    func fetchConversation(id: UUID) async -> LumiConversationSummary?
+
+    /// Count conversations without loading their summaries.
+    func conversationCount(projectPath: String?) async -> Int
+
     /// 数据存储目录
     var dataDirectory: URL { get }
 
@@ -104,6 +121,22 @@ public protocol ConversationManaging: ObservableObject {
 
 public extension ConversationManaging {
     var isLoadingConversations: Bool { false }
+
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil
+    ) async -> [LumiConversationSummary] {
+        []
+    }
+
+    func fetchConversation(id: UUID) async -> LumiConversationSummary? {
+        nil
+    }
+
+    func conversationCount(projectPath: String?) async -> Int {
+        0
+    }
 
     /// 按更新时间倒序排序
     var sortedConversations: [LumiConversationSummary] {

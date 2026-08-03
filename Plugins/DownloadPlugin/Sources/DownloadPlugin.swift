@@ -14,11 +14,13 @@ public final class DownloadPlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "com.coffic.lumi.plugin.download-agent"
-    public let name = "Download Agent"
+    public var name: String {
+        LumiPluginLocalization.string("Download Agent", bundle: .module)
+    }
     public let order = 92
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Download files with progress tracking and batch support."
 
     public init() {}

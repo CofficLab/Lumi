@@ -18,7 +18,7 @@ public struct OpenRemoteStatusBarView: View, SuperLog {
         category: "plugin.open-remote.status"
     )
     nonisolated public static let emoji = "🌐"
-    nonisolated public static let verbose = true
+    nonisolated public static let verbose = false
 
     @LumiTheme private var theme: any LumiUITheme
     @StateObject private var observer: ProjectPathObserver
@@ -28,7 +28,6 @@ public struct OpenRemoteStatusBarView: View, SuperLog {
     @State private var lastResolvedPath: String = ""
 
     public init(project: any ProjectProviding) {
-        Self.logger.info("\(Self.i)statusBarView init, project=\(project.currentProject?.path ?? "nil")")
         self._observer = StateObject(wrappedValue: ProjectPathObserver(project: project))
     }
 

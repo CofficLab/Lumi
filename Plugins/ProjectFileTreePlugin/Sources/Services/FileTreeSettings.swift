@@ -16,40 +16,48 @@ public final class FileTreeSettings: @unchecked Sendable {
 
     // MARK: - Properties
 
-    private let store: FileTreeStore
+    private var store: FileTreeStore?
 
     // MARK: - Initialization
 
     private init() {
-        let root = ProjectFileTreePluginRuntimeBridge.pluginDirectory
-            ?? ProjectFileTreePluginRuntimeBridge.fallbackRootDirectory
-                .appendingPathComponent(ProjectFileTreePluginRuntimeBridge.pluginName, isDirectory: true)
-        self.store = FileTreeStore(directory: root)
+        // StoragePlugin 会在项目插件之前注册 Storage。这里不能提前创建 fallback
+        // Store，否则会在错误的 Application Support 根目录留下 ProjectFileTree 目录。
+        self.store = nil
+    }
+
+    /// 注入 Storage service 返回的插件目录。
+    ///
+    /// `shared` 可能会在插件生命周期的 `onBoot` 之前被 UI 或其他静态对象触发，
+    /// 因此不能只在 init 时读取 RuntimeBridge；在 Storage 可用后必须重新绑定 Store。
+    public func configure(pluginDirectory: URL) {
+        ProjectFileTreePluginRuntimeBridge.pluginDirectory = pluginDirectory
+        store = FileTreeStore(directory: pluginDirectory)
     }
 
     // MARK: - Expanded Paths
 
     /// 获取已展开的文件夹相对路径集合
     public func expandedPaths(for projectRoot: String) -> Set<String> {
-        store.expandedPaths(for: projectRoot)
+        store?.expandedPaths(for: projectRoot) ?? []
     }
 
     /// 保存已展开的文件夹相对路径集合
     @discardableResult
     public func setExpandedPaths(_ paths: Set<String>, for projectRoot: String) -> Bool {
-        store.setExpandedPaths(paths, for: projectRoot)
+        store?.setExpandedPaths(paths, for: projectRoot) ?? false
     }
 
     /// 添加一个展开的文件夹路径
     @discardableResult
     public func addExpandedPath(_ relativePath: String, for projectRoot: String) -> Bool {
-        store.addExpandedPath(relativePath, for: projectRoot)
+        store?.addExpandedPath(relativePath, for: projectRoot) ?? false
     }
 
     /// 移除一个折叠的文件夹路径
     @discardableResult
     public func removeExpandedPath(_ relativePath: String, for projectRoot: String) -> Bool {
-        store.removeExpandedPath(relativePath, for: projectRoot)
+        store?.removeExpandedPath(relativePath, for: projectRoot) ?? false
     }
 
     // MARK: - Package Dependencies
@@ -65,12 +73,12 @@ public final class FileTreeSettings: @unchecked Sendable {
     /// 记录上次打开的项目路径
     @discardableResult
     public func setLastProjectPath(_ path: String) -> Bool {
-        store.setLastProjectPath(path)
+        store?.setLastProjectPath(path) ?? false
     }
 
     /// 获取上次打开的项目路径
     public func lastProjectPath() -> String? {
-        store.lastProjectPath()
+        store?.lastProjectPath()
     }
 
     private func packageSectionExpandedKey(_ projectRoot: String) -> String {

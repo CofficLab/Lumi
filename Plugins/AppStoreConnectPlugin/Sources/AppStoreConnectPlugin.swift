@@ -8,7 +8,9 @@ import SwiftUI
 @MainActor
 public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.app-store-connect"
-    public let name = "AppStoreConnect"
+    public var name: String {
+        AppStoreConnectLocalization.string("AppStoreConnect", bundle: .module)
+    }
     public let order = 65
     public nonisolated static let emoji = "🚀"
     public nonisolated static let verbose: Bool = false

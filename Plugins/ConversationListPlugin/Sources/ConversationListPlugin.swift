@@ -8,7 +8,9 @@ import SwiftUI
 @MainActor
 public final class ConversationListPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-list"
-    public let name = "Conversation List"
+    public var name: String {
+        LumiPluginLocalization.string("Conversation List", bundle: .module)
+    }
     public let order = 76
     public let policy: LumiPluginPolicy = .alwaysOn
 
@@ -26,10 +28,7 @@ public final class ConversationListPlugin: LumiPlugin {
 
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
-            CreateNewConversationLumiTool(),
-            DeleteConversationLumiTool(),
-            GetRecentConversationsLumiTool(),
-            GetConversationCountLumiTool(),
+            GetRecentConversationsTool(),
         ]
     }
 
@@ -90,6 +89,7 @@ public final class ConversationListPlugin: LumiPlugin {
             attentionStore.markNeedsAttention(conversationID: conversationID)
         }
     }
+
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}

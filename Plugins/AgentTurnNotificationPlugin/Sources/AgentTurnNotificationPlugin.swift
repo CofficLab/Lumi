@@ -11,7 +11,9 @@ public final class AgentTurnNotificationPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.turn-notification", category: "AgentTurnNotificationPlugin")
 
     public let id = "com.coffic.lumi.plugin.turn-notification"
-    public let name = "Turn Notification"
+    public var name: String {
+        LumiPluginLocalization.string("Turn Notification", bundle: .module)
+    }
     public let order = 99
     public let policy: LumiPluginPolicy = .alwaysOn
 

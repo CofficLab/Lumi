@@ -73,8 +73,8 @@ struct VideoConverterAboutView: View {
         }
     }
 
-    private func L(_ key: String) -> String {
-        VideoConverterLocalization.string(key)
+    private func L(_ key: String, locale: Locale = .current) -> String {
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
     }
 
     private func coreL(_ key: String) -> String {

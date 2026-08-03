@@ -17,9 +17,10 @@ public final class BrewManagerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.brew-manager"
-    public let name = "Package Management"
+    public var name: String { LumiPluginLocalization.string("Package Management", bundle: .module) }
+    public var pluginDescription: String { LumiPluginLocalization.string("Manage Homebrew packages and casks", bundle: .module) }
     public let order = 260
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     // MARK: - Initialization
 

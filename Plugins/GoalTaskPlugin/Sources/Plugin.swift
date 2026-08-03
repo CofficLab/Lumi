@@ -17,11 +17,13 @@ public final class Plugin: LumiPlugin, SuperLog {
     )
 
     public let id = "com.coffic.lumi.plugin.goal-task"
-    public let name = "GoalTask"
+    public var name: String {
+        GoalTaskLocalization.string("GoalTask", bundle: .module)
+    }
     public let order = 91
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Goal and task management for multi-step objectives."
 
     /// 共享的 GoalStateManager 实例

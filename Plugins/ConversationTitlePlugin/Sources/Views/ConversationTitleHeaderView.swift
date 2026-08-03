@@ -15,11 +15,6 @@ struct ConversationTitleHeaderView: View {
     }
 
     private var displayTitle: String {
-        guard let conversations = kernel.conversations,
-              let conversationID = conversations.selectedConversationID,
-              let conversation = conversations.conversations.first(where: { $0.id == conversationID }) else {
-            return ""
-        }
-        return conversation.displayTitle
+        kernel.conversations?.currentTitle ?? ""
     }
 }

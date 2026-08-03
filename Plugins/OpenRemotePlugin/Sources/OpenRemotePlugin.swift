@@ -11,10 +11,12 @@ public final class OpenRemotePlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.open-remote")
 
     public let id = "com.coffic.lumi.plugin.open-remote"
-    public let name = "Open Remote Repository"
+    public var name: String {
+        LumiPluginLocalization.string("Open Remote Repository", bundle: .module)
+    }
     public let order = 62
     public let category: LumiPluginCategory = .open
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 

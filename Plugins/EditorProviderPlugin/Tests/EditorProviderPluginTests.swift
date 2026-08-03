@@ -45,7 +45,7 @@ struct EditorProviderPluginTests {
                 editorThemeId: "test-dracula"
             ),
         ])
-        kernel.registerThemeService(MockThemeService(themeRegistry: themeRegistry))
+        try kernel.registerThemeService(MockThemeService(themeRegistry: themeRegistry))
 
         let editorService = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
         try kernel.registerService(EditorService.self, editorService)

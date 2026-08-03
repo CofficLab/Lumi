@@ -11,7 +11,9 @@ public final class ConversationSpeedPlugin: LumiPlugin, SuperLog {
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.conversation-speed"
-    public let name = "ConversationSpeed"
+    public var name: String {
+        LumiPluginLocalization.string("ConversationSpeed", bundle: .module)
+    }
     public let order = 86
     public let policy: LumiPluginPolicy = .alwaysOn
 

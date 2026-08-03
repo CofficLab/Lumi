@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class SublyxPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.sublyx"
-    public let name = "Sublyx"
+    public var name: String {
+        LumiPluginLocalization.string("Sublyx", bundle: .module)
+    }
     public let order = 104
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

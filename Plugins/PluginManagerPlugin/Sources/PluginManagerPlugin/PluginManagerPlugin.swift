@@ -13,7 +13,9 @@ import SwiftUI
 @MainActor
 public final class PluginManagerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.plugin-manager"
-    public let name = "Plugin Manager"
+    public var name: String {
+        LumiPluginLocalization.string("Plugin Manager", bundle: .module)
+    }
     public let order = 90
     public let policy: LumiPluginPolicy = .alwaysOn
 
@@ -26,7 +28,26 @@ public final class PluginManagerPlugin: LumiPlugin {
         let directory = storage.pluginDataDirectory(for: "PluginManager")
         let store = PluginEnabledStateStore(pluginDirectory: directory)
         enabledStateStore = store
-        kernel.pluginManager.installEnabledStatePersistence(store)
+        // PluginManagerPlugin owns persistence. The kernel manager only receives
+        // the already loaded runtime state and never touches the storage layer.
+        kernel.pluginManager.applyPersistedPluginStates(store.loadPluginEnabledOverrides())
+    }
+
+    /// 更新插件启用状态：先持久化用户意图，再通知内核应用运行时状态。
+    public func setPluginEnabled(kernel: LumiKernel, id: String, enabled: Bool) async {
+        guard let store = enabledStateStore else { return }
+        guard kernel.pluginManager.plugin(id: id)?.policy.isConfigurable == true else { return }
+        guard kernel.pluginManager.isPluginEnabled(id: id) != enabled else { return }
+
+        guard await kernel.pluginManager.setPluginEnabled(id: id, enabled: enabled) else { return }
+        store.savePluginEnabledOverride(enabled, for: id)
+    }
+
+    /// 清除用户覆盖，回落到插件声明的默认策略。
+    public func resetPluginEnabledState(kernel: LumiKernel, id: String) async {
+        guard let store = enabledStateStore else { return }
+        guard await kernel.pluginManager.resetPluginEnabledState(id: id) else { return }
+        store.clearPluginEnabledOverride(for: id)
     }
 
     public func onReady(kernel: LumiKernel) async throws {}

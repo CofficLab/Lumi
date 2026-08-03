@@ -65,13 +65,13 @@ struct AppIconDesignerAboutView: View {
                 SupportedShapesCard(
                     title: AppIconDesignerLocalization.string("Supported Shapes"),
                     shapes: [
-                        ("rectangle", "Rectangles & Rounded Corners"),
-                        ("circle.fill", "Circles & Ellipses"),
-                        ("capsule.fill", "Capsules"),
-                        ("triangle.fill", "Triangles"),
-                        ("line.diagonal", "Lines"),
-                        ("textformat", "Text Labels"),
-                        ("star.fill", "SF Symbols")
+                        ("rectangle", AppIconDesignerLocalization.string("Rectangles & Rounded Corners")),
+                        ("circle.fill", AppIconDesignerLocalization.string("Circles & Ellipses")),
+                        ("capsule.fill", AppIconDesignerLocalization.string("Capsules")),
+                        ("triangle.fill", AppIconDesignerLocalization.string("Triangles")),
+                        ("line.diagonal", AppIconDesignerLocalization.string("Lines")),
+                        ("textformat", AppIconDesignerLocalization.string("Text Labels")),
+                        ("star.fill", AppIconDesignerLocalization.string("SF Symbols"))
                     ]
                 )
 
@@ -79,9 +79,9 @@ struct AppIconDesignerAboutView: View {
                 RequirementsCard(
                     title: AppIconDesignerLocalization.string("Requirements"),
                     items: [
-                        "macOS 14.0 or later",
-                        "Swift 6.0 or later",
-                        "Xcode 15.0+ (for AppIcon export)"
+                        AppIconDesignerLocalization.string("macOS 14.0 or later"),
+                        AppIconDesignerLocalization.string("Swift 6.0 or later"),
+                        AppIconDesignerLocalization.string("Xcode 15.0+ (for AppIcon export)")
                     ]
                 )
             }

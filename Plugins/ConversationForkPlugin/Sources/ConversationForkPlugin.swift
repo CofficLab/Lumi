@@ -11,7 +11,9 @@ public final class ConversationForkPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-fork", category: "ConversationForkPlugin")
 
     public let id = "com.coffic.lumi.plugin.conversation-fork"
-    public let name = "Continue in New Chat"
+    public var name: String {
+        LumiPluginLocalization.string("Continue in New Chat", bundle: .module)
+    }
     public let order = 61
     public let policy: LumiPluginPolicy = .alwaysOn
 

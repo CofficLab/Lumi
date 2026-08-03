@@ -11,7 +11,9 @@ public final class ProjectRAGPlugin: LumiPlugin, SuperLog {
     nonisolated static let verbose: Bool = false
 
     public let id = "com.coffic.lumi.plugin.project.rag"
-    public let name = "Project RAG"
+    public var name: String {
+        LumiPluginLocalization.string("Project RAG", bundle: .module)
+    }
     public let order = 200
     public let policy: LumiPluginPolicy = .alwaysOn
 

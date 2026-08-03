@@ -1,6 +1,6 @@
 import Foundation
-import SwiftUI
 import LumiKernel
+import SwiftUI
 
 /// Message Store Plugin
 ///
@@ -8,8 +8,10 @@ import LumiKernel
 @MainActor
 public final class MessageManagerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.message-store"
-    public let name = "Message Store"
-    public let order = 62  // After ConversationStorePlugin
+    public var name: String {
+        LumiPluginLocalization.string("Message Store", bundle: .module)
+    }
+    public let order = 62 // After ConversationStorePlugin
     public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}
@@ -19,7 +21,6 @@ public final class MessageManagerPlugin: LumiPlugin {
     public func onReady(kernel: LumiKernel) async throws {
         try await MessageStoreOnReadyHook().execute(kernel)
     }
-
 
     // MARK: - LumiPlugin stubs
 
@@ -47,6 +48,7 @@ public final class MessageManagerPlugin: LumiPlugin {
             ),
         ]
     }
+
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
@@ -66,32 +68,4 @@ public final class MessageManagerPlugin: LumiPlugin {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
-}
-
-// MARK: - Runtime Bridge
-
-/// 持有 `MessageStore` 的进程内单例。
-///
-/// 不加 actor 隔离:消息读取可在后台线程执行,故 `store` 的读写通过内部锁保护,
-/// 保证主线程(onReady 赋值)与后台读取线程之间的并发安全。
-final class MessageStoreRuntimeBridge: @unchecked Sendable {
-    static let shared = MessageStoreRuntimeBridge()
-
-    private let lock = NSLock()
-    private var _store: MessageStore?
-
-    var store: MessageStore? {
-        get {
-            lock.lock()
-            defer { lock.unlock() }
-            return _store
-        }
-        set {
-            lock.lock()
-            defer { lock.unlock() }
-            _store = newValue
-        }
-    }
-
-    private init() {}
 }

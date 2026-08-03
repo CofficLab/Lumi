@@ -40,27 +40,10 @@ public final class EventManager: ObservableObject, SuperLog {
         post(.conversationsDidChange, object: object)
     }
 
-    public func postSelectedRemoteProviderIDDidChange(providerID: String?) {
-        post(.selectedRemoteProviderIDDidChange, userInfo: ["providerID": providerID as Any])
-    }
-
-    public func postSelectedLocalProviderIDDidChange(providerID: String?) {
-        post(.selectedLocalProviderIDDidChange, userInfo: ["providerID": providerID as Any])
-    }
-
-    public func postSelectedModelsDidChange(selectedModels: [String: String]) {
-        post(.selectedModelsDidChange, userInfo: ["selectedModels": selectedModels])
-    }
-
-    public func postRoutingModeDidChange(routingMode: LumiModelRoutingMode) {
-        post(.routingModeDidChange, userInfo: ["routingMode": routingMode])
-    }
-
-    public func postProviderAvailabilityDidChange(availabilityResults: [String: LumiModelAvailabilityResult]) {
-        post(.providerAvailabilityDidChange, userInfo: ["availabilityResults": availabilityResults])
-    }
-
-    public func postProviderStatusesDidChange(providerStatuses: [String: LumiLLMProviderStatus]) {
-        post(.providerStatusesDidChange, userInfo: ["providerStatuses": providerStatuses])
+    public func postConversationTitleDidChange(object: Any? = nil, conversationID: UUID?) {
+        let userInfo = conversationID.map {
+            [LumiNotificationUserInfoKey.conversationID: $0] as [AnyHashable: Any]
+        }
+        post(.conversationTitleDidChange, object: object, userInfo: userInfo)
     }
 }

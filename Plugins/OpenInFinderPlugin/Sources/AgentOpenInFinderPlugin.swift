@@ -10,10 +10,12 @@ import SwiftUI
 @MainActor
 public final class AgentOpenInFinderPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-finder"
-    public let name = "Open in Finder"
+    public var name: String {
+        LumiPluginLocalization.string("Open in Finder", bundle: .module)
+    }
     public let order = 61
     public let category: LumiPluginCategory = .open
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 
@@ -38,9 +40,9 @@ public final class AgentOpenInFinderPlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
-                Text(name)
+                Text(LumiPluginLocalization.string("Open in Finder", bundle: .module))
                     .font(.title2.weight(.semibold))
-                Text("Open current project in Finder")
+                Text(LumiPluginLocalization.string("Open current project in Finder", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }

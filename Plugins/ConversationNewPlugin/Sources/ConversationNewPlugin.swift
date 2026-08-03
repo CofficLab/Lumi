@@ -5,7 +5,9 @@ import SwiftUI
 @MainActor
 public final class ConversationNewPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-new"
-    public let name = "New Chat Button"
+    public var name: String {
+        LumiPluginLocalization.string("New Chat Button", bundle: .module)
+    }
     public let order = 60
     public let policy: LumiPluginPolicy = .alwaysOn
 

@@ -13,10 +13,12 @@ private let gitOKPluginLogger = Logger(subsystem: "com.coffic.lumi", category: "
 @MainActor
 public final class AgentOpenInGitOKPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-gitok"
-    public let name = "Open in GitOK"
+    public var name: String {
+        LumiPluginLocalization.string("Open in GitOK", bundle: .module)
+    }
     public let order = 98
     public let category: LumiPluginCategory = .open
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 
@@ -41,9 +43,9 @@ public final class AgentOpenInGitOKPlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
-                Text(name)
+                Text(LumiPluginLocalization.string("Open in GitOK", bundle: .module))
                     .font(.title2.weight(.semibold))
-                Text("Open current project in GitOK")
+                Text(LumiPluginLocalization.string("Open current project in GitOK", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }

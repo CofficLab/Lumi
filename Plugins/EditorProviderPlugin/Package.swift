@@ -9,6 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/EditorSource"),
@@ -25,7 +26,11 @@ let package = Package(
                 .product(name: "EditorSource", package: "EditorSource"),
                 .product(name: "EditorTextView", package: "EditorTextView"),
                 .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
-            ]
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+            ],
+            path: ".",
+            exclude: ["Tests"],
+            resources: [.process("Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "EditorProviderPluginTests",

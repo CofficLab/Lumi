@@ -18,9 +18,6 @@ private final class MenuBarLogoObserver: ObservableObject {
 
         let observable = logo as any ObservableObject
         let publisher = observable.objectWillChange as! ObservableObjectPublisher
-        MenuBarManagerPlugin.logger.info(
-            "[LogoHighlight] MenuBarLogoObserver installed state=\(self.isHighlighted)"
-        )
         observation = publisher
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
@@ -28,9 +25,6 @@ private final class MenuBarLogoObserver: ObservableObject {
                     guard let self else { return }
                     let newValue = logo.isLogoHighlighted
                     guard self.isHighlighted != newValue else { return }
-                    MenuBarManagerPlugin.logger.info(
-                        "[LogoHighlight] MenuBarLogoObserver state \(self.isHighlighted) -> \(newValue)"
-                    )
                     self.isHighlighted = newValue
                 }
             }
@@ -75,9 +69,6 @@ struct MenuBarLogoView: View {
         .frame(width: 22, height: 22)
         .onAppear {
             let scene = isHighlighted ? "statusBarHighlighted" : "statusBar"
-            MenuBarManagerPlugin.logger.info(
-                "[LogoHighlight] MenuBarLogoView appeared scene=\(scene) highlighted=\(self.isHighlighted)"
-            )
         }
     }
 }

@@ -18,7 +18,9 @@ public final class PortManagerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.port-manager"
-    public let name = "Port Manager"
+    public var name: String {
+        LumiPluginLocalization.string("Port Manager", bundle: .module)
+    }
     public let order = 43
 	public let policy: LumiPluginPolicy = .disabled
 

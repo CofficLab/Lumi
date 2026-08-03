@@ -3,6 +3,7 @@ import LumiUI
 import SwiftUI
 
 /// 工具栏视图：显示当前模型的上下文窗口大小
+@MainActor
 struct ConversationContextSizeToolbarView: View {
     @LumiTheme private var theme
     @ObservedObject var kernel: LumiKernel
@@ -27,21 +28,18 @@ struct ConversationContextSizeToolbarView: View {
         }
     }
 
-    private var llmProviderManager: (any LLMProviderManaging)? {
-        kernel.resolveService((any LLMProviderManaging).self)
-    }
-
     private func currentContextSize() -> Int? {
-        // 优先从当前对话获取 provider/model
-        let conversations = kernel.conversations
-        let conversationID = conversations?.selectedConversationID
-        let providerID = conversationID.flatMap { conversations?.providerID(for: $0) }
-            ?? llmProviderManager?.selectedProviderID
-        let modelName = conversationID.flatMap { conversations?.modelName(for: $0) }
-            ?? llmProviderManager?.selectedModel
+        // 在一次 MainActor 快照中读取服务，避免启动注册期间重复解析 service registry。
+        guard let providerManager = kernel.llmProvider else { return nil }
+        let conversationManager = kernel.conversations
+        let conversationID = conversationManager?.selectedConversationID
+        let providerID = conversationID.flatMap { conversationManager?.providerID(for: $0) }
+            ?? providerManager.selectedProviderID
+        let modelName = conversationID.flatMap { conversationManager?.modelName(for: $0) }
+            ?? providerManager.selectedModel
 
         guard let providerID, let modelName else { return nil }
-        guard let info = llmProviderManager?.providerInfo(id: providerID) else { return nil }
+        guard let info = providerManager.providerInfo(id: providerID) else { return nil }
         return info.contextWindowSizes[modelName]
     }
 

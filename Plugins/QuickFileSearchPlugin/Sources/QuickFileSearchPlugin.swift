@@ -5,7 +5,9 @@ import LumiUI
 @MainActor
 public final class QuickFileSearchPlugin: LumiPlugin {
     public let id = "QuickFileSearch"
-    public let name = "Quick File Search"
+    public var name: String {
+        LumiPluginLocalization.string("Quick File Search", bundle: .module)
+    }
     public let order = 50
     public let policy: LumiPluginPolicy = .alwaysOn
 

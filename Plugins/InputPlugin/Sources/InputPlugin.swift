@@ -12,7 +12,9 @@ public final class InputPlugin: LumiPlugin {
     nonisolated public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.input-manager"
-    public let name = "Input Manager"
+    public var name: String {
+        LumiPluginLocalization.string("Input Manager", bundle: .module)
+    }
     public let order = 70
 	public let policy: LumiPluginPolicy = .disabled
 

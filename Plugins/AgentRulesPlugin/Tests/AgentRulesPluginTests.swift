@@ -16,7 +16,7 @@ import LumiKernel
     #expect(plugin.order == 50)
     #expect(plugin.policy == .alwaysOn)
     #expect(plugin.category == .general)
-    #expect(plugin.stage == .stable)
+    #expect(plugin.stage == .beta)
     #expect(plugin.settingsTabItems(kernel: LumiKernel()).count == 1)
 }
 

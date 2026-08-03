@@ -53,7 +53,7 @@ final class AutoConversationTitleService: SuperLog {
 
         guard let kernel,
               let firstUserMessage = firstUserMessage(in: conversationID),
-              shouldGenerateTitle(
+              await shouldGenerateTitle(
                   conversationID: conversationID,
                   messageID: messageID,
                   firstUserMessage: firstUserMessage
@@ -67,7 +67,7 @@ final class AutoConversationTitleService: SuperLog {
                 conversationID: conversationID
             )
             guard !title.isEmpty,
-                  shouldApplyGeneratedTitle(
+                  await shouldApplyGeneratedTitle(
                       conversationID: conversationID,
                       firstUserMessageContent: firstUserMessage.content,
                       generatedTitle: title
@@ -86,8 +86,8 @@ final class AutoConversationTitleService: SuperLog {
         conversationID: UUID,
         messageID: UUID,
         firstUserMessage: LumiChatMessage
-    ) -> Bool {
-        shouldApplyGeneratedTitle(
+    ) async -> Bool {
+        await shouldApplyGeneratedTitle(
             conversationID: conversationID,
             firstUserMessageContent: firstUserMessage.content
         ) && firstUserMessage.id == messageID
@@ -97,8 +97,8 @@ final class AutoConversationTitleService: SuperLog {
         conversationID: UUID,
         firstUserMessageContent: String,
         generatedTitle: String? = nil
-    ) -> Bool {
-        guard let conversation = kernel?.conversations?.conversations.first(where: { $0.id == conversationID }) else {
+    ) async -> Bool {
+        guard let conversation = await kernel?.conversations?.fetchConversation(id: conversationID) else {
             return false
         }
         return Self.shouldApplyGeneratedTitle(

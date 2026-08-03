@@ -34,7 +34,7 @@ Homebrew package management plugin for Lumi. Provides a developer tool view for 
 
 ## Policy
 
-`.optOut` - enabled by default and user-configurable, so users can disable it from plugin settings.
+`.optIn` - disabled by default and user-configurable, so users can enable it from plugin settings.
 
 ## Project Structure
 

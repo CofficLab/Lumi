@@ -60,7 +60,7 @@ Packages/SuperLogKit/build/
 
 # Carthage
 #
-# Add this line if you want to avoid checking in source code from Carthage dependencies.
+# Add this line if you want to avoid checking in source code from Carthage releases.
 # Carthage/Checkouts
 
 Carthage/Build/
@@ -82,3 +82,6 @@ fastlane/test_output
 /buildServer.json
 .compile_file
 scripts/test-version-bump.sh
+
+# Workbuddy
+.workbuddy/

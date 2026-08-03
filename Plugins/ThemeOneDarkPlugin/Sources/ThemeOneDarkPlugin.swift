@@ -7,7 +7,9 @@ import SwiftUI
 @MainActor
 public final class ThemeOneDarkPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.one-dark"
-    public let name = "One Dark Theme"
+    public var name: String {
+        LumiPluginLocalization.string("One Dark Theme", bundle: .module)
+    }
     public let order = 131
 	public let policy: LumiPluginPolicy = .alwaysOn
 

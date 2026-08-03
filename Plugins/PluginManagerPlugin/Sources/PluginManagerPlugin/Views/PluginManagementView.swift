@@ -198,10 +198,6 @@ struct PluginManagementView: View {
                             .font(.appCaptionEmphasized)
                             .foregroundStyle(theme.textPrimary)
                             .lineLimit(1)
-
-                        if plugin.stage != .stable {
-                            AppTag(plugin.stage.displayName, style: .subtle)
-                        }
                     }
 
                     Text(plugin.pluginDescription.isEmpty ? plugin.id : plugin.pluginDescription)
@@ -242,8 +238,6 @@ private struct PluginSettingsDetailView: View {
             VStack(alignment: .leading, spacing: 18) {
                 header
                 AppDivider()
-                metaInfo
-                AppDivider()
                 pluginSettingsContent
             }
             .padding(22)
@@ -273,11 +267,6 @@ private struct PluginSettingsDetailView: View {
                     AppTag(plugin.stage.displayName, style: plugin.stage == .stable ? .accent : .subtle)
                 }
 
-                Text(plugin.id)
-                    .font(.appCaption)
-                    .foregroundStyle(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
                 if !plugin.pluginDescription.isEmpty {
                     Text(plugin.pluginDescription)
                         .font(.appCaption)
@@ -299,7 +288,12 @@ private struct PluginSettingsDetailView: View {
         if plugin.policy.isConfigurable {
             Toggle(isOn: Binding(
                 get: { isEnabled },
-                set: { newValue in kernel.pluginManager.setPlugin(id: plugin.id, enabled: newValue) }
+                set: { newValue in
+                    Task { @MainActor in
+                        await kernel.pluginManager.plugin(ofType: PluginManagerPlugin.self)?
+                            .setPluginEnabled(kernel: kernel, id: plugin.id, enabled: newValue)
+                    }
+                }
             )) {
                 Text(PluginManagerText.string(PluginManagerText.enable))
                     .font(.appBody)
@@ -315,28 +309,6 @@ private struct PluginSettingsDetailView: View {
             default:
                 EmptyView()
             }
-        }
-    }
-
-    private var metaInfo: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            metaRow(label: PluginManagerText.string("Category"), value: plugin.category.displayName)
-            metaRow(
-                label: PluginManagerText.string("Stage"),
-                value: "\(plugin.stage.displayName) · \(plugin.stage.description)"
-            )
-        }
-        .font(.appCaption)
-    }
-
-    private func metaRow(label: String, value: String) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(label)
-                .foregroundStyle(theme.textTertiary)
-                .frame(width: 80, alignment: .leading)
-            Text(value)
-                .foregroundStyle(theme.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 

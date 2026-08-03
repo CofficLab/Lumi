@@ -1,146 +1,180 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Symbols" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Symbols"
+  "sourceLanguage": "en",
+  "strings": {
+    "Editor Symbols": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor Symbols"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "符号"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器符号"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "符號"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器符号"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "符號"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器符号"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "符號"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器符号"
           }
         }
       }
     },
-    "Workspace Symbols" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Workspace Symbols"
+    "Symbols": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Symbols"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作区符号"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "符号"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作區符號"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "符號"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作區符號"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "符號"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作區符號"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "符號"
           }
         }
       }
     },
-    "Workspace Symbols (%lld)" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Workspace Symbols (%lld)"
+    "Workspace Symbols": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspace Symbols"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作区符号 (%lld)"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作区符号"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作區符號 (%lld)"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作區符號"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作區符號 (%lld)"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作區符號"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作區符號 (%lld)"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作區符號"
           }
         }
       }
     },
-    "Workspace symbols not available" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Workspace symbols not available"
+    "Workspace Symbols (%lld)": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspace Symbols (%lld)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作区符号不可用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作区符号 (%lld)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作區符號不可用"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作區符號 (%lld)"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作區符號不可用"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作區符號 (%lld)"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作區符號不可用"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作區符號 (%lld)"
+          }
+        }
+      }
+    },
+    "Workspace symbols not available": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspace symbols not available"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作区符号不可用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作區符號不可用"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作區符號不可用"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作區符號不可用"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

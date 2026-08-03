@@ -10,7 +10,9 @@ public final class EditorStickySymbolBarHeaderPlugin: LumiPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.editor-sticky-symbol-bar-header")
 
     public let id = "com.coffic.lumi.plugin.editor-sticky-symbol-bar-header"
-    public let name = "Editor Sticky Symbol Bar"
+    public var name: String {
+        LumiPluginLocalization.string("Editor Sticky Symbol Bar", bundle: .module)
+    }
     public let order = 85
 	public let policy: LumiPluginPolicy = .disabled
 

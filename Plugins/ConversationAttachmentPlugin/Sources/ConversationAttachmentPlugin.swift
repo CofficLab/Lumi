@@ -12,7 +12,9 @@ import SwiftUI
 @MainActor
 public final class ConversationAttachmentPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.chat-attachment-preview"
-    public let name = "Conversation Attachment"
+    public var name: String {
+        LumiPluginLocalization.string("Conversation Attachment", bundle: .module)
+    }
     public let order = 81
     public let policy: LumiPluginPolicy = .alwaysOn
 

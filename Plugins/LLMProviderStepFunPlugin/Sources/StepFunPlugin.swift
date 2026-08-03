@@ -8,7 +8,9 @@ let stepFunPluginDataDirectoryName = "LLMProviderStepFunPlugin"
 @MainActor
 public final class StepFunPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.stepfun"
-    public let name = "StepFun StepPlan"
+    public var name: String {
+        LumiPluginLocalization.string("StepFun StepPlan", bundle: .module)
+    }
     public let order = 93
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

@@ -65,7 +65,7 @@ struct BrewManagerEmptyView: View {
 
                 VStack(spacing: 10) {
                     AppButton(
-                        LocalizedStringKey("Browse Packages"),
+                        LumiPluginLocalization.string("Browse Packages", bundle: .module),
                         systemImage: "magnifyingglass",
                         style: .primary,
                         fillsWidth: true
@@ -75,7 +75,7 @@ struct BrewManagerEmptyView: View {
 
                     if let onLearnMore {
                         AppButton(
-                            LocalizedStringKey("Learn More"),
+                            LumiPluginLocalization.string("Learn More", bundle: .module),
                             systemImage: "book",
                             style: .ghost,
                             fillsWidth: true,
