@@ -271,11 +271,6 @@ private struct PluginSettingsDetailView: View {
                     AppTag(plugin.stage.displayName, style: plugin.stage == .stable ? .accent : .subtle)
                 }
 
-                Text(plugin.id)
-                    .font(.appCaption)
-                    .foregroundStyle(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
                 if !plugin.pluginDescription.isEmpty {
                     Text(plugin.pluginDescription)
                         .font(.appCaption)
