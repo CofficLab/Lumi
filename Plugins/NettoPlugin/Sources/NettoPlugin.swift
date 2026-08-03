@@ -17,7 +17,9 @@ public final class NettoPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.netto"
-    public let name = "Netto Firewall Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Netto Firewall Plugin", bundle: .module)
+    }
     public let order = 99
 	public let policy: LumiPluginPolicy = .disabled
 

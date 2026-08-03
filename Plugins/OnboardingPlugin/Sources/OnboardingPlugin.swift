@@ -4,7 +4,9 @@ import SwiftUI
 @MainActor
 public final class OnboardingPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.onboarding"
-    public let name = "Onboarding"
+    public var name: String {
+        LumiPluginLocalization.string("Onboarding", bundle: .module)
+    }
     public let order = 10
     public let policy: LumiPluginPolicy = .alwaysOn
 

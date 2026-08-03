@@ -16,7 +16,9 @@ public final class NetworkManagerPlugin: LumiPlugin {
     private var httpExchangeStore: HTTPExchangeStore?
 
     public let id = "com.coffic.lumi.plugin.network-manager"
-    public let name = "Network Monitor"
+    public var name: String {
+        LumiPluginLocalization.string("Network Monitor", bundle: .module)
+    }
     public let order = 30
     public let policy: LumiPluginPolicy = .alwaysOn
 
