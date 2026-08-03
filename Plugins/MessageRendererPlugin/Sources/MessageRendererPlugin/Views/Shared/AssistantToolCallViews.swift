@@ -29,14 +29,16 @@ struct BorderedUtilityContent<Content: View>: View {
 /// V2/V3 模式：带图标/背景/边框/按钮的卡片行。
 
 struct ToolCallRowsView: View {
+    let kernel: LumiKernel
     let message: LumiChatMessage
     let verbosity: LumiResponseVerbosity
 
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
+    @State private var resolvedToolCalls: [LumiToolCall]?
 
     private var toolCalls: [LumiToolCall] {
-        message.toolCalls ?? []
+        resolvedToolCalls ?? message.toolCalls ?? []
     }
 
     private var rowContext: ToolCallRowMessageContext {
@@ -48,12 +50,33 @@ struct ToolCallRowsView: View {
     }
 
     var body: some View {
-        if verbosity == .brief {
-            // V1:ChatGPT 风格的「可折叠工具步骤组」——进行中展开,完成后收起成一行摘要。
-            CollapsibleToolStepGroup(message: message, toolCalls: toolCalls, verbosity: verbosity)
-        } else {
-            lumiCardRows
+        Group {
+            if verbosity == .brief {
+                // V1:ChatGPT 风格的「可折叠工具步骤组」——进行中展开,完成后收起成一行摘要。
+                CollapsibleToolStepGroup(
+                    kernel: kernel,
+                    message: message,
+                    toolCalls: message.toolCalls ?? [],
+                    verbosity: verbosity
+                )
+            } else {
+                lumiCardRows
+            }
         }
+        .task {
+            guard verbosity != .brief else { return }
+            await resolveResults()
+        }
+    }
+
+    @MainActor
+    private func resolveResults() async {
+        guard let manager = kernel.toolManager else { return }
+        var resolved = message.toolCalls ?? []
+        for index in resolved.indices where resolved[index].result == nil {
+            resolved[index].result = await manager.toolCallResult(for: resolved[index].id)
+        }
+        resolvedToolCalls = resolved
     }
 
     private var lumiCardRows: some View {

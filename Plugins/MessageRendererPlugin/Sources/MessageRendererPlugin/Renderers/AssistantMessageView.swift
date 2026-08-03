@@ -5,12 +5,13 @@ import MarkdownKit
 import SwiftUI
 
 struct AssistantMessageView: View {
+    let kernel: LumiKernel
     let message: LumiChatMessage
     let verbosity: LumiResponseVerbosity
 
     var body: some View {
         MessageViewChrome(message: message, showsHeader: verbosity != .brief, verbosity: verbosity) {
-            AssistantMessageBody(message: message, shouldHideAssistantBody: message.isToolExecutionOnly, verbosity: verbosity)
+            AssistantMessageBody(kernel: kernel, message: message, shouldHideAssistantBody: message.isToolExecutionOnly, verbosity: verbosity)
         }
     }
 }
@@ -18,6 +19,7 @@ struct AssistantMessageView: View {
 private struct AssistantMessageBody: View {
     @LumiTheme private var theme
 
+    let kernel: LumiKernel
     let message: LumiChatMessage
     let shouldHideAssistantBody: Bool
     let verbosity: LumiResponseVerbosity
@@ -36,7 +38,7 @@ private struct AssistantMessageBody: View {
 
             if let toolCalls = message.toolCalls,
                !toolCalls.isEmpty {
-                ToolCallRowsView(message: message, verbosity: verbosity)
+                ToolCallRowsView(kernel: kernel, message: message, verbosity: verbosity)
                     .padding(.top, shouldHideAssistantBody ? 0 : 4)
             }
         }

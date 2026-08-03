@@ -110,7 +110,7 @@ public struct MessageRendererOnBootHook {
                     message.role == .assistant
                 },
                 render: { message, verbosity in
-                    AssistantMessageView(message: message, verbosity: verbosity)
+                    AssistantMessageView(kernel: kernel, message: message, verbosity: verbosity)
                 }
             )
         )
@@ -125,7 +125,7 @@ public struct MessageRendererOnBootHook {
                     message.renderKind == "tool-step-group" || message.renderKind == "turn-activity"
                 },
                 render: { message, verbosity in
-                    ToolStepGroupMessageView(message: message, verbosity: verbosity)
+                    ToolStepGroupMessageView(kernel: kernel, message: message, verbosity: verbosity)
                 }
             )
         )

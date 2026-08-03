@@ -115,7 +115,15 @@ public extension MessageModel {
         let encoder = JSONEncoder()
         let metadataData = try? encoder.encode(message.metadata)
         let metadataJson = metadataData.flatMap { String(data: $0, encoding: .utf8) }
-        let toolCallsData = try? encoder.encode(message.toolCalls)
+        // Tool results are owned by ToolManager and loaded on demand by the UI.
+        // Keep invocation metadata in the message timeline, but avoid duplicating
+        // potentially large result text and image attachments in MessageModel.
+        let lightweightToolCalls = message.toolCalls?.map { toolCall -> LumiToolCall in
+            var copy = toolCall
+            copy.result = nil
+            return copy
+        }
+        let toolCallsData = try? encoder.encode(lightweightToolCalls)
         let toolCallsJson = toolCallsData.flatMap { String(data: $0, encoding: .utf8) }
         let metadataInputTokens = message.metadata[MessageTokenMetadata.inputKey].flatMap { Int($0) }
         let metadataOutputTokens = message.metadata[MessageTokenMetadata.outputKey].flatMap { Int($0) }
