@@ -18,7 +18,7 @@ public final class GitHubPlugin: LumiPlugin, SuperLog {
     public let order = 16
     public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .agent
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = "GitHub integration for issues, repos, and code search."
 
     public init() {}
