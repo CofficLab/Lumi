@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class ThemeGithubPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.github"
-    public let name = "GitHub Theme"
+    public var name: String {
+        LumiPluginLocalization.string("GitHub Theme", bundle: .module)
+    }
     public let order = 128
 	public let policy: LumiPluginPolicy = .alwaysOn
 
