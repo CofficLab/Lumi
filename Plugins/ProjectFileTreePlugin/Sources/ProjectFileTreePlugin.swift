@@ -21,7 +21,9 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     /// 是否启用拖放(文件移动)。
     public nonisolated static let dragAndDropEnabled = true
     public let id = "com.coffic.lumi.plugin.project-file-tree"
-    public let name = "Project File Tree"
+    public var name: String {
+        LumiPluginLocalization.string("Project File Tree", bundle: .module)
+    }
     public let order = 0
     public let policy: LumiPluginPolicy = .alwaysOn
 

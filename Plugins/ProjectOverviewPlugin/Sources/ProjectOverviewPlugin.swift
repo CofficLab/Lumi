@@ -10,7 +10,9 @@ public final class ProjectOverviewPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project-overview")
 
     public let id = "ProjectOverview"
-    public let name = "ProjectOverview"
+    public var name: String {
+        PluginProjectOverviewLocalization.string("ProjectOverview")
+    }
     public let order = 14
     public let policy: LumiPluginPolicy = .alwaysOn
 

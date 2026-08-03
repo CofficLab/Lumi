@@ -5,7 +5,9 @@ import LumiUI
 @MainActor
 public final class ProjectIssueScannerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.project-issue-scanner"
-    public let name = "Project Issue Scanner"
+    public var name: String {
+        LumiPluginLocalization.string("Project Issue Scanner", bundle: .module)
+    }
     public let order = 97
 	public let policy: LumiPluginPolicy = .disabled
 
