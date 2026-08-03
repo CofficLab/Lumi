@@ -198,10 +198,6 @@ struct PluginManagementView: View {
                             .font(.appCaptionEmphasized)
                             .foregroundStyle(theme.textPrimary)
                             .lineLimit(1)
-
-                        if plugin.stage != .stable {
-                            AppTag(plugin.stage.displayName, style: .subtle)
-                        }
                     }
 
                     Text(plugin.pluginDescription.isEmpty ? plugin.id : plugin.pluginDescription)
