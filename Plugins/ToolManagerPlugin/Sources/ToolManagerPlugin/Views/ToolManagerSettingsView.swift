@@ -82,6 +82,11 @@ public struct ToolManagerSettingsView: View {
                 }
             )
         )
+        // The tools page contains a full-height ScrollView. Keep the tab bar
+        // above that content in the hit-test order so the other tabs remain
+        // clickable on macOS.
+        .contentShape(Rectangle())
+        .zIndex(1)
     }
 
     private var availableTabs: [AppTabBar.Tab] {

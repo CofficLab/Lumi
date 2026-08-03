@@ -13,7 +13,9 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.clipboard-manager"
-    public let name = "Clipboard Manager Plugin"
+    public var name: String {
+        LumiPluginLocalization.string("Clipboard Manager Plugin", bundle: .module)
+    }
     public let order = 270
     public let policy: LumiPluginPolicy = .optIn // 功能插件
 
