@@ -7,7 +7,9 @@ import SwiftUI
 /// in the settings sidebar, powered by MessageManaging in LumiKernel.
 public final class ActivityHeatmapPlugin: LumiPlugin {
     public let id = "com.coffic.activity-heatmap"
-    public let name = "Activity Heatmap"
+    public var name: String {
+        LumiPluginLocalization.string("Activity Heatmap", bundle: .module)
+    }
     public let order = 9
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .general

@@ -14,7 +14,9 @@ public final class AgentTempStoragePlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "com.coffic.lumi.plugin.agent-temp-storage"
-    public let name = "Agent Temp Storage"
+    public var name: String {
+        LumiPluginLocalization.string("Agent Temp Storage", bundle: .module)
+    }
     public let order = 80
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
