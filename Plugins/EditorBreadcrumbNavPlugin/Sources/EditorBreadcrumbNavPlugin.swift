@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class EditorBreadcrumbNavPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-breadcrumb-header"
-    public let name = "Editor Breadcrumb Header"
+    public var name: String {
+        LumiPluginLocalization.string("Editor Breadcrumb Header", bundle: .module)
+    }
     public let order = 80
 	public let policy: LumiPluginPolicy = .disabled
 
