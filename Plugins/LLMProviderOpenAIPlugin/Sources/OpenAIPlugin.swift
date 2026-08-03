@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class OpenAIPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.openai"
-    public let name = "OpenAI"
+    public var name: String {
+        LumiPluginLocalization.string("OpenAI", bundle: .module)
+    }
     public let order = 100
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }
