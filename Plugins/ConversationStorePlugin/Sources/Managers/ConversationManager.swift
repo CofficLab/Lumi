@@ -293,6 +293,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             updateCurrentTitle()
         }
         notifyConversationsChanged()
+        kernel?.eventManager.postConversationTitleDidChange(object: self, conversationID: conversationID)
 
         // 持久化到数据库（异步）
         Task {

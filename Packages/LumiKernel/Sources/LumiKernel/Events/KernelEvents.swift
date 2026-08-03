@@ -9,6 +9,7 @@ public enum LumiKernelEvent: String, CaseIterable, Sendable {
     case enabledPluginsDidChange = "com.coffic.lumi.enabledPluginsDidChange"
     case messagesDidChange = "com.coffic.lumi.messagesDidChange"
     case conversationsDidChange = "com.coffic.lumi.conversationsDidChange"
+    case conversationTitleDidChange = "com.coffic.lumi.conversationTitleDidChange"
     case themeDidChange = "com.coffic.lumi.themeDidChange"
 
     case selectedRemoteProviderIDDidChange = "LumiProviderState.SelectedRemoteProviderIDDidChange"
