@@ -53,6 +53,92 @@ struct MiniMaxAnthropicEvent: Sendable {
     let error: String?
 }
 
+struct MiniMaxTextSegments: Sendable {
+    var content = ""
+    var thinking = ""
+}
+
+/// Extracts MiniMax's XML-style thinking tags from OpenAI `content` deltas.
+/// The tags may be split across network chunks, so parsing must retain a
+/// partial suffix until the next delta arrives.
+struct MiniMaxThinkingTagParser {
+    private static let openTag = "<think>"
+    private static let closeTag = "</think>"
+
+    private var buffer = ""
+    private var isThinking = false
+
+    mutating func append(_ value: String) -> MiniMaxTextSegments {
+        guard !value.isEmpty else { return MiniMaxTextSegments() }
+        buffer += value
+        return drain(final: false)
+    }
+
+    mutating func finish() -> MiniMaxTextSegments {
+        drain(final: true)
+    }
+
+    private mutating func drain(final: Bool) -> MiniMaxTextSegments {
+        var result = MiniMaxTextSegments()
+
+        while !buffer.isEmpty {
+            let tag = isThinking ? Self.closeTag : Self.openTag
+            if let range = buffer.range(of: tag) {
+                append(buffer[..<range.lowerBound], to: &result)
+                buffer.removeSubrange(buffer.startIndex..<range.upperBound)
+                isThinking.toggle()
+                continue
+            }
+
+            // Some MiniMax responses contain a duplicate closing tag after
+            // normal text. Treat it as markup rather than user-visible text.
+            if !isThinking, let range = buffer.range(of: Self.closeTag) {
+                append(buffer[..<range.lowerBound], to: &result)
+                buffer.removeSubrange(buffer.startIndex..<range.upperBound)
+                continue
+            }
+
+            if final {
+                append(buffer[...], to: &result)
+                buffer.removeAll(keepingCapacity: true)
+            } else {
+                let tags = isThinking ? [Self.closeTag] : [Self.openTag, Self.closeTag]
+                let keepLength = trailingTagPrefixLength(in: buffer, tags: tags)
+                let flushLength = buffer.count - keepLength
+                if flushLength > 0 {
+                    let end = buffer.index(buffer.startIndex, offsetBy: flushLength)
+                    append(buffer[..<end], to: &result)
+                    buffer.removeSubrange(buffer.startIndex..<end)
+                }
+            }
+            break
+        }
+
+        return result
+    }
+
+    private func append(_ text: Substring, to result: inout MiniMaxTextSegments) {
+        guard !text.isEmpty else { return }
+        if isThinking {
+            result.thinking += text
+        } else {
+            result.content += text
+        }
+    }
+
+    private func trailingTagPrefixLength(in value: String, tags: [String]) -> Int {
+        let maximum = min(value.count, (tags.map(\.count).max() ?? 1) - 1)
+        guard maximum > 0 else { return 0 }
+        for length in stride(from: maximum, through: 1, by: -1) {
+            let suffix = String(value.suffix(length))
+            if tags.contains(where: { $0.hasPrefix(suffix) }) {
+                return length
+            }
+        }
+        return 0
+    }
+}
+
 final class MiniMaxOpenAIService: @unchecked Sendable {
     let url: URL
     private let network: (any NetworkProviding)?

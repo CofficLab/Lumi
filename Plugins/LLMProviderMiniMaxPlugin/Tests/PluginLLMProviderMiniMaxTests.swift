@@ -103,6 +103,61 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(MiniMaxOpenAIProvider.info.id != MiniMaxAnthropicProvider.info.id)
     }
 
+    @Test func openAIToolCallIsFlushedWhenStreamOmitsDoneSentinel() {
+        let response = #"data: {"choices":[{"finish_reason":"tool_calls","delta":{"tool_calls":[{"id":"call_1","type":"function","function":{"name":"project_overview","arguments":"{}"}}]}}]}"#
+        let events = MiniMaxOpenAIEventParser.parse(Data(response.utf8))
+        let state = MiniMaxMessageState(
+            conversationID: UUID(),
+            providerID: MiniMaxOpenAIProvider.info.id,
+            model: MiniMaxOpenAIProvider.info.defaultModel,
+            started: Date()
+        )
+
+        for event in events {
+            state.append(event)
+        }
+        state.finish()
+
+        let message = state.message()
+        #expect(message.toolCalls?.count == 1)
+        #expect(message.toolCalls?.first?.name == "project_overview")
+        #expect(message.toolCalls?.first?.arguments == "{}")
+    }
+
+    @Test func openAIEmbeddedThinkTagsAreSeparatedFromContent() {
+        let state = MiniMaxMessageState(
+            conversationID: UUID(),
+            providerID: MiniMaxOpenAIProvider.info.id,
+            model: MiniMaxOpenAIProvider.info.defaultModel,
+            started: Date()
+        )
+        _ = state.append(MiniMaxOpenAIEvent(
+            content: "<think>先检查代码",
+            reasoning: nil,
+            toolDeltas: [],
+            stopReason: nil,
+            done: false,
+            error: nil,
+            inputTokens: nil,
+            outputTokens: nil
+        ))
+        _ = state.append(MiniMaxOpenAIEvent(
+            content: "</think>这是正文</think>",
+            reasoning: nil,
+            toolDeltas: [],
+            stopReason: nil,
+            done: false,
+            error: nil,
+            inputTokens: nil,
+            outputTokens: nil
+        ))
+        _ = state.finish()
+
+        let message = state.message()
+        #expect(message.reasoningContent == "先检查代码")
+        #expect(message.content == "这是正文")
+    }
+
     @Test func httpErrorRendererMatchesOtherStatusCodes() {
         let conversationID = UUID()
         let rateLimited = LumiChatMessage(
