@@ -9,6 +9,7 @@ struct ActivityBar: View, SuperLog {
     nonisolated static let emoji = "📍"
     nonisolated static let verbose = true
 
+    @LumiTheme private var theme
     @Environment(\.openWindow) private var openWindow
     @ObservedObject var kernel: LumiKernel
     @State private var highlightedContainerID: String?
@@ -35,6 +36,13 @@ struct ActivityBar: View, SuperLog {
         .frame(width: 48)
         .appSurface(style: .panel, cornerRadius: 0)
         .borderTrailing()
+        #if DEBUG
+        .overlay(
+            Rectangle()
+                .fill(theme.warning.opacity(0.20))
+                .allowsHitTesting(false)
+        )
+        #endif
     }
 
     // MARK: - Container List
