@@ -17,6 +17,7 @@ import SuperLogKit
 ///
 /// Sends notifications:
 /// - `.lumiMessageSaved` after each message is persisted
+/// - `.lumiTurnStarted` when a turn starts running
 /// - `.lumiTurnCompleted` when turn ends normally (completed)
 /// - `.lumiTurnFinished` when turn ends (any reason)
 @MainActor
@@ -40,6 +41,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     private var pendingChildWorks: [UUID: [String: AgentTurnChildWork]] = [:]
     private var activeChildWorks: [UUID: Task<Void, Never>] = [:]
     private var turnCreationExcludedToolNames: [UUID: Set<String>] = [:]
+    private var parentConversationIDs: [UUID: UUID] = [:]
 
     // MARK: - Initialization
 
@@ -70,6 +72,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             providerID: request.providerID,
             modelName: request.modelID
         )
+        parentConversationIDs[conversationID] = request.parentConversationID
+        defer { parentConversationIDs.removeValue(forKey: conversationID) }
         turnCreationExcludedToolNames[conversationID] = request.excludedToolNames
         defer { turnCreationExcludedToolNames.removeValue(forKey: conversationID) }
 
@@ -132,6 +136,11 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             await self.executeTurnLoop(conversationID: conversationID)
         }
         activeTurnTasks[conversationID] = task
+        postTurnStartedNotification(
+            conversationID: conversationID,
+            turnID: turnID,
+            parentConversationID: parentConversationIDs[conversationID]
+        )
 
         // Wait for turn to complete
         await task.value
@@ -257,6 +266,13 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
     public func currentTurnID(for conversationID: UUID) -> UUID? {
         turnIDs[conversationID]
+    }
+
+    public func activeChildTurnCount(for parentConversationID: UUID) -> Int {
+        activeTurnTasks.keys.reduce(into: 0) { count, conversationID in
+            guard parentConversationIDs[conversationID] == parentConversationID else { return }
+            count += 1
+        }
     }
 
     private func startChildWorkIfNeeded(for conversationID: UUID) {
@@ -738,6 +754,25 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
     // MARK: - Notifications
 
+    private func postTurnStartedNotification(
+        conversationID: UUID,
+        turnID: UUID,
+        parentConversationID: UUID?
+    ) {
+        var userInfo: [AnyHashable: Any] = [
+            LumiMessageSavedNotification.conversationIDKey: conversationID,
+            LumiTurnStartedNotification.turnIDKey: turnID,
+        ]
+        if let parentConversationID {
+            userInfo[LumiTurnStartedNotification.parentConversationIDKey] = parentConversationID
+        }
+        NotificationCenter.default.post(
+            name: .lumiTurnStarted,
+            object: nil,
+            userInfo: userInfo
+        )
+    }
+
     private func postMessageSavedNotification(message: LumiChatMessage, conversationID: UUID) {
         let userInfo: [AnyHashable: Any] = [
             LumiMessageSavedNotification.conversationIDKey: conversationID,
@@ -752,10 +787,10 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     }
 
     private func postTurnCompletedNotification(conversationID: UUID) async {
-        let userInfo: [AnyHashable: Any] = [
-            LumiMessageSavedNotification.conversationIDKey: conversationID,
-            LumiTurnFinishedNotification.reasonKey: LumiTurnEndReason.completed.rawValue,
-        ]
+        let userInfo = turnNotificationUserInfo(
+            conversationID: conversationID,
+            reason: LumiTurnEndReason.completed
+        )
         NotificationCenter.default.post(
             name: .lumiTurnCompleted,
             object: nil,
@@ -766,10 +801,10 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     }
 
     private func postTurnFinishedNotification(conversationID: UUID, reason: LumiTurnEndReason) async {
-        let userInfo: [AnyHashable: Any] = [
-            LumiMessageSavedNotification.conversationIDKey: conversationID,
-            LumiTurnFinishedNotification.reasonKey: reason.rawValue,
-        ]
+        let userInfo = turnNotificationUserInfo(
+            conversationID: conversationID,
+            reason: reason
+        )
         NotificationCenter.default.post(
             name: .lumiTurnFinished,
             object: nil,
@@ -783,6 +818,23 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             guard plugin.policy.shouldRegister else { continue }
             await plugin.onTurnFinished(kernel: kernel, conversationID: conversationID, reason: reason)
         }
+    }
+
+    private func turnNotificationUserInfo(
+        conversationID: UUID,
+        reason: LumiTurnEndReason
+    ) -> [AnyHashable: Any] {
+        var userInfo: [AnyHashable: Any] = [
+            LumiMessageSavedNotification.conversationIDKey: conversationID,
+            LumiTurnFinishedNotification.reasonKey: reason.rawValue,
+        ]
+        if let turnID = turnIDs[conversationID] {
+            userInfo[LumiTurnFinishedNotification.turnIDKey] = turnID
+        }
+        if let parentConversationID = parentConversationIDs[conversationID] {
+            userInfo[LumiTurnFinishedNotification.parentConversationIDKey] = parentConversationID
+        }
+        return userInfo
     }
 
     // MARK: - Helpers
