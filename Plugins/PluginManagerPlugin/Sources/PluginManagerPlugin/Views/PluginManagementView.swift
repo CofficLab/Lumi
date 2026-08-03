@@ -242,8 +242,6 @@ private struct PluginSettingsDetailView: View {
             VStack(alignment: .leading, spacing: 18) {
                 header
                 AppDivider()
-                metaInfo
-                AppDivider()
                 pluginSettingsContent
             }
             .padding(22)
@@ -320,28 +318,6 @@ private struct PluginSettingsDetailView: View {
             default:
                 EmptyView()
             }
-        }
-    }
-
-    private var metaInfo: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            metaRow(label: PluginManagerText.string("Category"), value: plugin.category.displayName)
-            metaRow(
-                label: PluginManagerText.string("Stage"),
-                value: "\(plugin.stage.displayName) · \(plugin.stage.description)"
-            )
-        }
-        .font(.appCaption)
-    }
-
-    private func metaRow(label: String, value: String) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(label)
-                .foregroundStyle(theme.textTertiary)
-                .frame(width: 80, alignment: .leading)
-            Text(value)
-                .foregroundStyle(theme.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
