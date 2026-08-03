@@ -19,7 +19,7 @@ public final class VideoConverterPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.video-converter"
     public let name = "Video Converter Plugin"
     public let order = 870
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     // MARK: - Initialization
 

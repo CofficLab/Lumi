@@ -16,7 +16,7 @@ public final class DownloadPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.download-agent"
     public let name = "Download Agent"
     public let order = 92
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Download files with progress tracking and batch support."

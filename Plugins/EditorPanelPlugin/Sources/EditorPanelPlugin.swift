@@ -19,7 +19,7 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
     public let id = "LumiEditor"
     public let name = "Code Editor"
     public let order = 277
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .development
     public let stage: LumiPluginStage = .beta
     public var pluginDescription: String {

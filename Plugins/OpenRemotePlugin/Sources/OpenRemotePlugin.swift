@@ -14,7 +14,7 @@ public final class OpenRemotePlugin: LumiPlugin {
     public let name = "Open Remote Repository"
     public let order = 62
     public let category: LumiPluginCategory = .open
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 

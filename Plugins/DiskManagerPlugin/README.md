@@ -35,7 +35,7 @@ Disk management plugin for Lumi. Provides a system tool view for disk usage anal
 
 ## Policy
 
-`.optOut` - enabled by default and user-configurable, so users can disable it from plugin settings.
+`.optIn` - disabled by default and user-configurable, so users can enable it from plugin settings.
 
 ## Project Structure
 

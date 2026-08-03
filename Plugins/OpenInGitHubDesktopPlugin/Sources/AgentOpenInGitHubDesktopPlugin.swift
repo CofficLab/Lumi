@@ -13,7 +13,7 @@ public final class AgentOpenInGitHubDesktopPlugin: LumiPlugin {
     public let name = "Open in GitHub Desktop"
     public let order = 97
     public let category: LumiPluginCategory = .open
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 

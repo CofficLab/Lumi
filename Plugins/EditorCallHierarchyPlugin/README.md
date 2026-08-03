@@ -38,7 +38,7 @@ Lumi 代码编辑器采用分层 + 插件扩展架构。完整说明见 [docs/ed
 - **类型**：`LumiPanelBottomTabItem`
 - **Slot**：`panelBottom`
 - **Order**：4
-- **Activation**：optOut
+- **Activation**：disabled
 
 ## 依赖
 

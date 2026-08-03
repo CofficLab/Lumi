@@ -9,7 +9,7 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
     public let id = "com.coffic.activity-heatmap"
     public let name = "Activity Heatmap"
     public let order = 9
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .general
     public let pluginDescription = "Display daily message activity and token consumption charts."
 

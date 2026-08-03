@@ -6,7 +6,7 @@ public final class EditorSwiftPlugin: LumiPlugin {
     public let id = "EditorSwift"
     public let name = "Swift Editor"
     public let order = 4
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .development
     public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Provides Swift language support and tree-sitter highlighting."

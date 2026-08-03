@@ -8,7 +8,7 @@ import Testing
     #expect(plugin.id == "EditorSwift")
     #expect(plugin.name == "Swift Editor")
     #expect(plugin.order == 4)
-    #expect(plugin.policy == .optOut)
+        #expect(plugin.policy == .optIn)
     #expect(plugin.category == .development)
     #expect(plugin.stage == .beta)
 }

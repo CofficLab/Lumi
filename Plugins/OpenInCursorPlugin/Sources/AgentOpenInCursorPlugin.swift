@@ -13,7 +13,7 @@ public final class AgentOpenInCursorPlugin: LumiPlugin {
     public let name = "Open in Cursor"
     public let order = 60
     public let category: LumiPluginCategory = .open
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 

@@ -43,7 +43,7 @@ Anti-sleep plugin for Lumi. Provides menu bar controls and agent tools for preve
 
 ## Policy
 
-`.optOut` - enabled by default and user-configurable, so users can disable it from plugin settings.
+`.alwaysOn` - always enabled and not user-configurable.
 
 ## Project Structure
 

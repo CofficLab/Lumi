@@ -12,7 +12,7 @@ struct PluginCaffeinateTests {
         #expect(CaffeinatePlugin.isConfigurable == true)
         #expect(CaffeinatePlugin().category == .system)
         #expect(CaffeinatePlugin().order == 7)
-        #expect(CaffeinatePlugin().policy == .optOut)
+        #expect(CaffeinatePlugin().policy == .alwaysOn)
     }
 
     @Test

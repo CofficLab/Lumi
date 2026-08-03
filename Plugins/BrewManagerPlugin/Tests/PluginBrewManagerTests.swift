@@ -12,7 +12,7 @@ struct PluginBrewManagerTests {
         #expect(BrewManagerPlugin().category == .developerTool)
         #expect(BrewManagerPlugin().order == 60)
         #expect(BrewManagerPlugin.isConfigurable == true)
-        #expect(BrewManagerPlugin().policy == .optOut)
+        #expect(BrewManagerPlugin().policy == .optIn)
         #expect(BrewManagerPlugin.shared.instanceLabel == BrewManagerPlugin().id)
     }
 

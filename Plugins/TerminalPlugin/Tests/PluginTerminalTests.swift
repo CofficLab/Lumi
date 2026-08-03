@@ -6,8 +6,8 @@ import Testing
 }
 
 @MainActor
-@Test func pluginPolicyIsOptOut() {
+@Test func pluginPolicyIsOptIn() {
     let plugin = TerminalPlugin()
-    #expect(plugin.policy == .optOut)
+        #expect(plugin.policy == .optIn)
     #expect(plugin.policy.isConfigurable == true)
 }

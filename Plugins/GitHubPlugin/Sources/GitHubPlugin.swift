@@ -16,7 +16,7 @@ public final class GitHubPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.github"
     public let name = "GitHub"
     public let order = 16
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "GitHub integration for issues, repos, and code search."

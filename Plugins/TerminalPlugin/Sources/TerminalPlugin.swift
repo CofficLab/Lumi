@@ -11,7 +11,7 @@ public final class TerminalPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.terminal"
     public let name = "Terminal"
     public let order = 279
-	public let policy: LumiPluginPolicy = .optOut
+	public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 

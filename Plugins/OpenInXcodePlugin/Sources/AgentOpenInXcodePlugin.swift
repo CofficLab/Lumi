@@ -13,7 +13,7 @@ public final class AgentOpenInXcodePlugin: LumiPlugin {
     public let name = "Open in Xcode"
     public let order = 95
     public let category: LumiPluginCategory = .open
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 

@@ -16,7 +16,7 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
     public let id = "AppIconDesigner"
     public let name = "AppIconDesigner"
     public let order = 79
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .stable
     public let pluginDescription = "Design app icons with shapes, layers, and export capabilities."

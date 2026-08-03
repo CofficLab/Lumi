@@ -16,7 +16,7 @@ public final class AgentOpenInGitOKPlugin: LumiPlugin {
     public let name = "Open in GitOK"
     public let order = 98
     public let category: LumiPluginCategory = .open
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 

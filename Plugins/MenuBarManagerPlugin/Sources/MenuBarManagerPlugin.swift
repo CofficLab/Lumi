@@ -17,7 +17,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     public let id = "com.coffic.lumi.plugin.menubar-manager"
     public let name = "Menu Bar Manager"
     public let order = 300
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
 
     private weak var kernel: LumiKernel?
     private(set) public var isMenuBarPresented: Bool = false
