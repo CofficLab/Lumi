@@ -19,7 +19,7 @@ public final class GitPlugin: LumiPlugin, SuperLog {
     public let order = 11
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .development
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Git integration: history, commit details, branches, diffs."
 
     public init() {}
