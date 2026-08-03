@@ -3,6 +3,14 @@ import Foundation
 /// Manages agent-turn execution and lifecycle.
 @MainActor
 public protocol AgentTurnManaging: AnyObject {
+    /// Creates and starts an independent agent turn.
+    ///
+    /// The implementation owns the child conversation/turn lifecycle. This is
+    /// the entry point for tools and other Kernel consumers that need to
+    /// delegate work to another agent without constructing an agent loop
+    /// themselves.
+    func createTurn(_ request: AgentTurnCreationRequest) async throws -> AgentTurnHandle
+
     /// Runs a complete agent turn for the given conversation.
     func runTurn(in conversationID: UUID) async throws -> AgentTurnOutcome
 
@@ -39,6 +47,10 @@ public protocol AgentTurnManaging: AnyObject {
 }
 
 public extension AgentTurnManaging {
+    func createTurn(_ request: AgentTurnCreationRequest) async throws -> AgentTurnHandle {
+        throw AgentTurnManagingError.createNotSupported
+    }
+
     func currentTurnID(for conversationID: UUID) -> UUID? { nil }
 
     func resumeTurn(
