@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class ThemeSpringPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme.spring"
-    public let name = "Spring Theme"
+    public var name: String {
+        LumiPluginLocalization.string("Spring Theme", bundle: .module)
+    }
     public let order = 124
 	public let policy: LumiPluginPolicy = .alwaysOn
 
