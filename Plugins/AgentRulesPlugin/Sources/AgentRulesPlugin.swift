@@ -9,7 +9,7 @@ public final class AgentRulesPlugin: LumiPlugin {
     public let order = 50
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .general
-    public let stage: LumiPluginStage = .stable
+    public let stage: LumiPluginStage = .beta
     public let pluginDescription = "Manage rule documents in .agent/rules directory."
 
     public init() {}
