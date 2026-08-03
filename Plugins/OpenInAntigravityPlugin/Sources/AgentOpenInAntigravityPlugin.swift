@@ -10,7 +10,9 @@ import SwiftUI
 @MainActor
 public final class AgentOpenInAntigravityPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-antigravity"
-    public let name = "Open in Antigravity"
+    public var name: String {
+        LumiPluginLocalization.string("Open in Antigravity", bundle: .module)
+    }
     public let order = 83
     public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optIn

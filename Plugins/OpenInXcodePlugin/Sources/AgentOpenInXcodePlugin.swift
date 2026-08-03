@@ -10,7 +10,9 @@ import SwiftUI
 @MainActor
 public final class AgentOpenInXcodePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-xcode"
-    public let name = "Open in Xcode"
+    public var name: String {
+        LumiPluginLocalization.string("Open in Xcode", bundle: .module)
+    }
     public let order = 95
     public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optIn

@@ -10,7 +10,9 @@ import SwiftUI
 @MainActor
 public final class AgentOpenInFinderPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-finder"
-    public let name = "Open in Finder"
+    public var name: String {
+        LumiPluginLocalization.string("Open in Finder", bundle: .module)
+    }
     public let order = 61
     public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optIn

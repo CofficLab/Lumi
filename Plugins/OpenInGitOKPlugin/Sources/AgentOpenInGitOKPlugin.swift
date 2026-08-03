@@ -13,7 +13,9 @@ private let gitOKPluginLogger = Logger(subsystem: "com.coffic.lumi", category: "
 @MainActor
 public final class AgentOpenInGitOKPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-gitok"
-    public let name = "Open in GitOK"
+    public var name: String {
+        LumiPluginLocalization.string("Open in GitOK", bundle: .module)
+    }
     public let order = 98
     public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optIn

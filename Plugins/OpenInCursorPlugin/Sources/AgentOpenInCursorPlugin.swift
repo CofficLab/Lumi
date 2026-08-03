@@ -10,7 +10,9 @@ import SwiftUI
 @MainActor
 public final class AgentOpenInCursorPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-cursor"
-    public let name = "Open in Cursor"
+    public var name: String {
+        LumiPluginLocalization.string("Open in Cursor", bundle: .module)
+    }
     public let order = 60
     public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optIn

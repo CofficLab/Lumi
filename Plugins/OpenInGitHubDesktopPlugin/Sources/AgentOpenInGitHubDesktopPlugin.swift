@@ -10,7 +10,9 @@ import SwiftUI
 @MainActor
 public final class AgentOpenInGitHubDesktopPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.open-in-github-desktop"
-    public let name = "Open in GitHub Desktop"
+    public var name: String {
+        LumiPluginLocalization.string("Open in GitHub Desktop", bundle: .module)
+    }
     public let order = 97
     public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optIn
