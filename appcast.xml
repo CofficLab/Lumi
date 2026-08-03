@@ -3,35 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.6.3</title>
-            <pubDate>Sun, 02 Aug 2026 16:23:25 +0000</pubDate>
-            <sparkle:version>512</sparkle:version>
-            <sparkle:shortVersionString>5.6.3</sparkle:shortVersionString>
+            <title>5.6.4</title>
+            <pubDate>Mon, 03 Aug 2026 10:01:03 +0000</pubDate>
+            <sparkle:version>513</sparkle:version>
+            <sparkle:shortVersionString>5.6.4</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.6.3</h2>
-<h3>Changes since v5.6.2</h3>
+            <description><![CDATA[<h2>Release v5.6.4</h2>
+<h3>Changes since v5.6.3</h3>
 <ul>
-<li>feat(browserplugin): add BrowserAgentTool to agentTools</li>
-<li>feat(ConversationInputPlugin): attach image files as base64 when dragged into composer</li>
-<li>feat(MiniMaxVideoTool): route all network requests through kernel's NetworkProviding</li>
-<li>feat(NetworkManagerPlugin): add download tool and split HTTPLogTools into individual files</li>
-<li>feat(NetworkManagerPlugin): add searchPage and searchCount to HTTPExchangeStore</li>
-<li>feat(NetworkManagerPlugin): skip inline rendering for large HTTP body payloads</li>
-<li>fix(deepseek): remove duplicate/deprecated files after refactor</li>
-<li>fix(LLMProvider): inject plugin data directory via storage API in onBoot</li>
-<li>fix(NetworkManagerPlugin): center code block with GeometryReader and add missing localizations</li>
-<li>fix(OnboardingPlugin): delay ViewModel creation until onReady to use correct storage directory</li>
-<li>refactor(deepseek): add Anthropic protocol support and restructure provider architecture</li>
-<li>refactor(deepseek): move pure data types into a Models directory</li>
-<li>refactor(MiniMaxVideoTool): return download URL instead of downloading video binary</li>
-<li>refactor(networkmanager): drop auto-refresh on HTTP exchange settings</li>
-<li>refactor(NetworkManagerPlugin): replace fixed-directory download with NSSavePanel text export for large payloads</li>
-<li>refactor(toolmanager): extract usage statistics into its own settings tab</li>
-<li>trash:  delete unnecessary code or files</li>
+<li>feat(ConversationManager): post a fine-grained notification when conversation title changes</li>
+<li>feat(ConversationManaging): add paginated fetch, single-ID fetch, and per-project count APIs</li>
+<li>feat(LumiUI): add shimmer effect modifier for skeleton loading views</li>
+<li>feat(MiniMaxPlugin): add video record persistence, query tools, and settings view</li>
+<li>feat(MiniMaxPlugin): move MiniMaxTokenPlanProvider to Providers directory</li>
+<li>feat(WindowMain): collect onboarding pages and inject via environment</li>
+<li>fix(command): prevent menu action failures and redundant rebuilds</li>
+<li>fix(ConversationListPlugin): coalesce reload requests during active reload</li>
+<li>fix(ConversationManager): notify list after persisting conversation to database</li>
+<li>fix(DeviceInfoPlugin): use Int64 for CPU state counters to prevent Int32 overflow on multi-core machines</li>
+<li>fix(DiskManagerPlugin): localize remaining hardcoded strings in about view</li>
+<li>fix(Open*): use Bundle.module for pluginAboutView localization in all Open plugins</li>
+<li>fix(Plugins): change policy from optIn to alwaysOn for ActivityHeatmap, Download, and IdleTime plugins</li>
+<li>refactor(ActivityPlugins): update plugin implementations</li>
+<li>refactor(AgentRulesPlugin): update plugin implementation</li>
+<li>refactor(AgentTempStoragePlugin): update plugin implementation</li>
+<li>refactor(AppIconDesignerPlugin): update plugin implementation</li>
+<li>refactor(AppPlugins): update plugin implementations</li>
+<li>refactor(AskUserPlugin): update plugin implementation</li>
+<li>refactor(BrewManagerPlugin): update plugin implementation</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.6.3</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.6.4</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.6.3/Lumi_5.6.3_arm64.dmg" length="40122999" type="application/octet-stream" sparkle:edSignature="ZYVIyGKUHSwfWaaVp9NT7PU1sxvq2nCbrgq97rYn9v4ME5N68PI6icyW4RigbCWqVhPJy/BbjBSgv2Jo6g74Dw=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.6.4/Lumi_5.6.4_arm64.dmg" length="40540638" type="application/octet-stream" sparkle:edSignature="UW5WdIM19KcDw4yRf3LxRl9JjcikofClnKBgh0b3LIXDHnthbmo5br1YMUOy4vIBcshpCYI/mThrLDj6fQ4fDQ=="/>
         </item>
     </channel>
 </rss>
