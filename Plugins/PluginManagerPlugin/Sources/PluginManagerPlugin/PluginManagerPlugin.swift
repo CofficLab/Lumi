@@ -52,13 +52,6 @@ public final class PluginManagerPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-    public func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
-        await PluginManagerWillSendToLLMHook(pluginID: id).execute(
-            kernel: kernel,
-            messages: messages
-        )
-    }
-
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
         [
             SettingsTabItem(
@@ -86,7 +79,6 @@ public final class PluginManagerPlugin: LumiPlugin {
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }

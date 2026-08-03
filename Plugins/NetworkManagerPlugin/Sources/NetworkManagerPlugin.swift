@@ -62,7 +62,6 @@ public final class NetworkManagerPlugin: LumiPlugin {
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
 
     // MARK: - Agent Tools
 

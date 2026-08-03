@@ -355,10 +355,7 @@ public final class PluginManager: ObservableObject {
         }
 
         manager.removeAll()
-        manager.removeAllSubAgents()
-
-        // Build the ordinary tool set first. Sub-agents receive this snapshot so they
-        // can use project tools without seeing the unified delegate tool.
+        // Build the ordinary tool set from plugin contributions.
         for plugin in allPlugins {
             guard effectiveEnabled(for: plugin) else { continue }
             let tools = plugin.agentTools(kernel: kernel)
@@ -367,29 +364,6 @@ public final class PluginManager: ObservableObject {
             }
         }
 
-        let availableTools = manager.allAgentTools()
-        let providerResolver: @MainActor @Sendable (String) -> (any LumiLLMProvider)? = { [weak kernel] id in
-            kernel?.llmProvider?.llmProvider(id: id)
-        }
-
-        for plugin in allPlugins {
-            guard effectiveEnabled(for: plugin) else { continue }
-            for definition in plugin.subAgents(kernel: kernel) {
-                manager.addSubAgent(definition)
-            }
-        }
-        let subAgents = manager.allSubAgents()
-        if !subAgents.isEmpty {
-            manager.add(
-                SubAgentRouterTool(
-                    definitions: subAgents,
-                    providerResolver: providerResolver,
-                    availableTools: availableTools,
-                    executionToolService: manager
-                ),
-                pluginID: "Sub Agents"
-            )
-        }
     }
 
     /// 收集所有插件贡献的编辑器运行时插件,并注册到内核的 `EditorProviding` 服务。
@@ -418,35 +392,12 @@ public final class PluginManager: ObservableObject {
         //    确保 settingsTabItems 创建视图时能读取到已注册的工具列表。
         if let toolManager = kernel.toolManager {
             toolManager.removeAll()
-            toolManager.removeAllSubAgents()
             for plugin in allPlugins {
                 guard effectiveEnabled(for: plugin) else { continue }
                 let tools = plugin.agentTools(kernel: kernel)
                 for tool in tools {
                     toolManager.add(tool, pluginID: plugin.id)
                 }
-            }
-            let availableTools = toolManager.allAgentTools()
-            let providerResolver: @MainActor @Sendable (String) -> (any LumiLLMProvider)? = { [weak kernel] id in
-                kernel?.llmProvider?.llmProvider(id: id)
-            }
-            for plugin in allPlugins {
-                guard effectiveEnabled(for: plugin) else { continue }
-                for definition in plugin.subAgents(kernel: kernel) {
-                    toolManager.addSubAgent(definition)
-                }
-            }
-            let subAgents = toolManager.allSubAgents()
-            if !subAgents.isEmpty {
-                toolManager.add(
-                    SubAgentRouterTool(
-                        definitions: subAgents,
-                        providerResolver: providerResolver,
-                        availableTools: availableTools,
-                        executionToolService: toolManager
-                    ),
-                    pluginID: "Sub Agents"
-                )
             }
         }
 

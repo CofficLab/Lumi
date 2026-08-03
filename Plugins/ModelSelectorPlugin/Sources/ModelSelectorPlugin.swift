@@ -30,7 +30,6 @@ public final class ModelSelectorPlugin: LumiPlugin {
     public func agentTools(kernel: LumiKernel) -> [LumiAgentTool] { [] }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }

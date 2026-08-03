@@ -41,7 +41,6 @@ public final class MemoryPlugin: LumiPlugin {
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
             SaveMemoryTool(),

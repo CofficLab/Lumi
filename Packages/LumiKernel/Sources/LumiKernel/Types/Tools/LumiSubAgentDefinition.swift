@@ -20,8 +20,8 @@ public struct LumiSubAgentDefinition: Sendable, Identifiable {
     ///
     /// This lets a plugin ship provider-agnostic built-in sub-agents that always
     /// track the user's active model, instead of being pinned to one provider.
-    /// Resolution happens lazily in `SubAgentDelegateTool.runDelegate`, so model
-    /// switches take effect immediately without re-collecting contributions.
+    /// The future AgentTool implementation will resolve this policy when it
+    /// creates a child turn.
     ///
     /// Defaults to `false` to preserve the pinned-provider behavior.
     public let inheritsSelectedProvider: Bool

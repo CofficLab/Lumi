@@ -27,10 +27,5 @@ let package = Package(
             path: "Sources"
         ,
             resources: [.process("../Resources/Localizable.xcstrings")]),
-        .testTarget(
-            name: "SubAgentProviderPluginTests",
-            dependencies: ["SubAgentProviderPlugin"],
-            path: "Tests"
-        ),
     ]
 )

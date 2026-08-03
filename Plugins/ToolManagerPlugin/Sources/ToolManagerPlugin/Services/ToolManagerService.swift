@@ -25,9 +25,6 @@ public final class ToolManagerService: ToolManaging {
     /// 插件首次出现顺序，决定分组在 UI 中的排列。
     private var pluginOrder: [String] = []
 
-    /// 已注册的子 Agent 定义，独立于可执行的 delegate 工具保存，供 UI 和调试查询。
-    private var registeredSubAgents: [String: LumiSubAgentDefinition] = [:]
-    private var subAgentOrder: [String] = []
     /// Fast path for results produced during the current process. Persistence is
     /// asynchronous, so the UI can resolve a freshly completed call immediately.
     private var resultCache: [String: LumiToolResult] = [:]
@@ -76,23 +73,6 @@ public final class ToolManagerService: ToolManaging {
             let tools = names.compactMap { registeredTools[$0] }
             return tools.isEmpty ? nil : (pluginID, tools)
         }
-    }
-
-    public func allSubAgents() -> [LumiSubAgentDefinition] {
-        subAgentOrder.compactMap { registeredSubAgents[$0] }
-    }
-
-    public func addSubAgent(_ subAgent: LumiSubAgentDefinition) {
-        let key = subAgent.routingID
-        if registeredSubAgents[key] == nil {
-            subAgentOrder.append(key)
-        }
-        registeredSubAgents[key] = subAgent
-    }
-
-    public func removeAllSubAgents() {
-        registeredSubAgents.removeAll()
-        subAgentOrder.removeAll()
     }
 
     public func collectTools() async throws -> [any LumiAgentTool] {

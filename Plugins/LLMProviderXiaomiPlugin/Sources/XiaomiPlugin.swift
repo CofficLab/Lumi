@@ -30,7 +30,6 @@ public final class XiaomiPlugin: LumiPlugin {
         [XiaomiProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
         [
             ApiKeyMissingRenderer.item,

@@ -12,8 +12,8 @@ import SwiftUI
 /// 主 Agent 当前选中的 provider/model。这样无论 StepFun 是否可用，只要用户选了
 /// 任意支持工具调用的模型，就始终有子 Agent 可用。
 ///
-/// 子 Agent 经由框架的 `SubAgentRouterTool`（`delegate_task` 工具）按关键词路由派发，
-/// 本插件不直接注册任何工具或 UI。
+/// 子 Agent 定义暂时保留，后续将改为通过 AgentTool 调用 Kernel 的
+/// `AgentTurnManaging.createTurn` 能力。本插件当前不直接注册任何工具或 UI。
 @MainActor
 public final class SubAgentProviderPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.sub-agent-provider"
@@ -37,17 +37,6 @@ public final class SubAgentProviderPlugin: LumiPlugin {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {}
-
-    // MARK: - Sub-Agents
-
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] {
-        [
-            ExploreAgent.definition,
-            CodeReviewAgent.definition,
-            BugFixerAgent.definition,
-            TestWriterAgent.definition
-        ]
-    }
 
     // MARK: - LumiPlugin stubs
 

@@ -3,7 +3,7 @@ import LumiKernel
 
 /// StepFun 子 Agent 的可用性 gate。
 ///
-/// 背景:`LumiPlugin.subAgents(kernel:)` 是同步方法,框架只在启动
+/// 背景：插件可用性探测是异步的，不能阻塞启动流程。
 /// (`PluginManager.registerAgentTools`)与插件启停
 /// (`PluginManager.rebuildAllContributions`)时各调用一次,且没有事件机制
 /// 让插件运行时主动重新收集自己的 sub-agents —— 除非插件自己调用 public 的
@@ -19,8 +19,7 @@ import LumiKernel
 ///           (unknown 也返回 [],保守 gate)
 /// ```
 ///
-/// 时序自洽:`onReady` 异步启动探测 → 随后 `registerAgentTools` 调 `subAgents`
-/// (此时探测未完 → 返空,gate)→ 探测完成 → 触发 rebuild → 再次调 `subAgents`
+/// `onReady` 异步启动探测，探测完成后更新 gate 状态。
 /// (已 ready → 返全部)。磁盘缓存命中时,从启动到注册成功的窗口被压到很短。
 @MainActor
 final class StepFunSubAgentsGate {
@@ -65,7 +64,7 @@ final class StepFunSubAgentsGate {
 
     /// 同步读:仅当 `ready` 时返回全部 sub-agent,其余状态返回空数组。
     ///
-    /// 满足 `LumiPlugin.subAgents(kernel:)` 的同步签名 —— gate 决策不触发网络,
+    /// gate 决策不触发网络,
     /// 网络探测由 `refresh(kernel:)` 在 `onReady` 异步驱动。
     /// 不需要 kernel(决策纯本地),故签名不带它,便于无 kernel 环境测试。
     func evaluate() -> [LumiSubAgentDefinition] {
