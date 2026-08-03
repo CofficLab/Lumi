@@ -1,107 +1,119 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Ask User" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ask User"
+  "sourceLanguage": "en",
+  "strings": {
+    "Ask User": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask User"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用户询问"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用户询问"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用戶詢問"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用戶詢問"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用戶詢問"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用戶詢問"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用戶詢問"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用戶詢問"
           }
         }
       }
     },
-    "Conversation: %@" : {
-
-    },
-    "Provides ask_user tool, letting LLM ask the user questions and wait for responses." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Provides ask_user tool, letting LLM ask the user questions and wait for responses."
+    "AskUser": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AskUser"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供 ask_user 工具，让 LLM 可以向用户提问并等待回答。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "询问用户"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供 ask_user 工具，讓 LLM 可以向用戶提問並等待回答。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "询问用户"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供 ask_user 工具，讓 LLM 可以向用戶提問並等待回答。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "询问用户"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供 ask_user 工具，讓 LLM 可以向用戶提問並等待回答。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "询问用户"
           }
         }
       }
     },
-    "ToolCall ID: %@" : {
-
+    "Conversation: %@": {},
+    "Provides ask_user tool, letting LLM ask the user questions and wait for responses.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides ask_user tool, letting LLM ask the user questions and wait for responses."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供 ask_user 工具，让 LLM 可以向用户提问并等待回答。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供 ask_user 工具，讓 LLM 可以向用戶提問並等待回答。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供 ask_user 工具，讓 LLM 可以向用戶提問並等待回答。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供 ask_user 工具，讓 LLM 可以向用戶提問並等待回答。"
+          }
+        }
+      }
     },
-    "否" : {
-
-    },
-    "已回答：%@" : {
-
-    },
-    "或者输入自定义回答：" : {
-
-    },
-    "无法解析问题内容" : {
-
-    },
-    "是" : {
-
-    },
-    "点击选项回答问题" : {
-
-    },
-    "输入回答..." : {
-
-    },
-    "输入回答后提交" : {
-
-    },
-    "选择预设选项或输入自定义回答" : {
-
-    }
+    "ToolCall ID: %@": {},
+    "否": {},
+    "已回答：%@": {},
+    "或者输入自定义回答：": {},
+    "无法解析问题内容": {},
+    "是": {},
+    "点击选项回答问题": {},
+    "输入回答...": {},
+    "输入回答后提交": {},
+    "选择预设选项或输入自定义回答": {}
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

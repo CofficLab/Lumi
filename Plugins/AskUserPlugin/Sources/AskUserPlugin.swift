@@ -24,7 +24,9 @@ public final class AskUserPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin Identity
 
     public let id = "plugin-ask-user"
-    public let name = "AskUser"
+    public var name: String {
+        LumiPluginLocalization.string("AskUser", bundle: .module)
+    }
     public let order = 100
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .general
