@@ -52,11 +52,25 @@ public protocol ToolManaging: AnyObject {
 
     /// Query all persisted tool calls belonging to an agent turn.
     func toolCalls(for turnID: UUID) async -> [LumiToolCallRecord]
+
+    /// Query the result of one tool invocation by its original tool-call ID.
+    ///
+    /// The ID is `LumiToolCall.id`, not the ID of a separate tool-log record.
+    /// Implementations may return `nil` when the call is unknown, has not
+    /// completed yet, or the backing result store is not available.
+    func toolCallResult(for toolCallID: String) async -> LumiToolResult?
 }
 
 // MARK: - Default registration
 
 public extension ToolManaging {
+    /// Default implementation for tool managers that do not persist individual
+    /// results yet. This keeps the new capability source-compatible while the
+    /// concrete persistence layer is migrated incrementally.
+    func toolCallResult(for toolCallID: String) async -> LumiToolResult? {
+        nil
+    }
+
     /// Backward-compatible execution entry point for callers outside the agent loop.
     func execute(_ toolCall: LumiToolCall, conversationID: UUID) async -> LumiToolResult {
         await execute(toolCall, conversationID: conversationID, turnID: nil)
