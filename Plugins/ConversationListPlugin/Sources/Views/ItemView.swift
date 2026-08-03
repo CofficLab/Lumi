@@ -52,13 +52,13 @@ public struct ItemView: View {
                     .foregroundColor(theme.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                
+
                 if let providerID = conversation.providerID {
                     HStack(spacing: 4) {
                         Text(providerID)
                             .font(.footnote)
                             .foregroundColor(theme.textTertiary)
-                        
+
                         if let modelName = conversation.modelName, !modelName.isEmpty {
                             Text("·")
                                 .foregroundColor(theme.textTertiary)
@@ -70,7 +70,7 @@ public struct ItemView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                 }
-                
+
                 HStack(spacing: 4) {
                     if let projectPath = conversation.projectPath {
                         Text(URL(fileURLWithPath: projectPath).lastPathComponent)
@@ -146,5 +146,4 @@ public struct ItemView: View {
     private var isActive: Bool {
         kernel.agentTurnManager?.isRunning(for: conversation.id) == true
     }
-
 }

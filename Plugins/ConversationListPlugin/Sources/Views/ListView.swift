@@ -24,7 +24,21 @@ public struct ListView: View {
             } else if conversations.isEmpty {
                 ListEmptyView()
             } else {
-                listContent
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(conversations, id: \.id) { conversation in
+                            ItemView(
+                                conversation: conversation,
+                                svc: svc,
+                                kernel: kernel,
+                                attentionStore: attentionStore
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                }
+                .scrollContentBackground(.hidden)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -34,24 +48,6 @@ public struct ListView: View {
                 await reload()
             }
         }
-    }
-
-    private var listContent: some View {
-        ScrollView {
-            VStack(spacing: 4) {
-                ForEach(conversations, id: \.id) { conversation in
-                    ItemView(
-                        conversation: conversation,
-                        svc: svc,
-                        kernel: kernel,
-                        attentionStore: attentionStore
-                    )
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-        }
-        .scrollContentBackground(.hidden)
     }
 
     private func reload() async {
