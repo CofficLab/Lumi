@@ -12,7 +12,9 @@ public final class RClickPlugin: LumiPlugin {
     public nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.rclick"
-    public let name = "Right Click"
+    public var name: String {
+        LumiPluginLocalization.string("Right Click", bundle: .module)
+    }
     public let order = 50
     public let policy: LumiPluginPolicy = .disabled
 
