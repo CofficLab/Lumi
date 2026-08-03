@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class XybbzPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.xybbz"
-    public let name = "Xybbz"
+    public var name: String {
+        LumiPluginLocalization.string("Xybbz", bundle: .module)
+    }
     public let order = 103
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }

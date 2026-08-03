@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class ZhipuPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.zhipu"
-    public let name = "智谱 Coding Plan"
+    public var name: String {
+        LumiPluginLocalization.string("智谱 Coding Plan", bundle: .module)
+    }
     public let order = 110
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }
