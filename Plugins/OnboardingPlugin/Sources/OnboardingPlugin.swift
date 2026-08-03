@@ -1,5 +1,5 @@
-import SwiftUI
 import LumiKernel
+import SwiftUI
 
 @MainActor
 public final class OnboardingPlugin: LumiPlugin {
@@ -21,8 +21,8 @@ public final class OnboardingPlugin: LumiPlugin {
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] {
         [
             OnboardingPageItem(id: "onboarding-welcome") {
-                OnboardingWelcomePage()
-            }
+                PluginManagementPage()
+            },
         ]
     }
 
@@ -32,13 +32,11 @@ public final class OnboardingPlugin: LumiPlugin {
                 id: "onboarding-root-overlay",
                 order: 10,
                 wrap: { content in
-                    AnyView(OnboardingRootOverlay(content: content))
+                    AnyView(RootOverlay(content: content))
                 }
-            )
+            ),
         ]
     }
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }

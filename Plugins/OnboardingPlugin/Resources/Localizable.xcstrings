@@ -1,6 +1,114 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "1. Click the Settings button in the Activity Bar" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "1. Click the Settings button in the Activity Bar" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "1. 点击活动栏上的设置按钮" } }
+      }
+    },
+    "2. Select Plugins in the Settings sidebar" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "2. Select Plugins in the Settings sidebar" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "2. 在设置侧栏中选择插件" } }
+      }
+    },
+    "3. Turn plugins on or off with the switches" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "3. Turn plugins on or off with the switches" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "3. 使用开关启用或关闭插件" } }
+      }
+    },
+    "Appearance" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Appearance" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "外观" } }
+      }
+    },
+    "Enable the tools you want to use" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enable the tools you want to use" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启用你需要的工具" } }
+      }
+    },
+    "General" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "General" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "通用" } }
+      }
+    },
+    "Git" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Git" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Git" } }
+      }
+    },
+    "Lumi" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Lumi" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Lumi" } }
+      }
+    },
+    "Manage your plugins" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Manage your plugins" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "管理你的插件" } }
+      }
+    },
+    "Open Settings from the Activity Bar, then enable or disable plugins whenever you need." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Settings from the Activity Bar, then enable or disable plugins whenever you need." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "从活动栏打开设置，随时启用或关闭插件。" } }
+      }
+    },
+    "Plugins" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Plugins" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "插件" } }
+      }
+    },
+    "Plugin Manager" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Plugin Manager" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "插件管理" } }
+      }
+    },
+    "Project Files" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Project Files" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "项目文件" } }
+      }
+    },
+    "Replay" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Replay" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重新播放" } }
+      }
+    },
+    "Replay animation" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Replay animation" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重新播放动画" } }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "设置" } }
+      }
+    },
+    "Start a conversation or open Settings to customize Lumi" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start a conversation or open Settings to customize Lumi" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开始对话，或打开设置自定义 Lumi" } }
+      }
+    },
+    "You're ready to customize Lumi" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You're ready to customize Lumi" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "现在可以自定义 Lumi 了" } }
+      }
+    },
     "After switching modes, check the top tip to see available capabilities" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1451,6 +1559,12 @@
             "value" : "你的 AI 驅動個人桌面助手"
           }
         }
+      }
+    },
+    "Your AI-powered desktop assistant" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your AI-powered desktop assistant" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "你的 AI 驱动个人桌面助手" } }
       }
     }
   },

@@ -1,237 +1,9 @@
-import Foundation
 import LumiKernel
-import os
-import SuperLogKit
 import SwiftUI
-
-enum OnboardingPageIndexing {
-    static func clampedIndex(_ index: Int, pageCount: Int) -> Int {
-        guard pageCount > 0 else { return 0 }
-        return min(max(index, 0), pageCount - 1)
-    }
-}
-
-// MARK: - ViewModel
-
-@MainActor
-public final class OnboardingPluginViewModel: ObservableObject, SuperLog {
-    // MARK: - 属性
-
-    @Published var isPresentingOnboarding = false
-    @Published var currentStep = 0
-    @Published var isTransitioning = false
-    @Published var persistenceErrorMessage: String?
-
-    private let store: OnboardingPluginStore
-
-    // MARK: - 初始化
-
-    public init(store: OnboardingPluginStore = .init(pluginId: "Onboarding")) {
-        self.store = store
-    }
-
-    // MARK: - 计算属性
-
-    private var hasCompletedOnboarding: Bool {
-        store.completed
-    }
-
-    // MARK: - 公开方法
-
-    public func presentIfNeededOnLaunch() {
-        guard !hasCompletedOnboarding else { return }
-        guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else { return }
-        start()
-    }
-
-    public func start() {
-        currentStep = 0
-        isPresentingOnboarding = true
-    }
-
-    public func show(forceReset: Bool) {
-        if forceReset {
-            guard store.setCompleted(false) else {
-                persistenceErrorMessage = LumiPluginLocalization.string("Failed to reset onboarding state. Please check if Lumi data directory is writable.", bundle: .module)
-                return
-            }
-        }
-        start()
-    }
-
-    public func skip() {
-        complete()
-    }
-
-    public func complete() {
-        guard store.setCompleted(true) else {
-            persistenceErrorMessage = LumiPluginLocalization.string("Failed to save onboarding state. Please check if Lumi data directory is writable.", bundle: .module)
-            return
-        }
-        isPresentingOnboarding = false
-        currentStep = 0
-    }
-
-    public func nextStep(totalSteps: Int) {
-        guard totalSteps > 0 else {
-            complete()
-            return
-        }
-        guard !isTransitioning else { return }
-
-        currentStep = OnboardingPageIndexing.clampedIndex(currentStep, pageCount: totalSteps)
-        if currentStep >= totalSteps - 1 {
-            complete()
-        } else {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                isTransitioning = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                self.currentStep = OnboardingPageIndexing.clampedIndex(self.currentStep + 1, pageCount: totalSteps)
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    self.isTransitioning = false
-                }
-            }
-        }
-    }
-
-    public func previousStep() {
-        guard !isTransitioning else { return }
-        guard currentStep > 0 else { return }
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            isTransitioning = true
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            self.currentStep = max(self.currentStep - 1, 0)
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                self.isTransitioning = false
-            }
-        }
-    }
-}
-
-// MARK: - Store
-
-public final class OnboardingPluginStore: SuperLog {
-    // MARK: - 属性
-
-    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.onboarding.store")
-    private let fileManager = FileManager.default
-    private let settingsURL: URL
-    private let stateFileURL: URL
-    private let corruptStateFileURL: URL
-
-    // MARK: - 初始化
-
-    public init(pluginId: String) {
-        let pluginDirectory = OnboardingPluginRuntimeBridge.pluginDirectory
-            ?? OnboardingPluginRuntimeBridge.fallbackRootDirectory
-                .appendingPathComponent(pluginId, isDirectory: true)
-        self.settingsURL = pluginDirectory.appendingPathComponent("settings", isDirectory: true)
-        self.stateFileURL = settingsURL.appendingPathComponent("onboarding_state.plist")
-        self.corruptStateFileURL = settingsURL.appendingPathComponent("onboarding_state.corrupt.plist")
-        prepareDirectories()
-    }
-
-    init(settingsDirectory: URL) {
-        self.settingsURL = settingsDirectory
-        self.stateFileURL = settingsURL.appendingPathComponent("onboarding_state.plist")
-        self.corruptStateFileURL = settingsURL.appendingPathComponent("onboarding_state.corrupt.plist")
-        prepareDirectories()
-    }
-
-    // MARK: - 公开方法
-
-    public var completed: Bool {
-        get { readCompletedFlag() }
-        set { setCompleted(newValue) }
-    }
-
-    @discardableResult
-    public func setCompleted(_ completed: Bool) -> Bool {
-        writeCompletedFlag(completed)
-    }
-
-    // MARK: - 私有方法
-
-    private func prepareDirectories() {
-        do {
-            try fileManager.createDirectory(at: settingsURL, withIntermediateDirectories: true)
-        } catch {
-            Self.logger.error("\(Self.t)Create onboarding settings directory failed: \(error.localizedDescription)")
-        }
-    }
-
-    private func readCompletedFlag() -> Bool {
-        guard fileManager.fileExists(atPath: stateFileURL.path) else {
-            return false
-        }
-
-        do {
-            let data = try Data(contentsOf: stateFileURL)
-            let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
-            guard let dict = plist as? [String: Any] else {
-                Self.logger.error("\(Self.t)Read onboarding state failed: root plist is not a dictionary")
-                quarantineCorruptState()
-                return false
-            }
-            return dict["completed"] as? Bool ?? false
-        } catch {
-            Self.logger.error("\(Self.t)Read onboarding state failed: \(error.localizedDescription)")
-            quarantineCorruptState()
-            return false
-        }
-    }
-
-    @discardableResult
-    private func writeCompletedFlag(_ completed: Bool) -> Bool {
-        let payload: [String: Any] = [
-            "completed": completed,
-            "updatedAt": Date()
-        ]
-
-        let data: Data
-        do {
-            data = try PropertyListSerialization.data(fromPropertyList: payload, format: .binary, options: 0)
-        } catch {
-            Self.logger.error("\(Self.t)Encode onboarding state failed: \(error.localizedDescription)")
-            return false
-        }
-
-        let tempURL = settingsURL.appendingPathComponent("onboarding_state.tmp")
-        do {
-            try fileManager.createDirectory(at: settingsURL, withIntermediateDirectories: true)
-            try data.write(to: tempURL, options: .atomic)
-            if fileManager.fileExists(atPath: stateFileURL.path) {
-                _ = try fileManager.replaceItemAt(stateFileURL, withItemAt: tempURL)
-            } else {
-                try fileManager.moveItem(at: tempURL, to: stateFileURL)
-            }
-            return true
-        } catch {
-            Self.logger.error("\(Self.t)Persist onboarding state failed: \(error.localizedDescription)")
-            try? fileManager.removeItem(at: tempURL)
-            return false
-        }
-    }
-
-    private func quarantineCorruptState() {
-        guard fileManager.fileExists(atPath: stateFileURL.path) else { return }
-
-        do {
-            if fileManager.fileExists(atPath: corruptStateFileURL.path) {
-                try fileManager.removeItem(at: corruptStateFileURL)
-            }
-            try fileManager.moveItem(at: stateFileURL, to: corruptStateFileURL)
-        } catch {
-            Self.logger.error("\(Self.t)Quarantine corrupt onboarding state failed: \(error.localizedDescription)")
-        }
-    }
-}
 
 // MARK: - RootOverlay
 
-public struct OnboardingRootOverlay<Content: View>: View {
+public struct RootOverlay<Content: View>: View {
     public let content: Content
 
     /// Aggregated onboarding pages from all enabled plugins, injected via
@@ -244,17 +16,17 @@ public struct OnboardingRootOverlay<Content: View>: View {
     /// 使用 RuntimeBridge 中的 viewModel，确保在 onBoot/onReady 阶段初始化
     /// 这样可以保证使用正确的 storage 目录，而不是 fallback 到 Application Support
     ///
-    /// 注意：不能直接 `@StateObject var viewModel = OnboardingPluginViewModel()`
-    /// 因为 OnboardingPluginStore.init(pluginId:) 会立即创建目录。
+    /// 注意：不能直接 `@StateObject var viewModel = PluginViewModel()`
+    /// 因为 PluginStore.init(pluginId:) 会立即创建目录。
     /// 必须延迟到 onAppear 时再创建 fallback，此时 kernel.storage 已注入正确路径。
-    @State private var viewModel: OnboardingPluginViewModel?
+    @State private var viewModel: PluginViewModel?
 
     // MARK: - 页面聚合
 
     private var pages: [OnboardingPageView] {
         guard !environmentPages.isEmpty else {
             return [
-                OnboardingPageView(order: 0, view: AnyView(OnboardingWelcomePage()))
+                OnboardingPageView(order: 0, view: AnyView(PluginManagementPage()))
             ]
         }
         return environmentPages
@@ -263,7 +35,7 @@ public struct OnboardingRootOverlay<Content: View>: View {
     public var body: some View {
         Group {
             if let viewModel {
-                OnboardingPresentedContent(content: content, viewModel: viewModel, pages: pages)
+                PresentedContent(content: content, viewModel: viewModel, pages: pages)
             } else {
                 content
             }
@@ -271,7 +43,7 @@ public struct OnboardingRootOverlay<Content: View>: View {
             .onAppear {
                 // 延迟创建 viewModel，避免在 View 属性初始化阶段就创建 Store 并触发 prepareDirectories()
                 if viewModel == nil {
-                    viewModel = OnboardingPluginRuntimeBridge.viewModel ?? OnboardingPluginViewModel()
+                    viewModel = RuntimeBridge.viewModel ?? PluginViewModel()
                 }
                 viewModel?.presentIfNeededOnLaunch()
             }
@@ -280,9 +52,9 @@ public struct OnboardingRootOverlay<Content: View>: View {
 
 /// Keeps the delayed ViewModel creation in the root overlay while ensuring
 /// sheet presentation observes the ViewModel's @Published state.
-private struct OnboardingPresentedContent<Content: View>: View {
+private struct PresentedContent<Content: View>: View {
     let content: Content
-    @ObservedObject var viewModel: OnboardingPluginViewModel
+    @ObservedObject var viewModel: PluginViewModel
     let pages: [OnboardingPageView]
 
     var body: some View {
@@ -292,15 +64,15 @@ private struct OnboardingPresentedContent<Content: View>: View {
                 viewModel.show(forceReset: forceReset)
             }
             .sheet(isPresented: $viewModel.isPresentingOnboarding) {
-                OnboardingSheetView(viewModel: viewModel, pages: pages)
+                SheetView(viewModel: viewModel, pages: pages)
             }
     }
 }
 
 // MARK: - SheetView
 
-private struct OnboardingSheetView: View {
-    @ObservedObject var viewModel: OnboardingPluginViewModel
+private struct SheetView: View {
+    @ObservedObject var viewModel: PluginViewModel
     let pages: [OnboardingPageView]
     @Environment(\.colorScheme) private var colorScheme
 
@@ -349,7 +121,7 @@ private struct OnboardingSheetView: View {
                 bottomBar(isLastPage: isLastPage)
             }
         }
-        .frame(width: 640, height: 480)
+        .frame(width: 640, height: 550)
         .background(.clear)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
@@ -521,12 +293,12 @@ private struct OnboardingSheetView: View {
     }
 
     private var safePageIndex: Int {
-        OnboardingPageIndexing.clampedIndex(viewModel.currentStep, pageCount: pages.count)
+        PageIndexing.clampedIndex(viewModel.currentStep, pageCount: pages.count)
     }
 }
 
 // MARK: - 预览
 
 #Preview("新手引导") {
-    OnboardingRootOverlay(content: EmptyView())
+    RootOverlay(content: EmptyView())
 }
