@@ -105,6 +105,10 @@ public final class MLXDownloadManager: NSObject, ObservableObject, SuperLog {
 
     private override init() {
         let initialLimit = MLXDownloadManager.readSpeedLimit()
+        // 注意:下载中临时文件故意放 `tmp/` 而不是 `Application Support/<plugin>/`,
+        // 因为下载中途的部分文件不该算持久化数据(失败/取消可由系统清理,不占主目录)。
+        // 这与 `LLMProviderMLXPluginRuntimeBridge.pluginSubdirectory` 规律共存:
+        // 桥接负责"已落盘、可恢复复用"的模型数据;此目录只负责"传输中"的字节。
         let config = DownloadManager.Configuration(
             downloadDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("lumi-mlx-download"),
             maxConcurrentDownloads: 3,

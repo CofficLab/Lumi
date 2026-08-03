@@ -1,7 +1,6 @@
 import SwiftUI
 import LLMKit
 import LumiKernel
-import LumiKernel
 import LumiUI
 
 @MainActor
@@ -15,7 +14,13 @@ public final class MLXLumiPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        // 把宿主 `kernel.storage` 计算出的 plugin 数据目录注入到 bridge,
+        // 让 `MLXModels.cacheRootDirectory` 走 `storage.pluginDataDirectory(for:)`
+        // 这条正路,而不是每次 fallback。与其它持久化插件(FileLog / EditorSwift /
+        // AppStoreConnect 等)遵循同一规律。
+        Self.bootstrapFromLumiCoreIfNeeded(kernel: kernel)
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
         if let network = kernel.network {

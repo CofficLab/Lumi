@@ -16,4 +16,15 @@ enum LLMProviderMLXPluginRuntimeBridge {
     }()
 }
 
+@MainActor
+public extension MLXLumiPlugin {
+    static func bootstrapFromLumiCoreIfNeeded(kernel: LumiKernel) {
+        guard !didBootstrapFromLumiCore else { return }
+        if let storage = kernel.storage {
+            LLMProviderMLXPluginRuntimeBridge.pluginSubdirectory = storage.pluginDataDirectory(for: LLMProviderMLXPluginRuntimeBridge.pluginName)
+        }
+        didBootstrapFromLumiCore = true
+    }
+}
+
 private nonisolated(unsafe) var didBootstrapFromLumiCore = false
