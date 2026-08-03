@@ -10,6 +10,7 @@ public struct ListView: View {
     @State private var isLoading = true
     @State private var isLoadingMore = false
     @State private var isReloading = false
+    @State private var reloadPending = false
     @State private var hasMore = true
     @State private var paginationCursor: ConversationPageCursor?
     let svc: (any ConversationManaging)?
@@ -82,10 +83,22 @@ public struct ListView: View {
     }
 
     private func reload() async {
-        guard let svc, !isReloading else { return }
+        guard let svc else { return }
+        if isReloading {
+            reloadPending = true
+            return
+        }
 
         isReloading = true
-        defer { isReloading = false }
+        defer {
+            isReloading = false
+            if reloadPending {
+                reloadPending = false
+                Task { @MainActor in
+                    await reload()
+                }
+            }
+        }
 
         // 首次加载时显示 loading；已有内容时保持旧列表可见。
         let targetCount = max(conversations.count, Self.pageSize)
