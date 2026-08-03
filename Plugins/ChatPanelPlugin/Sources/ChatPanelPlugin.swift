@@ -9,7 +9,9 @@ import SwiftUI
 @MainActor
 public final class ChatPanelPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.chat-panel"
-    public let name = "Chat"
+    public var name: String {
+        LumiPluginLocalization.string("Chat", bundle: .module)
+    }
     public let order = 278
     public let policy: LumiPluginPolicy = .alwaysOn
 

@@ -5,7 +5,9 @@ import SwiftUI
 @MainActor
 public final class ChatModePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.chat-mode"
-    public let name = "Chat Mode"
+    public var name: String {
+        LumiPluginLocalization.string("Chat Mode", bundle: .module)
+    }
     public let order = 84
     public let policy: LumiPluginPolicy = .alwaysOn
 

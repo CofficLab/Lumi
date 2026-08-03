@@ -20,7 +20,9 @@ public final class ChatScreenshotPlugin: LumiPlugin, SuperLog {
     public nonisolated static let emoji = "📸"
 
     public let id = "com.coffic.lumi.plugin.chat-screenshot"
-    public let name = "Chat Screenshot"
+    public var name: String {
+        LumiPluginLocalization.string("Chat Screenshot", bundle: .module)
+    }
     public let order = 81
     public let policy: LumiPluginPolicy = .alwaysOn
 
