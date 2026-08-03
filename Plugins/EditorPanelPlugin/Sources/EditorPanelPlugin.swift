@@ -49,9 +49,9 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 16) {
-                Text(name)
+                Text(LumiPluginLocalization.string("Code Editor", bundle: .module))
                     .font(.title2.weight(.semibold))
-                Text(pluginDescription)
+                Text(LumiPluginLocalization.string("Display the content of the current project file.", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }
