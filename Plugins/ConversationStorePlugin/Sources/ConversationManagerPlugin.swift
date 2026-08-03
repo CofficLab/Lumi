@@ -15,7 +15,9 @@ public final class ConversationStorePlugin: LumiPlugin, SuperLog {
     public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.conversation-store"
-    public let name = "Conversation Store"
+    public var name: String {
+        LumiPluginLocalization.string("Conversation Store", bundle: .module)
+    }
     public let order = 7
     public let policy: LumiPluginPolicy = .alwaysOn
 

@@ -11,7 +11,9 @@ public final class ConversationTitlePlugin: LumiPlugin, SuperLog {
     public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.conversation-title"
-    public let name = "Conversation Title"
+    public var name: String {
+        LumiPluginLocalization.string("Conversation Title", bundle: .module)
+    }
     public let order = 77
     public let policy: LumiPluginPolicy = .alwaysOn
     private var autoTitleService: AutoConversationTitleService?
