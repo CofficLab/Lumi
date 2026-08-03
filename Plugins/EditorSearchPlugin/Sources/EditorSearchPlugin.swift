@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class EditorSearchPanelPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-search"
-    public let name = "Editor Search"
+    public var name: String {
+        LumiPluginLocalization.string("Editor Search", bundle: .module)
+    }
     public let order = 2
 	public let policy: LumiPluginPolicy = .disabled
 

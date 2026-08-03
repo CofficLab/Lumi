@@ -6,7 +6,9 @@ import SwiftUI
 @MainActor
 public final class EditorProblemsPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-problems"
-    public let name = "Editor Problems"
+    public var name: String {
+        LumiPluginLocalization.string("Editor Problems", bundle: .module)
+    }
     public let order = 1
 	public let policy: LumiPluginPolicy = .disabled
 
