@@ -5,7 +5,9 @@ import SwiftUI
 @MainActor
 public final class ConversationLanguagePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-language"
-    public let name = "Language Selector"
+    public var name: String {
+        LumiPluginLocalization.string("Language Selector", bundle: .module)
+    }
     public let order = 83
     public let policy: LumiPluginPolicy = .alwaysOn
 

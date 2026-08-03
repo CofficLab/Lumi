@@ -8,7 +8,9 @@ import SwiftUI
 @MainActor
 public final class ConversationListPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-list"
-    public let name = "Conversation List"
+    public var name: String {
+        LumiPluginLocalization.string("Conversation List", bundle: .module)
+    }
     public let order = 76
     public let policy: LumiPluginPolicy = .alwaysOn
 
