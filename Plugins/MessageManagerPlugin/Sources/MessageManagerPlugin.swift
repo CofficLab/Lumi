@@ -11,7 +11,7 @@ public final class MessageManagerPlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("Message Store", bundle: .module)
     }
-    public let order = 62 // After ConversationStorePlugin
+    public let order = 62 // After ConversationManagerPlugin
     public let policy: LumiPluginPolicy = .alwaysOn
 
     public init() {}

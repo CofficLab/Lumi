@@ -6,7 +6,7 @@ import SwiftUI
 
 /// 设置界面:展示每次「发出的请求」详情。
 ///
-/// 参考 ConversationStorePlugin 提供的设置视图布局(Sidebar + Detail),
+/// 参考 ConversationManagerPlugin 提供的设置视图布局(Sidebar + Detail),
 /// 数据来自 `AgentTurnRecordStore`(SwiftData 持久化)。
 @MainActor
 public struct AgentTurnRunnerSettingsView: View {
