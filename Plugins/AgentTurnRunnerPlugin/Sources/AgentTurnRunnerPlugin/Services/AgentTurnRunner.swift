@@ -39,6 +39,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     private var failedConversations: Set<UUID> = []
     private var pendingChildWorks: [UUID: [String: AgentTurnChildWork]] = [:]
     private var activeChildWorks: [UUID: Task<Void, Never>] = [:]
+    private var turnCreationExcludedToolNames: [UUID: Set<String>] = [:]
 
     // MARK: - Initialization
 
@@ -69,6 +70,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             providerID: request.providerID,
             modelName: request.modelID
         )
+        turnCreationExcludedToolNames[conversationID] = request.excludedToolNames
+        defer { turnCreationExcludedToolNames.removeValue(forKey: conversationID) }
 
         if let systemPrompt = request.systemPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
            !systemPrompt.isEmpty {
@@ -240,6 +243,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         cancelledConversations.insert(conversationID)
         suspensions.removeValue(forKey: conversationID)
         pendingChildWorks.removeValue(forKey: conversationID)
+        turnCreationExcludedToolNames.removeValue(forKey: conversationID)
         activeChildWorks[conversationID]?.cancel()
         activeChildWorks.removeValue(forKey: conversationID)
         turnStates[conversationID] = .cancelled
@@ -327,7 +331,9 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
             // Build request with current message history
             let history = kernel.messageManager?.messages(for: conversationID) ?? []
-            let tools = kernel.toolManager?.allAgentTools() ?? []
+            let tools = (kernel.toolManager?.allAgentTools() ?? []).filter {
+                !turnCreationExcludedToolNames[conversationID, default: []].contains($0.name)
+            }
             if Self.verbose {
                 let metrics = Self.messageMetrics(history)
                 Self.logger.info("\(Self.t)LLM history loaded conversation=\(conversationID.uuidString.prefix(8)) messages=\(history.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars) toolCallArgumentChars=\(metrics.toolCallArgumentChars)")

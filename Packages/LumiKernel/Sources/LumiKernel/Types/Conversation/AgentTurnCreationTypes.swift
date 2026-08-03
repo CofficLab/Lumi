@@ -20,6 +20,9 @@ public struct AgentTurnCreationRequest: Sendable, Equatable {
     /// Optional specialist system prompt for the created turn.
     public let systemPrompt: String?
 
+    /// Tool names that must not be exposed to the created turn.
+    public let excludedToolNames: Set<String>
+
     /// The parent turn ID, when the request originates inside an active turn.
     public let parentTurnID: UUID?
 
@@ -30,6 +33,7 @@ public struct AgentTurnCreationRequest: Sendable, Equatable {
         providerID: String? = nil,
         modelID: String? = nil,
         systemPrompt: String? = nil,
+        excludedToolNames: Set<String> = [],
         parentTurnID: UUID? = nil
     ) {
         self.parentConversationID = parentConversationID
@@ -38,6 +42,7 @@ public struct AgentTurnCreationRequest: Sendable, Equatable {
         self.providerID = providerID
         self.modelID = modelID
         self.systemPrompt = systemPrompt
+        self.excludedToolNames = excludedToolNames
         self.parentTurnID = parentTurnID
     }
 }
