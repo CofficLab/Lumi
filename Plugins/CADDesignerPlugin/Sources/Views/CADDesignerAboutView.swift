@@ -7,7 +7,12 @@ import SwiftUI
 /// Plugin about view for CAD Designer.
 /// Introduces the plugin's aluminum profile CAD design capabilities.
 struct CADDesignerAboutView: View {
+    @Environment(\.locale) private var locale
     @LumiTheme private var theme
+
+    private func L(_ key: String) -> String {
+        CADDesignerLocalization.string(key, locale: locale)
+    }
 
     var body: some View {
         ScrollView {
@@ -15,81 +20,81 @@ struct CADDesignerAboutView: View {
                 // Feature Highlights
                 FeatureHighlight(
                     icon: "cube.fill",
-                    title: CADDesignerLocalization.string("3D Viewport"),
-                    description: CADDesignerLocalization.string("Design aluminum profile frames in an interactive 3D viewport with orbit camera, reference grid, and XYZ axis guides.")
+                    title: L("3D Viewport"),
+                    description: L("Design aluminum profile frames in an interactive 3D viewport with orbit camera, reference grid, and XYZ axis guides.")
                 )
 
                 FeatureHighlight(
                     icon: "square.stack.3d.up.fill",
-                    title: CADDesignerLocalization.string("Component Library"),
-                    description: CADDesignerLocalization.string("Access European standard 20/30/40 series aluminum profiles (12 specifications) plus connectors: brackets, bolts, sliding nuts, end caps, and hinges.")
+                    title: L("Component Library"),
+                    description: L("Access European standard 20/30/40 series aluminum profiles (12 specifications) plus connectors: brackets, bolts, sliding nuts, end caps, and hinges.")
                 )
 
                 FeatureHighlight(
                     icon: "link",
-                    title: CADDesignerLocalization.string("Assembly Relationships"),
-                    description: CADDesignerLocalization.string("Define connections between components with rigid, hinge, or bolt joint types to build accurate assembly structures.")
+                    title: L("Assembly Relationships"),
+                    description: L("Define connections between components with rigid, hinge, or bolt joint types to build accurate assembly structures.")
                 )
 
                 FeatureHighlight(
                     icon: "list.clipboard.fill",
-                    title: CADDesignerLocalization.string("BOM Generation"),
-                    description: CADDesignerLocalization.string("Automatically aggregate identical profiles and connectors into a bill of materials with quantities and specifications.")
+                    title: L("BOM Generation"),
+                    description: L("Automatically aggregate identical profiles and connectors into a bill of materials with quantities and specifications.")
                 )
 
                 FeatureHighlight(
                     icon: "scissors",
-                    title: CADDesignerLocalization.string("Cutting Optimization"),
-                    description: CADDesignerLocalization.string("Optimize cutting plans using First Fit Decreasing algorithm to minimize material waste and leftover scraps.")
+                    title: L("Cutting Optimization"),
+                    description: L("Optimize cutting plans using First Fit Decreasing algorithm to minimize material waste and leftover scraps.")
                 )
 
                 FeatureHighlight(
                     icon: "camera.fill",
-                    title: CADDesignerLocalization.string("Export Options"),
-                    description: CADDesignerLocalization.string("Export viewport renders as PNG or PDF. Save and load projects in .cadproj JSON format.")
+                    title: L("Export Options"),
+                    description: L("Export viewport renders as PNG or PDF. Save and load projects in .cadproj JSON format.")
                 )
 
                 FeatureHighlight(
                     icon: "wand.and.stars",
-                    title: CADDesignerLocalization.string("AI-Powered Design"),
-                    description: CADDesignerLocalization.string("Natural language commands like 'build a 1m × 0.5m workbench' to automatically create frames with optimal component placement.")
+                    title: L("AI-Powered Design"),
+                    description: L("Natural language commands like 'build a 1m × 0.5m workbench' to automatically create frames with optimal component placement.")
                 )
 
                 // AI Tools
                 AIToolsCard(
-                    title: CADDesignerLocalization.string("Available AI Tools"),
+                    title: L("Available AI Tools"),
                     tools: [
-                        ("cad_create_project", "Create new CAD project"),
-                        ("cad_place_profile", "Place aluminum profile"),
-                        ("cad_update_profile", "Update component properties"),
-                        ("cad_place_connector", "Place connector"),
-                        ("cad_connect_components", "Define connections"),
-                        ("cad_build_frame", "Auto-generate rectangular frame"),
-                        ("cad_generate_bom", "Generate bill of materials"),
-                        ("cad_optimize_cutting", "Optimize cutting plan"),
-                        ("cad_save_project", "Save project to file"),
-                        ("cad_load_project", "Load project from file")
+                        ("cad_create_project", L("Create new CAD project")),
+                        ("cad_place_profile", L("Place aluminum profile")),
+                        ("cad_update_profile", L("Update component properties")),
+                        ("cad_place_connector", L("Place connector")),
+                        ("cad_connect_components", L("Define connections")),
+                        ("cad_build_frame", L("Auto-generate rectangular frame")),
+                        ("cad_generate_bom", L("Generate bill of materials")),
+                        ("cad_optimize_cutting", L("Optimize cutting plan")),
+                        ("cad_save_project", L("Save project to file")),
+                        ("cad_load_project", L("Load project from file"))
                     ]
                 )
 
                 // Technical Details
                 TechnicalDetailsCard(
-                    title: CADDesignerLocalization.string("Technical Details"),
+                    title: L("Technical Details"),
                     details: [
-                        ("3D Engine", "SceneKit (native macOS)"),
-                        ("UI Framework", "SwiftUI + NSViewRepresentable"),
-                        ("Project Format", ".cadproj (JSON)"),
-                        ("Profile Standards", "EU 20/30/40 series")
+                        (L("3D Engine"), L("SceneKit (native macOS)")),
+                        (L("UI Framework"), L("SwiftUI + NSViewRepresentable")),
+                        (L("Project Format"), L(".cadproj (JSON)")),
+                        (L("Profile Standards"), L("EU 20/30/40 series"))
                     ]
                 )
 
                 // Requirements
                 RequirementsCard(
-                    title: CADDesignerLocalization.string("Requirements"),
+                    title: L("Requirements"),
                     items: [
-                        "macOS 14.0 or later",
-                        "Swift 6.0 or later",
-                        "SceneKit-capable GPU"
+                        L("macOS 14.0 or later"),
+                        L("Swift 6.0 or later"),
+                        L("SceneKit-capable GPU")
                     ]
                 )
             }
