@@ -14,7 +14,9 @@ public final class BrowserPlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "Browser"
-    public let name = "Browser"
+    public var name: String {
+        LumiPluginLocalization.string("Browser", bundle: .module)
+    }
     public let order = 102
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent

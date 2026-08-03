@@ -14,7 +14,9 @@ public final class CaffeinatePlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "Caffeinate"
-    public let name = "Caffeinate"
+    public var name: String {
+        LumiPluginLocalization.string("Caffeinate", bundle: .module)
+    }
     public let order = 1
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .system
