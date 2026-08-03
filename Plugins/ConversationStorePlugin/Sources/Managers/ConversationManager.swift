@@ -187,10 +187,11 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         cache(conversation)
         selectedConversationID = id
         updateCurrentTitle()
-        notifyConversationsChanged()
         persistSelectedConversationID()
 
-        // Persist to database async
+        // Persist first, then notify the list. Otherwise the list may query the
+        // database before this conversation is stored and conclude that nothing
+        // changed.
         Task {
             do {
                 try await store?.createConversation(
@@ -202,6 +203,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                     modelName: effectiveModelName,
                     projectPath: effectiveProjectPath
                 )
+                self.notifyConversationsChanged()
             } catch {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)Failed to persist conversation: \(error)")
