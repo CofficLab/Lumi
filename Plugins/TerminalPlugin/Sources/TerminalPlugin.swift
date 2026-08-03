@@ -9,7 +9,9 @@ public final class TerminalPlugin: LumiPlugin {
     nonisolated(unsafe) private var pluginsChangedObserver: NSObjectProtocol?
 
     public let id = "com.coffic.lumi.plugin.terminal"
-    public let name = "Terminal"
+    public var name: String {
+        LumiPluginLocalization.string("Terminal", bundle: .module)
+    }
     public let order = 279
 	public let policy: LumiPluginPolicy = .optIn
 

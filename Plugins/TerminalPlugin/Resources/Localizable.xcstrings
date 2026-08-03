@@ -2,6 +2,38 @@
   "sourceLanguage": "en",
   "strings": {
     "%lld": {},
+    "Automatically matches your editor theme for consistent appearance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically matches your editor theme for consistent appearance"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动匹配编辑器主题，保持外观一致"
+          }
+        }
+      }
+    },
+    "Click the terminal icon in the panel to open": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click the terminal icon in the panel to open"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击面板中的终端图标打开"
+          }
+        }
+      }
+    },
     "Close Tab": {
       "localizations": {
         "en": {
@@ -71,6 +103,54 @@
         }
       }
     },
+    "Create new tabs for different tasks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create new tabs for different tasks"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为不同任务创建新标签页"
+          }
+        }
+      }
+    },
+    "Each tab maintains its own shell session": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each tab maintains its own shell session"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每个标签页维护独立的 Shell 会话"
+          }
+        }
+      }
+    },
+    "Each tab starts in your project root directory": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each tab starts in your project root directory"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每个标签页从项目根目录启动"
+          }
+        }
+      }
+    },
     "Full keyboard": {
       "extractionState": "stale",
       "localizations": {
@@ -106,6 +186,22 @@
         }
       }
     },
+    "How It Works": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How It Works"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作原理"
+          }
+        }
+      }
+    },
     "Interactive terminal emulator": {
       "extractionState": "stale",
       "localizations": {
@@ -137,6 +233,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "互動式終端機模擬器"
+          }
+        }
+      }
+    },
+    "Multi-Tab Terminal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multi-Tab Terminal"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多标签终端"
           }
         }
       }
@@ -245,41 +357,6 @@
         }
       }
     },
-    "Open several shells side by side": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open several shells side by side"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "并排打开多个 shell"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "並排開啟多個 shell"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "並排開啟多個 shell"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "並排開啟多個 shell"
-          }
-        }
-      }
-    },
     "Open Terminal from the sidebar at any time.": {
       "extractionState": "stale",
       "localizations": {
@@ -315,84 +392,53 @@
         }
       }
     },
-    "Terminal": {
+    "Open multiple terminal tabs for parallel command execution": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Terminal"
+            "value": "Open multiple terminal tabs for parallel command execution"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "终端"
+            "value": "打开多个终端标签页，并行执行命令"
+          }
+        }
+      }
+    },
+    "Open several shells side by side": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open several shells side by side"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "并排打开多个 shell"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "終端機"
+            "value": "並排開啟多個 shell"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "終端機"
+            "value": "並排開啟多個 shell"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "終端機"
-          }
-        }
-      }
-    },
-    "Multi-Tab Terminal": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Multi-Tab Terminal"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "多标签终端"
-          }
-        }
-      }
-    },
-    "Shell Integration": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shell Integration"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shell 集成"
-          }
-        }
-      }
-    },
-    "Theme Matching": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Theme Matching"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "主题匹配"
+            "value": "並排開啟多個 shell"
           }
         }
       }
@@ -413,18 +459,50 @@
         }
       }
     },
-    "Open multiple terminal tabs for parallel command execution": {
+    "Right-click on tab bar for more options": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open multiple terminal tabs for parallel command execution"
+            "value": "Right-click on tab bar for more options"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "打开多个终端标签页，并行执行命令"
+            "value": "右键点击标签栏查看更多选项"
+          }
+        }
+      }
+    },
+    "Sessions persist across panel switches": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessions persist across panel switches"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会话在面板切换时保持不变"
+          }
+        }
+      }
+    },
+    "Shell Integration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shell Integration"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shell 集成"
           }
         }
       }
@@ -445,114 +523,68 @@
         }
       }
     },
-    "Automatically matches your editor theme for consistent appearance": {
+    "Terminal": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Automatically matches your editor theme for consistent appearance"
+            "value": "Terminal"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "自动匹配编辑器主题，保持外观一致"
+            "value": "终端"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "终端"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "终端"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "终端"
           }
         }
       }
     },
-    "Each tab starts in your project root directory": {
+    "Theme Matching": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Each tab starts in your project root directory"
+            "value": "Theme Matching"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "每个标签页从项目根目录启动"
+            "value": "主题匹配"
           }
         }
       }
     },
-    "How It Works": {
+    "Theme automatically syncs with editor": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "How It Works"
+            "value": "Theme automatically syncs with editor"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "工作原理"
-          }
-        }
-      }
-    },
-    "Click the terminal icon in the panel to open": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Click the terminal icon in the panel to open"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "点击面板中的终端图标打开"
-          }
-        }
-      }
-    },
-    "Create new tabs for different tasks": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Create new tabs for different tasks"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为不同任务创建新标签页"
-          }
-        }
-      }
-    },
-    "Each tab maintains its own shell session": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Each tab maintains its own shell session"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每个标签页维护独立的 Shell 会话"
-          }
-        }
-      }
-    },
-    "Sessions persist across panel switches": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sessions persist across panel switches"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "会话在面板切换时保持不变"
+            "value": "主题自动与编辑器同步"
           }
         }
       }
@@ -601,38 +633,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "使用 Cmd+W 关闭当前标签页"
-          }
-        }
-      }
-    },
-    "Right-click on tab bar for more options": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Right-click on tab bar for more options"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "右键点击标签栏查看更多选项"
-          }
-        }
-      }
-    },
-    "Theme automatically syncs with editor": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Theme automatically syncs with editor"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "主题自动与编辑器同步"
           }
         }
       }
