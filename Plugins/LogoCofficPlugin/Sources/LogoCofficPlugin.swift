@@ -5,7 +5,9 @@ import LumiUI
 @MainActor
 public final class LogoCofficPlugin: LumiPlugin {
     public let id = "com.lumi.plugin.logo-coffic"
-    public let name = "Coffic Logo"
+    public var name: String {
+        LumiPluginLocalization.string("Coffic Logo", bundle: .module)
+    }
     public let order = 100
 	public let policy: LumiPluginPolicy = .alwaysOn
 

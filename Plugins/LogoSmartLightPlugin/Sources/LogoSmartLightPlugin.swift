@@ -5,7 +5,9 @@ import SwiftUI
 @MainActor
 public final class LogoSmartLightPlugin: LumiPlugin {
     public let id = "com.lumi.plugin.logo-smart-light"
-    public let name = "Smart Light Logo"
+    public var name: String {
+        LumiPluginLocalization.string("Smart Light Logo", bundle: .module)
+    }
     public let order = 200
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .general

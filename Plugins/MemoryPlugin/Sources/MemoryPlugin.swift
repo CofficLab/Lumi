@@ -16,7 +16,9 @@ public final class MemoryPlugin: LumiPlugin {
     public nonisolated(unsafe) static var config: MemoryPluginConfig = .default
 
     public let id = "com.coffic.lumi.plugin.memory"
-    public let name = "Memory"
+    public var name: String {
+        LumiPluginLocalization.string("Memory", bundle: .module)
+    }
     public let order = 4
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
