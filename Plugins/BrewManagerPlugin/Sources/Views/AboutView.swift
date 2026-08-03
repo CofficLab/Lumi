@@ -7,7 +7,12 @@ import SwiftUI
 /// Plugin about view for Brew Manager.
 /// Introduces the plugin's Homebrew package management capabilities.
 struct AboutView: View {
+    @Environment(\.locale) private var locale
     @LumiTheme private var theme
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
+    }
 
     var body: some View {
         ScrollView {
@@ -15,71 +20,71 @@ struct AboutView: View {
                 // Feature Highlights
                 FeatureHighlight(
                     icon: "list.bullet.rectangle.fill",
-                    title: LumiPluginLocalization.string("Installed Packages", bundle: .module),
-                    description: LumiPluginLocalization.string("Browse all installed Homebrew formulae and casks. View package details including version, installation date, and dependencies.", bundle: .module)
+                    title: L("Installed Packages"),
+                    description: L("Browse all installed Homebrew formulae and casks. View package details including version, installation date, and dependencies.")
                 )
 
                 FeatureHighlight(
                     icon: "arrow.up.circle.fill",
-                    title: LumiPluginLocalization.string("Update Checker", bundle: .module),
-                    description: LumiPluginLocalization.string("Identify packages with available updates. See current vs. latest version at a glance to plan your upgrade strategy.", bundle: .module)
+                    title: L("Update Checker"),
+                    description: L("Identify packages with available updates. See current vs. latest version at a glance to plan your upgrade strategy.")
                 )
 
                 FeatureHighlight(
                     icon: "magnifyingglass",
-                    title: LumiPluginLocalization.string("Package Search", bundle: .module),
-                    description: LumiPluginLocalization.string("Search Homebrew repository for new packages. Browse descriptions, homepages, and installation instructions.", bundle: .module)
+                    title: L("Package Search"),
+                    description: L("Search Homebrew repository for new packages. Browse descriptions, homepages, and installation instructions.")
                 )
 
                 FeatureHighlight(
                     icon: "arrow.down.circle.fill",
-                    title: LumiPluginLocalization.string("Install & Uninstall", bundle: .module),
-                    description: LumiPluginLocalization.string("Install new packages or uninstall existing ones. Monitor installation progress and handle errors gracefully.", bundle: .module)
+                    title: L("Install & Uninstall"),
+                    description: L("Install new packages or uninstall existing ones. Monitor installation progress and handle errors gracefully.")
                 )
 
                 FeatureHighlight(
                     icon: "arrow.clockwise.circle.fill",
-                    title: LumiPluginLocalization.string("Batch Upgrade", bundle: .module),
-                    description: LumiPluginLocalization.string("Upgrade all outdated packages at once, or selectively upgrade individual packages. Keep your system fresh.", bundle: .module)
+                    title: L("Batch Upgrade"),
+                    description: L("Upgrade all outdated packages at once, or selectively upgrade individual packages. Keep your system fresh.")
                 )
 
                 FeatureHighlight(
                     icon: "checkmark.shield.fill",
-                    title: LumiPluginLocalization.string("Environment Check", bundle: .module),
-                    description: LumiPluginLocalization.string("Automatically detects Homebrew installation status. Shows clear guidance when Homebrew is not installed.", bundle: .module)
+                    title: L("Environment Check"),
+                    description: L("Automatically detects Homebrew installation status. Shows clear guidance when Homebrew is not installed.")
                 )
 
                 // Package Types
                 PackageTypesCard(
-                    title: LumiPluginLocalization.string("Supported Package Types", bundle: .module),
+                    title: L("Supported Package Types"),
                     types: [
-                        ("Formulae", "Command-line tools and libraries"),
-                        ("Casks", "macOS GUI applications"),
-                        ("Fonts", "System fonts"),
-                        ("Services", "Background services")
+                        (L("Formulae"), L("Command-line tools and libraries")),
+                        (L("Casks"), L("macOS GUI applications")),
+                        (L("Fonts"), L("System fonts")),
+                        (L("Services"), L("Background services"))
                     ]
                 )
 
                 // Quick Actions
                 QuickActionsCard(
-                    title: LumiPluginLocalization.string("Quick Actions", bundle: .module),
+                    title: L("Quick Actions"),
                     actions: [
-                        ("Install", "Download and install a package"),
-                        ("Uninstall", "Remove a package from your system"),
-                        ("Upgrade", "Update to the latest version"),
-                        ("Upgrade All", "Update all outdated packages"),
-                        ("Search", "Find packages in Homebrew"),
-                        ("Info", "View package details and dependencies")
+                        (L("Install"), L("Download and install a package")),
+                        (L("Uninstall"), L("Remove a package from your system")),
+                        (L("Upgrade"), L("Update to the latest version")),
+                        (L("Upgrade All"), L("Update all outdated packages")),
+                        (L("Search"), L("Find packages in Homebrew")),
+                        (L("Info"), L("View package details and dependencies"))
                     ]
                 )
 
                 // Requirements
                 RequirementsCard(
-                    title: LumiPluginLocalization.string("Requirements", bundle: .module),
+                    title: L("Requirements"),
                     items: [
-                        "macOS 14.0 or later",
-                        "Swift 6.0 or later",
-                        "Homebrew installed (/opt/homebrew)"
+                        L("macOS 14.0 or later"),
+                        L("Swift 6.0 or later"),
+                        L("Homebrew installed (/opt/homebrew)")
                     ]
                 )
             }

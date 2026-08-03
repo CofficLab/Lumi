@@ -79,7 +79,7 @@ struct BrewManagerErrorView: View {
                 VStack(spacing: 10) {
                     if let onRetry {
                         AppButton(
-                            LocalizedStringKey("Retry"),
+                            LumiPluginLocalization.string("Retry", bundle: .module),
                             systemImage: "arrow.clockwise",
                             style: .primary,
                             fillsWidth: true,
@@ -88,7 +88,7 @@ struct BrewManagerErrorView: View {
                     }
 
                     AppButton(
-                        LocalizedStringKey("Dismiss"),
+                        LumiPluginLocalization.string("Dismiss", bundle: .module),
                         systemImage: "xmark",
                         style: .ghost,
                         fillsWidth: true,
