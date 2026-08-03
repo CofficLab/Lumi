@@ -17,7 +17,9 @@ import SwiftUI
 @MainActor
 public final class SubAgentProviderPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.sub-agent-provider"
-    public let name = "Sub-Agent Provider"
+    public var name: String {
+        LumiPluginLocalization.string("Sub-Agent Provider", bundle: .module)
+    }
     public let order = 220
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent

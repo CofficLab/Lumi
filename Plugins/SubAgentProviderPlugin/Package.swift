@@ -15,15 +15,18 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),
     ],
     targets: [
         .target(
             name: "SubAgentProviderPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-            ],
+                        .product(name: "LocalizationKit", package: "LocalizationKit"),
+],
             path: "Sources"
-        ),
+        ,
+            resources: [.process("../Resources/Localizable.xcstrings")]),
         .testTarget(
             name: "SubAgentProviderPluginTests",
             dependencies: ["SubAgentProviderPlugin"],
