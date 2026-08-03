@@ -81,6 +81,7 @@ import LogoSmartLightPlugin
 import LumiKernel
 import MemoryPlugin
 import MenuBarManagerPlugin
+import MenuBarHelperPlugin
 import MessageListPlugin
 import MessageRendererPlugin
 import MessageStreamingPlugin
@@ -244,6 +245,7 @@ public enum PluginService {
             InputPlugin(),
             IdleTimePlugin(),
             MenuBarManagerPlugin(),
+            MenuBarHelperPlugin(),
             CaffeinatePlugin(),
             AgentTempStoragePlugin(),
             AppIconDesignerPlugin(),
