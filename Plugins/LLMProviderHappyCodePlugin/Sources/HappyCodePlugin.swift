@@ -7,7 +7,9 @@ import LumiUI
 @MainActor
 public final class HappyCodePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.happycode"
-    public let name = "HappyCode"
+    public var name: String {
+        LumiPluginLocalization.string("HappyCode", bundle: .module)
+    }
     public let order = 96
 	public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }
