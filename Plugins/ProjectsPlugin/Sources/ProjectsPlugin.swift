@@ -55,7 +55,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
                 placement: .center,
                 order: 0
             ) {
-                ControlView(viewModel: viewModel)
+                ControlView(viewModel: viewModel, kernel: kernel)
             },
         ]
     }
