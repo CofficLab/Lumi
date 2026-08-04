@@ -17,7 +17,6 @@ public final class ConversationListPlugin: LumiPlugin {
     public static let verbose = false
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
     public let attentionStore: ConversationAttentionStore
-    private let selectedProjectHook = OnConversationSelectedHook()
 
     public init() {
         attentionStore = ConversationAttentionStore()
@@ -25,14 +24,7 @@ public final class ConversationListPlugin: LumiPlugin {
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
-    public func onReady(kernel: LumiKernel) async throws {
-        // 放在 onReady 而不是 onBoot：onBoot 只保证自己注册顺序里的服务可用，
-        // onReady 才是「所有插件的 onBoot 已完成」之后，更稳。
-        // 这里真正依赖的是 kernel.conversations（由 order=7 的
-        // ConversationManagerPlugin 在我们 order=76 之前注册），实际在
-        // onBoot 阶段就已可用，但放 onReady 跟项目里其他 Hook 一致。
-        selectedProjectHook.attach(kernel: kernel)
-    }
+    public func onReady(kernel: LumiKernel) async throws {}
 
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
