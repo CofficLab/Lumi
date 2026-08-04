@@ -21,6 +21,12 @@ public final class GitService: @unchecked Sendable, SuperLog {
     public nonisolated static let emoji = "🌿"
     public static let shared = GitService()
 
+    /// Prevent malformed tool input from turning ancestor lookup into an
+    /// unbounded allocation loop. Normal macOS project paths are far below
+    /// this limit.
+    private static let maximumPathLength = 4_096
+    private static let maximumRepositorySearchDepth = 128
+
     private init() {}
 
     /// 在共享的 libgit2 串行队列上执行 LibGit2 操作，并安全地将结果传回 async 调用方。
@@ -340,6 +346,11 @@ public final class GitService: @unchecked Sendable, SuperLog {
     /// - Returns: 验证通过的绝对路径
     /// - Throws: 如果路径不在允许范围内，抛出错误
     public static func validatePath(_ path: String?, allowedDirectories: [String]) throws -> String {
+        let rawPath = path ?? FileManager.default.currentDirectoryPath
+        guard rawPath.utf8.count <= maximumPathLength else {
+            throw GitServiceError.invalidPath(path: rawPath)
+        }
+
         let resolvedPath = Self.resolvePath(path)
 
         // 如果没有限制，直接返回
@@ -373,8 +384,12 @@ public final class GitService: @unchecked Sendable, SuperLog {
     }
 
     public static func repositoryRoot(containing path: String) throws -> String {
+        guard path.utf8.count <= maximumPathLength else {
+            throw GitServiceError.invalidPath(path: path)
+        }
+
         var candidate = repositorySearchStart(for: path)
-        while true {
+        for _ in 0..<maximumRepositorySearchDepth {
             if FileManager.default.fileExists(atPath: URL(fileURLWithPath: candidate).appendingPathComponent(".git").path) {
                 return candidate
             }
@@ -385,6 +400,8 @@ public final class GitService: @unchecked Sendable, SuperLog {
             }
             candidate = parent
         }
+
+        throw GitServiceError.repositoryNotGit(path: path)
     }
 
     public static func relativePath(
@@ -454,6 +471,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
 public enum GitServiceError: LocalizedError {
     case repositoryNotGit(path: String)
     case pathNotAllowed(path: String, allowedDirectories: [String])
+    case invalidPath(path: String)
 
     public var errorDescription: String? {
         switch self {
@@ -462,6 +480,8 @@ public enum GitServiceError: LocalizedError {
         case .pathNotAllowed(let path, let allowedDirectories):
             let formattedDirs = allowedDirectories.map { "`\($0)`" }.joined(separator: ", ")
             return "🚫 路径访问被拒绝：\(path)\n\n允许的目录：\(formattedDirs)\n\n此路径不在允许的访问范围内。请确保 Git 操作在允许的项目目录中执行。"
+        case .invalidPath:
+            return "Git 路径无效或过长。请传入有效的项目目录或文件路径。"
         }
     }
 }
