@@ -429,10 +429,6 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             await streamingStore?.startStreaming(conversationID: conversationID)
             var assistantMessage: LumiChatMessage
             do {
-                if Self.verbose {
-                    let metrics = Self.messageMetrics(preparedMessages)
-                    Self.logger.info("\(Self.t)LLM request start provider=\(type(of: targetProvider).info.id) model=\(model) messages=\(preparedMessages.count) tools=\(tools.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars)")
-                }
                 // onChunk 在 provider 后台任务里调用(@Sendable)。store 的写方法标 async,
                 // 通过 await 跳回 @MainActor 执行,保证对 @Published 的写安全。
                 // tool-call 增量不通过 onChunk 推送,此处无需处理;最终落库消息会带上完整 toolCalls。
