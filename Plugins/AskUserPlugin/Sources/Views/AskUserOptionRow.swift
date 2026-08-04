@@ -54,10 +54,12 @@ struct AskUserOptionRow: View {
 
                     Spacer(minLength: 4)
 
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "chevron.right")
-                        .font(.system(size: 10))
-                        .foregroundColor(isSelected ? theme.success : theme.textSecondary)
-                        .padding(.top, 2)
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(theme.success)
+                            .padding(.top, 2)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
