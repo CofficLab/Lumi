@@ -3,9 +3,9 @@ import SwiftUI
 
 /// Main view for the Story Writer plugin.
 ///
-/// Two-pane layout:
-/// - Left: outline tree (story selector + chapter/character list)
-/// - Right: selected node editor
+/// Renders only the editor pane (right side of the original two-pane layout).
+/// The outline pane (left side) is now contributed by the plugin via
+/// `LumiPlugin.panelRailTabItems(kernel:)`.
 struct StoryWriterView: View {
     @ObservedObject var viewModel: StoryWriterViewModel
 
@@ -16,43 +16,34 @@ struct StoryWriterView: View {
     }
 
     var body: some View {
-        HSplitView {
-            StoryOutlineView(viewModel: viewModel)
-                .frame(minWidth: 200, idealWidth: 240, maxWidth: 320)
-
-            editorPane
-                .frame(minWidth: 400)
+        Group {
+            switch viewModel.selectedNodeKind {
+            case .story:
+                if let story = viewModel.currentStory {
+                    StoryEditorView(viewModel: viewModel, story: story)
+                } else {
+                    emptyState
+                }
+            case .chapter:
+                if let chapter = viewModel.selectedChapter() {
+                    ChapterEditorView(viewModel: viewModel, chapter: chapter)
+                } else {
+                    emptyState
+                }
+            case .character:
+                if let character = viewModel.selectedCharacter() {
+                    CharacterEditorView(viewModel: viewModel, character: character)
+                } else {
+                    emptyState
+                }
+            case .none:
+                emptyState
+            }
         }
         .onAppear {
             Task {
                 await viewModel.loadStories()
             }
-        }
-    }
-
-    @ViewBuilder
-    private var editorPane: some View {
-        switch viewModel.selectedNodeKind {
-        case .story:
-            if let story = viewModel.currentStory {
-                StoryEditorView(viewModel: viewModel, story: story)
-            } else {
-                emptyState
-            }
-        case .chapter:
-            if let chapter = viewModel.selectedChapter() {
-                ChapterEditorView(viewModel: viewModel, chapter: chapter)
-            } else {
-                emptyState
-            }
-        case .character:
-            if let character = viewModel.selectedCharacter() {
-                CharacterEditorView(viewModel: viewModel, character: character)
-            } else {
-                emptyState
-            }
-        case .none:
-            emptyState
         }
     }
 

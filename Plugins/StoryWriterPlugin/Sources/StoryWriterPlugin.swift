@@ -52,12 +52,24 @@ public final class StoryWriterPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: name,
                 systemImage: "book.closed.fill",
-                railVisibility: .unsupported,
-                chatVisibility: .unsupported,
+                railVisibility: .alwaysVisible,
+                chatVisibility: .alwaysVisible,
                 panelHeaderVisibility: .unsupported,
                 panelBottomVisibility: .unsupported
             ) {
                 StoryWriterRootView()
+            },
+        ]
+    }
+
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        [
+            PanelRailTabItem(
+                id: "\(id).outline",
+                title: LumiPluginLocalization.string("Story Outline"),
+                systemImage: "list.bullet.rectangle.portrait"
+            ) {
+                StoryOutlineRootView()
             },
         ]
     }
@@ -71,7 +83,6 @@ public final class StoryWriterPlugin: LumiPlugin, SuperLog {
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }

@@ -540,6 +540,34 @@
         }
       }
     },
+    "Story Outline" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Story Outline"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "故事大纲"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "故事大綱"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "故事大綱"
+          }
+        }
+      }
+    },
     "e.g. Protagonist, Antagonist, Supporting..." : {
       "localizations" : {
         "en" : {

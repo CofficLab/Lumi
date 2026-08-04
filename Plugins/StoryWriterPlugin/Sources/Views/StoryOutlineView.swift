@@ -1,6 +1,10 @@
 import SwiftUI
 
 /// Left pane: story selector + outline tree (chapters + characters).
+///
+/// When used as a registered rail tab, instantiate `StoryOutlineRootView` so the
+/// view model is fetched from `RuntimeBridge`. Pass a view model explicitly when
+/// embedding inside a two-pane layout.
 struct StoryOutlineView: View {
     @ObservedObject var viewModel: StoryWriterViewModel
 
@@ -287,5 +291,31 @@ private struct OutlineRow: View {
         .contextMenu {
             Button(L("Delete"), role: .destructive, action: onDelete)
         }
+    }
+}
+
+// MARK: - Root View (Rail Entry Point)
+
+/// Entry point view that retrieves the view model from `RuntimeBridge`.
+///
+/// Used as the content of the registered rail tab so the left pane can be
+/// contributed via `LumiPlugin.panelRailTabItems(kernel:)` instead of being
+/// hard-wired inside a two-pane container.
+struct StoryOutlineRootView: View {
+    @StateObject private var viewModel: StoryWriterViewModel
+
+    init() {
+        // Retrieve viewModel from RuntimeBridge; create a placeholder if not yet initialized.
+        if let vm = RuntimeBridge.viewModel {
+            _viewModel = StateObject(wrappedValue: vm)
+        } else {
+            // Fallback: create a temporary store for preview/testing.
+            let tempStore = StoryStore(pluginDirectory: FileManager.default.temporaryDirectory)
+            _viewModel = StateObject(wrappedValue: StoryWriterViewModel(store: tempStore))
+        }
+    }
+
+    var body: some View {
+        StoryOutlineView(viewModel: viewModel)
     }
 }
