@@ -1,4 +1,5 @@
 import Foundation
+import LumiKernel
 
 enum MiniMaxProviderCatalog {
     static let models = ["MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed", "MiniMax-M2.5", "MiniMax-M2", "MiniMax-Text-01"]
