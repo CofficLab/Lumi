@@ -76,7 +76,6 @@ struct StoryEditorView: View {
                         .font(.headline)
                     HStack(spacing: 24) {
                         StatItem(title: L("Chapters"), value: "\(viewModel.chapters.count)")
-                        StatItem(title: L("Characters"), value: "\(viewModel.characters.count)")
                         StatItem(
                             title: L("Total Words"),
                             value: "\(viewModel.chapters.reduce(0) { $0 + $1.wordCount })"

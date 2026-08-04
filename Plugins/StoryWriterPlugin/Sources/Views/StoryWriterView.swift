@@ -31,11 +31,8 @@ struct StoryWriterView: View {
                     emptyState
                 }
             case .character:
-                if let character = viewModel.selectedCharacter() {
-                    CharacterEditorView(viewModel: viewModel, character: character)
-                } else {
-                    emptyState
-                }
+                // Character editing has been removed from the UI; fall back to empty state.
+                emptyState
             case .none:
                 emptyState
             }

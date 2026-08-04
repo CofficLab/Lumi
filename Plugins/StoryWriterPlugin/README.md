@@ -1,8 +1,8 @@
 # StoryWriterPlugin
 
-A two-pane story writing workspace integrated as an ActivityBar view container.
+A two-pane story writing workspace.
 
-- **Left pane**: outline tree (story → chapters / characters)
-- **Right pane**: selected node editor (chapter markdown / character card / story metadata)
+- **Left pane (rail tab)**: story picker dropdown + chapter tree
+- **Right pane (ActivityBar view container)**: selected node editor (chapter markdown / story metadata)
 - **AI assistance**: via a dedicated ChatSection flow (configured separately)
 - **Persistence**: self-managed JSON under `~/Library/Application Support/.../StoryWriter/`
