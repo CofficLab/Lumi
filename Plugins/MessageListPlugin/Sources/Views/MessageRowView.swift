@@ -6,6 +6,9 @@ import SwiftUI
 ///
 /// `verbosity` 由 `MessageListView` 计算并显式传入，再由 `LumiMessageRendererItem.render`
 /// 闭包转发给具体视图。
+///
+/// 在分发到具体 renderer 后,会在消息行右上角叠加一个 `renderer.id` 徽章,
+/// 便于在调试时一眼分辨当前生效的具体渲染器(包括第三方插件贡献的)。
 struct MessageRowView: View {
     let kernel: LumiKernel
     let message: LumiChatMessage
@@ -19,6 +22,7 @@ struct MessageRowView: View {
         Group {
             if let renderer {
                 renderer.render(message, verbosity)
+                    .messageRendererIdBadge(renderer.id)
             } else {
                 Text("No renderer for message: \(message.id)")
                     .foregroundColor(.orange)
