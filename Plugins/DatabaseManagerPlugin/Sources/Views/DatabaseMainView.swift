@@ -22,7 +22,7 @@ public struct DatabaseMainView: View {
     }
 
     public var body: some View {
-        ZStack {
+        ZStack(alignment: .topLeading) {
             if viewModel.isConnected {
                 connectedContent
             } else {

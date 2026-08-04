@@ -23,6 +23,7 @@ public struct DatabaseSidebarView: View {
                 keysBrowser
             }
         }
+        .frame(maxHeight: .infinity, alignment: .topLeading)
         .padding(8)
     }
 
