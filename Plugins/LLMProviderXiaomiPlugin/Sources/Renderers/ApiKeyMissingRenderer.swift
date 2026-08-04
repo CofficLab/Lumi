@@ -11,7 +11,7 @@ enum ApiKeyMissingRenderer {
         canRender: { message in
             XiaomiRenderKind.matchesApiKeyMissing(message)
         },
-        render: { message in
+        render: { message, _ in
             ApiKeyMissingView(message: message)
         }
     )

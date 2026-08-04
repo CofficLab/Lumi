@@ -11,7 +11,7 @@ enum Http403Renderer {
         canRender: { message in
             XiaomiRenderKind.matchesHttp(statusCode: 403, message: message)
         },
-        render: { message in
+        render: { message, _ in
             HttpErrorView(message: message, statusCode: 403)
         }
     )
