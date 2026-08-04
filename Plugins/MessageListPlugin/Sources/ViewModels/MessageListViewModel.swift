@@ -88,6 +88,17 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         !persistedMessages.isEmpty
     }
 
+    /// Whether the message list currently contains a live streaming turn.
+    ///
+    /// Static history can use a virtualized `LazyVStack`. During streaming we
+    /// keep the existing eager stack for now because the streaming row changes
+    /// at token frequency; the streaming/history split can be refined later
+    /// without making static history pay that cost.
+    var isStreaming: Bool {
+        guard let streaming = kernel.messageStreaming else { return false }
+        return streaming.currentStage != .idle || streaming.currentStreamingRow != nil
+    }
+
     /// 当前会话的响应详细程度;由 View 透传给渲染闭包,
     /// 渲染器可据此切换简洁/标准/详细外观。
     var verbosity: LumiResponseVerbosity {

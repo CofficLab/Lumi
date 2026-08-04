@@ -58,47 +58,19 @@ struct MessageListView: View {
         GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
-                    // 用 VStack 而非 LazyVStack:本列表数据源在流式输出期间会高频变化
-                    // (每个流式 token 都会重算 displayRows)。
-                    // LazyVStack 在数据源高频变化时会陷入主线程重布局活锁——每帧反复
-                    // applyNodes/update 视口内行、重建 _LazyLayoutViewCache,导致 CPU 100%
-                    // 且内存随 _LazyLayout_Subview 持续拷贝分配而单调上涨。
-                    // VStack 一次性构建所有行,只对行序列变化做一次 diff,反而稳定。
-                    // 列表条数已由游标分页(pageSize=40)和 renderer 两层缓存控制,
-                    // 一次性渲染几十行无压力,无需 LazyVStack 惰性化。
-                    VStack(spacing: 0) {
-                        // 顶部"加载更早消息":仅在还有更早消息时显示。
-                        if viewModel.hasEarlierMessages {
-                            Button {
-                                Task { await loadEarlier(proxy: proxy) }
-                            } label: {
-                                if viewModel.isLoadingEarlier {
-                                    ProgressView().controlSize(.small)
-                                } else {
-                                    Text(LumiPluginLocalization.string("Load earlier messages", bundle: .module))
-                                        .font(.appCaption)
-                                        .foregroundColor(theme.textSecondary)
-                                }
+                    // 静态历史使用 LazyVStack,避免把当前窗口内的所有消息都创建并布局。
+                    // 流式期间暂时保留 VStack:displayRows 会以 token 频率变化,后续再把
+                    // 流式尾部拆成独立视图,从而也能在流式场景安全使用 LazyVStack。
+                    Group {
+                        if viewModel.isStreaming {
+                            VStack(spacing: 0) {
+                                messageRows(proxy: proxy)
                             }
-                            .buttonStyle(.plain)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
+                        } else {
+                            LazyVStack(spacing: 0) {
+                                messageRows(proxy: proxy)
+                            }
                         }
-
-                        ForEach(viewModel.displayRows) { message in
-                            MessageRowView(
-                                kernel: kernel,
-                                message: message,
-                                verbosity: viewModel.verbosity
-                            )
-                            .id(message.id)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 4)
-                        }
-
-                        // 底部锚点:通过它的几何位置判断 isAtBottom。
-                        bottomAnchor
-                            .padding(.bottom, 24)
                     }
                     .padding(.vertical, 4)
                     // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
@@ -149,6 +121,43 @@ struct MessageListView: View {
                 }
             }
         }
+    }
+
+    /// Shared row content for the eager streaming stack and virtualized history stack.
+    @ViewBuilder
+    private func messageRows(proxy: ScrollViewProxy) -> some View {
+        // 顶部"加载更早消息":仅在还有更早消息时显示。
+        if viewModel.hasEarlierMessages {
+            Button {
+                Task { await loadEarlier(proxy: proxy) }
+            } label: {
+                if viewModel.isLoadingEarlier {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Text(LumiPluginLocalization.string("Load earlier messages", bundle: .module))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
+                }
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        }
+
+        ForEach(viewModel.displayRows) { message in
+            MessageRowView(
+                kernel: kernel,
+                message: message,
+                verbosity: viewModel.verbosity
+            )
+            .id(message.id)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
+        }
+
+        // 底部锚点:通过它的几何位置判断 isAtBottom。
+        bottomAnchor
+            .padding(.bottom, 24)
     }
 
     /// 底部锚点行:1pt 高的透明视图,报告其全局 max-Y。
