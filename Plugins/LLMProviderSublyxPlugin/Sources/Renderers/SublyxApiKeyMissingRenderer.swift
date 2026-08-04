@@ -13,7 +13,7 @@ enum SublyxApiKeyMissingRenderer {
         canRender: { message in
             SublyxRenderKind.matchesApiKeyMissing(message)
         },
-        render: { message in
+        render: { message, _ in
             SublyxApiKeyMissingView(message: message)
         }
     )

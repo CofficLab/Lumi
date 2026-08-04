@@ -12,7 +12,7 @@ enum SublyxHttpErrorRenderer {
         canRender: { message in
             SublyxRenderKind.isSublyxError(message) && SublyxRenderKind.httpStatusCode(from: message.renderKind) != nil
         },
-        render: { message in
+        render: { message, _ in
             let statusCode = SublyxRenderKind.httpStatusCode(from: message.renderKind) ?? 0
             return AnyView(SublyxHttpErrorView(message: message, statusCode: statusCode))
         }

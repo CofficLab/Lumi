@@ -12,7 +12,7 @@ enum SublyxRequestFailedRenderer {
         canRender: { message in
             SublyxRenderKind.matches(renderKind: SublyxRenderKind.requestFailed, message: message)
         },
-        render: { message in
+        render: { message, _ in
             SublyxRequestFailedView(message: message)
         }
     )
