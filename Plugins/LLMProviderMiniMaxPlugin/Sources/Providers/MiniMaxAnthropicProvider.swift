@@ -5,7 +5,17 @@ import LumiKernel
 public final class MiniMaxAnthropicProvider: LumiLLMProvider, @unchecked Sendable {
     public static let shortName = "MiniMax"
     public static let apiKeyHelpURL: String? = MiniMaxOpenAIProvider.apiKeyHelpURL
-    public static let info = LumiLLMProviderInfo(id: "minimax-tokenplan-anthropic", displayName: "MiniMax (Anthropic)", description: "MiniMax Token Plan via Anthropic-compatible API", defaultModel: "MiniMax-M2.7", availableModels: MiniMaxProviderCatalog.models, contextWindowSizes: MiniMaxProviderCatalog.contexts, modelCapabilities: MiniMaxProviderCatalog.capabilities, websiteURL: URL(string: "https://platform.minimaxi.com/")!, apiKeyStorageKey: MiniMaxProviderSupport.apiKeyStorageKey)
+    public static let info = LumiLLMProviderInfo(
+        id: "minimax-tokenplan-anthropic",
+        displayName: "MiniMax (Anthropic)",
+        description: "MiniMax Token Plan via Anthropic-compatible API",
+        defaultModel: "MiniMax-M2.7",
+        availableModels: MiniMaxProviderCatalog.models,
+        contextWindowSizes: MiniMaxProviderCatalog.contexts,
+        modelCapabilities: MiniMaxProviderCatalog.capabilities,
+        websiteURL: URL(string: "https://platform.minimaxi.com/")!,
+        apiKeyStorageKey: MiniMaxProviderSupport.apiKeyStorageKey
+    )
     private let support = MiniMaxProviderSupport()
     private let service: MiniMaxAnthropicService
 
@@ -33,6 +43,7 @@ public final class MiniMaxAnthropicProvider: LumiLLMProvider, @unchecked Sendabl
         if message.content.isEmpty && (message.toolCalls?.isEmpty ?? true) { throw MiniMaxProviderError.invalidResponse("MiniMax returned an empty response") }
         return message
     }
+
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult { await AvailabilityService.checkAvailability(provider: self, model: model) }
     public func providerStatus() -> LumiLLMProviderStatus? { LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self) }
     public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
@@ -40,6 +51,7 @@ public final class MiniMaxAnthropicProvider: LumiLLMProvider, @unchecked Sendabl
         if let status = LumiLLMHTTPErrorParsing.statusCode(from: error), [400, 401, 403].contains(status) { return .nonRetryable }
         return (error as? MiniMaxProviderError)?.llmErrorDisposition ?? (context.attempt < context.maxAttempts ? .retryable() : .nonRetryable)
     }
+
     public func errorRenderKind(for error: Error) -> String? { support.errorKind(error) }
     public func makeErrorMessage(conversationID: UUID, request: LumiLLMRequest, error: Error, disposition: LumiLLMErrorDisposition) -> LumiChatMessage { support.errorMessage(providerID: Self.info.id, conversationID: conversationID, request: request, error: error, disposition: disposition) }
 }
