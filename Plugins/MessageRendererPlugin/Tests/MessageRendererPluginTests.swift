@@ -95,6 +95,12 @@ import Testing
 
 @MainActor
 private func bootedRenderers() async throws -> [LumiMessageRendererItem] {
+    // Provider plugins register these prefixes during their own onBoot hooks.
+    // This package test boots only the core renderer, so mirror that runtime state.
+    ProviderRenderKindManager.shared.registerProviderPrefix("zhipu-", for: "zhipu")
+    ProviderRenderKindManager.shared.registerProviderPrefix("aliyun-", for: "aliyun")
+    ProviderRenderKindManager.shared.registerProviderPrefix("xiaomi-", for: "xiaomi-api")
+
     let kernel = LumiKernel()
     try await MessageRendererOnBootHook().execute(kernel)
     return kernel.messageRendererManager?.allMessageRenderers() ?? []
