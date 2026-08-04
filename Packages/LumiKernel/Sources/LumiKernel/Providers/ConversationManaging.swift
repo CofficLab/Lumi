@@ -33,11 +33,22 @@ public protocol ConversationManaging: ObservableObject {
         beforeID: UUID?
     ) async -> [LumiConversationSummary]
 
+    /// Fetch one page, optionally including conversations created by sub-agents.
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool
+    ) async -> [LumiConversationSummary]
+
     /// Fetch one conversation summary by ID without requiring the full list.
     func fetchConversation(id: UUID) async -> LumiConversationSummary?
 
     /// Count conversations without loading their summaries.
     func conversationCount(projectPath: String?) async -> Int
+
+    /// Count conversations, optionally including conversations created by sub-agents.
+    func conversationCount(projectPath: String?, includingChildConversations: Bool) async -> Int
 
     /// 数据存储目录
     var dataDirectory: URL { get }
@@ -51,6 +62,15 @@ public protocol ConversationManaging: ObservableObject {
     ///   - modelName: 模型名称（可选，传 nil 则自动使用当前选中的模型）
     /// - Returns: 新对话 ID
     func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID
+
+    /// Creates a conversation with an optional parent conversation.
+    func createConversation(
+        title: String?,
+        projectPath: String?,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID
 
     /// 选择对话
     func selectConversation(id: UUID)
@@ -130,12 +150,35 @@ public extension ConversationManaging {
         []
     }
 
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil,
+        includingChildConversations: Bool
+    ) async -> [LumiConversationSummary] {
+        await fetchConversationPage(limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID)
+    }
+
     func fetchConversation(id: UUID) async -> LumiConversationSummary? {
         nil
     }
 
     func conversationCount(projectPath: String?) async -> Int {
         0
+    }
+
+    func conversationCount(projectPath: String?, includingChildConversations: Bool) async -> Int {
+        await conversationCount(projectPath: projectPath)
+    }
+
+    func createConversation(
+        title: String?,
+        projectPath: String?,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
+        try createConversation(title: title, projectPath: projectPath, providerID: providerID, modelName: modelName)
     }
 
     /// 按更新时间倒序排序

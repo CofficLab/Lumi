@@ -101,6 +101,8 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
     public var providerID: String?
     public var modelName: String?
     public var projectPath: String?
+    /// The conversation that spawned this conversation, if it was created by a sub-agent.
+    public var parentConversationID: UUID?
 
     public init(
         id: UUID = UUID(),
@@ -114,7 +116,8 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         automationLevel: LumiAutomationLevel? = nil,
         providerID: String? = nil,
         modelName: String? = nil,
-        projectPath: String? = nil
+        projectPath: String? = nil,
+        parentConversationID: UUID? = nil
     ) {
         self.id = id
         self.title = title
@@ -128,6 +131,7 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         self.providerID = providerID
         self.modelName = modelName
         self.projectPath = projectPath
+        self.parentConversationID = parentConversationID
     }
 
     public var displayTitle: String {
