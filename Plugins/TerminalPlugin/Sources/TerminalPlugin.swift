@@ -14,6 +14,8 @@ public final class TerminalPlugin: LumiPlugin {
     }
     public let order = 279
 	public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
+    public let category: LumiPluginCategory = .development
 
     public init() {}
 
