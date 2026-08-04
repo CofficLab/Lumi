@@ -8,6 +8,7 @@ public final class DeepSeekPlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("DeepSeek", bundle: .module)
     }
+
     public let order = 92
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }
