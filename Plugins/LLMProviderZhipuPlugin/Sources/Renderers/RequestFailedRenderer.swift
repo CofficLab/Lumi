@@ -8,7 +8,7 @@ enum RequestFailedRenderer {
         canRender: { message in
             ZhipuRenderKind.matches(renderKind: ZhipuRenderKind.requestFailed, message: message)
         },
-        render: { message in
+        render: { message, _ in
             HttpErrorView(message: message, statusCode: nil)
         }
     )
