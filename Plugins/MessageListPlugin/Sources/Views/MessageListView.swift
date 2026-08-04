@@ -77,7 +77,9 @@ struct MessageListView: View {
 
                         bottomAnchor
                     }
-                    .padding(.vertical, 4)
+                    // Keep a top inset without leaving scrollable space after
+                    // the bottom anchor; the anchor must be the true content end.
+                    .padding(.top, 4)
                     // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
                     .environment(\.lumiActiveToolGroupIDs, viewModel.activeStepGroupMessageIDs)
                     .environment(\.lumiTurnActivitySummaries, viewModel.turnActivitySummaries)
@@ -172,7 +174,10 @@ struct MessageListView: View {
                     value: geometry.frame(in: .global).maxY
                 )
         }
-        .frame(height: 1)
+        // Keep the spacer inside the anchor so automatic scrolling includes
+        // the visual bottom breathing room instead of leaving extra scrollable
+        // content below the target.
+        .frame(height: 16)
         .id(MessageListScrollCoordinator.bottomAnchorID)
         .accessibilityHidden(true)
     }
