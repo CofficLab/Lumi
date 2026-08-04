@@ -2,152 +2,166 @@ import SwiftUI
 import LumiUI
 import LumiKernel
 
+/// 主面板：表格/键浏览 + Query 编辑器 + 结果区。
+///
+/// 连接管理迁到了工具栏右上角 `DatabaseToolbarButton` 的 popover，
+/// 因此本视图不再渲染连接列表，未连接时显示「去右上角添加连接」的引导。
 public struct DatabaseMainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @StateObject private var viewModel = DatabaseViewModel()
+    /// 由 ``DatabaseManagerPlugin`` 注入，与 ``DatabaseToolbarButton`` 共享同一个实例，
+    /// 这样在工具栏 popover 中选中/断开连接会立即反映到主面板。
+    @ObservedObject var viewModel: DatabaseViewModel
+
+    /// 由本视图的「去添加」按钮触发；popover 中的 Add Connection 共享同一个表单。
     @State private var showAddConfigSheet = false
-    
+
+    public init(viewModel: DatabaseViewModel) {
+        self.viewModel = viewModel
+    }
+
     public var body: some View {
-        HSplitView {
-            // Sidebar
-            VStack(alignment: .leading) {
-                Text(LumiPluginLocalization.string("Connections", bundle: .module))
-                    .font(.appBodyEmphasized)
-                    .foregroundColor(theme.textPrimary)
-                    .padding(.horizontal)
-                    .padding(.top)
-                
-                List(viewModel.configs, id: \.id) { config in
-                    HStack {
-                        Image(systemName: "server.rack")
-                        Text(config.name)
-                        Spacer()
-                        if viewModel.selectedConfig?.id == config.id && viewModel.isConnected {
-                            Circle()
-                                .fill(theme.success)
-                                .frame(width: 8, height: 8)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if viewModel.selectedConfig?.id != config.id {
-                            Task { await viewModel.connect(config: config) }
-                        }
-                    }
-                }
-                .listStyle(.sidebar)
-                
-                AppButton("Add Connection", style: .primary, fillsWidth: true, action: { showAddConfigSheet = true })
-                .padding()
-            }
-            .frame(minWidth: 200, maxWidth: 300)
-            
-            // Main Content
-            VStack {
-                if viewModel.isConnected {
-                    VStack(spacing: 0) {
-                        if viewModel.selectedConfig?.type == .redis {
-                            AppCard {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Text(LumiPluginLocalization.string("Keys", bundle: .module))
-                                            .font(.appBodyEmphasized)
-                                            .foregroundColor(theme.textPrimary)
-                                        Spacer()
-                                        AppButton("Load", style: .secondary, fillsWidth: true, action: { Task { await viewModel.loadRedisKeys() } })
-                                    }
-                                    List(viewModel.redisKeys, id: \.self) { key in
-                                        HStack {
-                                            Image(systemName: "key")
-                                            Text(key)
-                                            Spacer()
-                                            AppButton("Open", style: .ghost, fillsWidth: true, action: { Task { await viewModel.openRedisKey(key) } })
-                                        }
-                                    }
-                                    .frame(minHeight: 120, maxHeight: 200)
-                                }
-                            }
-                            settingsDivider
-                        }
-                        if viewModel.selectedConfig?.type == .sqlite {
-                            AppCard {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Text(LumiPluginLocalization.string("Tables", bundle: .module))
-                                            .font(.appBodyEmphasized)
-                                            .foregroundColor(theme.textPrimary)
-                                        Spacer()
-                                        AppButton("Load", style: .secondary, fillsWidth: true, action: { Task { await viewModel.loadSQLiteTables() } })
-                                    }
-                                    List(viewModel.sqliteTables, id: \.self) { table in
-                                        HStack {
-                                            Image(systemName: "tablecells")
-                                            Text(table)
-                                            Spacer()
-                                            AppButton("Open", style: .ghost, fillsWidth: true, action: { Task { await viewModel.openSQLiteTable(table) } })
-                                        }
-                                    }
-                                    .frame(minHeight: 120, maxHeight: 200)
-                                }
-                            }
-                            settingsDivider
-                        }
-                        // Query Editor
-                        TextEditor(text: $viewModel.queryText)
-                            .font(.monospaced(.body)())
-                            .padding(8)
-                            .frame(minHeight: 100, maxHeight: 200)
-                            .border(theme.appSubtleBorder)
-                        
-                        // Toolbar
-                        HStack {
-                            Spacer()
-                            if viewModel.isConnected {
-                                AppButton("Disconnect", style: .secondary, fillsWidth: true, action: { Task { await viewModel.disconnect() } })
-                            }
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .scaleEffect(0.5)
-                            }
-                            AppButton("Run", style: .primary, fillsWidth: true, action: { Task { await viewModel.executeQuery() } })
-                            .keyboardShortcut(.return, modifiers: .command)
-                        }
-                        .padding(8)
-                        .background(Material.regularMaterial)
-                        
-                        settingsDivider
-                        
-                        // Results
-                        if let error = viewModel.errorMessage {
-                            Text(error)
-                                .foregroundColor(theme.error)
-                                .padding()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        } else if let result = viewModel.queryResult {
-                            QueryResultView(result: result)
-                        } else {
-                            Text(LumiPluginLocalization.string("No results", bundle: .module))
-                                .foregroundColor(theme.textSecondary)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                    }
-                } else {
-                    VStack {
-                        Image(systemName: "database")
-                            .font(.appLargeTitle)
-                            .foregroundColor(theme.textSecondary)
-                        Text(LumiPluginLocalization.string("Select a database to connect", bundle: .module))
-                            .font(.appTitle)
-                            .foregroundColor(theme.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
+        Group {
+            if viewModel.isConnected {
+                connectedContent
+            } else {
+                emptyState
             }
         }
         .sheet(isPresented: $showAddConfigSheet) {
             AddConnectionView(viewModel: viewModel, isPresented: $showAddConfigSheet)
         }
+    }
+
+    // MARK: - Connected
+
+    private var connectedContent: some View {
+        VStack(spacing: 0) {
+            if viewModel.selectedConfig?.type == .redis {
+                keysBrowser
+                settingsDivider
+            }
+            if viewModel.selectedConfig?.type == .sqlite {
+                tablesBrowser
+                settingsDivider
+            }
+            queryEditor
+            toolbar
+            settingsDivider
+            resultsSection
+        }
+    }
+
+    private var keysBrowser: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(LumiPluginLocalization.string("Keys", bundle: .module))
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
+                    Spacer()
+                    AppButton("Load", style: .secondary, fillsWidth: true, action: { Task { await viewModel.loadRedisKeys() } })
+                }
+                List(viewModel.redisKeys, id: \.self) { key in
+                    HStack {
+                        Image(systemName: "key")
+                        Text(key)
+                        Spacer()
+                        AppButton("Open", style: .ghost, fillsWidth: true, action: { Task { await viewModel.openRedisKey(key) } })
+                    }
+                }
+                .frame(minHeight: 120, maxHeight: 200)
+            }
+        }
+    }
+
+    private var tablesBrowser: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(LumiPluginLocalization.string("Tables", bundle: .module))
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
+                    Spacer()
+                    AppButton("Load", style: .secondary, fillsWidth: true, action: { Task { await viewModel.loadSQLiteTables() } })
+                }
+                List(viewModel.sqliteTables, id: \.self) { table in
+                    HStack {
+                        Image(systemName: "tablecells")
+                        Text(table)
+                        Spacer()
+                        AppButton("Open", style: .ghost, fillsWidth: true, action: { Task { await viewModel.openSQLiteTable(table) } })
+                    }
+                }
+                .frame(minHeight: 120, maxHeight: 200)
+            }
+        }
+    }
+
+    private var queryEditor: some View {
+        TextEditor(text: $viewModel.queryText)
+            .font(.monospaced(.body)())
+            .padding(8)
+            .frame(minHeight: 100, maxHeight: 200)
+            .border(theme.appSubtleBorder)
+    }
+
+    private var toolbar: some View {
+        HStack {
+            Spacer()
+            if viewModel.isConnected {
+                AppButton("Disconnect", style: .secondary, fillsWidth: true, action: { Task { await viewModel.disconnect() } })
+            }
+            if viewModel.isLoading {
+                ProgressView()
+                    .scaleEffect(0.5)
+            }
+            AppButton("Run", style: .primary, fillsWidth: true, action: { Task { await viewModel.executeQuery() } })
+                .keyboardShortcut(.return, modifiers: .command)
+        }
+        .padding(8)
+        .background(Material.regularMaterial)
+    }
+
+    @ViewBuilder
+    private var resultsSection: some View {
+        if let error = viewModel.errorMessage {
+            Text(error)
+                .foregroundColor(theme.error)
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else if let result = viewModel.queryResult {
+            QueryResultView(result: result)
+        } else {
+            Text(LumiPluginLocalization.string("No results", bundle: .module))
+                .foregroundColor(theme.textSecondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    // MARK: - Empty state
+
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "cylinder.split.1x2")
+                .font(.appLargeTitle)
+                .foregroundColor(theme.textSecondary)
+            Text(LumiPluginLocalization.string("Select a database to connect", bundle: .module))
+                .font(.appTitle)
+                .foregroundColor(theme.textSecondary)
+            Text(LumiPluginLocalization.string("Use the toolbar button at the top right to manage connections.", bundle: .module))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 360)
+            AppButton(
+                LumiPluginLocalization.string("Add Connection", bundle: .module),
+                style: .primary,
+                fillsWidth: false,
+                action: { showAddConfigSheet = true }
+            )
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var settingsDivider: some View {

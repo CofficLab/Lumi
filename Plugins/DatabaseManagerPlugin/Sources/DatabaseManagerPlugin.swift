@@ -21,6 +21,12 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
 
     public init() {}
 
+    /// 插件级唯一的 DatabaseViewModel 实例。
+    /// 通过 `viewContainers` 和 `titleToolbarItems` 同时注入，
+    /// 让 `DatabaseMainView`（面板）与 `DatabaseToolbarButton`（工具栏 popover）
+    /// 共享同一份连接/选中状态，避免"在 popover 选了连接但面板没同步"的问题。
+    private let sharedViewModel = DatabaseViewModel()
+
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {}
@@ -45,7 +51,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
                 panelBodyVisibility: .alwaysVisible,
                 panelBottomVisibility: .unsupported
             ) {
-                AnyView(DatabaseMainView())
+                AnyView(DatabaseMainView(viewModel: self.sharedViewModel))
             },
         ]
     }
@@ -60,7 +66,19 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+        [
+            LumiTitleToolbarItem(
+                id: "\(id).toolbar-button",
+                title: LumiPluginLocalization.string("Database Connections", bundle: .module),
+                placement: .trailing,
+                order: 500
+            ) {
+                DatabaseToolbarButton(kernel: kernel, containerID: "database-manager", viewModel: self.sharedViewModel)
+            },
+        ]
+    }
+
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
