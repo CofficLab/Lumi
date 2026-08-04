@@ -23,8 +23,7 @@ struct ToolbarButton: View {
                     isPresented.toggle()
                 }
                 .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-                    ListView(kernel: kernel, attentionStore: attentionStore)
-                        .frame(width: 300, height: 480)
+                    ToolbarPopoverContent(kernel: kernel, attentionStore: attentionStore)
                 }
             }
         }
