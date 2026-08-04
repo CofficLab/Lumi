@@ -38,6 +38,23 @@ final class PendingMessageBuffer: @unchecked Sendable {
             storage[conversationID] = list
         }
     }
+
+    /// Mutate a pending message in place and return the updated value.
+    @discardableResult
+    func update(
+        id: UUID,
+        conversationID: UUID,
+        _ transform: (inout LumiChatMessage) -> Void
+    ) -> LumiChatMessage? {
+        lock.lock(); defer { lock.unlock() }
+        guard var list = storage[conversationID],
+              let index = list.firstIndex(where: { $0.id == id })
+        else { return nil }
+
+        transform(&list[index])
+        storage[conversationID] = list
+        return list[index]
+    }
 }
 
 /// 瞬时 status 消息缓冲(每会话最多一条,永不落盘)。

@@ -306,7 +306,15 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
         if Self.verbose {
             Self.logger.info("\(Self.t)updateMessage ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(id.uuidString.prefix(8))…, newContentChars=\(content.count)")
         }
-        store?.updateMessage(id: id, content: content)
+        let pendingMessage = pending.update(id: id, conversationID: conversationID) { message in
+            message.content = content
+        }
+        if let pendingMessage {
+            // Keep the update ordered after the original write-behind insert.
+            persistUpdatedMessage(pendingMessage, conversationID: conversationID)
+        } else {
+            store?.updateMessage(id: id, content: content)
+        }
         // Notify UI to refresh
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
     }
@@ -361,22 +369,28 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
         assistantMessageID: UUID,
         in conversationID: UUID
     ) {
-        guard let old = store?.fetchMessage(id: assistantMessageID) else {
+        let updatedMessage = pending.snapshot(for: conversationID)
+            .first(where: { $0.id == assistantMessageID })
+            ?? store?.fetchMessage(id: assistantMessageID)
+        guard var message = updatedMessage,
+              var toolCalls = message.toolCalls,
+              let index = toolCalls.firstIndex(where: { $0.id == toolCallID })
+        else {
             if Self.verbose {
-                Self.logger.warning("\(Self.t)updateToolCallResult: message \(assistantMessageID) not found")
+                Self.logger.warning("\(Self.t)updateToolCallResult: tool call \(toolCallID) not found")
             }
             return
         }
 
-        guard old.toolCalls != nil else {
-            if Self.verbose {
-                Self.logger.warning("\(Self.t)updateToolCallResult: message has no toolCalls")
-            }
-            return
+        toolCalls[index].result = result
+        message.toolCalls = toolCalls
+        if pending.update(id: assistantMessageID, conversationID: conversationID) { pendingMessage in
+            pendingMessage.toolCalls = toolCalls
+        } != nil {
+            persistUpdatedToolCalls(toolCalls, messageID: assistantMessageID)
+        } else {
+            store?.updateToolCalls(id: assistantMessageID, toolCalls: toolCalls)
         }
-
-        // The result is persisted by ToolManager and resolved lazily by the UI.
-        // Do not write the potentially large result back into MessageModel.
 
         if Self.verbose {
             Self.logger.info("\(Self.t)updateToolCallResult ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(assistantMessageID.uuidString.prefix(8))…, toolCall=\(toolCallID)")
@@ -384,6 +398,27 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
 
         // Notify UI to refresh
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
+    }
+
+    private nonisolated func persistUpdatedMessage(
+        _ message: LumiChatMessage,
+        conversationID: UUID
+    ) {
+        let store = self.store
+        persistQueue.async {
+            _ = store?.updateMessage(id: message.id, content: message.content)
+            self.dequeuePending(id: message.id, conversationID: conversationID)
+        }
+    }
+
+    private nonisolated func persistUpdatedToolCalls(
+        _ toolCalls: [LumiToolCall],
+        messageID: UUID
+    ) {
+        let store = self.store
+        persistQueue.async {
+            _ = store?.updateToolCalls(id: messageID, toolCalls: toolCalls)
+        }
     }
 }
 
