@@ -27,7 +27,17 @@ class MiniMaxProviderSupport {
     }
 
     func errorMessage(providerID: String, conversationID: UUID, request: LumiLLMRequest, error: Error, disposition: LumiLLMErrorDisposition) -> LumiChatMessage {
-        LumiLLMProviderErrorSupport.makeErrorMessage(providerID: providerID, conversationID: conversationID, request: request, error: error, disposition: disposition, renderKind: errorKind(error))
+        var message = LumiLLMProviderErrorSupport.makeErrorMessage(providerID: providerID, conversationID: conversationID, request: request, error: error, disposition: disposition, renderKind: errorKind(error))
+
+        // The generic failure resolver intentionally keeps rawErrorDetail short.
+        // Preserve MiniMax's original response body separately so the error UI can
+        // show the complete JSON returned by the provider.
+        if case let MiniMaxProviderError.api(_, rawResponse) = error,
+           !rawResponse.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            message.metadata[LLMTransportMetadata.responseDetails] = rawResponse
+        }
+
+        return message
     }
 }
 

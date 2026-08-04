@@ -253,6 +253,16 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(message.metadata[LumiLLMErrorMetadata.retryable] == "false")
     }
 
+    @Test func errorMessagePreservesMiniMaxRawResponse() {
+        let rawResponse = #"{"error":{"message":"已达到 Token Plan 用量上限：请升级 Token Plan 套餐或购买积分补充用量。 (2056)","type":"rate_limit_error"},"request_id":"06c0e1336148ddfb89b77bc39f2b9c9b","type":"error"}"#
+        let message = makeMessage(
+            for: MiniMaxProviderError.api(statusCode: 429, message: rawResponse)
+        )
+
+        #expect(message.rawErrorDetail?.contains("Token Plan") == true)
+        #expect(message.metadata[LLMTransportMetadata.responseDetails] == rawResponse)
+    }
+
     @Test func errorMessageMapsHTTP429AsRetryable() {
         let message = makeMessage(
             for: HTTPClientError.httpError(statusCode: 429, message: "rate limited")
