@@ -12,6 +12,17 @@ public enum LumiLLMFailureDetailResolver {
             return resolve(from: httpError, locale: locale)
         }
 
+        if let networkError = error as? HTTPNetworkError {
+            let body = networkError.body.flatMap { String(data: $0, encoding: .utf8) }?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let summary = networkError.errorDescription ?? networkError.localizedDescription
+            return LumiLLMFailureDetail(
+                summary: summary,
+                httpStatusCode: networkError.statusCode,
+                transportDetails: body?.isEmpty == false ? body : nil
+            )
+        }
+
         if let localized = error as? LocalizedError,
            let description = localized.errorDescription?.trimmingCharacters(in: .whitespacesAndNewlines),
            !description.isEmpty {

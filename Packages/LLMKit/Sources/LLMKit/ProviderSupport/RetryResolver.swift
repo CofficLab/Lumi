@@ -91,9 +91,11 @@ public enum LumiLLMProviderErrorSupport {
     ) -> LumiChatMessage {
         let detail: LumiLLMFailureDetail
         var metadata: [String: String] = [:]
+        var httpBody: String?
 
         if case let LumiLLMProviderSupportError.streamingFailed(message) = error {
             let split = LumiLLMTransportDetails.split(message)
+            httpBody = Self.responseBody(from: split.responseDetails)
             detail = LumiLLMFailureDetail(
                 summary: split.summary,
                 httpStatusCode: LumiProviderHTTPErrorParsing.statusCode(from: split.summary)
@@ -103,6 +105,7 @@ public enum LumiLLMProviderErrorSupport {
             metadata = LumiLLMTransportDetails.metadata(from: split)
         } else {
             detail = LumiLLMFailureDetailResolver.resolve(from: error)
+            httpBody = detail.transportDetails
             if let transportDetails = detail.transportDetails {
                 metadata[LumiLLMTransportMetadata.responseDetails] = transportDetails
             }
@@ -126,8 +129,20 @@ public enum LumiLLMProviderErrorSupport {
             modelName: request.model,
             isError: true,
             rawErrorDetail: detail.summary.isEmpty ? detail.availabilityDisplayText : detail.summary,
+            httpStatusCode: detail.httpStatusCode,
+            httpBody: httpBody,
             renderKind: resolvedRenderKind,
             metadata: metadata
         )
+    }
+
+    private static func responseBody(from responseDetails: String?) -> String? {
+        guard let responseDetails,
+              let markerRange = responseDetails.range(of: "Response Body:") else {
+            return nil
+        }
+        let body = responseDetails[markerRange.upperBound...]
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return body.isEmpty || body == "-" ? nil : body
     }
 }
