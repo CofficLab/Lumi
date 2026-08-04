@@ -11,10 +11,17 @@ import SwiftUI
 ///   (`kernel.conversations?.objectWillChange` → `kernel.project.openProject(at:)`)。
 /// - `OnProjectChangedHook`:当前项目切换时,清空当前选中的对话
 ///   (`kernel.project.objectWillChange` → `kernel.conversations.deselectConversation()`)。
+/// - `OnConversationProviderModelSyncHook`:选中对话后,把对话绑定的 Provider/Model
+///   同步到内核全局(`kernel.conversations.objectWillChange` →
+///   `kernel.llmProviders.selectProvider(id:)` / `selectModel(providerID:model:)`)。
+///   仅在不一致时写入,无绑定则跳过,避免覆盖用户刚手动选择的全局值。
 ///
-/// 两条 hook 形成对称联动:
+/// 前两条 hook 形成对称联动:
 ///   - 选中对话 → 跟随对话绑定的项目;
 ///   - 项目变化 → 清空当前对话,避免旧对话与新项目不一致。
+///
+/// 第三条 hook 是单向同步:
+///   - 选中对话 → 把对话的 Provider/Model 写入内核全局,使后续发送的消息使用对话绑定的模型。
 ///
 /// 设计意图:
 /// - 不产生新的状态源,只在已有状态之间建立联动规则;
@@ -37,6 +44,7 @@ public final class StateMonitorPlugin: LumiPlugin {
 
     private let selectedProjectHook = OnConversationSelectedHook()
     private let projectChangedHook = OnProjectChangedHook()
+    private let providerModelSyncHook = OnConversationProviderModelSyncHook()
 
     // MARK: - Init
 
@@ -54,11 +62,13 @@ public final class StateMonitorPlugin: LumiPlugin {
         // 就已可用,但放 onReady 跟项目里其他 Hook 一致。
         selectedProjectHook.attach(kernel: kernel)
         projectChangedHook.attach(kernel: kernel)
+        providerModelSyncHook.attach(kernel: kernel)
     }
 
     public func onDisable(kernel: LumiKernel) async throws {
         selectedProjectHook.detach()
         projectChangedHook.detach()
+        providerModelSyncHook.detach()
     }
 
     // MARK: - Empty contribution points
