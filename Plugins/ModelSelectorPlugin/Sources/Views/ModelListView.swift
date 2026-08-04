@@ -6,7 +6,7 @@ import LumiUI
 /// 模型列表视图
 ///
 /// 显示指定供应商的模型列表，支持搜索和选择。
-/// 从 kernel 自动获取 LLMProviderManaging 和 ConversationManaging 服务。
+/// 从 kernel 自动获取 LLMProviderManaging 服务。
 struct ModelListView: View {
     @LumiTheme private var theme
     let kernel: LumiKernel
@@ -19,10 +19,6 @@ struct ModelListView: View {
     /// 从 kernel 获取服务
     private var llmProvider: (any LLMProviderManaging)? {
         kernel.resolveService((any LLMProviderManaging).self)
-    }
-
-    private var conversationManaging: (any ConversationManaging)? {
-        kernel.resolveService((any ConversationManaging).self)
     }
 
     /// 当前选中供应商的显示名称
@@ -85,10 +81,6 @@ struct ModelListView: View {
                                 onSelect: {
                                     onSelect?(providerID, model)
                                     llmProvider.selectModel(providerID: providerID, model: model)
-                                    if let conversations = conversationManaging,
-                                       let convID = conversations.selectedConversationID {
-                                        conversations.selectProvider(id: providerID, model: model, for: convID)
-                                    }
                                 }
                             )
                         }

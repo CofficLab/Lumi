@@ -14,20 +14,8 @@ struct ActionBarButton: View {
         kernel.resolveService((any LLMProviderManaging).self)
     }
 
-    private var conversationManaging: (any ConversationManaging)? {
-        kernel.resolveService((any ConversationManaging).self)
-    }
-
-    /// Initial selection: conversation provider/model if exists, else from LLMProviderManaging
+    /// Initial selection from LLMProviderManaging
     private var initialSelection: (providerID: String?, model: String?) {
-        // Check conversation first
-        if let conversations = conversationManaging,
-           let convID = conversations.selectedConversationID,
-           let convProviderID = conversations.providerID(for: convID) {
-            let convModel = conversations.modelName(for: convID)
-            return (convProviderID, convModel)
-        }
-        // Fallback to LLMProviderManaging
         return (llmProvider?.selectedProviderID, llmProvider?.selectedModel)
     }
 

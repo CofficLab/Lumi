@@ -13,18 +13,8 @@ struct PopoverContent: View {
         kernel.resolveService((any LLMProviderManaging).self)
     }
 
-    private var conversationManaging: (any ConversationManaging)? {
-        kernel.resolveService((any ConversationManaging).self)
-    }
-
-    /// Initial selection from conversation or LLMProviderManaging
+    /// Initial selection from LLMProviderManaging
     private var initialSelection: (providerID: String?, model: String?) {
-        if let conversations = conversationManaging,
-           let convID = conversations.selectedConversationID,
-           let convProviderID = conversations.providerID(for: convID) {
-            let convModel = conversations.modelName(for: convID)
-            return (convProviderID, convModel)
-        }
         return (llmProvider?.selectedProviderID, llmProvider?.selectedModel)
     }
 
