@@ -26,7 +26,7 @@ public struct AppMessageBubbleStyle: @unchecked Sendable {
     public init(
         contentPadding: CGFloat = 10,
         assistantTrailingPadding: CGFloat = 20,
-        cornerRadius: CGFloat = 16,
+        cornerRadius: CGFloat = 8,
         errorBackground: Color = Color(hex: "FF453A").opacity(0.1),
         userBackground: Color = Color(hex: "0A84FF").opacity(0.1),
         assistantBackground: Color = .clear,
