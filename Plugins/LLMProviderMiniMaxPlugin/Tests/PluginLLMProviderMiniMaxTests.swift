@@ -263,6 +263,19 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(message.metadata[LLMTransportMetadata.responseDetails] == rawResponse)
     }
 
+    @Test func errorMessagePreservesHTTPNetworkErrorBody() {
+        let rawResponse = #"{"error":{"message":"已达到 Token Plan 用量上限：请升级 Token Plan 套餐或购买积分补充用量。 (2056)","type":"rate_limit_error"},"request_id":"06c0e1336148ddfb89b77bc39f2b9c9b9","type":"error"}"#
+        let error = HTTPNetworkError(
+            url: URL(string: "https://api.minimax.chat/anthropic/v1/messages")!,
+            statusCode: 429,
+            body: Data(rawResponse.utf8)
+        )
+        let message = makeMessage(for: error)
+
+        #expect(message.renderKind == MiniMaxRenderKind.http(429))
+        #expect(message.metadata[LLMTransportMetadata.responseDetails] == rawResponse)
+    }
+
     @Test func errorMessageMapsHTTP429AsRetryable() {
         let message = makeMessage(
             for: HTTPClientError.httpError(statusCode: 429, message: "rate limited")

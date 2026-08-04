@@ -22,6 +22,7 @@ class MiniMaxProviderSupport {
     func errorKind(_ error: Error) -> String? {
         if case LumiLLMProviderSupportError.missingAPIKey = error { return MiniMaxRenderKind.apiKeyMissing }
         if let code = (error as? MiniMaxProviderError)?.statusCode { return MiniMaxRenderKind.http(code) }
+        if let code = (error as? HTTPNetworkError)?.statusCode { return MiniMaxRenderKind.http(code) }
         if let code = LumiLLMHTTPErrorParsing.statusCode(from: error) { return MiniMaxRenderKind.http(code) }
         return MiniMaxRenderKind.requestFailed
     }
@@ -33,6 +34,13 @@ class MiniMaxProviderSupport {
         // Preserve MiniMax's original response body separately so the error UI can
         // show the complete JSON returned by the provider.
         if case let MiniMaxProviderError.api(_, rawResponse) = error,
+           !rawResponse.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            message.metadata[LLMTransportMetadata.responseDetails] = rawResponse
+        }
+
+        if let networkError = error as? HTTPNetworkError,
+           let body = networkError.body,
+           let rawResponse = String(data: body, encoding: .utf8),
            !rawResponse.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             message.metadata[LLMTransportMetadata.responseDetails] = rawResponse
         }
