@@ -204,11 +204,11 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         guard let suspension,
               suspension.suspensionID == request.suspensionID,
               let assistantMessage = kernel?.messageManager?.messages(for: conversationID)
-                .reversed()
-                .first(where: { message in
-                    message.role == .assistant
-                        && message.toolCalls?.contains(where: { $0.id == suspension.toolCallID }) == true
-                }),
+              .reversed()
+              .first(where: { message in
+                  message.role == .assistant
+                      && message.toolCalls?.contains(where: { $0.id == suspension.toolCallID }) == true
+              }),
               let toolCallID = suspension.toolCallID
         else {
             throw AgentTurnManagingError.invalidResumeRequest
@@ -334,15 +334,10 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             let tools = (kernel.toolManager?.allAgentTools() ?? []).filter {
                 !turnCreationExcludedToolNames[conversationID, default: []].contains($0.name)
             }
-            if Self.verbose {
-                let metrics = Self.messageMetrics(history)
-                Self.logger.info("\(Self.t)LLM history loaded conversation=\(conversationID.uuidString.prefix(8)) messages=\(history.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars) toolCallArgumentChars=\(metrics.toolCallArgumentChars)")
-            }
 
             guard let provider = kernel.llmProvider?.allLLMProviders().first else {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)没有可用的 LLM Provider")
-                }
+                Self.logger.error("\(Self.t)没有可用的 LLM Provider")
+
                 appendErrorMessage(
                     conversationID: conversationID,
                     content: String(localized: "No LLM provider available", defaultValue: "No LLM provider available")
@@ -488,11 +483,6 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             postMessageSavedNotification(message: assistantMessage, conversationID: conversationID)
             await streamingStore?.endStreaming()
 
-            if Self.verbose {
-                let toolArgChars = assistantMessage.toolCalls?.reduce(0) { $0 + $1.arguments.count } ?? 0
-                Self.logger.info("\(Self.t)收到 assistant 消息 contentChars=\(assistantMessage.content.count) reasoningChars=\(assistantMessage.reasoningContent?.count ?? 0) toolCalls=\(assistantMessage.toolCalls?.count ?? 0) toolCallArgumentChars=\(toolArgChars)")
-            }
-
             // No tool calls → turn complete
             guard let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty else {
                 if Self.verbose {
@@ -559,10 +549,6 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                         turnControl: .suspend(boundSuspension)
                     )
                 }
-                if Self.verbose {
-                    let imageBase64Chars = result.imageAttachments.reduce(0) { $0 + $1.base64Data.count }
-                    Self.logger.info("\(Self.t)工具结果 received tool=\(toolCall.name) contentChars=\(result.content.count) images=\(result.imageAttachments.count) imageBase64Chars=\(imageBase64Chars) isError=\(result.isError)")
-                }
 
                 // Update the assistant message's toolCall with the result
                 // This allows the UI to show correct visual state (success/failure/duration)
@@ -614,5 +600,4 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             // Continue loop with new tool results in message history
         }
     }
-
 }
