@@ -7,7 +7,7 @@ struct ControlView: View {
     @ObservedObject private var viewModel: ProjectsViewModel
     @ObservedObject private var kernel: LumiKernel
     @State private var isPopoverPresented = false
-    @State private var supportsProject = false
+    @State private var activeContainerRevision = 0
 
     init(viewModel: ProjectsViewModel, kernel: LumiKernel) {
         self.viewModel = viewModel
@@ -15,6 +15,9 @@ struct ControlView: View {
     }
 
     var body: some View {
+        let _ = activeContainerRevision
+        let supportsProject = kernel.workspace?.currentViewContainer?.supportsProject == true
+
         Group {
             if supportsProject {
                 Button {
@@ -41,17 +44,13 @@ struct ControlView: View {
             }
         }
         .onAppear {
-            updateProjectSupport()
+            activeContainerRevision += 1
         }
         .onActiveViewContainerIDDidChange { _ in
-            updateProjectSupport()
-        }
-    }
-
-    private func updateProjectSupport() {
-        supportsProject = kernel.workspace?.currentViewContainer?.supportsProject == true
-        if !supportsProject {
-            isPopoverPresented = false
+            activeContainerRevision += 1
+            if !supportsProject {
+                isPopoverPresented = false
+            }
         }
     }
 }

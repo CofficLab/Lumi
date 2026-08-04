@@ -28,6 +28,7 @@ public struct DatabaseMainView: View {
                 emptyState
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showAddConfigSheet) {
             AddConnectionView(viewModel: viewModel, isPresented: $showAddConfigSheet)
         }
@@ -36,19 +37,28 @@ public struct DatabaseMainView: View {
     // MARK: - Connected
 
     private var connectedContent: some View {
-        VStack(spacing: 0) {
-            if viewModel.selectedConfig?.type == .redis {
-                keysBrowser
-                settingsDivider
+        HStack(alignment: .top, spacing: 0) {
+            // 左侧：表 / Keys 浏览
+            Group {
+                if viewModel.selectedConfig?.type == .redis {
+                    keysBrowser
+                } else if viewModel.selectedConfig?.type == .sqlite {
+                    tablesBrowser
+                }
             }
-            if viewModel.selectedConfig?.type == .sqlite {
-                tablesBrowser
-                settingsDivider
-            }
-            queryEditor
-            toolbar
+            .frame(width: 220, height: .infinity, alignment: .top)
+
             settingsDivider
-            resultsSection
+
+            // 右侧：上为 SQL 编辑器 + 工具栏，下为结果
+            VStack(spacing: 0) {
+                queryEditor
+                toolbar
+                settingsDivider
+                resultsSection
+                    .frame(maxHeight: .infinity, alignment: .top)
+            }
+            .frame(maxWidth: .infinity)
         }
     }
 
