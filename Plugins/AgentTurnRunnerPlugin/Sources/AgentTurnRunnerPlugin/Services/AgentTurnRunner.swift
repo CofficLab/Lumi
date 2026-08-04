@@ -266,6 +266,20 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             Self.logger.info("\(Self.t)cancelTurn ➡️ conversationID=\(conversationID.uuidString.prefix(8))…")
         }
 
+        // 先快照出所有仍把 `conversationID` 作为 parent 的 child turn。
+        // 必须在修改任何 `activeTurnTasks` / `parentConversationIDs` 之前快照,
+        // 否则递归取消会改变我们正在遍历的集合。
+        let childIDs = activeTurnTasks.keys.filter {
+            parentConversationIDs[$0] == conversationID
+        }
+        if Self.verbose && !childIDs.isEmpty {
+            let preview = childIDs.map { $0.uuidString.prefix(8) }.joined(separator: ", ")
+            Self.logger.info("\(Self.t)cancelTurn 级联 ➡️ parent=\(conversationID.uuidString.prefix(8))…, children=[\(preview)]")
+        }
+        for childID in childIDs {
+            cancelTurn(in: childID)
+        }
+
         cancelledConversations.insert(conversationID)
         suspensions.removeValue(forKey: conversationID)
         pendingChildWorks.removeValue(forKey: conversationID)

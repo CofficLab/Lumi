@@ -127,6 +127,22 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         ) ?? []
     }
 
+    public func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool,
+        projectPath: String
+    ) async -> [LumiConversationSummary] {
+        await store?.fetchConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID,
+            includingChildConversations: includingChildConversations,
+            projectPath: projectPath
+        ) ?? []
+    }
+
     public func fetchConversation(id: UUID) async -> LumiConversationSummary? {
         if let cached = conversations.first(where: { $0.id == id }) {
             return cached
@@ -318,11 +334,18 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             persistSelectedConversationID()
         }
 
-        notifyConversationsChanged()
-
-        // Delete from database async
+        // Delete every storage owned by the conversation. The list is updated
+        // optimistically, but the change notification is sent only after the
+        // persistent cleanup so a reload cannot resurrect the row.
         Task {
-            await store?.deleteConversation(id: id)
+            let ids = await store?.conversationIDsToDelete(id: id) ?? [id]
+            for conversationID in ids {
+                kernel?.agentTurnManager?.cancelTurn(in: conversationID)
+                kernel?.messageManager?.clearMessages(in: conversationID)
+                await kernel?.toolManager?.deleteToolCalls(for: conversationID)
+            }
+            _ = await store?.deleteConversations(ids: ids)
+            self.notifyConversationsChanged()
         }
     }
 

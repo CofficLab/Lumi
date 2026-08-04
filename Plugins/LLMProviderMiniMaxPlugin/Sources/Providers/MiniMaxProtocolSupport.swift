@@ -58,6 +58,24 @@ struct MiniMaxTextSegments: Sendable {
     var thinking = ""
 }
 
+/// MiniMax requires tool-call arguments to be a valid JSON object string.
+///
+/// Tool arguments arrive incrementally from the model and can be truncated
+/// when a stream ends unexpectedly. Normalize them at both persistence and
+/// request-building boundaries so one malformed call cannot poison the next
+/// request with MiniMax error 2013.
+enum MiniMaxToolArguments {
+    static func normalized(_ raw: String) -> String {
+        guard let data = raw.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let normalizedData = try? JSONSerialization.data(withJSONObject: object),
+              let normalized = String(data: normalizedData, encoding: .utf8) else {
+            return "{}"
+        }
+        return normalized
+    }
+}
+
 /// Extracts MiniMax's XML-style thinking tags from OpenAI `content` deltas.
 /// The tags may be split across network chunks, so parsing must retain a
 /// partial suffix until the next delta arrives.
@@ -275,7 +293,18 @@ enum MiniMaxRequestBuilder {
         case .system, .user: return ["role": message.role.rawValue, "content": message.content]
         case .assistant:
             var value: [String: Any] = ["role": "assistant", "content": message.content]
-            if let calls = message.toolCalls { value["tool_calls"] = calls.map { ["id": $0.id, "type": "function", "function": ["name": $0.name, "arguments": $0.arguments]] } }
+            if let calls = message.toolCalls {
+                value["tool_calls"] = calls.map {
+                    [
+                        "id": $0.id,
+                        "type": "function",
+                        "function": [
+                            "name": $0.name,
+                            "arguments": MiniMaxToolArguments.normalized($0.arguments),
+                        ],
+                    ]
+                }
+            }
             return value
         case .tool: guard let id = message.toolCallID else { return nil }; return ["role": "tool", "tool_call_id": id, "content": message.content]
         case .error, .status: return nil

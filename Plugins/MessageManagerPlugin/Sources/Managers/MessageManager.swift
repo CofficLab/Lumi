@@ -324,7 +324,12 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
         if Self.verbose {
             Self.logger.info("\(Self.t)clearMessages ➡️ conversation=\(conversationID.uuidString.prefix(8))…")
         }
-        store?.deleteAllMessages(conversationId: conversationID)
+        // Drain the write-behind queue before deleting. Otherwise an older
+        // assistant/tool write could land after the delete and resurrect data.
+        persistQueue.sync {
+            store?.deleteAllMessages(conversationId: conversationID)
+            pending.clear(conversationID: conversationID)
+        }
         statusBuffer.clear(conversationID: conversationID)
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
     }

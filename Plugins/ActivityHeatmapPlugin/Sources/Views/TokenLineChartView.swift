@@ -114,7 +114,14 @@ public struct TokenLineChartView: View {
                 }
             }
             .chartYAxis {
-                AxisMarks(position: .leading)
+                AxisMarks(position: .leading) { value in
+                    AxisValueLabel {
+                        if let intValue = value.as(Int.self) {
+                            Text(formatNumber(intValue))
+                        }
+                    }
+                    AxisGridLine()
+                }
             }
             .chartYScale(domain: 0...maxYValue)
             .chartOverlay { proxy in

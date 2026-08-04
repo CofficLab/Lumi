@@ -10,29 +10,31 @@ struct ConversationInputView: View, SuperLog {
     nonisolated static let verbose = false
 
     @LumiTheme private var theme
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+    @ObservedObject var inputState: InputState
+
+    init(kernel: LumiKernel, inputState: InputState) {
+        self.kernel = kernel
+        self._inputState = ObservedObject(wrappedValue: inputState)
+    }
 
     var body: some View {
-        if let inputState = kernel.conversationInput {
-            VStack(spacing: 0) {
-                AppDivider()
+        VStack(spacing: 0) {
+            AppDivider()
 
-                if let errorMessage = inputState.errorMessage {
-                    InputErrorView(message: errorMessage, onDismiss: {
-                        inputState.errorMessage = nil
-                    })
-                    .padding(.bottom, 4)
-                }
-
-                ComposerView(
-                    inputState: inputState,
-                    kernel: kernel,
-                    onSend: { inputState.send(kernel: kernel) }
-                )
+            if let errorMessage = inputState.errorMessage {
+                InputErrorView(message: errorMessage, onDismiss: {
+                    inputState.errorMessage = nil
+                })
+                .padding(.bottom, 4)
             }
-            .background(theme.background)
-        } else {
-            EmptyView()
+
+            ComposerView(
+                inputState: inputState,
+                kernel: kernel,
+                onSend: { inputState.send(kernel: kernel) }
+            )
         }
+        .background(theme.background)
     }
 }

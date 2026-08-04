@@ -22,12 +22,42 @@ class MiniMaxProviderSupport {
     func errorKind(_ error: Error) -> String? {
         if case LumiLLMProviderSupportError.missingAPIKey = error { return MiniMaxRenderKind.apiKeyMissing }
         if let code = (error as? MiniMaxProviderError)?.statusCode { return MiniMaxRenderKind.http(code) }
+        if let code = (error as? HTTPNetworkError)?.statusCode { return MiniMaxRenderKind.http(code) }
         if let code = LumiLLMHTTPErrorParsing.statusCode(from: error) { return MiniMaxRenderKind.http(code) }
         return MiniMaxRenderKind.requestFailed
     }
 
     func errorMessage(providerID: String, conversationID: UUID, request: LumiLLMRequest, error: Error, disposition: LumiLLMErrorDisposition) -> LumiChatMessage {
-        LumiLLMProviderErrorSupport.makeErrorMessage(providerID: providerID, conversationID: conversationID, request: request, error: error, disposition: disposition, renderKind: errorKind(error))
+        var message = LumiLLMProviderErrorSupport.makeErrorMessage(providerID: providerID, conversationID: conversationID, request: request, error: error, disposition: disposition, renderKind: errorKind(error))
+
+        // The generic failure resolver intentionally keeps rawErrorDetail short.
+        // Preserve MiniMax's original response body separately so the error UI can
+        // show the complete JSON returned by the provider.
+        if case let MiniMaxProviderError.api(_, rawResponse) = error,
+           !rawResponse.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            message.metadata[LLMTransportMetadata.responseDetails] = rawResponse
+        }
+
+        if let networkError = error as? HTTPNetworkError,
+           let body = networkError.body,
+           let rawResponse = String(data: body, encoding: .utf8),
+           !rawResponse.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let details = [
+                "Response Status: \(networkError.statusCode.map(String.init) ?? "-")",
+                "Response Headers:",
+                formattedResponseHeaders(networkError.headers),
+                "Response Body:",
+                rawResponse,
+            ]
+            message.metadata[LLMTransportMetadata.responseDetails] = details.joined(separator: "\n")
+        }
+
+        return message
+    }
+
+    private func formattedResponseHeaders(_ headers: [String: String]) -> String {
+        guard !headers.isEmpty else { return "-" }
+        return headers.keys.sorted().map { "\($0): \(headers[$0] ?? "")" }.joined(separator: "\n")
     }
 }
 
@@ -42,6 +72,13 @@ final class MiniMaxMessageState: @unchecked Sendable {
     func append(_ event: MiniMaxAnthropicEvent) { lock.lock(); defer { lock.unlock() }; if let value = event.text, !value.isEmpty { if first == nil { first = Date() }; content += value }; if let value = event.thinking, !value.isEmpty { if first == nil { first = Date() }; reasoning += value }; if let id = event.toolID { saveToolLocked(); activeID = id; activeName = event.toolName ?? "" }; if let args = event.toolArguments { activeArgs += args }; stopReason = event.stopReason ?? stopReason }
     @discardableResult
     func finish() -> MiniMaxTextSegments { lock.lock(); defer { lock.unlock() }; let segments = thinkingParser.finish(); if !segments.content.isEmpty { content += segments.content }; if !segments.thinking.isEmpty { reasoning += segments.thinking }; ended = Date(); saveToolLocked(); return segments }
-    private func saveToolLocked() { guard let id = activeID, let name = activeName else { return }; calls.append(LumiToolCall(id: id, name: name, arguments: activeArgs.isEmpty ? "{}" : activeArgs)); activeID = nil; activeName = nil; activeArgs = "" }
+    private func saveToolLocked() {
+        guard let id = activeID, let name = activeName else { return }
+        let arguments = activeArgs.isEmpty ? "{}" : MiniMaxToolArguments.normalized(activeArgs)
+        calls.append(LumiToolCall(id: id, name: name, arguments: arguments))
+        activeID = nil
+        activeName = nil
+        activeArgs = ""
+    }
     func message() -> LumiChatMessage { lock.lock(); defer { lock.unlock() }; let end = ended ?? Date(); return LumiChatMessage(conversationID: conversationID, role: .assistant, content: content, providerID: providerID, modelName: model, rawErrorDetail: error, toolCalls: calls.isEmpty ? nil : calls, reasoningContent: reasoning.isEmpty ? nil : reasoning, inputTokenCount: input, outputTokenCount: output, latencyMs: end.timeIntervalSince(started) * 1000, timeToFirstTokenMs: first.map { $0.timeIntervalSince(started) * 1000 }, streamingDurationMs: first.map { end.timeIntervalSince($0) * 1000 }) }
 }

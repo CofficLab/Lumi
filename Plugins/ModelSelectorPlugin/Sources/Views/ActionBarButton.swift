@@ -8,27 +8,12 @@ struct ActionBarButton: View {
     let kernel: LumiKernel
 
     @State private var isPopoverPresented = false
+    @State private var selectedProviderID: String?
+    @State private var selectedModel: String?
 
     /// 从 kernel 获取服务
     private var llmProvider: (any LLMProviderManaging)? {
         kernel.resolveService((any LLMProviderManaging).self)
-    }
-
-    private var conversationManaging: (any ConversationManaging)? {
-        kernel.resolveService((any ConversationManaging).self)
-    }
-
-    /// Initial selection: conversation provider/model if exists, else from LLMProviderManaging
-    private var initialSelection: (providerID: String?, model: String?) {
-        // Check conversation first
-        if let conversations = conversationManaging,
-           let convID = conversations.selectedConversationID,
-           let convProviderID = conversations.providerID(for: convID) {
-            let convModel = conversations.modelName(for: convID)
-            return (convProviderID, convModel)
-        }
-        // Fallback to LLMProviderManaging
-        return (llmProvider?.selectedProviderID, llmProvider?.selectedModel)
     }
 
     var body: some View {
@@ -63,18 +48,34 @@ struct ActionBarButton: View {
             )
         }
         .accessibilityLabel("Select Model")
+        .onReceive(NotificationCenter.default.publisher(for: .lumiSelectedRemoteProviderIDDidChange)) { _ in
+            updateSelection()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiSelectedLocalProviderIDDidChange)) { _ in
+            updateSelection()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiSelectedModelsDidChange)) { _ in
+            updateSelection()
+        }
+        .onAppear {
+            updateSelection()
+        }
+    }
+
+    private func updateSelection() {
+        selectedProviderID = llmProvider?.selectedProviderID
+        selectedModel = llmProvider?.selectedModel
     }
 
     private var buttonLabel: String {
         guard let llmProvider else { return "Select Provider" }
-        let selection = initialSelection
-        guard let providerID = selection.providerID,
+        guard let providerID = selectedProviderID,
               let provider = llmProvider.allLLMProviders().first(where: { type(of: $0).info.id == providerID })
         else {
             return "Select Provider"
         }
         let info = type(of: provider).info
-        if let model = selection.model {
+        if let model = selectedModel {
             let displayModel = info.modelDisplayNames[model] ?? model
             return "\(info.displayName) · \(displayModel)"
         }

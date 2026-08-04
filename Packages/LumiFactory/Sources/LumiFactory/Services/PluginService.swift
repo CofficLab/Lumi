@@ -12,6 +12,7 @@ import BrewManagerPlugin
 import BrowserPlugin
 import CADDesignerPlugin
 import StoryWriterPlugin
+import StateMonitorPlugin
 import CaffeinatePlugin
 import ConversationAttachmentPlugin
 import ConversationPendingMessagePlugin
@@ -193,6 +194,7 @@ public enum PluginService {
             AgentTurnRunnerPlugin(),
             MessageRendererPlugin(),
             ConversationTitlePlugin(),
+            StateMonitorPlugin(),
             ConversationListPlugin(),
             ConversationNewPlugin(),
             ProjectRAGPlugin(),

@@ -242,6 +242,59 @@ public actor ConversationStore: SuperLog {
         }
     }
 
+    /// Fetch one page of conversations filtered by project path.
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil,
+        includingChildConversations: Bool = false,
+        projectPath: String
+    ) -> [LumiConversationSummary] {
+        guard limit > 0 else { return [] }
+
+        let context = ModelContext(container)
+        normalizeEmptyParentConversationIDs(in: context)
+        let cursorTimestamp = beforeUpdatedAt?.timeIntervalSince1970
+        let cursorID = beforeID?.uuidString
+        var descriptor: FetchDescriptor<ConversationModel>
+
+        if let cursorTimestamp, let cursorID {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    ($0.updatedAt < cursorTimestamp ||
+                    ($0.updatedAt == cursorTimestamp && $0.id < cursorID)) &&
+                    $0.projectPath == projectPath &&
+                    (includingChildConversations || $0.parentConversationID == nil)
+                },
+                sortBy: [
+                    SortDescriptor(\.updatedAt, order: .reverse),
+                    SortDescriptor(\.id, order: .reverse),
+                ]
+            )
+        } else {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.projectPath == projectPath &&
+                    (includingChildConversations || $0.parentConversationID == nil)
+                },
+                sortBy: [
+                    SortDescriptor(\.updatedAt, order: .reverse),
+                    SortDescriptor(\.id, order: .reverse),
+                ]
+            )
+        }
+
+        descriptor.fetchLimit = limit
+
+        do {
+            let models = try context.fetch(descriptor)
+            return models.compactMap { $0.toLumiConversationSummary() }
+        } catch {
+            Self.logger.error("\(Self.t)按项目查询对话分页失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
     /// Count conversations without materializing their summaries.
     func conversationCount(includingChildConversations: Bool = true) -> Int {
         let context = ModelContext(container)
@@ -448,18 +501,45 @@ public actor ConversationStore: SuperLog {
 
     /// Delete a conversation by ID
     func deleteConversation(id: UUID) -> Bool {
+        deleteConversations(ids: [id])
+    }
+
+    /// Return the conversation and all descendant Agent conversations.
+    func conversationIDsToDelete(id: UUID) -> [UUID] {
+        guard let models = try? ModelContext(container).fetch(FetchDescriptor<ConversationModel>()) else {
+            return [id]
+        }
+
+        var ids = [id.uuidString]
+        var changed = true
+        while changed {
+            changed = false
+            for model in models where !ids.contains(model.id) {
+                guard let parentID = model.parentConversationID,
+                      ids.contains(parentID) else { continue }
+                ids.append(model.id)
+                changed = true
+            }
+        }
+        return ids.compactMap(UUID.init(uuidString:))
+    }
+
+    /// Delete a set of conversations in one SwiftData transaction.
+    @discardableResult
+    func deleteConversations(ids: [UUID]) -> Bool {
+        guard !ids.isEmpty else { return false }
         let context = ModelContext(container)
-        let idString = id.uuidString
+        let idStrings = ids.map(\.uuidString)
 
         let descriptor = FetchDescriptor<ConversationModel>(
-            predicate: #Predicate<ConversationModel> { $0.id == idString }
+            predicate: #Predicate<ConversationModel> { idStrings.contains($0.id) }
         )
 
-        guard let model = try? context.fetch(descriptor).first else {
+        guard let models = try? context.fetch(descriptor), !models.isEmpty else {
             return false
         }
 
-        context.delete(model)
+        for model in models { context.delete(model) }
         return save(context, operation: "删除对话")
     }
 

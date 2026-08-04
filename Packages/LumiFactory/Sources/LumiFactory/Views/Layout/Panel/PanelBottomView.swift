@@ -7,6 +7,7 @@ struct PanelBottomView: View {
     private let layoutManager: WorkspaceProviding
 
     @LumiTheme private var theme
+    @State private var selectedTabIDs: [String: String] = [:]
 
     init(layoutManager: WorkspaceProviding) {
         self.layoutManager = layoutManager
@@ -22,7 +23,8 @@ struct PanelBottomView: View {
 
     /// 当前容器选中的底部 tab（经协议查询，按容器独立记忆 + 持久化）。
     private var selectedTabID: String {
-        layoutManager.activeBottomTabID(for: viewContainerID) ?? ""
+        selectedTabIDs[viewContainerID]
+            ?? layoutManager.activeBottomTabID(for: viewContainerID)
     }
 
     var body: some View {
@@ -33,6 +35,7 @@ struct PanelBottomView: View {
                     selectedTab: Binding(
                         get: { selectedTabID },
                         set: { newValue in
+                            selectedTabIDs[viewContainerID] = newValue
                             layoutManager.presentBottomTab(id: newValue, viewContainerID: viewContainerID)
                         }
                     )
@@ -46,7 +49,22 @@ struct PanelBottomView: View {
             }
             .frame(minHeight: 80)
             .background(theme.surface)
+            .onAppear {
+                syncSelectedTab()
+            }
+            .onActiveViewContainerIDDidChange { _ in
+                syncSelectedTab()
+            }
+            .onActiveBottomTabIDDidChange { containerID, tabID in
+                guard containerID == viewContainerID else { return }
+                selectedTabIDs[containerID] = tabID
+            }
         }
+    }
+
+    private func syncSelectedTab() {
+        guard !viewContainerID.isEmpty else { return }
+        selectedTabIDs[viewContainerID] = layoutManager.activeBottomTabID(for: viewContainerID)
     }
 
     @ViewBuilder

@@ -303,6 +303,7 @@
       }
     },
     "MiniMax HTTP %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -337,6 +338,7 @@
       }
     },
     "MiniMax request failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

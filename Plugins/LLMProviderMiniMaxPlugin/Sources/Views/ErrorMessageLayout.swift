@@ -1,12 +1,8 @@
 import LumiKernel
-import LumiKernel
 import LumiUI
 import SwiftUI
 
-/// 错误消息的通用外壳布局：图标 + 标题 + 供应商标签 + 复制按钮 + 自定义内容。
-///
-/// 历史说明:曾支持"查看原始消息" popover (Binding<Bool> showRawMessage),
-/// 该功能已彻底删除;若用户需要查看详细错误,可使用 InfoButton 中的 popover。
+/// MiniMax 错误消息外壳：与默认错误消息保持一致的 header + 错误正文两段式布局。
 struct ErrorMessageLayout<Content: View>: View {
     @LumiTheme private var theme
 
@@ -29,35 +25,48 @@ struct ErrorMessageLayout<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .center, spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(theme.error)
+                ChatAvatarView(kind: .error)
 
-                Text(LumiPluginLocalization.string("Error", bundle: .module))
-                    .font(.appMicroEmphasized)
-                    .foregroundColor(theme.textTertiary)
+                AppIdentityRow(
+                    title: LumiPluginLocalization.string("Error", bundle: .module),
+                    metadata: [
+                        message.providerID ?? MiniMaxTokenPlanProvider.info.id,
+                        message.modelName ?? "",
+                    ]
+                )
 
-                ProviderBadge()
+                Spacer(minLength: 0)
 
-                Spacer()
-
-                Button {
+                AppIconButton(systemImage: "doc.on.doc", tint: theme.textSecondary, size: .regular) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(copyContent, forType: .string)
-                } label: {
-                    Image(systemName: "doc.on.doc")
-                        .font(.appMicro)
                 }
-                .buttonStyle(.plain)
-                .foregroundColor(theme.textSecondary)
                 .help(LumiPluginLocalization.string("Copy", bundle: .module))
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .appSurface(
+                style: .custom(theme.textSecondary.opacity(0.08)),
+                cornerRadius: 10,
+                borderColor: theme.divider.opacity(0.65)
+            )
 
             content()
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    theme.error.opacity(0.10),
+                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(theme.error.opacity(0.16), lineWidth: 1)
+                )
         }
-        .padding(12)
-        .frame(maxWidth: 680, alignment: .leading)
-        .appSurface(style: .listRow, cornerRadius: 8, borderColor: theme.error.opacity(0.28))
+        // Match normal message flow: fill the available row width instead of
+        // creating a centered, narrow error card.
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

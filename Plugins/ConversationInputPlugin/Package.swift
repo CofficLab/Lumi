@@ -29,5 +29,11 @@ let package = Package(
             path: "Sources/ConversationInputPlugin"
         ,
             resources: [.process("../../Resources/Localizable.xcstrings")])
+        ,
+        .testTarget(
+            name: "ConversationInputPluginTests",
+            dependencies: ["ConversationInputPlugin"],
+            path: "Tests"
+        )
     ]
 )

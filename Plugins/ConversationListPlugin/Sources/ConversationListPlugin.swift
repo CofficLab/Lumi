@@ -42,6 +42,13 @@ public final class ConversationListPlugin: LumiPlugin {
             ) {
                 ListView(kernel: kernel, attentionStore: attentionStore)
             },
+            PanelRailTabItem(
+                id: "project-chats",
+                title: "Project",
+                systemImage: "folder.fill"
+            ) {
+                ListView(kernel: kernel, attentionStore: attentionStore, scopeToCurrentProject: true)
+            },
         ]
     }
 

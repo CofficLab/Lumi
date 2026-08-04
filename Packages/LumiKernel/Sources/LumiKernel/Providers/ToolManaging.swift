@@ -50,11 +50,19 @@ public protocol ToolManaging: AnyObject {
     /// Implementations may return `nil` when the call is unknown, has not
     /// completed yet, or the backing result store is not available.
     func toolCallResult(for toolCallID: String) async -> LumiToolResult?
+
+    /// Delete all persisted tool-call records associated with a conversation.
+    ///
+    /// Conversation deletion uses this hook so tool results do not outlive
+    /// the conversation timeline that references them.
+    func deleteToolCalls(for conversationID: UUID) async
 }
 
 // MARK: - Default registration
 
 public extension ToolManaging {
+    func deleteToolCalls(for conversationID: UUID) async {}
+
     /// Default implementation for tool managers that do not persist individual
     /// results yet. This keeps the new capability source-compatible while the
     /// concrete persistence layer is migrated incrementally.

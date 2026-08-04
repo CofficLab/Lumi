@@ -81,6 +81,16 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(!Http403Renderer.item.canRender(otherProviderMessage))
         #expect(Http403Renderer.item.order > 160)
 
+        let anthropicMessage = LumiChatMessage(
+            conversationID: conversationID,
+            role: .error,
+            content: "",
+            providerID: MiniMaxAnthropicProvider.info.id,
+            isError: true,
+            renderKind: MiniMaxRenderKind.http(429)
+        )
+        #expect(HttpErrorRenderer.item.canRender(anthropicMessage))
+
         let unauthorizedMessage = LumiChatMessage(
             conversationID: conversationID,
             role: .error,
@@ -122,6 +132,56 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(message.toolCalls?.count == 1)
         #expect(message.toolCalls?.first?.name == "project_overview")
         #expect(message.toolCalls?.first?.arguments == "{}")
+    }
+
+    @Test func truncatedOpenAIToolArgumentsAreNormalizedBeforePersistence() {
+        let state = MiniMaxMessageState(
+            conversationID: UUID(),
+            providerID: MiniMaxOpenAIProvider.info.id,
+            model: MiniMaxOpenAIProvider.info.defaultModel,
+            started: Date()
+        )
+        _ = state.append(MiniMaxOpenAIEvent(
+            content: nil,
+            reasoning: nil,
+            toolDeltas: [(
+                id: "call_truncated",
+                name: "write_file",
+                arguments: #"{"content":"code","path":"/tmp/file""#
+            )],
+            stopReason: "tool_calls",
+            done: false,
+            error: nil,
+            inputTokens: nil,
+            outputTokens: nil
+        ))
+        _ = state.finish()
+
+        #expect(state.message().toolCalls?.first?.arguments == "{}")
+    }
+
+    @Test func malformedHistoricalToolArgumentsAreNormalizedBeforeRequest() throws {
+        let malformed = #"{"content":"code","path":"/tmp/file""#
+        let message = LumiChatMessage(
+            conversationID: UUID(),
+            role: .assistant,
+            content: "",
+            toolCalls: [
+                LumiToolCall(id: "call_truncated", name: "write_file", arguments: malformed),
+            ]
+        )
+        let request = LumiLLMRequest(
+            messages: [message],
+            model: MiniMaxOpenAIProvider.info.defaultModel
+        )
+
+        let body = MiniMaxRequestBuilder.openAI(request)
+        let messages = try #require(body["messages"] as? [[String: Any]])
+        let toolCalls = try #require(messages[0]["tool_calls"] as? [[String: Any]])
+        let function = try #require(toolCalls[0]["function"] as? [String: Any])
+
+        #expect(function["arguments"] as? String == "{}")
+        _ = try JSONSerialization.data(withJSONObject: body)
     }
 
     @Test func openAIEmbeddedThinkTagsAreSeparatedFromContent() {
@@ -201,6 +261,31 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(message.rawErrorDetail == "invalid_api_key")
         #expect(message.metadata[LLMTransportMetadata.responseDetails]?.contains("invalid_api_key") == true)
         #expect(message.metadata[LumiLLMErrorMetadata.retryable] == "false")
+    }
+
+    @Test func errorMessagePreservesMiniMaxRawResponse() {
+        let rawResponse = #"{"error":{"message":"已达到 Token Plan 用量上限：请升级 Token Plan 套餐或购买积分补充用量。 (2056)","type":"rate_limit_error"},"request_id":"06c0e1336148ddfb89b77bc39f2b9c9b","type":"error"}"#
+        let message = makeMessage(
+            for: MiniMaxProviderError.api(statusCode: 429, message: rawResponse)
+        )
+
+        #expect(message.rawErrorDetail?.contains("Token Plan") == true)
+        #expect(message.metadata[LLMTransportMetadata.responseDetails] == rawResponse)
+    }
+
+    @Test func errorMessagePreservesHTTPNetworkErrorBody() {
+        let rawResponse = #"{"error":{"message":"已达到 Token Plan 用量上限：请升级 Token Plan 套餐或购买积分补充用量。 (2056)","type":"rate_limit_error"},"request_id":"06c0e1336148ddfb89b77bc39f2b9c9b9","type":"error"}"#
+        let error = HTTPNetworkError(
+            url: URL(string: "https://api.minimax.chat/anthropic/v1/messages")!,
+            statusCode: 429,
+            body: Data(rawResponse.utf8)
+        )
+        let message = makeMessage(for: error)
+
+        #expect(message.renderKind == MiniMaxRenderKind.http(429))
+        #expect(message.metadata[LLMTransportMetadata.responseDetails]?.contains("Response Status: 429") == true)
+        #expect(message.metadata[LLMTransportMetadata.responseDetails]?.contains("Response Headers:") == true)
+        #expect(message.metadata[LLMTransportMetadata.responseDetails]?.contains(rawResponse) == true)
     }
 
     @Test func errorMessageMapsHTTP429AsRetryable() {

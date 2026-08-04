@@ -61,10 +61,10 @@ struct IdleTimeSettingsCard: View {
             ForEach(Array(scores.enumerated()), id: \.offset) { _, score in
                 RoundedRectangle(cornerRadius: 2)
                     .fill(Color.accentColor.opacity(0.2 + 0.8 * (score / maximum)))
-                    .frame(maxWidth: .infinity, minHeight: 4, maxHeight: 42 * CGFloat(score / maximum) + 4)
+                    .frame(maxWidth: .infinity, minHeight: 4, maxHeight: 80 * CGFloat(score / maximum) + 4)
             }
         }
-        .frame(height: 48, alignment: .bottom)
+        .frame(height: 86, alignment: .bottom)
         .accessibilityLabel(LumiPluginLocalization.string("Activity intensity by time of day", bundle: .module))
     }
 

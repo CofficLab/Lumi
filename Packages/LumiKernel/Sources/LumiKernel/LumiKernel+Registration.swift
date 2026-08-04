@@ -34,9 +34,22 @@ extension LumiKernelContainer {
         try registerService(MessageSending.self, messageSend)
     }
 
-    /// Register conversation input service
+    /// Register conversation input service.
+    ///
+    /// Input text, IME composition state, cursor position and auto-growing
+    /// height are high-frequency UI state. They must be observed by the input
+    /// views directly instead of being forwarded through the Kernel-wide
+    /// objectWillChange publisher.
+    ///
+    /// Consumers that render input state must observe the concrete input
+    /// service directly. This keeps keystrokes and IME composition local to
+    /// the input subtree instead of invalidating unrelated Kernel observers.
     public func registerConversationInputService(_ conversationInput: any ConversationInputProviding) throws {
-        try registerService(ConversationInputProviding.self, conversationInput)
+        try registerService(
+            ConversationInputProviding.self,
+            conversationInput,
+            forwardsObjectWillChange: false
+        )
     }
 
     /// Register conversation managing service

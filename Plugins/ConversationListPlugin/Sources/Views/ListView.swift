@@ -17,62 +17,80 @@ public struct ListView: View {
     @ObservedObject private var kernel: LumiKernel
     @ObservedObject private var attentionStore: ConversationAttentionStore
 
-    public init(kernel: LumiKernel, attentionStore: ConversationAttentionStore) {
+    /// When true, only shows conversations associated with the current project.
+    private let scopeToCurrentProject: Bool
+
+    public init(kernel: LumiKernel, attentionStore: ConversationAttentionStore, scopeToCurrentProject: Bool = false) {
         self.svc = kernel.conversations
         self._kernel = ObservedObject(wrappedValue: kernel)
         self._attentionStore = ObservedObject(wrappedValue: attentionStore)
+        self.scopeToCurrentProject = scopeToCurrentProject
+    }
+
+    /// The project path to filter by, or nil if showing all conversations.
+    private var effectiveProjectPath: String? {
+        guard scopeToCurrentProject else { return nil }
+        return kernel.project?.currentProject?.path
     }
 
     public var body: some View {
-        Group {
-            if svc == nil {
-                ListErrorView()
-            } else if isLoading {
-                ListLoadingView()
-            } else if conversations.isEmpty {
-                ListEmptyView()
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 4) {
-                        ForEach(conversations, id: \.id) { conversation in
-                            ItemView(
-                                conversation: conversation,
-                                isSelected: selectedConversationID == conversation.id,
-                                isActive: kernel.agentTurnManager?.isRunning(for: conversation.id) == true,
-                                needsAttention: attentionStore.needsAttention(for: conversation.id),
-                                onSelect: {
-                                    guard let svc else { return }
-                                    Task { @MainActor in
-                                        _ = await svc.fetchConversation(id: conversation.id)
-                                        svc.selectConversation(id: conversation.id)
-                                        attentionStore.markRead(conversationID: conversation.id)
-                                    }
-                                },
-                                onDelete: {
-                                    guard let svc else { return }
-                                    svc.deleteConversation(id: conversation.id)
-                                }
-                            )
-                        }
+        VStack(spacing: 0) {
+            headerBar
 
-                        if hasMore {
-                            ProgressView()
-                                .controlSize(.small)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
-                                .onAppear {
-                                    Task { await loadNextPage() }
-                                }
+            Group {
+                if svc == nil {
+                    ListErrorView()
+                } else if isLoading {
+                    ListLoadingView()
+                } else if conversations.isEmpty {
+                    ListEmptyView()
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 4) {
+                            ForEach(conversations, id: \.id) { conversation in
+                                ItemView(
+                                    conversation: conversation,
+                                    isSelected: selectedConversationID == conversation.id,
+                                    isActive: kernel.agentTurnManager?.isRunning(for: conversation.id) == true,
+                                    needsAttention: attentionStore.needsAttention(for: conversation.id),
+                                    onSelect: {
+                                        guard let svc else { return }
+                                        Task { @MainActor in
+                                            _ = await svc.fetchConversation(id: conversation.id)
+                                            svc.selectConversation(id: conversation.id)
+                                            attentionStore.markRead(conversationID: conversation.id)
+                                        }
+                                    },
+                                    onDelete: {
+                                        guard let svc else { return }
+                                        svc.deleteConversation(id: conversation.id)
+                                    }
+                                )
+                            }
+
+                            if hasMore {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .onAppear {
+                                        Task { await loadNextPage() }
+                                    }
+                            }
                         }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .scrollContentBackground(.hidden)
                 }
-                .scrollContentBackground(.hidden)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .task {
+            await reload()
+        }
+        .task(id: effectiveProjectPath) {
             await reload()
         }
         .onLumiConversationsDidChange {
@@ -80,6 +98,39 @@ public struct ListView: View {
                 await reload()
             }
         }
+    }
+
+    /// 顶部标题栏：根据 scopeToCurrentProject 与当前项目动态显示。
+    @ViewBuilder
+    private var headerBar: some View {
+        HStack(spacing: 6) {
+            Image(systemName: scopeToCurrentProject ? "folder.fill" : "tray.full.fill")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+            Text(headerTitle)
+                .font(.appCaption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity)
+        .background(Color.secondary.opacity(0.06))
+    }
+
+    private var headerTitle: String {
+        if scopeToCurrentProject {
+            let projectName = kernel.project?.currentProject?.name
+                ?? kernel.project?.currentProject?.path
+                ?? "—"
+            return String(
+                format: LumiPluginLocalization.string("Project Conversations (%@)", bundle: .module),
+                projectName
+            )
+        }
+        return LumiPluginLocalization.string("All Projects Conversations", bundle: .module)
     }
 
     private func reload() async {
@@ -111,11 +162,22 @@ public struct ListView: View {
 
         // 获取至少当前已经展示的数量，避免刷新后丢掉用户已经加载的分页。
         while snapshot.count < targetCount {
-            let page = await svc.fetchConversationPage(
-                limit: Self.pageSize,
-                beforeUpdatedAt: cursor?.updatedAt,
-                beforeID: cursor?.id
-            )
+            let page: [LumiConversationSummary]
+            if let projectPath = effectiveProjectPath {
+                page = await svc.fetchConversationPage(
+                    limit: Self.pageSize,
+                    beforeUpdatedAt: cursor?.updatedAt,
+                    beforeID: cursor?.id,
+                    includingChildConversations: false,
+                    projectPath: projectPath
+                )
+            } else {
+                page = await svc.fetchConversationPage(
+                    limit: Self.pageSize,
+                    beforeUpdatedAt: cursor?.updatedAt,
+                    beforeID: cursor?.id
+                )
+            }
             guard !page.isEmpty else { break }
 
             snapshot.append(contentsOf: page)
@@ -146,11 +208,22 @@ public struct ListView: View {
         guard let svc, !isLoadingMore, hasMore else { return }
 
         isLoadingMore = true
-        let page = await svc.fetchConversationPage(
-            limit: Self.pageSize,
-            beforeUpdatedAt: paginationCursor?.updatedAt,
-            beforeID: paginationCursor?.id
-        )
+        let page: [LumiConversationSummary]
+        if let projectPath = effectiveProjectPath {
+            page = await svc.fetchConversationPage(
+                limit: Self.pageSize,
+                beforeUpdatedAt: paginationCursor?.updatedAt,
+                beforeID: paginationCursor?.id,
+                includingChildConversations: false,
+                projectPath: projectPath
+            )
+        } else {
+            page = await svc.fetchConversationPage(
+                limit: Self.pageSize,
+                beforeUpdatedAt: paginationCursor?.updatedAt,
+                beforeID: paginationCursor?.id
+            )
+        }
 
         conversations.append(contentsOf: page)
         if let last = page.last {

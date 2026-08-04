@@ -1,10 +1,15 @@
+import Combine
 import Foundation
 
 /// 对话管理能力协议
 ///
 /// 定义对话的列表、创建、删除、选择等管理功能。
+///
+/// `ObjectWillChangePublisher == ObservableObjectPublisher` 约束与 `ProjectProviding` 一致，
+/// 用于让协议存在类型（`any ConversationManaging`）的 `objectWillChange` 可被订阅，
+/// 从而支持 SwiftUI 跨包响应式观察 + Hook 订阅。
 @MainActor
-public protocol ConversationManaging: ObservableObject {
+public protocol ConversationManaging: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 所有对话列表
     var conversations: [LumiConversationSummary] { get }
 
@@ -39,6 +44,15 @@ public protocol ConversationManaging: ObservableObject {
         beforeUpdatedAt: Date?,
         beforeID: UUID?,
         includingChildConversations: Bool
+    ) async -> [LumiConversationSummary]
+
+    /// Fetch one page of conversations filtered by project path.
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool,
+        projectPath: String
     ) async -> [LumiConversationSummary]
 
     /// Fetch one conversation summary by ID without requiring the full list.
@@ -157,6 +171,16 @@ public extension ConversationManaging {
         includingChildConversations: Bool
     ) async -> [LumiConversationSummary] {
         await fetchConversationPage(limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID)
+    }
+
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil,
+        includingChildConversations: Bool,
+        projectPath: String
+    ) async -> [LumiConversationSummary] {
+        await fetchConversationPage(limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID, includingChildConversations: includingChildConversations)
     }
 
     func fetchConversation(id: UUID) async -> LumiConversationSummary? {
