@@ -449,15 +449,15 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 assistantMessage = try await targetProvider.sendStreaming(request) { chunk in
                     let piece = chunk.content ?? ""
                     if chunk.isThinking {
-                        await streamingStore?.appendThinking(piece)
+                        await streamingStore?.appendThinking(piece, conversationID: conversationID)
                     } else {
-                        await streamingStore?.appendContent(piece)
+                        await streamingStore?.appendContent(piece, conversationID: conversationID)
                     }
                 }
             } catch {
                 Self.logger.error("\(Self.t)LLM 调用失败: \(error.localizedDescription)")
                 // 流式期间 store 已持有临时行;失败时清掉它,避免 UI 残留空行。
-                await streamingStore?.endStreaming()
+                await streamingStore?.endStreaming(conversationID: conversationID)
                 let disposition = targetProvider.retryDisposition(
                     for: error,
                     context: LumiLLMRetryContext(attempt: 1, maxAttempts: 1)
@@ -491,7 +491,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             // 两者互不干扰。落库后清掉 store 的临时行,UI 自然从 messagesDidChange 刷新出真实行。
             kernel.messageManager?.insertMessage(assistantMessage, to: conversationID)
             postMessageSavedNotification(message: assistantMessage, conversationID: conversationID)
-            await streamingStore?.endStreaming()
+            await streamingStore?.endStreaming(conversationID: conversationID)
 
             // No tool calls → turn complete
             guard let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty else {
