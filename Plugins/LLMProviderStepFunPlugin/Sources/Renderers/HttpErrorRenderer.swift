@@ -13,7 +13,7 @@ enum HttpErrorRenderer {
         canRender: { message in
             StepFunRenderKind.matchesOtherHttpError(message)
         },
-        render: { message in
+        render: { message, _ in
             let statusCode = StepFunRenderKind.httpStatusCode(from: message.renderKind)
             HttpErrorView(message: message, statusCode: statusCode)
         }

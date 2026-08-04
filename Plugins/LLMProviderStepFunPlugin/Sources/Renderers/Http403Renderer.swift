@@ -13,7 +13,7 @@ enum Http403Renderer {
         canRender: { message in
             StepFunRenderKind.matchesHttp(statusCode: 403, message: message)
         },
-        render: { message in
+        render: { message, _ in
             Http403View(message: message)
         }
     )
