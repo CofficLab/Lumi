@@ -127,6 +127,22 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         ) ?? []
     }
 
+    public func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool,
+        projectPath: String
+    ) async -> [LumiConversationSummary] {
+        await store?.fetchConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID,
+            includingChildConversations: includingChildConversations,
+            projectPath: projectPath
+        ) ?? []
+    }
+
     public func fetchConversation(id: UUID) async -> LumiConversationSummary? {
         if let cached = conversations.first(where: { $0.id == id }) {
             return cached

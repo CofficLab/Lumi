@@ -17,10 +17,20 @@ public struct ListView: View {
     @ObservedObject private var kernel: LumiKernel
     @ObservedObject private var attentionStore: ConversationAttentionStore
 
-    public init(kernel: LumiKernel, attentionStore: ConversationAttentionStore) {
+    /// When true, only shows conversations associated with the current project.
+    private let scopeToCurrentProject: Bool
+
+    public init(kernel: LumiKernel, attentionStore: ConversationAttentionStore, scopeToCurrentProject: Bool = false) {
         self.svc = kernel.conversations
         self._kernel = ObservedObject(wrappedValue: kernel)
         self._attentionStore = ObservedObject(wrappedValue: attentionStore)
+        self.scopeToCurrentProject = scopeToCurrentProject
+    }
+
+    /// The project path to filter by, or nil if showing all conversations.
+    private var effectiveProjectPath: String? {
+        guard scopeToCurrentProject else { return nil }
+        return kernel.project?.currentProject?.path
     }
 
     public var body: some View {
@@ -75,6 +85,9 @@ public struct ListView: View {
         .task {
             await reload()
         }
+        .task(id: effectiveProjectPath) {
+            await reload()
+        }
         .onLumiConversationsDidChange {
             Task { @MainActor in
                 await reload()
@@ -111,11 +124,22 @@ public struct ListView: View {
 
         // 获取至少当前已经展示的数量，避免刷新后丢掉用户已经加载的分页。
         while snapshot.count < targetCount {
-            let page = await svc.fetchConversationPage(
-                limit: Self.pageSize,
-                beforeUpdatedAt: cursor?.updatedAt,
-                beforeID: cursor?.id
-            )
+            let page: [LumiConversationSummary]
+            if let projectPath = effectiveProjectPath {
+                page = await svc.fetchConversationPage(
+                    limit: Self.pageSize,
+                    beforeUpdatedAt: cursor?.updatedAt,
+                    beforeID: cursor?.id,
+                    includingChildConversations: false,
+                    projectPath: projectPath
+                )
+            } else {
+                page = await svc.fetchConversationPage(
+                    limit: Self.pageSize,
+                    beforeUpdatedAt: cursor?.updatedAt,
+                    beforeID: cursor?.id
+                )
+            }
             guard !page.isEmpty else { break }
 
             snapshot.append(contentsOf: page)
@@ -146,11 +170,22 @@ public struct ListView: View {
         guard let svc, !isLoadingMore, hasMore else { return }
 
         isLoadingMore = true
-        let page = await svc.fetchConversationPage(
-            limit: Self.pageSize,
-            beforeUpdatedAt: paginationCursor?.updatedAt,
-            beforeID: paginationCursor?.id
-        )
+        let page: [LumiConversationSummary]
+        if let projectPath = effectiveProjectPath {
+            page = await svc.fetchConversationPage(
+                limit: Self.pageSize,
+                beforeUpdatedAt: paginationCursor?.updatedAt,
+                beforeID: paginationCursor?.id,
+                includingChildConversations: false,
+                projectPath: projectPath
+            )
+        } else {
+            page = await svc.fetchConversationPage(
+                limit: Self.pageSize,
+                beforeUpdatedAt: paginationCursor?.updatedAt,
+                beforeID: paginationCursor?.id
+            )
+        }
 
         conversations.append(contentsOf: page)
         if let last = page.last {

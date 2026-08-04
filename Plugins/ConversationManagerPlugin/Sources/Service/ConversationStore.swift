@@ -242,6 +242,59 @@ public actor ConversationStore: SuperLog {
         }
     }
 
+    /// Fetch one page of conversations filtered by project path.
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil,
+        includingChildConversations: Bool = false,
+        projectPath: String
+    ) -> [LumiConversationSummary] {
+        guard limit > 0 else { return [] }
+
+        let context = ModelContext(container)
+        normalizeEmptyParentConversationIDs(in: context)
+        let cursorTimestamp = beforeUpdatedAt?.timeIntervalSince1970
+        let cursorID = beforeID?.uuidString
+        var descriptor: FetchDescriptor<ConversationModel>
+
+        if let cursorTimestamp, let cursorID {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    ($0.updatedAt < cursorTimestamp ||
+                    ($0.updatedAt == cursorTimestamp && $0.id < cursorID)) &&
+                    $0.projectPath == projectPath &&
+                    (includingChildConversations || $0.parentConversationID == nil)
+                },
+                sortBy: [
+                    SortDescriptor(\.updatedAt, order: .reverse),
+                    SortDescriptor(\.id, order: .reverse),
+                ]
+            )
+        } else {
+            descriptor = FetchDescriptor<ConversationModel>(
+                predicate: #Predicate<ConversationModel> {
+                    $0.projectPath == projectPath &&
+                    (includingChildConversations || $0.parentConversationID == nil)
+                },
+                sortBy: [
+                    SortDescriptor(\.updatedAt, order: .reverse),
+                    SortDescriptor(\.id, order: .reverse),
+                ]
+            )
+        }
+
+        descriptor.fetchLimit = limit
+
+        do {
+            let models = try context.fetch(descriptor)
+            return models.compactMap { $0.toLumiConversationSummary() }
+        } catch {
+            Self.logger.error("\(Self.t)按项目查询对话分页失败：\(error.localizedDescription)")
+            return []
+        }
+    }
+
     /// Count conversations without materializing their summaries.
     func conversationCount(includingChildConversations: Bool = true) -> Int {
         let context = ModelContext(container)

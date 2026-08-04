@@ -41,6 +41,15 @@ public protocol ConversationManaging: ObservableObject {
         includingChildConversations: Bool
     ) async -> [LumiConversationSummary]
 
+    /// Fetch one page of conversations filtered by project path.
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool,
+        projectPath: String
+    ) async -> [LumiConversationSummary]
+
     /// Fetch one conversation summary by ID without requiring the full list.
     func fetchConversation(id: UUID) async -> LumiConversationSummary?
 
@@ -157,6 +166,16 @@ public extension ConversationManaging {
         includingChildConversations: Bool
     ) async -> [LumiConversationSummary] {
         await fetchConversationPage(limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID)
+    }
+
+    func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date? = nil,
+        beforeID: UUID? = nil,
+        includingChildConversations: Bool,
+        projectPath: String
+    ) async -> [LumiConversationSummary] {
+        await fetchConversationPage(limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID, includingChildConversations: includingChildConversations)
     }
 
     func fetchConversation(id: UUID) async -> LumiConversationSummary? {
