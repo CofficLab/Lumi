@@ -55,6 +55,7 @@ public final class TerminalPlugin: LumiPlugin {
                 id: id,
                 title: name,
                 systemImage: "terminal",
+                supportsProject: true,
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,
                 panelHeaderVisibility: .unsupported,
