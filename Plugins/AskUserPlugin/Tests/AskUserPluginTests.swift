@@ -564,3 +564,103 @@ struct AskUserBridgeTests {
     }
 
 }
+
+// MARK: - Agent Turn Batch Tests
+
+@Suite("AgentTurnBatch")
+struct AgentTurnBatchTests {
+    private let conversationID = UUID()
+
+    @Test("a suspended tool is not terminal")
+    func suspendedToolIsNotTerminal() {
+        let suspension = AgentTurnSuspension(
+            suspensionID: "suspension-1",
+            conversationID: conversationID,
+            toolCallID: "call-1",
+            kind: "userInput",
+            payload: "{}"
+        )
+        let call = LumiToolCall(
+            id: "call-1",
+            name: "ask_user",
+            arguments: "{}",
+            result: LumiToolResult(
+                content: "{}",
+                turnControl: .suspend(suspension)
+            )
+        )
+
+        #expect(!call.hasTerminalResult)
+    }
+
+    @Test("a resumed tool is terminal")
+    func resumedToolIsTerminal() {
+        let suspension = AgentTurnSuspension(
+            suspensionID: "suspension-1",
+            conversationID: conversationID,
+            toolCallID: "call-1",
+            kind: "userInput",
+            payload: "{}"
+        )
+        let call = LumiToolCall(
+            id: "call-1",
+            name: "ask_user",
+            arguments: "{}",
+            result: LumiToolResult(
+                content: "{}",
+                turnControl: .resumed(suspension, answer: "yes")
+            )
+        )
+
+        #expect(call.hasTerminalResult)
+    }
+
+    @Test("a batch becomes terminal only after every tool is answered")
+    func batchReadiness() {
+        let firstSuspension = AgentTurnSuspension(
+            suspensionID: "suspension-1",
+            conversationID: conversationID,
+            toolCallID: "call-1",
+            kind: "userInput",
+            payload: "{}"
+        )
+        let secondSuspension = AgentTurnSuspension(
+            suspensionID: "suspension-2",
+            conversationID: conversationID,
+            toolCallID: "call-2",
+            kind: "userInput",
+            payload: "{}"
+        )
+        let first = LumiToolCall(
+            id: "call-1",
+            name: "ask_user",
+            arguments: "{}",
+            result: LumiToolResult(
+                content: "{}",
+                turnControl: .resumed(firstSuspension, answer: "yes")
+            )
+        )
+        let secondWaiting = LumiToolCall(
+            id: "call-2",
+            name: "ask_user",
+            arguments: "{}",
+            result: LumiToolResult(
+                content: "{}",
+                turnControl: .suspend(secondSuspension)
+            )
+        )
+
+        #expect(![first, secondWaiting].isTerminalToolBatch)
+
+        let secondAnswered = LumiToolCall(
+            id: "call-2",
+            name: "ask_user",
+            arguments: "{}",
+            result: LumiToolResult(
+                content: "{}",
+                turnControl: .resumed(secondSuspension, answer: "no")
+            )
+        )
+        #expect([first, secondAnswered].isTerminalToolBatch)
+    }
+}
