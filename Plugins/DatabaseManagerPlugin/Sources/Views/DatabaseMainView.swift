@@ -2,10 +2,11 @@ import SwiftUI
 import LumiUI
 import LumiKernel
 
-/// 主面板：表格/键浏览 + Query 编辑器 + 结果区。
+/// 主面板：Query 编辑器 + 结果区。
 ///
-/// 连接管理迁到了工具栏右上角 `DatabaseToolbarButton` 的 popover，
-/// 因此本视图不再渲染连接列表，未连接时显示「去右上角添加连接」的引导。
+/// 表/键浏览已迁移到 RailView（`DatabaseSidebarView`），
+/// 本视图仅负责数据展示和查询操作。
+/// 连接管理迁到了工具栏右上角 `DatabaseToolbarButton` 的 popover。
 public struct DatabaseMainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
@@ -39,103 +40,17 @@ public struct DatabaseMainView: View {
     @ViewBuilder
     private var connectedContent: some View {
         if viewModel.selectedConfig?.type == .sqlite {
-            HStack(alignment: .top, spacing: 0) {
-                tablesBrowser
-                    .frame(width: 240, alignment: .topLeading)
-
-                AppDivider(.vertical)
-                tableDataSection
-            }
+            tableDataSection
         } else {
-            HStack(alignment: .top, spacing: 0) {
-                Group {
-                    if viewModel.selectedConfig?.type == .redis {
-                        keysBrowser
-                    }
-                }
-                .frame(width: 220, alignment: .topLeading)
-
-                AppDivider(.vertical)
-
-                VStack(spacing: 0) {
-                    queryEditor
-                    toolbar
-                    AppDivider()
-                    resultsSection
-                        .frame(maxHeight: .infinity, alignment: .top)
-                }
-                .frame(maxWidth: .infinity, alignment: .topLeading)
+            VStack(spacing: 0) {
+                queryEditor
+                toolbar
+                AppDivider()
+                resultsSection
+                    .frame(maxHeight: .infinity, alignment: .top)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-    }
-
-    private var keysBrowser: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(LumiPluginLocalization.string("Keys", bundle: .module))
-                        .font(.appBodyEmphasized)
-                        .foregroundColor(theme.textPrimary)
-                    Spacer()
-                    AppButton("Load", systemImage: "arrow.clockwise", style: .secondary, size: .small, action: { Task { await viewModel.loadRedisKeys() } })
-                }
-                ScrollView {
-                    LazyVStack(spacing: 4) {
-                        ForEach(viewModel.redisKeys, id: \.self) { key in
-                            AppListRow(isSelected: false, action: { Task { await viewModel.openRedisKey(key) } }) {
-                                HStack {
-                                    Image(systemName: "key")
-                                    Text(key)
-                                        .lineLimit(1)
-                                    Spacer()
-                                }
-                            }
-                        }
-                    }
-                }
-                .scrollIndicators(.hidden)
-                .frame(maxHeight: .infinity)
-            }
-        }
-        .padding(8)
-    }
-
-    private var tablesBrowser: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(LumiPluginLocalization.string("Tables", bundle: .module))
-                        .font(.appBodyEmphasized)
-                        .foregroundColor(theme.textPrimary)
-                    Spacer()
-                    AppButton("Load", systemImage: "arrow.clockwise", style: .secondary, size: .small, action: { Task { await viewModel.loadSQLiteTables() } })
-                }
-                ScrollView {
-                    LazyVStack(spacing: 4) {
-                        ForEach(viewModel.sqliteTables, id: \.self) { table in
-                            AppListRow(
-                                isSelected: viewModel.selectedSQLiteTable == table,
-                                action: { Task { await viewModel.openSQLiteTable(table) } }
-                            ) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "tablecells")
-                                    Text(table)
-                                        .lineLimit(1)
-                                    Spacer()
-                                    if viewModel.selectedSQLiteTable == table {
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(Color.accentColor)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                .scrollIndicators(.hidden)
-                .frame(maxHeight: .infinity)
-            }
-        }
-        .padding(8)
     }
 
     private var tableDataSection: some View {

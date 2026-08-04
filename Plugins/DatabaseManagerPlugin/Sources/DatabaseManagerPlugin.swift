@@ -46,7 +46,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
                 id: "database-manager",
                 title: "Database",
                 systemImage: "cylinder.split.1x2",
-                railVisibility: .unsupported,
+                railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
                 panelHeaderVisibility: .unsupported,
                 panelBodyVisibility: .alwaysVisible,
@@ -82,7 +82,18 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
 
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        [
+            PanelRailTabItem(
+                id: "database-manager.sidebar",
+                title: "Database",
+                systemImage: "cylinder.split.1x2",
+                visibility: .viewContainer(id: "database-manager")
+            ) {
+                DatabaseSidebarView(viewModel: self.sharedViewModel)
+            },
+        ]
+    }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
