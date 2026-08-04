@@ -584,6 +584,9 @@
         }
       }
     },
+    "First 50 rows" : {
+
+    },
     "Inspect schemas and run read-only queries" : {
       "extractionState" : "stale",
       "localizations" : {

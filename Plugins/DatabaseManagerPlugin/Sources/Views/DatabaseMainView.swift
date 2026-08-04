@@ -21,7 +21,7 @@ public struct DatabaseMainView: View {
     }
 
     public var body: some View {
-        Group {
+        ZStack {
             if viewModel.isConnected {
                 connectedContent
             } else {
@@ -36,29 +36,36 @@ public struct DatabaseMainView: View {
 
     // MARK: - Connected
 
+    @ViewBuilder
     private var connectedContent: some View {
-        HStack(alignment: .top, spacing: 0) {
-            // 左侧：表 / Keys 浏览
-            Group {
-                if viewModel.selectedConfig?.type == .redis {
-                    keysBrowser
-                } else if viewModel.selectedConfig?.type == .sqlite {
-                    tablesBrowser
+        if viewModel.selectedConfig?.type == .sqlite {
+            HStack(alignment: .top, spacing: 0) {
+                tablesBrowser
+                    .frame(width: 240, alignment: .topLeading)
+
+                AppDivider(.vertical)
+                tableDataSection
+            }
+        } else {
+            HStack(alignment: .top, spacing: 0) {
+                Group {
+                    if viewModel.selectedConfig?.type == .redis {
+                        keysBrowser
+                    }
                 }
-            }
-            .frame(width: 220, height: .infinity, alignment: .top)
+                .frame(width: 220, alignment: .topLeading)
 
-            settingsDivider
+                AppDivider(.vertical)
 
-            // 右侧：上为 SQL 编辑器 + 工具栏，下为结果
-            VStack(spacing: 0) {
-                queryEditor
-                toolbar
-                settingsDivider
-                resultsSection
-                    .frame(maxHeight: .infinity, alignment: .top)
+                VStack(spacing: 0) {
+                    queryEditor
+                    toolbar
+                    AppDivider()
+                    resultsSection
+                        .frame(maxHeight: .infinity, alignment: .top)
+                }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity)
         }
     }
 
@@ -70,19 +77,27 @@ public struct DatabaseMainView: View {
                         .font(.appBodyEmphasized)
                         .foregroundColor(theme.textPrimary)
                     Spacer()
-                    AppButton("Load", style: .secondary, fillsWidth: true, action: { Task { await viewModel.loadRedisKeys() } })
+                    AppButton("Load", systemImage: "arrow.clockwise", style: .secondary, size: .small, action: { Task { await viewModel.loadRedisKeys() } })
                 }
-                List(viewModel.redisKeys, id: \.self) { key in
-                    HStack {
-                        Image(systemName: "key")
-                        Text(key)
-                        Spacer()
-                        AppButton("Open", style: .ghost, fillsWidth: true, action: { Task { await viewModel.openRedisKey(key) } })
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(viewModel.redisKeys, id: \.self) { key in
+                            AppListRow(isSelected: false, action: { Task { await viewModel.openRedisKey(key) } }) {
+                                HStack {
+                                    Image(systemName: "key")
+                                    Text(key)
+                                        .lineLimit(1)
+                                    Spacer()
+                                }
+                            }
+                        }
                     }
                 }
-                .frame(minHeight: 120, maxHeight: 200)
+                .scrollIndicators(.hidden)
+                .frame(maxHeight: .infinity)
             }
         }
+        .padding(8)
     }
 
     private var tablesBrowser: some View {
@@ -93,19 +108,70 @@ public struct DatabaseMainView: View {
                         .font(.appBodyEmphasized)
                         .foregroundColor(theme.textPrimary)
                     Spacer()
-                    AppButton("Load", style: .secondary, fillsWidth: true, action: { Task { await viewModel.loadSQLiteTables() } })
+                    AppButton("Load", systemImage: "arrow.clockwise", style: .secondary, size: .small, action: { Task { await viewModel.loadSQLiteTables() } })
                 }
-                List(viewModel.sqliteTables, id: \.self) { table in
-                    HStack {
-                        Image(systemName: "tablecells")
-                        Text(table)
-                        Spacer()
-                        AppButton("Open", style: .ghost, fillsWidth: true, action: { Task { await viewModel.openSQLiteTable(table) } })
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        ForEach(viewModel.sqliteTables, id: \.self) { table in
+                            AppListRow(
+                                isSelected: viewModel.selectedSQLiteTable == table,
+                                action: { Task { await viewModel.openSQLiteTable(table) } }
+                            ) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "tablecells")
+                                    Text(table)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    if viewModel.selectedSQLiteTable == table {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(Color.accentColor)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                .frame(minHeight: 120, maxHeight: 200)
+                .scrollIndicators(.hidden)
+                .frame(maxHeight: .infinity)
             }
         }
+        .padding(8)
+    }
+
+    private var tableDataSection: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(viewModel.selectedSQLiteTable ?? LumiPluginLocalization.string("Select a table", bundle: .module))
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
+                    if viewModel.selectedSQLiteTable != nil {
+                        Text("First 50 rows")
+                            .font(.appCaption)
+                            .foregroundColor(theme.textSecondary)
+                    }
+                }
+                Spacer()
+                if viewModel.selectedSQLiteTable != nil {
+                    AppButton("Refresh", systemImage: "arrow.clockwise", style: .secondary, size: .small, action: {
+                        guard let table = viewModel.selectedSQLiteTable else { return }
+                        Task { await viewModel.openSQLiteTable(table) }
+                    })
+                }
+                if viewModel.isLoading {
+                    ProgressView()
+                        .scaleEffect(0.6)
+                }
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 48)
+            .appSurface(style: .toolbar, cornerRadius: 0)
+
+            AppDivider()
+            resultsSection
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var queryEditor: some View {
@@ -117,35 +183,39 @@ public struct DatabaseMainView: View {
     }
 
     private var toolbar: some View {
-        HStack {
-            Spacer()
-            if viewModel.isConnected {
-                AppButton("Disconnect", style: .secondary, fillsWidth: true, action: { Task { await viewModel.disconnect() } })
+        AppToolbarContainer(height: 48) {
+            HStack {
+                Spacer()
+                if viewModel.isConnected {
+                    AppButton("Disconnect", systemImage: "bolt.horizontal.circle", style: .secondary, size: .small, action: { Task { await viewModel.disconnect() } })
+                }
+                if viewModel.isLoading {
+                    ProgressView()
+                        .scaleEffect(0.5)
+                }
+                AppButton("Run", systemImage: "play.fill", style: .primary, size: .small, action: { Task { await viewModel.executeQuery() } })
+                    .keyboardShortcut(.return, modifiers: .command)
             }
-            if viewModel.isLoading {
-                ProgressView()
-                    .scaleEffect(0.5)
-            }
-            AppButton("Run", style: .primary, fillsWidth: true, action: { Task { await viewModel.executeQuery() } })
-                .keyboardShortcut(.return, modifiers: .command)
         }
-        .padding(8)
-        .background(Material.regularMaterial)
     }
 
     @ViewBuilder
     private var resultsSection: some View {
         if let error = viewModel.errorMessage {
-            Text(error)
-                .foregroundColor(theme.error)
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
+            AppErrorBanner(message: LocalizedStringKey(error))
+                .padding(12)
         } else if let result = viewModel.queryResult {
             QueryResultView(result: result)
         } else {
-            Text(LumiPluginLocalization.string("No results", bundle: .module))
-                .foregroundColor(theme.textSecondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            AppEmptyState(
+                icon: viewModel.selectedSQLiteTable == nil ? "tablecells" : "tray",
+                title: viewModel.selectedSQLiteTable == nil
+                    ? LumiPluginLocalization.string("Select a table", bundle: .module)
+                    : LumiPluginLocalization.string("No results", bundle: .module),
+                description: viewModel.selectedSQLiteTable == nil
+                    ? LumiPluginLocalization.string("Choose a table from the sidebar to view its data.", bundle: .module)
+                    : nil
+            )
         }
     }
 
@@ -174,11 +244,6 @@ public struct DatabaseMainView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var settingsDivider: some View {
-        Rectangle()
-            .fill(theme.appDivider)
-            .frame(height: 1)
-    }
 }
 
 public struct QueryResultView: View {
