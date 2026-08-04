@@ -71,7 +71,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             title: request.title,
             projectPath: kernel.project?.currentProject?.path,
             providerID: request.providerID,
-            modelName: request.modelID
+            modelName: request.modelID,
+            parentConversationID: request.parentConversationID
         )
         parentConversationIDs[conversationID] = request.parentConversationID
         defer { parentConversationIDs.removeValue(forKey: conversationID) }

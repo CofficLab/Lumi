@@ -184,32 +184,51 @@ public actor ConversationStore: SuperLog {
         guard limit > 0 else { return [] }
 
         let context = ModelContext(container)
+        normalizeEmptyParentConversationIDs(in: context)
         let cursorTimestamp = beforeUpdatedAt?.timeIntervalSince1970
         let cursorID = beforeID?.uuidString
         var descriptor: FetchDescriptor<ConversationModel>
 
-        let rootPredicate: Predicate<ConversationModel>? = includingChildConversations ? nil : #Predicate<ConversationModel> { $0.parentConversationID == nil }
-
         if let cursorTimestamp, let cursorID {
-            descriptor = FetchDescriptor<ConversationModel>(
-                predicate: #Predicate<ConversationModel> {
-                    $0.updatedAt < cursorTimestamp ||
-                    ($0.updatedAt == cursorTimestamp && $0.id < cursorID) &&
-                    (includingChildConversations || $0.parentConversationID == nil)
-                },
-                sortBy: [
-                    SortDescriptor(\.updatedAt, order: .reverse),
-                    SortDescriptor(\.id, order: .reverse),
-                ]
-            )
+            if includingChildConversations {
+                descriptor = FetchDescriptor<ConversationModel>(
+                    predicate: #Predicate<ConversationModel> {
+                        $0.updatedAt < cursorTimestamp ||
+                        ($0.updatedAt == cursorTimestamp && $0.id < cursorID)
+                    },
+                    sortBy: [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.id, order: .reverse),
+                    ]
+                )
+            } else {
+                descriptor = FetchDescriptor<ConversationModel>(
+                    predicate: #Predicate<ConversationModel> {
+                        ($0.updatedAt < cursorTimestamp ||
+                        ($0.updatedAt == cursorTimestamp && $0.id < cursorID)) &&
+                        $0.parentConversationID == nil
+                    },
+                    sortBy: [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.id, order: .reverse),
+                    ]
+                )
+            }
         } else {
-            descriptor = FetchDescriptor<ConversationModel>(
-                predicate: rootPredicate,
-                sortBy: [
+            if includingChildConversations {
+                descriptor = FetchDescriptor<ConversationModel>(sortBy: [
                     SortDescriptor(\.updatedAt, order: .reverse),
                     SortDescriptor(\.id, order: .reverse),
-                ]
-            )
+                ])
+            } else {
+                descriptor = FetchDescriptor<ConversationModel>(
+                    predicate: #Predicate<ConversationModel> { $0.parentConversationID == nil },
+                    sortBy: [
+                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.id, order: .reverse),
+                    ]
+                )
+            }
         }
 
         descriptor.fetchLimit = limit
@@ -226,6 +245,7 @@ public actor ConversationStore: SuperLog {
     /// Count conversations without materializing their summaries.
     func conversationCount(includingChildConversations: Bool = true) -> Int {
         let context = ModelContext(container)
+        normalizeEmptyParentConversationIDs(in: context)
         let descriptor: FetchDescriptor<ConversationModel> = includingChildConversations
             ? FetchDescriptor<ConversationModel>()
             : FetchDescriptor<ConversationModel>(predicate: #Predicate<ConversationModel> { $0.parentConversationID == nil })
@@ -240,10 +260,12 @@ public actor ConversationStore: SuperLog {
 
     func conversationCount(projectPath: String?, includingChildConversations: Bool = true) -> Int {
         let context = ModelContext(container)
+        normalizeEmptyParentConversationIDs(in: context)
         let descriptor: FetchDescriptor<ConversationModel>
         if let projectPath {
             descriptor = FetchDescriptor<ConversationModel>(predicate: #Predicate<ConversationModel> {
-                $0.projectPath == projectPath && (includingChildConversations || $0.parentConversationID == nil)
+                $0.projectPath == projectPath &&
+                (includingChildConversations || $0.parentConversationID == nil)
             })
         } else {
             descriptor = includingChildConversations
@@ -442,6 +464,21 @@ public actor ConversationStore: SuperLog {
     }
 
     // MARK: - Private
+
+    /// Older stores may encode an unset optional string as an empty string.
+    /// Normalize those values so root-conversation predicates remain compatible.
+    @discardableResult
+    private func normalizeEmptyParentConversationIDs(in context: ModelContext) -> Int {
+        let descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { $0.parentConversationID == "" }
+        )
+        guard let models = try? context.fetch(descriptor), !models.isEmpty else { return 0 }
+        for model in models {
+            model.parentConversationID = nil
+        }
+        try? context.save()
+        return models.count
+    }
 
     private func save(_ context: ModelContext, operation: StaticString) -> Bool {
         do {
