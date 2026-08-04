@@ -36,6 +36,7 @@
       }
     },
     "%@ API Key required" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2479,6 +2480,15 @@
       }
     },
     "最近 14 天暂无 token 记录" : {
+
+    },
+    "当前 Keychain 中仍可读取到 API Key。上面的错误是请求当时产生的历史错误，建议直接重试。" : {
+
+    },
+    "当前 Keychain 中没有找到 API Key。若你确认已经配置，请检查钥匙串访问权限或重新保存一次。" : {
+
+    },
+    "当前无法读取 macOS Keychain，Key 本身没有被判定为缺失。" : {
 
     },
     "正在加载供应商…" : {

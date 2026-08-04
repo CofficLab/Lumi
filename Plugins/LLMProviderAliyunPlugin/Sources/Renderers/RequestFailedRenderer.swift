@@ -12,7 +12,7 @@ enum RequestFailedRenderer {
         canRender: { message in
             AliyunRenderKind.matches(renderKind: AliyunRenderKind.requestFailed, message: message)
         },
-        render: { message in
+        render: { message, _ in
             HttpErrorView(message: message, statusCode: nil)
         }
     )

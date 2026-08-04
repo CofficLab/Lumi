@@ -5,33 +5,52 @@ import SwiftUI
 struct ControlView: View {
     @LumiTheme private var theme: any LumiUITheme
     @ObservedObject private var viewModel: ProjectsViewModel
+    @ObservedObject private var kernel: LumiKernel
     @State private var isPopoverPresented = false
+    @State private var activeContainerRevision = 0
 
-    init(viewModel: ProjectsViewModel) {
+    init(viewModel: ProjectsViewModel, kernel: LumiKernel) {
         self.viewModel = viewModel
+        self.kernel = kernel
     }
 
     var body: some View {
-        Button {
-            isPopoverPresented = true
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "folder")
-                    .font(.system(size: 12, weight: .semibold))
+        let _ = activeContainerRevision
+        let supportsProject = kernel.workspace?.currentViewContainer?.supportsProject == true
 
-                Text(viewModel.currentProject?.name ?? LumiPluginLocalization.string("Projects", bundle: .module))
-                    .font(.system(size: 13, weight: .medium))
-                    .lineLimit(1)
+        Group {
+            if supportsProject {
+                Button {
+                    isPopoverPresented = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "folder")
+                            .font(.system(size: 12, weight: .semibold))
+
+                        Text(viewModel.currentProject?.name ?? LumiPluginLocalization.string("Projects", bundle: .module))
+                            .font(.system(size: 13, weight: .medium))
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(theme.textPrimary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(theme.elevatedSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+                    PopoverView(viewModel: viewModel)
+                }
             }
-            .foregroundStyle(theme.textPrimary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(theme.elevatedSurface)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
         }
-        .buttonStyle(.plain)
-        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            PopoverView(viewModel: viewModel)
+        .onAppear {
+            activeContainerRevision += 1
+        }
+        .onActiveViewContainerIDDidChange { _ in
+            activeContainerRevision += 1
+            if !supportsProject {
+                isPopoverPresented = false
+            }
         }
     }
 }

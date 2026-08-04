@@ -1,17 +1,14 @@
-import SwiftUI
 import LLMKit
 import LumiKernel
-import LumiKernel
 import LumiUI
+import SwiftUI
 
 @MainActor
 public final class AiRouterPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.airouter"
-    public var name: String {
-        LumiPluginLocalization.string("AiRouter", bundle: .module)
-    }
+    public var name: String = "AiRouter"
     public let order = 91
-	public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
@@ -27,11 +24,9 @@ public final class AiRouterPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
         [AiRouterProvider(apiService: LLMAPIService(kernel: kernel))]
     }
-
 
     // MARK: - LumiPlugin stubs
 

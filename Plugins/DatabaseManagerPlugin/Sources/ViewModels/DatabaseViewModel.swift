@@ -15,6 +15,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     @Published var isLoading: Bool = false
     @Published var redisKeys: [String] = []
     @Published var sqliteTables: [String] = []
+    @Published var selectedSQLiteTable: String?
 
     private let manager = DatabaseManagerCore.shared
     nonisolated(unsafe) private var connectedConfigId: UUID?
@@ -70,6 +71,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             queryResult = nil
             redisKeys = []
             sqliteTables = []
+            selectedSQLiteTable = nil
             
             // 根据类型设置默认查询/命令
             switch config.type {
@@ -119,6 +121,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         queryResult = nil
         redisKeys = []
         sqliteTables = []
+        selectedSQLiteTable = nil
     }
 
     public func executeQuery() async {
@@ -223,6 +226,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                 return nil
             }
             sqliteTables = names
+            if let selectedSQLiteTable, !names.contains(selectedSQLiteTable) {
+                self.selectedSQLiteTable = nil
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -230,6 +236,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     
     /// 打开指定 SQLite 表
     public func openSQLiteTable(_ name: String) async {
+        selectedSQLiteTable = name
         queryText = "SELECT * FROM \(quotedSQLiteIdentifier(name)) LIMIT 50;"
         await executeQuery()
     }

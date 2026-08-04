@@ -6,6 +6,8 @@ import SwiftUI
 public extension Notification.Name {
     static let lumiConversationsDidChange = LumiKernelEvent.conversationsDidChange.notificationName
     static let lumiConversationTitleDidChange = LumiKernelEvent.conversationTitleDidChange.notificationName
+    static let lumiConversationDidDelete = LumiKernelEvent.conversationDidDelete.notificationName
+    static let lumiConversationWillDelete = LumiKernelEvent.conversationWillDelete.notificationName
 }
 
 // MARK: - UserInfo Keys
@@ -35,6 +37,22 @@ public extension NotificationCenter {
         }
         NotificationCenter.default.post(name: .lumiConversationTitleDidChange, object: nil, userInfo: userInfo)
     }
+
+    /// 发送 `.lumiConversationDidDelete` 通知
+    static func postLumiConversationDidDelete(conversationID: UUID) {
+        let userInfo: [AnyHashable: Any] = [
+            LumiNotificationUserInfoKey.conversationID: conversationID,
+        ]
+        NotificationCenter.default.post(name: .lumiConversationDidDelete, object: nil, userInfo: userInfo)
+    }
+
+    /// 发送 `.lumiConversationWillDelete` 通知(对话即将被删除,ID 仍可访问)
+    static func postLumiConversationWillDelete(conversationID: UUID) {
+        let userInfo: [AnyHashable: Any] = [
+            LumiNotificationUserInfoKey.conversationID: conversationID,
+        ]
+        NotificationCenter.default.post(name: .lumiConversationWillDelete, object: nil, userInfo: userInfo)
+    }
 }
 
 // MARK: - NotificationCenter Subscribe Helpers
@@ -58,6 +76,31 @@ public extension NotificationCenter {
             handler(notification.lumiConversationID)
         }
     }
+
+    /// Subscribe to `.lumiConversationDidDelete`.
+    /// Handler receives the deleted conversation ID from userInfo.
+    /// Returns an opaque observer token that must be passed to `removeObserver(_:)` in `deinit`.
+    @MainActor
+    func onLumiConversationDidDelete(_ handler: @escaping (UUID) -> Void) -> NSObjectProtocol {
+        addObserver(forName: .lumiConversationDidDelete, object: nil, queue: .main) { notification in
+            if let conversationID = notification.lumiConversationID {
+                handler(conversationID)
+            }
+        }
+    }
+
+    /// Subscribe to `.lumiConversationWillDelete`.
+    /// Handler receives the about-to-be-deleted conversation ID from userInfo
+    /// (still accessible at this point — fetch title/etc. if needed).
+    /// Returns an opaque observer token that must be passed to `removeObserver(_:)` in `deinit`.
+    @MainActor
+    func onLumiConversationWillDelete(_ handler: @escaping (UUID) -> Void) -> NSObjectProtocol {
+        addObserver(forName: .lumiConversationWillDelete, object: nil, queue: .main) { notification in
+            if let conversationID = notification.lumiConversationID {
+                handler(conversationID)
+            }
+        }
+    }
 }
 
 // MARK: - SwiftUI View Extensions
@@ -75,6 +118,24 @@ public extension View {
     func onLumiConversationTitleDidChange(perform action: @escaping (UUID?) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .lumiConversationTitleDidChange)) { notification in
             action(notification.lumiConversationID)
+        }
+    }
+
+    /// 监听 `.lumiConversationDidDelete` 通知
+    func onLumiConversationDidDelete(perform action: @escaping (UUID) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiConversationDidDelete)) { notification in
+            if let conversationID = notification.lumiConversationID {
+                action(conversationID)
+            }
+        }
+    }
+
+    /// 监听 `.lumiConversationWillDelete` 通知(对话即将被删除,但 ID 仍可访问)
+    func onLumiConversationWillDelete(perform action: @escaping (UUID) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiConversationWillDelete)) { notification in
+            if let conversationID = notification.lumiConversationID {
+                action(conversationID)
+            }
         }
     }
 }

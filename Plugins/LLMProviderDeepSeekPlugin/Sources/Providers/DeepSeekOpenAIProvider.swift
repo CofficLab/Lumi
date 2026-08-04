@@ -1,5 +1,6 @@
 import Foundation
 import KeychainKit
+import LLMKit
 import LumiKernel
 
 public final class DeepSeekOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
@@ -173,17 +174,13 @@ public final class DeepSeekOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
         error: Error,
         disposition: LumiLLMErrorDisposition
     ) -> LumiChatMessage {
-        var metadata = disposition.metadataEntries
-        if let error = error as? DeepSeekOpenAIProviderError, let status = error.statusCode {
-            metadata["httpStatusCode"] = String(status)
-        }
-        return LumiChatMessage(
+        LumiLLMProviderErrorSupport.makeErrorMessage(
+            providerID: Self.info.id,
             conversationID: conversationID,
-            role: .error,
-            content: error.localizedDescription,
-            isError: true,
-            rawErrorDetail: error.localizedDescription,
-            metadata: metadata
+            request: request,
+            error: error,
+            disposition: disposition,
+            renderKind: errorRenderKind(for: error)
         )
     }
 }

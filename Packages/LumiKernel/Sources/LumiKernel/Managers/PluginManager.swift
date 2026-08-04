@@ -159,6 +159,7 @@ public final class PluginManager: ObservableObject {
                     title: item.title,
                     systemImage: item.systemImage,
                     visibility: item.visibility,
+                    requiresProjectSupport: item.requiresProjectSupport,
                     content: item.makeView
                 )
                 railItem.order = pluginOrder
@@ -173,6 +174,7 @@ public final class PluginManager: ObservableObject {
                         id: container.id,
                         title: container.title,
                         systemImage: container.systemImage,
+                        supportsProject: container.supportsProject,
                         railVisibility: container.railVisibility,
                         chatVisibility: container.chatVisibility,
                         panelHeaderVisibility: container.panelHeaderVisibility,
@@ -185,6 +187,7 @@ public final class PluginManager: ObservableObject {
                         id: container.id,
                         title: container.title,
                         systemImage: container.systemImage,
+                        supportsProject: container.supportsProject,
                         railVisibility: container.railVisibility,
                         chatVisibility: container.chatVisibility,
                         panelHeaderVisibility: container.panelHeaderVisibility,

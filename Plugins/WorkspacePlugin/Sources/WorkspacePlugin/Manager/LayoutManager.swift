@@ -196,6 +196,10 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         // 注册前于 onReady 写入）优先，用户后续手动选择也不会被覆盖。
         if activeViewContainerID == nil, sortedViewContainers.first?.id == container.id {
             activeViewContainerID = container.id
+        } else if activeViewContainerID == container.id {
+            // 持久化恢复可能早于容器注册，activeViewContainerID 此时不会再次变化。
+            // 补发通知，让依赖 currentViewContainer 的 UI 在容器真正可查询后刷新。
+            NotificationCenter.postActiveViewContainerIDDidChange(containerID: container.id)
         }
     }
 

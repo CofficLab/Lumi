@@ -14,10 +14,10 @@ struct BorderedUtilityContent<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 tint.opacity(role == .system ? 0.07 : 0.1),
-                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .stroke(tint.opacity(0.16), lineWidth: 1)
             )
     }

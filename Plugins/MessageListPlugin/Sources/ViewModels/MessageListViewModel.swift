@@ -106,9 +106,10 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// at token frequency; the streaming/history split can be refined later
     /// without making static history pay that cost.
     var isStreaming: Bool {
-        guard let streaming = kernel.messageStreaming else { return false }
-        guard streaming.streamingConversationID == selectedConversationID else { return false }
-        return streaming.currentStage != .idle || streaming.currentStreamingRow != nil
+        guard let streaming = kernel.messageStreaming,
+              let conversationID = selectedConversationID else { return false }
+        return streaming.streamingStage(for: conversationID) != .idle
+            || streaming.streamingRow(for: conversationID) != nil
     }
 
     /// 当前会话的响应详细程度;由 View 透传给渲染闭包,
@@ -286,8 +287,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
                 .eraseToAnyPublisher()
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self, weak streaming] _ in
-                    guard let self, let streaming,
-                          streaming.streamingConversationID == self.selectedConversationID else { return }
+                    guard let self, let streaming else { return }
                     self.scheduleStreamingPresentation(using: streaming)
                 }
                 .store(in: &cancellables)

@@ -214,6 +214,12 @@
         }
       }
     },
+    "HTTP Body:\n%@" : {
+
+    },
+    "HTTP Status Code: %lld" : {
+
+    },
     "Lumi" : {
       "localizations" : {
         "en" : {

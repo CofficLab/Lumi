@@ -44,10 +44,6 @@ let package = Package(
                 .product(name: "DownloadKit", package: "DownloadKit"),
             ],
             path: "Sources",
-            exclude: [
-                "MLXPlugin.swift",
-                "MLXProvider.swift",
-            ],
             resources: [
                 .process("../Resources/Localizable.xcstrings")
             ]

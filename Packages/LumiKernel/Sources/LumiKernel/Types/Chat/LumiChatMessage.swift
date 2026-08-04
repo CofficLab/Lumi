@@ -13,6 +13,8 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
     public var modelName: String?
     public var isError: Bool
     public var rawErrorDetail: String?
+    public var httpStatusCode: Int?
+    public var httpBody: String?
     public var renderKind: String?
     public var metadata: [String: String]
     public var toolCalls: [LumiToolCall]?
@@ -35,6 +37,8 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         modelName: String? = nil,
         isError: Bool = false,
         rawErrorDetail: String? = nil,
+        httpStatusCode: Int? = nil,
+        httpBody: String? = nil,
         renderKind: String? = nil,
         metadata: [String: String] = [:],
         toolCalls: [LumiToolCall]? = nil,
@@ -56,6 +60,8 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.modelName = modelName
         self.isError = isError
         self.rawErrorDetail = rawErrorDetail
+        self.httpStatusCode = httpStatusCode
+        self.httpBody = httpBody
         self.renderKind = renderKind
         self.metadata = metadata
         self.toolCalls = toolCalls
@@ -79,6 +85,8 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         modelName: String? = nil,
         isError: Bool = false,
         rawErrorDetail: String? = nil,
+        httpStatusCode: Int? = nil,
+        httpBody: String? = nil,
         renderKind: String? = nil,
         metadata: [String: String] = [:],
         toolCalls: [LumiToolCall]? = nil,
@@ -101,6 +109,8 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
             modelName: modelName,
             isError: isError,
             rawErrorDetail: rawErrorDetail,
+            httpStatusCode: httpStatusCode,
+            httpBody: httpBody,
             renderKind: renderKind,
             metadata: metadata,
             toolCalls: toolCalls,

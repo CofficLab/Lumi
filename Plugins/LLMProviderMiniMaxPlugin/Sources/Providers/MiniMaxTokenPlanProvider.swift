@@ -2,14 +2,6 @@ import Foundation
 import LLMKit
 import LumiKernel
 
-enum MiniMaxProviderCatalog {
-    static let models = ["MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed", "MiniMax-M2.5", "MiniMax-M2", "MiniMax-Text-01"]
-    static let contexts = ["MiniMax-M3": 204_800, "MiniMax-M2.7": 204_800, "MiniMax-M2.7-highspeed": 204_800, "MiniMax-M2.5": 204_800, "MiniMax-M2": 131_072, "MiniMax-Text-01": 4_000_000]
-    static let capabilities: [String: LumiModelCapabilities] = [
-        "MiniMax-M3": .init(supportsVision: true, supportsTools: true), "MiniMax-M2.7": .init(supportsVision: true, supportsTools: true), "MiniMax-M2.7-highspeed": .init(supportsVision: true, supportsTools: true), "MiniMax-M2.5": .init(supportsVision: false, supportsTools: true), "MiniMax-M2": .init(supportsVision: false, supportsTools: true), "MiniMax-Text-01": .init(supportsVision: false, supportsTools: false),
-    ]
-}
-
 class MiniMaxProviderSupport {
     static let apiKeyStorageKey = "DevAssistant_ApiKey_MiniMax"
 
@@ -80,5 +72,6 @@ final class MiniMaxMessageState: @unchecked Sendable {
         activeName = nil
         activeArgs = ""
     }
+
     func message() -> LumiChatMessage { lock.lock(); defer { lock.unlock() }; let end = ended ?? Date(); return LumiChatMessage(conversationID: conversationID, role: .assistant, content: content, providerID: providerID, modelName: model, rawErrorDetail: error, toolCalls: calls.isEmpty ? nil : calls, reasoningContent: reasoning.isEmpty ? nil : reasoning, inputTokenCount: input, outputTokenCount: output, latencyMs: end.timeIntervalSince(started) * 1000, timeToFirstTokenMs: first.map { $0.timeIntervalSince(started) * 1000 }, streamingDurationMs: first.map { end.timeIntervalSince($0) * 1000 }) }
 }

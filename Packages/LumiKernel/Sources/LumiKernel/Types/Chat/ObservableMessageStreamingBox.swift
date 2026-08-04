@@ -8,7 +8,7 @@ import Foundation
 /// `objectWillChange` 桥接到自己的 publisher 上。
 ///
 /// **为何需要独立订阅**:`MessageStreaming` 在流式期间高频变更(`@Published`
-/// currentStreamingRow/currentStage 每个 chunk 都更新)。若经 kernel 的全局
+/// 每个会话的 streamingRow/streamingStage 每个 chunk 都更新)。若经 kernel 的全局
 /// objectWillChange 转发,会广播给所有订阅 kernel 的视图(20+),拖慢整个 app。
 /// 用本包装器让消费视图(如 `MessageListView`)精确订阅 store,绕开全局广播。
 ///

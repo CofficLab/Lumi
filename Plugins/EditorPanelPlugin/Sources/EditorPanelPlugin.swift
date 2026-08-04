@@ -39,6 +39,7 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: name,
                 systemImage: "chevron.left.forwardslash.chevron.right",
+                supportsProject: true,
                 railVisibility: .visibleByDefault,
                 chatVisibility: .visibleByDefault,
                 panelHeaderVisibility: .visibleByDefault,

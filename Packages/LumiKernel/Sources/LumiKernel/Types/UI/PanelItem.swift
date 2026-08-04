@@ -97,6 +97,8 @@ public struct PanelRailTabItem: Identifiable, Sendable {
     public let title: String
     public let systemImage: String
     public let visibility: PanelRailTabVisibility
+    /// 是否仅在支持项目的 ViewContainer 中展示。
+    public let requiresProjectSupport: Bool
     public let makeView: @MainActor @Sendable () -> AnyView
 
     /// 公开初始化器（不包含 order）
@@ -105,6 +107,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         title: String,
         systemImage: String,
         visibility: PanelRailTabVisibility = .always,
+        requiresProjectSupport: Bool = false,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
@@ -112,6 +115,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         self.title = title
         self.systemImage = systemImage
         self.visibility = visibility
+        self.requiresProjectSupport = requiresProjectSupport
         self.makeView = { AnyView(content()) }
     }
 
@@ -122,6 +126,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         title: String,
         systemImage: String,
         visibility: PanelRailTabVisibility = .always,
+        requiresProjectSupport: Bool = false,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
@@ -129,6 +134,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         self.title = title
         self.systemImage = systemImage
         self.visibility = visibility
+        self.requiresProjectSupport = requiresProjectSupport
         self.makeView = { AnyView(content()) }
     }
 }

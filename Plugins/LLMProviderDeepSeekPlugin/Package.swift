@@ -14,6 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(path: "../../Packages/LLMKit"),
         .package(path: "../../Packages/KeychainKit"),
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LocalizationKit"),
@@ -22,6 +23,7 @@ let package = Package(
         .target(
             name: "LLMProviderDeepSeekPlugin",
             dependencies: [
+                .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "KeychainKit", package: "KeychainKit"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),

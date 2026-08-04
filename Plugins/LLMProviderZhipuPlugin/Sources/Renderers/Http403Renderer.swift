@@ -8,7 +8,7 @@ enum Http403Renderer {
         canRender: { message in
             ZhipuRenderKind.matchesHttp(statusCode: 403, message: message)
         },
-        render: { message in
+        render: { message, _ in
             HttpErrorView(message: message, statusCode: 403)
         }
     )

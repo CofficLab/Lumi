@@ -1,8 +1,26 @@
 import LumiKernel
+import HttpKit
 import XCTest
 @testable import LLMKit
 
 final class ProviderErrorSupportTests: XCTestCase {
+    func testHTTPErrorMessagePreservesStatusCodeAndBody() {
+        let request = LumiLLMRequest(messages: [], model: "test-model")
+        let body = #"{"error":"invalid request"}"#
+
+        let message = LumiLLMProviderErrorSupport.makeErrorMessage(
+            providerID: "test-provider",
+            conversationID: UUID(),
+            request: request,
+            error: HTTPClientError.httpError(statusCode: 422, message: body),
+            disposition: .nonRetryable,
+            renderKind: nil
+        )
+
+        XCTAssertEqual(message.httpStatusCode, 422)
+        XCTAssertEqual(message.httpBody, body)
+    }
+
     func testMissingAPIKeyUsesGenericRenderKindWhenProviderDoesNotProvideOne() {
         let conversationID = UUID()
         let request = LumiLLMRequest(messages: [], model: "test-model")

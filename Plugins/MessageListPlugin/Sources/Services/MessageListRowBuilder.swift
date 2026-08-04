@@ -7,7 +7,7 @@ import LumiKernel
 /// 真实落库消息(`persisted`,已由 `MessageManaging` 合并了瞬时 status 行)之后,
 /// 按流式阶段决定是否拼接流式临时行、是否剔除 status 行。
 ///
-/// 行合并规则(按流式阶段 `MessageStreaming.currentStage`):
+/// 行合并规则(按指定会话的流式阶段):
 /// - **`.sending`**(LLM 尚未响应):流式行是空壳不显示;只显示 status"正在发送…"。
 /// - **`.thinking`**(思考中):显示流式行(渲染思考文本),剔除 status。
 /// - **`.generating`**(正文生成中):显示流式行(渲染正文),剔除 status。
@@ -92,7 +92,7 @@ struct MessageListRowBuilder {
         guard let conversationID,
               shouldShowStreamingRow(conversationID: conversationID, streaming: streaming)
         else { return nil }
-        return streaming?.currentStreamingRow
+        return streaming?.streamingRow(for: conversationID)
     }
 
     private func shouldShowStreamingRow(
@@ -100,12 +100,12 @@ struct MessageListRowBuilder {
         streaming: (any MessageStreaming)?
     ) -> Bool {
         guard let streaming,
-              streaming.streamingConversationID == conversationID,
-              let row = streaming.currentStreamingRow,
+              let row = streaming.streamingRow(for: conversationID),
               row.conversationID == conversationID
         else { return false }
 
-        return streaming.currentStage == .thinking || streaming.currentStage == .generating
+        let stage = streaming.streamingStage(for: conversationID)
+        return stage == .thinking || stage == .generating
     }
 
     /// 把同一 Turn 中连续的 `isToolExecutionOnly` 助手消息合并成一条活动消息。

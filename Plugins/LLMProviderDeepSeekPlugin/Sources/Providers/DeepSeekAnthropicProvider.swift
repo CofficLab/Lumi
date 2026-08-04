@@ -1,5 +1,6 @@
 import Foundation
 import KeychainKit
+import LLMKit
 import LumiKernel
 
 /// DeepSeek 的 Anthropic-compatible 协议实现，作为 `DeepSeekOpenAIProvider` 的兄弟 provider。
@@ -173,7 +174,7 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
             "max_tokens": 1,
             "messages": [[
                 "role": "user",
-                "content": [[ "type": "text", "text": "ping" ]],
+                "content": [["type": "text", "text": "ping"]],
             ]],
             "stream": false,
         ]
@@ -208,17 +209,13 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
         error: Error,
         disposition: LumiLLMErrorDisposition
     ) -> LumiChatMessage {
-        var metadata = disposition.metadataEntries
-        if let error = error as? DeepSeekAnthropicProviderError, let status = error.statusCode {
-            metadata["httpStatusCode"] = String(status)
-        }
-        return LumiChatMessage(
+        LumiLLMProviderErrorSupport.makeErrorMessage(
+            providerID: Self.info.id,
             conversationID: conversationID,
-            role: .error,
-            content: error.localizedDescription,
-            isError: true,
-            rawErrorDetail: error.localizedDescription,
-            metadata: metadata
+            request: request,
+            error: error,
+            disposition: disposition,
+            renderKind: errorRenderKind(for: error)
         )
     }
 }

@@ -34,6 +34,12 @@ public final class MessageModel: @unchecked Sendable {
     /// Raw error detail string
     public var rawErrorDetail: String?
 
+    /// HTTP response status code for an error message
+    public var httpStatusCode: Int?
+
+    /// HTTP response body for an error message
+    public var httpBody: String?
+
     /// Render kind (e.g., "text", "markdown")
     public var renderKind: String?
 
@@ -74,6 +80,8 @@ public final class MessageModel: @unchecked Sendable {
         modelName: String? = nil,
         isError: Bool = false,
         rawErrorDetail: String? = nil,
+        httpStatusCode: Int? = nil,
+        httpBody: String? = nil,
         renderKind: String? = nil,
         metadataJson: String? = nil,
         toolCallsJson: String? = nil,
@@ -94,6 +102,8 @@ public final class MessageModel: @unchecked Sendable {
         self.modelName = modelName
         self.isError = isError
         self.rawErrorDetail = rawErrorDetail
+        self.httpStatusCode = httpStatusCode
+        self.httpBody = httpBody
         self.renderKind = renderKind
         self.metadataJson = metadataJson
         self.toolCallsJson = toolCallsJson
@@ -138,6 +148,8 @@ public extension MessageModel {
             modelName: message.modelName,
             isError: message.isError,
             rawErrorDetail: message.rawErrorDetail,
+            httpStatusCode: message.httpStatusCode,
+            httpBody: message.httpBody,
             renderKind: message.renderKind,
             metadataJson: metadataJson,
             toolCallsJson: toolCallsJson,
@@ -177,6 +189,8 @@ public extension MessageModel {
             modelName: modelName,
             isError: isError,
             rawErrorDetail: rawErrorDetail,
+            httpStatusCode: httpStatusCode,
+            httpBody: httpBody,
             renderKind: renderKind,
             metadata: metadata,
             toolCalls: toolCalls,

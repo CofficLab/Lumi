@@ -14,6 +14,8 @@ public final class TerminalPlugin: LumiPlugin {
     }
     public let order = 279
 	public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
+    public let category: LumiPluginCategory = .development
 
     public init() {}
 
@@ -53,6 +55,7 @@ public final class TerminalPlugin: LumiPlugin {
                 id: id,
                 title: name,
                 systemImage: "terminal",
+                supportsProject: true,
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,
                 panelHeaderVisibility: .unsupported,

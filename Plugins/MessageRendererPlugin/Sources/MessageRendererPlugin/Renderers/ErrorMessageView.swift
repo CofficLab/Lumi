@@ -23,6 +23,14 @@ struct ErrorMessageView: View {
         return LumiPluginLocalization.string("Request failed.", bundle: .module)
     }
 
+    private var httpBodyText: String? {
+        guard let body = message.httpBody?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !body.isEmpty else {
+            return nil
+        }
+        return body
+    }
+
     var body: some View {
         MessageViewChrome(
             message: message,
@@ -37,10 +45,20 @@ struct ErrorMessageView: View {
                         .textSelection(.enabled)
                 } else {
                     BorderedUtilityContent(tint: theme.error, role: .error) {
-                        Text(summaryText)
-                            .font(.appBody)
-                            .foregroundColor(theme.error)
-                            .textSelection(.enabled)
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let httpStatusCode = message.httpStatusCode {
+                                Text("HTTP Status Code: \(httpStatusCode)")
+                            }
+
+                            Text(summaryText)
+
+                            if let httpBodyText {
+                                Text("HTTP Body:\n\(httpBodyText)")
+                            }
+                        }
+                        .font(.appBody)
+                        .foregroundColor(theme.error)
+                        .textSelection(.enabled)
                     }
                 }
             }

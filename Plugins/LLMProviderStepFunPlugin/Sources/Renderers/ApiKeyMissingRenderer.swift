@@ -13,7 +13,7 @@ enum ApiKeyMissingRenderer {
         canRender: { message in
             StepFunRenderKind.matchesApiKeyMissing(message)
         },
-        render: { message in
+        render: { message, _ in
             ApiKeyMissingView(message: message)
         }
     )

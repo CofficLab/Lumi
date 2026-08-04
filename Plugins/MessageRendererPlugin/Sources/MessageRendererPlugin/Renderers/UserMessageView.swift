@@ -43,7 +43,7 @@ private struct UserMessagePresentationModifier: ViewModifier {
                 .foregroundColor(isError ? theme.error : theme.textPrimary)
                 .background(
                     (isError ? theme.error : theme.textSecondary).opacity(0.10),
-                    in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
                 )
                 .frame(maxWidth: .infinity, alignment: .trailing)
         } else {

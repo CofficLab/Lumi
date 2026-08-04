@@ -1,8 +1,8 @@
-import SwiftUI
 import LumiKernel
 import LumiUI
 import os
 import SuperLogKit
+import SwiftUI
 
 @MainActor
 public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
@@ -14,10 +14,18 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     public var name: String {
         LumiPluginLocalization.string("Database", bundle: .module)
     }
+
     public let order = 750
     public let policy: LumiPluginPolicy = .optIn
+    public let category: LumiPluginCategory = .development
 
     public init() {}
+
+    /// 插件级唯一的 DatabaseViewModel 实例。
+    /// 通过 `viewContainers` 和 `titleToolbarItems` 同时注入，
+    /// 让 `DatabaseMainView`（面板）与 `DatabaseToolbarButton`（工具栏 popover）
+    /// 共享同一份连接/选中状态，避免"在 popover 选了连接但面板没同步"的问题。
+    private let sharedViewModel = DatabaseViewModel()
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
@@ -38,13 +46,14 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
                 id: "database-manager",
                 title: "Database",
                 systemImage: "cylinder.split.1x2",
-                railVisibility: .unsupported,
+                railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
                 panelBodyVisibility: .alwaysVisible,
                 panelBottomVisibility: .unsupported
             ) {
-                AnyView(DatabaseMainView())
-            }
+                AnyView(DatabaseMainView(viewModel: self.sharedViewModel))
+            },
         ]
     }
 
@@ -52,17 +61,39 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
         AnyView(DatabaseManagerAboutView())
     }
 
-
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+        [
+            LumiTitleToolbarItem(
+                id: "\(id).toolbar-button",
+                title: LumiPluginLocalization.string("Database Connections", bundle: .module),
+                placement: .trailing,
+                order: 500
+            ) {
+                DatabaseToolbarButton(kernel: kernel, containerID: "database-manager", viewModel: self.sharedViewModel)
+            },
+        ]
+    }
+
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        [
+            PanelRailTabItem(
+                id: "database-manager.sidebar",
+                title: "Database",
+                systemImage: "cylinder.split.1x2",
+                visibility: .viewContainer(id: "database-manager")
+            ) {
+                DatabaseSidebarView(viewModel: self.sharedViewModel)
+            },
+        ]
+    }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }

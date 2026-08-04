@@ -13,7 +13,7 @@ enum RequestFailedRenderer {
         canRender: { message in
             StepFunRenderKind.matches(renderKind: StepFunRenderKind.requestFailed, message: message)
         },
-        render: { message in
+        render: { message, _ in
             RequestFailedView(message: message)
         }
     )

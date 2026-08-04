@@ -9,8 +9,9 @@ public final class HyperAPIPlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("HyperAPI", bundle: .module)
     }
+
     public let order = 97
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
