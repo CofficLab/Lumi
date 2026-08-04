@@ -13,15 +13,21 @@ import SwiftUI
 ///   (`kernel.project.objectWillChange` → `kernel.conversations.deselectConversation()`)。
 /// - `OnConversationProviderModelSyncHook`:选中对话后,把对话绑定的 Provider/Model
 ///   同步到内核全局(`kernel.conversations.objectWillChange` →
-///   `kernel.llmProviders.selectProvider(id:)` / `selectModel(providerID:model:)`)。
+///   `kernel.llmProvider.selectProvider(id:)` / `selectModel(providerID:model:)`)。
 ///   仅在不一致时写入,无绑定则跳过,避免覆盖用户刚手动选择的全局值。
+/// - `OnGlobalProviderModelSyncHook`:全局 Provider/Model 变化时,把全局选择同步到
+///   当前对话(`.lumiSelectedRemoteProviderIDDidChange` /
+///   `.lumiSelectedLocalProviderIDDidChange` / `.lumiSelectedModelsDidChange` →
+///   `kernel.conversations.selectProvider(id:model:for:)`)。
+///   仅在不一致时写入,避免覆盖用户刚手动选择的对话绑定。
 ///
 /// 前两条 hook 形成对称联动:
 ///   - 选中对话 → 跟随对话绑定的项目;
 ///   - 项目变化 → 清空当前对话,避免旧对话与新项目不一致。
 ///
-/// 第三条 hook 是单向同步:
-///   - 选中对话 → 把对话的 Provider/Model 写入内核全局,使后续发送的消息使用对话绑定的模型。
+/// 后两条 hook 形成对称联动:
+///   - 选中对话 → 把对话的 Provider/Model 写入内核全局,使后续发送的消息使用对话绑定的模型;
+///   - 全局 Provider/Model 变化 → 把全局选择同步到当前对话,使对话绑定与全局一致。
 ///
 /// 设计意图:
 /// - 不产生新的状态源,只在已有状态之间建立联动规则;
@@ -45,6 +51,7 @@ public final class StateMonitorPlugin: LumiPlugin {
     private let selectedProjectHook = OnConversationSelectedHook()
     private let projectChangedHook = OnProjectChangedHook()
     private let providerModelSyncHook = OnConversationProviderModelSyncHook()
+    private let globalProviderModelSyncHook = OnGlobalProviderModelSyncHook()
 
     // MARK: - Init
 
@@ -63,12 +70,14 @@ public final class StateMonitorPlugin: LumiPlugin {
         selectedProjectHook.attach(kernel: kernel)
         projectChangedHook.attach(kernel: kernel)
         providerModelSyncHook.attach(kernel: kernel)
+        globalProviderModelSyncHook.attach(kernel: kernel)
     }
 
     public func onDisable(kernel: LumiKernel) async throws {
         selectedProjectHook.detach()
         projectChangedHook.detach()
         providerModelSyncHook.detach()
+        globalProviderModelSyncHook.detach()
     }
 
     // MARK: - Empty contribution points

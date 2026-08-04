@@ -46,8 +46,23 @@ Lumi 的运行时状态联动层。
   | ---------------------------- | ------------------------------------------ |
   | 对话选中(且绑定 provider)    | 同步 provider/model 到内核全局当前选中     |
 
-  不监听 `kernel.llmProviders.objectWillChange`,避免形成「内核全局变 →
+  不监听 `kernel.llmProvider.objectWillChange`,避免形成「内核全局变 →
   写入某个对话 → 又让本 hook 把全局再覆盖回去」的循环。
+
+- `OnGlobalProviderModelSyncHook.swift` — 新增,实现反向同步:
+
+  | 触发源                                     | 反应                                       |
+  | ------------------------------------------ | ------------------------------------------ |
+  | 全局 provider/model 变化(用户手动选择)    | 同步 provider/model 到当前对话绑定         |
+
+  监听 `.lumiSelectedRemoteProviderIDDidChange` /
+  `.lumiSelectedLocalProviderIDDidChange` / `.lumiSelectedModelsDidChange` 事件,
+  当全局 provider/model 变化时,把全局选择同步到当前对话。仅在不一致时写入,
+  避免覆盖用户刚手动选择的对话绑定。
+
+  后两条 hook 形成对称联动:
+  - 对话切换 → 同步 provider/model 到全局;
+  - 全局 provider/model 变化 → 同步到当前对话。
 
 ## Policy
 
