@@ -62,6 +62,7 @@ public actor ToolCallRecordStore: SuperLog {
 
     /// 批量写入缓冲区,减少 IO 操作。
     private var pendingRecords: [ToolCallRecordModel] = []
+    private var deletedConversationIDs: Set<String> = []
     private let maxBatchSize = 10
 
     private var flushTask: Task<Void, Never>?
@@ -126,6 +127,7 @@ public actor ToolCallRecordStore: SuperLog {
         riskLevel: String,
         turnControl: String? = nil
     ) {
+        guard !deletedConversationIDs.contains(conversationID.uuidString) else { return }
         let model = ToolCallRecordModel(
             id: UUID().uuidString,
             toolCallID: toolCallID,
@@ -241,6 +243,10 @@ public actor ToolCallRecordStore: SuperLog {
 
     /// 删除指定会话的所有记录。
     func deleteAll(for conversationID: UUID) {
+        deletedConversationIDs.insert(conversationID.uuidString)
+        // Tool calls are write-behind. Flush first so a record accepted before
+        // deletion cannot be written back after the delete completes.
+        flush()
         let descriptor = FetchDescriptor<ToolCallRecordModel>(
             predicate: #Predicate<ToolCallRecordModel> {
                 $0.conversationID == conversationID.uuidString

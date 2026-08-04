@@ -28,6 +28,8 @@ public final class ToolManagerService: ToolManaging {
     /// Fast path for results produced during the current process. Persistence is
     /// asynchronous, so the UI can resolve a freshly completed call immediately.
     private var resultCache: [String: LumiToolResult] = [:]
+    private var resultCacheConversationIDs: [String: UUID] = [:]
+    private var deletedConversationIDs: Set<UUID> = []
 
     public init() {}
 
@@ -110,9 +112,12 @@ public final class ToolManagerService: ToolManaging {
         conversationID: UUID,
         turnID: UUID?
     ) async -> LumiToolResult {
+        guard !deletedConversationIDs.contains(conversationID) else {
+            return LumiToolResult(content: "Conversation was deleted", isError: true)
+        }
         guard let tool = registeredTools[toolCall.name] else {
             let result = LumiToolResult(content: "Tool not found: \(toolCall.name)", isError: true)
-            resultCache[toolCall.id] = result
+            cache(result, for: toolCall.id, conversationID: conversationID)
             return result
         }
 
@@ -124,7 +129,7 @@ public final class ToolManagerService: ToolManaging {
                 duration: Date().timeIntervalSince(startedAt),
                 isError: true
             )
-            resultCache[toolCall.id] = result
+            cache(result, for: toolCall.id, conversationID: conversationID)
             return result
         }
         let currentProjectPath = kernel.project?.currentProject?.path
@@ -147,7 +152,7 @@ public final class ToolManagerService: ToolManaging {
                 duration: Date().timeIntervalSince(startedAt),
                 isError: true
             )
-            resultCache[toolCall.id] = result
+            cache(result, for: toolCall.id, conversationID: conversationID)
             // 记录解码失败
             logToolCall(
                 toolCallID: toolCall.id,
@@ -184,7 +189,7 @@ public final class ToolManagerService: ToolManaging {
                 duration: Date().timeIntervalSince(startedAt),
                 isError: true
             )
-            resultCache[toolCall.id] = result
+            cache(result, for: toolCall.id, conversationID: conversationID)
             // 记录失败的调用
             logToolCall(
                 toolCallID: toolCall.id,
@@ -214,7 +219,7 @@ public final class ToolManagerService: ToolManaging {
             imageAttachments: images,
             turnControl: executionResult.turnControl
         )
-        resultCache[toolCall.id] = result
+        cache(result, for: toolCall.id, conversationID: conversationID)
 
         // 记录成功的调用(后台异步，不阻塞主流程)
         logToolCall(
@@ -282,6 +287,27 @@ public final class ToolManagerService: ToolManaging {
             duration: record.duration,
             isError: record.resultIsError
         )
+    }
+
+    public func deleteToolCalls(for conversationID: UUID) async {
+        deletedConversationIDs.insert(conversationID)
+        // Remove transient results as well as the persisted execution log.
+        if let records = await recordStore?.fetchRecords(for: conversationID) {
+            for record in records {
+                if let toolCallID = record.toolCallID {
+                    resultCache.removeValue(forKey: toolCallID)
+                }
+            }
+        }
+        resultCacheConversationIDs = resultCacheConversationIDs.filter { $0.value != conversationID }
+        resultCache = resultCache.filter { resultCacheConversationIDs[$0.key] != nil }
+        await recordStore?.deleteAll(for: conversationID)
+    }
+
+    private func cache(_ result: LumiToolResult, for toolCallID: String, conversationID: UUID) {
+        guard !deletedConversationIDs.contains(conversationID) else { return }
+        resultCache[toolCallID] = result
+        resultCacheConversationIDs[toolCallID] = conversationID
     }
 
     // MARK: - Tool Call Logging
