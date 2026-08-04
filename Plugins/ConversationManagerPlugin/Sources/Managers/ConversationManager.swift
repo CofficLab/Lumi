@@ -334,11 +334,18 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             persistSelectedConversationID()
         }
 
-        notifyConversationsChanged()
-
-        // Delete from database async
+        // Delete every storage owned by the conversation. The list is updated
+        // optimistically, but the change notification is sent only after the
+        // persistent cleanup so a reload cannot resurrect the row.
         Task {
-            await store?.deleteConversation(id: id)
+            let ids = await store?.conversationIDsToDelete(id: id) ?? [id]
+            for conversationID in ids {
+                kernel?.agentTurnManager?.cancelTurn(in: conversationID)
+                kernel?.messageManager?.clearMessages(in: conversationID)
+                await kernel?.toolManager?.deleteToolCalls(for: conversationID)
+            }
+            _ = await store?.deleteConversations(ids: ids)
+            self.notifyConversationsChanged()
         }
     }
 

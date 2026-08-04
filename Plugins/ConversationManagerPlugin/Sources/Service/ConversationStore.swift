@@ -501,18 +501,45 @@ public actor ConversationStore: SuperLog {
 
     /// Delete a conversation by ID
     func deleteConversation(id: UUID) -> Bool {
+        deleteConversations(ids: [id])
+    }
+
+    /// Return the conversation and all descendant Agent conversations.
+    func conversationIDsToDelete(id: UUID) -> [UUID] {
+        guard let models = try? ModelContext(container).fetch(FetchDescriptor<ConversationModel>()) else {
+            return [id]
+        }
+
+        var ids = [id.uuidString]
+        var changed = true
+        while changed {
+            changed = false
+            for model in models where !ids.contains(model.id) {
+                guard let parentID = model.parentConversationID,
+                      ids.contains(parentID) else { continue }
+                ids.append(model.id)
+                changed = true
+            }
+        }
+        return ids.compactMap(UUID.init(uuidString:))
+    }
+
+    /// Delete a set of conversations in one SwiftData transaction.
+    @discardableResult
+    func deleteConversations(ids: [UUID]) -> Bool {
+        guard !ids.isEmpty else { return false }
         let context = ModelContext(container)
-        let idString = id.uuidString
+        let idStrings = ids.map(\.uuidString)
 
         let descriptor = FetchDescriptor<ConversationModel>(
-            predicate: #Predicate<ConversationModel> { $0.id == idString }
+            predicate: #Predicate<ConversationModel> { idStrings.contains($0.id) }
         )
 
-        guard let model = try? context.fetch(descriptor).first else {
+        guard let models = try? context.fetch(descriptor), !models.isEmpty else {
             return false
         }
 
-        context.delete(model)
+        for model in models { context.delete(model) }
         return save(context, operation: "删除对话")
     }
 
