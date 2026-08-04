@@ -5,6 +5,12 @@ struct CharacterEditorView: View {
     @ObservedObject var viewModel: StoryWriterViewModel
     @State var character: Character
 
+    @Environment(\.locale) private var locale
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, locale: locale)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -14,12 +20,15 @@ struct CharacterEditorView: View {
                         .font(.title)
                         .foregroundStyle(.green)
                     VStack(alignment: .leading, spacing: 4) {
-                        TextField("Character Name", text: $character.name)
+                        TextField(L("Character Name"), text: $character.name)
                             .font(.title.bold())
                             .textFieldStyle(.plain)
-                        Text("Last edited: \(character.updatedAt.formatted(date: .abbreviated, time: .shortened))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Text(String(
+                            format: L("Last edited: %@"),
+                            character.updatedAt.formatted(date: .abbreviated, time: .shortened)
+                        ))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     }
                     Spacer()
                     Button {
@@ -27,7 +36,7 @@ struct CharacterEditorView: View {
                             await viewModel.deleteCharacter(id: character.id)
                         }
                     } label: {
-                        Label("Delete", systemImage: "trash")
+                        Label(L("Delete"), systemImage: "trash")
                     }
                 }
 
@@ -35,15 +44,15 @@ struct CharacterEditorView: View {
 
                 // Role
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Role")
+                    Text(L("Role"))
                         .font(.headline)
-                    TextField("e.g. Protagonist, Antagonist, Supporting...", text: $character.role)
+                    TextField(L("e.g. Protagonist, Antagonist, Supporting..."), text: $character.role)
                         .textFieldStyle(.roundedBorder)
                 }
 
                 // Personality
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Personality")
+                    Text(L("Personality"))
                         .font(.headline)
                     TextEditor(text: $character.personality)
                         .frame(minHeight: 80)
@@ -52,7 +61,7 @@ struct CharacterEditorView: View {
 
                 // Notes
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Notes")
+                    Text(L("Notes"))
                         .font(.headline)
                     TextEditor(text: $character.notes)
                         .frame(minHeight: 120)

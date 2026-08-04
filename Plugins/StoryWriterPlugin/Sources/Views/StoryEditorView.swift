@@ -5,8 +5,14 @@ struct StoryEditorView: View {
     @ObservedObject var viewModel: StoryWriterViewModel
     @State var story: Story
 
+    @Environment(\.locale) private var locale
+
     @State private var isEditingTitle = false
     @State private var editTitle = ""
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, locale: locale)
+    }
 
     var body: some View {
         ScrollView {
@@ -18,7 +24,7 @@ struct StoryEditorView: View {
                         .foregroundStyle(.blue)
                     VStack(alignment: .leading, spacing: 4) {
                         if isEditingTitle {
-                            TextField("Story Title", text: $editTitle, onCommit: {
+                            TextField(L("Story Title"), text: $editTitle, onCommit: {
                                 saveTitle()
                             })
                             .font(.title.bold())
@@ -30,23 +36,26 @@ struct StoryEditorView: View {
                                     isEditingTitle = true
                                 }
                         }
-                        Text("Last edited: \(story.updatedAt.formatted(date: .abbreviated, time: .shortened))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Text(String(
+                            format: L("Last edited: %@"),
+                            story.updatedAt.formatted(date: .abbreviated, time: .shortened)
+                        ))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     }
                     Spacer()
                     Button {
                         exportStory()
                     } label: {
-                        Label("Export", systemImage: "square.and.arrow.up")
+                        Label(L("Export"), systemImage: "square.and.arrow.up")
                     }
-                    .help("Export story as Markdown")
+                    .help(L("Export story as Markdown"))
                     Button {
                         Task {
                             await viewModel.deleteStory(id: story.id)
                         }
                     } label: {
-                        Label("Delete", systemImage: "trash")
+                        Label(L("Delete"), systemImage: "trash")
                     }
                 }
 
@@ -54,7 +63,7 @@ struct StoryEditorView: View {
 
                 // Synopsis
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Synopsis")
+                    Text(L("Synopsis"))
                         .font(.headline)
                     TextEditor(text: $story.synopsis)
                         .frame(minHeight: 120)
@@ -63,13 +72,13 @@ struct StoryEditorView: View {
 
                 // Stats
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Statistics")
+                    Text(L("Statistics"))
                         .font(.headline)
                     HStack(spacing: 24) {
-                        StatItem(title: "Chapters", value: "\(viewModel.chapters.count)")
-                        StatItem(title: "Characters", value: "\(viewModel.characters.count)")
+                        StatItem(title: L("Chapters"), value: "\(viewModel.chapters.count)")
+                        StatItem(title: L("Characters"), value: "\(viewModel.characters.count)")
                         StatItem(
-                            title: "Total Words",
+                            title: L("Total Words"),
                             value: "\(viewModel.chapters.reduce(0) { $0 + $1.wordCount })"
                         )
                     }

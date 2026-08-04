@@ -9,6 +9,12 @@ import SwiftUI
 struct StoryWriterView: View {
     @ObservedObject var viewModel: StoryWriterViewModel
 
+    @Environment(\.locale) private var locale
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, locale: locale)
+    }
+
     var body: some View {
         HSplitView {
             StoryOutlineView(viewModel: viewModel)
@@ -55,9 +61,9 @@ struct StoryWriterView: View {
             Image(systemName: "book.closed")
                 .font(.system(size: 48))
                 .foregroundStyle(.secondary)
-            Text("No story selected")
+            Text(L("No story selected"))
                 .font(.headline)
-            Text("Create or import a story to get started.")
+            Text(L("Create or import a story to get started."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }

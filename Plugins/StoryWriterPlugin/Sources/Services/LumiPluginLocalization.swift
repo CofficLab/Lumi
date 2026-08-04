@@ -4,10 +4,15 @@ import LocalizationKit
 /// Runtime localization for StoryWriterPlugin bundle.
 ///
 /// Provides localization lookup scoped to this plugin by delegating to LumiLocalization.
-public enum LumiPluginLocalization {
-    public static let table = "Localizable"
+enum LumiPluginLocalization {
+    static let table = "Localizable"
 
-    public static func string(_ key: String) -> String {
-        LumiLocalization.string(key, bundle: Bundle.module, table: table)
+    static func string(
+        _ key: String,
+        bundle: Bundle = Bundle.module,
+        table: String = LumiPluginLocalization.table,
+        locale: Locale = .current
+    ) -> String {
+        LumiLocalization.string(key, bundle: bundle, table: table, locale: locale)
     }
 }

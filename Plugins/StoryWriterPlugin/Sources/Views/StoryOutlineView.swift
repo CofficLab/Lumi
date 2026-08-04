@@ -4,8 +4,14 @@ import SwiftUI
 struct StoryOutlineView: View {
     @ObservedObject var viewModel: StoryWriterViewModel
 
+    @Environment(\.locale) private var locale
+
     @State private var showingNewStoryDialog = false
     @State private var newStoryTitle = ""
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, locale: locale)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,17 +20,17 @@ struct StoryOutlineView: View {
                 Button {
                     showingNewStoryDialog = true
                 } label: {
-                    Label("New Story", systemImage: "plus")
+                    Label(L("New Story"), systemImage: "plus")
                 }
-                .help("Create a new story")
+                .help(L("Create a new story"))
 
                 if viewModel.currentStoryID != nil {
                     Button {
                         importMarkdown()
                     } label: {
-                        Label("Import", systemImage: "square.and.arrow.down")
+                        Label(L("Import"), systemImage: "square.and.arrow.down")
                     }
-                    .help("Import Markdown file as a new chapter")
+                    .help(L("Import Markdown file as a new chapter"))
                 }
 
                 Spacer()
@@ -47,9 +53,9 @@ struct StoryOutlineView: View {
                 OutlineTreeView(viewModel: viewModel)
             }
         }
-        .alert("New Story", isPresented: $showingNewStoryDialog) {
-            TextField("Story Title", text: $newStoryTitle)
-            Button("Create") {
+        .alert(L("New Story"), isPresented: $showingNewStoryDialog) {
+            TextField(L("Story Title"), text: $newStoryTitle)
+            Button(L("Create")) {
                 if !newStoryTitle.isEmpty {
                     Task {
                         await viewModel.createStory(title: newStoryTitle)
@@ -57,11 +63,11 @@ struct StoryOutlineView: View {
                     }
                 }
             }
-            Button("Cancel", role: .cancel) {
+            Button(L("Cancel"), role: .cancel) {
                 newStoryTitle = ""
             }
         } message: {
-            Text("Enter a title for the new story.")
+            Text(L("Enter a title for the new story."))
         }
     }
 
@@ -91,6 +97,12 @@ private struct StoryRow: View {
     let story: Story
     @ObservedObject var viewModel: StoryWriterViewModel
 
+    @Environment(\.locale) private var locale
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, locale: locale)
+    }
+
     var body: some View {
         HStack {
             Image(systemName: "book.fill")
@@ -98,13 +110,16 @@ private struct StoryRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(story.title)
                     .font(.headline)
-                Text("Last edited: \(story.updatedAt.formatted(date: .abbreviated, time: .shortened))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(String(
+                    format: L("Last edited: %@"),
+                    story.updatedAt.formatted(date: .abbreviated, time: .shortened)
+                ))
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
         }
         .contextMenu {
-            Button("Delete") {
+            Button(L("Delete"), role: .destructive) {
                 Task {
                     await viewModel.deleteStory(id: story.id)
                 }
@@ -118,16 +133,22 @@ private struct StoryRow: View {
 private struct OutlineTreeView: View {
     @ObservedObject var viewModel: StoryWriterViewModel
 
+    @Environment(\.locale) private var locale
+
     @State private var showingNewChapterDialog = false
     @State private var newChapterTitle = ""
     @State private var showingNewCharacterDialog = false
     @State private var newCharacterName = ""
 
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, locale: locale)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Chapters section
             OutlineSection(
-                title: "Chapters",
+                title: L("Chapters"),
                 systemImage: "doc.text",
                 onAdd: { showingNewChapterDialog = true }
             ) {
@@ -149,7 +170,7 @@ private struct OutlineTreeView: View {
 
             // Characters section
             OutlineSection(
-                title: "Characters",
+                title: L("Characters"),
                 systemImage: "person.fill",
                 onAdd: { showingNewCharacterDialog = true }
             ) {
@@ -169,9 +190,9 @@ private struct OutlineTreeView: View {
                 }
             }
         }
-        .alert("New Chapter", isPresented: $showingNewChapterDialog) {
-            TextField("Chapter Title", text: $newChapterTitle)
-            Button("Create") {
+        .alert(L("New Chapter"), isPresented: $showingNewChapterDialog) {
+            TextField(L("Chapter Title"), text: $newChapterTitle)
+            Button(L("Create")) {
                 if !newChapterTitle.isEmpty {
                     Task {
                         await viewModel.createChapter(title: newChapterTitle)
@@ -179,15 +200,15 @@ private struct OutlineTreeView: View {
                     }
                 }
             }
-            Button("Cancel", role: .cancel) {
+            Button(L("Cancel"), role: .cancel) {
                 newChapterTitle = ""
             }
         } message: {
-            Text("Enter a title for the new chapter.")
+            Text(L("Enter a title for the new chapter."))
         }
-        .alert("New Character", isPresented: $showingNewCharacterDialog) {
-            TextField("Character Name", text: $newCharacterName)
-            Button("Create") {
+        .alert(L("New Character"), isPresented: $showingNewCharacterDialog) {
+            TextField(L("Character Name"), text: $newCharacterName)
+            Button(L("Create")) {
                 if !newCharacterName.isEmpty {
                     Task {
                         await viewModel.createCharacter(name: newCharacterName)
@@ -195,11 +216,11 @@ private struct OutlineTreeView: View {
                     }
                 }
             }
-            Button("Cancel", role: .cancel) {
+            Button(L("Cancel"), role: .cancel) {
                 newCharacterName = ""
             }
         } message: {
-            Text("Enter a name for the new character.")
+            Text(L("Enter a name for the new character."))
         }
     }
 }
@@ -234,11 +255,17 @@ private struct OutlineSection<Content: View>: View {
 }
 
 private struct OutlineRow: View {
+    @Environment(\.locale) private var locale
+
     let title: String
     let systemImage: String
     let isSelected: Bool
     let onSelect: () -> Void
     let onDelete: () -> Void
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, locale: locale)
+    }
 
     var body: some View {
         Button(action: onSelect) {
@@ -248,6 +275,7 @@ private struct OutlineRow: View {
                     .foregroundStyle(.secondary)
                 Text(title)
                     .lineLimit(1)
+
                 Spacer()
             }
             .padding(.horizontal, 16)
@@ -257,7 +285,7 @@ private struct OutlineRow: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            Button("Delete", role: .destructive, action: onDelete)
+            Button(L("Delete"), role: .destructive, action: onDelete)
         }
     }
 }

@@ -5,8 +5,14 @@ struct ChapterEditorView: View {
     @ObservedObject var viewModel: StoryWriterViewModel
     @State var chapter: Chapter
 
+    @Environment(\.locale) private var locale
+
     @State private var isEditingTitle = false
     @State private var editTitle = ""
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, locale: locale)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,7 +23,7 @@ struct ChapterEditorView: View {
                     .foregroundStyle(.blue)
 
                 if isEditingTitle {
-                    TextField("Chapter Title", text: $editTitle, onCommit: {
+                    TextField(L("Chapter Title"), text: $editTitle, onCommit: {
                         saveTitle()
                     })
                     .font(.title2.bold())
@@ -33,10 +39,10 @@ struct ChapterEditorView: View {
                 Spacer()
 
                 // Status picker
-                Picker("Status", selection: $chapter.status) {
-                    Text("Draft").tag(ChapterStatus.draft)
-                    Text("In Progress").tag(ChapterStatus.inProgress)
-                    Text("Done").tag(ChapterStatus.done)
+                Picker(L("Status"), selection: $chapter.status) {
+                    Text(L("Draft")).tag(ChapterStatus.draft)
+                    Text(L("In Progress")).tag(ChapterStatus.inProgress)
+                    Text(L("Done")).tag(ChapterStatus.done)
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 280)
@@ -47,7 +53,7 @@ struct ChapterEditorView: View {
                         await viewModel.deleteChapter(id: chapter.id)
                     }
                 } label: {
-                    Label("Delete", systemImage: "trash")
+                    Label(L("Delete"), systemImage: "trash")
                 }
             }
             .padding(.horizontal, 16)
@@ -62,12 +68,12 @@ struct ChapterEditorView: View {
 
             // Footer (word count)
             HStack {
-                Text("Word Count: \(chapter.wordCount)")
+                Text(String(format: L("Word Count: %lld"), Int64(chapter.wordCount)))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
                 if chapter.targetWordCount > 0 {
-                    Text("Target: \(chapter.targetWordCount)")
+                    Text(String(format: L("Target: %lld"), Int64(chapter.targetWordCount)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
