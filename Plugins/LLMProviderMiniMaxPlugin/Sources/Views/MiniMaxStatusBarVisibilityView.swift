@@ -9,7 +9,7 @@ struct MiniMaxStatusBarVisibilityView: View {
     }
 
     var body: some View {
-        if selectedProviderID == MiniMaxTokenPlanProvider.info.id {
+        if selectedProviderID == MiniMaxTokenPlanProvider.info.id || selectedProviderID == MiniMaxAnthropicProvider.info.id {
             StatusBarView(network: kernel.network)
         } else {
             EmptyView()
