@@ -42,6 +42,13 @@ final class MiniMaxMessageState: @unchecked Sendable {
     func append(_ event: MiniMaxAnthropicEvent) { lock.lock(); defer { lock.unlock() }; if let value = event.text, !value.isEmpty { if first == nil { first = Date() }; content += value }; if let value = event.thinking, !value.isEmpty { if first == nil { first = Date() }; reasoning += value }; if let id = event.toolID { saveToolLocked(); activeID = id; activeName = event.toolName ?? "" }; if let args = event.toolArguments { activeArgs += args }; stopReason = event.stopReason ?? stopReason }
     @discardableResult
     func finish() -> MiniMaxTextSegments { lock.lock(); defer { lock.unlock() }; let segments = thinkingParser.finish(); if !segments.content.isEmpty { content += segments.content }; if !segments.thinking.isEmpty { reasoning += segments.thinking }; ended = Date(); saveToolLocked(); return segments }
-    private func saveToolLocked() { guard let id = activeID, let name = activeName else { return }; calls.append(LumiToolCall(id: id, name: name, arguments: activeArgs.isEmpty ? "{}" : activeArgs)); activeID = nil; activeName = nil; activeArgs = "" }
+    private func saveToolLocked() {
+        guard let id = activeID, let name = activeName else { return }
+        let arguments = activeArgs.isEmpty ? "{}" : MiniMaxToolArguments.normalized(activeArgs)
+        calls.append(LumiToolCall(id: id, name: name, arguments: arguments))
+        activeID = nil
+        activeName = nil
+        activeArgs = ""
+    }
     func message() -> LumiChatMessage { lock.lock(); defer { lock.unlock() }; let end = ended ?? Date(); return LumiChatMessage(conversationID: conversationID, role: .assistant, content: content, providerID: providerID, modelName: model, rawErrorDetail: error, toolCalls: calls.isEmpty ? nil : calls, reasoningContent: reasoning.isEmpty ? nil : reasoning, inputTokenCount: input, outputTokenCount: output, latencyMs: end.timeIntervalSince(started) * 1000, timeToFirstTokenMs: first.map { $0.timeIntervalSince(started) * 1000 }, streamingDurationMs: first.map { end.timeIntervalSince($0) * 1000 }) }
 }

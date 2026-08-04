@@ -124,6 +124,56 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(message.toolCalls?.first?.arguments == "{}")
     }
 
+    @Test func truncatedOpenAIToolArgumentsAreNormalizedBeforePersistence() {
+        let state = MiniMaxMessageState(
+            conversationID: UUID(),
+            providerID: MiniMaxOpenAIProvider.info.id,
+            model: MiniMaxOpenAIProvider.info.defaultModel,
+            started: Date()
+        )
+        _ = state.append(MiniMaxOpenAIEvent(
+            content: nil,
+            reasoning: nil,
+            toolDeltas: [(
+                id: "call_truncated",
+                name: "write_file",
+                arguments: #"{"content":"code","path":"/tmp/file""#
+            )],
+            stopReason: "tool_calls",
+            done: false,
+            error: nil,
+            inputTokens: nil,
+            outputTokens: nil
+        ))
+        _ = state.finish()
+
+        #expect(state.message().toolCalls?.first?.arguments == "{}")
+    }
+
+    @Test func malformedHistoricalToolArgumentsAreNormalizedBeforeRequest() throws {
+        let malformed = #"{"content":"code","path":"/tmp/file""#
+        let message = LumiChatMessage(
+            conversationID: UUID(),
+            role: .assistant,
+            content: "",
+            toolCalls: [
+                LumiToolCall(id: "call_truncated", name: "write_file", arguments: malformed),
+            ]
+        )
+        let request = LumiLLMRequest(
+            messages: [message],
+            model: MiniMaxOpenAIProvider.info.defaultModel
+        )
+
+        let body = MiniMaxRequestBuilder.openAI(request)
+        let messages = try #require(body["messages"] as? [[String: Any]])
+        let toolCalls = try #require(messages[0]["tool_calls"] as? [[String: Any]])
+        let function = try #require(toolCalls[0]["function"] as? [String: Any])
+
+        #expect(function["arguments"] as? String == "{}")
+        _ = try JSONSerialization.data(withJSONObject: body)
+    }
+
     @Test func openAIEmbeddedThinkTagsAreSeparatedFromContent() {
         let state = MiniMaxMessageState(
             conversationID: UUID(),
