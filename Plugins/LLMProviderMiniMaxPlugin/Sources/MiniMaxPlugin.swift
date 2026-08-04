@@ -63,7 +63,7 @@ public final class MiniMaxPlugin: LumiPlugin {
                 systemImage: "chart.bar.fill",
                 placement: .trailing,
                 statusBarView: {
-                    MiniMaxStatusBarVisibilityView(kernel: kernel)
+                    StatusBarVisibilityView(kernel: kernel)
                 }
             )
         ]

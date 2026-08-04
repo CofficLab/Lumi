@@ -1,7 +1,7 @@
 import LumiKernel
 import SwiftUI
 
-struct MiniMaxStatusBarVisibilityView: View {
+struct StatusBarVisibilityView: View {
     @ObservedObject var kernel: LumiKernel
 
     private var selectedProviderID: String? {
