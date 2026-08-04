@@ -58,6 +58,8 @@ public struct ViewContainerItem: Identifiable, Sendable {
     public let title: String
     public let systemImage: String
     public var order: Int
+    /// 当前容器是否围绕某个项目工作。
+    public let supportsProject: Bool
     /// 可选的视图工厂闭包。如果为 nil，表示该容器仅在 ActivityBar 中显示图标，不提供视图内容。
     public let makeView: (@MainActor @Sendable () -> AnyView)?
     public let railVisibility: ViewContainerVisibility
@@ -71,6 +73,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         id: String,
         title: String,
         systemImage: String,
+        supportsProject: Bool = false,
         railVisibility: ViewContainerVisibility = .visibleByDefault,
         chatVisibility: ViewContainerVisibility = .visibleByDefault,
         panelHeaderVisibility: ViewContainerVisibility = .visibleByDefault,
@@ -82,6 +85,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.title = title
         self.systemImage = systemImage
         self.order = 200  // 默认值，内核会覆盖
+        self.supportsProject = supportsProject
         self.railVisibility = railVisibility
         self.chatVisibility = chatVisibility
         self.panelHeaderVisibility = panelHeaderVisibility
@@ -96,6 +100,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         title: String,
         systemImage: String,
         order: Int,
+        supportsProject: Bool = false,
         railVisibility: ViewContainerVisibility = .visibleByDefault,
         chatVisibility: ViewContainerVisibility = .visibleByDefault,
         panelHeaderVisibility: ViewContainerVisibility = .visibleByDefault,
@@ -107,6 +112,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.title = title
         self.systemImage = systemImage
         self.order = order
+        self.supportsProject = supportsProject
         self.railVisibility = railVisibility
         self.chatVisibility = chatVisibility
         self.panelHeaderVisibility = panelHeaderVisibility
@@ -120,6 +126,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         id: String,
         title: String,
         systemImage: String,
+        supportsProject: Bool = false,
         railVisibility: ViewContainerVisibility = .visibleByDefault,
         chatVisibility: ViewContainerVisibility = .visibleByDefault,
         panelHeaderVisibility: ViewContainerVisibility = .visibleByDefault,
@@ -130,6 +137,7 @@ public struct ViewContainerItem: Identifiable, Sendable {
         self.title = title
         self.systemImage = systemImage
         self.order = 200
+        self.supportsProject = supportsProject
         self.railVisibility = railVisibility
         self.chatVisibility = chatVisibility
         self.panelHeaderVisibility = panelHeaderVisibility
