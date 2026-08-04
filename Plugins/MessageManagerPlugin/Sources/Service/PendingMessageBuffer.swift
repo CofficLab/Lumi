@@ -39,6 +39,11 @@ final class PendingMessageBuffer: @unchecked Sendable {
         }
     }
 
+    func clear(conversationID: UUID) {
+        lock.lock(); defer { lock.unlock() }
+        storage.removeValue(forKey: conversationID)
+    }
+
     /// Mutate a pending message in place and return the updated value.
     @discardableResult
     func update(
