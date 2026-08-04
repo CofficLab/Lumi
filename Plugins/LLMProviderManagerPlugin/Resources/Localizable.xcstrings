@@ -36,6 +36,7 @@
       }
     },
     "%@ API Key required" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

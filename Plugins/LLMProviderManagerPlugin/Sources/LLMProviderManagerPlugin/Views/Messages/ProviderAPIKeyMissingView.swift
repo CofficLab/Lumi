@@ -31,7 +31,10 @@ struct ProviderAPIKeyMissingView: View {
                     .font(.appCallout)
                     .foregroundStyle(theme.primary)
 
-                Text("\(providerName) API Key required")
+                Text(String(
+                    format: LumiPluginLocalization.string("%@ API Key required", bundle: .module),
+                    providerName
+                ))
                     .font(.appCallout)
                     .fontWeight(.semibold)
                     .foregroundStyle(theme.textPrimary)
@@ -39,13 +42,13 @@ struct ProviderAPIKeyMissingView: View {
                 Spacer(minLength: 8)
             }
 
-            Text("Enter an API Key here, then resend your message.")
+            Text(LumiPluginLocalization.string("Enter an API Key here, then resend your message.", bundle: .module))
                 .font(.appCaption)
                 .foregroundStyle(theme.textSecondary)
 
             if let providerWebsiteURL {
                 Link(destination: providerWebsiteURL) {
-                    Label("Open provider website", systemImage: "arrow.up.right.square")
+                    Label(LumiPluginLocalization.string("Open provider website", bundle: .module), systemImage: "arrow.up.right.square")
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
@@ -54,7 +57,7 @@ struct ProviderAPIKeyMissingView: View {
 
             HStack(alignment: .center, spacing: 8) {
                 AppInputField(
-                    LocalizedStringKey("Enter API Key"),
+                    LocalizedStringKey(LumiPluginLocalization.string("Enter API Key", bundle: .module)),
                     text: Binding(
                         get: { apiKey },
                         set: { newValue in
@@ -74,11 +77,11 @@ struct ProviderAPIKeyMissingView: View {
                 ) {
                     isAPIKeyVisible.toggle()
                 }
-                .help(isAPIKeyVisible ? "Hide API Key" : "Show API Key")
+                .help(isAPIKeyVisible ? LumiPluginLocalization.string("Hide API Key", bundle: .module) : LumiPluginLocalization.string("Show API Key", bundle: .module))
             }
 
             if provider == nil {
-                Text("Provider is not registered yet. Open Settings to configure this key.")
+                Text(LumiPluginLocalization.string("Provider is not registered yet. Open Settings to configure this key.", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
             }
@@ -92,7 +95,7 @@ struct ProviderAPIKeyMissingView: View {
                         .padding(.top, 4)
                 }
             } label: {
-                Text("Details")
+                Text(LumiPluginLocalization.string("Details", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
             }

@@ -1,6 +1,11 @@
 import Foundation
+import LocalizationKit
 
 /// Runtime localization for the Lumi plugin string catalog.
+///
+/// Delegates to `LumiLocalization` from LocalizationKit, which correctly
+/// resolves `.xcstrings` catalogs in SPM plugin bundles (unlike the
+/// standard `Bundle.localizedString(forKey:value:table:)` API).
 ///
 /// The xcstrings resource lives in `LLMProviderManagerPlugin` and is shared
 /// across all Lumi plugins that need localized strings. Pass an explicit
@@ -17,8 +22,6 @@ public enum LumiPluginLocalization {
         locale: Locale = .current
     ) -> String {
         let target = bundle ?? resourceBundle
-        let value = target.localizedString(forKey: key, value: nil, table: table)
-        // If the value equals the key, the string wasn't found → return the key itself.
-        return value == key ? key : value
+        return LumiLocalization.string(key, bundle: target, table: table, locale: locale)
     }
 }
