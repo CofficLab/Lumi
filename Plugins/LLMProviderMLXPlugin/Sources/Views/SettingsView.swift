@@ -6,7 +6,7 @@ import SuperLogKit
 import SwiftUI
 
 @available(macOS 14.0, *)
-public struct MLXLocalProviderSettingsView: View, SuperLog {
+public struct SettingsView: View, SuperLog {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "ui.mlx")
 
     @LumiTheme private var theme

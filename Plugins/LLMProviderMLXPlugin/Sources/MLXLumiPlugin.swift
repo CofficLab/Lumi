@@ -1,7 +1,7 @@
-import SwiftUI
 import LLMKit
 import LumiKernel
 import LumiUI
+import SwiftUI
 
 @MainActor
 public final class MLXLumiPlugin: LumiPlugin {
@@ -9,6 +9,7 @@ public final class MLXLumiPlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("MLX", bundle: .module)
     }
+
     public let order = 310
     public let policy: LumiPluginPolicy = .alwaysOn
 
@@ -28,17 +29,16 @@ public final class MLXLumiPlugin: LumiPlugin {
         }
     }
 
-
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
         [MLXLumiProvider()]
     }
-
 
     // MARK: - LumiPlugin stubs
 
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
         [ModelNotDownloadedRenderer.item]
     }
+
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
@@ -55,18 +55,15 @@ public final class MLXLumiPlugin: LumiPlugin {
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
-    /// 注册 MLX 专属设置页。
-    ///
-    /// 4.x 时代这项能力通过 `llmProviderSettingsViews` 提供；当前设置页消费
-    /// `LLMProviderSettingsItem`，迁移时若继续返回空数组，MLX 仍能正常对话，
-    /// 但“设置 → 本地供应商”里不会出现模型下载、暂停/恢复和缓存管理界面。
+
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] {
         [
             LLMProviderSettingsItem(providerID: "mlx") { _ in
-                MLXLocalProviderSettingsView()
+                SettingsView()
             },
         ]
     }
+
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
