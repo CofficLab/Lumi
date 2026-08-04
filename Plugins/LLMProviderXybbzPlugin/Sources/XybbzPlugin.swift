@@ -9,8 +9,9 @@ public final class XybbzPlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("Xybbz", bundle: .module)
     }
+
     public let order = 103
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}

@@ -9,8 +9,9 @@ public final class LPgptPlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("LPgpt", bundle: .module)
     }
+
     public let order = 98
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}

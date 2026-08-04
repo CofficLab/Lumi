@@ -1,8 +1,7 @@
-import SwiftUI
 import LLMKit
 import LumiKernel
-import LumiKernel
 import LumiUI
+import SwiftUI
 
 @MainActor
 public final class HappyCodePlugin: LumiPlugin {
@@ -10,8 +9,9 @@ public final class HappyCodePlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("HappyCode", bundle: .module)
     }
+
     public let order = 96
-	public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
@@ -27,11 +27,9 @@ public final class HappyCodePlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
         [HappyCodeProvider(apiService: LLMAPIService(kernel: kernel))]
     }
-
 
     // MARK: - LumiPlugin stubs
 

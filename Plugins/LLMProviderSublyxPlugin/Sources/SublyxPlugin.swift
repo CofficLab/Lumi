@@ -9,8 +9,9 @@ public final class SublyxPlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("Sublyx", bundle: .module)
     }
+
     public let order = 104
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
@@ -37,6 +38,7 @@ public final class SublyxPlugin: LumiPlugin {
             SublyxRequestFailedRenderer.item,
         ]
     }
+
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }

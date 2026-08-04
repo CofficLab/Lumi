@@ -9,8 +9,9 @@ public final class MegaLLMPlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("MegaLLM", bundle: .module)
     }
+
     public let order = 99
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
