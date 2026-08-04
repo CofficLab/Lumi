@@ -40,3 +40,33 @@ public protocol LumiLLMProvider: Sendable {
     func errorRenderKind(for error: Error) -> String?
     func makeErrorMessage(conversationID: UUID, request: LumiLLMRequest, error: Error, disposition: LumiLLMErrorDisposition) -> LumiChatMessage
 }
+
+/// A non-secret diagnostic for the provider's API key storage.
+public enum LumiLLMProviderAPIKeyDiagnostic: Sendable, Equatable {
+    case configured
+    case missing
+    case inaccessible(String)
+}
+
+public extension LumiLLMProvider {
+    /// Re-reads the key using the same path used by an actual request.
+    /// This is intentionally not based on `getApiKey()`, which may collapse
+    /// Keychain read failures into an empty string.
+    func apiKeyDiagnostic() -> LumiLLMProviderAPIKeyDiagnostic {
+        do {
+            _ = try lumiResolveAPIKey()
+            return .configured
+        } catch let error as LumiLLMProviderSupportError {
+            switch error {
+            case .missingAPIKey:
+                return .missing
+            case .apiKeyAccessFailed(_, let details):
+                return .inaccessible(details)
+            default:
+                return .inaccessible(error.localizedDescription)
+            }
+        } catch {
+            return .inaccessible(error.localizedDescription)
+        }
+    }
+}
