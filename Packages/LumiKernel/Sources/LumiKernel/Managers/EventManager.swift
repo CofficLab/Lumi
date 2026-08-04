@@ -54,6 +54,13 @@ public final class EventManager: ObservableObject, SuperLog {
         post(.conversationDidDelete, object: object, userInfo: userInfo)
     }
 
+    public func postConversationWillDelete(object: Any? = nil, conversationID: UUID) {
+        let userInfo: [AnyHashable: Any] = [
+            LumiNotificationUserInfoKey.conversationID: conversationID,
+        ]
+        post(.conversationWillDelete, object: object, userInfo: userInfo)
+    }
+
     // MARK: - AgentTurnRunner Notifications
 
     public func postMessageSaved(
