@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Editor for a chapter (TextEditor + word count + status).
+/// Editor for a chapter (TextEditor + word count).
 struct ChapterEditorView: View {
     @ObservedObject var viewModel: StoryWriterViewModel
     @State var chapter: Chapter
@@ -37,24 +37,6 @@ struct ChapterEditorView: View {
                 }
 
                 Spacer()
-
-                // Status picker
-                Picker(L("Status"), selection: $chapter.status) {
-                    Text(L("Draft")).tag(ChapterStatus.draft)
-                    Text(L("In Progress")).tag(ChapterStatus.inProgress)
-                    Text(L("Done")).tag(ChapterStatus.done)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 280)
-
-                // Delete button
-                Button {
-                    Task {
-                        await viewModel.deleteChapter(id: chapter.id)
-                    }
-                } label: {
-                    Label(L("Delete"), systemImage: "trash")
-                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -83,9 +65,6 @@ struct ChapterEditorView: View {
             .border(.separator)
         }
         .onChange(of: chapter.content) { _, _ in
-            saveChapter()
-        }
-        .onChange(of: chapter.status) { _, _ in
             saveChapter()
         }
     }

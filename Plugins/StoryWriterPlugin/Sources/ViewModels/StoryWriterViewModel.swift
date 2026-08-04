@@ -26,6 +26,46 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     public init(store: StoryStore) {
         self.store = store
+        observeExternalChanges()
+    }
+
+    // MARK: - External change observation
+
+    private nonisolated(unsafe) var notificationObserver: NSObjectProtocol?
+
+    private func observeExternalChanges() {
+        // Agent tools post this notification after mutating the on-disk story
+        // store. Reload everything to stay in sync.
+        notificationObserver = NotificationCenter.default.addObserver(
+            forName: .storyWriterDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                await self.reloadFromDisk()
+            }
+        }
+    }
+
+    deinit {
+        if let token = notificationObserver {
+            NotificationCenter.default.removeObserver(token)
+        }
+    }
+
+    /// Reload the in-memory snapshot from disk, preserving the current
+    /// `currentStoryID` if it still exists.
+    public func reloadFromDisk() async {
+        let previousID = currentStoryID
+        stories = await store.loadAllStories()
+        if let previousID, stories.contains(where: { $0.id == previousID }) {
+            await selectStory(id: previousID)
+        } else if let first = stories.first {
+            await selectStory(id: first.id)
+        } else {
+            await selectStory(id: nil)
+        }
     }
 
     // MARK: - Stories

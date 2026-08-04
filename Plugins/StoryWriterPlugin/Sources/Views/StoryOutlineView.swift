@@ -49,11 +49,15 @@ struct StoryOutlineView: View {
             .padding(.vertical, 8)
             .border(.separator)
 
-            // Chapter tree for the current story.
+            // Chapter tree fills the remaining vertical space.
             if viewModel.currentStoryID != nil {
                 chapterTree
+                    .frame(maxHeight: .infinity, alignment: .top)
+            } else {
+                Spacer(minLength: 0)
             }
         }
+        .frame(maxHeight: .infinity, alignment: .top)
         .alert(L("New Story"), isPresented: $showingNewStoryDialog) {
             TextField(L("Story Title"), text: $newStoryTitle)
             Button(L("Create")) {
@@ -178,17 +182,21 @@ struct StoryOutlineView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
             } else {
-                ForEach(viewModel.chapters) { chapter in
-                    OutlineRow(
-                        title: chapter.title,
-                        systemImage: "doc.text",
-                        isSelected: viewModel.selectedNodeID == chapter.id
-                    ) {
-                        viewModel.selectedNodeID = chapter.id
-                        viewModel.selectedNodeKind = .chapter
-                    } onDelete: {
-                        Task {
-                            await viewModel.deleteChapter(id: chapter.id)
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(viewModel.chapters) { chapter in
+                            OutlineRow(
+                                title: chapter.title,
+                                systemImage: "doc.text",
+                                isSelected: viewModel.selectedNodeID == chapter.id
+                            ) {
+                                viewModel.selectedNodeID = chapter.id
+                                viewModel.selectedNodeKind = .chapter
+                            } onDelete: {
+                                Task {
+                                    await viewModel.deleteChapter(id: chapter.id)
+                                }
+                            }
                         }
                     }
                 }

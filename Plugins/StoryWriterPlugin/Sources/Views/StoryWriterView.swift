@@ -27,6 +27,7 @@ struct StoryWriterView: View {
             case .chapter:
                 if let chapter = viewModel.selectedChapter() {
                     ChapterEditorView(viewModel: viewModel, chapter: chapter)
+                        .id(chapter.id)
                 } else {
                     emptyState
                 }

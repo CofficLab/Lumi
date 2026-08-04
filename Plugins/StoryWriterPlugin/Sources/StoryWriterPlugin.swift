@@ -74,6 +74,26 @@ public final class StoryWriterPlugin: LumiPlugin, SuperLog {
         ]
     }
 
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            // Stories
+            ListStoriesTool(),
+            GetStoryTool(),
+            CreateStoryTool(),
+            UpdateStoryTool(),
+            DeleteStoryTool(),
+            // Chapters
+            ListChaptersTool(),
+            GetChapterTool(),
+            CreateChapterTool(),
+            UpdateChapterTool(),
+            DeleteChapterTool(),
+            // Import / Export
+            ImportMarkdownAsChapterTool(),
+            ExportStoryAsMarkdownTool(),
+        ]
+    }
+
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
