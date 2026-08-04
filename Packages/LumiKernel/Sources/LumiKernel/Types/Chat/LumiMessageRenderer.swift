@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 消息渲染器条目:由插件贡献,被 `MessageRendering` 管理器统一注册和匹配。
 ///
-/// 渲染闭包 `render` 现在只接收 2 个参数:
+/// 渲染闭包 `render` 接收 2 个参数:
 /// - `LumiChatMessage` — 当前要渲染的消息
 /// - `LumiResponseVerbosity` — 当前对话的响应详细程度(brief / standard / detailed)
 public struct LumiMessageRendererItem: Identifiable, @unchecked Sendable {
@@ -24,21 +24,5 @@ public struct LumiMessageRendererItem: Identifiable, @unchecked Sendable {
         self.render = { message, verbosity in
             AnyView(render(message, verbosity))
         }
-    }
-
-    /// 兼容层:render 只关心 message。
-    @available(*, deprecated, message: "迁移到 2 参数 render (message, verbosity)")
-    public init<Content: View>(
-        id: String,
-        order: Int = 0,
-        canRender: @escaping @MainActor (LumiChatMessage) -> Bool,
-        @ViewBuilder render: @escaping @MainActor (LumiChatMessage) -> Content
-    ) {
-        self.init(
-            id: id,
-            order: order,
-            canRender: canRender,
-            render: { message, _ in render(message) }
-        )
     }
 }
