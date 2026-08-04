@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.7.0</title>
-            <pubDate>Tue, 04 Aug 2026 06:48:43 +0000</pubDate>
-            <sparkle:version>515</sparkle:version>
-            <sparkle:shortVersionString>5.7.0</sparkle:shortVersionString>
+            <title>5.7.1</title>
+            <pubDate>Tue, 04 Aug 2026 11:10:41 +0000</pubDate>
+            <sparkle:version>516</sparkle:version>
+            <sparkle:shortVersionString>5.7.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.7.0</h2>
-<h3>Changes since v5.6.5</h3>
+            <description><![CDATA[<h2>Release v5.7.1</h2>
+<h3>Changes since v5.7.0</h3>
 <ul>
-<li>docs(MessageList): add performance optimization plan and mark P1 streaming decoupling done</li>
-<li>feat: add ConversationAgentTurnCount plugin for sub-agent turn indicator</li>
-<li>feat(AgentTurnRunner): add createTurn, fix resume race, and prefer conversation provider/model</li>
-<li>feat(AgentTurnRunner): implement turn started notification and parent-child turn tracking</li>
-<li>feat(Conversation): add parent-child conversation support and propagate through AgentTurnRunner</li>
-<li>feat(LLMProviderMiniMax): show status bar for Anthropic provider</li>
-<li>feat(LumiKernel): add createTurn entry point for independent agent turns</li>
-<li>feat(LumiKernel): add hasTerminalResult and isTerminalToolBatch helpers</li>
-<li>feat(LumiKernel): add PanelRailTabVisibility to filter rail tabs per view container</li>
-<li>feat(LumiKernel): add turn started notification and parent-child turn tracking</li>
-<li>feat(LumiKernel): expose streamingConversationID on MessageStreaming protocol</li>
-<li>feat(MessageManager): defer persistence of updates via PendingMessageBuffer</li>
-<li>feat(StoryWriterPlugin): add "Add to Chat" context menu for chapters and mark plugin as beta</li>
-<li>feat(StoryWriterPlugin): add story writing workspace plugin</li>
-<li>fix(GitPlugin): cap path length and repository search depth in service layer</li>
-<li>fix(MessageListPlugin): move bottom breathing room inside anchor to prevent extra scrollable space</li>
-<li>fix(MessageListPlugin): prevent cross-conversation streaming from rebuilding rows</li>
-<li>fix(StoryWriterPlugin): fix chapter detail not updating when switching chapters and add agent tools</li>
-<li>fix(StoryWriterPlugin): localize all user-visible strings and complete translations</li>
-<li>perf(MarkdownKit): cache block parses on the init path and inline parses via async upgrade</li>
+<li>feat(ActivityHeatmap): adjust bar chart heights and format Y-axis labels</li>
+<li>feat(AgentTurnRunnerPlugin): cascade cancelTurn to child turns sharing parent</li>
+<li>feat(ConversationListPlugin): add "Project" rail tab to show conversations scoped to current project</li>
+<li>feat(ConversationListPlugin): OnConversationSelectedHook attach in onReady and scoped header title</li>
+<li>feat(ConversationManagerPlugin): cascade delete conversation-related data including child conversations and tool calls</li>
+<li>feat(LLMProviderMiniMaxPlugin): preserve and display raw error response</li>
+<li>feat(LLMProviderMiniMaxPlugin): preserve HTTPNetworkError body for error display</li>
+<li>feat(LumiFactory): register StateMonitorPlugin</li>
+<li>feat(LumiKernel): add deleteToolCalls(for:) to ToolManaging protocol</li>
+<li>feat(LumiKernel): constrain ConversationManaging publisher for existentials and cross-package observation</li>
+<li>feat(StateMonitorPlugin): add OnGlobalProviderModelSyncHook to sync global provider/model to current conversation</li>
+<li>feat(StateMonitorPlugin): clear selected conversation when current project changes</li>
+<li>feat(StateMonitorPlugin): extract conversation→project sync hook into dedicated always-on plugin</li>
+<li>feat(StateMonitorPlugin): sync conversation's provider/model to kernel when selection changes</li>
+<li>feat(ToolManagerPlugin): implement deleteToolCalls(for:) with conversation isolation and write-behind flush</li>
+<li>fix(ConversationInputPlugin): reduce input lag and restore Return submission</li>
+<li>fix(ConversationListPlugin): move delete context menu to row level for macOS right-click</li>
+<li>fix(LLMProviderManagerPlugin): post notifications when provider/model changes</li>
+<li>fix(LLMProviderMiniMaxPlugin): normalize truncated tool-call arguments to avoid MiniMax error 2013</li>
+<li>fix(MessageManagerPlugin): drain PendingMessageBuffer before deleting conversation</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.7.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.7.1</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.7.0/Lumi_5.7.0_arm64.dmg" length="39707488" type="application/octet-stream" sparkle:edSignature="gOe2FJpweHpJiDZqgfa3DL85A6FqUTXDLLETA4v3GAKOpk2FnGLsV7tQ4EKrewwtCQyEsJpBX+Tyopvg9edbDg=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.7.1/Lumi_5.7.1_arm64.dmg" length="40825117" type="application/octet-stream" sparkle:edSignature="VpC7uGF0dACN7GqR0BPn5Bnk9/5u2j0IPmmX/Mdy2Rha8onErRPS2T9gHAOiVY4po+LDKmB2LRuWQMp/iIuUBw=="/>
         </item>
     </channel>
 </rss>
