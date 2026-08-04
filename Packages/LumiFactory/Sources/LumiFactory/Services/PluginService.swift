@@ -96,6 +96,7 @@ import NetworkManagerPlugin
 import OnboardingPlugin
 import OpenInAntigravityPlugin
 import OpenInCursorPlugin
+import OpenInVSCodePlugin
 import OpenInFinderPlugin
 import OpenInGitHubDesktopPlugin
 import OpenInGitOKPlugin
@@ -301,6 +302,7 @@ public enum PluginService {
             AgentOpenInFinderPlugin(),
             AgentOpenInXcodePlugin(),
             AgentOpenInCursorPlugin(),
+            AgentOpenInVSCodePlugin(),
             AgentOpenInAntigravityPlugin(),
             AgentOpenInGitHubDesktopPlugin(),
             AgentOpenInGitOKPlugin(),
