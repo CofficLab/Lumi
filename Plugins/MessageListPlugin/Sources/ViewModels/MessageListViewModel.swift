@@ -96,6 +96,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// without making static history pay that cost.
     var isStreaming: Bool {
         guard let streaming = kernel.messageStreaming else { return false }
+        guard streaming.streamingConversationID == selectedConversationID else { return false }
         return streaming.currentStage != .idle || streaming.currentStreamingRow != nil
     }
 
@@ -273,7 +274,11 @@ final class MessageListViewModel: ObservableObject, SuperLog {
                 .map { _ in () }
                 .eraseToAnyPublisher()
                 .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in self?.rebuildRows() }
+                .sink { [weak self, weak streaming] _ in
+                    guard let self, let streaming,
+                          streaming.streamingConversationID == self.selectedConversationID else { return }
+                    self.rebuildRows()
+                }
                 .store(in: &cancellables)
         }
         if let sender = kernel.messageSender {
@@ -291,13 +296,21 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// 切会话时其他会话的流式行会被 RowBuilder 按 conversationID 自动过滤。
     private func rebuildRows() {
         let verbosity = self.verbosity
-        displayRows = rowBuilder.build(
+        let rows = rowBuilder.build(
             persisted: persistedMessages,
             conversationID: selectedConversationID,
             streaming: kernel.messageStreaming,
             verbosity: verbosity
         )
-        let content = kernel.messageStreaming?.currentStreamingRow?.content
+        if displayRows != rows {
+            displayRows = rows
+        }
+
+        let streaming = kernel.messageStreaming
+        let isCurrentConversationStreaming = streaming?.streamingConversationID == selectedConversationID
+        let content = isCurrentConversationStreaming
+            ? streaming?.currentStreamingRow?.content
+            : nil
         if tailStreamingContent != content {
             tailStreamingContent = content
         }
