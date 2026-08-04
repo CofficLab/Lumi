@@ -1,4 +1,5 @@
 import Foundation
+import LumiKernel
 
 /// Runtime bridge for accessing the view model from plugin contribution closures.
 ///
@@ -7,4 +8,5 @@ import Foundation
 @MainActor
 public enum RuntimeBridge {
     public static var viewModel: StoryWriterViewModel?
+    public static var kernel: LumiKernel?
 }

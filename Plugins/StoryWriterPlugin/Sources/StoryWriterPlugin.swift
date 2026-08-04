@@ -23,7 +23,7 @@ public final class StoryWriterPlugin: LumiPlugin, SuperLog {
     }
     public let order = 90
     public let policy: LumiPluginPolicy = .optIn
-
+    public let stage: LumiPluginStage = .beta
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
@@ -37,6 +37,7 @@ public final class StoryWriterPlugin: LumiPlugin, SuperLog {
         let store = StoryStore(pluginDirectory: storageDirectory)
         let viewModel = StoryWriterViewModel(store: store)
         RuntimeBridge.viewModel = viewModel
+        RuntimeBridge.kernel = kernel
 
         // Initial load
         await viewModel.loadStories()
@@ -67,7 +68,8 @@ public final class StoryWriterPlugin: LumiPlugin, SuperLog {
             PanelRailTabItem(
                 id: "\(id).outline",
                 title: LumiPluginLocalization.string("Story Outline"),
-                systemImage: "list.bullet.rectangle.portrait"
+                systemImage: "list.bullet.rectangle.portrait",
+                visibility: .viewContainer(id: id)
             ) {
                 StoryOutlineRootView()
             },

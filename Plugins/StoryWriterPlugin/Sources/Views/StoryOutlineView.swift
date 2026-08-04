@@ -188,15 +188,20 @@ struct StoryOutlineView: View {
                             OutlineRow(
                                 title: chapter.title,
                                 systemImage: "doc.text",
-                                isSelected: viewModel.selectedNodeID == chapter.id
-                            ) {
-                                viewModel.selectedNodeID = chapter.id
-                                viewModel.selectedNodeKind = .chapter
-                            } onDelete: {
-                                Task {
-                                    await viewModel.deleteChapter(id: chapter.id)
+                                isSelected: viewModel.selectedNodeID == chapter.id,
+                                onAddToChat: {
+                                    addToChat(chapter: chapter)
+                                },
+                                onSelect: {
+                                    viewModel.selectedNodeID = chapter.id
+                                    viewModel.selectedNodeKind = .chapter
+                                },
+                                onDelete: {
+                                    Task {
+                                        await viewModel.deleteChapter(id: chapter.id)
+                                    }
                                 }
-                            }
+                            )
                         }
                     }
                 }
@@ -224,6 +229,21 @@ struct StoryOutlineView: View {
             }
         }
     }
+
+    /// Append chapter path to the conversation input via the kernel service.
+    private func addToChat(chapter: Chapter) {
+        guard let conversationInput = RuntimeBridge.kernel?.conversationInput else { return }
+        guard let story = viewModel.currentStory else { return }
+
+        let text = "\(story.title) - \(chapter.title)"
+
+        if conversationInput.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            conversationInput.text = text
+        } else {
+            conversationInput.text = conversationInput.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                + "\n" + text
+        }
+    }
 }
 
 // MARK: - Outline Row
@@ -234,6 +254,7 @@ private struct OutlineRow: View {
     let title: String
     let systemImage: String
     let isSelected: Bool
+    let onAddToChat: () -> Void
     let onSelect: () -> Void
     let onDelete: () -> Void
 
@@ -259,6 +280,11 @@ private struct OutlineRow: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
+            Button {
+                onAddToChat()
+            } label: {
+                Label(L("Add to Chat"), systemImage: "bubble.left")
+            }
             Button(L("Delete"), role: .destructive, action: onDelete)
         }
     }
