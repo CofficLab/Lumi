@@ -9,6 +9,12 @@ import SwiftUI
 /// 当前职责:
 /// - `OnConversationSelectedHook`:选中对话后,自动跟随其绑定的项目
 ///   (`kernel.conversations?.objectWillChange` → `kernel.project.openProject(at:)`)。
+/// - `OnProjectChangedHook`:当前项目切换时,清空当前选中的对话
+///   (`kernel.project.objectWillChange` → `kernel.conversations.deselectConversation()`)。
+///
+/// 两条 hook 形成对称联动:
+///   - 选中对话 → 跟随对话绑定的项目;
+///   - 项目变化 → 清空当前对话,避免旧对话与新项目不一致。
 ///
 /// 设计意图:
 /// - 不产生新的状态源,只在已有状态之间建立联动规则;
@@ -30,6 +36,7 @@ public final class StateMonitorPlugin: LumiPlugin {
     // MARK: - Hooks
 
     private let selectedProjectHook = OnConversationSelectedHook()
+    private let projectChangedHook = OnProjectChangedHook()
 
     // MARK: - Init
 
@@ -46,10 +53,12 @@ public final class StateMonitorPlugin: LumiPlugin {
         // `ConversationManagerPlugin` 在我们之前注册),实际在 onBoot 阶段
         // 就已可用,但放 onReady 跟项目里其他 Hook 一致。
         selectedProjectHook.attach(kernel: kernel)
+        projectChangedHook.attach(kernel: kernel)
     }
 
     public func onDisable(kernel: LumiKernel) async throws {
         selectedProjectHook.detach()
+        projectChangedHook.detach()
     }
 
     // MARK: - Empty contribution points

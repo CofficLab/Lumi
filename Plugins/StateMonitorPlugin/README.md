@@ -14,8 +14,24 @@ Lumi 的运行时状态联动层。
   与 `kernel.project?.currentProject.path` 不一致时,自动调用
   `project.openProject(at:)` 跟随切换。
 
-实现位于 `Sources/StateMonitorPlugin/Hooks/OnConversationSelectedHook.swift`。
-从 `ConversationListPlugin` 迁出,实现保持不变。
+- **项目切换 → 清空当前对话**:
+  监听 `kernel.project.objectWillChange`,当 `currentProject.path` 实际发生
+  变化时,自动调用 `kernel.conversations?.deselectConversation()`,
+  把 `selectedConversationID` 置为 `nil`,避免旧对话与新项目状态不一致。
+
+实现位于 `Sources/StateMonitorPlugin/Hooks/`:
+
+- `OnConversationSelectedHook.swift` — 从 `ConversationListPlugin` 迁出,
+  实现保持不变。
+- `OnProjectChangedHook.swift` — 新增,与上一条形成对称联动:
+
+  | 触发源                     | 反应                                  |
+  | -------------------------- | ------------------------------------- |
+  | 对话选中(且绑定项目)     | 跟随切换到对话绑定的项目 |
+  | 当前项目变化             | 清空当前选中的对话            |
+
+  `deselectConversation()` 只重置 `selectedConversationID`,不会触发
+  `kernel.project.objectWillChange`,因此不会自我循环。
 
 ## Policy
 
