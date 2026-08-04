@@ -8,9 +8,8 @@ let stepFunPluginDataDirectoryName = "LLMProviderStepFunPlugin"
 @MainActor
 public final class StepFunPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.stepfun"
-    public var name: String {
-        LumiPluginLocalization.string("StepFun StepPlan", bundle: .module)
-    }
+    public var name: String = "StepFun StepPlan"
+
     public let order = 93
     public let policy: LumiPluginPolicy = .alwaysOn
     public var category: LumiPluginCategory { .llmProvider }
@@ -72,6 +71,7 @@ public final class StepFunPlugin: LumiPlugin {
             RequestFailedRenderer.item,
         ]
     }
+
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
