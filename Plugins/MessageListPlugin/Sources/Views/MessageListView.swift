@@ -58,19 +58,24 @@ struct MessageListView: View {
         GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
-                    // 静态历史使用 LazyVStack,避免把当前窗口内的所有消息都创建并布局。
-                    // 流式期间暂时保留 VStack:displayRows 会以 token 频率变化,后续再把
-                    // 流式尾部拆成独立视图,从而也能在流式场景安全使用 LazyVStack。
-                    Group {
-                        if viewModel.isStreaming {
-                            VStack(spacing: 0) {
-                                messageRows(proxy: proxy)
-                            }
-                        } else {
-                            LazyVStack(spacing: 0) {
-                                messageRows(proxy: proxy)
-                            }
+                    // History and the live tail have separate update paths.
+                    // Token updates only replace streamingRow; historical rows
+                    // keep their LazyVStack identity and layout cache.
+                    LazyVStack(spacing: 0) {
+                        historyRows(proxy: proxy)
+
+                        if let message = viewModel.streamingRow {
+                            MessageRowView(
+                                kernel: kernel,
+                                message: message,
+                                verbosity: viewModel.verbosity
+                            )
+                            .id(message.id)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 4)
                         }
+
+                        bottomAnchor
                     }
                     .padding(.vertical, 4)
                     // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
@@ -95,7 +100,7 @@ struct MessageListView: View {
                     // 首屏数据就绪后,滚到最底部(无动画)。
                     scrollCoordinator.scrollToBottom(
                         proxy: proxy,
-                        messages: viewModel.displayRows,
+                        messages: viewModel.historyRows,
                         animated: false
                     )
                 }
@@ -107,14 +112,14 @@ struct MessageListView: View {
                         if wasAtBottom {
                             await scrollCoordinator.scrollToBottomAfterLayout(
                                 proxy: proxy,
-                                messages: viewModel.displayRows
+                                messages: viewModel.historyRows
                             )
                         }
                     }
                 }
                 // 流式跟随滚动:流式行内容变化时,
                 // 若用户停在底部则跟随滚到底(无动画,避免高频 delta 抖动)。
-                .onChange(of: viewModel.tailStreamingContent) { _ in
+                .onChange(of: viewModel.tailStreamingContent) { _, _ in
                     if isAtBottom {
                         proxy.scrollTo(MessageListScrollCoordinator.bottomAnchorID, anchor: .bottom)
                     }
@@ -123,9 +128,10 @@ struct MessageListView: View {
         }
     }
 
-    /// Shared row content for the eager streaming stack and virtualized history stack.
+    /// Stable historical rows. The live streaming tail is rendered separately
+    /// so token updates do not rebuild this collection.
     @ViewBuilder
-    private func messageRows(proxy: ScrollViewProxy) -> some View {
+    private func historyRows(proxy: ScrollViewProxy) -> some View {
         // 顶部"加载更早消息":仅在还有更早消息时显示。
         if viewModel.hasEarlierMessages {
             Button {
@@ -144,7 +150,7 @@ struct MessageListView: View {
             .padding(.vertical, 8)
         }
 
-        ForEach(viewModel.displayRows) { message in
+        ForEach(viewModel.historyRows) { message in
             MessageRowView(
                 kernel: kernel,
                 message: message,
@@ -155,9 +161,6 @@ struct MessageListView: View {
             .padding(.vertical, 4)
         }
 
-        // 底部锚点:通过它的几何位置判断 isAtBottom。
-        bottomAnchor
-            .padding(.bottom, 24)
     }
 
     /// 底部锚点行:1pt 高的透明视图,报告其全局 max-Y。
