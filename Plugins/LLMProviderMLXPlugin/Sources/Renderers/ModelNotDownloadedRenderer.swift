@@ -16,7 +16,7 @@ enum ModelNotDownloadedRenderer {
         canRender: { message in
             MLXRenderKind.matchesModelNotDownloaded(message)
         },
-        render: { message in
+        render: { message, _ in
             ModelNotDownloadedView(message: message)
         }
     )
