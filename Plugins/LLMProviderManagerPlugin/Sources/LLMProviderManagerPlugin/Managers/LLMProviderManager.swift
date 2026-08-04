@@ -132,6 +132,8 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
         if Self.verbose {
             Self.logger.info("\(Self.t)selectProvider ➡️ 已选择 id=\(id)")
         }
+        // Post notification for UI updates
+        NotificationCenter.default.post(name: .lumiSelectedRemoteProviderIDDidChange, object: nil)
     }
 
     // MARK: - Model Selection
@@ -155,6 +157,8 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
         if Self.verbose {
             Self.logger.info("\(Self.t)selectModel ➡️ 已选择 provider=\(providerID), model=\(model)")
         }
+        // Post notification for UI updates
+        NotificationCenter.default.post(name: .lumiSelectedModelsDidChange, object: nil)
     }
 
     // MARK: - Send
