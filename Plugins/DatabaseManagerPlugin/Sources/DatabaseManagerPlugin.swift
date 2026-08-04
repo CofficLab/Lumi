@@ -1,8 +1,8 @@
-import SwiftUI
 import LumiKernel
 import LumiUI
 import os
 import SuperLogKit
+import SwiftUI
 
 @MainActor
 public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
@@ -14,8 +14,10 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     public var name: String {
         LumiPluginLocalization.string("Database", bundle: .module)
     }
+
     public let order = 750
     public let policy: LumiPluginPolicy = .optIn
+    public let category: LumiPluginCategory = .development
 
     public init() {}
 
@@ -44,14 +46,13 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
                 panelBottomVisibility: .unsupported
             ) {
                 AnyView(DatabaseMainView())
-            }
+            },
         ]
     }
 
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(DatabaseManagerAboutView())
     }
-
 
     // MARK: - LumiPlugin stubs
 
