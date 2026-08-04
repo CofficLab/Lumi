@@ -68,9 +68,6 @@ public protocol LumiPlugin: AnyObject {
     /// 提供 LLM Provider 实现
     func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider]
 
-    /// 提供子 Agent 定义
-    func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition]
-
     /// 提供 Agent 工具
     func agentTools(kernel: LumiKernel) -> [any LumiAgentTool]
 

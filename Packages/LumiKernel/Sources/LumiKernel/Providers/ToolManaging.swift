@@ -26,15 +26,6 @@ public protocol ToolManaging: AnyObject {
     /// collects tools registered without a plugin id.
     func agentToolsGroupedByPlugin() -> [(pluginID: String, tools: [any LumiAgentTool])]
 
-    /// All sub-agent definitions
-    func allSubAgents() -> [LumiSubAgentDefinition]
-
-    /// Add a sub-agent definition
-    func addSubAgent(_ subAgent: LumiSubAgentDefinition)
-
-    /// Remove all registered sub-agent definitions during contribution rebuilds.
-    func removeAllSubAgents()
-
     // MARK: - Execution (agent loop calls these)
 
     /// Find a tool by name

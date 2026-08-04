@@ -70,7 +70,8 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
             if let persistedSelectedID,
                !loaded.contains(where: { $0.id == persistedSelectedID }),
-               let selected = await store.fetchConversation(id: persistedSelectedID) {
+               let selected = await store.fetchConversation(id: persistedSelectedID),
+               selected.parentConversationID == nil {
                 loaded.append(selected)
             }
 
@@ -90,6 +91,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                 self.isLoadingConversations = false
                 self.notifyConversationsChanged()
 
+
                 if Self.verbose {
                     Self.logger.info("\(Self.t)Loaded \(loaded.count) conversations")
                 }
@@ -100,13 +102,28 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     /// Load a bounded conversation page for settings/history UIs.
     public func fetchConversationPage(
         limit: Int,
-        beforeUpdatedAt: Date? = nil,
-        beforeID: UUID? = nil
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?
+    ) async -> [LumiConversationSummary] {
+        await fetchConversationPage(
+            limit: limit,
+            beforeUpdatedAt: beforeUpdatedAt,
+            beforeID: beforeID,
+            includingChildConversations: false
+        )
+    }
+
+    public func fetchConversationPage(
+        limit: Int,
+        beforeUpdatedAt: Date?,
+        beforeID: UUID?,
+        includingChildConversations: Bool
     ) async -> [LumiConversationSummary] {
         await store?.fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
-            beforeID: beforeID
+            beforeID: beforeID,
+            includingChildConversations: includingChildConversations
         ) ?? []
     }
 
@@ -131,7 +148,14 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     }
 
     public func conversationCount(projectPath: String?) async -> Int {
-        await store?.conversationCount(projectPath: projectPath) ?? 0
+        await store?.conversationCount(projectPath: projectPath, includingChildConversations: false) ?? 0
+    }
+
+    public func conversationCount(projectPath: String?, includingChildConversations: Bool) async -> Int {
+        await store?.conversationCount(
+            projectPath: projectPath,
+            includingChildConversations: includingChildConversations
+        ) ?? 0
     }
 
     /// Fetch daily conversation counts without loading conversation summaries.
@@ -147,6 +171,22 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     // MARK: - ConversationManaging
 
     public func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID {
+        try createConversation(
+            title: title,
+            projectPath: projectPath,
+            providerID: providerID,
+            modelName: modelName,
+            parentConversationID: nil
+        )
+    }
+
+    public func createConversation(
+        title: String?,
+        projectPath: String?,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
         let now = Date()
         let id = UUID()
         let conversationTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -180,14 +220,17 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             automationLevel: effectiveAutomationLevel,
             providerID: effectiveProviderID,
             modelName: effectiveModelName,
-            projectPath: effectiveProjectPath
+            projectPath: effectiveProjectPath,
+            parentConversationID: parentConversationID
         )
 
         // Add to the bounded in-memory cache immediately.
-        cache(conversation)
-        selectedConversationID = id
-        updateCurrentTitle()
-        persistSelectedConversationID()
+        if parentConversationID == nil {
+            cache(conversation)
+            selectedConversationID = id
+            updateCurrentTitle()
+            persistSelectedConversationID()
+        }
 
         // Persist first, then notify the list. Otherwise the list may query the
         // database before this conversation is stored and conclude that nothing
@@ -201,7 +244,8 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                     createdAt: now,
                     providerID: effectiveProviderID,
                     modelName: effectiveModelName,
-                    projectPath: effectiveProjectPath
+                    projectPath: effectiveProjectPath,
+                    parentConversationID: parentConversationID
                 )
                 self.notifyConversationsChanged()
             } catch {
@@ -228,6 +272,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     }
 
     private func cache(_ summary: LumiConversationSummary) {
+        guard summary.parentConversationID == nil else { return }
         if let index = conversations.firstIndex(where: { $0.id == summary.id }) {
             conversations[index] = summary
         } else {

@@ -150,16 +150,9 @@ struct ToolStatsRowView: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(stats.toolDisplayName)
-                    .font(.appBody)
-                    .lineLimit(1)
-
-                Text(stats.toolName)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
+            Text(stats.toolName)
+                .font(.appBody)
+                .lineLimit(1)
 
             Spacer()
 

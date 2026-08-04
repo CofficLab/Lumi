@@ -457,8 +457,14 @@ public struct ConversationStoreSettingsView: View {
         guard conversations.isEmpty, isLoadingConversations else { return }
 
         isLoadingConversations = true
-        async let page = conversationManager.fetchConversationPage(limit: conversationPageSize)
-        async let count = conversationManager.conversationCount()
+        async let page = conversationManager.fetchConversationPage(
+            limit: conversationPageSize,
+            includingChildConversations: true
+        )
+        async let count = conversationManager.conversationCount(
+            projectPath: nil,
+            includingChildConversations: true
+        )
         async let series = conversationManager.fetchDailyCountSeries()
         let (loaded, total, dailySeries) = await (page, count, series)
         conversations = loaded
@@ -480,7 +486,8 @@ public struct ConversationStoreSettingsView: View {
         let page = await conversationManager.fetchConversationPage(
             limit: conversationPageSize,
             beforeUpdatedAt: last.updatedAt,
-            beforeID: last.id
+            beforeID: last.id,
+            includingChildConversations: true
         )
         conversations.append(contentsOf: page)
         hasMoreConversations = page.count == conversationPageSize

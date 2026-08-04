@@ -77,35 +77,12 @@ public struct AskUserStandardView: View {
     private var optionsList: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(response.options) { option in
-                Button {
-                    submitAnswer(option.label)
-                } label: {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(option.label)
-                                .font(.system(size: 13))
-                            if let description = option.description {
-                                Text(description)
-                                    .font(.system(size: 11))
-                                    .foregroundColor(theme.textSecondary)
-                                    .lineLimit(2)
-                            }
-                        }
-                        Spacer()
-                        Image(systemName: selectedAnswer == option.label ? "checkmark.circle.fill" : "chevron.right")
-                            .font(.system(size: 10))
-                            .foregroundColor(selectedAnswer == option.label ? theme.success : theme.textSecondary)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(selectedAnswer == option.label ? theme.success.opacity(0.12) : theme.elevatedSurface)
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(responded)
-                .opacity(responded && selectedAnswer != option.label ? 0.55 : 1)
+                AskUserOptionRow(
+                    option: option,
+                    selectedAnswer: selectedAnswer,
+                    responded: responded,
+                    onSelect: submitAnswer
+                )
             }
         }
     }

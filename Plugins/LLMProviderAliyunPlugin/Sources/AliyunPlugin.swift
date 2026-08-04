@@ -38,7 +38,6 @@ public final class AliyunPlugin: LumiPlugin {
 
     // MARK: - LumiPlugin stubs
 
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
         [
             ApiKeyMissingRenderer.item,

@@ -36,7 +36,6 @@ public final class MLXLumiPlugin: LumiPlugin {
 
     // MARK: - LumiPlugin stubs
 
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
         [ModelNotDownloadedRenderer.item]
     }

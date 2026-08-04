@@ -80,6 +80,22 @@ public final class ConversationService: ConversationManaging {
     // MARK: - ConversationManaging
 
     public func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID {
+        try createConversation(
+            title: title,
+            projectPath: projectPath,
+            providerID: providerID,
+            modelName: modelName,
+            parentConversationID: nil
+        )
+    }
+
+    public func createConversation(
+        title: String?,
+        projectPath: String?,
+        providerID: String?,
+        modelName: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
         let now = Date()
         let id = UUID()
         let normalizedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -93,7 +109,8 @@ public final class ConversationService: ConversationManaging {
             updatedAt: now,
             providerID: providerID,
             modelName: modelName,
-            projectPath: projectPath
+            projectPath: projectPath,
+            parentConversationID: parentConversationID
         )
 
         conversations.insert(conversation, at: 0)

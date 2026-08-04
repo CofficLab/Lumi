@@ -40,7 +40,6 @@ public final class MiniMaxPlugin: LumiPlugin {
         ]
     }
 
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
         [
             ApiKeyMissingRenderer.item,
@@ -64,7 +63,7 @@ public final class MiniMaxPlugin: LumiPlugin {
                 systemImage: "chart.bar.fill",
                 placement: .trailing,
                 statusBarView: {
-                    MiniMaxStatusBarVisibilityView(kernel: kernel)
+                    StatusBarVisibilityView(kernel: kernel)
                 }
             )
         ]

@@ -17,39 +17,95 @@ import SuperLogKit
 ///
 /// Sends notifications:
 /// - `.lumiMessageSaved` after each message is persisted
+/// - `.lumiTurnStarted` when a turn starts running
 /// - `.lumiTurnCompleted` when turn ends normally (completed)
 /// - `.lumiTurnFinished` when turn ends (any reason)
 @MainActor
 public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-turn-runner")
     public nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // MARK: - Properties
 
-    private weak var kernel: LumiKernel?
-    private var activeTurnTasks: [UUID: Task<Void, Never>] = [:]
-    private var cancelledConversations: Set<UUID> = []
+    weak var kernel: LumiKernel?
+    var activeTurnTasks: [UUID: Task<Void, Never>] = [:]
+    var cancelledConversations: Set<UUID> = []
     /// 因工具请求用户交互而暂停的对话。
-    private var awaitingConversations: Set<UUID> = []
-    private var suspensions: [UUID: AgentTurnSuspension] = [:]
-    private var turnStates: [UUID: AgentTurnState] = [:]
-    private var turnIDs: [UUID: UUID] = [:]
-    private var resumingTurnIDs: Set<UUID> = []
-    private var failedConversations: Set<UUID> = []
-    private var pendingChildWorks: [UUID: [String: AgentTurnChildWork]] = [:]
-    private var activeChildWorks: [UUID: Task<Void, Never>] = [:]
+    var awaitingConversations: Set<UUID> = []
+    /// All suspended calls in the current assistant tool-call batch, keyed by
+    /// their original tool-call ID. A batch may contain multiple ask_user
+    /// calls, so one suspension per conversation is not sufficient.
+    var pendingSuspensions: [UUID: [String: AgentTurnSuspension]] = [:]
+    var suspensions: [UUID: AgentTurnSuspension] = [:]
+    var turnStates: [UUID: AgentTurnState] = [:]
+    var turnIDs: [UUID: UUID] = [:]
+    var resumingTurnIDs: Set<UUID> = []
+    var failedConversations: Set<UUID> = []
+    var pendingChildWorks: [UUID: [String: AgentTurnChildWork]] = [:]
+    var activeChildWorks: [UUID: Task<Void, Never>] = [:]
+    var turnCreationExcludedToolNames: [UUID: Set<String>] = [:]
+    var parentConversationIDs: [UUID: UUID] = [:]
 
     // MARK: - Initialization
 
     public init(kernel: LumiKernel) {
         self.kernel = kernel
-        if Self.verbose {
-            Self.logger.info("\(Self.t)AgentTurnRunnerService")
-        }
     }
 
     // MARK: - AgentTurnManaging
+
+    public func createTurn(_ request: AgentTurnCreationRequest) async throws -> AgentTurnHandle {
+        let task = request.task.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !task.isEmpty, let kernel else {
+            throw AgentTurnManagingError.invalidCreationRequest
+        }
+        guard let conversations = kernel.conversations else {
+            throw LumiKernelError.serviceNotAvailable(service: "Conversation")
+        }
+        guard let messageManager = kernel.messageManager else {
+            throw LumiKernelError.serviceNotAvailable(service: "Message")
+        }
+
+        let conversationID = try conversations.createConversation(
+            title: request.title,
+            projectPath: kernel.project?.currentProject?.path,
+            providerID: request.providerID,
+            modelName: request.modelID,
+            parentConversationID: request.parentConversationID
+        )
+        parentConversationIDs[conversationID] = request.parentConversationID
+        defer { parentConversationIDs.removeValue(forKey: conversationID) }
+        turnCreationExcludedToolNames[conversationID] = request.excludedToolNames
+        defer { turnCreationExcludedToolNames.removeValue(forKey: conversationID) }
+
+        if let systemPrompt = request.systemPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !systemPrompt.isEmpty {
+            messageManager.insertMessage(
+                LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .system,
+                    content: systemPrompt
+                ),
+                to: conversationID
+            )
+        }
+
+        messageManager.insertMessage(
+            LumiChatMessage(
+                conversationID: conversationID,
+                role: .user,
+                content: task
+            ),
+            to: conversationID
+        )
+
+        _ = try await runTurn(in: conversationID)
+        guard let turnID = currentTurnID(for: conversationID) else {
+            throw AgentTurnManagingError.turnFailed
+        }
+        return AgentTurnHandle(conversationID: conversationID, turnID: turnID)
+    }
 
     public func runTurn(in conversationID: UUID) async throws -> AgentTurnOutcome {
         if Self.verbose {
@@ -82,6 +138,11 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             await self.executeTurnLoop(conversationID: conversationID)
         }
         activeTurnTasks[conversationID] = task
+        postTurnStartedNotification(
+            conversationID: conversationID,
+            turnID: turnID,
+            parentConversationID: parentConversationIDs[conversationID]
+        )
 
         // Wait for turn to complete
         await task.value
@@ -124,15 +185,30 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         in conversationID: UUID,
         request: AgentTurnResumeRequest
     ) async throws -> AgentTurnOutcome {
-        let suspension = suspensions[conversationID] ?? persistedSuspension(for: conversationID)
+        // The suspended tool posts its message-change notification before the
+        // outer runTurn() has removed activeTurnTasks. A user can therefore
+        // answer while that task is still unwinding. Wait for that lifecycle
+        // to finish before starting the resumed turn; otherwise runTurn()
+        // treats the resume as a concurrent turn and returns .cancelled.
+        if let activeTask = activeTurnTasks[conversationID] {
+            await activeTask.value
+            activeTurnTasks.removeValue(forKey: conversationID)
+        }
+
+        let suspension = pendingSuspensions[conversationID]?.values.first(where: {
+            $0.suspensionID == request.suspensionID
+        }) ?? suspensions[conversationID] ?? persistedSuspension(
+            for: conversationID,
+            suspensionID: request.suspensionID
+        )
         guard let suspension,
               suspension.suspensionID == request.suspensionID,
               let assistantMessage = kernel?.messageManager?.messages(for: conversationID)
-                .reversed()
-                .first(where: { message in
-                    message.role == .assistant
-                        && message.toolCalls?.contains(where: { $0.id == suspension.toolCallID }) == true
-                }),
+              .reversed()
+              .first(where: { message in
+                  message.role == .assistant
+                      && message.toolCalls?.contains(where: { $0.id == suspension.toolCallID }) == true
+              }),
               let toolCallID = suspension.toolCallID
         else {
             throw AgentTurnManagingError.invalidResumeRequest
@@ -160,19 +236,29 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         }
 
         suspensions.removeValue(forKey: conversationID)
-        turnStates[conversationID] = .running
-        resumingTurnIDs.insert(conversationID)
-        return try await runTurn(in: conversationID)
-    }
 
-    @discardableResult
-    public func registerChildWork(
-        in conversationID: UUID,
-        suspensionID: String,
-        work: @escaping AgentTurnChildWork
-    ) -> Bool {
-        pendingChildWorks[conversationID, default: [:]][suspensionID] = work
-        return true
+        if let matchingToolCallID = pendingSuspensions[conversationID]?.first(where: {
+            $0.value.suspensionID == request.suspensionID
+        })?.key {
+            pendingSuspensions[conversationID]?.removeValue(forKey: matchingToolCallID)
+        }
+        if pendingSuspensions[conversationID]?.isEmpty == true {
+            pendingSuspensions.removeValue(forKey: conversationID)
+        }
+
+        let latestToolCalls = latestAssistantToolCalls(in: conversationID)
+        guard latestToolCalls?.isTerminalToolBatch == true else {
+            // Other interactive calls in this batch are still waiting. The
+            // answer is persisted above, but no new LLM turn is started yet.
+            turnStates[conversationID] = .suspended(suspension)
+            return .awaitingUserResponse
+        }
+
+        turnStates[conversationID] = .running
+        // This is intentionally a fresh turn. The answered tool result is now
+        // part of the durable conversation history, so no special resume mode
+        // is needed for the next LLM request.
+        return try await runTurn(in: conversationID)
     }
 
     public func cancelTurn(in conversationID: UUID) {
@@ -183,6 +269,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         cancelledConversations.insert(conversationID)
         suspensions.removeValue(forKey: conversationID)
         pendingChildWorks.removeValue(forKey: conversationID)
+        pendingSuspensions.removeValue(forKey: conversationID)
+        turnCreationExcludedToolNames.removeValue(forKey: conversationID)
         activeChildWorks[conversationID]?.cancel()
         activeChildWorks.removeValue(forKey: conversationID)
         turnStates[conversationID] = .cancelled
@@ -196,33 +284,6 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
     public func currentTurnID(for conversationID: UUID) -> UUID? {
         turnIDs[conversationID]
-    }
-
-    private func startChildWorkIfNeeded(for conversationID: UUID) {
-        guard activeChildWorks[conversationID] == nil,
-              let suspension = suspensions[conversationID],
-              let work = pendingChildWorks[conversationID]?.removeValue(forKey: suspension.suspensionID)
-        else { return }
-
-        if pendingChildWorks[conversationID]?.isEmpty == true {
-            pendingChildWorks.removeValue(forKey: conversationID)
-        }
-
-        let task = Task { @MainActor [weak self] in
-            let answer = await work()
-            guard !Task.isCancelled, let self else { return }
-            activeChildWorks.removeValue(forKey: conversationID)
-            let request = AgentTurnResumeRequest(
-                suspensionID: suspension.suspensionID,
-                answer: answer
-            )
-            if let messageSender = self.kernel?.messageSender {
-                _ = try? await messageSender.resumeTurn(in: conversationID, request: request)
-            } else {
-                _ = try? await self.resumeTurn(in: conversationID, request: request)
-            }
-        }
-        activeChildWorks[conversationID] = task
     }
 
     public func state(for conversationID: UUID) -> AgentTurnState {
@@ -270,16 +331,13 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
             // Build request with current message history
             let history = kernel.messageManager?.messages(for: conversationID) ?? []
-            let tools = kernel.toolManager?.allAgentTools() ?? []
-            if Self.verbose {
-                let metrics = Self.messageMetrics(history)
-                Self.logger.info("\(Self.t)LLM history loaded conversation=\(conversationID.uuidString.prefix(8)) messages=\(history.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars) toolCallArgumentChars=\(metrics.toolCallArgumentChars)")
+            let tools = (kernel.toolManager?.allAgentTools() ?? []).filter {
+                !turnCreationExcludedToolNames[conversationID, default: []].contains($0.name)
             }
 
             guard let provider = kernel.llmProvider?.allLLMProviders().first else {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)没有可用的 LLM Provider")
-                }
+                Self.logger.error("\(Self.t)没有可用的 LLM Provider")
+
                 appendErrorMessage(
                     conversationID: conversationID,
                     content: String(localized: "No LLM provider available", defaultValue: "No LLM provider available")
@@ -289,14 +347,19 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             }
 
             let targetProvider: any LumiLLMProvider
-            if let selectedProviderID = kernel.llmProvider?.selectedProviderID,
-               let selectedProvider = kernel.llmProvider?.llmProvider(id: selectedProviderID) {
+            if let conversationProviderID = kernel.conversations?.providerID(for: conversationID),
+               let conversationProvider = kernel.llmProvider?.llmProvider(id: conversationProviderID) {
+                targetProvider = conversationProvider
+            } else if let selectedProviderID = kernel.llmProvider?.selectedProviderID,
+                      let selectedProvider = kernel.llmProvider?.llmProvider(id: selectedProviderID) {
                 targetProvider = selectedProvider
             } else {
                 targetProvider = provider
             }
 
-            let model = kernel.llmProvider?.selectedModel ?? type(of: targetProvider).info.defaultModel
+            let model = kernel.conversations?.modelName(for: conversationID)
+                ?? kernel.llmProvider?.selectedModel
+                ?? type(of: targetProvider).info.defaultModel
 
             // 抽取最近一条 user message 的图片附件(由 MessageSender 写入 metadata["imageAttachments"])。
             // 实现细节见 LumiKernel.LumiImageAttachmentMetadata.extract。
@@ -366,10 +429,6 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             await streamingStore?.startStreaming(conversationID: conversationID)
             var assistantMessage: LumiChatMessage
             do {
-                if Self.verbose {
-                    let metrics = Self.messageMetrics(preparedMessages)
-                    Self.logger.info("\(Self.t)LLM request start provider=\(type(of: targetProvider).info.id) model=\(model) messages=\(preparedMessages.count) tools=\(tools.count) contentChars=\(metrics.contentChars) metadataChars=\(metrics.metadataChars) reasoningChars=\(metrics.reasoningChars)")
-                }
                 // onChunk 在 provider 后台任务里调用(@Sendable)。store 的写方法标 async,
                 // 通过 await 跳回 @MainActor 执行,保证对 @Published 的写安全。
                 // tool-call 增量不通过 onChunk 推送,此处无需处理;最终落库消息会带上完整 toolCalls。
@@ -420,11 +479,6 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             postMessageSavedNotification(message: assistantMessage, conversationID: conversationID)
             await streamingStore?.endStreaming()
 
-            if Self.verbose {
-                let toolArgChars = assistantMessage.toolCalls?.reduce(0) { $0 + $1.arguments.count } ?? 0
-                Self.logger.info("\(Self.t)收到 assistant 消息 contentChars=\(assistantMessage.content.count) reasoningChars=\(assistantMessage.reasoningContent?.count ?? 0) toolCalls=\(assistantMessage.toolCalls?.count ?? 0) toolCallArgumentChars=\(toolArgChars)")
-            }
-
             // No tool calls → turn complete
             guard let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty else {
                 if Self.verbose {
@@ -433,9 +487,11 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 return
             }
 
-            // Execute the initial batch in order. A suspension stops this loop;
-            // a later resume continues the same assistant message through
-            // `executePendingToolCalls` before another LLM request is made.
+            // Execute the entire initial batch in order. Suspended calls are
+            // recorded and later answered independently; the batch only
+            // becomes eligible for a new LLM request after every call is
+            // terminal.
+            var batchSuspensions: [String: AgentTurnSuspension] = [:]
             for toolCall in toolCalls where toolCall.result == nil {
                 try? Task.checkCancellation()
 
@@ -489,10 +545,6 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                         turnControl: .suspend(boundSuspension)
                     )
                 }
-                if Self.verbose {
-                    let imageBase64Chars = result.imageAttachments.reduce(0) { $0 + $1.base64Data.count }
-                    Self.logger.info("\(Self.t)工具结果 received tool=\(toolCall.name) contentChars=\(result.content.count) images=\(result.imageAttachments.count) imageBase64Chars=\(imageBase64Chars) isError=\(result.isError)")
-                }
 
                 // Update the assistant message's toolCall with the result
                 // This allows the UI to show correct visual state (success/failure/duration)
@@ -530,237 +582,18 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                     if Self.verbose {
                         Self.logger.info("\(Self.t)工具请求暂停（\(toolCall.name)），等待外部恢复")
                     }
-                    suspensions[conversationID] = suspension
-                    awaitingConversations.insert(conversationID)
-                    return
+                    batchSuspensions[toolCall.id] = suspension
                 }
+            }
+
+            if !batchSuspensions.isEmpty {
+                pendingSuspensions[conversationID] = batchSuspensions
+                suspensions[conversationID] = batchSuspensions.values.first
+                awaitingConversations.insert(conversationID)
+                return
             }
 
             // Continue loop with new tool results in message history
         }
-    }
-
-    /// Finds the latest assistant tool-call message that still has an
-    /// unexecuted call. Tool results are no longer embedded in the assistant
-    /// message, so the durable completion marker is the separate `.tool`
-    /// message with the matching `toolCallID`.
-    private func incompleteToolCallMessage(in conversationID: UUID) -> LumiChatMessage? {
-        let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
-        let completedToolCallIDs = Set(
-            messages.compactMap { message in
-                message.role == .tool ? message.toolCallID : nil
-            }
-        )
-        return messages.reversed().first { message in
-            message.role == .assistant
-                && message.toolCalls?.contains(where: {
-                    $0.result == nil && !completedToolCallIDs.contains($0.id)
-                }) == true
-        }
-    }
-
-    /// Continues an interrupted assistant tool-call batch in order. This path
-    /// is used after resuming a suspended call, so already completed calls are
-    /// skipped and the next queued call can suspend independently.
-    ///
-    /// - Returns: `true` when the batch suspended again for user input.
-    private func executePendingToolCalls(
-        in assistantMessage: LumiChatMessage,
-        conversationID: UUID
-    ) async -> Bool {
-        guard let kernel,
-              let toolManager = kernel.toolManager,
-              let toolCalls = assistantMessage.toolCalls
-        else {
-            Self.logger.error("\(Self.t)ToolManager 不可用，无法继续工具批次")
-            failedConversations.insert(conversationID)
-            return false
-        }
-
-        var completedToolCallIDs = Set(
-            (kernel.messageManager?.messages(for: conversationID) ?? []).compactMap { message in
-                message.role == .tool ? message.toolCallID : nil
-            }
-        )
-
-        for toolCall in toolCalls where toolCall.result == nil && !completedToolCallIDs.contains(toolCall.id) {
-            try? Task.checkCancellation()
-            if cancelledConversations.contains(conversationID) {
-                return false
-            }
-
-            insertStatusMessage(
-                conversationID: conversationID,
-                content: String(
-                    localized: "status.executing-tool",
-                    defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
-                )
-            )
-
-            var result = await toolManager.execute(
-                toolCall,
-                conversationID: conversationID,
-                turnID: turnIDs[conversationID]
-            )
-            if case let .suspend(suspension) = result.turnControl,
-               suspension.toolCallID == nil {
-                let boundSuspension = AgentTurnSuspension(
-                    suspensionID: suspension.suspensionID,
-                    conversationID: suspension.conversationID,
-                    toolCallID: toolCall.id,
-                    kind: suspension.kind,
-                    payload: suspension.payload
-                )
-                result = LumiToolResult(
-                    content: result.content,
-                    duration: result.duration,
-                    isError: result.isError,
-                    imageAttachments: result.imageAttachments,
-                    turnControl: .suspend(boundSuspension)
-                )
-            }
-
-            kernel.messageManager?.updateToolCallResult(
-                result,
-                toolCallID: toolCall.id,
-                assistantMessageID: assistantMessage.id,
-                in: conversationID
-            )
-
-            let toolResultMessage = LumiChatMessage(
-                conversationID: conversationID,
-                role: .tool,
-                content: result.content,
-                turnID: turnIDs[conversationID],
-                isError: result.isError,
-                metadata: LumiImageAttachmentMetadata.encode(result.imageAttachments),
-                toolCallID: toolCall.id
-            )
-            kernel.messageManager?.insertMessage(toolResultMessage, to: conversationID)
-            postMessageSavedNotification(message: toolResultMessage, conversationID: conversationID)
-            completedToolCallIDs.insert(toolCall.id)
-
-            if case let .suspend(suspension) = result.turnControl {
-                if Self.verbose {
-                    Self.logger.info("\(Self.t)工具请求暂停（\(toolCall.name)），等待批次中的下一个调用")
-                }
-                suspensions[conversationID] = suspension
-                awaitingConversations.insert(conversationID)
-                return true
-            }
-        }
-
-        return false
-    }
-
-    /// Rebuilds a suspension from the persisted assistant tool-call result.
-    /// This makes a suspended turn recoverable after the manager is recreated.
-    private func persistedSuspension(for conversationID: UUID) -> AgentTurnSuspension? {
-        let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
-        for message in messages.reversed() where message.role == .assistant {
-            for toolCall in (message.toolCalls ?? []).reversed() {
-                if case let .suspend(suspension) = toolCall.result?.turnControl,
-                   suspension.conversationID == conversationID {
-                    return suspension
-                }
-            }
-        }
-        return nil
-    }
-
-    // MARK: - Notifications
-
-    private func postMessageSavedNotification(message: LumiChatMessage, conversationID: UUID) {
-        let userInfo: [AnyHashable: Any] = [
-            LumiMessageSavedNotification.conversationIDKey: conversationID,
-            "messageID": message.id,
-            LumiMessageSavedNotification.roleKey: message.role.rawValue,
-        ]
-        NotificationCenter.default.post(
-            name: .lumiMessageSaved,
-            object: nil,
-            userInfo: userInfo
-        )
-    }
-
-    private func postTurnCompletedNotification(conversationID: UUID) async {
-        let userInfo: [AnyHashable: Any] = [
-            LumiMessageSavedNotification.conversationIDKey: conversationID,
-            LumiTurnFinishedNotification.reasonKey: LumiTurnEndReason.completed.rawValue,
-        ]
-        NotificationCenter.default.post(
-            name: .lumiTurnCompleted,
-            object: nil,
-            userInfo: userInfo
-        )
-        // 复用 finished 路径：发送 .lumiTurnFinished 并分发 onTurnFinished 钩子
-        await postTurnFinishedNotification(conversationID: conversationID, reason: .completed)
-    }
-
-    private func postTurnFinishedNotification(conversationID: UUID, reason: LumiTurnEndReason) async {
-        let userInfo: [AnyHashable: Any] = [
-            LumiMessageSavedNotification.conversationIDKey: conversationID,
-            LumiTurnFinishedNotification.reasonKey: reason.rawValue,
-        ]
-        NotificationCenter.default.post(
-            name: .lumiTurnFinished,
-            object: nil,
-            userInfo: userInfo
-        )
-
-        // 分发 onTurnFinished 钩子（按插件 order 升序，仅启用插件）。
-        // 与上面 willSendToLLM 的遍历模式一致。
-        guard let kernel else { return }
-        for plugin in kernel.pluginManager.allPlugins {
-            guard plugin.policy.shouldRegister else { continue }
-            await plugin.onTurnFinished(kernel: kernel, conversationID: conversationID, reason: reason)
-        }
-    }
-
-    // MARK: - Helpers
-
-    private func appendErrorMessage(conversationID: UUID, content: String) {
-        guard let kernel else { return }
-        let errorMessage = LumiChatMessage(
-            conversationID: conversationID,
-            role: .error,
-            content: content
-        )
-        kernel.messageManager?.insertMessage(errorMessage, to: conversationID)
-        postMessageSavedNotification(message: errorMessage, conversationID: conversationID)
-    }
-
-    /// 插入一条瞬时 status 消息(如"正在执行: X…"),由 `MessageManaging` 仅存内存、不落盘。
-    /// 工具结果/回合产物 insert 时自动清除。不发送 messageSaved 通知(status 是瞬时的,无需回看)。
-    private func insertStatusMessage(conversationID: UUID, content: String) {
-        guard let kernel else { return }
-        let status = LumiChatMessage(
-            conversationID: conversationID,
-            role: .status,
-            content: content,
-            metadata: ["isTransientStatus": "true"]
-        )
-        kernel.messageManager?.insertMessage(status, to: conversationID)
-    }
-
-    private static func messageMetrics(_ messages: [LumiChatMessage]) -> (
-        contentChars: Int,
-        metadataChars: Int,
-        reasoningChars: Int,
-        toolCallArgumentChars: Int
-    ) {
-        var contentChars = 0
-        var metadataChars = 0
-        var reasoningChars = 0
-        var toolCallArgumentChars = 0
-
-        for message in messages {
-            contentChars += message.content.count
-            metadataChars += message.metadata.reduce(0) { $0 + $1.key.count + $1.value.count }
-            reasoningChars += message.reasoningContent?.count ?? 0
-            toolCallArgumentChars += message.toolCalls?.reduce(0) { $0 + $1.arguments.count } ?? 0
-        }
-
-        return (contentChars, metadataChars, reasoningChars, toolCallArgumentChars)
     }
 }

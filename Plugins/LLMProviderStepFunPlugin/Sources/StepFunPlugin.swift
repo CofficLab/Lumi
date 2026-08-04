@@ -22,7 +22,7 @@ public final class StepFunPlugin: LumiPlugin {
     /// 持有单例(而非每次 `llmProviders(kernel:)` 都新建)有两个原因:
     /// 1. `StepFunSubAgentsGate` 需要复用同一个 provider 去做可用性探测,且需共享它的
     ///    `AvailabilityDiskCache`,避免探测/注册两条路径各持一个 provider、缓存分裂。
-    /// 2. boot 时序里 `registerAgentTools`(调 `subAgents`)早于 `registerLLMProviders`,
+    /// 2. boot 时序里 provider 注册与可用性探测需要共享同一个 provider 实例,
     ///    provider 不在 kernel registry 中 —— 持有自己的实例,gate 在任何时点都能探测。
     ///
     /// 用 `private var` + 懒初始化(而非 `private let`),因为初始化 provider 需要 kernel,
@@ -61,14 +61,6 @@ public final class StepFunPlugin: LumiPlugin {
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
         [ensureProvider(kernel: kernel)]
-    }
-
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] {
-        // 同步 gate:仅当探测通过(ready)才返回全部 sub-agent。
-        // 走 ensureProvider 保证 gate 已构造(它只构造对象、不触发网络,同步安全)。
-        _ = ensureProvider(kernel: kernel)
-        guard let gate else { return [] }
-        return gate.evaluate()
     }
 
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {

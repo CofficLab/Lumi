@@ -75,6 +75,7 @@
       }
     },
     "Copy" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -318,6 +319,7 @@
       }
     },
     "Received Data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -352,6 +354,7 @@
       }
     },
     "Request / Response Details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -455,6 +458,7 @@
       }
     },
     "Sending Data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -489,6 +493,7 @@
       }
     },
     "Show less" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -558,6 +563,7 @@
       }
     },
     "Show more" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -627,6 +633,7 @@
       }
     },
     "Show request and response details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1012,6 +1019,7 @@
       }
     },
     "工具执行失败" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1116,6 +1124,7 @@
       }
     },
     "查询结果中..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

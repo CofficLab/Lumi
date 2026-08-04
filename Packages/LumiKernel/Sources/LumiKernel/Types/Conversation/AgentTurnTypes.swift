@@ -81,3 +81,20 @@ public enum AgentTurnControl: Codable, Sendable, Equatable {
     }
 }
 
+public extension LumiToolCall {
+    /// Whether this tool call has a result that no longer requires external
+    /// interaction. A suspended interaction has a result payload, but it is
+    /// not terminal until it is answered.
+    var hasTerminalResult: Bool {
+        guard let result else { return false }
+        return !result.turnControl.isSuspended
+    }
+}
+
+public extension Collection where Element == LumiToolCall {
+    /// Whether every call in this assistant batch can be sent to the LLM as a
+    /// completed tool-result sequence.
+    var isTerminalToolBatch: Bool {
+        allSatisfy(\.hasTerminalResult)
+    }
+}

@@ -21,6 +21,10 @@ public protocol MessageStreaming: ObservableObject, Sendable where ObjectWillCha
     /// 其 id 始终是 `Self.streamingRowID`（进程级常量），SwiftUI diff 稳定。
     var currentStreamingRow: LumiChatMessage? { get }
 
+    /// 当前流式输出所属的会话。非流式期间为 nil。
+    /// 消息列表必须用它隔离不同会话的 token 更新。
+    var streamingConversationID: UUID? { get }
+
     /// 当前回合所处的阶段（idle/sending/thinking/generating）。
     ///
     /// 供"发送中"状态行据此生成动态文案。

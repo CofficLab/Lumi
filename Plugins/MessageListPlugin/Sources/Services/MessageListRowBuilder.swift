@@ -43,22 +43,36 @@ struct MessageListRowBuilder {
         streaming: (any MessageStreaming)?,
         verbosity: LumiResponseVerbosity
     ) -> [LumiChatMessage] {
+        var rows = buildHistory(
+            persisted: persisted,
+            conversationID: conversationID,
+            streaming: streaming,
+            verbosity: verbosity
+        )
+        if let streamingRow = buildStreamingRow(
+            conversationID: conversationID,
+            streaming: streaming
+        ) {
+            rows.append(streamingRow)
+        }
+        return rows
+    }
+
+    /// Builds only stable history rows. This path must not run for every
+    /// streaming token; the view model refreshes it only when history or the
+    /// streaming/status boundary changes.
+    func buildHistory(
+        persisted: [LumiChatMessage],
+        conversationID: UUID?,
+        streaming: (any MessageStreaming)?,
+        verbosity: LumiResponseVerbosity
+    ) -> [LumiChatMessage] {
         guard let conversationID else { return persisted }
 
-        let streamingRow = streaming?.currentStreamingRow
-        let stage = streaming?.currentStage ?? .idle
-        let belongsToCurrent = streamingRow?.conversationID == conversationID
-
-        // 流式行显示条件:thinking(展示思考文本)或 generating(展示正文)阶段才显示。
-        // .sending 阶段流式行是空壳(LLM 尚未响应),不显示 —— 该阶段由 status"正在发送…"承载。
-        let showStreamingRow = belongsToCurrent
-            && (stage == .thinking || stage == .generating)
-            && streamingRow != nil
-
-        // 流式行一旦实质展示(thinking/generating),status 就退场(由流式行承载)。
-        // 仅 .sending 阶段保留 status。
-        let dropStatus = showStreamingRow
-        // V1 下隐藏独立 `.tool` 结果行(结果收进步骤卡片,避免与内联展示重复)。
+        let dropStatus = shouldShowStreamingRow(
+            conversationID: conversationID,
+            streaming: streaming
+        )
         let dropToolRows = verbosity == .brief
         let filtered = persisted.filter { message in
             if dropStatus, message.role == .status { return false }
@@ -66,15 +80,32 @@ struct MessageListRowBuilder {
             return true
         }
 
-        // 把连续的「只含工具调用的助手消息」合并成一条合成消息。
-        // V1 与 V2/V3 都合并:V1 走可折叠步骤组,V2/V3 走助手气泡(多个工具卡片聚在一起,
-        // 只剩一个消息头)。合成消息仅在展示层,不落库、不进 LLM 历史。
-        var rows = Self.mergeConsecutiveToolExecutionMessages(filtered)
+        return Self.mergeConsecutiveToolExecutionMessages(filtered)
+    }
 
-        if showStreamingRow, let streamingRow {
-            rows.append(streamingRow)
-        }
-        return rows
+    /// Returns the current streaming row only when it belongs to the selected
+    /// conversation and has entered a visible thinking/generating stage.
+    func buildStreamingRow(
+        conversationID: UUID?,
+        streaming: (any MessageStreaming)?
+    ) -> LumiChatMessage? {
+        guard let conversationID,
+              shouldShowStreamingRow(conversationID: conversationID, streaming: streaming)
+        else { return nil }
+        return streaming?.currentStreamingRow
+    }
+
+    private func shouldShowStreamingRow(
+        conversationID: UUID,
+        streaming: (any MessageStreaming)?
+    ) -> Bool {
+        guard let streaming,
+              streaming.streamingConversationID == conversationID,
+              let row = streaming.currentStreamingRow,
+              row.conversationID == conversationID
+        else { return false }
+
+        return streaming.currentStage == .thinking || streaming.currentStage == .generating
     }
 
     /// 把同一 Turn 中连续的 `isToolExecutionOnly` 助手消息合并成一条活动消息。

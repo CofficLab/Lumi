@@ -24,9 +24,11 @@ public struct MarkdownBlockRenderer: View {
     ) {
         self.markdown = markdown
         self.theme = theme
-        self._blocks = State(initialValue: MarkdownParser.parse(markdown))
+        self._blocks = State(initialValue: MarkdownBlockCache.shared.blocks(for: markdown))
     }
 
+    /// Blocks are initialized from the bounded process cache so their measured
+    /// height is available during the first layout pass.
     @State private var blocks: [MarkdownBlock]
     @Environment(\.preferOuterScroll) private var preferOuterScroll
 
@@ -38,9 +40,6 @@ public struct MarkdownBlockRenderer: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(theme.textColor ?? .primary)
-        .task(id: markdown) {
-            blocks = await MarkdownParseCache.shared.blocks(for: markdown)
-        }
     }
 
     // MARK: - Block Rendering
@@ -191,7 +190,7 @@ public struct MarkdownBlockRenderer: View {
 
     @ViewBuilder
     private func inlineText(_ text: String) -> some View {
-        Text(MarkdownInlineParser.parse(text))
+        CachedMarkdownInlineText(text: text)
             .textSelection(.enabled)
     }
 
@@ -215,16 +214,26 @@ public struct MarkdownBlockRenderer: View {
     }
 }
 
-// MARK: - MarkdownParseCache
+// MARK: - MarkdownBlockCache
 
-private actor MarkdownParseCache {
-    static let shared = MarkdownParseCache()
+/// Synchronous bounded cache for block parsing.
+///
+/// Markdown block parsing must be available during the first layout pass so
+/// ScrollView can measure the message's height correctly. The cache keeps that
+/// necessary first parse from repeating whenever SwiftUI reconstructs a View
+/// value during scrolling.
+private final class MarkdownBlockCache: @unchecked Sendable {
+    static let shared = MarkdownBlockCache()
 
     private let limit = 128
+    private let lock = NSLock()
     private var cache: [String: [MarkdownBlock]] = [:]
     private var keys: [String] = []
 
     func blocks(for markdown: String) -> [MarkdownBlock] {
+        lock.lock()
+        defer { lock.unlock() }
+
         if let cached = cache[markdown] {
             return cached
         }
@@ -242,6 +251,61 @@ private actor MarkdownParseCache {
         }
 
         return parsed
+    }
+}
+
+/// Asynchronous bounded cache for inline Markdown parsing.
+///
+/// Inline parsing used to happen directly inside `body`, which meant that
+/// rebuilding a message row could re-run `AttributedString(markdown:)` for
+/// every paragraph, list item, quote, and table cell. The cache keeps that
+/// work off the view evaluation path and bounds retained attributed strings.
+private actor MarkdownInlineParseCache {
+    static let shared = MarkdownInlineParseCache()
+
+    private let limit = 512
+    private var cache: [String: AttributedString] = [:]
+    private var keys: [String] = []
+
+    func attributedString(for text: String) -> AttributedString {
+        if let cached = cache[text] {
+            return cached
+        }
+
+        let parsed = MarkdownInlineParser.parse(text)
+        cache[text] = parsed
+        keys.append(text)
+
+        if keys.count > limit {
+            let overflow = keys.count - limit
+            for key in keys.prefix(overflow) {
+                cache.removeValue(forKey: key)
+            }
+            keys.removeFirst(overflow)
+        }
+
+        return parsed
+    }
+}
+
+/// Displays plain text first, then upgrades to the cached inline Markdown
+/// representation when the asynchronous parse completes.
+private struct CachedMarkdownInlineText: View {
+    let text: String
+
+    @State private var attributedText: AttributedString?
+
+    var body: some View {
+        Group {
+            if let attributedText {
+                Text(attributedText)
+            } else {
+                Text(verbatim: text)
+            }
+        }
+        .task(id: text) {
+            attributedText = await MarkdownInlineParseCache.shared.attributedString(for: text)
+        }
     }
 }
 

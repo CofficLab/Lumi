@@ -30,7 +30,6 @@ public final class OpenAIPlugin: LumiPlugin {
         [OpenAIProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }

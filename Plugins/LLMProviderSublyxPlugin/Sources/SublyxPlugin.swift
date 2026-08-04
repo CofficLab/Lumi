@@ -30,7 +30,6 @@ public final class SublyxPlugin: LumiPlugin {
         [SublyxProvider(apiService: LLMAPIService(kernel: kernel))]
     }
 
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
         [
             SublyxApiKeyMissingRenderer.item,

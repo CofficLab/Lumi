@@ -406,28 +406,14 @@ struct ToolManagerPluginTests {
         #expect(result.turnControl == .suspend(suspension))
     }
 
-    @Test("service keeps provider-local sub-agent ids distinct")
-    func serviceKeepsProviderLocalSubAgents() {
-        let service = ToolManagerService()
-        let stepfunExplore = makeSubAgent(id: "explore", providerID: "stepfun")
-        let openAIExplore = makeSubAgent(id: "explore", providerID: "openai")
-
-        service.addSubAgent(stepfunExplore)
-        service.addSubAgent(openAIExplore)
-        service.addSubAgent(stepfunExplore)
-
-        #expect(service.allSubAgents().map(\.routingID) == ["stepfun:explore", "openai:explore"])
-    }
-
     @Test("plugin exposes core tools and registers its service")
     func pluginContributions() async throws {
         let plugin = ToolManagerPlugin()
         let kernel = LumiKernel()
         #expect(plugin.id == "com.coffic.lumi.plugin.tool-manager")
         #expect(plugin.policy == .alwaysOn)
-        #expect(plugin.agentTools(kernel: kernel).map(\.name) == ["ls", "glob", "read_file", "write_file", "edit_file", "run_command"])
+        #expect(plugin.agentTools(kernel: kernel).map(\.name) == ["ls", "glob", "read_file", "write_file", "edit_file", "run_command", "run_subagent"])
         #expect(plugin.llmProviders(kernel: kernel).isEmpty)
-        #expect(plugin.subAgents(kernel: kernel).isEmpty)
         #expect(plugin.messageRenderers(kernel: kernel).isEmpty)
         #expect(plugin.menuBarContentItems(kernel: kernel).isEmpty)
         #expect(plugin.menuBarPopupItems(kernel: kernel).isEmpty)
@@ -561,17 +547,6 @@ struct ToolManagerPluginTests {
         let fileURL = directory.appendingPathComponent(name)
         try contents.write(to: fileURL)
         return fileURL
-    }
-
-    private func makeSubAgent(id: String, providerID: String) -> LumiSubAgentDefinition {
-        LumiSubAgentDefinition(
-            id: id,
-            displayName: id,
-            description: "test",
-            providerID: providerID,
-            modelID: "test",
-            systemPrompt: "test"
-        )
     }
 
     private func makeLines(count: Int, width: Int) -> Data {

@@ -11,6 +11,7 @@ import AskUserPlugin
 import BrewManagerPlugin
 import BrowserPlugin
 import CADDesignerPlugin
+import StoryWriterPlugin
 import CaffeinatePlugin
 import ConversationAttachmentPlugin
 import ConversationPendingMessagePlugin
@@ -26,6 +27,7 @@ import ConversationLanguagePlugin
 import ConversationListPlugin
 import ConversationMessageCountPlugin
 import ConversationContextSizePlugin
+import ConversationAgentTurnCountPlugin
 import ConversationNewPlugin
 import ConversationSpeedPlugin
 import ConversationManagerPlugin
@@ -114,7 +116,6 @@ import SettingsPlugin
 import ShowImagePlugin
 import SkillPlugin
 import StoragePlugin
-import SubAgentProviderPlugin
 import TerminalPlugin
 import ThemeAuroraPlugin
 import ThemeAutumnPlugin
@@ -209,6 +210,7 @@ public enum PluginService {
             PluginManagerPlugin(),
             ConversationMessageCountPlugin(),
             ConversationContextSizePlugin(),
+            ConversationAgentTurnCountPlugin(),
             SettingsPlugin(),
             LogoPlugin(),
             LogoCofficPlugin(),
@@ -264,6 +266,7 @@ public enum PluginService {
             ProjectOverviewPlugin(),
             AppStoreConnectPlugin(),
             CADDesignerPlugin(),
+            StoryWriterPlugin(),
             ActivityHeatmapPlugin(),
             FileLogPlugin(),
             OnboardingPlugin(),
@@ -273,8 +276,6 @@ public enum PluginService {
             AppUpdatePlugin(),
             // User interaction
             AskUserPlugin(),
-            // Built-in provider-agnostic sub-agents (Explore / Code Review / Bug Fixer / Test Writer)
-            SubAgentProviderPlugin(),
             // Themes
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),

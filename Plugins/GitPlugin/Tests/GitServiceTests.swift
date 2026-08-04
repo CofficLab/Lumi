@@ -44,6 +44,15 @@ struct GitServiceTests {
             _ = try await GitService.shared.getDiff(path: tempDir.path, staged: false, file: nil)
         }
     }
+
+    @Test("repository root lookup rejects pathological paths quickly")
+    func repositoryRootRejectsPathologicalPath() throws {
+        let deepPath = "/tmp" + String(repeating: "/lumi-path-segment", count: 300)
+
+        #expect(throws: GitServiceError.self) {
+            _ = try GitService.repositoryRoot(containing: deepPath)
+        }
+    }
     
     @Test("getLog throws repositoryNotGit for non-git directory")
     func getLogThrowsForNonGitDirectory() async throws {

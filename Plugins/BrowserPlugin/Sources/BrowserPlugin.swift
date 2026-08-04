@@ -39,7 +39,6 @@ public final class BrowserPlugin: LumiPlugin, SuperLog {
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [BrowserAgentTool()]
     }
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }

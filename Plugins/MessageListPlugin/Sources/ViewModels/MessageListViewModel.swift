@@ -31,13 +31,16 @@ final class MessageListViewModel: ObservableObject, SuperLog {
 
     // MARK: - Published State (供 View 展示)
 
-    /// 最终展示行序列:真实消息 + 流式临时行 + 状态行(由 RowBuilder 合并)。
-    @Published private(set) var displayRows: [LumiChatMessage] = []
+    /// 稳定历史展示行:真实消息 + 状态行,不包含高频变化的流式尾部。
+    @Published private(set) var historyRows: [LumiChatMessage] = []
+
+    /// 当前会话的流式尾部。token 到达时只更新这一行,不重建 historyRows。
+    @Published private(set) var streamingRow: LumiChatMessage?
 
     /// 内存中的真实落库消息(分页窗口),按时间升序;`hasPersistedMessages` 由它派生。
-    /// 任何变更都会触发 `rebuildRows` 重算展示行。
+    /// 任何变更都会触发历史行重算,流式尾部单独维护。
     @Published private(set) var persistedMessages: [LumiChatMessage] = [] {
-        didSet { rebuildRows() }
+        didSet { rebuildHistoryRows() }
     }
 
     /// 顶部是否还有更早的消息未加载。
@@ -68,6 +71,8 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// 切换会话时记录的目标会话,用于丢弃过期的后台读结果。
     private var activeConversationID: UUID?
     private var cancellables: Set<AnyCancellable> = []
+    /// Coalesces bursts of provider chunks to one UI update per display frame.
+    private var streamingRefreshTask: Task<Void, Never>?
     private var didBindToolActivityNotifications = false
     /// 流式/发送服务是否都已绑定;服务后于本 viewmodel 就绪时由 `activate` 重试绑定。
     private var didBindServices = false
@@ -86,6 +91,24 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// (流式/状态行不算 —— 空态语义基于真实历史)。
     var hasPersistedMessages: Bool {
         !persistedMessages.isEmpty
+    }
+
+    /// Compatibility snapshot for scroll setup and non-rendering callers.
+    /// The main message view renders `historyRows` and `streamingRow` separately.
+    var displayRows: [LumiChatMessage] {
+        historyRows + (streamingRow.map { [$0] } ?? [])
+    }
+
+    /// Whether the message list currently contains a live streaming turn.
+    ///
+    /// Static history can use a virtualized `LazyVStack`. During streaming we
+    /// keep the existing eager stack for now because the streaming row changes
+    /// at token frequency; the streaming/history split can be refined later
+    /// without making static history pay that cost.
+    var isStreaming: Bool {
+        guard let streaming = kernel.messageStreaming else { return false }
+        guard streaming.streamingConversationID == selectedConversationID else { return false }
+        return streaming.currentStage != .idle || streaming.currentStreamingRow != nil
     }
 
     /// 当前会话的响应详细程度;由 View 透传给渲染闭包,
@@ -262,7 +285,11 @@ final class MessageListViewModel: ObservableObject, SuperLog {
                 .map { _ in () }
                 .eraseToAnyPublisher()
                 .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in self?.rebuildRows() }
+                .sink { [weak self, weak streaming] _ in
+                    guard let self, let streaming,
+                          streaming.streamingConversationID == self.selectedConversationID else { return }
+                    self.scheduleStreamingPresentation(using: streaming)
+                }
                 .store(in: &cancellables)
         }
         if let sender = kernel.messageSender {
@@ -270,27 +297,74 @@ final class MessageListViewModel: ObservableObject, SuperLog {
                 .map { _ in () }
                 .eraseToAnyPublisher()
                 .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in self?.rebuildRows() }
+                .sink { [weak self] _ in self?.rebuildHistoryRows() }
                 .store(in: &cancellables)
         }
         didBindServices = kernel.messageStreaming != nil && kernel.messageSender != nil
     }
 
-    /// 重算展示行:真实消息 + 流式临时行 + 状态行。
-    /// 切会话时其他会话的流式行会被 RowBuilder 按 conversationID 自动过滤。
-    private func rebuildRows() {
+    /// Rebuilds only stable history rows. Streaming tokens do not enter this
+    /// path unless the status/streaming boundary changes.
+    private func rebuildHistoryRows() {
         let verbosity = self.verbosity
-        displayRows = rowBuilder.build(
+        let rows = rowBuilder.buildHistory(
             persisted: persistedMessages,
             conversationID: selectedConversationID,
             streaming: kernel.messageStreaming,
             verbosity: verbosity
         )
-        let content = kernel.messageStreaming?.currentStreamingRow?.content
+        if historyRows != rows {
+            historyRows = rows
+        }
+
+        refreshStreamingPresentation(using: kernel.messageStreaming)
+    }
+
+    /// Updates only the live tail. The history list is rebuilt at most when
+    /// entering/leaving the visible streaming stage.
+    private func scheduleStreamingPresentation(using _: any MessageStreaming) {
+        guard streamingRefreshTask == nil else { return }
+        streamingRefreshTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 16_000_000)
+            guard !Task.isCancelled, let self else { return }
+            self.streamingRefreshTask = nil
+            self.refreshStreamingPresentation(using: self.kernel.messageStreaming)
+        }
+    }
+
+    private func refreshStreamingPresentation(using streaming: (any MessageStreaming)?) {
+        let nextRow = rowBuilder.buildStreamingRow(
+            conversationID: selectedConversationID,
+            streaming: streaming
+        )
+        let wasShowingStreamingRow = streamingRow != nil
+        let isShowingStreamingRow = nextRow != nil
+
+        if wasShowingStreamingRow != isShowingStreamingRow {
+            streamingRow = nextRow
+            rebuildHistoryRowsWithoutStreamingRecursion()
+        } else if streamingRow != nextRow {
+            streamingRow = nextRow
+        }
+
+        let content = nextRow?.content
         if tailStreamingContent != content {
             tailStreamingContent = content
         }
         recomputeActiveStepGroups()
+    }
+
+    /// Rebuilds history without calling back into streaming presentation.
+    private func rebuildHistoryRowsWithoutStreamingRecursion() {
+        let rows = rowBuilder.buildHistory(
+            persisted: persistedMessages,
+            conversationID: selectedConversationID,
+            streaming: kernel.messageStreaming,
+            verbosity: verbosity
+        )
+        if historyRows != rows {
+            historyRows = rows
+        }
     }
 
     /// 计算 V1 下应默认展开的工具步骤组集合。

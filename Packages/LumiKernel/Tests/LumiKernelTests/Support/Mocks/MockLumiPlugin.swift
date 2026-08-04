@@ -29,7 +29,6 @@ final class MockLumiPlugin: LumiPlugin {
     func onBoot(kernel: LumiKernel) async throws {}
     func onReady(kernel: LumiKernel) async throws {}
     func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
-    func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }

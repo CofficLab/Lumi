@@ -21,7 +21,7 @@ public final class MessageStreamingStore: MessageStreaming {
     @Published public private(set) var currentStage: ChatStage = .idle
 
     /// 当前流式所属的会话 id。UI 据此判断是否属于当前选中的会话，避免串台。
-    private(set) var streamingConversationID: UUID?
+    public private(set) var streamingConversationID: UUID?
 
     public init(kernel: LumiKernel) {
         // 保留 kernel 引用位:未来若需查询落库状态等可复用,当前不持有(避免循环引用)。

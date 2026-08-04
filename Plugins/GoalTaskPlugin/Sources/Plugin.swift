@@ -60,7 +60,6 @@ public final class Plugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
             CreateGoalTool(),

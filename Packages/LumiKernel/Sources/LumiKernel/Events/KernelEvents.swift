@@ -12,6 +12,11 @@ public enum LumiKernelEvent: String, CaseIterable, Sendable {
     case conversationTitleDidChange = "com.coffic.lumi.conversationTitleDidChange"
     case themeDidChange = "com.coffic.lumi.themeDidChange"
 
+    case messageSaved = "com.coffic.lumi.messageSaved"
+    case turnStarted = "com.coffic.lumi.turnStarted"
+    case turnCompleted = "com.coffic.lumi.turnCompleted"
+    case turnFinished = "com.coffic.lumi.turnFinished"
+
     case selectedRemoteProviderIDDidChange = "LumiProviderState.SelectedRemoteProviderIDDidChange"
     case selectedLocalProviderIDDidChange = "LumiProviderState.SelectedLocalProviderIDDidChange"
     case selectedModelsDidChange = "LumiProviderState.SelectedModelsDidChange"
@@ -27,6 +32,19 @@ public enum LumiKernelEvent: String, CaseIterable, Sendable {
 public extension Notification.Name {
     static let lumiEnabledPluginsDidChange = LumiKernelEvent.enabledPluginsDidChange.notificationName
     static let lumiThemeDidChange = LumiKernelEvent.themeDidChange.notificationName
+
+    static let lumiMessagesDidChange = LumiKernelEvent.messagesDidChange.notificationName
+    static let lumiMessageSaved = LumiKernelEvent.messageSaved.notificationName
+    static let lumiTurnStarted = LumiKernelEvent.turnStarted.notificationName
+    static let lumiTurnCompleted = LumiKernelEvent.turnCompleted.notificationName
+    static let lumiTurnFinished = LumiKernelEvent.turnFinished.notificationName
+
+    static let lumiShowOnboarding = Notification.Name("Onboarding.Show")
+
+    static let lumiFocusChatInput = Notification.Name("lumi.focusChatInput")
+    static let lumiSendChatMessage = Notification.Name("lumi.sendChatMessage")
+    static let lumiStopChatGeneration = Notification.Name("lumi.stopChatGeneration")
+    static let lumiResendMessage = Notification.Name("lumi.resendMessage")
 
     static let lumiSelectedRemoteProviderIDDidChange = LumiKernelEvent.selectedRemoteProviderIDDidChange.notificationName
     static let lumiSelectedLocalProviderIDDidChange = LumiKernelEvent.selectedLocalProviderIDDidChange.notificationName

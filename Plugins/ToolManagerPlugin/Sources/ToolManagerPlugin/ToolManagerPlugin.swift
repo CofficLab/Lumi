@@ -7,8 +7,7 @@ import SwiftUI
 
 /// 工具管理插件
 ///
-/// 向 LumiKernel 注册 ToolManager 服务,并注册 5 个核心工具:
-/// ListDirectoryTool, ReadFileTool, WriteFileTool, EditFileTool, ShellTool.
+/// 向 LumiKernel 注册 ToolManager 服务,并注册文件/终端工具及内置子代理工具。
 @MainActor
 public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.tool-manager")
@@ -60,11 +59,11 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
             WriteFileTool(),
             EditFileTool(),
             ShellTool(),
+            SubAgentTool(),
         ]
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }

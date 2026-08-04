@@ -4,7 +4,7 @@ import LumiKernel
 
 /// `StepFunSubAgentsGate` 的状态机契约测试。
 ///
-/// gate 把「供应商是否可用」与「同步的 `subAgents(kernel:)`」解耦:
+/// gate 把「供应商是否可用」与异步可用性探测解耦:
 /// - 网络探测结果经 `apply(result:kernel:)` 注入(刷新由 `onReady` 异步驱动,此处不测网络)。
 /// - `evaluate(kernel:)` 同步读 `phase`:仅 `ready` 返回全部 7 个 sub-agent。
 ///

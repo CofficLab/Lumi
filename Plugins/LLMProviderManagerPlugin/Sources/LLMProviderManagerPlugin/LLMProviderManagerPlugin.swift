@@ -41,7 +41,6 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
         #endif
     }
 
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
         [
             ProviderAPIKeyMissingRenderer.item(kernel: kernel),

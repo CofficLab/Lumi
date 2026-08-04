@@ -36,7 +36,6 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
         await ProjectsWillSendToLLMHook(pluginID: id).execute(kernel: kernel, messages: messages)
     }

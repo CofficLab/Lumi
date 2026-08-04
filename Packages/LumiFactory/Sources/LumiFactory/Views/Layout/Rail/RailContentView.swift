@@ -7,7 +7,9 @@ struct RailContentView: View {
     @ObservedObject var kernel: LumiKernel
 
     private var tabs: [PanelRailTabItem] {
-        kernel.workspace?.allPanelRailTabItems ?? []
+        guard let workspace = kernel.workspace else { return [] }
+        let containerID = workspace.activeViewContainerID ?? ""
+        return workspace.allPanelRailTabItems.filter { $0.visibility.isVisible(in: containerID) }
     }
 
     private var viewContainerID: String {

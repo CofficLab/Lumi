@@ -7,12 +7,18 @@ import Foundation
 /// ``AgentTurnSuspension`` and ``AgentTurnControl`` remain in
 /// `Types/Conversation/AgentTurnTypes.swift`.
 public enum AgentTurnManagingError: Error, LocalizedError, Sendable {
+    case createNotSupported
+    case invalidCreationRequest
     case resumeNotSupported
     case invalidResumeRequest
     case turnFailed
 
     public var errorDescription: String? {
         switch self {
+        case .createNotSupported:
+            "This agent turn manager does not support creating independent turns yet."
+        case .invalidCreationRequest:
+            "The agent turn creation request is invalid."
         case .resumeNotSupported:
             "This agent turn manager does not support resuming suspended turns yet."
         case .invalidResumeRequest:

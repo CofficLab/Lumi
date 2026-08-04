@@ -26,7 +26,6 @@ public final class ProjectRAGPlugin: LumiPlugin, SuperLog {
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
-    public func subAgents(kernel: LumiKernel) -> [LumiSubAgentDefinition] { [] }
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
             RAGCodeSearchTool(),

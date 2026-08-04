@@ -41,6 +41,7 @@ let package = Package(
         .package(path: "../../Plugins/ConversationInputPlugin"),
         .package(path: "../../Plugins/ConversationMessageCountPlugin"),
         .package(path: "../../Plugins/ConversationContextSizePlugin"),
+        .package(path: "../../Plugins/ConversationAgentTurnCountPlugin"),
         .package(path: "../../Plugins/ConversationTitlePlugin"),
         .package(path: "../../Plugins/ConversationAttachmentPlugin"),
         .package(path: "../../Plugins/ConversationPendingMessagePlugin"),
@@ -149,6 +150,7 @@ let package = Package(
         .package(path: "../../Plugins/GoalTaskPlugin"),
         .package(path: "../../Plugins/AppStoreConnectPlugin"),
         .package(path: "../../Plugins/CADDesignerPlugin"),
+        .package(path: "../../Plugins/StoryWriterPlugin"),
         .package(path: "../../Plugins/ActivityHeatmapPlugin"),
         .package(path: "../../Plugins/FileLogPlugin"),
         .package(path: "../../Plugins/OnboardingPlugin"),
@@ -158,7 +160,6 @@ let package = Package(
         .package(path: "../../Plugins/AppUpdatePlugin"),
         // User interaction
         .package(path: "../../Plugins/AskUserPlugin"),
-        .package(path: "../../Plugins/SubAgentProviderPlugin"),
     ],
     targets: [
         .target(
@@ -196,6 +197,7 @@ let package = Package(
                 .product(name: "ConversationInputPlugin", package: "ConversationInputPlugin"),
                 .product(name: "ConversationMessageCountPlugin", package: "ConversationMessageCountPlugin"),
                 .product(name: "ConversationContextSizePlugin", package: "ConversationContextSizePlugin"),
+                .product(name: "ConversationAgentTurnCountPlugin", package: "ConversationAgentTurnCountPlugin"),
                 .product(name: "ConversationTitlePlugin", package: "ConversationTitlePlugin"),
                 .product(name: "ConversationAttachmentPlugin", package: "ConversationAttachmentPlugin"),
                 .product(name: "ConversationPendingMessagePlugin", package: "ConversationPendingMessagePlugin"),
@@ -305,6 +307,7 @@ let package = Package(
                 .product(name: "GoalTaskPlugin", package: "GoalTaskPlugin"),
                 .product(name: "AppStoreConnectPlugin", package: "AppStoreConnectPlugin"),
                 .product(name: "CADDesignerPlugin", package: "CADDesignerPlugin"),
+                .product(name: "StoryWriterPlugin", package: "StoryWriterPlugin"),
                 .product(name: "ActivityHeatmapPlugin", package: "ActivityHeatmapPlugin"),
                 .product(name: "FileLogPlugin", package: "FileLogPlugin"),
                 .product(name: "OnboardingPlugin", package: "OnboardingPlugin"),
@@ -313,7 +316,6 @@ let package = Package(
                 .product(name: "AgentTurnNotificationPlugin", package: "AgentTurnNotificationPlugin"),
                 .product(name: "AppUpdatePlugin", package: "AppUpdatePlugin"),
                 .product(name: "AskUserPlugin", package: "AskUserPlugin"),
-                .product(name: "SubAgentProviderPlugin", package: "SubAgentProviderPlugin"),
             ],
             resources: [
                 .process("Resources")

@@ -43,6 +43,9 @@ final public class ConversationModel: @unchecked Sendable {
     /// Associated project path
     public var projectPath: String?
 
+    /// Parent conversation ID for sub-agent conversations
+    public var parentConversationID: String?
+
     public init(
         id: String = UUID().uuidString,
         title: String,
@@ -55,7 +58,8 @@ final public class ConversationModel: @unchecked Sendable {
         automationLevelRaw: String? = nil,
         providerId: String? = nil,
         modelName: String? = nil,
-        projectPath: String? = nil
+        projectPath: String? = nil,
+        parentConversationID: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -69,6 +73,7 @@ final public class ConversationModel: @unchecked Sendable {
         self.providerId = providerId
         self.modelName = modelName
         self.projectPath = projectPath
+        self.parentConversationID = parentConversationID
     }
 }
 
@@ -90,7 +95,8 @@ public extension ConversationModel {
             automationLevelRaw: summary.automationLevel?.rawValue,
             providerId: summary.providerID,
             modelName: summary.modelName,
-            projectPath: summary.projectPath
+            projectPath: summary.projectPath,
+            parentConversationID: summary.parentConversationID?.uuidString
         )
     }
 
@@ -123,7 +129,8 @@ public extension ConversationModel {
             automationLevel: automationLevel,
             providerID: providerId,
             modelName: modelName,
-            projectPath: projectPath
+            projectPath: projectPath,
+            parentConversationID: parentConversationID.flatMap(UUID.init(uuidString:))
         )
     }
 }
