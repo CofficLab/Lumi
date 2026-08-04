@@ -6,10 +6,7 @@ import SwiftUI
 @MainActor
 public final class AiRouterPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider.airouter"
-    public var name: String {
-        LumiPluginLocalization.string("AiRouter", bundle: .module)
-    }
-
+    public var name: String = "AiRouter"
     public let order = 91
     public let policy: LumiPluginPolicy = .optIn
     public var category: LumiPluginCategory { .llmProvider }
