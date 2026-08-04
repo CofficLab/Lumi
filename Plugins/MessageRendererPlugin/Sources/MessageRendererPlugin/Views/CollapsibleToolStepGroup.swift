@@ -179,6 +179,7 @@ struct CollapsibleToolStepGroup: View {
             )
         } else {
             ToolCallRowView(
+                kernel: kernel,
                 message: message,
                 toolCall: toolCall,
                 verbosity: verbosity,

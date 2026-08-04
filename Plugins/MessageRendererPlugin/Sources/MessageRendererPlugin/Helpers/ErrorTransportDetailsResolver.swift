@@ -1,21 +1,6 @@
 import LumiKernel
 import LumiKernel
 
-struct ResolvedErrorTransportDetails: Equatable {
-    let summary: String
-    let requestDetails: String?
-    let responseDetails: String?
-
-    var hasTransportDetails: Bool {
-        requestDetails != nil || responseDetails != nil
-    }
-
-    var displaySummary: String {
-        let trimmed = summary.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? summary : trimmed
-    }
-}
-
 enum ErrorTransportDetailsResolver {
     private static let summarySeparator = "\n\n--- Request / Response Details ---\n"
     private static let responseSectionMarker = "Response Status:"

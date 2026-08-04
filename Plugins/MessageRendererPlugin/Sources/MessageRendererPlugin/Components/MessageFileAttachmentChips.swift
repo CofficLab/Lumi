@@ -3,9 +3,6 @@ import LumiUI
 import SwiftUI
 
 /// 消息气泡内展示文件附件的只读 chip 列(横向滚动)。
-///
-/// 与「附件预览区」(`ConversationAttachmentPlugin`)的 chip 区别在于:这里展示的是
-/// **已随消息发出**的附件,因此没有删除按钮,仅作回看。
 struct MessageFileAttachmentChips: View {
     let attachments: [LumiFileAttachment]
     @LumiTheme private var theme

@@ -4,26 +4,6 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
-struct BorderedUtilityContent<Content: View>: View {
-    let tint: Color
-    let role: LumiChatMessageRole
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        content()
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                tint.opacity(role == .system ? 0.07 : 0.1),
-                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(tint.opacity(0.16), lineWidth: 1)
-            )
-    }
-}
-
 // MARK: - ToolCallRowsView
 /// V1 (brief) 模式：纯文本 inline 样式，完全融入消息正文；
 /// V2/V3 模式：带图标/背景/边框/按钮的卡片行。
@@ -96,6 +76,7 @@ struct ToolCallRowsView: View {
             )
         } else {
             ToolCallRowView(
+                kernel: kernel,
                 message: message,
                 toolCall: toolCall,
                 verbosity: verbosity,
@@ -107,109 +88,6 @@ struct ToolCallRowsView: View {
     }
 }
 
-// MARK: - V1 inline tool call view (brief mode)
-
-/// V1 模式下的工具调用展示：纯文本 inline，完全融入消息正文样式。
-/// 与 AssistantMessageBody 的正文保持一致的字体与颜色，
-/// 不带图标、背景、边框、按钮，保持简洁的 inline 风格。
-private struct LumiInlineToolCallListView: View {
-    @LumiTheme private var theme
-    let toolCalls: [LumiToolCall]
-
-    var body: some View {
-        if summaryText.isEmpty {
-            EmptyView()
-        } else {
-            Text(summaryText)
-                .font(.appCaption)
-                .foregroundColor(theme.textSecondary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
-        }
-    }
-
-    private var summaryText: String {
-        ToolCallBriefSummaryFormatter.summaryText(for: toolCalls)
-    }
-}
-
-enum ToolCallBriefSummaryFormatter {
-    static func summaryText(for toolCalls: [LumiToolCall]) -> String {
-        toolCalls
-            .map(title(for:))
-            .filter { !$0.isEmpty }
-            .joined(separator: "  ·  ")
-    }
-
-    static func title(for toolCall: LumiToolCall) -> String {
-        let description = toolCall.displayDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return description.flatMap { $0.isEmpty ? nil : $0 } ?? "执行工具"
-    }
-}
-
-/// V1「可折叠工具步骤组」折叠态摘要的纯逻辑(便于单元测试)。
-///
-/// 文案样式(用户选定:数量 + 总耗时):
-/// - 进行中:`执行中 · 已完成 k/N`(+ 已完成部分的耗时)
-/// - 全部完成:`执行了 N 个步骤 · <总耗时>`
-/// - 有失败:`执行了 N 个步骤(X 失败) · <总耗时>`
-enum ToolStepGroupSummary {
-    static func summaryText(for summary: LumiTurnActivitySummary) -> String {
-        var parts = ["执行了 \(summary.totalCount) 个步骤"]
-        if summary.failedCount > 0 {
-            parts[0] += "(\(summary.failedCount) 失败)"
-        }
-        if let duration = summary.totalDuration {
-            parts.append(MessageViewHelpers.formatDuration(duration))
-        }
-        return parts.joined(separator: " · ")
-    }
-
-    /// 组内任一调用仍在执行 → loading;否则任一失败 → failed;否则 completed。
-    static func aggregateState(for toolCalls: [LumiToolCall]) -> ToolCallResultVisualState {
-        if toolCalls.contains(where: { $0.result == nil }) {
-            return .loading
-        }
-        if toolCalls.contains(where: { $0.result?.isError == true }) {
-            return .failed
-        }
-        return .completed
-    }
-
-    /// 折叠态摘要文案。
-    static func summaryText(for toolCalls: [LumiToolCall]) -> String {
-        let total = toolCalls.count
-        let finished = toolCalls.filter { $0.result != nil }.count
-        let state = aggregateState(for: toolCalls)
-
-        if state == .loading {
-            let progress = "执行中 · 已完成 \(finished)/\(total)"
-            if let duration = totalDuration(for: toolCalls) {
-                return "\(progress) · \(MessageViewHelpers.formatDuration(duration))"
-            }
-            return progress
-        }
-
-        var parts = ["执行了 \(total) 个步骤"]
-        let failed = toolCalls.filter { $0.result?.isError == true }.count
-        if failed > 0 {
-            parts[0] = "执行了 \(total) 个步骤(\(failed) 失败)"
-        }
-        if let duration = totalDuration(for: toolCalls) {
-            parts.append(MessageViewHelpers.formatDuration(duration))
-        }
-        return parts.joined(separator: " · ")
-    }
-
-    /// 已完成工具的耗时之和(进行中仅统计已完成的部分);无任何耗时数据时为 nil。
-    static func totalDuration(for toolCalls: [LumiToolCall]) -> TimeInterval? {
-        let durations = toolCalls.compactMap { $0.result?.duration }
-        guard !durations.isEmpty else { return nil }
-        return durations.reduce(0, +)
-    }
-}
-
 // MARK: - ToolCallRowView
 
 /// 单个工具调用卡片行。供 `ToolCallRowsView`(V2/V3)与
@@ -217,6 +95,7 @@ enum ToolStepGroupSummary {
 struct ToolCallRowView: View {
     @LumiTheme private var theme
 
+    let kernel: LumiKernel
     let message: LumiChatMessage
     let toolCall: LumiToolCall
     let verbosity: LumiResponseVerbosity
@@ -335,10 +214,8 @@ struct ToolCallRowView: View {
     @ViewBuilder
     private var resultButton: some View {
         AppIconButton(
-            systemImage: visualState.systemImage,
-            tint: isResultsPresented
-                ? theme.textPrimary
-                : visualState.isFailure ? theme.error : theme.textSecondary,
+            systemImage: "doc.text.magnifyingglass",
+            tint: isResultsPresented ? theme.textPrimary : theme.textSecondary,
             size: .regular,
             isActive: isResultsPresented
         ) {
@@ -346,17 +223,13 @@ struct ToolCallRowView: View {
         }
         .help(LumiPluginLocalization.string("调用结果", bundle: .module))
         .popover(isPresented: popoverBinding(selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
-            ToolDetailPopoverView(
-                title: "调用结果",
-                systemImage: visualState.systemImage,
-                isError: visualState.isFailure
-            ) {
-                ToolCallResultView(
-                    result: toolCall.result,
-                    isLoading: isLoadingResult,
-                    visualState: visualState
-                )
-            }
+            // 结果按钮本身不持有数据:打开时先显示 loading,再去 kernel 查询该工具调用结果,
+            // 查到后再渲染。
+            ToolCallResultLazyPopover(
+                kernel: kernel,
+                toolCallID: toolCall.id,
+                fallbackResult: toolCall.result
+            )
         }
     }
 
@@ -545,136 +418,47 @@ private struct ToolCallResultView: View {
     }
 }
 
-// MARK: - LoadingToolSectionView
+// MARK: - ToolCallResultLazyPopover
 
-private struct LoadingToolSectionView: View {
-    @LumiTheme private var theme
+/// 结果按钮弹层:不在打开前持有数据。打开时先展示 loading,再去 kernel 查询该工具调用结果,
+/// 查到后再渲染。
+///
+/// `fallbackResult` 仅用于在 kernel 查询返回 nil(如结果尚未持久化、store 不可用)时,
+/// 复用行内已解析的结果作为兜底,避免空面板。
+private struct ToolCallResultLazyPopover: View {
+    let kernel: LumiKernel
+    let toolCallID: String
+    let fallbackResult: LumiToolResult?
 
-    var body: some View {
-        HStack(spacing: 8) {
-            ProgressView()
-                .controlSize(.small)
+    @State private var result: LumiToolResult?
+    @State private var didLoad = false
 
-            Text(verbatim: LumiPluginLocalization.string("查询结果中...", bundle: .module))
-                .font(.appCaption)
-                .foregroundColor(theme.textSecondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .toolSubtleCard()
+    private var isLoading: Bool {
+        !didLoad
     }
-}
 
-// MARK: - ToolFailureNoticeView
-
-private struct ToolFailureNoticeView: View {
-    @LumiTheme private var theme
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(theme.error)
-
-            Text(verbatim: LumiPluginLocalization.string("工具执行失败", bundle: .module))
-                .font(.appCaptionEmphasized)
-                .foregroundColor(theme.error)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .toolSubtleCard()
+    private var visualState: ToolCallResultVisualState {
+        ToolCallResultVisualState(result: result, isLoading: isLoading)
     }
-}
-
-// MARK: - ToolTextSectionView
-
-private struct ToolTextSectionView: View {
-    @LumiTheme private var theme
-
-    let content: String
-    var isError = false
 
     var body: some View {
-        AppCard(
-            style: .subtle,
-            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
+        ToolDetailPopoverView(
+            title: "调用结果",
+            systemImage: visualState.systemImage,
+            isError: visualState.isFailure
         ) {
-            ScrollView(.vertical, showsIndicators: true) {
-                Text(content)
-                    .font(.appMonoCaption)
-                    .foregroundColor(isError ? theme.error : theme.textPrimary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
-            }
-            .frame(maxHeight: 360)
+            ToolCallResultView(
+                result: result,
+                isLoading: isLoading,
+                visualState: visualState
+            )
+        }
+        .task {
+            guard !didLoad else { return }
+            let resolved = await kernel.toolManager?.toolCallResult(for: toolCallID)
+            result = resolved ?? fallbackResult
+            didLoad = true
         }
     }
 }
 
-// MARK: - EmptyToolSectionView
-
-private struct EmptyToolSectionView: View {
-    @LumiTheme private var theme
-
-    let systemImage: String
-    let text: String
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemImage)
-                .foregroundColor(theme.textSecondary)
-
-            Text(text)
-                .font(.appCaption)
-                .foregroundColor(theme.textSecondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .toolSubtleCard()
-    }
-}
-
-// MARK: - ToolSubtleCardModifier
-
-private struct ToolSubtleCardModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        AppCard(
-            style: .subtle,
-            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
-        ) {
-            content
-        }
-    }
-}
-
-private extension View {
-    func toolSubtleCard() -> some View {
-        modifier(ToolSubtleCardModifier())
-    }
-}
-
-// MARK: - ToolCallResultVisualState
-
-enum ToolCallResultVisualState: Equatable {
-    case loading
-    case failed
-    case completed
-
-    init(result: LumiToolResult?, isLoading: Bool) {
-        if isLoading {
-            self = .loading
-        } else if result?.isError == true {
-            self = .failed
-        } else {
-            self = .completed
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .loading: "hourglass"
-        case .failed: "exclamationmark.triangle.fill"
-        case .completed: "doc.text.magnifyingglass"
-        }
-    }
-
-    var isFailure: Bool {
-        self == .failed
-    }
-}
