@@ -16,6 +16,7 @@ public final class XiaomiPlugin: LumiPlugin {
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
+        ProviderRenderKindManager.shared.registerProviderPrefix("xiaomi-", for: "xiaomi-api")
         if let storage = kernel.storage {
             AvailabilityDiskCacheDirectoryResolver.set(
                 pluginName: "LLMProviderXiaomiPlugin",
