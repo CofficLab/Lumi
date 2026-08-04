@@ -1,5 +1,13 @@
 import AppKit
+import os
 import SwiftUI
+
+#if DEBUG
+private let chatInputPerformanceLog = OSLog(
+    subsystem: "com.coffic.lumi",
+    category: "conversation-input-performance"
+)
+#endif
 
 /// 聊天输入编辑器视图
 public struct ChatInputEditorView: NSViewRepresentable {
@@ -70,7 +78,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         textView.autoresizingMask = [.width]
         textView.delegate = context.coordinator
         textView.keyDownHandler = { [weak coordinator = context.coordinator] event in
-            coordinator?.handleKeyDown(event) ?? false
+            coordinator?.handleKeyDown(event, in: textView) ?? false
         }
         textView.pasteHandler = { [weak coordinator = context.coordinator, weak textView] pasteboard in
             guard let coordinator, let textView else { return false }
@@ -78,6 +86,14 @@ public struct ChatInputEditorView: NSViewRepresentable {
         }
         textView.fileDropHandler = { [weak coordinator = context.coordinator] url in
             coordinator?.handleFileDrop(url)
+        }
+        textView.imageDragHoverHandler = { [weak coordinator = context.coordinator] hovering in
+            guard let coordinator else { return }
+            DispatchQueue.main.async {
+                if coordinator.parent.isImageDragHovering != hovering {
+                    coordinator.parent.isImageDragHovering = hovering
+                }
+            }
         }
         textView.drawsBackground = false
         textView.font = font
@@ -109,32 +125,13 @@ public struct ChatInputEditorView: NSViewRepresentable {
         guard let textView = nsView.documentView as? EditorTextView else { return }
 
         context.coordinator.parent = self
-        textView.delegate = context.coordinator
-        textView.keyDownHandler = { [weak coordinator = context.coordinator] event in
-            coordinator?.handleKeyDown(event) ?? false
-        }
-        textView.pasteHandler = { [weak coordinator = context.coordinator, weak textView] pasteboard in
-            guard let coordinator, let textView else { return false }
-            return coordinator.handlePaste(pasteboard, in: textView)
-        }
-        textView.fileDropHandler = { [weak coordinator = context.coordinator] url in
-            coordinator?.handleFileDrop(url)
-        }
-        textView.imageDragHoverHandler = { [weak coordinator = context.coordinator] hovering in
-            guard let coordinator else { return }
-            DispatchQueue.main.async {
-                if coordinator.parent.isImageDragHovering != hovering {
-                    coordinator.parent.isImageDragHovering = hovering
-                }
-            }
-        }
 
         if textView.textColor != textColor {
             textView.textColor = textColor
             textView.insertionPointColor = textColor
         }
 
-        if textView.hasMarkedText() {
+        if textView.hasMarkedText() || textView.isIMEComposing {
             return
         }
 
@@ -142,6 +139,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         let textChanged = currentText != text
         if textChanged {
             textView.delegate = nil
+            textView.hasPastePreviewAttachments = false
             textView.string = text
             textView.delegate = context.coordinator
         }
@@ -152,12 +150,12 @@ public struct ChatInputEditorView: NSViewRepresentable {
         if textChanged || cursorBindingChanged {
             let position = ChatInputEditorRules.swiftToUTF16Index(cursorPosition, in: text)
             DispatchQueue.main.async {
-                if textChanged, let tv = nsView.documentView as? EditorTextView {
-                    updateHeight(for: tv)
-                }
                 if let tv = nsView.documentView as? EditorTextView {
                     tv.setSelectedRange(NSRange(location: position, length: 0))
                 }
+            }
+            if textChanged {
+                context.coordinator.scheduleHeightUpdate(for: textView, immediately: true)
             }
         }
     }
@@ -167,6 +165,9 @@ public struct ChatInputEditorView: NSViewRepresentable {
     }
 
     private func updateHeight(for textView: NSTextView) {
+#if DEBUG
+        os_signpost(.event, log: chatInputPerformanceLog, name: "Height Measurement")
+#endif
         let layoutManager = textView.layoutManager!
         let textContainer = textView.textContainer!
         layoutManager.ensureLayout(for: textContainer)
@@ -188,20 +189,30 @@ public struct ChatInputEditorView: NSViewRepresentable {
     }
 
     private func resolvedText(from textView: NSTextView) -> String {
-        guard let textStorage = textView.textStorage, textStorage.length > 0 else {
+        guard let editorTextView = textView as? EditorTextView,
+              editorTextView.hasPastePreviewAttachments,
+              let textStorage = textView.textStorage,
+              textStorage.length > 0 else {
             return textView.string
         }
 
         let fullRange = NSRange(location: 0, length: textStorage.length)
         var result = String()
         result.reserveCapacity(textStorage.length)
+        var foundAttachment = false
 
         textStorage.enumerateAttributes(in: fullRange, options: []) { attributes, range, _ in
             if let attachment = attributes[.attachment] as? PastePreviewAttachment {
+                foundAttachment = true
                 result += attachment.originalText
             } else {
                 result += textStorage.attributedSubstring(from: range).string
             }
+        }
+
+        if !foundAttachment {
+            editorTextView.hasPastePreviewAttachments = false
+            return textView.string
         }
 
         return result
@@ -212,13 +223,80 @@ extension ChatInputEditorView {
     public final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: ChatInputEditorView
         var lastSyncedCursorPosition: Int?
+        private var pendingHeightWorkItem: DispatchWorkItem?
+        private var heightScheduleID = UUID()
 
         init(_ parent: ChatInputEditorView) {
             self.parent = parent
         }
 
+        deinit {
+            pendingHeightWorkItem?.cancel()
+        }
+
+        @MainActor
+        func scheduleHeightUpdate(for textView: NSTextView, immediately: Bool = false) {
+            pendingHeightWorkItem?.cancel()
+            heightScheduleID = UUID()
+            let scheduleID = heightScheduleID
+
+            guard !textView.hasMarkedText() else {
+#if DEBUG
+                os_signpost(.event, log: chatInputPerformanceLog, name: "Marked Text Update")
+#endif
+                return
+            }
+            if let editorTextView = textView as? EditorTextView,
+               editorTextView.isIMEComposing {
+#if DEBUG
+                os_signpost(.event, log: chatInputPerformanceLog, name: "Marked Text Update")
+#endif
+                return
+            }
+            if immediately {
+                parent.updateHeight(for: textView)
+                return
+            }
+
+            let workItem = DispatchWorkItem { [weak self, weak textView] in
+                guard let self,
+                      let textView,
+                      self.heightScheduleID == scheduleID else { return }
+                self.parent.updateHeight(for: textView)
+            }
+            pendingHeightWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.016, execute: workItem)
+        }
+
         public func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
+
+            // AppKit sends text changes for every intermediate IME update.
+            // Keep marked text and its selection inside NSTextView until the
+            // composition is committed; publishing it here would invalidate
+            // the whole SwiftUI tree and feed pinyin into the draft state.
+            guard !textView.hasMarkedText() else {
+#if DEBUG
+                os_signpost(.event, log: chatInputPerformanceLog, name: "Marked Text Update")
+#endif
+                return
+            }
+            if let editorTextView = textView as? EditorTextView,
+               editorTextView.isIMEComposing {
+#if DEBUG
+                os_signpost(.event, log: chatInputPerformanceLog, name: "Marked Text Update")
+#endif
+                return
+            }
+
+#if DEBUG
+            os_signpost(.event, log: chatInputPerformanceLog, name: "Committed Text Publication")
+#endif
+            publishCommittedText(from: textView)
+        }
+
+        @MainActor
+        private func publishCommittedText(from textView: NSTextView) {
             parent.text = parent.resolvedText(from: textView)
 
             let utf16Location = textView.selectedRange().location
@@ -228,7 +306,7 @@ extension ChatInputEditorView {
             }
             lastSyncedCursorPosition = swiftLocation
 
-            parent.updateHeight(for: textView)
+            scheduleHeightUpdate(for: textView)
         }
 
         @MainActor
@@ -244,6 +322,7 @@ extension ChatInputEditorView {
 
             let attachment = PastePreviewAttachment(originalText: text)
             let attributed = NSAttributedString(attachment: attachment)
+            textView.hasPastePreviewAttachments = true
             textView.insertText(attributed, replacementRange: textView.selectedRange())
             return true
         }
@@ -258,7 +337,11 @@ extension ChatInputEditorView {
                 if parent.isVerbose {
                     parent.log("doCommandBy captured return: \(NSStringFromSelector(commandSelector))")
                 }
-                return submitFromEnter()
+                if !textView.hasMarkedText() {
+                    (textView as? EditorTextView)?.finishIMEComposition()
+                    publishCommittedText(from: textView)
+                }
+                return submitFromEnter(in: textView)
             } else if commandSelector == #selector(NSResponder.moveUp(_:)) {
                 if let onArrowUp = parent.onArrowUp {
                     onArrowUp()
@@ -274,7 +357,7 @@ extension ChatInputEditorView {
         }
 
         @MainActor
-        func handleKeyDown(_ event: NSEvent) -> Bool {
+        func handleKeyDown(_ event: NSEvent, in textView: EditorTextView) -> Bool {
             if event.keyCode == 53, let onEscape = parent.onEscape {
                 onEscape()
                 return true
@@ -290,7 +373,11 @@ extension ChatInputEditorView {
             if parent.isVerbose {
                 parent.log("keyDown captured return")
             }
-            return submitFromEnter()
+            if !textView.hasMarkedText() {
+                textView.finishIMEComposition()
+                publishCommittedText(from: textView)
+            }
+            return submitFromEnter(in: textView)
         }
 
         @MainActor
@@ -299,7 +386,7 @@ extension ChatInputEditorView {
         }
 
         @MainActor
-        private func submitFromEnter() -> Bool {
+        private func submitFromEnter(in textView: NSTextView) -> Bool {
             if let onEnter = parent.onEnter {
                 onEnter()
                 return true
@@ -313,6 +400,8 @@ extension ChatInputEditorView {
 // MARK: - EditorTextView
 
 final class EditorTextView: NSTextView {
+    var hasPastePreviewAttachments = false
+    private(set) var isIMEComposing = false
     var pasteHandler: ((NSPasteboard) -> Bool)?
     var imageDragHoverHandler: ((Bool) -> Void)?
     var keyDownHandler: ((NSEvent) -> Bool)?
@@ -334,6 +423,42 @@ final class EditorTextView: NSTextView {
         registerForDraggedTypes([.fileURL, .string])
     }
 
+    override func setMarkedText(
+        _ string: Any,
+        selectedRange: NSRange,
+        replacementRange: NSRange
+    ) {
+        isIMEComposing = true
+        super.setMarkedText(
+            string,
+            selectedRange: selectedRange,
+            replacementRange: replacementRange
+        )
+    }
+
+    override func unmarkText() {
+        super.unmarkText()
+        isIMEComposing = false
+    }
+
+    func finishIMEComposition() {
+        isIMEComposing = false
+    }
+
+    override func insertText(_ insertString: Any, replacementRange: NSRange) {
+        // Some input methods commit the candidate through insertText without
+        // calling the NSTextView unmarkText override first. Clear our local
+        // composition guard at the commit boundary so the following
+        // textDidChange publishes the committed draft to InputState.
+        isIMEComposing = false
+        super.insertText(insertString, replacementRange: replacementRange)
+    }
+
+    override func insertText(_ insertString: Any) {
+        isIMEComposing = false
+        super.insertText(insertString)
+    }
+
     override func paste(_ sender: Any?) {
         if pasteHandler?(NSPasteboard.general) == true {
             return
@@ -350,6 +475,9 @@ final class EditorTextView: NSTextView {
     }
 
     override func keyDown(with event: NSEvent) {
+        if !hasMarkedText() {
+            isIMEComposing = false
+        }
         if !hasMarkedText(), keyDownHandler?(event) == true {
             return
         }

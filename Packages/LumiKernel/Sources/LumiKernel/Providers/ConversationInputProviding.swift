@@ -8,7 +8,11 @@ import SwiftUI
 /// 扩展草稿恢复、输入预填、输入同步等能力。
 @MainActor
 public protocol ConversationInputProviding: ObservableObject {
-    /// 当前输入文本
+    /// 当前已提交的输入文本。
+    ///
+    /// IME marked text is owned by the native editor until composition is
+    /// committed, so consumers should not expect intermediate pinyin/kana
+    /// composition values here.
     var text: String { get set }
 
     /// 输入框高度

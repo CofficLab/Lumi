@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import Testing
 @testable import LumiKernel
 
@@ -38,6 +39,29 @@ struct ConversationInputProvidingTests {
         #expect(input.isInputFocused == true)
         #expect(input.inputCursorPosition == 3)
         #expect(input.errorMessage == "boom")
+    }
+
+    @Test("输入状态变化不应广播到 kernel 的全局观察者")
+    func inputChangesDoNotInvalidateKernel() throws {
+        let kernel = KernelTestKit.makeKernel()
+        let input = MockConversationInputProviding()
+        try kernel.registerConversationInputService(input)
+
+        var invalidationCount = 0
+        let cancellable = kernel.objectWillChange.sink { _ in
+            invalidationCount += 1
+        }
+        defer { cancellable.cancel() }
+
+        input.text = "ni"
+        input.inputCursorPosition = 2
+        input.inputHeight = 80
+        input.isInputFocused = true
+
+        // registerService delivers forwarded changes on the main run loop.
+        RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+
+        #expect(invalidationCount == 0)
     }
 
     @Test("可接受要加入会话的文件引用")

@@ -52,6 +52,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)chatSectionItems ➡️ 注册 1 个 .bottomFixed item (注入 kernel)")
         }
+        let inputState = self.inputState
         return [
             ChatSectionItem(
                 id: id,
@@ -59,15 +60,16 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                ConversationInputView(kernel: kernel)
+                ConversationInputView(kernel: kernel, inputState: inputState)
             }
         ]
     }
 
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
-        [
+        let inputState = self.inputState
+        return [
             ChatSectionActionBarItem(id: "\(id).send-button", placement: .trailing) {
-                SendActionBarButton(kernel: kernel)
+                SendActionBarButton(kernel: kernel, inputState: inputState)
             }
         ]
     }
