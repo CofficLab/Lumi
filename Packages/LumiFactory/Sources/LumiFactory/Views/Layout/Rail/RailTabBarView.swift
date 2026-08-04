@@ -14,7 +14,9 @@ struct RailTabBarView: View {
     @LumiTheme private var theme
 
     private var tabs: [PanelRailTabItem] {
-        kernel.workspace?.allPanelRailTabItems ?? []
+        guard let workspace = kernel.workspace else { return [] }
+        let containerID = workspace.activeViewContainerID ?? ""
+        return workspace.allPanelRailTabItems.filter { $0.visibility.isVisible(in: containerID) }
     }
 
     private var viewContainerID: String {

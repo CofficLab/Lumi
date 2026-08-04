@@ -158,6 +158,7 @@ public final class PluginManager: ObservableObject {
                     id: item.id,
                     title: item.title,
                     systemImage: item.systemImage,
+                    visibility: item.visibility,
                     content: item.makeView
                 )
                 railItem.order = pluginOrder
