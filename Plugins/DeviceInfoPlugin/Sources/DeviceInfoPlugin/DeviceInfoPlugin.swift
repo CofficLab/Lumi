@@ -42,6 +42,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: "Device Info",
                 systemImage: "macbook.and.iphone",
+                supportsProject: false,
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,
                 panelHeaderVisibility: .unsupported,
