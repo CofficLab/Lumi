@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.7.1</title>
-            <pubDate>Tue, 04 Aug 2026 11:10:41 +0000</pubDate>
-            <sparkle:version>516</sparkle:version>
-            <sparkle:shortVersionString>5.7.1</sparkle:shortVersionString>
+            <title>5.7.2</title>
+            <pubDate>Tue, 04 Aug 2026 16:12:09 +0000</pubDate>
+            <sparkle:version>517</sparkle:version>
+            <sparkle:shortVersionString>5.7.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.7.1</h2>
-<h3>Changes since v5.7.0</h3>
+            <description><![CDATA[<h2>Release v5.7.2</h2>
+<h3>Changes since v5.7.1</h3>
 <ul>
-<li>feat(ActivityHeatmap): adjust bar chart heights and format Y-axis labels</li>
-<li>feat(AgentTurnRunnerPlugin): cascade cancelTurn to child turns sharing parent</li>
-<li>feat(ConversationListPlugin): add "Project" rail tab to show conversations scoped to current project</li>
-<li>feat(ConversationListPlugin): OnConversationSelectedHook attach in onReady and scoped header title</li>
-<li>feat(ConversationManagerPlugin): cascade delete conversation-related data including child conversations and tool calls</li>
-<li>feat(LLMProviderMiniMaxPlugin): preserve and display raw error response</li>
-<li>feat(LLMProviderMiniMaxPlugin): preserve HTTPNetworkError body for error display</li>
-<li>feat(LumiFactory): register StateMonitorPlugin</li>
-<li>feat(LumiKernel): add deleteToolCalls(for:) to ToolManaging protocol</li>
-<li>feat(LumiKernel): constrain ConversationManaging publisher for existentials and cross-package observation</li>
-<li>feat(StateMonitorPlugin): add OnGlobalProviderModelSyncHook to sync global provider/model to current conversation</li>
-<li>feat(StateMonitorPlugin): clear selected conversation when current project changes</li>
-<li>feat(StateMonitorPlugin): extract conversation→project sync hook into dedicated always-on plugin</li>
-<li>feat(StateMonitorPlugin): sync conversation's provider/model to kernel when selection changes</li>
-<li>feat(ToolManagerPlugin): implement deleteToolCalls(for:) with conversation isolation and write-behind flush</li>
-<li>fix(ConversationInputPlugin): reduce input lag and restore Return submission</li>
-<li>fix(ConversationListPlugin): move delete context menu to row level for macOS right-click</li>
-<li>fix(LLMProviderManagerPlugin): post notifications when provider/model changes</li>
-<li>fix(LLMProviderMiniMaxPlugin): normalize truncated tool-call arguments to avoid MiniMax error 2013</li>
-<li>fix(MessageManagerPlugin): drain PendingMessageBuffer before deleting conversation</li>
+<li>feat(ChatPanelPlugin): declare supportsProject for chat container</li>
+<li>feat(ConversationAgentTurnCountPlugin): replace tooltip with clickable button and popover detail panel</li>
+<li>feat(DeviceInfoPlugin): declare supportsProject for device info container</li>
+<li>feat(EditorPanelPlugin): declare supportsProject for editor container</li>
+<li>feat(kernel): add httpStatusCode and httpBody to LumiChatMessage</li>
+<li>feat(kernel): add lumiConversationDidDelete notification</li>
+<li>feat(kernel): add lumiConversationWillDelete notification</li>
+<li>feat(kernel): add supportsProject property to ViewContainerItem</li>
+<li>feat(LLMKit): preserve HTTP status code and body in error messages</li>
+<li>feat(LLMProviderAliyunPlugin): register provider render kind prefix on boot</li>
+<li>feat(LLMProviderManagerPlugin): add API key diagnostic view for missing key errors</li>
+<li>feat(LLMProviderXiaomiPlugin): register provider render kind prefix on boot</li>
+<li>feat(LLMProviderZhipuPlugin): register provider render kind prefix on boot</li>
+<li>feat(LumiKernel): add API key diagnostic for LLM providers</li>
+<li>feat(LumiKernel): add requiresProjectSupport flag to hide rail tabs when no project is open</li>
+<li>feat(MessageListPlugin): gate renderer id badge behind #if DEBUG</li>
+<li>feat(MessageListPlugin): overlay renderer id badge in MessageRowView</li>
+<li>feat(MessageManagerPlugin): add httpStatusCode and httpBody to MessageModel</li>
+<li>feat(MessageRendererPlugin): display HTTP status code and body in error view</li>
+<li>feat(OpenInVSCodePlugin): add Open in VSCode plugin</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.7.1</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.7.2</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.7.1/Lumi_5.7.1_arm64.dmg" length="40825117" type="application/octet-stream" sparkle:edSignature="VpC7uGF0dACN7GqR0BPn5Bnk9/5u2j0IPmmX/Mdy2Rha8onErRPS2T9gHAOiVY4po+LDKmB2LRuWQMp/iIuUBw=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.7.2/Lumi_5.7.2_arm64.dmg" length="41375221" type="application/octet-stream" sparkle:edSignature="QBAngMi0VBtL28kgPmER8dyhdLTmsMgGgNd4qQCnw79ByZa7E0bu0i4wbEtvNCXkSY7OXmzhqpbqpNEQFRMDAw=="/>
         </item>
     </channel>
 </rss>
