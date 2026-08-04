@@ -10,13 +10,6 @@ struct HttpErrorView: View {
     let message: LumiChatMessage
     let statusCode: Int?
 
-    private var title: String {
-        if let statusCode {
-            return LumiPluginLocalization.string("MiniMax HTTP \(statusCode)", bundle: .module)
-        }
-        return LumiPluginLocalization.string("MiniMax request failed", bundle: .module)
-    }
-
     private var displayText: String {
         let raw = ((message.rawErrorDetail?.isEmpty == false) ? message.rawErrorDetail : message.content) ?? ""
         return raw.components(separatedBy: Self.transportDetailsSeparator).first ?? raw
@@ -33,15 +26,10 @@ struct HttpErrorView: View {
     var body: some View {
         ErrorMessageLayout(message: message) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .font(.appCallout)
-                    .fontWeight(.semibold)
-                    .foregroundColor(theme.textPrimary)
-
                 if !displayText.isEmpty {
                     Text(displayText)
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
+                        .font(.appBody)
+                        .foregroundColor(theme.error)
                         .textSelection(.enabled)
                 }
 

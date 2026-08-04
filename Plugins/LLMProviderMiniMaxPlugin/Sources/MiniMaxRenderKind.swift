@@ -23,7 +23,9 @@ enum MiniMaxRenderKind {
     }
 
     static func isMiniMaxError(_ message: LumiChatMessage) -> Bool {
-        message.isError && message.providerID == MiniMaxTokenPlanProvider.info.id
+        message.isError
+            && (message.providerID == MiniMaxTokenPlanProvider.info.id
+                || message.providerID == MiniMaxAnthropicProvider.info.id)
     }
 
     static func matches(renderKind expected: String, message: LumiChatMessage) -> Bool {

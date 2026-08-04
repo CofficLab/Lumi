@@ -42,10 +42,22 @@ class MiniMaxProviderSupport {
            let body = networkError.body,
            let rawResponse = String(data: body, encoding: .utf8),
            !rawResponse.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            message.metadata[LLMTransportMetadata.responseDetails] = rawResponse
+            let details = [
+                "Response Status: \(networkError.statusCode.map(String.init) ?? "-")",
+                "Response Headers:",
+                formattedResponseHeaders(networkError.headers),
+                "Response Body:",
+                rawResponse,
+            ]
+            message.metadata[LLMTransportMetadata.responseDetails] = details.joined(separator: "\n")
         }
 
         return message
+    }
+
+    private func formattedResponseHeaders(_ headers: [String: String]) -> String {
+        guard !headers.isEmpty else { return "-" }
+        return headers.keys.sorted().map { "\($0): \(headers[$0] ?? "")" }.joined(separator: "\n")
     }
 }
 

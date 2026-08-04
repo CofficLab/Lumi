@@ -81,6 +81,16 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(!Http403Renderer.item.canRender(otherProviderMessage))
         #expect(Http403Renderer.item.order > 160)
 
+        let anthropicMessage = LumiChatMessage(
+            conversationID: conversationID,
+            role: .error,
+            content: "",
+            providerID: MiniMaxAnthropicProvider.info.id,
+            isError: true,
+            renderKind: MiniMaxRenderKind.http(429)
+        )
+        #expect(HttpErrorRenderer.item.canRender(anthropicMessage))
+
         let unauthorizedMessage = LumiChatMessage(
             conversationID: conversationID,
             role: .error,
@@ -273,7 +283,9 @@ struct PluginLLMProviderMiniMaxTests {
         let message = makeMessage(for: error)
 
         #expect(message.renderKind == MiniMaxRenderKind.http(429))
-        #expect(message.metadata[LLMTransportMetadata.responseDetails] == rawResponse)
+        #expect(message.metadata[LLMTransportMetadata.responseDetails]?.contains("Response Status: 429") == true)
+        #expect(message.metadata[LLMTransportMetadata.responseDetails]?.contains("Response Headers:") == true)
+        #expect(message.metadata[LLMTransportMetadata.responseDetails]?.contains(rawResponse) == true)
     }
 
     @Test func errorMessageMapsHTTP429AsRetryable() {
