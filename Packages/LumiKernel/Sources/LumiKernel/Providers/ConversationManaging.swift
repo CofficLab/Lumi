@@ -1,10 +1,15 @@
+import Combine
 import Foundation
 
 /// 对话管理能力协议
 ///
 /// 定义对话的列表、创建、删除、选择等管理功能。
+///
+/// `ObjectWillChangePublisher == ObservableObjectPublisher` 约束与 `ProjectProviding` 一致，
+/// 用于让协议存在类型（`any ConversationManaging`）的 `objectWillChange` 可被订阅，
+/// 从而支持 SwiftUI 跨包响应式观察 + Hook 订阅。
 @MainActor
-public protocol ConversationManaging: ObservableObject {
+public protocol ConversationManaging: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 所有对话列表
     var conversations: [LumiConversationSummary] { get }
 
