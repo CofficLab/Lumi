@@ -35,6 +35,16 @@ public struct ItemView: View {
         }) {
             content
         }
+        // Attach the menu to the row itself. Attaching it to `content` puts it
+        // inside AppListRow's Button label, and the button consumes the
+        // right-click before SwiftUI can present the menu on macOS.
+        .contextMenu {
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label(LumiPluginLocalization.string("Delete", bundle: .module), systemImage: "trash")
+            }
+        }
     }
 
     private var content: some View {
@@ -91,13 +101,6 @@ public struct ItemView: View {
                 } else if needsAttention {
                     attentionDot
                 }
-            }
-        }
-        .contextMenu {
-            Button(role: .destructive) {
-                onDelete()
-            } label: {
-                Label(LumiPluginLocalization.string("Delete", bundle: .module), systemImage: "trash")
             }
         }
     }
