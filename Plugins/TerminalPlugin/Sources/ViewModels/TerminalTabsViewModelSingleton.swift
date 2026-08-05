@@ -18,4 +18,13 @@ extension TerminalTabsViewModel {
     public static let shared = TerminalTabsViewModel(
         themeIdProvider: { TerminalPluginBridge.editorThemeIdProvider?() ?? "xcode-dark" }
     )
+
+    /// 底部面板使用的独立 ViewModel
+    ///
+    /// 必须与 `shared` 分开：同一批会话对应同一批终端 NSView，
+    /// 一个 NSView 同时只能有一个 superview，两处宿主共享会话会互相
+    /// 抢占 superview 导致黑屏。
+    public static let bottomPanel = TerminalTabsViewModel(
+        themeIdProvider: { TerminalPluginBridge.editorThemeIdProvider?() ?? "xcode-dark" }
+    )
 }

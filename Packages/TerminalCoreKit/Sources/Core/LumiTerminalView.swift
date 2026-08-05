@@ -1,33 +1,35 @@
 import AppKit
 import SwiftTerm
 
-/// 自定义终端视图
-///
-/// 继承 `LocalProcessTerminalView` 并重写 frame 相关方法，
-/// 防止 SwiftUI 在布局时传入 zero size 导致终端缓冲区被清空。
-///
-/// 问题原因：SwiftUI 在 Tab 切换、窗口 resize 或视图层级变化时，
-/// 可能短暂给 NSView 传入 size 为 zero 的 frame。
-/// SwiftTerm 的 `LocalProcessTerminalView` 收到 zero frame 时会重置终端，
-/// 导致内容丢失。
+/// 自定义终端视图，保留 SwiftTerm 的完整 AppKit frame 生命周期。
 public class LumiTerminalView: LocalProcessTerminalView {
-    override public func setFrameSize(_ newSize: NSSize) {
-        // 忽略 zero size，防止终端缓冲区被清空
-        if newSize.width > 0 && newSize.height > 0 {
-            super.setFrameSize(newSize)
-        }
+    // MARK: - Ready 通知
+
+    /// 视图首次挂到窗口并获得有效尺寸时触发（用于启动 shell）。
+    ///
+    /// SwiftUI 的 `makeNSView` / `updateNSView` 被调用时 frame 通常仍是 zero，
+    /// 真正完成布局发生在之后，因此需要一个布局驱动的回调来启动 shell。
+    public var onReady: (() -> Void)?
+
+    private var didNotifyReady = false
+
+    override public func layout() {
+        super.layout()
+        notifyReadyIfNeeded()
     }
 
-    override public var frame: CGRect {
-        get {
-            super.frame
-        }
-        set {
-            // 忽略 zero size
-            if newValue.width > 0 && newValue.height > 0 {
-                super.frame = newValue
-            }
-        }
+    override public func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        notifyReadyIfNeeded()
+    }
+
+    private func notifyReadyIfNeeded() {
+        guard !didNotifyReady,
+              window != nil,
+              bounds.width > 0,
+              bounds.height > 0 else { return }
+        didNotifyReady = true
+        onReady?()
     }
 
     // MARK: - Accessibility

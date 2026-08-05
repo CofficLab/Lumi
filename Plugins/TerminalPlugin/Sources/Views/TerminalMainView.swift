@@ -9,11 +9,17 @@ public struct TerminalMainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     let projectProvider: (any ProjectProviding)?
 
-    /// 使用全局单例，无论 TerminalMainView 被重建多少次，都共享同一份终端会话状态。
-    @ObservedObject private var viewModel = TerminalTabsViewModel.shared
+    /// 使用单例 ViewModel，无论 TerminalMainView 被重建多少次，都共享同一份终端会话状态。
+    /// ViewContainer 与底部面板必须传入不同的实例（默认 `.shared`，底部面板用 `.bottomPanel`），
+    /// 否则两处的终端 NSView 会互相抢占 superview 导致黑屏。
+    @ObservedObject private var viewModel: TerminalTabsViewModel
 
-    public init(projectProvider: (any ProjectProviding)? = nil) {
+    public init(
+        projectProvider: (any ProjectProviding)? = nil,
+        viewModel: TerminalTabsViewModel = .shared
+    ) {
         self.projectProvider = projectProvider
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
     }
 
     private var indexedSessions: [(offset: Int, session: TerminalSession)] {
