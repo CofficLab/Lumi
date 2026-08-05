@@ -30,7 +30,15 @@ public final class MLXLumiPlugin: LumiPlugin {
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        allMLXSeriesProviders
+        [
+            MLXQwenProvider(),
+            MLXLlamaProvider(),
+            MLXMistralProvider(),
+            MLXGemma4Provider(),
+            MLXDeepSeekProvider(),
+            MLXCoderProvider(),
+            MLXMicrosoftProvider(),
+        ]
     }
 
     // MARK: - LumiPlugin stubs

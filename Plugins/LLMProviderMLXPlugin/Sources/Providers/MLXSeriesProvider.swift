@@ -284,18 +284,6 @@ open class MLXSeriesProviderBase: LumiLLMProvider, @unchecked Sendable {
 
 // MARK: - 向后兼容
 
-/// 所有 MLX 系列供应商的注册表（供 MLXLumiPlugin.llmProviders 直接引用）
-@available(macOS 14.0, *)
-public let allMLXSeriesProviders: [any LumiLLMProvider] = [
-    MLXQwenProvider(),
-    MLXLlamaProvider(),
-    MLXMistralProvider(),
-    MLXGemma4Provider(),
-    MLXDeepSeekProvider(),
-    MLXCoderProvider(),
-    MLXMicrosoftProvider(),
-]
-
 /// 向后兼容：`MLXLumiProvider` 即 Qwen 系列实例。
 /// 旧代码（测试、其它文件）继续用 `MLXLumiProvider()` 也能工作。
 @available(macOS 14.0, *)
