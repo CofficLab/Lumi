@@ -24,23 +24,32 @@ struct QueryResultView: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                Section {
-                    ForEach(0 ..< result.rows.count, id: \.self) { rowIndex in
-                        let row = result.rows[rowIndex]
-                        resultRow(row: row)
+        GeometryReader { proxy in
+            ScrollView([.horizontal, .vertical]) {
+                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        ForEach(0 ..< result.rows.count, id: \.self) { rowIndex in
+                            let row = result.rows[rowIndex]
+                            resultRow(row: row)
+                        }
+                    } header: {
+                        headerRow
                     }
-                } header: {
-                    headerRow
+
+                    Spacer()
                 }
-                
-                Spacer()
+                // 内容比视口小时：撑满视口并靠左上对齐（Spacer 把行顶到顶部、单元格推到左侧）。
+                // 内容比视口大时：min 约束不生效，自然产生横/纵滚动。
+                // 不能用 maxWidth/maxHeight: .infinity —— 双向 ScrollView 在两个方向都给无界 proposal，
+                // 内容会塌缩成理想尺寸并被 ScrollView 居中（即之前「跑到中间」的原因）。
+                .frame(
+                    minWidth: max(proxy.size.width, tableWidth),
+                    minHeight: proxy.size.height,
+                    alignment: .topLeading
+                )
             }
-            .background(.red)
         }
-        .frame(minWidth: tableWidth, alignment: .topLeading)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Layout
