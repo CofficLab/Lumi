@@ -124,8 +124,7 @@ public struct SettingsView: View, SuperLog {
         let selectedSeries = visibleSeries.first { $0.id == selectedSeriesId } ?? visibleSeries.first
 
         return AppSettingsSection(
-            title: LumiPluginLocalization.string("本地模型", bundle: .module),
-            subtitle: LumiPluginLocalization.string("下载后在本地运行，无需 API Key", bundle: .module),
+            title: LumiPluginLocalization.string("模型列表", bundle: .module),
             spacing: 12
         ) {
             VStack(alignment: .leading, spacing: 12) {
