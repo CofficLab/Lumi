@@ -3,37 +3,31 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.7.2</title>
-            <pubDate>Tue, 04 Aug 2026 16:12:11 +0000</pubDate>
-            <sparkle:version>517</sparkle:version>
-            <sparkle:shortVersionString>5.7.2</sparkle:shortVersionString>
+            <title>5.7.3</title>
+            <pubDate>Wed, 05 Aug 2026 05:22:11 +0000</pubDate>
+            <sparkle:version>518</sparkle:version>
+            <sparkle:shortVersionString>5.7.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.7.2</h2>
-<h3>Changes since v5.7.1</h3>
+            <description><![CDATA[<h2>Release v5.7.3</h2>
+<h3>Changes since v5.7.2</h3>
 <ul>
-<li>feat(ChatPanelPlugin): declare supportsProject for chat container</li>
-<li>feat(ConversationAgentTurnCountPlugin): replace tooltip with clickable button and popover detail panel</li>
-<li>feat(DeviceInfoPlugin): declare supportsProject for device info container</li>
-<li>feat(EditorPanelPlugin): declare supportsProject for editor container</li>
-<li>feat(kernel): add httpStatusCode and httpBody to LumiChatMessage</li>
-<li>feat(kernel): add lumiConversationDidDelete notification</li>
-<li>feat(kernel): add lumiConversationWillDelete notification</li>
-<li>feat(kernel): add supportsProject property to ViewContainerItem</li>
-<li>feat(LLMKit): preserve HTTP status code and body in error messages</li>
-<li>feat(LLMProviderAliyunPlugin): register provider render kind prefix on boot</li>
-<li>feat(LLMProviderManagerPlugin): add API key diagnostic view for missing key errors</li>
-<li>feat(LLMProviderXiaomiPlugin): register provider render kind prefix on boot</li>
-<li>feat(LLMProviderZhipuPlugin): register provider render kind prefix on boot</li>
-<li>feat(LumiKernel): add API key diagnostic for LLM providers</li>
-<li>feat(LumiKernel): add requiresProjectSupport flag to hide rail tabs when no project is open</li>
-<li>feat(MessageListPlugin): gate renderer id badge behind #if DEBUG</li>
-<li>feat(MessageListPlugin): overlay renderer id badge in MessageRowView</li>
-<li>feat(MessageManagerPlugin): add httpStatusCode and httpBody to MessageModel</li>
-<li>feat(MessageRendererPlugin): display HTTP status code and body in error view</li>
-<li>feat(OpenInVSCodePlugin): add Open in VSCode plugin</li>
+<li>feat(BookletMakerPlugin): add booklet maker plugin and register in LumiFactory</li>
+<li>feat(DatabaseManagerPlugin): add connection persistence and sidebar mode toggle</li>
+<li>feat(ImageToPDFPlugin): add image-to-PDF conversion plugin and register in LumiFactory</li>
+<li>feat(SkillPlugin): hide status bar item unless current view container supports project</li>
+<li>fix(ConversationListPlugin): always show attention dot regardless of selection state</li>
+<li>fix(DatabaseManagerPlugin): update QueryResultView</li>
+<li>fix(DatabaseManagerPlugin): update SQLiteTableView</li>
+<li>fix(ImageToPDFPlugin): capture self.id in toolbar title closure to keep title scoped to plugin instance</li>
+<li>fix(TerminalPlugin): fix terminal black screen by deferring shell startup and isolating view models</li>
+<li>refactor(ConversationListPlugin): inject conversationManager as required dependency instead of optional state</li>
+<li>refactor(ConversationListPlugin): reorganize Views into subdirectories and extract RailView</li>
+<li>refactor(DatabaseManagerPlugin): reorganize views into subdirectories and extract sub-views</li>
+<li>refactor(ImageToPDFPlugin): conditionally show toolbar title only when container is active</li>
+<li>refactor(ImageToPDFPlugin): remove inline header and inject title via toolbar center</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.7.2</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.7.2/Lumi_5.7.2_x86_64.dmg" length="45980052" type="application/octet-stream" sparkle:edSignature="Q5/yzFiOVXxJjM9/7hrpTSUPYayvWlrvyne+mo/UiDCSwWT0WdhJMh11/yyTlloFxt8H9sLQ4xqL8ntERi8YBQ=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.7.3</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.7.3/Lumi_5.7.3_x86_64.dmg" length="45337911" type="application/octet-stream" sparkle:edSignature="vfp4F8mN7FRjj5ovgkBIAB4D0cgB7sXQW/BQKlXLD+f/iaFprtbCmFJxZmldvwqAeyFTRnCQQhq5h3vZ6fZ7Bw=="/>
         </item>
     </channel>
 </rss>
