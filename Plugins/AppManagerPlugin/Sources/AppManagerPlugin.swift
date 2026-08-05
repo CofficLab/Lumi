@@ -14,14 +14,18 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
     nonisolated public static let emoji = "📱"
     nonisolated public static let verbose = false
 
-    // MARK: - LumiPlugin
-
     public let id = "com.coffic.lumi.plugin.app-manager"
     public var name: String {
         PluginAppManagerLocalization.string("App Manager")
     }
     public let order = 242
-	public let policy: LumiPluginPolicy = .optIn
+    public let policy: LumiPluginPolicy = .optIn
+
+    /// 插件级唯一的 AppManagerViewModel 实例。
+    /// 通过 `viewContainers` 和 `panelRailTabItems` 同时注入，
+    /// 让 AppRailView（侧边栏）与 AppManagerView（内容区）共享同一份
+    /// 应用列表 / 选中状态，避免"在侧边栏选了应用但详情没同步"的问题。
+    private let sharedViewModel = AppManagerViewModel()
 
     /// 数据根目录解析器
     nonisolated(unsafe) public static var databaseRootURLProvider: () -> URL = {
@@ -55,11 +59,10 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
                 panelHeaderVisibility: .unsupported,
                 panelBottomVisibility: .unsupported
             ) {
-                AppManagerView()
+                AppManagerView(viewModel: self.sharedViewModel)
             },
         ]
     }
-
 
     // MARK: - LumiPlugin stubs
 
@@ -67,21 +70,21 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
         [
-            LumiTitleToolbarItem(
-                id: "\(id).refresh",
-                title: PluginAppManagerLocalization.string("Refresh"),
-                placement: .trailing,
-                order: 250
+            PanelRailTabItem(
+                id: "app-manager.sidebar",
+                title: PluginAppManagerLocalization.string("Apps"),
+                systemImage: "apps.iphone",
+                visibility: .viewContainer(id: id)
             ) {
-                AppManagerRefreshButton(kernel: kernel, containerID: self.id)
+                AppRailView(viewModel: self.sharedViewModel)
             },
         ]
     }
-    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
-    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
@@ -116,36 +119,4 @@ enum AppManagerPluginRuntimeBridge {
         let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
         return appSupport.appendingPathComponent(bundleID, isDirectory: true)
     }()
-}
-
-// MARK: - Refresh Notification
-
-extension Notification.Name {
-    static let appManagerRefreshRequested = Notification.Name("AppManagerPlugin.refreshRequested")
-}
-
-// MARK: - Toolbar Refresh Button
-
-private struct AppManagerRefreshButton: View {
-    let kernel: LumiKernel
-    let containerID: String
-
-    @State private var isVisible = false
-
-    var body: some View {
-        Group {
-            if isVisible {
-                AppIconButton(systemImage: "arrow.clockwise") {
-                    NotificationCenter.default.post(name: .appManagerRefreshRequested, object: nil)
-                }
-                .help(PluginAppManagerLocalization.string("Refresh"))
-            }
-        }
-        .onAppear {
-            isVisible = kernel.workspace?.activeViewContainerID == containerID
-        }
-        .onActiveViewContainerIDDidChange { activeID in
-            isVisible = activeID == containerID
-        }
-    }
 }

@@ -102,5 +102,13 @@ struct AppManagerDetailView: View {
                 )
             }
         }
+        .alert(PluginAppManagerLocalization.string("Confirm Uninstall"), isPresented: $viewModel.showUninstallConfirmation) {
+            Button(PluginAppManagerLocalization.string("Cancel"), role: .cancel) { }
+            Button(PluginAppManagerLocalization.string("Uninstall"), role: .destructive) {
+                viewModel.deleteSelectedFiles()
+            }
+        } message: {
+            Text(PluginAppManagerLocalization.string("Are you sure you want to delete the selected files? This action cannot be undone."))
+        }
     }
 }
