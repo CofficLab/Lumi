@@ -37,6 +37,10 @@ final class BookletRendererIntegrationTests: XCTestCase {
         }
         // 6 source pages (even) → 3 output sheets.
         XCTAssertEqual(outDoc.pageCount, 3)
+
+        // Each output sheet is a landscape A4 page.
+        let outputBounds = try XCTUnwrap(outDoc.page(at: 0)?.bounds(for: .mediaBox))
+        XCTAssertGreaterThan(outputBounds.width, outputBounds.height)
     }
 
     func testRenderPadsOddInput() async throws {

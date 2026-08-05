@@ -61,7 +61,7 @@ struct BookletExplanationView: View {
         let baseInputHeight: CGFloat = 176
         let baseInputWidth: CGFloat = baseInputHeight * (210.0 / 297.0) * 2 + 8  // 两页 + 间距
 
-        // OutputDiagramContainer: 一个 A4 旋转 90 度，尺寸与单页输入一致
+        // OutputDiagramContainer: 一张横向 A4，内部并排放置两个缩小页面
         let baseOutputWidth: CGFloat = baseInputHeight   // 旋转后宽度 = 原高度
         let baseOutputHeight: CGFloat = baseInputHeight * (210.0 / 297.0)  // 旋转后高度 = 原宽度
 

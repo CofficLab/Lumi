@@ -29,23 +29,33 @@ struct A4PaperView: View {
     /// 是否显示内置示例文字（容器模式下为 false）
     private let showDefaultContent: Bool
 
-    /// 示例文字内容（苏轼《水调歌头》）
-    static let sampleText = """
-    水调歌头
-    苏轼
+    /// 示例文字内容：不同页使用不同的内容，便于看出拼版前后的对应关系。
+    static let pageOneSampleText = """
+    项目概览
+    Lumi Booklet Maker
 
-    明月几时有？把酒问青天。
-    不知天上宫阙，今夕是何年。
-    我欲乘风归去，又恐琼楼玉宇，
-    高处不胜寒。起舞弄清影，
-    何似在人间。
+    将多个 PDF 页面整理到适合打印的小册子版式中。
+    支持设置纸张大小、页边距和装订线。
 
-    转朱阁，低绮户，照无眠。
-    不应有恨，何事长向别时圆？
-    人有悲欢离合，月有阴晴圆缺，
-    此事古难全。但愿人长久，
-    千里共婵娟。
+    这是一份示例文档的第一页，
+    用于展示原始页面内容。
     """
+
+    static let pageTwoSampleText = """
+    使用步骤
+    快速开始
+
+    1. 拖入需要处理的 PDF 文件。
+    2. 选择输出纸张与排列方式。
+    3. 点击转换并预览生成结果。
+
+    这是一份示例文档的第二页，
+    用于确认页面内容被正确合并。
+    """
+
+    static func sampleText(for pageNumber: Int?) -> String {
+        pageNumber == 2 ? pageTwoSampleText : pageOneSampleText
+    }
 
     // A4 比例：210:297 ≈ 1:1.414
     private let aspectRatio: CGFloat = 210.0 / 297.0
@@ -121,7 +131,7 @@ struct A4PaperView: View {
     @ViewBuilder
     private var contentArea: some View {
         if showDefaultContent {
-            Text(Self.sampleText)
+            Text(Self.sampleText(for: pageNumber))
                 .font(.system(size: 6))
                 .foregroundColor(.primary)
                 .multilineTextAlignment(.leading)

@@ -46,6 +46,11 @@ enum PaperSize: String, CaseIterable, Identifiable, Codable, Sendable {
         CGSize(width: mmToPt(widthMM), height: mmToPt(heightMM))
     }
 
+    /// Size used by the booklet renderer: the output sheet is landscape.
+    var landscapeSizeInPoints: CGSize {
+        CGSize(width: mmToPt(heightMM), height: mmToPt(widthMM))
+    }
+
     // MARK: - Unit conversion
 
     /// Convert millimetres to PDF points.

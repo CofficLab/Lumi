@@ -101,7 +101,10 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
             guard let consumer = CGDataConsumer(data: outputData) else {
                 throw RenderError.outputContextFailed(outputURL)
             }
-            var mediaBox = CGRect(origin: .zero, size: settings.outputPaper.sizeInPoints)
+            // Booklet sheets are printed in landscape so the two reduced
+            // portrait source pages sit side by side across the long edge.
+            var mediaBox = CGRect(origin: .zero,
+                                  size: settings.outputPaper.landscapeSizeInPoints)
             guard let ctx = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else {
                 throw RenderError.outputContextFailed(outputURL)
             }
