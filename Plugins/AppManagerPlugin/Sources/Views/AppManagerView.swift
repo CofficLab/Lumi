@@ -76,6 +76,10 @@ struct AppManagerView: View {
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .appManagerRefreshRequested)) { _ in
+            guard !viewModel.isLoading else { return }
+            viewModel.refresh()
+        }
         .alert(PluginAppManagerLocalization.string("Confirm Uninstall"), isPresented: $viewModel.showUninstallConfirmation) {
             Button(PluginAppManagerLocalization.string("Cancel"), role: .cancel) { }
             Button(PluginAppManagerLocalization.string("Uninstall"), role: .destructive) {
@@ -94,7 +98,7 @@ struct AppManagerView: View {
                 placeholder: LocalizedStringKey(PluginAppManagerLocalization.string("Search Apps"))
             )
 
-            // 第二行：统计 + 刷新
+            // 第二行：统计
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(PluginAppManagerLocalization.format("%lld Apps", viewModel.installedApps.count))
@@ -107,10 +111,6 @@ struct AppManagerView: View {
                 }
 
                 Spacer()
-
-                AppButton(PluginAppManagerLocalization.string("Refresh"), style: .secondary, fillsWidth: true, action: { viewModel.refresh() })
-                .disabled(viewModel.isLoading)
-                .appTooltip(LocalizedStringKey(PluginAppManagerLocalization.string("Refresh")))
             }
         }
         .padding()

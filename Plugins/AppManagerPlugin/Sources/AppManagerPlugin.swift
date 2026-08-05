@@ -67,7 +67,18 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+        [
+            LumiTitleToolbarItem(
+                id: "\(id).refresh",
+                title: PluginAppManagerLocalization.string("Refresh"),
+                placement: .trailing,
+                order: 250
+            ) {
+                AppManagerRefreshButton(kernel: kernel, containerID: self.id)
+            },
+        ]
+    }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
@@ -105,4 +116,36 @@ enum AppManagerPluginRuntimeBridge {
         let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
         return appSupport.appendingPathComponent(bundleID, isDirectory: true)
     }()
+}
+
+// MARK: - Refresh Notification
+
+extension Notification.Name {
+    static let appManagerRefreshRequested = Notification.Name("AppManagerPlugin.refreshRequested")
+}
+
+// MARK: - Toolbar Refresh Button
+
+private struct AppManagerRefreshButton: View {
+    let kernel: LumiKernel
+    let containerID: String
+
+    @State private var isVisible = false
+
+    var body: some View {
+        Group {
+            if isVisible {
+                AppIconButton(systemImage: "arrow.clockwise") {
+                    NotificationCenter.default.post(name: .appManagerRefreshRequested, object: nil)
+                }
+                .help(PluginAppManagerLocalization.string("Refresh"))
+            }
+        }
+        .onAppear {
+            isVisible = kernel.workspace?.activeViewContainerID == containerID
+        }
+        .onActiveViewContainerIDDidChange { activeID in
+            isVisible = activeID == containerID
+        }
+    }
 }
