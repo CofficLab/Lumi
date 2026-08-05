@@ -1,59 +1,47 @@
-import LumiKernel
 import LumiUI
 import SwiftUI
 
 // MARK: - About View
 
-struct DatabaseManagerAboutView: View {
+/// Plugin-detail panel shown in the plugin manager.
+struct ImageToPDFAboutView: View {
     @Environment(\.locale) private var locale
-    @LumiTheme private var theme
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Feature Highlights
                 FeatureHighlight(
-                    icon: "server.rack",
-                    title: L("Multi-Database Support"),
-                    description: L("Connect to SQLite, MySQL, PostgreSQL, and Redis databases")
+                    icon: "photo.on.rectangle.angled",
+                    title: L("Image to PDF"),
+                    description: L("Convert dropped images to single-page PDFs that preserve the original size and orientation.")
+                )
+                FeatureHighlight(
+                    icon: "square.grid.3x3",
+                    title: L("Batch Conversion"),
+                    description: L("Drop one or many images at once; each becomes its own PDF in the output list.")
+                )
+                FeatureHighlight(
+                    icon: "square.and.arrow.up",
+                    title: L("Export Anywhere"),
+                    description: L("Pick a destination folder and export every converted PDF at once, or open them individually.")
                 )
 
-                FeatureHighlight(
-                    icon: "tablecells",
-                    title: L("Data Browser"),
-                    description: L("Browse and inspect database tables and records")
-                )
-
-                FeatureHighlight(
-                    icon: "square.and.pencil",
-                    title: L("Query Editor"),
-                    description: L("Write and execute SQL queries with syntax highlighting")
-                )
-
-                FeatureHighlight(
-                    icon: "chart.bar",
-                    title: L("Schema Inspector"),
-                    description: L("View database schema, indexes, and relationships")
-                )
-
-                // How It Works
                 HowItWorksCard(
-                    title: coreL("about.section.howItWorks"),
+                    title: L("How It Works"),
                     steps: [
-                        L("Configure database connections in settings"),
-                        L("Browse available databases and tables"),
-                        L("Execute queries and view results"),
-                        L("Export data in various formats")
+                        L("Drag and drop image files into the drop zone"),
+                        L("Click Convert to produce a PDF for each image"),
+                        L("Preview, open, or reveal any PDF in the list"),
+                        L("Click Export to… and choose a folder to save all PDFs")
                     ]
                 )
 
-                // Tips
                 TipsCard(
-                    title: coreL("about.section.tips"),
+                    title: L("Tips"),
                     tips: [
-                        L("Use read-only mode for production databases"),
-                        L("Save frequently used queries as snippets"),
-                        L("Enable connection pooling for better performance")
+                        L("PDFs keep the original image size — no resizing or compression"),
+                        L("Supported formats: PNG, JPEG, HEIC, TIFF, BMP, GIF and more"),
+                        L("Re-converting replaces the previous PDFs in the output list")
                     ]
                 )
             }
@@ -61,12 +49,8 @@ struct DatabaseManagerAboutView: View {
         }
     }
 
-    private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
-    }
-
-    private func coreL(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: LumiKernelResources.bundle, locale: locale)
+    private func L(_ key: String, locale: Locale = .current) -> String {
+        ImageToPDFLocalization.string(key)
     }
 }
 
@@ -85,21 +69,18 @@ private struct FeatureHighlight: View {
                 .foregroundStyle(theme.primary)
                 .frame(width: 40, height: 40)
                 .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
+                    Circle().fill(theme.primary.opacity(0.1))
                 )
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(theme.textPrimary)
-
                 Text(description)
                     .font(.system(size: 13))
                     .foregroundColor(theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-
             Spacer(minLength: 0)
         }
         .padding(14)
@@ -128,10 +109,8 @@ private struct HowItWorksCard: View {
                             .foregroundStyle(theme.primary)
                             .frame(width: 22, height: 22)
                             .background(
-                                Circle()
-                                    .fill(theme.primary.opacity(0.15))
+                                Circle().fill(theme.primary.opacity(0.15))
                             )
-
                         Text(step)
                             .font(.system(size: 13))
                             .foregroundColor(theme.textSecondary)
@@ -165,7 +144,6 @@ private struct TipsCard: View {
                             .font(.system(size: 12))
                             .foregroundStyle(theme.primary)
                             .frame(width: 16)
-
                         Text(tip)
                             .font(.system(size: 13))
                             .foregroundColor(theme.textSecondary)

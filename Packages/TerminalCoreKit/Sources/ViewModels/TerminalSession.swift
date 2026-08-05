@@ -18,6 +18,7 @@ public final class TerminalSession: ObservableObject, Identifiable {
     /// 自定义终端视图（零尺寸保护 + 无障碍）
     public let terminalView: LumiTerminalView
     private let initialWorkingDirectory: String?
+    private var hasStartedProcess = false
     /// KVO 观察系统外观变化
     private var appearanceObservation: NSKeyValueObservation?
     /// 当前编辑器主题 ID（用于终端颜色同步）
@@ -61,14 +62,33 @@ public final class TerminalSession: ObservableObject, Identifiable {
             }
         }
 
-        // 启动 shell 进程（使用 Shell Integration）
-        startShell()
+        // shell 在 NSView 挂载并获得有效尺寸后再启动。
+        // 终端会话通常在 SwiftUI 的 onAppear 中创建，此时 frame 仍可能是 zero。
+        // makeNSView/updateNSView 里的 startIfNeeded() 大多会因 zero bounds 而跳过，
+        // 因此必须依赖布局完成后的 onReady 回调来真正启动 shell。
+        terminalView.onReady = { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.startIfNeeded()
+            }
+        }
     }
 
     /// 更新主题 ID 并重新应用颜色
     public func updateTheme(_ themeId: String) {
         currentThemeId = themeId
         applyThemeColors()
+    }
+
+    /// 在终端视图完成布局后启动 shell；重复调用不会创建多个进程。
+    public func startIfNeeded() {
+        guard !hasStartedProcess else { return }
+        guard terminalView.bounds.width > 0,
+              terminalView.bounds.height > 0 else { return }
+
+        hasStartedProcess = true
+        startShell()
+        terminalView.needsDisplay = true
+        terminalView.setNeedsDisplay(terminalView.bounds)
     }
 
     /// 启动 shell 进程

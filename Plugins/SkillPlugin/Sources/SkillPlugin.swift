@@ -29,8 +29,13 @@ public final class SkillPlugin: LumiPlugin, SuperLog {
 
     // MARK: - Status Bar
 
+    /// 当前活跃的 View Container 支持项目时，状态栏才显示 Skills 按钮；
+    /// 否则返回空数组，从源头避免出现"无项目可操作"的按钮。
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
-        [
+        guard kernel.workspace?.currentViewContainer?.supportsProject == true else {
+            return []
+        }
+        return [
             StatusBarItem(
                 id: id,
                 title: name,

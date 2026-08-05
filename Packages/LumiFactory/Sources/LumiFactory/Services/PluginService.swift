@@ -8,6 +8,7 @@ import AppIconDesignerPlugin
 import AppManagerPlugin
 import AppStoreConnectPlugin
 import AskUserPlugin
+import BookletMakerPlugin
 import BrewManagerPlugin
 import BrowserPlugin
 import CADDesignerPlugin
@@ -51,6 +52,7 @@ import GitHubPlugin
 import GitPlugin
 import GoalTaskPlugin
 import HostsManagerPlugin
+import ImageToPDFPlugin
 import IdleTimePlugin
 import InputPlugin
 import WorkspacePlugin
@@ -240,6 +242,8 @@ public enum PluginService {
             ConversationLanguagePlugin(),
             VideoConverterPlugin(),
             NettoPlugin(),
+            ImageToPDFPlugin(),
+            BookletMakerPlugin(),
             QuickLauncherPlugin(),
             PortManagerPlugin(),
             AppManagerPlugin(),

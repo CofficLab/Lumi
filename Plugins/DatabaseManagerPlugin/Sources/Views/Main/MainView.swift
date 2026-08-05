@@ -1,13 +1,13 @@
-import SwiftUI
-import LumiUI
 import LumiKernel
+import LumiUI
+import SwiftUI
 
 /// 主面板：Query 编辑器 + 结果区。
 ///
 /// 表/键浏览已迁移到 RailView（`DatabaseSidebarView`），
 /// 本视图仅负责数据展示和查询操作。
 /// 连接管理迁到了工具栏右上角 `DatabaseToolbarButton` 的 popover。
-public struct DatabaseMainView: View {
+public struct MainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     /// 由 ``DatabaseManagerPlugin`` 注入，与 ``DatabaseToolbarButton`` 共享同一个实例，
@@ -40,53 +40,17 @@ public struct DatabaseMainView: View {
     @ViewBuilder
     private var connectedContent: some View {
         if viewModel.selectedConfig?.type == .sqlite {
-            tableDataSection
+            SQLiteTableView(viewModel: viewModel)
         } else {
             VStack(spacing: 0) {
                 queryEditor
                 toolbar
                 AppDivider()
-                resultsSection
+                QueryResultSectionView(viewModel: viewModel)
                     .frame(maxHeight: .infinity, alignment: .top)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-    }
-
-    private var tableDataSection: some View {
-        VStack(spacing: 0) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(viewModel.selectedSQLiteTable ?? LumiPluginLocalization.string("Select a table", bundle: .module))
-                        .font(.appBodyEmphasized)
-                        .foregroundColor(theme.textPrimary)
-                    if viewModel.selectedSQLiteTable != nil {
-                        Text("First 50 rows")
-                            .font(.appCaption)
-                            .foregroundColor(theme.textSecondary)
-                    }
-                }
-                Spacer()
-                if viewModel.selectedSQLiteTable != nil {
-                    AppButton("Refresh", systemImage: "arrow.clockwise", style: .secondary, size: .small, action: {
-                        guard let table = viewModel.selectedSQLiteTable else { return }
-                        Task { await viewModel.openSQLiteTable(table) }
-                    })
-                }
-                if viewModel.isLoading {
-                    ProgressView()
-                        .scaleEffect(0.6)
-                }
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 48)
-            .appSurface(style: .toolbar, cornerRadius: 0)
-
-            AppDivider()
-            resultsSection
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var queryEditor: some View {
@@ -114,119 +78,20 @@ public struct DatabaseMainView: View {
         }
     }
 
-    @ViewBuilder
-    private var resultsSection: some View {
-        if let error = viewModel.errorMessage {
-            AppErrorBanner(message: LocalizedStringKey(error))
-                .padding(12)
-        } else if let result = viewModel.queryResult {
-            QueryResultView(result: result)
-        } else {
-            AppEmptyState(
-                icon: viewModel.selectedSQLiteTable == nil ? "tablecells" : "tray",
-                title: viewModel.selectedSQLiteTable == nil
-                    ? LumiPluginLocalization.string("Select a table", bundle: .module)
-                    : LumiPluginLocalization.string("No results", bundle: .module),
-                description: viewModel.selectedSQLiteTable == nil
-                    ? LumiPluginLocalization.string("Choose a table from the sidebar to view its data.", bundle: .module)
-                    : nil
-            )
-        }
-    }
-
     // MARK: - Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "cylinder.split.1x2")
-                .font(.appLargeTitle)
-                .foregroundColor(theme.textSecondary)
-            Text(LumiPluginLocalization.string("Select a database to connect", bundle: .module))
-                .font(.appTitle)
-                .foregroundColor(theme.textSecondary)
-            Text(LumiPluginLocalization.string("Use the toolbar button at the top right to manage connections.", bundle: .module))
-                .font(.appCaption)
-                .foregroundColor(theme.textSecondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 360)
-            AppButton(
-                LumiPluginLocalization.string("Add Connection", bundle: .module),
-                style: .primary,
-                fillsWidth: false,
-                action: { showAddConfigSheet = true }
-            )
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-}
-
-public struct QueryResultView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-
-    public let result: QueryResult
-    
-    public var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                HStack(spacing: 0) {
-                    ForEach(result.columns, id: \.self) { col in
-                        Text(col)
-                            .font(.appBodyEmphasized)
-                            .foregroundColor(theme.textPrimary)
-                            .padding(8)
-                            .frame(width: 120, alignment: .leading)
-                            .border(theme.appSubtleBorder)
-                    }
-                }
-                .background(Material.regularMaterial)
-                
-                // Rows
-                LazyVStack(spacing: 0) {
-                    ForEach(0..<result.rows.count, id: \.self) { rowIndex in
-                        let row = result.rows[rowIndex]
-                        HStack(spacing: 0) {
-                            ForEach(0..<row.count, id: \.self) { colIndex in
-                                let text = content(for: row[colIndex])
-                                Text(text)
-                                    .font(.monospaced(.body)())
-                                    .foregroundColor(theme.textPrimary)
-                                    .padding(8)
-                                    .frame(width: 160, alignment: .leading)
-                                    .border(theme.appSubtleBorder.opacity(0.7))
-                                    .contextMenu {
-                                        Button(LumiPluginLocalization.string("Copy", bundle: .module)) {
-                                            NSPasteboard.general.clearContents()
-                                            NSPasteboard.general.setString(text, forType: .string)
-                                        }
-                                    }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    public func content(for value: DatabaseValue) -> String {
-        switch value {
-        case .integer(let v): return String(v)
-        case .double(let v): return String(v)
-        case .string(let v): return v
-        case .bool(let v): return String(v)
-        case .data(let v): return "<BLOB \(v.count) bytes>"
-        case .null: return "NULL"
-        }
+        MainEmptyStateView(viewModel: viewModel, onAddConnection: { showAddConfigSheet = true })
     }
 }
+
 
 public struct AddConnectionView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @ObservedObject var viewModel: DatabaseViewModel
     @Binding var isPresented: Bool
-    
+
     @State private var name = ""
     @State private var type: DatabaseType = .sqlite
     @State private var host = ""
@@ -238,17 +103,17 @@ public struct AddConnectionView: View {
     @State private var isTesting = false
     @State private var testMessage: String?
     @State private var testSuccess = false
-    
+
     public var body: some View {
         VStack(spacing: 20) {
             Text(LumiPluginLocalization.string("Add Connection", bundle: .module))
                 .font(.appTitle)
                 .foregroundColor(theme.textPrimary)
-            
+
             AppCard {
                 VStack(alignment: .leading, spacing: 8) {
                     GlassTextField(title: "Connection Name", text: $name, placeholder: "My Database")
-                    
+
                     HStack {
                         Text(LumiPluginLocalization.string("Database Type", bundle: .module))
                             .foregroundColor(theme.textSecondary)
@@ -261,7 +126,7 @@ public struct AddConnectionView: View {
                         .pickerStyle(.menu)
                         .frame(width: 160)
                     }
-                    
+
                     if type == .sqlite {
                         GlassTextField(title: "Database Path", text: $sqlitePath, placeholder: "/path/to/db.sqlite")
                     } else {
@@ -275,7 +140,7 @@ public struct AddConnectionView: View {
                     }
                 }
             }
-            
+
             HStack {
                 AppButton("Cancel", style: .ghost, fillsWidth: true, action: { isPresented = false })
                 AppButton("Test Connection", style: .secondary, fillsWidth: true, action: {
@@ -316,7 +181,7 @@ public struct AddConnectionView: View {
                 })
                 .disabled(!isValid())
             }
-            
+
             if let msg = testMessage {
                 HStack {
                     Image(systemName: testSuccess ? "checkmark.circle" : "xmark.octagon")
@@ -333,7 +198,7 @@ public struct AddConnectionView: View {
         .padding()
         .frame(width: 400)
     }
-    
+
     private func isValid() -> Bool {
         (try? makeConnectionConfig()) != nil
     }

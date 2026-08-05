@@ -37,6 +37,7 @@ public final class TerminalPlugin: LumiPlugin {
                 guard let self, let kernel else { return }
                 guard kernel.pluginManager.isPluginEnabled(id: self.id) else {
                     TerminalTabsViewModel.shared.closeAllSessions()
+                    TerminalTabsViewModel.bottomPanel.closeAllSessions()
                     return
                 }
             }
@@ -76,13 +77,15 @@ public final class TerminalPlugin: LumiPlugin {
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] {
+        // 底部面板的终端使用独立的 ViewModel（.bottomPanel），
+        // 与 ViewContainer 的 .shared 隔离，避免同一 NSView 被两个宿主抢占。
         [
             PanelBottomTabItem(
                 id: "\(id).bottom",
                 title: name,
                 systemImage: "terminal"
             ) {
-                TerminalMainView(projectProvider: kernel.project)
+                TerminalMainView(projectProvider: kernel.project, viewModel: .bottomPanel)
             }
         ]
     }

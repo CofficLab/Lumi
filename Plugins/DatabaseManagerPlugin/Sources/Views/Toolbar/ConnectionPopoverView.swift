@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// 仅承载连接列表、Add Connection、当前连接状态、断开等高频操作；
 /// Tables/Keys 浏览、Query 编辑、结果表仍放在主面板 `DatabaseMainView`。
-struct DatabaseConnectionPopoverView: View {
+struct ConnectionPopoverView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @ObservedObject var viewModel: DatabaseViewModel
