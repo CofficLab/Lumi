@@ -253,7 +253,7 @@ struct ToolCallRowView: View {
 
     /// V2/V3 的持续卡片描边。
     private var rowBorder: some View {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
             .stroke(
                 visualState.isFailure
                     ? theme.error.opacity(isHovering ? 0.45 : 0.28)
@@ -297,7 +297,7 @@ private struct ToolCallRowContainerModifier: ViewModifier {
                 .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
                 .background(rowBackground())
                 .overlay(rowBorder())
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .scaleEffect(isHovering ? 1.01 : 1)
                 .animation(.easeOut(duration: 0.12), value: isHovering)
         } else {
