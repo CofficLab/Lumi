@@ -12,35 +12,38 @@ struct AppManagerDetailView: View {
             if let app = viewModel.selectedApp {
                 VStack(alignment: .leading, spacing: 16) {
                     // Header
-                    HStack(spacing: 16) {
-                        if let icon = app.icon {
-                            AppImageThumbnail(
-                                image: Image(nsImage: icon),
-                                size: CGSize(width: 64, height: 64),
-                                shape: .none
-                            )
-                        } else {
-                            Image(systemName: "app.fill")
-                                .resizable()
-                                .frame(width: 64, height: 64)
-                                .foregroundColor(theme.textSecondary)
-                        }
+                    AppCard(style: .subtle, cornerRadius: 12, padding: EdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 14)) {
+                        HStack(spacing: 16) {
+                            if let icon = app.icon {
+                                AppImageThumbnail(
+                                    image: Image(nsImage: icon),
+                                    size: CGSize(width: 64, height: 64),
+                                    shape: .none
+                                )
+                            } else {
+                                Image(systemName: "app.fill")
+                                    .resizable()
+                                    .frame(width: 64, height: 64)
+                                    .foregroundColor(theme.textSecondary)
+                            }
 
-                        VStack(alignment: .leading) {
-                            Text(app.displayName)
-                                .font(.appTitle)
-                                .foregroundColor(theme.textPrimary)
-                            Text(app.bundleIdentifier ?? PluginAppManagerLocalization.string("Unknown Bundle ID"))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                            Text(app.bundleURL.path)
-                                .font(.appMicro)
-                                .foregroundColor(theme.textSecondary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
+                            VStack(alignment: .leading) {
+                                Text(app.displayName)
+                                    .font(.appTitle)
+                                    .foregroundColor(theme.textPrimary)
+                                AppIdentityRow(
+                                    title: app.bundleIdentifier ?? PluginAppManagerLocalization.string("Unknown Bundle ID"),
+                                    metadata: [app.version ?? ""],
+                                    metadataColor: theme.textSecondary
+                                )
+                                Text(app.bundleURL.path)
+                                    .font(.appMicro)
+                                    .foregroundColor(theme.textSecondary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                            }
                         }
                     }
-                    .padding()
 
                     GlassDivider()
 
@@ -59,9 +62,8 @@ struct AppManagerDetailView: View {
                                     .labelsHidden()
 
                                     VStack(alignment: .leading) {
-                                        Text(file.type.displayName)
-                                            .font(.appCaption)
-                                            .foregroundColor(theme.textSecondary)
+                                        AppTag(file.type.displayName)
+
                                         Text(file.path)
                                             .font(.appMicro)
                                             .foregroundColor(theme.textPrimary)
@@ -71,9 +73,7 @@ struct AppManagerDetailView: View {
 
                                     Spacer()
 
-                                    Text(formatBytes(file.size))
-                                        .font(.appMonoCaption)
-                                        .foregroundColor(theme.textSecondary)
+                                    AppSizeLabel(bytes: file.size)
                                 }
                             }
                         }
@@ -83,7 +83,7 @@ struct AppManagerDetailView: View {
 
                     // Footer Action
                     HStack {
-                        Text(PluginAppManagerLocalization.format("Selected: %@", formatBytes(viewModel.totalSelectedSize)))
+                        Text(PluginAppManagerLocalization.format("Selected: %@", ByteCountFormatter.string(fromByteCount: viewModel.totalSelectedSize, countStyle: .file)))
                             .font(.appBodyEmphasized)
                             .foregroundColor(theme.textPrimary)
 
@@ -96,15 +96,11 @@ struct AppManagerDetailView: View {
                     .padding()
                 }
             } else {
-                ContentUnavailableView(PluginAppManagerLocalization.string("Select an App"), systemImage: "hand.tap")
+                AppEmptyState(
+                    icon: "hand.tap",
+                    title: PluginAppManagerLocalization.string("Select an App")
+                )
             }
         }
-    }
-
-    private func formatBytes(_ bytes: Int64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useAll]
-        formatter.countStyle = .file
-        return formatter.string(fromByteCount: bytes)
     }
 }

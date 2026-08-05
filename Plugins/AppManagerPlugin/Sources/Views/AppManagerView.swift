@@ -14,13 +14,34 @@ struct AppManagerView: View {
                 // 顶部工具栏
                 toolbar
                 
+                // 错误提示横幅
+                if let errorMessage = viewModel.errorMessage {
+                    AppErrorBanner(
+                        message: LocalizedStringKey(errorMessage),
+                        retryTitle: LocalizedStringKey(PluginAppManagerLocalization.string("Retry")),
+                        onRetry: {
+                            viewModel.errorMessage = nil
+                            viewModel.refresh()
+                        }
+                    )
+                }
+                
                 GlassDivider()
                 
                 // 应用列表
                 if viewModel.isLoading {
-                    loadingView
+                    AppLoadingOverlay(
+                        message: LocalizedStringKey(PluginAppManagerLocalization.string("Scanning applications...")),
+                        size: .large
+                    )
                 } else if viewModel.filteredApps.isEmpty {
-                    emptyView
+                    AppEmptyState(
+                        icon: "app.dashed",
+                        title: PluginAppManagerLocalization.string("No applications found"),
+                        description: viewModel.searchText.isEmpty
+                            ? nil
+                            : PluginAppManagerLocalization.string("Try other search keywords")
+                    )
                 } else {
                     appList
                 }
@@ -63,32 +84,15 @@ struct AppManagerView: View {
         } message: {
             Text(PluginAppManagerLocalization.string("Are you sure you want to delete the selected files? This action cannot be undone."))
         }
-        .alert(PluginAppManagerLocalization.string("Error"), isPresented: Binding<Bool>(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
-        )) {
-            Button(PluginAppManagerLocalization.string("OK")) {
-                viewModel.errorMessage = nil
-            }
-        } message: {
-            if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-            }
-        }
     }
     
     private var toolbar: some View {
         VStack(alignment: .leading, spacing: 8) {
             // 第一行：搜索
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(theme.textSecondary)
-                TextField(
-                    PluginAppManagerLocalization.string("Search Apps"),
-                    text: $viewModel.searchText
-                )
-                .textFieldStyle(.roundedBorder)
-            }
+            AppSearchBar(
+                text: $viewModel.searchText,
+                placeholder: LocalizedStringKey(PluginAppManagerLocalization.string("Search Apps"))
+            )
 
             // 第二行：统计 + 刷新
             HStack {
@@ -106,18 +110,11 @@ struct AppManagerView: View {
 
                 AppButton(PluginAppManagerLocalization.string("Refresh"), style: .secondary, fillsWidth: true, action: { viewModel.refresh() })
                 .disabled(viewModel.isLoading)
+                .appTooltip(LocalizedStringKey(PluginAppManagerLocalization.string("Refresh")))
             }
         }
         .padding()
         .background(Material.regularMaterial)
-    }
-    
-    private var loadingView: some View {
-        AppManagerLoadingView()
-    }
-    
-    private var emptyView: some View {
-        AppManagerEmptyView(searchText: viewModel.searchText)
     }
     
     private var appList: some View {
