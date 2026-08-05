@@ -10,27 +10,34 @@ struct AppManagerDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             if let app = viewModel.selectedApp {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 0) {
                     // Header
                     AppCard(style: .subtle, cornerRadius: 12, padding: EdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 14)) {
-                        HStack(spacing: 16) {
-                            if let icon = app.icon {
-                                AppImageThumbnail(
-                                    image: Image(nsImage: icon),
-                                    size: CGSize(width: 64, height: 64),
-                                    shape: .none
-                                )
-                            } else {
-                                Image(systemName: "app.fill")
-                                    .resizable()
-                                    .frame(width: 64, height: 64)
-                                    .foregroundColor(theme.textSecondary)
-                            }
+                        HStack(alignment: .top, spacing: 16) {
+                            // Left: Icon + Name
+                            HStack(spacing: 12) {
+                                if let icon = app.icon {
+                                    AppImageThumbnail(
+                                        image: Image(nsImage: icon),
+                                        size: CGSize(width: 64, height: 64),
+                                        shape: .none
+                                    )
+                                } else {
+                                    Image(systemName: "app.fill")
+                                        .resizable()
+                                        .frame(width: 64, height: 64)
+                                        .foregroundColor(theme.textSecondary)
+                                }
 
-                            VStack(alignment: .leading) {
                                 Text(app.displayName)
                                     .font(.appTitle)
                                     .foregroundColor(theme.textPrimary)
+                            }
+
+                            Spacer()
+
+                            // Right: Properties
+                            VStack(alignment: .trailing, spacing: 4) {
                                 AppIdentityRow(
                                     title: app.bundleIdentifier ?? PluginAppManagerLocalization.string("Unknown Bundle ID"),
                                     metadata: [app.version ?? ""],
@@ -44,6 +51,7 @@ struct AppManagerDetailView: View {
                             }
                         }
                     }
+                    .frame(maxWidth: .infinity)
 
                     GlassDivider()
 
