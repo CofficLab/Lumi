@@ -1,3 +1,4 @@
+import Combine
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -13,75 +14,32 @@ public struct ListView: View {
     @State private var reloadPending = false
     @State private var hasMore = true
     @State private var paginationCursor: ConversationPageCursor?
-    let svc: (any ConversationManaging)?
+    @State private var conversationManager: ConversationManaging?
     @ObservedObject private var kernel: LumiKernel
     @ObservedObject private var attentionStore: ConversationAttentionStore
 
-    /// When true, only shows conversations associated with the current project.
-    private let scopeToCurrentProject: Bool
+    /// The project path to filter by, or nil if showing all conversations.
+    private let projectPath: String?
 
-    public init(kernel: LumiKernel, attentionStore: ConversationAttentionStore, scopeToCurrentProject: Bool = false) {
-        self.svc = kernel.conversations
+    public init(kernel: LumiKernel, attentionStore: ConversationAttentionStore, projectPath: String? = nil) {
         self._kernel = ObservedObject(wrappedValue: kernel)
         self._attentionStore = ObservedObject(wrappedValue: attentionStore)
-        self.scopeToCurrentProject = scopeToCurrentProject
+        self.projectPath = projectPath
+        self.conversationManager = kernel.conversationManager
     }
 
     /// The project path to filter by, or nil if showing all conversations.
     private var effectiveProjectPath: String? {
-        guard scopeToCurrentProject else { return nil }
-        return kernel.project?.currentProject?.path
+        projectPath
     }
 
     public var body: some View {
         VStack(spacing: 0) {
-            headerBar
-
             Group {
-                if svc == nil {
-                    ListErrorView()
-                } else if isLoading {
-                    ListLoadingView()
-                } else if conversations.isEmpty {
-                    ListEmptyView()
+                if let conversationManager {
+                    mainContent(conversationManager)
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 4) {
-                            ForEach(conversations, id: \.id) { conversation in
-                                ItemView(
-                                    conversation: conversation,
-                                    isSelected: selectedConversationID == conversation.id,
-                                    isActive: kernel.agentTurnManager?.isRunning(for: conversation.id) == true,
-                                    needsAttention: attentionStore.needsAttention(for: conversation.id),
-                                    onSelect: {
-                                        guard let svc else { return }
-                                        Task { @MainActor in
-                                            _ = await svc.fetchConversation(id: conversation.id)
-                                            svc.selectConversation(id: conversation.id)
-                                            attentionStore.markRead(conversationID: conversation.id)
-                                        }
-                                    },
-                                    onDelete: {
-                                        guard let svc else { return }
-                                        svc.deleteConversation(id: conversation.id)
-                                    }
-                                )
-                            }
-
-                            if hasMore {
-                                ProgressView()
-                                    .controlSize(.small)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                                    .onAppear {
-                                        Task { await loadNextPage() }
-                                    }
-                            }
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                    }
-                    .scrollContentBackground(.hidden)
+                    ListErrorView(reason: "Conversation store service is not available")
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -100,41 +58,53 @@ public struct ListView: View {
         }
     }
 
-    /// 顶部标题栏：根据 scopeToCurrentProject 与当前项目动态显示。
     @ViewBuilder
-    private var headerBar: some View {
-        HStack(spacing: 6) {
-            Image(systemName: scopeToCurrentProject ? "folder.fill" : "tray.full.fill")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-            Text(headerTitle)
-                .font(.appCaption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity)
-        .background(Color.secondary.opacity(0.06))
-    }
+    private func mainContent(_ conversationManager: ConversationManaging) -> some View {
+        if isLoading {
+            ListLoadingView()
+        } else if conversations.isEmpty {
+            ListEmptyView()
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 4) {
+                    ForEach(conversations, id: \.id) { conversation in
+                        ItemView(
+                            conversation: conversation,
+                            isSelected: conversationManager.selectedConversationID == conversation.id,
+                            isActive: kernel.agentTurnManager?.isRunning(for: conversation.id) == true,
+                            needsAttention: attentionStore.needsAttention(for: conversation.id),
+                            onSelect: {
+                                Task { @MainActor in
+                                    conversationManager.selectConversation(id: conversation.id)
+                                    attentionStore.markRead(conversationID: conversation.id)
+                                }
+                            },
+                            onDelete: {
+                                conversationManager.deleteConversation(id: conversation.id)
+                            }
+                        )
+                    }
 
-    private var headerTitle: String {
-        if scopeToCurrentProject {
-            let projectName = kernel.project?.currentProject?.name
-                ?? kernel.project?.currentProject?.path
-                ?? "—"
-            return String(
-                format: LumiPluginLocalization.string("Project Conversations (%@)", bundle: .module),
-                projectName
-            )
+                    if hasMore {
+                        ProgressView()
+                            .controlSize(.small)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .onAppear {
+                                Task { await loadNextPage(conversationManager) }
+                            }
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+            }
+            .scrollContentBackground(.hidden)
         }
-        return LumiPluginLocalization.string("All Projects Conversations", bundle: .module)
     }
 
     private func reload() async {
-        guard let svc else { return }
+        guard let conversationManager else { return }
+
         if isReloading {
             reloadPending = true
             return
@@ -164,7 +134,7 @@ public struct ListView: View {
         while snapshot.count < targetCount {
             let page: [LumiConversationSummary]
             if let projectPath = effectiveProjectPath {
-                page = await svc.fetchConversationPage(
+                page = await conversationManager.fetchConversationPage(
                     limit: Self.pageSize,
                     beforeUpdatedAt: cursor?.updatedAt,
                     beforeID: cursor?.id,
@@ -172,7 +142,7 @@ public struct ListView: View {
                     projectPath: projectPath
                 )
             } else {
-                page = await svc.fetchConversationPage(
+                page = await conversationManager.fetchConversationPage(
                     limit: Self.pageSize,
                     beforeUpdatedAt: cursor?.updatedAt,
                     beforeID: cursor?.id
@@ -200,17 +170,13 @@ public struct ListView: View {
         isLoading = false
     }
 
-    private var selectedConversationID: UUID? {
-        svc?.selectedConversationID
-    }
-
-    private func loadNextPage() async {
-        guard let svc, !isLoadingMore, hasMore else { return }
+    private func loadNextPage(_ conversationManager: ConversationManaging) async {
+        guard !isLoadingMore, hasMore else { return }
 
         isLoadingMore = true
         let page: [LumiConversationSummary]
         if let projectPath = effectiveProjectPath {
-            page = await svc.fetchConversationPage(
+            page = await conversationManager.fetchConversationPage(
                 limit: Self.pageSize,
                 beforeUpdatedAt: paginationCursor?.updatedAt,
                 beforeID: paginationCursor?.id,
@@ -218,7 +184,7 @@ public struct ListView: View {
                 projectPath: projectPath
             )
         } else {
-            page = await svc.fetchConversationPage(
+            page = await conversationManager.fetchConversationPage(
                 limit: Self.pageSize,
                 beforeUpdatedAt: paginationCursor?.updatedAt,
                 beforeID: paginationCursor?.id
@@ -235,9 +201,4 @@ public struct ListView: View {
         hasMore = page.count == Self.pageSize
         isLoadingMore = false
     }
-}
-
-private struct ConversationPageCursor {
-    let updatedAt: Date
-    let id: UUID
 }

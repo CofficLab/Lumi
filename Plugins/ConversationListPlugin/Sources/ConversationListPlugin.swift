@@ -40,7 +40,7 @@ public final class ConversationListPlugin: LumiPlugin {
                 title: "Chats",
                 systemImage: "message.fill"
             ) {
-                ListView(kernel: kernel, attentionStore: attentionStore)
+                RailView(kernel: kernel, attentionStore: attentionStore)
             },
             PanelRailTabItem(
                 id: "project-chats",
@@ -48,7 +48,7 @@ public final class ConversationListPlugin: LumiPlugin {
                 systemImage: "folder.fill",
                 requiresProjectSupport: true
             ) {
-                ListView(kernel: kernel, attentionStore: attentionStore, scopeToCurrentProject: true)
+                RailView(kernel: kernel, attentionStore: attentionStore, scopeToCurrentProject: true)
             },
         ]
     }

@@ -89,8 +89,7 @@ struct ToolbarPopoverContent: View {
         case .allProjects:
             ListView(
                 kernel: kernel,
-                attentionStore: attentionStore,
-                scopeToCurrentProject: false
+                attentionStore: attentionStore
             )
             // 固定 .id,确保两个 Tab 切换时 ListView 身份稳定,
             // 各自的滚动/分页/加载任务互不重置。
@@ -99,7 +98,7 @@ struct ToolbarPopoverContent: View {
             ListView(
                 kernel: kernel,
                 attentionStore: attentionStore,
-                scopeToCurrentProject: true
+                projectPath: kernel.project?.currentProject?.path
             )
             .id(Scope.currentProject)
         }
