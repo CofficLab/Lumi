@@ -21,7 +21,12 @@ public struct SettingsView: View, SuperLog {
     /// 下载限速档位（字节/秒）。0 表示不限速。
     @State private var speedLimitBytes: Int = MLXDownloadManager.shared.currentSpeedLimitBytes()
 
-    public init() {}
+    /// 限定显示的系列名（由 Provider 传入）。为 nil 时显示所有系列（旧行为）
+    private let seriesName: String?
+
+    public init(seriesName: String? = nil) {
+        self.seriesName = seriesName
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -31,7 +36,12 @@ public struct SettingsView: View, SuperLog {
         .task {
             if selectedSeriesId == nil {
                 let allSeries = modelManager.modelsBySeries()
-                selectedSeriesId = allSeries.first?.id
+                // 若限定了系列，默认选中该系列；否则选第一个
+                if let seriesName = seriesName, allSeries.contains(where: { $0.id == seriesName }) {
+                    selectedSeriesId = seriesName
+                } else {
+                    selectedSeriesId = allSeries.first?.id
+                }
             }
         }
     }
@@ -102,7 +112,16 @@ public struct SettingsView: View, SuperLog {
 
     private var modelListCard: some View {
         let allSeries = modelManager.modelsBySeries()
-        let selectedSeries = allSeries.first { $0.id == selectedSeriesId } ?? allSeries.first
+        
+        // 若限定了系列，只显示该系列
+        let visibleSeries: [MLXModelManager.ModelSeries]
+        if let seriesName = seriesName {
+            visibleSeries = allSeries.filter { $0.id == seriesName }
+        } else {
+            visibleSeries = allSeries
+        }
+        
+        let selectedSeries = visibleSeries.first { $0.id == selectedSeriesId } ?? visibleSeries.first
 
         return AppSettingsSection(
             title: LumiPluginLocalization.string("本地模型", bundle: .module),
@@ -110,10 +129,12 @@ public struct SettingsView: View, SuperLog {
             spacing: 12
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                // 系列选择器用流式布局：全部平铺、一行放不下自动换行，避免横向滚动条。
-                FlowLayout(spacing: 8) {
-                    ForEach(allSeries) { series in
-                        seriesTab(series, isSelected: series.id == selectedSeries?.id)
+                // 系列选择器：仅在未限定系列时显示
+                if seriesName == nil && visibleSeries.count > 1 {
+                    FlowLayout(spacing: 8) {
+                        ForEach(visibleSeries) { series in
+                            seriesTab(series, isSelected: series.id == selectedSeries?.id)
+                        }
                     }
                 }
 
@@ -139,8 +160,9 @@ public struct SettingsView: View, SuperLog {
                 // 列表变化时（如 RAM 改变导致可用模型增减），仅当用户当前选中的系列
                 // 已不存在才回退到第一个；否则保留用户选择，避免每次刷新都重置 tab。
                 // 旧逻辑无脑取 newSeries.first，会反复把选中重置回第一个系列。
-                if selectedSeriesId.map({ id in newSeries.contains { $0.id == id } }) == false {
-                    selectedSeriesId = newSeries.first?.id ?? oldSeries.first?.id
+                let currentVisible = visibleSeries
+                if selectedSeriesId.map({ id in currentVisible.contains { $0.id == id } }) == false {
+                    selectedSeriesId = currentVisible.first?.id ?? oldSeries.first?.id
                 }
             }
         }

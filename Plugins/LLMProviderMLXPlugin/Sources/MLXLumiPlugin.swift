@@ -67,7 +67,7 @@ public final class MLXLumiPlugin: LumiPlugin {
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] {
         MLXModels.seriesRegistrations.map { reg in
             LLMProviderSettingsItem(providerID: reg.providerID) { _ in
-                SettingsView()
+                SettingsView(seriesName: reg.seriesName)
             }
         }
     }
