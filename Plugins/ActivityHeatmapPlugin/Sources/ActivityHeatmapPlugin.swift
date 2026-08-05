@@ -18,6 +18,9 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
     /// Shared cache instance for the plugin
     private var cache: ActivityHeatmapCache?
 
+    /// Settings store for user preferences (period, etc.)
+    private var settingsStore: ActivityHeatmapSettingsStore?
+
     /// Cache directory for the plugin data (exposed for settings view to open in Finder)
     package var cacheDirectory: URL? {
         cache?.databaseDirectoryURL
@@ -28,8 +31,9 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
     public func onBoot(kernel: LumiKernel) async throws {
         // Initialize cache with storage service from kernel
         let storage = kernel.resolveService(StorageProviding.self)
-        let storageDirectory = await storage?.pluginDataDirectory(for: id)
+        let storageDirectory = await storage?.pluginDataDirectory(for: "ActivityHeatmap")
         cache = ActivityHeatmapCache(storageDirectory: storageDirectory, pluginID: id)
+        settingsStore = ActivityHeatmapSettingsStore(pluginDirectory: storageDirectory)
     }
 
     public func onReady(kernel: LumiKernel) async throws {}
@@ -46,6 +50,7 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
                 order: order
             ) {
                 ActivityHeatmapSettingsView(messageService: messageService, cache: self.cache,
+                                            settingsStore: self.settingsStore,
                                             idleTimeProvider: idleTimeProvider,
                                             idleTimeDataDirectory: idleTimeDataDirectory)
             },
