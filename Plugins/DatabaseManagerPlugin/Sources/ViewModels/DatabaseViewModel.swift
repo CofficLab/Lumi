@@ -16,9 +16,13 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     @Published var redisKeys: [String] = []
     @Published var sqliteTables: [String] = []
     @Published var selectedSQLiteTable: String?
+    /// 侧边栏当前展示的内容：数据浏览（Tables/Keys）或连接列表。
+    @Published public var sidebarMode: DatabaseSidebarMode = .browser
 
     private let manager = DatabaseManagerCore.shared
     nonisolated(unsafe) private var connectedConfigId: UUID?
+    /// 是否已尝试过自动重连（每次启动只自动连一次）。
+    private var didAutoConnect = false
 
     public init() {
         Task {
@@ -29,11 +33,18 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                             DatabaseManagerPlugin.logger.info("\(Self.t)初始化数据库视图模型")
             }
         }
-        // Load mock config
-        let demoConfig = DatabaseConfig(name: "Demo SQLite", type: .sqlite, database: ":memory:")
-        configs.append(demoConfig) // In-memory DB
-        Task {
-            await DatabaseAgentConnectionRegistry.shared.upsert(demoConfig)
+        // 恢复上次保存的连接；首次使用时保留一个内存 demo 连接
+        let savedConfigs = DatabaseConnectionStore.loadConfigs()
+        if savedConfigs.isEmpty {
+            let demoConfig = DatabaseConfig(name: "Demo SQLite", type: .sqlite, database: ":memory:")
+            configs = [demoConfig]
+        } else {
+            configs = savedConfigs
+        }
+        for config in configs {
+            Task {
+                await DatabaseAgentConnectionRegistry.shared.upsert(config)
+            }
         }
     }
 
@@ -47,9 +58,33 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
 
     public func addConfig(_ config: DatabaseConfig) {
         configs.append(config)
+        DatabaseConnectionStore.saveConfigs(configs)
         Task {
             await DatabaseAgentConnectionRegistry.shared.upsert(config)
         }
+    }
+
+    /// 移除一个已保存的连接。如果删除的是当前连接，先断开再删除。
+    public func removeConfig(_ config: DatabaseConfig) {
+        if selectedConfig?.id == config.id {
+            Task { await disconnect() }
+        }
+        configs.removeAll { $0.id == config.id }
+        DatabaseConnectionStore.deletePassword(for: config.id)
+        DatabaseConnectionStore.saveConfigs(configs)
+        Task {
+            await DatabaseAgentConnectionRegistry.shared.remove(id: config.id)
+        }
+    }
+
+    /// 仅在首次进入数据库 UI 时尝试一次自动重连上次使用的连接。
+    /// 显式断开后 `lastSelectedConfigID` 会被清空，因此断开过的连接不会自动连回来。
+    public func autoConnectIfNeeded() {
+        guard !didAutoConnect, !isConnected else { return }
+        didAutoConnect = true
+        guard let lastID = DatabaseConnectionStore.lastSelectedConfigID,
+              let config = configs.first(where: { $0.id == lastID }) else { return }
+        Task { await connect(config: config) }
     }
     
     public func connect(config: DatabaseConfig) async {
@@ -72,6 +107,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             redisKeys = []
             sqliteTables = []
             selectedSQLiteTable = nil
+            // 记住这次连接，下次自动重连
+            DatabaseConnectionStore.lastSelectedConfigID = config.id
             
             // 根据类型设置默认查询/命令
             switch config.type {
@@ -122,6 +159,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         redisKeys = []
         sqliteTables = []
         selectedSQLiteTable = nil
+        // 显式断开后，下次不再自动重连这个连接
+        DatabaseConnectionStore.lastSelectedConfigID = nil
     }
 
     public func executeQuery() async {

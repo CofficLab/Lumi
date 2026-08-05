@@ -37,10 +37,19 @@ struct SQLiteTableView: View {
 
     // MARK: - Subviews
 
+    /// 顶栏标题：当前连接的名称；选中具体表时显示「连接名 / 表名」。
+    private var connectionTitle: String {
+        let name = viewModel.selectedConfig?.name ?? LumiPluginLocalization.string("Select a table", bundle: .module)
+        if let table = viewModel.selectedSQLiteTable {
+            return "\(name) / \(table)"
+        }
+        return name
+    }
+
     private var toolbar: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(viewModel.selectedSQLiteTable ?? LumiPluginLocalization.string("Select a table", bundle: .module))
+                Text(connectionTitle)
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
                 if viewModel.selectedSQLiteTable != nil {
