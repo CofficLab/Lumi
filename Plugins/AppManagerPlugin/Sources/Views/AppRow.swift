@@ -1,7 +1,7 @@
 import LumiUI
 import SwiftUI
 
-/// 应用行视图
+/// 应用行视图（仅内容，交互由外层 AppListRow 处理）
 struct AppRow: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
@@ -40,19 +40,6 @@ struct AppRow: View {
             }
 
             Spacer()
-        }
-        .contextMenu {
-            AppContextMenuRow(
-                LocalizedStringKey(PluginAppManagerLocalization.string("Show in Finder")),
-                systemImage: "folder",
-                action: { viewModel.revealInFinder(app) }
-            )
-
-            AppContextMenuRow(
-                LocalizedStringKey(PluginAppManagerLocalization.string("Open")),
-                systemImage: "play.fill",
-                action: { viewModel.openApp(app) }
-            )
         }
     }
 }

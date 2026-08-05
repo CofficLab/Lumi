@@ -50,6 +50,10 @@ struct AppRailView: View {
             } else {
                 appList
             }
+
+            GlassDivider()
+
+            footer
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
@@ -67,35 +71,38 @@ struct AppRailView: View {
     // MARK: - Toolbar
 
     private var toolbar: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // 第一行：搜索 + 刷新
-            HStack(spacing: 8) {
-                AppSearchBar(
-                    text: $viewModel.searchText,
-                    placeholder: LocalizedStringKey(PluginAppManagerLocalization.string("Search Apps"))
-                )
+        HStack(spacing: 8) {
+            AppSearchBar(
+                text: $viewModel.searchText,
+                placeholder: LocalizedStringKey(PluginAppManagerLocalization.string("Search Apps"))
+            )
 
-                AppIconButton(systemImage: "arrow.clockwise") {
-                    guard !viewModel.isLoading else { return }
-                    viewModel.refresh()
-                }
-                .help(PluginAppManagerLocalization.string("Refresh"))
+            AppIconButton(systemImage: "arrow.clockwise") {
+                guard !viewModel.isLoading else { return }
+                viewModel.refresh()
             }
+            .help(PluginAppManagerLocalization.string("Refresh"))
+        }
+        .padding()
+        .background(Material.regularMaterial)
+    }
 
-            // 第二行：统计
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(PluginAppManagerLocalization.format("%lld Apps", viewModel.installedApps.count))
-                        .font(.appCallout)
-                        .foregroundColor(theme.textSecondary)
+    // MARK: - Footer
 
-                    Text(PluginAppManagerLocalization.format("Total Size: %@", viewModel.formattedTotalSize))
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                }
+    private var footer: some View {
+        HStack {
+            Text(PluginAppManagerLocalization.format("%lld Apps", viewModel.installedApps.count))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
 
-                Spacer()
-            }
+            Text("·")
+                .foregroundColor(theme.textSecondary)
+
+            Text(PluginAppManagerLocalization.format("Total Size: %@", viewModel.formattedTotalSize))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+
+            Spacer()
         }
         .padding()
         .background(Material.regularMaterial)
@@ -104,13 +111,33 @@ struct AppRailView: View {
     // MARK: - App List
 
     private var appList: some View {
-        List(selection: $viewModel.selectedApp) {
-            ForEach(viewModel.filteredApps) { app in
-                AppRow(app: app, viewModel: viewModel)
-                    .tag(app)
+        ScrollView {
+            LazyVStack(spacing: 4) {
+                ForEach(viewModel.filteredApps) { app in
+                    AppListRow(isSelected: viewModel.selectedApp?.id == app.id, action: {
+                        viewModel.selectedApp = app
+                    }) {
+                        AppRow(app: app, viewModel: viewModel)
+                    }
+                    .contextMenu {
+                        AppContextMenuRow(
+                            LocalizedStringKey(PluginAppManagerLocalization.string("Show in Finder")),
+                            systemImage: "folder",
+                            action: { viewModel.revealInFinder(app) }
+                        )
+
+                        AppContextMenuRow(
+                            LocalizedStringKey(PluginAppManagerLocalization.string("Open")),
+                            systemImage: "play.fill",
+                            action: { viewModel.openApp(app) }
+                        )
+                    }
+                }
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
         }
-        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
     }
 }
 

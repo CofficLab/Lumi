@@ -89,9 +89,8 @@ struct AppManagerDetailView: View {
 
                         Spacer()
 
-                        AppButton(PluginAppManagerLocalization.string("Uninstall Selected"), style: .destructive, fillsWidth: true, action: { viewModel.showUninstallConfirmation = true })
-                        .controlSize(.mini)
-                        .disabled(viewModel.selectedFileIds.isEmpty || viewModel.isDeleting)
+                        AppButton(PluginAppManagerLocalization.string("Uninstall Selected"), style: .destructive, size: .small, action: { viewModel.showUninstallConfirmation = true })
+                            .disabled(viewModel.selectedFileIds.isEmpty || viewModel.isDeleting)
                     }
                     .padding()
                 }
