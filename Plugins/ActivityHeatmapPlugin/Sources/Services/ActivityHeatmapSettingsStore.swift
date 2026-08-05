@@ -2,7 +2,7 @@ import Foundation
 
 /// 插件设置持久化存储，遵循 Projects 插件的数据存储约定：
 /// 所有数据存放在 `<pluginDataDir>/settings/` 目录下的 JSON 文件中。
-final class ActivityHeatmapSettingsStore {
+public final class ActivityHeatmapSettingsStore {
     private let settingsDirectory: URL
 
     // MARK: - File Names
@@ -12,13 +12,17 @@ final class ActivityHeatmapSettingsStore {
 
     // MARK: - Model
 
-    struct Settings: Codable {
-        var selectedPeriodRawValue: Int?
+    public struct Settings: Codable {
+        public var selectedPeriodRawValue: Int?
+
+        public init(selectedPeriodRawValue: Int? = nil) {
+            self.selectedPeriodRawValue = selectedPeriodRawValue
+        }
     }
 
     // MARK: - Init
 
-    init(pluginDirectory: URL?) {
+    public init(pluginDirectory: URL?) {
         let directory = pluginDirectory ?? FileManager.default.temporaryDirectory
             .appendingPathComponent("Lumi/ActivityHeatmap")
         self.settingsDirectory = directory
@@ -27,7 +31,7 @@ final class ActivityHeatmapSettingsStore {
 
     // MARK: - Load
 
-    func loadSettings() -> Settings {
+    public func loadSettings() -> Settings {
         let url = settingsDirectory.appendingPathComponent(Self.settingsFileName, isDirectory: false)
         guard FileManager.default.fileExists(atPath: url.path),
               let data = try? Data(contentsOf: url),
@@ -40,7 +44,7 @@ final class ActivityHeatmapSettingsStore {
 
     // MARK: - Save
 
-    func saveSettings(_ settings: Settings) {
+    public func saveSettings(_ settings: Settings) {
         try? FileManager.default.createDirectory(
             at: settingsDirectory,
             withIntermediateDirectories: true,
@@ -52,12 +56,12 @@ final class ActivityHeatmapSettingsStore {
 
     // MARK: - Write Helper
 
-    private nonisolated static func write<T: Encodable>(_ value: T, to url: URL) {
+    private nonisolated static func write<T: Encodable>(_ value: T, to: URL) {
         guard let data = try? JSONEncoder().encode(value) else { return }
-        let tmpURL = url.appendingPathExtension("tmp")
+        let tmpURL = to.appendingPathExtension("tmp")
         do {
             try data.write(to: tmpURL, options: .atomic)
-            try FileManager.default.replaceItemAt(url, withItemAt: tmpURL)
+            try FileManager.default.replaceItemAt(to, withItemAt: tmpURL)
         } catch {
             try? FileManager.default.removeItem(at: tmpURL)
         }
