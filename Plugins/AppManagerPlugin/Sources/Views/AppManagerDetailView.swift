@@ -52,6 +52,7 @@ struct AppManagerDetailView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
+                    .frame(height: 80)
 
                     GlassDivider()
 
@@ -89,18 +90,22 @@ struct AppManagerDetailView: View {
 
                     GlassDivider()
 
-                    // Footer Action
-                    HStack {
+                    // 底部：已选大小 + 卸载
+                    ActionBar {
                         Text(PluginAppManagerLocalization.format("Selected: %@", ByteCountFormatter.string(fromByteCount: viewModel.totalSelectedSize, countStyle: .file)))
                             .font(.appBodyEmphasized)
                             .foregroundColor(theme.textPrimary)
 
                         Spacer()
 
-                        AppButton(PluginAppManagerLocalization.string("Uninstall Selected"), style: .destructive, size: .small, action: { viewModel.showUninstallConfirmation = true })
-                            .disabled(viewModel.selectedFileIds.isEmpty || viewModel.isDeleting)
+                        AppButton(
+                            PluginAppManagerLocalization.string("Uninstall Selected"),
+                            style: .destructive,
+                            size: .small,
+                            action: { viewModel.showUninstallConfirmation = true }
+                        )
+                        .disabled(viewModel.selectedFileIds.isEmpty || viewModel.isDeleting)
                     }
-                    .padding()
                 }
             } else {
                 AppEmptyState(

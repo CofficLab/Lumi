@@ -15,8 +15,19 @@ struct AppRailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 顶部工具栏
-            toolbar
+            // 顶部：搜索应用
+            ActionBar {
+                AppSearchBar(
+                    text: $viewModel.searchText,
+                    placeholder: LocalizedStringKey(PluginAppManagerLocalization.string("Search Apps"))
+                )
+
+                AppIconButton(systemImage: "arrow.clockwise") {
+                    guard !viewModel.isLoading else { return }
+                    viewModel.refresh()
+                }
+                .help(PluginAppManagerLocalization.string("Refresh"))
+            }
 
             GlassDivider()
 
@@ -53,7 +64,21 @@ struct AppRailView: View {
 
             GlassDivider()
 
-            footer
+            // 底部：应用总数 + 总大小
+            ActionBar {
+                Text(PluginAppManagerLocalization.format("%lld Apps", viewModel.installedApps.count))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textSecondary)
+
+                Text("·")
+                    .foregroundColor(theme.textSecondary)
+
+                Text(PluginAppManagerLocalization.format("Total Size: %@", viewModel.formattedTotalSize))
+                    .font(.appBodyEmphasized)
+                    .foregroundColor(theme.textSecondary)
+
+                Spacer()
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
@@ -66,48 +91,6 @@ struct AppRailView: View {
                 }
             }
         }
-    }
-
-    // MARK: - Toolbar
-
-    private var toolbar: some View {
-        HStack(spacing: 8) {
-            AppSearchBar(
-                text: $viewModel.searchText,
-                placeholder: LocalizedStringKey(PluginAppManagerLocalization.string("Search Apps"))
-            )
-
-            AppIconButton(systemImage: "arrow.clockwise") {
-                guard !viewModel.isLoading else { return }
-                viewModel.refresh()
-            }
-            .help(PluginAppManagerLocalization.string("Refresh"))
-        }
-        .padding()
-        .background(Material.regularMaterial)
-    }
-
-    // MARK: - Footer
-
-    private var footer: some View {
-        HStack {
-            Text(PluginAppManagerLocalization.format("%lld Apps", viewModel.installedApps.count))
-                .font(.appBodyEmphasized)
-                .foregroundColor(theme.textSecondary)
-
-            Text("·")
-                .foregroundColor(theme.textSecondary)
-
-            Text(PluginAppManagerLocalization.format("Total Size: %@", viewModel.formattedTotalSize))
-                .font(.appBodyEmphasized)
-                .foregroundColor(theme.textSecondary)
-
-            Spacer()
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .frame(height: 40)
-        .background(Material.regularMaterial)
     }
 
     // MARK: - App List

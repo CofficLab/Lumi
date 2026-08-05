@@ -42,6 +42,7 @@
       }
     },
     "%lld Apps" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1071,6 +1072,7 @@
       }
     },
     "Search Apps" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1277,6 +1279,7 @@
       }
     },
     "Total Size: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1379,6 +1382,7 @@
       }
     },
     "Uninstall Selected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
