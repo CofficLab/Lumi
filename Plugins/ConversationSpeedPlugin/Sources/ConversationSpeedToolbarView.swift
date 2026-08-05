@@ -57,7 +57,9 @@ struct ConversationSpeedToolbarView: View {
                 EmptyView()
             }
         }
-        .onLumiMessagesDidChange {
+        .onLumiMessagesDidChange { eventConversationID in
+            guard eventConversationID == nil
+                || eventConversationID == selectedConversationID else { return }
             self.updateTPS()
         }
         .onAppear {
