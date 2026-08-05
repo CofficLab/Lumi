@@ -99,11 +99,10 @@ public final class ImageToPDFPlugin: LumiPlugin, SuperLog {
                 placement: .center,
                 order: 200
             ) {
-                HStack(spacing: 6) {
-                    Image(systemName: "photo.on.rectangle.angled")
-                    Text(ImageToPDFLocalization.string("Image to PDF"))
-                        .font(.headline)
-                }
+                ImageToPDFToolbarTitleView(
+                    containerID: id,
+                    kernel: kernel
+                )
             },
         ]
     }
