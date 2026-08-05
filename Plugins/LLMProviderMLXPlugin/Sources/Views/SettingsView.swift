@@ -198,6 +198,12 @@ public struct SettingsView: View, SuperLog {
                     ))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
+                    if !model.description.isEmpty {
+                        Text(model.description)
+                            .font(.appCaption)
+                            .foregroundColor(theme.textSecondary)
+                            .lineLimit(2)
+                    }
                 }
                 Spacer(minLength: 0)
             }
