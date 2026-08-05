@@ -1718,6 +1718,9 @@
         }
       }
     },
+    "Disk Cleanup" : {
+
+    },
     "Disk Manager" : {
       "localizations" : {
         "en" : {
@@ -2230,6 +2233,9 @@
           }
         }
       }
+    },
+    "Large Files" : {
+
     },
     "Logs" : {
       "localizations" : {
@@ -4266,6 +4272,9 @@
           }
         }
       }
+    },
+    "System Cleanup" : {
+
     },
     "System Logs" : {
       "localizations" : {

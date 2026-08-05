@@ -12,7 +12,7 @@ import SwiftUI
 public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.disk-manager")
     public nonisolated static let emoji = "💿"
-    nonisolated static let verbose = false
+    nonisolated static var verbose: Bool { false }
 
     // MARK: - LumiPlugin
 
@@ -21,6 +21,10 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     public var pluginDescription: String { PluginDiskManagerLocalization.string("Disk space analysis and large file cleaning") }
     public let order = 250
     public let policy: LumiPluginPolicy = .optIn
+
+    /// 磁盘清理类型选中状态：sidebar rail 与 main view 共享同一份，
+    /// 避免在 rail 切换后 main view 仍停留在旧类型上。
+    private let categoryStore = DiskCleanupCategoryStore()
 
     // MARK: - Initialization
 
@@ -38,7 +42,7 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: name,
                 systemImage: "internaldrive",
-                railVisibility: .unsupported,
+                railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
                 panelHeaderVisibility: .unsupported,
                 panelBottomVisibility: .unsupported
@@ -58,7 +62,18 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        [
+            PanelRailTabItem(
+                id: "\(id).categories",
+                title: PluginDiskManagerLocalization.string("Cleanup"),
+                systemImage: "list.bullet.indent",
+                visibility: .viewContainer(id: id)
+            ) {
+                DiskCleanupCategorySidebar(store: self.categoryStore)
+            }
+        ]
+    }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
