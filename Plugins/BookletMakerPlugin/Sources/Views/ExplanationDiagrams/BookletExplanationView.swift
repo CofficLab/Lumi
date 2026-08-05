@@ -31,7 +31,7 @@ struct BookletExplanationView: View {
 
                 // 下方：输出（拼版后的页面）
                 VStack(spacing: 4 * size.scaleFactor) {
-                    OutputDiagram(settings: settings)
+                    OutputDiagramContainer(settings: settings)
                         .frame(width: size.outputWidth, height: size.outputHeight)
                         .animation(.easeInOut(duration: 0.3), value: settings)
 
@@ -57,10 +57,13 @@ struct BookletExplanationView: View {
     /// 计算适配可用空间的比例尺寸
     private func computeDynamicSize(in availableSize: CGSize) -> DynamicSize {
         // 基准尺寸（设计稿尺寸）
-        let baseInputWidth: CGFloat = 260
+        // InputDiagram: 两个 A4 竖版并排
         let baseInputHeight: CGFloat = 176
-        let baseOutputWidth: CGFloat = 176
-        let baseOutputHeight: CGFloat = 124
+        let baseInputWidth: CGFloat = baseInputHeight * (210.0 / 297.0) * 2 + 8  // 两页 + 间距
+
+        // OutputDiagramContainer: 一个 A4 旋转 90 度，尺寸与单页输入一致
+        let baseOutputWidth: CGFloat = baseInputHeight   // 旋转后宽度 = 原高度
+        let baseOutputHeight: CGFloat = baseInputHeight * (210.0 / 297.0)  // 旋转后高度 = 原宽度
 
         // 上下布局：宽度取两者最大，高度为两者之和 + 间距 + 箭头
         let baseContentWidth = max(baseInputWidth, baseOutputWidth)
