@@ -1,3 +1,6 @@
+import Foundation
+import os
+import SuperLogKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -5,11 +8,20 @@ import UniformTypeIdentifiers
 
 /// Top section: a single drop zone that accepts a PDF, plus a small
 /// summary of the loaded file.
-struct BookletDropZoneView: View {
+struct BookletDropZoneView: View, SuperLog {
 
     @ObservedObject var viewModel: BookletMakerViewModel
 
     @State private var isTargeted: Bool = false
+
+    // MARK: - SuperLog Identity
+
+    nonisolated static let emoji = "📥"
+    nonisolated static let verbose: Bool = false
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.booklet-maker.drop-zone"
+    )
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -86,12 +98,59 @@ struct BookletDropZoneView: View {
 
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
         guard let provider = providers.first else { return false }
-        _ = provider.loadObject(ofClass: URL.self) { url, _ in
-            guard let url, url.pathExtension.lowercased() == "pdf" else { return }
-            Task { @MainActor in
-                await viewModel.loadPDF(url)
+        
+        Self.logger.info("\(Self.t)📥 handleDrop called, registeredTypes: \(provider.registeredTypeIdentifiers)")
+        
+        // 方式 1: 尝试直接获取文件 URL（适用于 Finder 拖拽的文件）
+        if provider.hasItemConformingToTypeIdentifier("com.adobe.pdf") {
+            Self.logger.info("\(Self.t)🔍 Trying loadFileRepresentation for com.adobe.pdf")
+            
+            provider.loadFileRepresentation(forTypeIdentifier: "com.adobe.pdf") { url, error in
+                if let error = error {
+                    Self.logger.warning("\(Self.t)❌ loadFileRepresentation failed: \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let tempURL = url else {
+                    Self.logger.warning("\(Self.t)❌ loadFileRepresentation returned nil URL")
+                    return
+                }
+                
+                Self.logger.info("\(Self.t)✅ Got temp file URL: \(tempURL.absoluteString)")
+                Self.logger.info("\(Self.t)📄 Filename: \(tempURL.lastPathComponent)")
+                
+                // 关键：loadFileRepresentation 提供的临时文件在回调后会被清理
+                // 必须立即复制到安全位置
+                let fileName = tempURL.lastPathComponent
+                let safeDir = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("BookletMakerDrops", isDirectory: true)
+                
+                do {
+                    // 确保目标目录存在
+                    try FileManager.default.createDirectory(at: safeDir, withIntermediateDirectories: true)
+                    
+                    let safeURL = safeDir.appendingPathComponent(fileName)
+                    
+                    // 如果同名文件已存在，先删除
+                    if FileManager.default.fileExists(atPath: safeURL.path) {
+                        try FileManager.default.removeItem(at: safeURL)
+                    }
+                    
+                    // 复制文件到安全位置
+                    try FileManager.default.copyItem(at: tempURL, to: safeURL)
+                    Self.logger.info("\(Self.t)✅ Copied to safe location: \(safeURL.absoluteString)")
+                    
+                    Task { @MainActor in
+                        await viewModel.loadPDF(safeURL)
+                    }
+                } catch {
+                    Self.logger.error("\(Self.t)❌ Failed to copy file: \(error.localizedDescription)")
+                }
             }
+            return true
         }
-        return true
+        
+        Self.logger.warning("\(Self.t)❌ No compatible type found in provider")
+        return false
     }
 }
