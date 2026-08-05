@@ -22,7 +22,16 @@ struct RailView: View {
         VStack(spacing: 0) {
             HeaderBarView(scopeToCurrentProject: scopeToCurrentProject, kernel: kernel)
 
-            ListView(kernel: kernel, attentionStore: attentionStore, projectPath: projectPath)
+            if let conversationManager = kernel.conversationManager {
+                ListView(
+                    kernel: kernel,
+                    conversationManager: conversationManager,
+                    attentionStore: attentionStore,
+                    projectPath: projectPath
+                )
+            } else {
+                ListErrorView(reason: "Conversation store service is not available")
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }

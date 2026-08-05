@@ -14,18 +14,23 @@ public struct ListView: View {
     @State private var reloadPending = false
     @State private var hasMore = true
     @State private var paginationCursor: ConversationPageCursor?
-    @State private var conversationManager: ConversationManaging?
     @ObservedObject private var kernel: LumiKernel
     @ObservedObject private var attentionStore: ConversationAttentionStore
+    private let conversationManager: ConversationManaging
 
     /// The project path to filter by, or nil if showing all conversations.
     private let projectPath: String?
 
-    public init(kernel: LumiKernel, attentionStore: ConversationAttentionStore, projectPath: String? = nil) {
+    public init(
+        kernel: LumiKernel,
+        conversationManager: ConversationManaging,
+        attentionStore: ConversationAttentionStore,
+        projectPath: String? = nil
+    ) {
         self._kernel = ObservedObject(wrappedValue: kernel)
         self._attentionStore = ObservedObject(wrappedValue: attentionStore)
+        self.conversationManager = conversationManager
         self.projectPath = projectPath
-        self.conversationManager = kernel.conversationManager
     }
 
     /// The project path to filter by, or nil if showing all conversations.
@@ -35,14 +40,8 @@ public struct ListView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            Group {
-                if let conversationManager {
-                    mainContent(conversationManager)
-                } else {
-                    ListErrorView(reason: "Conversation store service is not available")
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            mainContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .task {
@@ -59,7 +58,7 @@ public struct ListView: View {
     }
 
     @ViewBuilder
-    private func mainContent(_ conversationManager: ConversationManaging) -> some View {
+    private var mainContent: some View {
         if isLoading {
             ListLoadingView()
         } else if conversations.isEmpty {
@@ -91,7 +90,7 @@ public struct ListView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
                             .onAppear {
-                                Task { await loadNextPage(conversationManager) }
+                                Task { await loadNextPage() }
                             }
                     }
                 }
@@ -103,8 +102,6 @@ public struct ListView: View {
     }
 
     private func reload() async {
-        guard let conversationManager else { return }
-
         if isReloading {
             reloadPending = true
             return
@@ -170,7 +167,7 @@ public struct ListView: View {
         isLoading = false
     }
 
-    private func loadNextPage(_ conversationManager: ConversationManaging) async {
+    private func loadNextPage() async {
         guard !isLoadingMore, hasMore else { return }
 
         isLoadingMore = true

@@ -85,22 +85,28 @@ struct ToolbarPopoverContent: View {
 
     @ViewBuilder
     private var content: some View {
-        switch selectedScope {
-        case .allProjects:
-            ListView(
-                kernel: kernel,
-                attentionStore: attentionStore
-            )
-            // 固定 .id,确保两个 Tab 切换时 ListView 身份稳定,
-            // 各自的滚动/分页/加载任务互不重置。
-            .id(Scope.allProjects)
-        case .currentProject:
-            ListView(
-                kernel: kernel,
-                attentionStore: attentionStore,
-                projectPath: kernel.project?.currentProject?.path
-            )
-            .id(Scope.currentProject)
+        if let conversationManager = kernel.conversationManager {
+            switch selectedScope {
+            case .allProjects:
+                ListView(
+                    kernel: kernel,
+                    conversationManager: conversationManager,
+                    attentionStore: attentionStore
+                )
+                // 固定 .id,确保两个 Tab 切换时 ListView 身份稳定,
+                // 各自的滚动/分页/加载任务互不重置。
+                .id(Scope.allProjects)
+            case .currentProject:
+                ListView(
+                    kernel: kernel,
+                    conversationManager: conversationManager,
+                    attentionStore: attentionStore,
+                    projectPath: kernel.project?.currentProject?.path
+                )
+                .id(Scope.currentProject)
+            }
+        } else {
+            ListErrorView(reason: "Conversation store service is not available")
         }
     }
 }
