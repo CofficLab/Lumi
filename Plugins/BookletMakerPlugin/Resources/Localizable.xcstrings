@@ -33,6 +33,9 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "%lld mm" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -126,6 +129,35 @@
         }
       }
     },
+    "After Binding" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After Binding"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "装订后"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "裝訂後"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "裝訂後"
+          }
+        }
+      }
+    },
     "After conversion" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -151,6 +183,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "轉換後"
+          }
+        }
+      }
+    },
+    "Before Binding" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Before Binding"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "装订前"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "裝訂前"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "裝訂前"
           }
         }
       }
@@ -648,6 +709,35 @@
         }
       }
     },
+    "Original PDF · 8 pages" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original PDF · 8 pages"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始 PDF · 共 8 页"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始 PDF · 共 8 頁"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始 PDF · 共 8 頁"
+          }
+        }
+      }
+    },
     "Output paper" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -735,8 +825,63 @@
         }
       }
     },
-    "Page %lld" : {
-
+    "Pages %@ of %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pages %1$@ of %2$lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$@ 页 · 共 %2$lld 页"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$@ 頁 · 共 %2$lld 頁"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$@ 頁 · 共 %2$lld 頁"
+          }
+        }
+      }
+    },
+    "Pages %lld + %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pages %1$lld + %2$lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$lld 页 + 第 %2$lld 页"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$lld 頁 + 第 %2$lld 頁"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$lld 頁 + 第 %2$lld 頁"
+          }
+        }
+      }
     },
     "PDF has no pages: %@" : {
       "extractionState" : "manual",

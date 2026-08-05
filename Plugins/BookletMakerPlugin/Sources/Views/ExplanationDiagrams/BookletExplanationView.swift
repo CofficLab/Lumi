@@ -3,111 +3,93 @@ import SwiftUI
 // MARK: - Booklet Explanation View
 
 /// 示意图区域，展示 PDF 转换前后的效果
-/// 会根据用户的设置实时更新，作为拖放区域下方的内容展示
+///
+/// - 上方：8 页示例 PDF（每页内容不同，组合起来是一个完整的故事）
+/// - 下方：顶部为「装订前 / 装订后」tab
+///   - 装订前：左侧张数 tab，右侧显示该张纸的实际拼版内容
+///   - 装订后：可交互翻页的虚拟小册子
 struct BookletExplanationView: View {
     let settings: BookletSettings
 
+    /// 下方区域当前选中的 tab
+    @State private var selectedTab: ExplanationTab = .beforeBinding
+
+    private enum ExplanationTab {
+        case beforeBinding
+        case afterBinding
+    }
+
     var body: some View {
         GeometryReader { geo in
-            let size = computeDynamicSize(in: geo.size)
+            // 上下空间分配：上方页面条约占 40%，下方 tab 内容约占 60%
+            let stripHeight = max(90, min(150, geo.size.height * 0.36))
 
-            VStack(spacing: 16 * size.scaleFactor) {
-                // 上方：输入（两页 A4 并排）
-                VStack(spacing: 4 * size.scaleFactor) {
-                    InputDiagram(paperSize: settings.outputPaper)
-                        .frame(width: size.inputWidth, height: size.inputHeight)
-                        .animation(.easeInOut(duration: 0.3), value: settings.outputPaper)
+            VStack(spacing: 12) {
+                // 上方：8 页原始 PDF
+                inputStrip(pageHeight: stripHeight)
 
-                    Text(BookletLocalization.string("2 Original Pages"))
-                        .font(.system(size: max(8, 10 * size.scaleFactor)))
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-
-                // 中间：转换箭头
+                // 转换箭头
                 Image(systemName: "arrow.down")
-                    .font(.system(size: 20 * size.scaleFactor))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.accentColor)
 
-                // 下方：输出（拼版后的页面）
-                VStack(spacing: 4 * size.scaleFactor) {
-                    OutputDiagramContainer(settings: settings)
-                        .frame(width: size.outputWidth, height: size.outputHeight)
-                        .animation(.easeInOut(duration: 0.3), value: settings)
+                // 下方：装订前 / 装订后 tab
+                VStack(spacing: 8) {
+                    tabPicker
 
-                    Text(BookletLocalization.string("After conversion"))
-                        .font(.system(size: max(8, 10 * size.scaleFactor)))
-                        .foregroundColor(.secondary)
+                    tabContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(maxWidth: .infinity)
-
-                // 说明文字
-                Text(descriptionText)
-                    .font(.system(size: max(8, 10 * size.scaleFactor)))
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .animation(.easeInOut(duration: 0.2), value: settings.layout)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 
-    // MARK: - Dynamic Layout
+    // MARK: - Input Strip
 
-    /// 计算适配可用空间的比例尺寸
-    private func computeDynamicSize(in availableSize: CGSize) -> DynamicSize {
-        // 基准尺寸（设计稿尺寸）
-        // InputDiagram: 两个 A4 竖版并排
-        let baseInputHeight: CGFloat = 176
-        let baseInputWidth: CGFloat = baseInputHeight * (210.0 / 297.0) * 2 + 8  // 两页 + 间距
+    /// 8 页示例故事，横向并排展示；横向空间不足时支持滚动
+    private func inputStrip(pageHeight: CGFloat) -> some View {
+        VStack(spacing: 4) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(SampleStory.pages) { page in
+                        StoryPageView(pageNumber: page.id, height: pageHeight)
+                    }
+                }
+                .padding(.horizontal, 2)
+                // 内容整体居中：空间足够时不偏左
+                .frame(maxWidth: .infinity)
+            }
 
-        // OutputDiagramContainer: 一张横向 A4，内部并排放置两个缩小页面
-        let baseOutputWidth: CGFloat = baseInputHeight   // 旋转后宽度 = 原高度
-        let baseOutputHeight: CGFloat = baseInputHeight * (210.0 / 297.0)  // 旋转后高度 = 原宽度
-
-        // 上下布局：宽度取两者最大，高度为两者之和 + 间距 + 箭头
-        let baseContentWidth = max(baseInputWidth, baseOutputWidth)
-        let baseContentHeight = baseInputHeight + 16 + 30 + 16 + baseOutputHeight
-
-        // 计算缩放因子，保持宽高比
-        let availableContentWidth = availableSize.width - 32    // 留边距
-        let availableContentHeight = availableSize.height - 80  // 留出说明文字和间距
-
-        let widthScale = availableContentWidth / baseContentWidth
-        let heightScale = availableContentHeight / baseContentHeight
-
-        // 取较小值，确保内容不溢出
-        let scale = min(widthScale, heightScale, 2.0)
-
-        return DynamicSize(
-            inputWidth: baseInputWidth * scale,
-            inputHeight: baseInputHeight * scale,
-            outputWidth: baseOutputWidth * scale,
-            outputHeight: baseOutputHeight * scale,
-            scaleFactor: scale
-        )
-    }
-
-    /// 根据布局模式生成说明文字
-    private var descriptionText: String {
-        switch settings.layout {
-        case .bookletFold:
-            return String(format: BookletLocalization.string("Print on %@ paper, fold in half, and staple to create a booklet."),
-                         settings.outputPaper.displayName)
-        case .simplePair:
-            return String(format: BookletLocalization.string("Print two pages side by side on %@ paper."),
-                         settings.outputPaper.displayName)
+            Text(BookletLocalization.string("Original PDF · 8 pages"))
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
         }
     }
 
-    // MARK: - Types
+    // MARK: - Bottom Tabs
 
-    private struct DynamicSize {
-        let inputWidth: CGFloat
-        let inputHeight: CGFloat
-        let outputWidth: CGFloat
-        let outputHeight: CGFloat
-        let scaleFactor: CGFloat
+    private var tabPicker: some View {
+        Picker("", selection: $selectedTab) {
+            Text(BookletLocalization.string("Before Binding"))
+                .tag(ExplanationTab.beforeBinding)
+            Text(BookletLocalization.string("After Binding"))
+                .tag(ExplanationTab.afterBinding)
+        }
+        .pickerStyle(.segmented)
+        .frame(maxWidth: 240)
+        .labelsHidden()
+    }
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .beforeBinding:
+            SheetPreviewView(settings: settings)
+        case .afterBinding:
+            FlipBookView()
+        }
     }
 }
 
@@ -115,19 +97,17 @@ struct BookletExplanationView: View {
 
 #Preview("Default Settings") {
     BookletExplanationView(settings: BookletSettings())
-        .frame(width: 600, height: 400)
+        .frame(width: 600, height: 480)
         .padding()
 }
 
-#Preview("Custom Settings") {
+#Preview("Simple Pair") {
     BookletExplanationView(settings: BookletSettings(
         outputPaper: .a5,
         layout: .simplePair,
         marginMM: 15,
-        gutterMM: 10,
-        padBlankPage: true,
-        addCutMarks: true
+        gutterMM: 10
     ))
-    .frame(width: 600, height: 400)
+    .frame(width: 600, height: 480)
     .padding()
 }

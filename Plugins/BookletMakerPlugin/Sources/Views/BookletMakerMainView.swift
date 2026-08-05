@@ -17,8 +17,6 @@ struct BookletMakerMainView: View {
             BookletExplanationView(settings: viewModel.settings)
                 .frame(maxWidth: .infinity)
                 .frame(maxHeight: .infinity)
-                .background(.red.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .padding()
     }
