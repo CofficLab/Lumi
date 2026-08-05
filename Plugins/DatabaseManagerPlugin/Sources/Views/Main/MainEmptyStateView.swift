@@ -46,11 +46,10 @@ struct MainEmptyStateView: View {
     @ViewBuilder
     private var savedConnectionsSection: some View {
         if !viewModel.configs.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(spacing: 8) {
                 Text(LumiPluginLocalization.string("Saved Connections", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 AppCard {
                     VStack(spacing: 0) {
@@ -65,7 +64,6 @@ struct MainEmptyStateView: View {
                 }
                 .frame(maxWidth: 480)
             }
-            .padding(.horizontal, 24)
         }
     }
 
