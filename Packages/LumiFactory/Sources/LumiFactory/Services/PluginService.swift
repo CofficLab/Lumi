@@ -51,6 +51,7 @@ import GitHubPlugin
 import GitPlugin
 import GoalTaskPlugin
 import HostsManagerPlugin
+import ImageToPDFPlugin
 import IdleTimePlugin
 import InputPlugin
 import WorkspacePlugin
@@ -240,6 +241,7 @@ public enum PluginService {
             ConversationLanguagePlugin(),
             VideoConverterPlugin(),
             NettoPlugin(),
+            ImageToPDFPlugin(),
             QuickLauncherPlugin(),
             PortManagerPlugin(),
             AppManagerPlugin(),
