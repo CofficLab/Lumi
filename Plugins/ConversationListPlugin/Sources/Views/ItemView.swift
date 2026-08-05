@@ -95,12 +95,10 @@ public struct ItemView: View {
             Spacer()
         }
         .overlay(alignment: .topTrailing) {
-            if !isSelected {
-                if isActive {
-                    pulsingAttentionDot
-                } else if needsAttention {
-                    attentionDot
-                }
+            if isActive {
+                pulsingAttentionDot
+            } else if needsAttention {
+                attentionDot
             }
         }
     }
