@@ -1,6 +1,16 @@
 import Foundation
 import SwiftUI
 
+/// 命令菜单项的状态
+///
+/// 用于标记菜单项的选中状态，在 macOS 菜单栏中显示为勾选标记。
+public enum CommandItemState: Sendable {
+    /// 未选中（默认）
+    case off
+    /// 已选中（显示勾选标记）
+    case on
+}
+
 /// 命令菜单项
 ///
 /// 插件通过此结构注册菜单命令，由 LumiCore 统一消费。
@@ -10,18 +20,21 @@ public struct CommandItem: Identifiable, Sendable {
     public let action: @MainActor @Sendable () -> Void
     public let shortcut: KeyEquivalent?
     public let modifiers: EventModifiers?
+    public let state: CommandItemState
 
     public init(
         id: String? = nil,
         title: String,
         shortcut: KeyEquivalent? = nil,
         modifiers: EventModifiers? = nil,
+        state: CommandItemState = .off,
         action: @MainActor @Sendable @escaping () -> Void
     ) {
         self.id = id ?? title
         self.title = title
         self.shortcut = shortcut
         self.modifiers = modifiers
+        self.state = state
         self.action = action
     }
 }

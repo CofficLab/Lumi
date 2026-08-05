@@ -14,6 +14,9 @@ public final class ThemeManager: UIThemeProviding {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "service.theme")
     nonisolated static let verbose = false
 
+    /// Command group ID for theme menu registration.
+    private static let commandGroupId = "com.coffic.lumi.theme.menu"
+
     public let themeRegistry: LumiUIThemeRegistry
     private var themeSelectionStore: ThemeSelectionStore
     private var pluginsChangedObserver: NSObjectProtocol?
@@ -23,6 +26,9 @@ public final class ThemeManager: UIThemeProviding {
 
     /// Kernel event dispatcher, used to broadcast theme-change events.
     private weak var eventManager: EventManager?
+
+    /// Kernel reference, used to access the command service for menu registration.
+    private weak var kernel: LumiKernel?
 
     public var themes: [LumiUIThemeContribution] {
         themeRegistry.themes
@@ -95,6 +101,12 @@ public final class ThemeManager: UIThemeProviding {
     /// Inject the kernel event manager used to broadcast theme-change events.
     public func setEventManager(_ eventManager: EventManager) {
         self.eventManager = eventManager
+    }
+
+    /// Inject the kernel reference used to access the command service for menu registration.
+    public func setKernel(_ kernel: LumiKernel) {
+        self.kernel = kernel
+        registerThemeMenuCommands()
     }
 
     /// Reload themes from all enabled plugins' theme contributions.
@@ -213,5 +225,41 @@ public final class ThemeManager: UIThemeProviding {
     /// can react without ThemeManager knowing about them.
     private func postThemeDidChange() {
         eventManager?.post(.themeDidChange)
+        registerThemeMenuCommands()
+    }
+
+    /// 将当前主题列表注册为菜单栏命令组。
+    ///
+    /// 每次主题列表或选中状态变化时调用，先注销旧的再注册新的，
+    /// 使 `CommandMenuInstaller` 能够检测到签名变化并刷新菜单。
+    private func registerThemeMenuCommands() {
+        guard let kernel else { return }
+
+        let currentThemes = themeRegistry.themes
+        let currentSelectedId = themeRegistry.selectedThemeId
+
+        let items = currentThemes.map { theme in
+            CommandItem(
+                id: "\(Self.commandGroupId).select.\(theme.id)",
+                title: theme.displayName,
+                state: theme.id == currentSelectedId ? .on : .off
+            ) { [weak self] in
+                try? self?.selectTheme(id: theme.id)
+            }
+        }
+
+        let group = CommandMenuGroup(
+            id: Self.commandGroupId,
+            name: String(localized: "Theme"),
+            items: items,
+            placement: .topLevelMenu
+        )
+
+        kernel.command?.unregisterCommandGroup(id: Self.commandGroupId)
+        kernel.command?.registerCommandGroup(group)
+
+        if Self.verbose {
+            Self.logger.info("Registered \(items.count) theme menu commands")
+        }
     }
 }
