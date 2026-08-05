@@ -12,7 +12,7 @@ struct AppManagerDetailView: View {
             if let app = viewModel.selectedApp {
                 VStack(alignment: .leading, spacing: 0) {
                     // Header
-                    AppCard(style: .subtle, cornerRadius: 12, padding: EdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 14)) {
+                    AppCard(style: .subtle, cornerRadius: 0, padding: EdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 14)) {
                         HStack(alignment: .top, spacing: 16) {
                             // Left: Icon + Name
                             HStack(spacing: 12) {

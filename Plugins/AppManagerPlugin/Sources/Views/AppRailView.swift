@@ -92,19 +92,21 @@ struct AppRailView: View {
     private var footer: some View {
         HStack {
             Text(PluginAppManagerLocalization.format("%lld Apps", viewModel.installedApps.count))
-                .font(.appCaption)
+                .font(.appBodyEmphasized)
                 .foregroundColor(theme.textSecondary)
 
             Text("·")
                 .foregroundColor(theme.textSecondary)
 
             Text(PluginAppManagerLocalization.format("Total Size: %@", viewModel.formattedTotalSize))
-                .font(.appCaption)
+                .font(.appBodyEmphasized)
                 .foregroundColor(theme.textSecondary)
 
             Spacer()
         }
-        .padding()
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .frame(height: 40)
         .background(Material.regularMaterial)
     }
 
