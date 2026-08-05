@@ -1,9 +1,12 @@
 import SwiftUI
 
-// MARK: - Booklet Settings Panel
+// MARK: - Booklet Maker Rail View
 
-/// Right-hand side: the imposition parameters and the export button.
-struct BookletSettingsPanel: View {
+/// 侧边栏配置视图，显示小册子制作的所有设置选项。
+///
+/// 由 `BookletMakerPlugin` 注册为 `PanelRailTabItem`，
+/// 仅在 Booklet Maker ViewContainer 中可见。
+struct BookletMakerRailView: View {
 
     @ObservedObject var viewModel: BookletMakerViewModel
     let onExport: () -> Void
@@ -91,9 +94,16 @@ struct BookletSettingsPanel: View {
             .disabled(!viewModel.canExport)
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.gray.opacity(0.06))
-        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
+}
+
+// MARK: - Preview
+
+#Preview {
+    BookletMakerRailView(
+        viewModel: BookletMakerViewModel(),
+        onExport: {}
+    )
+    .frame(width: 260, height: 500)
 }

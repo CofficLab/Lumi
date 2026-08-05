@@ -67,6 +67,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     private let kernel: LumiKernel
     private let pagination = MessageListPaginationService()
     private let rowBuilder = MessageListRowBuilder()
+    private let tailRefreshGate = MessageListTailRefreshGate()
 
     /// 切换会话时记录的目标会话,用于丢弃过期的后台读结果。
     private var activeConversationID: UUID?
@@ -187,19 +188,40 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     ///
     /// 只作用于真实落库消息;流式临时行由流式服务独立持有,
     /// 经 `rebuildRows` 参与合并,无需任何特例处理。
-    func refreshTail() async {
-        guard let conversationID = selectedConversationID else { return }
+    @discardableResult
+    func refreshTail() async -> Bool {
+        await tailRefreshGate.run { [weak self] in
+            guard let self else { return false }
+            return await self.performTailRefresh()
+        }
+    }
+
+    /// Performs one tail snapshot read. The gate above guarantees this method
+    /// is never active more than once and requests arriving during I/O receive
+    /// one trailing pass before the owner returns.
+    private func performTailRefresh() async -> Bool {
+        guard let conversationID = selectedConversationID else { return false }
         guard let result = await pagination.refreshTail(
             conversationID: conversationID,
             messageManager: kernel.messageManager,
             current: persistedMessages
-        ) else { return }
-        guard activeConversationID == conversationID else { return }
-        persistedMessages = result.merged
-        if let hasEarlier = result.hasEarlierMessages {
+        ) else { return false }
+        guard activeConversationID == conversationID else { return false }
+
+        let messagesChanged = persistedMessages != result.merged
+        let hasEarlierChanged = result.hasEarlierMessages.map { $0 != hasEarlierMessages } ?? false
+        guard messagesChanged || hasEarlierChanged else { return false }
+
+        if messagesChanged {
+            persistedMessages = result.merged
+        }
+        if let hasEarlier = result.hasEarlierMessages, hasEarlierChanged {
             hasEarlierMessages = hasEarlier
         }
-        await refreshTurnActivitySummaries(conversationID: conversationID)
+        if messagesChanged {
+            await refreshTurnActivitySummaries(conversationID: conversationID)
+        }
+        return messagesChanged
     }
 
     // MARK: - Private
@@ -228,7 +250,9 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// still provide the expandable tool rows.
     private func refreshTurnActivitySummaries(conversationID: UUID) async {
         guard let toolManager = kernel.toolManager else {
-            turnActivitySummaries = [:]
+            if !turnActivitySummaries.isEmpty {
+                turnActivitySummaries = [:]
+            }
             return
         }
         let turnIDs = Set(
@@ -237,7 +261,9 @@ final class MessageListViewModel: ObservableObject, SuperLog {
                 .compactMap(\.turnID)
         )
         guard !turnIDs.isEmpty else {
-            turnActivitySummaries = [:]
+            if !turnActivitySummaries.isEmpty {
+                turnActivitySummaries = [:]
+            }
             return
         }
 
@@ -254,7 +280,9 @@ final class MessageListViewModel: ObservableObject, SuperLog {
             )
         }
         guard activeConversationID == conversationID else { return }
-        turnActivitySummaries = summaries
+        if turnActivitySummaries != summaries {
+            turnActivitySummaries = summaries
+        }
     }
 
     /// 订阅流式/发送服务的窄播(绕开 kernel 全局广播),变化时重算展示行。

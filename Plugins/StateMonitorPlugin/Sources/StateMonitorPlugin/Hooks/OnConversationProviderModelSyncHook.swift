@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import LumiKernel
 import os
+import SuperLogKit
 
 /// 选中对话后,把它绑定的 Provider/Model 同步到内核全局当前选中
 ///
@@ -30,11 +31,12 @@ import os
 /// 监听入口走 `objectWillChange`，与 `OnConversationSelectedHook` 共享同一种
 /// 触发源；两条 hook 各自维护 `lastObservedConversationID`,互不影响。
 @MainActor
-final class OnConversationProviderModelSyncHook {
+final class OnConversationProviderModelSyncHook: SuperLog {
 
     // MARK: - Logging
 
-    nonisolated static let verbose = true
+    nonisolated static let emoji = "🔄"
+    nonisolated static let verbose = false
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "plugin.state-monitor.hook.conversation-provider-model"
@@ -59,7 +61,7 @@ final class OnConversationProviderModelSyncHook {
               kernel.llmProvider != nil
         else {
             if Self.verbose {
-                Self.logger.warning("attach skipped: conversations or llmProviders not registered yet")
+                Self.logger.warning("\(Self.t)attach skipped: conversations or llmProviders not registered yet")
             }
             return
         }
@@ -76,10 +78,7 @@ final class OnConversationProviderModelSyncHook {
             }
 
         if Self.verbose {
-            Self.logger.info("""
-            attached to conversations service, initial selectedID=\
-            \(self.lastObservedConversationID?.uuidString.prefix(8) ?? "<nil>")
-            """)
+            Self.logger.info("\(Self.t)attached to conversations service, initial selectedID=\(self.lastObservedConversationID?.uuidString.prefix(8) ?? "<nil>")")
         }
     }
 
@@ -144,11 +143,7 @@ final class OnConversationProviderModelSyncHook {
         }
 
         if Self.verbose {
-            Self.logger.info("""
-            ✅ Synced global provider/model from conversation \
-            \(newID.uuidString.prefix(8)): \
-            \(oldProvider)/\(oldModel) → \(targetProviderID)/\(resolvedModel)
-            """)
+            Self.logger.info("\(Self.t)✅ Synced global provider/model from conversation \(newID.uuidString.prefix(8)): \(oldProvider)/\(oldModel) → \(targetProviderID)/\(resolvedModel)")
         }
     }
 }

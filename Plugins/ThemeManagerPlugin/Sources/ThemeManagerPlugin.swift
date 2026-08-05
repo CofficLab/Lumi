@@ -25,7 +25,9 @@ public final class ThemeManagerPlugin: LumiPlugin {
         themeServiceInstance.setEventManager(kernel.eventManager)
     }
 
-    public func onReady(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: LumiKernel) async throws {
+        themeService?.setKernel(kernel)
+    }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }

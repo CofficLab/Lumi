@@ -66,18 +66,23 @@ struct ModelListView: View {
                     $0.localizedCaseInsensitiveContains(searchText)
                 }
 
+                // 获取 provider 信息（用于能力展示）
+                let providerInfo = llmProvider.providerInfo(id: providerID)
+
                 ScrollView {
                     LazyVStack(spacing: 4) {
                         ForEach(filteredModels, id: \.self) { model in
-                            let info = llmProvider.allLLMProviders()
-                                .first { type(of: $0).info.id == providerID }.map { type(of: $0).info }
-                            let displayName = info?.modelDisplayNames[model] ?? model
+                            let displayName = providerInfo?.modelDisplayNames[model] ?? model
+                            let capabilities = providerInfo?.modelCapabilities[model]
+                            let contextWindowSize = providerInfo?.contextWindowSizes[model]
                             let isSelected = model == initialModel
 
                             ModelListItem(
                                 displayName: displayName,
                                 model: model,
                                 isSelected: isSelected,
+                                capabilities: capabilities,
+                                contextWindowSize: contextWindowSize,
                                 onSelect: {
                                     onSelect?(providerID, model)
                                     llmProvider.selectModel(providerID: providerID, model: model)

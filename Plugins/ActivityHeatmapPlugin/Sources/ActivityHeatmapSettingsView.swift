@@ -7,16 +7,22 @@ import LumiUI
 /// Displayed as a tab in the plugin settings sidebar.
 public struct ActivityHeatmapSettingsView: View {
     @State private var viewModel: ActivityHeatmapViewModel
-    @State private var period: ActivityHeatmapPeriod = .year
+    @State private var period: ActivityHeatmapPeriod
 
     private let cacheDirectory: URL?
+    private let settingsStore: ActivityHeatmapSettingsStore?
     private let idleTimeProvider: (any IdleTimeProviding)?
     private let idleTimeDataDirectory: URL?
 
     public init(messageService: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil,
+                settingsStore: ActivityHeatmapSettingsStore? = nil,
                 idleTimeProvider: (any IdleTimeProviding)? = nil,
                 idleTimeDataDirectory: URL? = nil) {
         _viewModel = State(initialValue: ActivityHeatmapViewModel(messageService: messageService, cache: cache))
+        self.settingsStore = settingsStore
+        let savedSettings = settingsStore?.loadSettings()
+        let savedPeriod = ActivityHeatmapPeriod(rawValue: savedSettings?.selectedPeriodRawValue ?? 0) ?? .days30
+        _period = State(initialValue: savedPeriod)
         self.cacheDirectory = cache?.databaseDirectoryURL
         self.idleTimeProvider = idleTimeProvider
         self.idleTimeDataDirectory = idleTimeDataDirectory
@@ -42,6 +48,7 @@ public struct ActivityHeatmapSettingsView: View {
             }
         }
         .onChange(of: period) { _, newValue in
+            settingsStore?.saveSettings(ActivityHeatmapSettingsStore.Settings(selectedPeriodRawValue: newValue.rawValue))
             guard viewModel.period != newValue else { return }
             viewModel.period = newValue
             Task { await viewModel.load() }

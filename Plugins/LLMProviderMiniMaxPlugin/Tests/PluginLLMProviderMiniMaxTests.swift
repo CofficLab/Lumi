@@ -218,6 +218,26 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(message.content == "这是正文")
     }
 
+    @Test func anthropicSSEParserPreservesFramesSplitAcrossChunks() {
+        let parser = MiniMaxAnthropicSSEParser()
+        let first = parser.append(Data("event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"hel".utf8))
+        let second = parser.append(Data("lo\"}}\n\n".utf8))
+
+        #expect(first.isEmpty)
+        #expect(second.count == 1)
+        #expect(second.first?.text == "hello")
+    }
+
+    @Test func openAISSEParserPreservesFramesSplitAcrossChunks() {
+        let parser = MiniMaxOpenAISSEParser()
+        let first = parser.append(Data("data: {\"choices\":[{\"delta\":{\"content\":\"hel".utf8))
+        let second = parser.append(Data("lo\"}}]}\n\n".utf8))
+
+        #expect(first.isEmpty)
+        #expect(second.count == 1)
+        #expect(second.first?.content == "hello")
+    }
+
     @Test func httpErrorRendererMatchesOtherStatusCodes() {
         let conversationID = UUID()
         let rateLimited = LumiChatMessage(
@@ -295,6 +315,18 @@ struct PluginLLMProviderMiniMaxTests {
 
         #expect(message.renderKind == MiniMaxRenderKind.http(429))
         #expect(message.metadata[LumiLLMErrorMetadata.retryable] == "true")
+    }
+
+    @Test func errorMessageUsesNestedProviderMessageAsSummary() {
+        let providerMessage = "当前服务集群负载较高，请稍后重试，感谢您的耐心等待。 (2064)"
+        let rawResponse = "{\"error\":{\"type\":\"overloaded_error\",\"message\":\"\(providerMessage)\",\"http_code\":\"529\"},\"type\":\"error\"}"
+        let message = makeMessage(
+            for: HTTPClientError.httpError(statusCode: 529, message: rawResponse)
+        )
+
+        #expect(message.rawErrorDetail == providerMessage)
+        #expect(message.metadata[LLMTransportMetadata.responseDetails] == rawResponse)
+        #expect(message.renderKind == MiniMaxRenderKind.http(529))
     }
 
     @Test func unsupportedModelAvailabilityMapsToStructuredFailure() {

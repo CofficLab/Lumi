@@ -7,6 +7,97 @@ import LumiKernel
 /// 按内存要求分类，提供适合不同设备的模型选择。
 public enum MLXModels {
 
+    // MARK: - 系列注册元数据
+
+    /// 一个 MLX 系列（品牌）在插件中对应的 Provider 元数据
+    ///
+    /// 把"系列名"和"对外暴露的 Provider id"解耦：
+    /// - `seriesName` 用于从 `LocalModelInfo.series` 中匹配模型
+    /// - `providerID` 是注册到 LumiKernel 的供应商 id（如 `mlx-qwen`）
+    /// - `providerSlug` 是用作 displayName 的品牌短名（如 "Qwen"）
+    public struct SeriesRegistration: Equatable, Sendable {
+        public let seriesName: String
+        public let providerID: String
+        public let providerSlug: String
+        public let providerDescription: String
+        public let websiteURL: URL
+
+        public init(
+            seriesName: String,
+            providerID: String,
+            providerSlug: String,
+            providerDescription: String,
+            websiteURL: URL
+        ) {
+            self.seriesName = seriesName
+            self.providerID = providerID
+            self.providerSlug = providerSlug
+            self.providerDescription = providerDescription
+            self.websiteURL = websiteURL
+        }
+    }
+
+    /// 所有对外暴露的 MLX 系列（品牌）注册信息
+    ///
+    /// 顺序就是用户在 Provider 选择器中看到的顺序；
+    /// 同时也是 `MLXLumiPlugin.llmProviders` 返回的顺序。
+    public static let seriesRegistrations: [SeriesRegistration] = [
+        SeriesRegistration(
+            seriesName: "Qwen 系列",
+            providerID: "mlx-qwen",
+            providerSlug: "Qwen",
+            providerDescription: "Qwen (Alibaba)",
+            websiteURL: URL(string: "https://qwenlm.github.io/")!
+        ),
+        SeriesRegistration(
+            seriesName: "Llama 系列",
+            providerID: "mlx-llama",
+            providerSlug: "Llama",
+            providerDescription: "Llama (Meta)",
+            websiteURL: URL(string: "https://llama.meta.com/")!
+        ),
+        SeriesRegistration(
+            seriesName: "Mistral 系列",
+            providerID: "mlx-mistral",
+            providerSlug: "Mistral",
+            providerDescription: "Mistral",
+            websiteURL: URL(string: "https://mistral.ai/")!
+        ),
+        SeriesRegistration(
+            seriesName: "Gemma 4 系列",
+            providerID: "mlx-gemma4",
+            providerSlug: "Gemma",
+            providerDescription: "Gemma (Google)",
+            websiteURL: URL(string: "https://ai.google.dev/gemma")!
+        ),
+        SeriesRegistration(
+            seriesName: "DeepSeek 系列",
+            providerID: "mlx-deepseek",
+            providerSlug: "DeepSeek",
+            providerDescription: "DeepSeek",
+            websiteURL: URL(string: "https://www.deepseek.com/")!
+        ),
+        SeriesRegistration(
+            seriesName: "代码 系列",
+            providerID: "mlx-coder",
+            providerSlug: "Coder",
+            providerDescription: "Code models",
+            websiteURL: URL(string: "https://github.com/ml-explore/mlx")!
+        ),
+        SeriesRegistration(
+            seriesName: "Microsoft 系列",
+            providerID: "mlx-microsoft",
+            providerSlug: "Microsoft",
+            providerDescription: "Microsoft Phi",
+            websiteURL: URL(string: "https://phi.microsoft.com/")!
+        ),
+    ]
+
+    /// 按 seriesName 查找 SeriesRegistration
+    public static func registration(forSeries seriesName: String) -> SeriesRegistration? {
+        seriesRegistrations.first { $0.seriesName == seriesName }
+    }
+
     // MARK: - 推荐模型（按优先级排序）
 
     /// 所有推荐模型（按 priority 排序）
@@ -18,6 +109,22 @@ public enum MLXModels {
         CoderModels.all +
         DeepSeekModels.all +
         MicrosoftModels.all
+
+    // MARK: - 按系列过滤
+
+    /// 返回给定 seriesName 下的所有推荐模型（按 priority 升序）
+    public static func recommended(forSeries seriesName: String) -> [LocalModelInfo] {
+        recommended
+            .filter { $0.series == seriesName }
+            .sorted { $0.priority < $1.priority }
+    }
+
+    /// 给定 seriesName + systemRAM，返回可用模型列表（按 priority 升序）
+    public static func availableModels(forSeries seriesName: String, systemRAM: Int? = nil) -> [LocalModelInfo] {
+        let ram = systemRAM ?? detectSystemRAM()
+        return recommended(forSeries: seriesName)
+            .filter { $0.minRAM <= ram }
+    }
 
     // MARK: - 按内存要求过滤
 

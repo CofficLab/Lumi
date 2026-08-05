@@ -36,28 +36,76 @@ struct AppManagerAboutView: View {
                 )
 
                 // How It Works
-                HowItWorksCard(
+                GlassInfoCard(
                     title: coreL("about.section.howItWorks"),
-                    steps: [
-                        L("Scans system Applications folder and other locations"),
-                        L("Builds a comprehensive list of installed apps"),
-                        L("Calculates app size and related cache files"),
-                        L("Provides options to clean app cache")
-                    ]
-                )
+                    icon: "questionmark.circle",
+                    iconColor: theme.primary
+                ) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+                            HStack(alignment: .top, spacing: 10) {
+                                Text("\(index + 1)")
+                                    .font(.appMonoCaption)
+                                    .foregroundStyle(theme.primary)
+                                    .frame(width: 22, height: 22)
+                                    .background(
+                                        Circle()
+                                            .fill(theme.primary.opacity(0.15))
+                                    )
+
+                                Text(step)
+                                    .font(.appCaption)
+                                    .foregroundColor(theme.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                }
 
                 // Tips
-                TipsCard(
-                    title: coreL("about.section.tips"),
-                    tips: [
-                        L("Click on an app to view detailed information"),
-                        L("Use the cache manager to free up disk space"),
-                        L("Rescan to refresh the application list")
-                    ]
-                )
+                AppCard(style: .subtle, cornerRadius: 12, padding: EdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 14)) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(coreL("about.section.tips"))
+                            .font(.appBodyEmphasized)
+                            .foregroundColor(theme.textPrimary)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(tips, id: \.self) { tip in
+                                HStack(alignment: .top, spacing: 8) {
+                                    Image(systemName: "lightbulb.fill")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(theme.primary)
+                                        .frame(width: 16)
+
+                                    Text(tip)
+                                        .font(.appCaption)
+                                        .foregroundColor(theme.textSecondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+                    }
+                }
             }
             .padding()
         }
+    }
+
+    private var steps: [String] {
+        [
+            L("Scans system Applications folder and other locations"),
+            L("Builds a comprehensive list of installed apps"),
+            L("Calculates app size and related cache files"),
+            L("Provides options to clean app cache")
+        ]
+    }
+
+    private var tips: [String] {
+        [
+            L("Click on an app to view detailed information"),
+            L("Use the cache manager to free up disk space"),
+            L("Rescan to refresh the application list")
+        ]
     }
 
     private func L(_ key: String) -> String {
@@ -86,102 +134,30 @@ private struct FeatureHighlight: View {
     let description: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
+        AppCard(style: .subtle, cornerRadius: 12, padding: EdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 14)) {
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(theme.primary)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        Circle()
+                            .fill(theme.primary.opacity(0.1))
+                    )
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
 
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - How It Works Card
-
-private struct HowItWorksCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let steps: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("\(index + 1)")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 22, height: 22)
-                            .background(
-                                Circle()
-                                    .fill(theme.primary.opacity(0.15))
-                            )
-
-                        Text(step)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    Text(description)
+                        .font(.appCaption)
+                        .foregroundColor(theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+
+                Spacer(minLength: 0)
             }
         }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Tips Card
-
-private struct TipsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let tips: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(tips, id: \.self) { tip in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 16)
-
-                        Text(tip)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
     }
 }

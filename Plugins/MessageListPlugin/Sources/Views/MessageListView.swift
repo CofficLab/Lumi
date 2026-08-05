@@ -106,12 +106,21 @@ struct MessageListView: View {
                         animated: false
                     )
                 }
-                .onLumiMessagesDidChange {
-                    // 尾部新消息/流式落库:通知 viewmodel 刷新尾部;若用户在底部则滚到底。
+                .onLumiMessagesDidChange { eventConversationID in
+                    guard MessageListNotificationFilter.shouldHandle(
+                        eventConversationID: eventConversationID,
+                        selectedConversationID: selectedConversationID
+                    ) else { return }
+
+                    // 同一轮发送会连续产生 status/user/tool/assistant 事件。
+                    // ViewModel 合并重叠刷新；只有拥有刷新且快照实际变化的调用方滚动。
+                    let targetConversationID = selectedConversationID
                     Task {
                         let wasAtBottom = isAtBottom
-                        await viewModel.refreshTail()
-                        if wasAtBottom {
+                        let didChange = await viewModel.refreshTail()
+                        if didChange,
+                           wasAtBottom,
+                           selectedConversationID == targetConversationID {
                             await scrollCoordinator.scrollToBottomAfterLayout(
                                 proxy: proxy,
                                 messages: viewModel.historyRows

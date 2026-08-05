@@ -1,8 +1,12 @@
 import SwiftUI
 
 struct CacheCleanerView: View {
-    @StateObject private var viewModel = CacheCleanerViewModel()
+    @ObservedObject var viewModel: CacheCleanerViewModel
     @State private var showCleanConfirmation = false
+
+    init(viewModel: CacheCleanerViewModel) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         VStack(spacing: 16) {

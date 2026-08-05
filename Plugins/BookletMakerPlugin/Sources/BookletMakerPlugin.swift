@@ -30,6 +30,12 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     public let order = 880
     public let policy: LumiPluginPolicy = .optIn
 
+    /// 插件级唯一的 BookletMakerViewModel 实例。
+    /// 通过 `viewContainers` 和 `panelRailTabItems` 同时注入，
+    /// 让 BookletMakerRailView（侧边栏）与 BookletMakerMainView（内容区）共享同一份
+    /// 配置状态，避免"在侧边栏改了设置但内容区没同步"的问题。
+    private let sharedViewModel = BookletMakerViewModel()
+
     public var pluginDescription: String {
         BookletLocalization.string(
             "Convert a PDF into a 2-up imposition ready for A4 duplex printing, folding and stapling."
@@ -61,12 +67,12 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: BookletLocalization.string("Booklet Maker"),
                 systemImage: "book.closed",
-                railVisibility: .unsupported,
+                railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
                 panelHeaderVisibility: .unsupported,
                 panelBottomVisibility: .unsupported
             ) {
-                BookletMakerMainView()
+                BookletMakerMainView(viewModel: self.sharedViewModel)
             },
         ]
     }
@@ -75,6 +81,25 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
 
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(BookletMakerAboutView())
+    }
+
+    // MARK: - Save Panel
+
+    private func presentSavePanel() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.pdf]
+        panel.nameFieldStringValue = suggestedFileName()
+        panel.canCreateDirectories = true
+        panel.title = BookletLocalization.string("Export Booklet PDF")
+        if panel.runModal() == .OK, let url = panel.url {
+            Task { await sharedViewModel.export(to: url) }
+        }
+    }
+
+    private func suggestedFileName() -> String {
+        let base = sharedViewModel.inputURL?.deletingPathExtension().lastPathComponent
+            ?? "booklet"
+        return "\(base)-booklet.pdf"
     }
 
     // MARK: - LumiPlugin Stubs
@@ -86,7 +111,20 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        [
+            PanelRailTabItem(
+                id: "booklet-maker.sidebar",
+                title: BookletLocalization.string("Settings"),
+                systemImage: "slider.horizontal.3",
+                visibility: .viewContainer(id: id)
+            ) {
+                BookletMakerRailView(viewModel: self.sharedViewModel, onExport: {
+                    self.presentSavePanel()
+                })
+            },
+        ]
+    }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }

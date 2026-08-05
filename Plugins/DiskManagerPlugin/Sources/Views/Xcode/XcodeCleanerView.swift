@@ -2,8 +2,12 @@ import SwiftUI
 import AppKit
 
 struct XcodeCleanerView: View {
-    @StateObject private var viewModel = XcodeCleanerViewModel()
+    @ObservedObject var viewModel: XcodeCleanerViewModel
     @State private var showCleanConfirmation = false
+
+    init(viewModel: XcodeCleanerViewModel) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         VStack(spacing: 16) {

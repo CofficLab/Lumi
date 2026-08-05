@@ -35,17 +35,17 @@ struct BookletSettings: Codable, Equatable, Sendable {
 
     // MARK: - Derived geometry
 
-    /// Width of a single source page cell on the output sheet, in points.
+    /// Width of a single source page cell on the landscape output sheet, in points.
     func cellWidthInPoints() -> CGFloat {
-        let paperWidth = PaperSize.mmToPt(outputPaper.widthMM)
+        let paperWidth = PaperSize.mmToPt(outputPaper.heightMM)
         let margin    = PaperSize.mmToPt(marginMM)
         let gutter    = PaperSize.mmToPt(gutterMM)
         return (paperWidth - 2 * margin - gutter) / 2
     }
 
-    /// Height of a single source page cell on the output sheet, in points.
+    /// Height of a single source page cell on the landscape output sheet, in points.
     func cellHeightInPoints() -> CGFloat {
-        let paperHeight = PaperSize.mmToPt(outputPaper.heightMM)
+        let paperHeight = PaperSize.mmToPt(outputPaper.widthMM)
         let margin      = PaperSize.mmToPt(marginMM)
         return paperHeight - 2 * margin
     }

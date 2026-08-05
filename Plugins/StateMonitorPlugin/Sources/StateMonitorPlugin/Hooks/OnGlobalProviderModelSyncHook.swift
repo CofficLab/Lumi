@@ -1,6 +1,7 @@
 import Foundation
 import LumiKernel
 import os
+import SuperLogKit
 
 /// 全局 Provider/Model 变化 → 当前对话
 ///
@@ -27,11 +28,12 @@ import os
 ///   `.lumiSelectedLocalProviderIDDidChange`、`.lumiSelectedModelsDidChange`
 /// - 这三个事件由 `LLMProviderManaging` 实现在 provider/model 变化时发出
 @MainActor
-final class OnGlobalProviderModelSyncHook {
+final class OnGlobalProviderModelSyncHook: SuperLog {
 
     // MARK: - Logging
 
-    nonisolated static let verbose = true
+    nonisolated static let emoji = "🌐"
+    nonisolated static let verbose = false
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "plugin.state-monitor.hook.global-provider-model"
@@ -55,7 +57,7 @@ final class OnGlobalProviderModelSyncHook {
               kernel.llmProvider != nil
         else {
             if Self.verbose {
-                Self.logger.warning("attach skipped: conversations or llmProvider not registered yet")
+                Self.logger.warning("\(Self.t)attach skipped: conversations or llmProvider not registered yet")
             }
             return
         }
@@ -86,7 +88,7 @@ final class OnGlobalProviderModelSyncHook {
         ]
 
         if Self.verbose {
-            Self.logger.info("attached to global provider/model change events")
+            Self.logger.info("\(Self.t)attached to global provider/model change events")
         }
     }
 
@@ -134,11 +136,7 @@ final class OnGlobalProviderModelSyncHook {
         conversations.selectProvider(id: globalProviderID, model: globalModel, for: currentID)
 
         if Self.verbose {
-            Self.logger.info("""
-            ✅ Synced global provider/model to conversation \
-            \(currentID.uuidString.prefix(8)): \
-            \(oldProvider)/\(oldModel) → \(newProvider)/\(newModel)
-            """)
+            Self.logger.info("\(Self.t)✅ Synced global provider/model to conversation \(currentID.uuidString.prefix(8)): \(oldProvider)/\(oldModel) → \(newProvider)/\(newModel)")
         }
     }
 }

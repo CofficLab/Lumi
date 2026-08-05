@@ -43,4 +43,14 @@ public extension View {
             action()
         }
     }
+
+    /// 监听 `.lumiMessagesDidChange` 通知，并传出发生变化的会话 ID。
+    ///
+    /// 旧调用方可继续使用无参数版本；消息列表等高成本消费者应使用此重载，
+    /// 避免其他会话的消息变化触发无关刷新。
+    func onLumiMessagesDidChange(perform action: @escaping (UUID?) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { notification in
+            action(notification.lumiConversationID)
+        }
+    }
 }

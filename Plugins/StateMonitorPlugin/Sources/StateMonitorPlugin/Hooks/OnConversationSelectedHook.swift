@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import LumiKernel
 import os
+import SuperLogKit
 
 /// 选中会话后跟随其绑定项目
 ///
@@ -25,11 +26,12 @@ import os
 /// 这样无论选中是通过 UI 点击、键盘快捷键、Agent tool 还是未来的 deep link 触发，
 /// 都会被覆盖。
 @MainActor
-final class OnConversationSelectedHook {
+final class OnConversationSelectedHook: SuperLog {
 
     // MARK: - Logging
 
-    nonisolated static let verbose = true
+    nonisolated static let emoji = "🔗"
+    nonisolated static let verbose = false
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "plugin.state-monitor.hook.selected"
@@ -51,7 +53,7 @@ final class OnConversationSelectedHook {
         self.kernel = kernel
         guard let conversations = kernel.conversations else {
             if Self.verbose {
-                Self.logger.warning("attach skipped: kernel.conversations not registered yet")
+                Self.logger.warning("\(Self.t)attach skipped: kernel.conversations not registered yet")
             }
             return
         }
@@ -71,10 +73,7 @@ final class OnConversationSelectedHook {
             }
 
         if Self.verbose {
-            Self.logger.info("""
-            attached to conversations service, initial selectedID=\
-            \(self.lastObservedConversationID?.uuidString.prefix(8) ?? "<nil>")
-            """)
+            Self.logger.info("\(Self.t)attached to conversations service, initial selectedID=\(self.lastObservedConversationID?.uuidString.prefix(8) ?? "<nil>")")
         }
     }
 
@@ -136,16 +135,10 @@ final class OnConversationSelectedHook {
             do {
                 try await projectService?.openProject(at: targetPath)
                 if Self.verbose {
-                    Self.logger.info("""
-                    ✅ Followed conversation \(newID.uuidString.prefix(8)): \
-                    project \(oldPath) → \(targetPath)
-                    """)
+                    Self.logger.info("\(Self.t)✅ Followed conversation \(newID.uuidString.prefix(8)): project \(oldPath) → \(targetPath)")
                 }
             } catch {
-                Self.logger.error("""
-                ❌ Failed to follow conversation \(newID.uuidString.prefix(8)) \
-                to project \(targetPath): \(error.localizedDescription)
-                """)
+                Self.logger.error("\(Self.t)❌ Failed to follow conversation \(newID.uuidString.prefix(8)) to project \(targetPath): \(error.localizedDescription)")
             }
         }
     }

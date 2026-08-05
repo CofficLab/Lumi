@@ -159,7 +159,8 @@ private final class CommandMenuInstaller {
     private func signature(for groups: [CommandMenuGroup]) -> String {
         groups.map { group in
             let items = group.items.map { item in
-                "\(item.id)=\(item.title)=\(String(describing: item.shortcut))=\(String(describing: item.modifiers))"
+                let stateStr = String(describing: item.state)
+                return "\(item.id)=\(item.title)=\(String(describing: item.shortcut))=\(String(describing: item.modifiers))=\(stateStr)"
             }.joined(separator: ";")
             return "\(group.id)=\(group.name)=\(group.placement.rawValue)=[\(items)]"
         }.joined(separator: "|")
@@ -191,6 +192,7 @@ private final class CommandMenuInstaller {
                     keyEquivalent: ""
                 )
                 menuItem.target = target
+                menuItem.state = item.state == .on ? .on : .off
                 submenu.addItem(menuItem)
                 actionTargets["\(group.id).\(item.id)"] = target
             }

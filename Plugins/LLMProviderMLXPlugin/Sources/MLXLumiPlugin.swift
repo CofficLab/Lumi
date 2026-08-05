@@ -30,7 +30,15 @@ public final class MLXLumiPlugin: LumiPlugin {
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [MLXLumiProvider()]
+        [
+            MLXQwenProvider(),
+            MLXLlamaProvider(),
+            MLXMistralProvider(),
+            MLXGemma4Provider(),
+            MLXDeepSeekProvider(),
+            MLXCoderProvider(),
+            MLXMicrosoftProvider(),
+        ]
     }
 
     // MARK: - LumiPlugin stubs
@@ -57,11 +65,11 @@ public final class MLXLumiPlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
 
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] {
-        [
-            LLMProviderSettingsItem(providerID: "mlx") { _ in
-                SettingsView()
-            },
-        ]
+        MLXModels.seriesRegistrations.map { reg in
+            LLMProviderSettingsItem(providerID: reg.providerID) { _ in
+                SettingsView(seriesName: reg.seriesName)
+            }
+        }
     }
 
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }

@@ -51,7 +51,7 @@ public final class ActivityHeatmapViewModel {
     /// The selected period. The owning view drives reloads explicitly
     /// (`onChange` → `load()`), which avoids the double-load that a `didSet`
     /// trigger would cause during initial `.task` seeding.
-    public var period: ActivityHeatmapPeriod = .year
+    public var period: ActivityHeatmapPeriod = .days30
 
     /// Statistics derived from the currently selected period.
     public var statistics: ActivityHeatmapStatistics {

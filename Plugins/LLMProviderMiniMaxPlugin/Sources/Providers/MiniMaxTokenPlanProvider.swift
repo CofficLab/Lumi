@@ -1,4 +1,5 @@
 import Foundation
+import HttpKit
 import LLMKit
 import LumiKernel
 
@@ -21,6 +22,15 @@ class MiniMaxProviderSupport {
 
     func errorMessage(providerID: String, conversationID: UUID, request: LumiLLMRequest, error: Error, disposition: LumiLLMErrorDisposition) -> LumiChatMessage {
         var message = LumiLLMProviderErrorSupport.makeErrorMessage(providerID: providerID, conversationID: conversationID, request: request, error: error, disposition: disposition, renderKind: errorKind(error))
+
+        // MiniMax wraps user-facing failures in {"error":{"message":"..."}}.
+        // Keep this provider-specific: the MiniMax HTTP renderer reads the
+        // summary from LumiChatMessage, while the complete response remains in
+        // responseDetails for diagnostics.
+        if let rawResponse = miniMaxRawResponse(from: error),
+           let providerMessage = miniMaxProviderMessage(from: rawResponse) {
+            message.rawErrorDetail = providerMessage
+        }
 
         // The generic failure resolver intentionally keeps rawErrorDetail short.
         // Preserve MiniMax's original response body separately so the error UI can
@@ -45,6 +55,31 @@ class MiniMaxProviderSupport {
         }
 
         return message
+    }
+
+    private func miniMaxRawResponse(from error: Error) -> String? {
+        switch error {
+        case let MiniMaxProviderError.api(_, response):
+            return response
+        case let HTTPClientError.httpError(_, response):
+            return response
+        case let networkError as HTTPNetworkError:
+            return networkError.body.flatMap { String(data: $0, encoding: .utf8) }
+        default:
+            return nil
+        }
+    }
+
+    private func miniMaxProviderMessage(from rawResponse: String) -> String? {
+        guard let data = rawResponse.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let error = object["error"] as? [String: Any],
+              let message = error["message"] as? String else {
+            return nil
+        }
+
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private func formattedResponseHeaders(_ headers: [String: String]) -> String {

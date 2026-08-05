@@ -169,6 +169,7 @@ final class MiniMaxOpenAIService: @unchecked Sendable {
 
     func send(apiKey: String, body: Data, onEvent: @Sendable @escaping (MiniMaxOpenAIEvent) async -> Bool) async throws {
         guard let network else { throw MiniMaxProviderError.networkUnavailable }
+        let parser = MiniMaxOpenAISSEParser()
         try await network.stream(
             HTTPRequest(url: url, method: .post, headers: [
                 "Authorization": "Bearer \(apiKey)",
@@ -177,12 +178,15 @@ final class MiniMaxOpenAIService: @unchecked Sendable {
             ], body: body, timeout: 300),
             onResponse: { _ in },
             onChunk: { data in
-                for event in MiniMaxOpenAIEventParser.parse(data) {
+                for event in parser.append(data) {
                     if !(await onEvent(event)) { return false }
                 }
                 return true
             }
         )
+        for event in parser.finish() {
+            if !(await onEvent(event)) { break }
+        }
     }
 
     func sendOnce(apiKey: String, body: Data) async throws -> Data {
@@ -208,6 +212,7 @@ final class MiniMaxAnthropicService: @unchecked Sendable {
 
     func send(apiKey: String, body: Data, onEvent: @Sendable @escaping (MiniMaxAnthropicEvent) async -> Bool) async throws {
         guard let network else { throw MiniMaxProviderError.networkUnavailable }
+        let parser = MiniMaxAnthropicSSEParser()
         try await network.stream(
             HTTPRequest(url: url, method: .post, headers: [
                 "x-api-key": apiKey,
@@ -217,12 +222,15 @@ final class MiniMaxAnthropicService: @unchecked Sendable {
             ], body: body, timeout: 300),
             onResponse: { _ in },
             onChunk: { data in
-                for event in MiniMaxAnthropicEventParser.parse(data) {
+                for event in parser.append(data) {
                     if !(await onEvent(event)) { return false }
                 }
                 return true
             }
         )
+        for event in parser.finish() {
+            if !(await onEvent(event)) { break }
+        }
     }
 }
 
@@ -269,6 +277,63 @@ enum MiniMaxAnthropicEventParser {
             default: return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: (delta?["stop_reason"] as? String) ?? ((json["delta"] as? [String: Any])?["stop_reason"] as? String), done: false, error: nil)
             }
         }
+    }
+}
+
+/// Buffers SSE data across arbitrary network chunk boundaries.
+///
+/// URLSession/network transports are allowed to split an SSE frame anywhere,
+/// including in the middle of the JSON payload. Parsing each chunk directly
+/// can therefore drop a partial frame and make a valid response look empty.
+final class MiniMaxOpenAISSEParser: @unchecked Sendable {
+    private var buffer = ""
+
+    func append(_ data: Data) -> [MiniMaxOpenAIEvent] {
+        buffer += String(decoding: data, as: UTF8.self)
+        let frames = completeFrames()
+        return frames.flatMap { MiniMaxOpenAIEventParser.parse(Data($0.utf8)) }
+    }
+
+    func finish() -> [MiniMaxOpenAIEvent] {
+        let frame = buffer
+        buffer.removeAll(keepingCapacity: true)
+        guard !frame.isEmpty else { return [] }
+        return MiniMaxOpenAIEventParser.parse(Data(frame.utf8))
+    }
+
+    private func completeFrames() -> [String] {
+        var frames: [String] = []
+        while let range = buffer.range(of: "\n\n") {
+            frames.append(String(buffer[..<range.upperBound]))
+            buffer.removeSubrange(buffer.startIndex..<range.upperBound)
+        }
+        return frames
+    }
+}
+
+final class MiniMaxAnthropicSSEParser: @unchecked Sendable {
+    private var buffer = ""
+
+    func append(_ data: Data) -> [MiniMaxAnthropicEvent] {
+        buffer += String(decoding: data, as: UTF8.self)
+        let frames = completeFrames()
+        return frames.flatMap { MiniMaxAnthropicEventParser.parse(Data($0.utf8)) }
+    }
+
+    func finish() -> [MiniMaxAnthropicEvent] {
+        let frame = buffer
+        buffer.removeAll(keepingCapacity: true)
+        guard !frame.isEmpty else { return [] }
+        return MiniMaxAnthropicEventParser.parse(Data(frame.utf8))
+    }
+
+    private func completeFrames() -> [String] {
+        var frames: [String] = []
+        while let range = buffer.range(of: "\n\n") {
+            frames.append(String(buffer[..<range.upperBound]))
+            buffer.removeSubrange(buffer.startIndex..<range.upperBound)
+        }
+        return frames
     }
 }
 

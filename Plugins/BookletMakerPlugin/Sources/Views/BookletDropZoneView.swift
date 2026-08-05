@@ -1,84 +1,104 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
-// MARK: - Booklet Drop Zone
+// MARK: - Booklet Drop Zone View
 
-/// Top section: a single drop zone that accepts a PDF, plus a small
-/// summary of the loaded file.
+/// 拖放区域视图，用于接收用户拖入或选择的 PDF 文件
 struct BookletDropZoneView: View {
-
     @ObservedObject var viewModel: BookletMakerViewModel
 
     @State private var isTargeted: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(
-                        isTargeted ? Color.accentColor : Color.gray.opacity(0.4),
-                        style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(isTargeted
-                                  ? Color.accentColor.opacity(0.08)
-                                  : Color.gray.opacity(0.04))
-                    )
+        VStack(spacing: 12) {
+            // 拖放区域
+            dropZone
+                .frame(height: 120)
 
-                VStack(spacing: 8) {
-                    Image(systemName: "doc.richtext")
-                        .font(.system(size: 36))
-                        .foregroundStyle(.secondary)
-                    Text(BookletLocalization.string(
-                        "Drop a PDF here or click to choose one"))
-                        .font(.headline)
-                    if let info = viewModel.inputInfo {
-                        Text(BookletLocalization.string(
-                            "%@ · %lld pages · %lld×%lld pt",
-                            viewModel.inputURL?.lastPathComponent ?? "",
-                            info.pageCount,
-                            Int(info.firstPageSize.width),
-                            Int(info.firstPageSize.height)))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding()
-            }
-            .frame(height: 140)
-            .contentShape(Rectangle())
-            .onTapGesture { presentOpenPanel() }
-            .onDrop(of: [.pdf, .fileURL], isTargeted: $isTargeted) { providers in
-                handleDrop(providers: providers)
-            }
-
-            if viewModel.hasInput {
-                HStack {
-                    Label(
-                        BookletLocalization.string("Output: %lld sheets")
-                            .replacingOccurrences(of: "%lld", with: "\(viewModel.expectedSheetCount)"),
-                        systemImage: "rectangle.split.2x1"
-                    )
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    Spacer()
-                    Button(BookletLocalization.string("Clear")) {
-                        viewModel.clear()
-                    }
-                    .buttonStyle(.borderless)
-                }
+            // 文件信息
+            if let inputURL = viewModel.inputURL {
+                fileInfo(for: inputURL)
             }
         }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(nsColor: .controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isTargeted ? Color.accentColor : Color.secondary.opacity(0.2), lineWidth: isTargeted ? 2 : 1)
+        )
+        .onDrop(of: [.pdf], isTargeted: $isTargeted) { providers in
+            handleDrop(providers: providers)
+        }
+    }
+
+    // MARK: - Sub Views
+
+    private var dropZone: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "doc.badge.plus")
+                .font(.system(size: 32))
+                .foregroundColor(.secondary)
+
+            Text(BookletLocalization.string("Drop PDF here or click to select"))
+                .font(.headline)
+                .foregroundColor(.secondary)
+
+            Text(BookletLocalization.string("Supports A4 PDF files"))
+                .font(.caption)
+                .foregroundColor(.secondary.opacity(0.7))
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            selectPDFFile()
+        }
+    }
+
+    private func fileInfo(for url: URL) -> some View {
+        HStack {
+            Image(systemName: "doc.fill")
+                .foregroundColor(.blue)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(url.lastPathComponent)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .lineLimit(1)
+
+                if let info = viewModel.inputInfo {
+                    Text("\(info.pageCount) pages")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Spacer()
+
+            Button(action: {
+                viewModel.clear()
+            }) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(nsColor: .textBackgroundColor))
+        )
     }
 
     // MARK: - Actions
 
-    private func presentOpenPanel() {
+    private func selectPDFFile() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.pdf]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
+
         if panel.runModal() == .OK, let url = panel.url {
             Task { await viewModel.loadPDF(url) }
         }
@@ -86,12 +106,21 @@ struct BookletDropZoneView: View {
 
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
         guard let provider = providers.first else { return false }
-        _ = provider.loadObject(ofClass: URL.self) { url, _ in
-            guard let url, url.pathExtension.lowercased() == "pdf" else { return }
+
+        _ = provider.loadObject(ofClass: URL.self) { url, error in
+            guard let url = url, url.pathExtension.lowercased() == "pdf" else { return }
             Task { @MainActor in
                 await viewModel.loadPDF(url)
             }
         }
         return true
     }
+}
+
+// MARK: - Preview
+
+#Preview("Empty State") {
+    BookletDropZoneView(viewModel: BookletMakerViewModel())
+        .frame(width: 500, height: 400)
+        .padding()
 }

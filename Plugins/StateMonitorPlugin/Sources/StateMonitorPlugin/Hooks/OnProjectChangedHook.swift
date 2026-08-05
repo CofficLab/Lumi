@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import LumiKernel
 import os
+import SuperLogKit
 
 /// 当前项目变化时清空当前对话
 ///
@@ -28,11 +29,12 @@ import os
 ///     `projectPath` 时才跟随，本 hook 在项目变化时清空对话，二者形成
 ///     「项目变 → 对话清空；选中绑项目的对话 → 项目跟随」的对称联动。
 @MainActor
-final class OnProjectChangedHook {
+final class OnProjectChangedHook: SuperLog {
 
     // MARK: - Logging
 
-    nonisolated static let verbose = true
+    nonisolated static let emoji = "📂"
+    nonisolated static let verbose = false
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
         category: "plugin.state-monitor.hook.project-changed"
@@ -54,7 +56,7 @@ final class OnProjectChangedHook {
         self.kernel = kernel
         guard let project = kernel.project else {
             if Self.verbose {
-                Self.logger.warning("attach skipped: kernel.project not registered yet")
+                Self.logger.warning("\(Self.t)attach skipped: kernel.project not registered yet")
             }
             return
         }
@@ -74,10 +76,7 @@ final class OnProjectChangedHook {
             }
 
         if Self.verbose {
-            Self.logger.info("""
-            attached to project service, initial path=\
-            \(self.lastObservedProjectPath ?? "<nil>")
-            """)
+            Self.logger.info("\(Self.t)attached to project service, initial path=\(self.lastObservedProjectPath ?? "<nil>")")
         }
     }
 
@@ -116,10 +115,7 @@ final class OnProjectChangedHook {
         conversations.deselectConversation()
 
         if Self.verbose {
-            Self.logger.info("""
-            ✅ Cleared selected conversation because project changed: \
-            \(oldPath) → \(newPath ?? "<nil>")
-            """)
+            Self.logger.info("\(Self.t)✅ Cleared selected conversation because project changed: \(oldPath) → \(newPath ?? "<nil>")")
         }
     }
 
