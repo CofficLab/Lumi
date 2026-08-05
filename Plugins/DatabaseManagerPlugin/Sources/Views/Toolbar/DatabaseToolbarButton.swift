@@ -55,7 +55,7 @@ public struct DatabaseToolbarButton: View {
                     isPopoverPresented.toggle()
                 }
                 .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-                    DatabaseConnectionPopoverView(
+                    ConnectionPopoverView(
                         viewModel: viewModel,
                         isPopoverPresented: $isPopoverPresented
                     )

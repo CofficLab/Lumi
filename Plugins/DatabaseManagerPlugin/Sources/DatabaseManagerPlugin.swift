@@ -52,13 +52,13 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
                 panelBodyVisibility: .alwaysVisible,
                 panelBottomVisibility: .unsupported
             ) {
-                AnyView(DatabaseMainView(viewModel: self.sharedViewModel))
+                AnyView(MainView(viewModel: self.sharedViewModel))
             },
         ]
     }
 
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
-        AnyView(DatabaseManagerAboutView())
+        AnyView(AboutView())
     }
 
     // MARK: - LumiPlugin stubs
@@ -90,7 +90,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
                 systemImage: "cylinder.split.1x2",
                 visibility: .viewContainer(id: "database-manager")
             ) {
-                DatabaseSidebarView(viewModel: self.sharedViewModel)
+                SidebarView(viewModel: self.sharedViewModel)
             },
         ]
     }

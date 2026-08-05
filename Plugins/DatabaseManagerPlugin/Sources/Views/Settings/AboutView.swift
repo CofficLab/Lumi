@@ -4,7 +4,7 @@ import SwiftUI
 
 // MARK: - About View
 
-struct DatabaseManagerAboutView: View {
+struct AboutView: View {
     @Environment(\.locale) private var locale
     @LumiTheme private var theme
 
