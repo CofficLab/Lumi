@@ -100,7 +100,7 @@ public final class ImageToPDFPlugin: LumiPlugin, SuperLog {
                 order: 200
             ) {
                 ImageToPDFToolbarTitleView(
-                    containerID: id,
+                    containerID: self.id,
                     kernel: kernel
                 )
             },
