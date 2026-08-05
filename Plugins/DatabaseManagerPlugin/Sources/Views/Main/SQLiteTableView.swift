@@ -31,7 +31,7 @@ struct SQLiteTableView: View {
             toolbar
             AppDivider()
             QueryResultSectionView(viewModel: viewModel)
-            Spacer()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
     }
 
