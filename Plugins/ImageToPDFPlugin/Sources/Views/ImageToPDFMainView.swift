@@ -5,31 +5,14 @@ struct ImageToPDFMainView: View {
     @StateObject private var viewModel = ImageToPDFViewModel()
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            Divider()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    inputSection
-                    actionBar
-                    outputSection
-                }
-                .padding()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                inputSection
+                actionBar
+                outputSection
             }
+            .padding()
         }
-    }
-
-    // MARK: - Header
-
-    private var header: some View {
-        HStack {
-            Image(systemName: "photo.on.rectangle.angled")
-                .font(.title2)
-            Text(ImageToPDFLocalization.string("Image to PDF"))
-                .font(.title2.bold())
-            Spacer()
-        }
-        .padding()
     }
 
     // MARK: - Input Section
