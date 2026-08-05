@@ -11,35 +11,33 @@ struct BookletExplanationView: View {
         GeometryReader { geo in
             let size = computeDynamicSize(in: geo.size)
 
-            VStack(spacing: 12 * size.scaleFactor) {
-                // 示意图容器
-                HStack(spacing: 32 * size.scaleFactor) {
-                    // 左侧：输入（两页 A4 并排）
-                    VStack(spacing: 6 * size.scaleFactor) {
-                        InputDiagram(paperSize: settings.outputPaper)
-                            .frame(width: size.inputWidth, height: size.inputHeight)
-                            .animation(.easeInOut(duration: 0.3), value: settings.outputPaper)
+            VStack(spacing: 16 * size.scaleFactor) {
+                // 上方：输入（两页 A4 并排）
+                VStack(spacing: 4 * size.scaleFactor) {
+                    InputDiagram(paperSize: settings.outputPaper)
+                        .frame(width: size.inputWidth, height: size.inputHeight)
+                        .animation(.easeInOut(duration: 0.3), value: settings.outputPaper)
 
-                        Text(BookletLocalization.string("2 Original Pages"))
-                            .font(.system(size: max(8, 10 * size.scaleFactor)))
-                            .foregroundColor(.secondary)
-                    }
+                    Text(BookletLocalization.string("2 Original Pages"))
+                        .font(.system(size: max(8, 10 * size.scaleFactor)))
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
 
-                    // 中间：转换箭头
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 20 * size.scaleFactor))
-                        .foregroundColor(.accentColor)
+                // 中间：转换箭头
+                Image(systemName: "arrow.down")
+                    .font(.system(size: 20 * size.scaleFactor))
+                    .foregroundColor(.accentColor)
 
-                    // 右侧：输出（拼版后的页面）
-                    VStack(spacing: 6 * size.scaleFactor) {
-                        OutputDiagram(settings: settings)
-                            .frame(width: size.outputWidth, height: size.outputHeight)
-                            .animation(.easeInOut(duration: 0.3), value: settings)
+                // 下方：输出（拼版后的页面）
+                VStack(spacing: 4 * size.scaleFactor) {
+                    OutputDiagram(settings: settings)
+                        .frame(width: size.outputWidth, height: size.outputHeight)
+                        .animation(.easeInOut(duration: 0.3), value: settings)
 
-                        Text(BookletLocalization.string("After conversion"))
-                            .font(.system(size: max(8, 10 * size.scaleFactor)))
-                            .foregroundColor(.secondary)
-                    }
+                    Text(BookletLocalization.string("After conversion"))
+                        .font(.system(size: max(8, 10 * size.scaleFactor)))
+                        .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -64,19 +62,19 @@ struct BookletExplanationView: View {
         let baseOutputWidth: CGFloat = 176
         let baseOutputHeight: CGFloat = 124
 
-        // 内容区域预估宽度：输入 + 间距 + 箭头 + 间距 + 输出
-        let baseContentWidth = baseInputWidth + 32 + 30 + 32 + baseOutputWidth
-        let baseContentHeight = baseInputHeight + 40 // 加上标签和间距
+        // 上下布局：宽度取两者最大，高度为两者之和 + 间距 + 箭头
+        let baseContentWidth = max(baseInputWidth, baseOutputWidth)
+        let baseContentHeight = baseInputHeight + 16 + 30 + 16 + baseOutputHeight
 
         // 计算缩放因子，保持宽高比
-        let availableContentWidth = availableSize.width - 32  // 留边距
-        let availableContentHeight = availableSize.height - 60 // 留出说明文字和间距
+        let availableContentWidth = availableSize.width - 32    // 留边距
+        let availableContentHeight = availableSize.height - 80  // 留出说明文字和间距
 
         let widthScale = availableContentWidth / baseContentWidth
         let heightScale = availableContentHeight / baseContentHeight
 
         // 取较小值，确保内容不溢出
-        let scale = min(widthScale, heightScale, 2.0) // 限制最大放大倍数为 2x
+        let scale = min(widthScale, heightScale, 2.0)
 
         return DynamicSize(
             inputWidth: baseInputWidth * scale,
