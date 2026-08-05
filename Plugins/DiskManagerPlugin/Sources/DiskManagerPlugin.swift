@@ -26,6 +26,10 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     /// 避免在 rail 切换后 main view 仍停留在旧类型上。
     private let categoryStore = DiskCleanupCategoryStore()
 
+    /// 5 个清理类型的共享 ViewModel 容器：让多个清理类型可以同时工作
+    /// （扫描结果不因切换类型而丢失）。
+    private let workspace = DiskCleanupWorkspace()
+
     // MARK: - Initialization
 
     public init() {}
@@ -47,7 +51,7 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
                 panelHeaderVisibility: .unsupported,
                 panelBottomVisibility: .unsupported
             ) {
-                DiskManagerView()
+                DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
             },
         ]
     }
