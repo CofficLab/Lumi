@@ -1432,6 +1432,7 @@
       }
     },
     "Local models via Apple MLX" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
