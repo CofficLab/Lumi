@@ -117,7 +117,22 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
     // MARK: - MessageManaging (reads — nonisolated, safe to run off-main)
 
     public nonisolated func messages(for conversationID: UUID) -> [LumiChatMessage] {
-        let all = store?.fetchMessages(conversationId: conversationID) ?? []
+        let diskMessages = store?.fetchMessages(conversationId: conversationID) ?? []
+        let pendingMessages = pendingSnapshot(for: conversationID)
+
+        // AgentTurnRunner uses this method as the durable source of truth
+        // before starting the next LLM iteration. Assistant/tool messages are
+        // persisted asynchronously, so reading only from disk can briefly
+        // hide a freshly inserted tool result and cause the same tool call to
+        // execute again. Merge pending writes here and de-duplicate by message
+        // ID so a message is represented exactly once during that window.
+        let diskIDs = Set(diskMessages.map(\.id))
+        var all = diskMessages
+        all.append(contentsOf: pendingMessages.filter { !diskIDs.contains($0.id) })
+        all.sort {
+            if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+            return $0.createdAt < $1.createdAt
+        }
 
         if Self.verbose {
             Self.logger.info("\(Self.t)messages(for:) conversation=\(conversationID.uuidString.prefix(8)) messages=\(all.count)")
