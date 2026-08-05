@@ -282,57 +282,6 @@ open class MLXSeriesProviderBase: LumiLLMProvider, @unchecked Sendable {
     }
 }
 
-// MARK: - 各品牌子类
-
-@available(macOS 14.0, *)
-public final class MLXQwenProvider: MLXSeriesProviderBase, @unchecked Sendable {
-    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "Qwen 系列" }!
-    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
-    public convenience init() { self.init(registration: Self._registration) }
-}
-
-@available(macOS 14.0, *)
-public final class MLXLlamaProvider: MLXSeriesProviderBase, @unchecked Sendable {
-    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "Llama 系列" }!
-    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
-    public convenience init() { self.init(registration: Self._registration) }
-}
-
-@available(macOS 14.0, *)
-public final class MLXMistralProvider: MLXSeriesProviderBase, @unchecked Sendable {
-    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "Mistral 系列" }!
-    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
-    public convenience init() { self.init(registration: Self._registration) }
-}
-
-@available(macOS 14.0, *)
-public final class MLXGemma4Provider: MLXSeriesProviderBase, @unchecked Sendable {
-    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "Gemma 4 系列" }!
-    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
-    public convenience init() { self.init(registration: Self._registration) }
-}
-
-@available(macOS 14.0, *)
-public final class MLXDeepSeekProvider: MLXSeriesProviderBase, @unchecked Sendable {
-    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "DeepSeek 系列" }!
-    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
-    public convenience init() { self.init(registration: Self._registration) }
-}
-
-@available(macOS 14.0, *)
-public final class MLXCoderProvider: MLXSeriesProviderBase, @unchecked Sendable {
-    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "代码 系列" }!
-    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
-    public convenience init() { self.init(registration: Self._registration) }
-}
-
-@available(macOS 14.0, *)
-public final class MLXMicrosoftProvider: MLXSeriesProviderBase, @unchecked Sendable {
-    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "Microsoft 系列" }!
-    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
-    public convenience init() { self.init(registration: Self._registration) }
-}
-
 // MARK: - 向后兼容
 
 /// 所有 MLX 系列供应商的注册表（供 MLXLumiPlugin.llmProviders 直接引用）
