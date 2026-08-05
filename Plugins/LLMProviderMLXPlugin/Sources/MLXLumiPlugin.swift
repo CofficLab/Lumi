@@ -30,7 +30,7 @@ public final class MLXLumiPlugin: LumiPlugin {
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [MLXLumiProvider()]
+        allMLXSeriesProviders
     }
 
     // MARK: - LumiPlugin stubs
@@ -57,11 +57,11 @@ public final class MLXLumiPlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
 
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] {
-        [
-            LLMProviderSettingsItem(providerID: "mlx") { _ in
+        MLXModels.seriesRegistrations.map { reg in
+            LLMProviderSettingsItem(providerID: reg.providerID) { _ in
                 SettingsView()
-            },
-        ]
+            }
+        }
     }
 
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }

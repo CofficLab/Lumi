@@ -15,23 +15,19 @@ private var isAppleSiliconMac: Bool {
     #endif
 }
 
-// MARK: - MLXLumiProvider
+// MARK: - MLXSeriesProviderBase
 
+/// MLX 系列（品牌）供应商基类
+///
+/// 一次实例化对应一个品牌（Qwen / Llama / Mistral / DeepSeek / Gemma / Coder / Microsoft）。
+/// 所有品牌共享同一个底层推理服务（`MLXInferenceService`）—— 同一进程只能加载一个本地模型，
+/// 因此 `_inferenceService` / `idleTimer` 是 `static`，跨实例复用。
+///
+/// 子类只需重写 `static var info` 与提供无参 `init()`，其它逻辑全部继承。
 @available(macOS 14.0, *)
-public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
-    public static let info = LumiLLMProviderInfo(
-        id: "mlx",
-        displayName: LumiPluginLocalization.string("MLX", bundle: .module),
-        description: LumiPluginLocalization.string("Local models via Apple MLX", bundle: .module),
-        defaultModel: MLXModels.toolModels.first?.id ?? "mlx-community/Qwen3.5-9B-4bit",
-        availableModels: MLXModels.toolModels.map(\.id),
-        isLocal: true,
-        modelCapabilities: Dictionary(uniqueKeysWithValues: MLXModels.toolModels.map {
-            ($0.id, LumiModelCapabilities(supportsVision: $0.supportsVision, supportsTools: $0.supportsTools))
-        }),
-        modelDisplayNames: Dictionary(uniqueKeysWithValues: MLXModels.toolModels.map { ($0.id, $0.displayName) }),
-        websiteURL: URL(string: "https://github.com/ml-explore/mlx")!
-    )
+open class MLXSeriesProviderBase: LumiLLMProvider, @unchecked Sendable {
+
+    // MARK: - 共享运行时（所有系列共用同一个推理服务）
 
     /// 持久化的推理服务（跨对话复用模型，避免每次重新加载）
     private nonisolated(unsafe) static var _inferenceService: MLXInferenceService?
@@ -40,18 +36,63 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
     /// 空闲超时时间（纳秒）：10 分钟
     private static let idleTimeoutNanos: UInt64 = 600_000_000_000
 
-    public init() {}
+    // MARK: - 实例字段
+
+    public let registration: MLXModels.SeriesRegistration
+
+    // MARK: - 构造
+
+    public init(registration: MLXModels.SeriesRegistration) {
+        self.registration = registration
+    }
+
+    // MARK: - LumiLLMProvider.info
+
+    /// 子类必须重写：返回本系列对应的 Provider 元数据。
+    ///
+    /// 基类直接 fatalError，避免意外走 base 分支。子类通过 `override class var info` 提供。
+    public class var info: LumiLLMProviderInfo {
+        fatalError("子类必须重写 MLXSeriesProviderBase.info")
+    }
+
+    /// 根据 SeriesRegistration 计算对应的 LumiLLMProviderInfo（子类共用）
+    public static func computeInfo(for registration: MLXModels.SeriesRegistration) -> LumiLLMProviderInfo {
+        let available = MLXModels.availableModels(forSeries: registration.seriesName)
+        let recommended = MLXModels.recommended(forSeries: registration.seriesName)
+
+        let fallbackDefault = available.first?.id ?? recommended.first?.id ?? ""
+
+        let capabilityLookup = Dictionary(uniqueKeysWithValues: recommended.map {
+            ($0.id, LumiModelCapabilities(supportsVision: $0.supportsVision, supportsTools: $0.supportsTools))
+        })
+        let displayNameLookup = Dictionary(uniqueKeysWithValues: recommended.map {
+            ($0.id, $0.displayName)
+        })
+
+        return LumiLLMProviderInfo(
+            id: registration.providerID,
+            displayName: registration.providerSlug,
+            description: registration.providerDescription,
+            defaultModel: fallbackDefault,
+            availableModels: available.map(\.id),
+            isLocal: true,
+            contextWindowSizes: [:],
+            modelCapabilities: capabilityLookup,
+            modelDisplayNames: displayNameLookup,
+            websiteURL: registration.websiteURL
+        )
+    }
+
+    // MARK: - LumiLLMProvider 接口实现
 
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         try await sendStreaming(request) { _ in }
     }
 
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        // 检查平台是否支持
         guard isAppleSiliconMac else {
             return .unavailable(.message("MLX 仅支持 Apple Silicon Mac，不支持 Intel Mac"))
         }
-
         if Self.info.availableModels.contains(model) {
             return .available
         }
@@ -59,7 +100,6 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     public func providerStatus() -> LumiLLMProviderStatus? {
-        // Intel Mac 返回不可用状态
         guard isAppleSiliconMac else {
             return LumiLLMProviderStatus(
                 message: "MLX 仅支持 Apple Silicon Mac",
@@ -74,31 +114,14 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         MLXErrorHandling.renderKind(for: error)
     }
 
-    public func lumiResolveAPIKey() throws -> String {
-        // MLX 是本地供应商，不需要 API Key
-        return ""
-    }
-
-    public func hasApiKey() -> Bool {
-        // 本地供应商不需要 API Key
-        return true
-    }
-
-    public func getApiKey() -> String {
-        return ""
-    }
-
-    public func setApiKey(_ apiKey: String) {
-        // 本地供应商不需要存储 API Key
-    }
-
-    public func removeApiKey() {
-        // 本地供应商不需要存储 API Key
-    }
+    public func lumiResolveAPIKey() throws -> String { "" }
+    public func hasApiKey() -> Bool { true }
+    public func getApiKey() -> String { "" }
+    public func setApiKey(_ apiKey: String) {}
+    public func removeApiKey() {}
 
     public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
-        // MLX 本地错误通常不可重试
-        return .nonRetryable
+        .nonRetryable
     }
 
     public func makeErrorMessage(
@@ -107,7 +130,6 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         error: Error,
         disposition: LumiLLMErrorDisposition
     ) -> LumiChatMessage {
-        let metadata = disposition.metadataEntries
         let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         return LumiChatMessage(
             conversationID: conversationID,
@@ -118,7 +140,7 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
             isError: true,
             rawErrorDetail: detail,
             renderKind: errorRenderKind(for: error),
-            metadata: metadata
+            metadata: disposition.metadataEntries
         )
     }
 
@@ -126,11 +148,9 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
-        // 检查平台是否支持
         guard isAppleSiliconMac else {
             throw MLXLumiError.unsupportedPlatform
         }
-
         guard let conversationID = request.messages.first?.conversationID else {
             throw MLXLumiError.missingConversation
         }
@@ -144,8 +164,7 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
             onChunk: onChunk
         )
 
-        let endTime = CFAbsoluteTimeGetCurrent()
-        let streamingDurationMs = (endTime - startTime) * 1000.0
+        let streamingDurationMs = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
 
         var metadata = MessageTokenMetadata.metadata(
             inputTokens: nil,
@@ -169,22 +188,25 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         )
     }
 
+    // MARK: - 推理核心（共享）
+
     @MainActor
     private static func generate(
         request: LumiLLMRequest,
         stats: StreamingTokenStats,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> String {
-        let service = Self._inferenceService ?? {
+        let service: MLXInferenceService = {
+            if let existing = _inferenceService {
+                return existing
+            }
             let s = MLXInferenceService()
-            Self._inferenceService = s
+            _inferenceService = s
             return s
         }()
 
-        // 有新请求，取消空闲卸载计时器
         cancelIdleTimer()
 
-        // 如果目标模型未加载，先卸载旧模型再加载新模型
         if service.currentModelId != request.model {
             if service.currentModelId != nil {
                 service.unloadModel()
@@ -234,7 +256,6 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
 
         await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束"))
 
-        // 生成完成，启动空闲卸载计时器
         startIdleTimer()
 
         return content
@@ -253,14 +274,85 @@ public final class MLXLumiProvider: LumiLLMProvider, @unchecked Sendable {
         idleTimer = Task { @MainActor in
             do {
                 try await Task.sleep(nanoseconds: idleTimeoutNanos)
-                // 计时器未被取消，说明确实空闲，释放模型内存
                 service.unloadModel()
             } catch {
-                // Task.sleep 被取消（有新请求），正常退出
+                // 被取消，正常退出
             }
         }
     }
 }
+
+// MARK: - 各品牌子类
+
+@available(macOS 14.0, *)
+public final class MLXQwenProvider: MLXSeriesProviderBase, @unchecked Sendable {
+    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "Qwen 系列" }!
+    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
+    public convenience init() { self.init(registration: Self._registration) }
+}
+
+@available(macOS 14.0, *)
+public final class MLXLlamaProvider: MLXSeriesProviderBase, @unchecked Sendable {
+    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "Llama 系列" }!
+    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
+    public convenience init() { self.init(registration: Self._registration) }
+}
+
+@available(macOS 14.0, *)
+public final class MLXMistralProvider: MLXSeriesProviderBase, @unchecked Sendable {
+    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "Mistral 系列" }!
+    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
+    public convenience init() { self.init(registration: Self._registration) }
+}
+
+@available(macOS 14.0, *)
+public final class MLXGemma4Provider: MLXSeriesProviderBase, @unchecked Sendable {
+    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "Gemma 4 系列" }!
+    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
+    public convenience init() { self.init(registration: Self._registration) }
+}
+
+@available(macOS 14.0, *)
+public final class MLXDeepSeekProvider: MLXSeriesProviderBase, @unchecked Sendable {
+    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "DeepSeek 系列" }!
+    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
+    public convenience init() { self.init(registration: Self._registration) }
+}
+
+@available(macOS 14.0, *)
+public final class MLXCoderProvider: MLXSeriesProviderBase, @unchecked Sendable {
+    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "代码 系列" }!
+    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
+    public convenience init() { self.init(registration: Self._registration) }
+}
+
+@available(macOS 14.0, *)
+public final class MLXMicrosoftProvider: MLXSeriesProviderBase, @unchecked Sendable {
+    private static let _registration = MLXModels.seriesRegistrations.first { $0.seriesName == "Microsoft 系列" }!
+    public override class var info: LumiLLMProviderInfo { computeInfo(for: _registration) }
+    public convenience init() { self.init(registration: Self._registration) }
+}
+
+// MARK: - 向后兼容
+
+/// 所有 MLX 系列供应商的注册表（供 MLXLumiPlugin.llmProviders 直接引用）
+@available(macOS 14.0, *)
+public let allMLXSeriesProviders: [any LumiLLMProvider] = [
+    MLXQwenProvider(),
+    MLXLlamaProvider(),
+    MLXMistralProvider(),
+    MLXGemma4Provider(),
+    MLXDeepSeekProvider(),
+    MLXCoderProvider(),
+    MLXMicrosoftProvider(),
+]
+
+/// 向后兼容：`MLXLumiProvider` 即 Qwen 系列实例。
+/// 旧代码（测试、其它文件）继续用 `MLXLumiProvider()` 也能工作。
+@available(macOS 14.0, *)
+public typealias MLXLumiProvider = MLXQwenProvider
+
+// MARK: - 流式 Token 统计
 
 /// 流式生成期间的 token 统计（线程安全，供 @MainActor 闭包外读取）
 private final class StreamingTokenStats: @unchecked Sendable {
@@ -290,6 +382,8 @@ private final class StreamingTokenStats: @unchecked Sendable {
         return _timeToFirstTokenMs
     }
 }
+
+// MARK: - 错误
 
 enum MLXLumiError: LocalizedError {
     case missingConversation
