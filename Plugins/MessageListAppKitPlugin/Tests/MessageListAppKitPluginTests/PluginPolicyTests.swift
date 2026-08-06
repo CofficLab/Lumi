@@ -27,4 +27,16 @@ struct PluginPolicyTests {
         let plugin = MessageListAppKitPlugin()
         #expect(plugin.policy.shouldRegister == false)
     }
+
+    @Test("stage is .dev so the plugin manager UI can label it as scaffolding")
+    func stageIsDev() {
+        let plugin = MessageListAppKitPlugin()
+        #expect(plugin.stage == .dev)
+    }
+
+    @Test("name matches the xcstrings key for the default locale")
+    func localizedName() {
+        let plugin = MessageListAppKitPlugin()
+        #expect(plugin.name == "Message List (AppKit)")
+    }
 }

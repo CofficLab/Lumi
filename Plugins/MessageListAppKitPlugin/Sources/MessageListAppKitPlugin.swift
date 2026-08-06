@@ -25,6 +25,10 @@ public final class MessageListAppKitPlugin: LumiPlugin {
     public let pluginDescription: String =
         "Native AppKit message list. Disabled by default; used for evaluation alongside the SwiftUI message list."
 
+    /// Ships as a scaffold. Will promote to `.experimental` once parity
+    /// work begins and to `.stable` once the performance gate passes.
+    public let stage: LumiPluginStage = .dev
+
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}

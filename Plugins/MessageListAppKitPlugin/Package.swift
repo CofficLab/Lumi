@@ -1,6 +1,29 @@
 // swift-tools-version: 6.0
 import PackageDescription
 
+// MARK: - Notes on declared dependencies
+//
+// `LumiKernel` and `LocalizationKit` are used today by the plugin entry
+// point (LumiPlugin conformance, LumiPluginLocalization helper).
+//
+// The remaining four packages are forward-looking and are intentionally
+// pulled in now so the target can `import` them as soon as later tasks
+// land without having to touch Package.swift each time:
+//
+//   - `LumiUI`                  — Task 4+ (when SwiftUI hosting is used
+//                                  only inside the AppKit bridge, never
+//                                  inside message renderers).
+//   - `SuperLogKit`             — light logging helper reserved for
+//                                  Task 15 diagnostics.
+//   - `MarkdownKit` (Core only)  — Task 8 (native block parsing). The
+//                                  SwiftUI `MarkdownKit` product is
+//                                  intentionally NOT consumed.
+//   - `beautiful-mermaid-swift` — Task 10 (native Mermaid rendering).
+//
+// Do not remove or rename these without first updating the plan; the
+// `SourceBoundaryTests` regex also asserts that the SwiftUI
+// `MarkdownKit` product is never pulled in directly.
+
 let package = Package(
     name: "MessageListAppKitPlugin",
     defaultLocalization: "en",
@@ -34,7 +57,7 @@ let package = Package(
             ],
             path: "Sources",
             resources: [
-                .process("Resources"),
+                .process("../Resources/Localizable.xcstrings"),
             ]
         ),
         .testTarget(
