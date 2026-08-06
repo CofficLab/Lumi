@@ -182,3 +182,97 @@ private enum AssistantMarkdownContrastTestSupport {
         ) >= minimumDelta
     }
 }
+
+// MARK: - Preferred renderer ID (explicit routing)
+
+@MainActor
+@Test func preferredRendererIDOverridesCanRenderChain() throws {
+    let manager = MessageRendererManager()
+
+    // 注册两个渲染器:A 只匹配 .user;B 只匹配 .error。
+    // 故意按 canRender 链 B 会被优先（高 order），用于下面验证 preferred 直接命中 A。
+    let rendererA = LumiMessageRendererItem(
+        id: "test-renderer-a",
+        order: 10,
+        canRender: { $0.role == .user },
+        render: { _, _ in EmptyView() }
+    )
+    let rendererB = LumiMessageRendererItem(
+        id: "test-renderer-b",
+        order: 999,
+        canRender: { $0.role == .user },
+        render: { _, _ in EmptyView() }
+    )
+    manager.registerMessageRenderer(rendererA)
+    manager.registerMessageRenderer(rendererB)
+
+    // 1) 不带 preferred → 走原 canRender 链,order 大的 B 胜出
+    let plain = LumiChatMessage(conversationID: UUID(), role: .user, content: "hi")
+    let matchedPlain = manager.renderer(for: plain)
+    #expect(matchedPlain?.id == "test-renderer-b")
+
+    // 2) 带 preferredRendererID → 直接命中 A,无视 order 和 canRender
+    let preferred = LumiChatMessage(
+        conversationID: UUID(),
+        role: .user,
+        content: "hi",
+        preferredRendererID: "test-renderer-a"
+    )
+    let matchedPreferred = manager.renderer(for: preferred)
+    #expect(matchedPreferred?.id == "test-renderer-a")
+}
+
+@MainActor
+@Test func preferredRendererIDFallsBackWhenRendererNotRegistered() throws {
+    let manager = MessageRendererManager()
+    let renderer = LumiMessageRendererItem(
+        id: "test-only-renderer",
+        order: 100,
+        canRender: { $0.role == .user },
+        render: { _, _ in EmptyView() }
+    )
+    manager.registerMessageRenderer(renderer)
+
+    // preferredRendererID 指向一个**未注册**的 id → 应走原 canRender 链
+    let message = LumiChatMessage(
+        conversationID: UUID(),
+        role: .user,
+        content: "hi",
+        preferredRendererID: "does-not-exist"
+    )
+    let matched = manager.renderer(for: message)
+    #expect(matched?.id == "test-only-renderer")
+}
+
+@MainActor
+@Test func preferredRendererIDFallsBackAfterUnregister() throws {
+    let manager = MessageRendererManager()
+    let rendererA = LumiMessageRendererItem(
+        id: "test-renderer-a",
+        order: 10,
+        canRender: { $0.role == .user },
+        render: { _, _ in EmptyView() }
+    )
+    let rendererB = LumiMessageRendererItem(
+        id: "test-renderer-b",
+        order: 999,
+        canRender: { $0.role == .user },
+        render: { _, _ in EmptyView() }
+    )
+    manager.registerMessageRenderer(rendererA)
+    manager.registerMessageRenderer(rendererB)
+
+    let message = LumiChatMessage(
+        conversationID: UUID(),
+        role: .user,
+        content: "hi",
+        preferredRendererID: "test-renderer-a"
+    )
+
+    // 1) A 注册时:preferred 命中 A
+    #expect(manager.renderer(for: message)?.id == "test-renderer-a")
+
+    // 2) A 被注销后:preferred 失效,走原 canRender 链,命中 B
+    manager.unregisterMessageRenderer(id: "test-renderer-a")
+    #expect(manager.renderer(for: message)?.id == "test-renderer-b")
+}

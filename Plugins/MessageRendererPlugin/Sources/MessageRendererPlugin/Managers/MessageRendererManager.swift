@@ -11,8 +11,9 @@ import LumiKernel
 /// body 求值一次)。原始实现每次都重新构建数组 + 排序 + 逐个 canRender 匹配,
 /// 在 LazyVStack 滚动时会压垮主线程。这里加两层缓存:
 /// 1. `sortedRenderers` —— 按 order 降序排好的渲染器列表,只在注册/注销时重算;
-/// 2. `matchCache` —— 按 (id, content, role, renderKind) 缓存的匹配结果,
-///    流式更新(content 变化)会自然产生不同的 key 从而重新匹配。
+/// 2. `matchCache` —— 按 (id, content, role, renderKind, preferredRendererID)
+///    缓存匹配到的 renderer id,流式更新(content 变化)及 preferredRendererID
+///    变化都会自然产生不同的 key 从而重新匹配。
 @MainActor
 public final class MessageRendererManager: MessageRendering {
     public static let shared = MessageRendererManager()
@@ -25,8 +26,8 @@ public final class MessageRendererManager: MessageRendering {
     /// 缓存的"按 order 降序排列"的渲染器快照;`nil` 表示需要重算。
     private var sortedRenderersCache: [LumiMessageRendererItem]?
 
-    /// 按 (消息 id, content, role, renderKind) 缓存匹配到的 renderer id;
-    /// 渲染器集合变化时整体清空。
+    /// 按 (消息 id, content, role, renderKind, preferredRendererID) 缓存匹配到的
+    /// renderer id;渲染器集合变化时整体清空。
     private var matchCache: [MatchKey: String] = [:]
 
     public init() {}
@@ -57,8 +58,14 @@ public final class MessageRendererManager: MessageRendering {
         if let cachedID = matchCache[key] {
             return messageRenderers[cachedID]
         }
-        // 未命中:在排好序的列表里找第一个 canRender 的,并缓存其 id。
-        let matched = sortedRenderers.first { $0.canRender(message) }
+        // 优先按消息指定的 renderer id 路由;未命中则按原 canRender 链兜底。
+        let matched: LumiMessageRendererItem?
+        if let preferredID = message.preferredRendererID,
+           let preferred = messageRenderers[preferredID] {
+            matched = preferred
+        } else {
+            matched = sortedRenderers.first { $0.canRender(message) }
+        }
         matchCache[key] = matched?.id
         return matched
     }
@@ -84,18 +91,21 @@ public final class MessageRendererManager: MessageRendering {
     }
 
     /// renderer 匹配的缓存键。
-    /// 包含 content/role/renderKind,使流式更新(同 id 但 content 增长)能正确重新匹配。
+    /// 包含 content/role/renderKind/preferredRendererID,
+    /// 使流式更新(同 id 但 content 增长)以及 preferredRendererID 变更能正确重新匹配。
     private struct MatchKey: Hashable {
         let id: UUID
         let content: String
         let role: String
         let renderKind: String?
+        let preferredRendererID: String?
 
         init(message: LumiChatMessage) {
             self.id = message.id
             self.content = message.content
             self.role = message.role.rawValue
             self.renderKind = message.renderKind
+            self.preferredRendererID = message.preferredRendererID
         }
     }
 }
