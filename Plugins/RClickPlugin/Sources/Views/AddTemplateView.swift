@@ -19,20 +19,30 @@ public struct AddTemplateView: View {
                 .font(.appBodyEmphasized)
                 .foregroundColor(theme.textPrimary)
 
-            Form {
-                TextField(LocalizedStringKey(LumiPluginLocalization.string("Name (e.g. Python Script)", bundle: .module)), text: $name)
-                    .onChange(of: name) { _, _ in showNameError = false }
-                TextField(LocalizedStringKey(LumiPluginLocalization.string("Extension (e.g. py)", bundle: .module)), text: $ext)
-                    .onChange(of: ext) { _, _ in showExtensionError = false }
+            VStack(spacing: 12) {
+                GlassTextField(
+                    title: LumiPluginLocalization.string("Name (e.g. Python Script)", bundle: .module),
+                    text: $name
+                )
+                .onChange(of: name) { _, _ in showNameError = false }
 
-                Section(header: Text(LumiPluginLocalization.string("Default Content", bundle: .module))) {
+                GlassTextField(
+                    title: LumiPluginLocalization.string("Extension (e.g. py)", bundle: .module),
+                    text: $ext
+                )
+                .onChange(of: ext) { _, _ in showExtensionError = false }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(LumiPluginLocalization.string("Default Content", bundle: .module))
+                        .font(.appCaption)
+                        .foregroundColor(theme.textTertiary)
                     TextEditor(text: $content)
-                        .frame(height: 100)
                         .font(.monospaced(.body)())
+                        .scrollContentBackground(.hidden)
+                        .frame(height: 100)
                         .appSurface(style: .listRow, cornerRadius: 8, borderColor: theme.appSubtleBorder)
                 }
             }
-            .formStyle(.grouped)
 
             if showNameError {
                 AppErrorBanner(message: LocalizedStringKey(LumiPluginLocalization.string("Template name cannot be empty or contain path separators", bundle: .module)))

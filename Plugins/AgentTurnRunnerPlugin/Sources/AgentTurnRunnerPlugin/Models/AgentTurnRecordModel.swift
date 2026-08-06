@@ -10,6 +10,9 @@ import SwiftData
 final class AgentTurnRecordModel {
     @Attribute(.unique) var id: String
     var conversationID: String
+    /// Turn identifier (optional for backward compatibility with pre-turn-tracking records).
+    /// Used to group LLM requests by agent turn for turn-level aggregation queries.
+    var turnID: String?
     var createdAt: Date
     var model: String
     var providerID: String?
@@ -25,6 +28,7 @@ final class AgentTurnRecordModel {
     init(
         id: String,
         conversationID: String,
+        turnID: String? = nil,
         createdAt: Date,
         model: String,
         providerID: String?,
@@ -36,6 +40,7 @@ final class AgentTurnRecordModel {
     ) {
         self.id = id
         self.conversationID = conversationID
+        self.turnID = turnID
         self.createdAt = createdAt
         self.model = model
         self.providerID = providerID

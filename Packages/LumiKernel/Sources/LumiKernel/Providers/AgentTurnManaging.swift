@@ -50,6 +50,38 @@ public protocol AgentTurnManaging: AnyObject {
     /// This is intended for parent-conversation UI, such as a toolbar indicator
     /// showing delegated Agent Turns.
     func activeChildTurnCount(for parentConversationID: UUID) -> Int
+
+    // MARK: - Historical Records
+
+    /// Returns persisted turn records for the given conversation, ordered by
+    /// `startedAt` descending (newest first).
+    ///
+    /// Implementations **should** overlay the current live turn's state:
+    /// when the queried `conversationID` has an active turn, the matching
+    /// record's `state` should reflect `state(for:)` instead of the archived
+    /// terminal state. This lets UI render the live turn consistently with
+    /// historical ones without a separate code path.
+    ///
+    /// Default implementation returns `[]` so existing adopters remain
+    /// source-compatible.
+    func turnRecords(
+        for conversationID: UUID,
+        limit: Int,
+        before turnID: UUID?
+    ) async -> [AgentTurnRecord]
+
+    /// Returns a single turn record by its identifier, or `nil` if unknown.
+    ///
+    /// Used by detail views that navigate from a message (via `turnID`) to the
+    /// full turn record. Default returns `nil`.
+    func turnRecord(id turnID: UUID) async -> AgentTurnRecord?
+
+    /// Deletes all persisted turn records associated with a conversation.
+    ///
+    /// Conversation deletion uses this hook so turn records do not outlive the
+    /// conversation timeline that references them, mirroring
+    /// `ToolManaging.deleteToolCalls(for:)`. Default is a no-op.
+    func deleteTurnRecords(for conversationID: UUID) async
 }
 
 public extension AgentTurnManaging {
@@ -79,5 +111,26 @@ public extension AgentTurnManaging {
         work: @escaping AgentTurnChildWork
     ) -> Bool {
         false
+    }
+
+    // MARK: - Historical Records (default implementations)
+
+    func turnRecords(
+        for conversationID: UUID,
+        limit: Int,
+        before turnID: UUID?
+    ) async -> [AgentTurnRecord] {
+        []
+    }
+
+    func turnRecord(id turnID: UUID) async -> AgentTurnRecord? { nil }
+
+    func deleteTurnRecords(for conversationID: UUID) async {}
+
+    // MARK: - Convenience Overloads
+
+    /// Unbounded convenience for callers that want every record of a conversation.
+    func turnRecords(for conversationID: UUID) async -> [AgentTurnRecord] {
+        await turnRecords(for: conversationID, limit: .max, before: nil)
     }
 }
