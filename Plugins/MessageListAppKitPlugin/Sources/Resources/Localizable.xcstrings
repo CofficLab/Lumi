@@ -1,0 +1,9 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Message List (AppKit)" : {
+      "comment" : "Name shown in the plugin manager for MessageListAppKitPlugin."
+    }
+  },
+  "version" : "1.0"
+}
