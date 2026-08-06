@@ -4,6 +4,27 @@ import LumiKernel
 import os
 import SuperLogKit
 
+/// Cheap fingerprint of the inputs that decide `MessageListRowBuilder.buildHistory`
+/// output, used to skip the (O(rows × content) memberwise) `historyRows` array
+/// comparison when nothing relevant changed between calls.
+private struct HistoryBuildSignature: Equatable {
+    let conversationID: UUID?
+    let verbosity: LumiResponseVerbosity
+    let streamingStage: ChatStage
+    let hasStreamingRow: Bool
+    /// Per persisted message — captures additions/removals/reordering AND
+    /// content edits while staying far cheaper than comparing full content
+    /// strings.
+    let fingerprints: [MessageFingerprint]
+}
+
+private struct MessageFingerprint: Equatable {
+    let id: UUID
+    let contentLength: Int
+    let role: LumiChatMessageRole
+    let isToolExecutionOnly: Bool
+}
+
 /// Message List View Model
 ///
 /// 消息列表 UI 的**视图模型**:持有全部视图状态(`displayRows`/`isLoading`/分页窗口),
@@ -75,8 +96,12 @@ final class MessageListViewModel: ObservableObject, SuperLog {
     /// Coalesces bursts of provider chunks to one UI update per display frame.
     private var streamingRefreshTask: Task<Void, Never>?
     private var didBindToolActivityNotifications = false
-    /// 流式/发送服务是否都已绑定;服务后于本 viewmodel 就绪时由 `activate` 重试绑定。
+    /// 流式/发送服务是否都已绑定;服务后就绪时由 `activate` 重试绑定。
     private var didBindServices = false
+    /// Signature of the inputs used to build the last `historyRows`. When the
+    /// next `rebuildHistoryRows` call sees the same signature, the (expensive,
+    /// O(rows × content) memberwise) array comparison is skipped entirely.
+    private var lastHistoryBuildSignature: HistoryBuildSignature?
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
@@ -321,11 +346,25 @@ final class MessageListViewModel: ObservableObject, SuperLog {
                 .store(in: &cancellables)
         }
         if let sender = kernel.messageSender {
+            // Sending churns at high frequency during a turn (status/queue
+            // updates per event). Rebuilding the whole history projection on
+            // every signal re-filters + re-merges all persisted messages and
+            // compares two full O(rows × content) arrays. Instead, route sender
+            // changes through the same coalesced tail-refresh path the message
+            // notification uses: it re-reads the newest page off the main actor,
+            // merges, and only mutates `persistedMessages` (→ `rebuildHistoryRows`)
+            // when the tail actually changed. The gate collapses overlapping
+            // signals into one active + one trailing refresh.
             sender.objectWillChange
                 .map { _ in () }
                 .eraseToAnyPublisher()
                 .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in self?.rebuildHistoryRows() }
+                .sink { [weak self] _ in
+                    guard let self else { return }
+                    Task { @MainActor [weak self] in
+                        await self?.refreshTail()
+                    }
+                }
                 .store(in: &cancellables)
         }
         didBindServices = kernel.messageStreaming != nil && kernel.messageSender != nil
@@ -333,19 +372,45 @@ final class MessageListViewModel: ObservableObject, SuperLog {
 
     /// Rebuilds only stable history rows. Streaming tokens do not enter this
     /// path unless the status/streaming boundary changes.
+    ///
+    /// Short-circuits on a cheap input signature: when the persisted window,
+    /// verbosity, and streaming stage are unchanged since the last build, the
+    /// full projection + O(rows × content) array comparison is skipped.
     private func rebuildHistoryRows() {
         let verbosity = self.verbosity
-        let rows = rowBuilder.buildHistory(
-            persisted: persistedMessages,
-            conversationID: selectedConversationID,
-            streaming: kernel.messageStreaming,
-            verbosity: verbosity
+        let streaming = kernel.messageStreaming
+        let conversationID = selectedConversationID
+        let stage = conversationID.flatMap { streaming?.streamingStage(for: $0) } ?? .idle
+        let hasStreamingRow = conversationID.flatMap { streaming?.streamingRow(for: $0) } != nil
+        let signature = HistoryBuildSignature(
+            conversationID: conversationID,
+            verbosity: verbosity,
+            streamingStage: stage,
+            hasStreamingRow: hasStreamingRow,
+            fingerprints: persistedMessages.map {
+                MessageFingerprint(
+                    id: $0.id,
+                    contentLength: $0.content.count,
+                    role: $0.role,
+                    isToolExecutionOnly: $0.isToolExecutionOnly
+                )
+            }
         )
-        if historyRows != rows {
-            historyRows = rows
+
+        if signature != lastHistoryBuildSignature {
+            lastHistoryBuildSignature = signature
+            let rows = rowBuilder.buildHistory(
+                persisted: persistedMessages,
+                conversationID: conversationID,
+                streaming: streaming,
+                verbosity: verbosity
+            )
+            if historyRows != rows {
+                historyRows = rows
+            }
         }
 
-        refreshStreamingPresentation(using: kernel.messageStreaming)
+        refreshStreamingPresentation(using: streaming)
     }
 
     /// Updates only the live tail. The history list is rebuilt at most when

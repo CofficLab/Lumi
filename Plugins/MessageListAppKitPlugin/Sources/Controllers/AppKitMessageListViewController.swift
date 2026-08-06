@@ -23,6 +23,13 @@ final class AppKitMessageListViewController: NSViewController {
     private var mermaidCache = AppKitMermaidCache()
     private var emptyStateView: AppKitEmptyStateView!
     private var loadingView: AppKitLoadingView!
+    /// Bumped on effective-appearance changes so theme-sensitive layout cache
+    /// keys invalidate and visible rows re-render with the new colors/fonts.
+    private var themeRevision = 0
+
+    private var currentTheme: AppKitMessageTheme {
+        AppKitMessageTheme.systemDefault(revision: themeRevision)
+    }
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
@@ -33,7 +40,10 @@ final class AppKitMessageListViewController: NSViewController {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func loadView() {
-        let root = NSView()
+        let root = AppearanceTrackingView()
+        root.onAppearanceChanged = { [weak self] in
+            self?.handleAppearanceChange()
+        }
 
         let scrollView = NSScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -112,7 +122,7 @@ final class AppKitMessageListViewController: NSViewController {
         scrollAnchor.startObserving()
 
         rendererRegistry = AppKitMessageRendererRegistry(environment: .init(
-            theme: AppKitMessageTheme.systemDefault(), // Task 14 snapshots LumiUI.
+            theme: currentTheme,
             mermaidCache: mermaidCache,
             layoutCache: layoutCache,
             outerScrollView: scrollView,
@@ -126,7 +136,11 @@ final class AppKitMessageListViewController: NSViewController {
 
         let emptyState = AppKitEmptyStateView()
         emptyState.translatesAutoresizingMaskIntoConstraints = false
-        emptyState.configure(title: "暂无消息", subtitle: "开始一段新的对话吧")
+        emptyState.configure(
+            title: LumiPluginLocalization.string("No Messages", bundle: .module),
+            subtitle: LumiPluginLocalization.string("Start a new conversation", bundle: .module)
+        )
+        emptyState.setAccessibilityLabel(LumiPluginLocalization.string("No Messages", bundle: .module))
         view.addSubview(emptyState, positioned: .above, relativeTo: scrollView)
         NSLayoutConstraint.activate([
             emptyState.topAnchor.constraint(equalTo: view.topAnchor),
@@ -185,6 +199,23 @@ final class AppKitMessageListViewController: NSViewController {
         tableView.layoutSubtreeIfNeeded()
     }
 
+    /// Light/dark (or accent) appearance changed: bump the theme revision,
+    /// invalidate theme-sensitive layout cache entries, and re-render the
+    /// visible rows with the new colors/fonts.
+    private func handleAppearanceChange() {
+        themeRevision += 1
+        layoutCache.invalidate(themeRevision: themeRevision - 1)
+        rendererRegistry = AppKitMessageRendererRegistry(environment: .init(
+            theme: currentTheme,
+            mermaidCache: mermaidCache,
+            layoutCache: layoutCache,
+            outerScrollView: scrollView,
+            messageSender: kernel.messageSender
+        ))
+        tableView.reloadData()
+        tableView.layoutSubtreeIfNeeded()
+    }
+
     // MARK: - Snapshot application
 
     private func apply(snapshot: AppKitMessageListSnapshot) {
@@ -217,5 +248,17 @@ final class AppKitMessageListViewController: NSViewController {
     private func updateOverlays(snapshot: AppKitMessageListSnapshot) {
         loadingView.isHidden = !snapshot.isLoading
         emptyStateView.isHidden = !(snapshot.isEmpty && !snapshot.isLoading)
+    }
+}
+
+// MARK: - Appearance Tracking View
+
+/// Root view that notifies the view controller when effective appearance changes.
+private final class AppearanceTrackingView: NSView {
+    var onAppearanceChanged: (() -> Void)?
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        onAppearanceChanged?()
     }
 }

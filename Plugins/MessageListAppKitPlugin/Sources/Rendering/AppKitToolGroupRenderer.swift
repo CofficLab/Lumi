@@ -44,7 +44,10 @@ final class AppKitToolGroupRenderer: AppKitMessageRenderer {
 
     func configure(view: NSView, row: AppKitMessageRow) {
         let calls = row.message.toolCalls ?? []
-        summaryLabel.stringValue = "工具执行 · \(calls.count) 次"
+        summaryLabel.stringValue = String(
+            format: LumiPluginLocalization.string("Executed · %d calls", bundle: .module),
+            calls.count
+        )
         stack.arrangedSubviews.forEach { stack.removeArrangedSubview($0) }
 
         for call in calls {

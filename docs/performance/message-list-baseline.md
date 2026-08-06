@@ -49,6 +49,34 @@
 - 工具：Instruments（Time Profiler / Core Animation / Allocations / Leaks）+ `os_signpost`
 - 日期：_（待填）_
 
+## 诊断基础设施（Task 15 完成）
+
+`AppKitMessageListMetrics`（`Sources/Diagnostics/AppKitMessageListMetrics.swift`）
+为以下热路径提供 `os_signpost` 区间：
+
+| Signpost | 类别 | 含义 |
+|---|---|---|
+| `snapshot-build` | snapshot | 构造不可变快照 |
+| `snapshot-apply` | snapshot | 将快照差异应用到 NSTableView |
+| `cell-configure` | cell | 为一条行配置 cell（含 rowID） |
+| `cell-reuse` | cell | `prepareForReuse` 重置 |
+| `markdown-parse` | markdown | Markdown 块/内联解析 |
+| `height-measure` | layout | 行高测量（含 rowID） |
+| `syntax-highlight` | render | 代码块语法高亮 |
+| `mermaid-render` | render | Mermaid 图表异步渲染 |
+| `scroll-hitch` | scroll | 滚动期间的卡顿区间 |
+
+`Counters` 单例提供内存诊断计数器（缓存命中/未命中等）。
+
+`AppKitMessageListPerformanceTests` 自动化了下列门槛：
+
+- 40 / 300 / 1000 行快照构造时间 < 500 / 1000 / 1000 ms
+- 分页保持初始页面 40 行（即使总消息数达 1000）
+- 布局缓存：相同 key 第二次命中
+- 重复 refresh 后行数稳定
+- 会话切换 < 500 ms
+
 ## 结论
 
 （Task 16 替换前，由本文件给出 AppKit 版本是否通过全部门槛的结论。）
+

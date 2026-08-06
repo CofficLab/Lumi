@@ -141,7 +141,7 @@ final class AppKitMermaidView: NSView {
 
     private func showFallback(source: String, error: String) {
         imageView.isHidden = true
-        fallbackLabel.stringValue = "Mermaid 渲染失败"
+        fallbackLabel.stringValue = LumiPluginLocalization.string("Mermaid render failed", bundle: .module)
         fallbackLabel.isHidden = false
         fallbackTextView.string = "\(source)\n\n错误: \(error)"
         fallbackScroll.isHidden = false

@@ -39,6 +39,10 @@ final class AppKitEmptyStateView: NSView {
     func configure(title: String, subtitle: String) {
         titleLabel.stringValue = title
         subtitleLabel.stringValue = subtitle
+        setAccessibilityElement(true)
+        setAccessibilityRole(.staticText)
+        setAccessibilityLabel(title)
+        setAccessibilityHelp(subtitle)
     }
 }
 
@@ -57,6 +61,8 @@ final class AppKitLoadingView: NSView {
             indicator.centerXAnchor.constraint(equalTo: centerXAnchor),
             indicator.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
+        setAccessibilityElement(true)
+        setAccessibilityLabel(LumiPluginLocalization.string("Loading", bundle: .module))
     }
 
     @available(*, unavailable)

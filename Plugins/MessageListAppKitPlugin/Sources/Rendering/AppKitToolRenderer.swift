@@ -75,12 +75,12 @@ final class AppKitToolRenderer: AppKitMessageRenderer {
             if result.isError {
                 iconView.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "error")
                 iconView.contentTintColor = .systemRed
-                statusLabel.stringValue = "失败"
+                statusLabel.stringValue = LumiPluginLocalization.string("Failed", bundle: .module)
                 statusLabel.textColor = .systemRed
             } else {
                 iconView.image = NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: "success")
                 iconView.contentTintColor = .systemGreen
-                var status = "完成"
+                var status = LumiPluginLocalization.string("Done", bundle: .module)
                 if let duration = result.duration {
                     status += " · \(Self.formatDuration(duration))"
                 }
@@ -92,7 +92,7 @@ final class AppKitToolRenderer: AppKitMessageRenderer {
         } else {
             iconView.image = NSImage(systemSymbolName: "gearshape.fill", accessibilityDescription: "tool")
             iconView.contentTintColor = .secondaryLabelColor
-            statusLabel.stringValue = "执行中…"
+            statusLabel.stringValue = LumiPluginLocalization.string("Executing…", bundle: .module)
             statusLabel.textColor = .secondaryLabelColor
             resultLabel.stringValue = ""
             resultLabel.isHidden = true

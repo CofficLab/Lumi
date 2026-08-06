@@ -48,10 +48,10 @@ struct MessageListV1View: View {
         GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
-                    // Keep the paginated message window eager. LazyVStack can
-                    // enter an AttributeGraph layout livelock when the live tail
-                    // is replaced by its persisted history row at turn completion.
-                    VStack(spacing: 0) {
+                    // Lazy so only visible conclusion rows are materialized; see
+                    // MessageListV2View for the rationale (stable ids only, live
+                    // status rendered outside the history `ForEach`).
+                    LazyVStack(spacing: 0) {
                         historyRows(proxy: proxy)
 
                         if let message = turnViewModel.statusMessage {

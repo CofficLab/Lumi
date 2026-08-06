@@ -48,10 +48,19 @@ struct MessageListV2View: View {
         GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
-                    // Keep the paginated message window eager. LazyVStack can
-                    // enter an AttributeGraph layout livelock when the live tail
-                    // is replaced by its persisted history row at turn completion.
-                    VStack(spacing: 0) {
+                    // Lazy so only visible history rows are materialized — the
+                    // window can hold hundreds of rows, each carrying a full
+                    // Markdown view tree, and eager materialization is the main
+                    // source of scroll jank in long conversations.
+                    //
+                    // This is safe because the live streaming tail is rendered
+                    // separately below (outside the history `ForEach`), so the
+                    // `ForEach` contains only stable, persisted ids. The earlier
+                    // AttributeGraph livelock arose when the streaming row (one
+                    // id) was swapped for its persisted counterpart (a different
+                    // id) inside the same eagerly-diffed collection; that swap no
+                    // longer touches the lazy `ForEach`.
+                    LazyVStack(spacing: 0) {
                         historyRows(proxy: proxy)
 
                         if let message = viewModel.streamingRow {

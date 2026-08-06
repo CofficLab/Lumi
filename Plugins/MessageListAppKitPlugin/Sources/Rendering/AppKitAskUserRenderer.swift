@@ -21,7 +21,7 @@ final class AppKitAskUserRenderer: AppKitMessageRenderer {
     private let controlsStack = NSStackView()
     private let statusLabel = NSTextField(labelWithString: "")
     private let freeTextField = NSTextField()
-    private let submitButton = NSButton(title: "提交", target: nil, action: nil)
+    private let submitButton = NSButton(title: "Submit", target: nil, action: nil)
 
     init(environment: AppKitMessageRendererRegistry.Environment) {
         self.environment = environment
@@ -41,13 +41,14 @@ final class AppKitAskUserRenderer: AppKitMessageRenderer {
         controlsStack.spacing = 6
 
         freeTextField.translatesAutoresizingMaskIntoConstraints = false
-        freeTextField.placeholderString = "输入你的回答…"
+        freeTextField.placeholderString = LumiPluginLocalization.string("Input your answer", bundle: .module)
         freeTextField.isHidden = true
         freeTextField.widthAnchor.constraint(greaterThanOrEqualToConstant: 220).isActive = true
 
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.bezelStyle = .rounded
         submitButton.controlSize = .small
+        submitButton.title = LumiPluginLocalization.string("Submit", bundle: .module)
         submitButton.isHidden = true
         submitButton.target = self
         submitButton.action = #selector(submitPressed)
@@ -88,7 +89,7 @@ final class AppKitAskUserRenderer: AppKitMessageRenderer {
         guard let payload = AppKitAskUserPayload.parse(
             from: row.message.toolCalls?.first?.result?.content
         ) else {
-            questionLabel.stringValue = "无法解析问题内容"
+            questionLabel.stringValue = LumiPluginLocalization.string("Cannot parse question", bundle: .module)
             statusLabel.stringValue = ""
             controlsStack.arrangedSubviews.forEach { controlsStack.removeArrangedSubview($0) }
             freeTextField.isHidden = true
@@ -165,7 +166,7 @@ final class AppKitAskUserRenderer: AppKitMessageRenderer {
               let sender = environment.messageSender else { return }
         responded = true
         setControlsEnabled(false)
-        statusLabel.stringValue = "已提交"
+        statusLabel.stringValue = LumiPluginLocalization.string("Submitted", bundle: .module)
 
         Task { @MainActor in
             _ = try? await sender.resumeTurn(
