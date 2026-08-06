@@ -375,10 +375,11 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
                 runs.append([coordinate])
             }
         }
-        guard let nearestRun = runs.min(by: {
-            abs((($0.first ?? center) + ($0.last ?? center)) / 2 - center)
-                < abs((($1.first ?? center) + ($1.last ?? center)) / 2 - center)
-        }),
+        func distanceFromCenter(_ run: [CGFloat]) -> CGFloat {
+            let mid = ((run.first ?? center) + (run.last ?? center)) / 2
+            return abs(mid - center)
+        }
+        guard let nearestRun = runs.min(by: { distanceFromCenter($0) < distanceFromCenter($1) }),
         let first = nearestRun.first,
         let last = nearestRun.last
         else { return dividerRect }
