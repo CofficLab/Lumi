@@ -80,6 +80,10 @@ public final class AppKitMessageListCoordinator {
 
     /// Switches to a conversation (or clears when `nil`), resets the window and
     /// loads the first page. Idempotently binds service subscriptions.
+    ///
+    /// Guarantees a final non-loading snapshot is published in every code
+    /// path (including `nil` and exception paths) — otherwise the view would
+    /// stay on the loading overlay forever.
     public func activate(conversationID: UUID?) async {
         bindServicesIfNeeded()
         activeConversationID = conversationID
@@ -90,8 +94,19 @@ public final class AppKitMessageListCoordinator {
         isLoadingEarlier = false
         publish(.loading(conversationID: conversationID))
 
-        guard let conversationID else { return }
-        await loadFirstPage(conversationID: conversationID)
+        guard let conversationID else {
+            // No conversation selected (initial state or service not ready).
+            // Publish an empty snapshot so the controller drops the loading
+            // overlay instead of spinning forever.
+            publish(.empty)
+            return
+        }
+
+        do {
+            try await loadFirstPage(conversationID: conversationID)
+        } catch {
+            print("[MessageListAppKit] activate: first-page load failed for \(conversationID.uuidString): \(error)")
+        }
         guard activeConversationID == conversationID else { return }
         publish(buildSnapshot())
     }
@@ -257,6 +272,9 @@ public final class AppKitMessageListCoordinator {
     }
 
     private func publish(_ snapshot: AppKitMessageListSnapshot) {
+        // Temporary diagnostic for "stuck on loading" investigation.
+        let conv = snapshot.conversationID?.uuidString ?? "nil"
+        print("[MessageListAppKit] publish: isLoading=\(snapshot.isLoading) rows=\(snapshot.rows.count) streaming=\(snapshot.streamingRow != nil) conv=\(conv)")
         latestSnapshot = snapshot
         onSnapshot?(snapshot)
     }
@@ -275,9 +293,13 @@ public final class AppKitMessageListCoordinator {
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     let selected = self.dependencies.conversations?.selectedConversationID
-                    if selected != self.activeConversationID {
-                        await self.activate(conversationID: selected)
-                    }
+                    // Only react once we already hold a non-nil active session —
+                    // avoids a race where the controller's first activate and
+                    // the very first conversationsDidChange notification both
+                    // run concurrently and the nil branch never reaches
+                    // publish(.empty).
+                    guard let current = self.activeConversationID else { return }
+                    if selected != current { await self.activate(conversationID: selected) }
                 }
             }
             .store(in: &cancellables)
