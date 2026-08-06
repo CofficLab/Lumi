@@ -18,6 +18,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     @Published public private(set) var selectedConversationID: UUID?
     @Published public private(set) var currentTitle: String = "No conversation"
     @Published public private(set) var isLoadingConversations = true
+    @Published public private(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
 
     /// Notification posted when conversations list changes
     static let conversationsDidChangeNotification = Notification.Name.lumiConversationsDidChange
@@ -86,6 +87,8 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                    !loaded.contains(where: { $0.id == selectedID }) {
                     self.selectedConversationID = loaded.first?.id
                 }
+                // 初始化全局详细程度为当前选中对话的详细程度
+                self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
                 self.updateCurrentTitle()
                 self.persistSelectedConversationID()
                 self.isLoadingConversations = false
@@ -214,8 +217,8 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         let effectiveProviderID = providerID ?? kernel?.llmProvider?.selectedProviderID
         // 如果未指定 modelName，则自动使用当前选中的模型
         let effectiveModelName = modelName ?? kernel?.llmProvider?.selectedModel
-        // 继承上一个对话的设置（详细程度、推理强度、语言、自动化程度）
-        let effectiveVerbosity = self.verbosity(for: selectedConversationID)
+        // 继承全局设置（详细程度、推理强度、语言、自动化程度）
+        let effectiveVerbosity = self.globalVerbosity
         let effectiveReasoningEffort = self.reasoningEffort(for: selectedConversationID)
         let effectiveLanguage = self.language(for: selectedConversationID)
         let effectiveAutomationLevel = self.automationLevel(for: selectedConversationID)
@@ -321,6 +324,29 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         persistSelectedConversationID()
     }
 
+    /// 标记对话为活跃：刷新 `updatedAt`，使其在「最近更新」排序中置顶。
+    ///
+    /// 由消息写入路径在会话收到新消息时调用(见 `MessageManager.insertMessage`)。
+    /// - 内存：更新缓存中的 `updatedAt` 并广播 `conversationsDidChange`，
+    ///   驱动对话列表(ConversationListPlugin)重新加载并按最新时间重排；
+    /// - 持久化：异步 touch 数据库时间戳，保证重启后排序一致。
+    public func markConversationActive(id: UUID) {
+        let now = Date()
+
+        if let index = conversations.firstIndex(where: { $0.id == id }) {
+            conversations[index].updatedAt = now
+            notifyConversationsChanged()
+        }
+
+        Task {
+            _ = await store?.touchConversation(id: id)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)markConversationActive: conversation=\(id.uuidString.prefix(8))")
+        }
+    }
+
     public func deleteConversation(id: UUID) {
         if Self.verbose {
             Self.logger.info("\(Self.t)Deleting conversation \(id.uuidString.prefix(8))...")
@@ -421,6 +447,14 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     }
 
     // MARK: - Verbosity
+
+    public func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) {
+        globalVerbosity = verbosity
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setGlobalVerbosity: verbosity=\(verbosity.rawValue)")
+        }
+    }
 
     public func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
         guard let conversationID else {

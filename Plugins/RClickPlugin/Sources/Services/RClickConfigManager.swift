@@ -109,6 +109,11 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     public func deleteTemplate(at offsets: IndexSet) {
         config.fileTemplates.remove(atOffsets: offsets)
     }
+
+    /// 删除模板（按 id）
+    public func deleteTemplate(_ template: NewFileTemplate) {
+        config.fileTemplates.removeAll { $0.id == template.id }
+    }
     
     /// 更新模板
     @discardableResult

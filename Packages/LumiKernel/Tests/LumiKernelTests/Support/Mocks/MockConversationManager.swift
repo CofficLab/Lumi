@@ -10,6 +10,7 @@ final class MockConversationManager: ConversationManaging {
     let log: OrchestrationEventLog?
 
     var selectedConversationID: UUID?
+    var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
 
     /// `createConversation` 返回的会话 id。
     var nextCreatedConversationID = UUID()
@@ -40,6 +41,7 @@ final class MockConversationManager: ConversationManaging {
     func modelName(for conversationID: UUID?) -> String? { nil }
     func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
 
+    func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) { globalVerbosity = verbosity }
     func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { .defaultVerbosity }
     func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
 

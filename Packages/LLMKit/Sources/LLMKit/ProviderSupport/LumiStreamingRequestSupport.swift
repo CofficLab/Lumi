@@ -42,10 +42,12 @@ public enum LumiStreamingRequestSupport: SuperLog {
         
         try LumiToolNameDeduplication.assertUnique(tools: request.tools)
         
+        let toolSchemas = request.tools.map(LumiToolSchema.init)
+        let toolNameReverseMap = LLMToolNameSanitizer.reverseMap(for: toolSchemas)
         let body = try adapter.buildStreamingRequestBody(
             messages: LumiLLMRequestMessages.preparedForProvider(request),
             model: request.model,
-            tools: request.tools.map(LumiToolSchema.init),
+            tools: toolSchemas,
             systemPrompt: "",
             config: LLMConfig.from(request)
         )
@@ -76,6 +78,7 @@ public enum LumiStreamingRequestSupport: SuperLog {
                 apiService: apiService,
                 buildRequest: buildRequest,
                 logRawChunk: logRawChunk,
+                toolNameReverseMap: toolNameReverseMap,
                 onChunk: onChunk
             ) {
             case let .success(message):
@@ -103,6 +106,7 @@ public enum LumiStreamingRequestSupport: SuperLog {
         apiService: LLMAPIService,
         buildRequest: (URL, String) -> URLRequest,
         logRawChunk: @escaping @Sendable (Data) -> Void,
+        toolNameReverseMap: [String: String],
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async -> StreamingAttemptResult {
         let httpRequest = buildRequest(url, apiKey)
@@ -127,7 +131,10 @@ public enum LumiStreamingRequestSupport: SuperLog {
                     logRawChunk(chunkData)
                     await processStreamChunk(
                         chunkData: chunkData,
-                        parse: { try adapter.parseStreamChunk(data: $0) },
+                        parse: Self.withToolNameReverseMap(
+                            parse: { try adapter.parseStreamChunk(data: $0) },
+                            reverseMap: toolNameReverseMap
+                        ),
                         state: state,
                         onChunk: onChunk
                     )
@@ -217,10 +224,12 @@ public enum LumiStreamingRequestSupport: SuperLog {
             throw LumiLLMProviderSupportError.emptyConversation
         }
         
+        let toolSchemas = request.tools.map(LumiToolSchema.init)
+        let toolNameReverseMap = LLMToolNameSanitizer.reverseMap(for: toolSchemas)
         var body = try adapter.buildStreamingRequestBody(
             messages: LumiLLMRequestMessages.preparedForProvider(request),
             model: request.model,
-            tools: request.tools.map(LumiToolSchema.init),
+            tools: toolSchemas,
             systemPrompt: systemPrompt,
             config: LLMConfig.from(request)
         )
@@ -252,6 +261,7 @@ public enum LumiStreamingRequestSupport: SuperLog {
                 adapter: adapter,
                 apiService: apiService,
                 buildRequest: buildRequest,
+                toolNameReverseMap: toolNameReverseMap,
                 onChunk: onChunk
             ) {
             case let .success(message):
@@ -278,6 +288,7 @@ public enum LumiStreamingRequestSupport: SuperLog {
         adapter: AnthropicCompatibleProviderAdapter,
         apiService: LLMAPIService,
         buildRequest: (URL, String) -> URLRequest,
+        toolNameReverseMap: [String: String],
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async -> StreamingAttemptResult {
         let httpRequest = buildRequest(url, apiKey)
@@ -301,7 +312,10 @@ public enum LumiStreamingRequestSupport: SuperLog {
                 onChunk: { chunkData in
                     let shouldContinue = await processStreamChunk(
                         chunkData: chunkData,
-                        parse: { try adapter.parseStreamChunk(data: $0) },
+                        parse: Self.withToolNameReverseMap(
+                            parse: { try adapter.parseStreamChunk(data: $0) },
+                            reverseMap: toolNameReverseMap
+                        ),
                         state: state,
                         onChunk: onChunk
                     )
@@ -376,6 +390,30 @@ public enum LumiStreamingRequestSupport: SuperLog {
     }
     
     // MARK: - Helper Functions
+
+    /// 包装供应商的流式解析闭包，把模型返回的 sanitize 后工具名反查为原始注册名。
+    ///
+    /// 适配器发送 tools 时会对工具名做协议转义（见 `LLMToolNameSanitizer`，例如
+    /// `app-store-connect.list-apps` → `app-store-connect_list-apps`），模型返回的
+    /// `tool_use` 名字是转义后的版本；工具调度按 Lumi 原始注册 id 查找，这里必须还原，
+    /// 否则执行阶段会因找不到工具而失败。映射为空的场景（无工具）原样透传。
+    private static func withToolNameReverseMap(
+        parse: @escaping (Data) throws -> StreamChunk?,
+        reverseMap: [String: String]
+    ) -> (Data) throws -> StreamChunk? {
+        { data in
+            guard let chunk = try parse(data) else { return nil }
+            guard let calls = chunk.toolCalls else { return chunk }
+            let mapped = calls.map { call in
+                ToolCall(
+                    id: call.id,
+                    name: reverseMap[call.name] ?? call.name,
+                    arguments: call.arguments
+                )
+            }
+            return chunk.withToolCalls(mapped)
+        }
+    }
     
     private static func hasNoDeliveredOutput(_ state: StreamingState) async -> Bool {
         let hasContent = await !state.accumulatedContentChunks.isEmpty

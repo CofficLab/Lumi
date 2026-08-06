@@ -28,7 +28,7 @@ public final class MiniMaxAnthropicProvider: LumiLLMProvider, @unchecked Sendabl
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage { try await sendStreaming(request) { _ in } }
     public func sendStreaming(_ request: LumiLLMRequest, onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void) async throws -> LumiChatMessage {
         guard let conversationID = request.messages.first?.conversationID else { throw MiniMaxProviderError.invalidRequest("Conversation is empty") }
-        let body = try JSONSerialization.data(withJSONObject: MiniMaxRequestBuilder.anthropic(request))
+        let body = try JSONSerialization.data(withJSONObject: MiniMaxRequestBuilder.anthropic(request), options: [.sortedKeys])
         let state = MiniMaxMessageState(conversationID: conversationID, providerID: Self.info.id, model: request.model, started: Date())
         try await service.send(apiKey: try lumiResolveAPIKey(), body: body) { event in
             if let error = event.error { state.setError(error); return false }

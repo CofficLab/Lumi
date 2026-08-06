@@ -27,7 +27,6 @@ public struct PreviewMenuRow: View {
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 8)
-        .background(Color.clear)
         .contentShape(Rectangle())
     }
 }

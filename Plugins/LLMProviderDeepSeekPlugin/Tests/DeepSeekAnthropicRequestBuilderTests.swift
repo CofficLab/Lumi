@@ -33,8 +33,8 @@ private final class StubTool: LumiAgentTool, @unchecked Sendable {
     }
 }
 
-@Suite("DeepSeekAnthropicRequestBuilder")
-struct DeepSeekAnthropicRequestBuilderTests {
+@Suite("AnthropicRequestBuilder")
+struct AnthropicRequestBuilderTests {
 
     private func makeRequest(
         messages: [LumiChatMessage],
@@ -59,7 +59,7 @@ struct DeepSeekAnthropicRequestBuilderTests {
             LumiChatMessage(conversationID: conversation, role: .system, content: "不要撒谎"),
             LumiChatMessage(conversationID: conversation, role: .user, content: "你好"),
         ])
-        let body = DeepSeekAnthropicRequestBuilder.body(for: request)
+        let body = AnthropicRequestBuilder.body(for: request)
         let system = try #require(body["system"])
         let messages = try #require(body["messages"] as? [[String: Any]])
         #expect(messages.count == 1)
@@ -78,7 +78,7 @@ struct DeepSeekAnthropicRequestBuilderTests {
             LumiChatMessage(conversationID: conversation, role: .system, content: "你是助手"),
             LumiChatMessage(conversationID: conversation, role: .user, content: "hi"),
         ])
-        let body = DeepSeekAnthropicRequestBuilder.body(for: request)
+        let body = AnthropicRequestBuilder.body(for: request)
         #expect(body["system"] is String)
     }
 
@@ -88,7 +88,7 @@ struct DeepSeekAnthropicRequestBuilderTests {
         let request = makeRequest(messages: [
             LumiChatMessage(conversationID: conversation, role: .user, content: "你好")
         ])
-        let body = DeepSeekAnthropicRequestBuilder.body(for: request)
+        let body = AnthropicRequestBuilder.body(for: request)
         guard let messages = body["messages"] as? [[String: Any]],
               let first = messages.first,
               let content = first["content"] as? [[String: Any]]
@@ -113,7 +113,7 @@ struct DeepSeekAnthropicRequestBuilderTests {
                 toolCalls: [call]
             )
         ])
-        let body = DeepSeekAnthropicRequestBuilder.body(for: request)
+        let body = AnthropicRequestBuilder.body(for: request)
         guard let messages = body["messages"] as? [[String: Any]],
               let first = messages.first,
               let content = first["content"] as? [[String: Any]]
@@ -146,7 +146,7 @@ struct DeepSeekAnthropicRequestBuilderTests {
                 toolCallID: "call_123"
             )
         ])
-        let body = DeepSeekAnthropicRequestBuilder.body(for: request)
+        let body = AnthropicRequestBuilder.body(for: request)
         guard let messages = body["messages"] as? [[String: Any]],
               let first = messages.first
         else {
@@ -178,7 +178,7 @@ struct DeepSeekAnthropicRequestBuilderTests {
             messages: [LumiChatMessage(conversationID: conversation, role: .user, content: "hi")],
             tools: [tool]
         )
-        let body = DeepSeekAnthropicRequestBuilder.body(for: request)
+        let body = AnthropicRequestBuilder.body(for: request)
         guard let tools = body["tools"] as? [[String: Any]],
               let first = tools.first
         else {
@@ -191,20 +191,53 @@ struct DeepSeekAnthropicRequestBuilderTests {
         #expect(first["type"] == nil, "Anthropic tools 不应有 type:function 包装")
     }
 
-    @Test("thinking 在非 automatic 时启用，自动时不启用")
-    func thinkingEnabledByReasoningEffort() {
+    @Test("默认(nil)与 automatic 也启用 thinking 且带保守预算(防服务端无上限吃光预算)")
+    func thinkingEnabledByDefaultAndAutomatic() {
         let conversation = UUID()
         let base = LumiChatMessage(conversationID: conversation, role: .user, content: "hi")
-        let auto = DeepSeekAnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .automatic))
-        #expect(auto["thinking"] == nil, "automatic 不应启用 thinking")
 
-        let high = DeepSeekAnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .high))
-        guard let thinking = high["thinking"] as? [String: Any] else {
+        // nil(绝大多数请求):必须显式传 thinking,否则 DeepSeek V4 服务端默认
+        // thinking 无上限,4096 输出预算全被思考消耗 → stop_reason=max_tokens
+        // 且 text 块从未开始(实测 2026-08-06)。
+        let defaultBody = AnthropicRequestBuilder.body(for: makeRequest(messages: [base]))
+        guard let defaultThinking = defaultBody["thinking"] as? [String: Any] else {
+            Issue.record("默认档应显式启用 thinking")
+            return
+        }
+        #expect(defaultThinking["type"] as? String == "enabled")
+        #expect(defaultThinking["budget_tokens"] as? Int == AnthropicRequestBuilder.defaultThinkingBudget)
+
+        let autoBody = AnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .automatic))
+        guard let autoThinking = autoBody["thinking"] as? [String: Any] else {
+            Issue.record("automatic 也应显式启用 thinking")
+            return
+        }
+        #expect(autoThinking["type"] as? String == "enabled")
+        #expect(autoThinking["budget_tokens"] as? Int == AnthropicRequestBuilder.defaultThinkingBudget)
+    }
+
+    @Test("显式档位按映射设置 budget，且 clamp 到 max_tokens 之内")
+    func thinkingBudgetClampedToMaxTokens() {
+        let conversation = UUID()
+        let base = LumiChatMessage(conversationID: conversation, role: .user, content: "hi")
+
+        let high = AnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .high))
+        guard let highThinking = high["thinking"] as? [String: Any] else {
             Issue.record("high 应启用 thinking")
             return
         }
-        #expect(thinking["type"] as? String == "enabled")
-        #expect(thinking["budget_tokens"] as? Int == 8192)
+        #expect(highThinking["type"] as? String == "enabled")
+        // high 请求 8192,但 max_tokens=4096,必须 clamp,不能超过 max_tokens
+        let budget = highThinking["budget_tokens"] as? Int ?? 0
+        #expect(budget <= AnthropicRequestBuilder.defaultMaxTokens)
+        #expect(budget == AnthropicRequestBuilder.maxThinkingBudget)
+
+        let low = AnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .low))
+        guard let lowThinking = low["thinking"] as? [String: Any] else {
+            Issue.record("low 应启用 thinking")
+            return
+        }
+        #expect(lowThinking["budget_tokens"] as? Int == 2048)
     }
 
     @Test("max_tokens 与 stream 是必填顶层字段")
@@ -213,9 +246,59 @@ struct DeepSeekAnthropicRequestBuilderTests {
         let request = makeRequest(messages: [
             LumiChatMessage(conversationID: conversation, role: .user, content: "hi")
         ])
-        let body = DeepSeekAnthropicRequestBuilder.body(for: request)
-        #expect(body["max_tokens"] as? Int == DeepSeekAnthropicRequestBuilder.defaultMaxTokens)
+        let body = AnthropicRequestBuilder.body(for: request)
+        #expect(body["max_tokens"] as? Int == AnthropicRequestBuilder.defaultMaxTokens)
         #expect(body["stream"] as? Bool == true)
         #expect(body["model"] as? String == "deepseek-v4-pro")
+    }
+
+    @Test("assistant 的 reasoningContent 回传为 thinking block(缓存前缀单元可复用)")
+    func assistantReasoningToThinkingBlock() {
+        let conversation = UUID()
+        let request = makeRequest(messages: [
+            LumiChatMessage(
+                conversationID: conversation,
+                role: .assistant,
+                content: "最终回答",
+                reasoningContent: "让我先思考一下"
+            )
+        ])
+        let body = AnthropicRequestBuilder.body(for: request)
+        guard let messages = body["messages"] as? [[String: Any]],
+              let first = messages.first,
+              let content = first["content"] as? [[String: Any]]
+        else {
+            Issue.record("assistant content 应为 blocks 数组")
+            return
+        }
+        // thinking block 在前,text block 在后
+        #expect(content.count == 2)
+        let types = content.compactMap { $0["type"] as? String }
+        #expect(types == ["thinking", "text"])
+        #expect(content[0]["thinking"] as? String == "让我先思考一下")
+        #expect(content[1]["text"] as? String == "最终回答")
+    }
+
+    @Test("assistant 仅含 reasoningContent 时仍输出 thinking block")
+    func assistantOnlyReasoningStillHasBlock() {
+        let conversation = UUID()
+        let request = makeRequest(messages: [
+            LumiChatMessage(
+                conversationID: conversation,
+                role: .assistant,
+                content: "",
+                reasoningContent: "思考过程"
+            )
+        ])
+        let body = AnthropicRequestBuilder.body(for: request)
+        guard let messages = body["messages"] as? [[String: Any]],
+              let first = messages.first,
+              let content = first["content"] as? [[String: Any]]
+        else {
+            Issue.record("assistant content 应为 blocks 数组")
+            return
+        }
+        #expect(content.count == 1)
+        #expect(content.first?["type"] as? String == "thinking")
     }
 }

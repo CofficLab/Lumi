@@ -20,19 +20,29 @@ import SwiftUI
 ///   `.lumiSelectedLocalProviderIDDidChange` / `.lumiSelectedModelsDidChange` →
 ///   `kernel.conversations.selectProvider(id:model:for:)`)。
 ///   仅在不一致时写入,避免覆盖用户刚手动选择的对话绑定。
+/// - `OnConversationVerbositySyncHook`:选中对话后,把对话绑定的详细程度
+///   同步到内核全局(`kernel.conversations.objectWillChange` →
+///   `kernel.conversations.setGlobalVerbosity`)。
+/// - `OnGlobalVerbositySyncHook`:全局详细程度变化时,把全局值同步到当前对话
+///   (`kernel.conversations.objectWillChange` →
+///   `kernel.conversations.setVerbosity(_:for:)`)。
 ///
 /// 前两条 hook 形成对称联动:
 ///   - 选中对话 → 跟随对话绑定的项目;
 ///   - 项目变化 → 清空当前对话,避免旧对话与新项目不一致。
 ///
-/// 后两条 hook 形成对称联动:
+/// Provider/Model 两条 hook 形成对称联动:
 ///   - 选中对话 → 把对话的 Provider/Model 写入内核全局,使后续发送的消息使用对话绑定的模型;
 ///   - 全局 Provider/Model 变化 → 把全局选择同步到当前对话,使对话绑定与全局一致。
+///
+/// Verbosity 两条 hook 形成对称联动:
+///   - 选中对话 → 把对话的详细程度写入内核全局;
+///   - 全局详细程度变化 → 把全局值同步到当前对话,使对话绑定与全局一致。
 ///
 /// 设计意图:
 /// - 不产生新的状态源,只在已有状态之间建立联动规则;
 /// - 所有 hook 都在 `onReady` 阶段 `attach`,确保依赖的服务已注册;
-/// - `order = 75` 仅为占位避开其他核心插件。Hook 真正依赖的 `conversations`
+/// - `order = 75` 仅为占位避开其他核心插件。 Hook 真正依赖的 `conversations`
 ///   服务由 `ConversationManagerPlugin`(`order = 7`)在其 `onBoot` 注册,而
 ///   `onReady` 在所有插件的 `onBoot` 完成后才执行,因此 order 数值大小对依赖
 ///   关系不敏感。
@@ -52,6 +62,8 @@ public final class StateMonitorPlugin: LumiPlugin {
     private let projectChangedHook = OnProjectChangedHook()
     private let providerModelSyncHook = OnConversationProviderModelSyncHook()
     private let globalProviderModelSyncHook = OnGlobalProviderModelSyncHook()
+    private let verbositySyncHook = OnConversationVerbositySyncHook()
+    private let globalVerbositySyncHook = OnGlobalVerbositySyncHook()
 
     // MARK: - Init
 
@@ -71,6 +83,8 @@ public final class StateMonitorPlugin: LumiPlugin {
         projectChangedHook.attach(kernel: kernel)
         providerModelSyncHook.attach(kernel: kernel)
         globalProviderModelSyncHook.attach(kernel: kernel)
+        verbositySyncHook.attach(kernel: kernel)
+        globalVerbositySyncHook.attach(kernel: kernel)
     }
 
     public func onDisable(kernel: LumiKernel) async throws {
@@ -78,6 +92,8 @@ public final class StateMonitorPlugin: LumiPlugin {
         projectChangedHook.detach()
         providerModelSyncHook.detach()
         globalProviderModelSyncHook.detach()
+        verbositySyncHook.detach()
+        globalVerbositySyncHook.detach()
     }
 
     // MARK: - Empty contribution points

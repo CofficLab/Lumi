@@ -26,10 +26,47 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
+    enum TimeRangeFilter: String, CaseIterable {
+        case all
+        case today
+        case lastHour
+        case lastTenMinutes
+
+        var title: String {
+            switch self {
+            case .all:
+                LumiPluginLocalization.string("All", bundle: .module)
+            case .today:
+                LumiPluginLocalization.string("Today", bundle: .module)
+            case .lastHour:
+                LumiPluginLocalization.string("Last Hour", bundle: .module)
+            case .lastTenMinutes:
+                LumiPluginLocalization.string("Last 10 Minutes", bundle: .module)
+            }
+        }
+
+        /// Earliest allowed `startedAt`; `nil` means no time filter.
+        func cutOff(relativeTo now: Date = Date()) -> Date? {
+            switch self {
+            case .all:
+                return nil
+            case .today:
+                return Calendar.current.startOfDay(for: now)
+            case .lastHour:
+                return now.addingTimeInterval(-3600)
+            case .lastTenMinutes:
+                return now.addingTimeInterval(-600)
+            }
+        }
+    }
+
     private let store: HTTPExchangeStore
     @LumiTheme private var theme
 
-    @State private var records: [HTTPExchangeRecord] = []
+    @State private var records: [HTTPExchangeExportSnapshot] = []
+    /// Lookup index rebuilt whenever `records` changes, so selecting the
+    /// detail record is O(1) instead of a linear scan on every redraw.
+    @State private var recordsByID: [UUID: HTTPExchangeExportSnapshot] = [:]
     @State private var isLoading = true
     @State private var isReloading = false
     @State private var isLoadingMore = false
@@ -37,6 +74,9 @@ public struct HTTPExchangeSettingsView: View {
     @State private var totalRecordCount: Int?
     @State private var selectedRecordID: UUID?
     @State private var selectedFilter: LogFilter = .all
+    @State private var selectedDomain: String?
+    @State private var selectedTimeRange: TimeRangeFilter = .all
+    @State private var domains: [String] = []
     @State private var dailyCountSeries = HTTPExchangeDailyCountSeries(points: [])
     @State private var exportErrorMessage: String?
 
@@ -46,26 +86,39 @@ public struct HTTPExchangeSettingsView: View {
         self.store = store
     }
 
-    private var selectedRecord: HTTPExchangeRecord? {
+    private var selectedRecord: HTTPExchangeExportSnapshot? {
         guard let selectedRecordID else { return nil }
-        return records.first { $0.id == selectedRecordID }
+        return recordsByID[selectedRecordID]
     }
 
-    private var filteredRecords: [HTTPExchangeRecord] {
+    private var filteredRecords: [HTTPExchangeExportSnapshot] {
+        records.filter { record in
+            matchesStatusFilter(record) && matchesDomain(record) && matchesTimeRange(record)
+        }
+    }
+
+    private func matchesStatusFilter(_ record: HTTPExchangeExportSnapshot) -> Bool {
         switch selectedFilter {
         case .all:
-            return records
+            return true
         case .normal:
-            return records.filter { record in
-                guard let statusCode = record.responseStatusCode else { return false }
-                return (200..<300).contains(statusCode)
-            }
+            guard let statusCode = record.responseStatusCode else { return false }
+            return (200..<300).contains(statusCode)
         case .abnormal:
-            return records.filter { record in
-                guard let statusCode = record.responseStatusCode else { return true }
-                return !(200..<300).contains(statusCode)
-            }
+            guard let statusCode = record.responseStatusCode else { return true }
+            return !(200..<300).contains(statusCode)
         }
+    }
+
+    private func matchesDomain(_ record: HTTPExchangeExportSnapshot) -> Bool {
+        guard let selectedDomain else { return true }
+        guard let host = URL(string: record.url)?.host?.lowercased() else { return false }
+        return host == selectedDomain
+    }
+
+    private func matchesTimeRange(_ record: HTTPExchangeExportSnapshot) -> Bool {
+        guard let cutOff = selectedTimeRange.cutOff() else { return true }
+        return record.startedAt >= cutOff
     }
 
     public var body: some View {
@@ -113,6 +166,17 @@ public struct HTTPExchangeSettingsView: View {
         .task {
             await reloadAsync()
         }
+        .onChange(of: selectedDomain) { _, _ in
+            Task { await reloadAsync() }
+        }
+        .onChange(of: selectedTimeRange) { _, _ in
+            Task { await reloadAsync() }
+        }
+        .onChange(of: HTTPExportProgress.shared.errorMessage) { _, newValue in
+            if let newValue {
+                exportErrorMessage = newValue
+            }
+        }
         .alert(
             LumiPluginLocalization.string("Export failed", bundle: .module),
             isPresented: Binding(
@@ -155,6 +219,9 @@ public struct HTTPExchangeSettingsView: View {
     private var sidebar: some View {
         VStack(spacing: 0) {
             filterTabs
+            domainFilter
+            timeRangeFilter
+            AppDivider()
 
             if isLoading && filteredRecords.isEmpty {
                 VStack(spacing: 12) {
@@ -177,7 +244,7 @@ public struct HTTPExchangeSettingsView: View {
                         ForEach(filteredRecords) { record in
                             recordRow(record)
                                 .onAppear {
-                                    if selectedFilter == .all, record.id == records.last?.id {
+                                    if selectedFilter == .all, selectedDomain == nil, selectedTimeRange == .all, record.id == records.last?.id {
                                         Task { await loadMoreAsync() }
                                     }
                                 }
@@ -218,14 +285,62 @@ public struct HTTPExchangeSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func recordRow(_ record: HTTPExchangeRecord) -> some View {
+    private var domainFilter: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "globe")
+                .font(.system(size: 11))
+                .foregroundStyle(theme.textSecondary)
+            Picker(LumiPluginLocalization.string("Domain", bundle: .module), selection: $selectedDomain) {
+                Text(LumiPluginLocalization.string("All", bundle: .module)).tag(String?.none)
+                ForEach(domains, id: \.self) { domain in
+                    Text(domain).tag(String?.some(domain))
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if selectedDomain != nil {
+                AppButton(
+                    LumiPluginLocalization.string("Export", bundle: .module),
+                    systemImage: "square.and.arrow.down",
+                    size: .small
+                ) {
+                    exportFilteredLogs()
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var timeRangeFilter: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "clock")
+                .font(.system(size: 11))
+                .foregroundStyle(theme.textSecondary)
+            Picker(LumiPluginLocalization.string("Time Range", bundle: .module), selection: $selectedTimeRange) {
+                ForEach(TimeRangeFilter.allCases, id: \.self) { range in
+                    Text(range.title).tag(range)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func recordRow(_ record: HTTPExchangeExportSnapshot) -> some View {
         let isSelected = selectedRecordID == record.id
         return AppListRow(isSelected: isSelected, action: {
             selectedRecordID = record.id
         }) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(record.requestMethod)
+                    Text(record.method)
                         .font(.appMicroEmphasized)
                         .foregroundStyle(theme.textPrimary)
                     Text(statusText(for: record))
@@ -237,7 +352,7 @@ public struct HTTPExchangeSettingsView: View {
                         .foregroundStyle(theme.textSecondary)
                 }
 
-                Text(record.requestURL)
+                Text(record.url)
                     .font(.appMicro)
                     .foregroundStyle(theme.textSecondary)
                     .lineLimit(2)
@@ -264,13 +379,13 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
-    private func requestTab(for record: HTTPExchangeRecord) -> some View {
+    private func requestTab(for record: HTTPExchangeExportSnapshot) -> some View {
         detailScroll {
             AppSettingsSection(title: LumiPluginLocalization.string("Request", bundle: .module), subtitle: LumiPluginLocalization.string("HTTP request sent by the client", bundle: .module)) {
                 VStack(spacing: 0) {
-                    detailRow(title: LumiPluginLocalization.string("Method", bundle: .module), icon: "arrow.left.arrow.right", value: record.requestMethod)
+                    detailRow(title: LumiPluginLocalization.string("Method", bundle: .module), icon: "arrow.left.arrow.right", value: record.method)
                     AppSettingsDivider()
-                    detailRow(title: LumiPluginLocalization.string("URL", bundle: .module), icon: "link", value: record.requestURL, monospace: true)
+                    detailRow(title: LumiPluginLocalization.string("URL", bundle: .module), icon: "link", value: record.url, monospace: true)
                     AppSettingsDivider()
                     detailRow(title: LumiPluginLocalization.string("Started At", bundle: .module), icon: "calendar", value: formattedDate(record.startedAt))
                     if let duration = record.duration {
@@ -304,7 +419,7 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
-    private func responseTab(for record: HTTPExchangeRecord) -> some View {
+    private func responseTab(for record: HTTPExchangeExportSnapshot) -> some View {
         detailScroll {
             AppSettingsSection(title: LumiPluginLocalization.string("Response", bundle: .module), subtitle: LumiPluginLocalization.string("HTTP response received from the server", bundle: .module)) {
                 VStack(spacing: 0) {
@@ -344,7 +459,7 @@ public struct HTTPExchangeSettingsView: View {
     }
 
     @ViewBuilder
-    private func errorSection(for record: HTTPExchangeRecord) -> some View {
+    private func errorSection(for record: HTTPExchangeExportSnapshot) -> some View {
         if record.errorDescription != nil {
             AppSettingsSection(title: LumiPluginLocalization.string("Error", bundle: .module), subtitle: LumiPluginLocalization.string("Transport or HTTP failure details", bundle: .module)) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -435,54 +550,122 @@ public struct HTTPExchangeSettingsView: View {
             isReloading = false
             isLoading = false
         }
-        await Task.yield()
 
-        let loadedRecords: [HTTPExchangeRecord]
+        // Snapshot the filter inputs on the main actor, then move every database
+        // read onto a background task. Each reader builds its own private
+        // `ModelContext` from the shared container, so none of this touches the
+        // main thread — the spinner keeps spinning while data loads.
+        let isPagedMode = selectedFilter == .all && selectedDomain == nil && selectedTimeRange == .all
+        let pageSize = self.pageSize
+        let selectedFilter = self.selectedFilter
+        let selectedDomain = self.selectedDomain
+        let store = self.store
+
+        let loadedRecords: [HTTPExchangeExportSnapshot]
         let total: Int
-        if selectedFilter == .all {
-            loadedRecords = store.fetchPage(limit: pageSize)
-            total = store.count()
+        let series: HTTPExchangeDailyCountSeries
+        let domainOptions: [String]
+
+        if isPagedMode {
+            // Page + count + chart + domains all run off the main actor; the
+            // chart and domain queries overlap via `async let`.
+            async let page = Task.detached(priority: .userInitiated) {
+                store.loadSnapshotPage(limit: pageSize)
+            }.value
+            async let count = Task.detached(priority: .userInitiated) {
+                store.loadSnapshotCount()
+            }.value
+            async let seriesResult = Task.detached(priority: .userInitiated) {
+                store.loadDailyCountSeries()
+            }.value
+            async let domainsResult = Task.detached(priority: .userInitiated) {
+                store.loadRecentDomains()
+            }.value
+
+            loadedRecords = await page
+            total = await count
+            series = await seriesResult
+            domainOptions = await domainsResult
         } else {
-            let matchingRecords = store.fetchAll().filter { record in
+            // Filtered mode: fetch all snapshots once (off the main actor), then
+            // apply the status/domain/time filters in memory on the same task.
+            // The filter predicates are captured as plain closures (value
+            // captures of `Sendable` inputs) so they run on the background task
+            // without hopping back to the main actor.
+            let statusPredicate: (HTTPExchangeExportSnapshot) -> Bool = { snapshot in
                 switch selectedFilter {
                 case .all:
                     return true
                 case .normal:
-                    guard let statusCode = record.responseStatusCode else { return false }
+                    guard let statusCode = snapshot.responseStatusCode else { return false }
                     return (200..<300).contains(statusCode)
                 case .abnormal:
-                    guard let statusCode = record.responseStatusCode else { return true }
+                    guard let statusCode = snapshot.responseStatusCode else { return true }
                     return !(200..<300).contains(statusCode)
                 }
             }
-            loadedRecords = matchingRecords
-            total = matchingRecords.count
+            let domainPredicate: (HTTPExchangeExportSnapshot) -> Bool = { snapshot in
+                guard let selectedDomain else { return true }
+                guard let host = URL(string: snapshot.url)?.host?.lowercased() else { return false }
+                return host == selectedDomain
+            }
+            async let allSnapshots = Task.detached(priority: .userInitiated) {
+                store.loadAllSnapshots()
+            }.value
+            async let seriesResult = Task.detached(priority: .userInitiated) {
+                store.loadDailyCountSeries()
+            }.value
+            async let domainsResult = Task.detached(priority: .userInitiated) {
+                store.loadRecentDomains()
+            }.value
+
+            let snapshots = await allSnapshots
+            let matching = snapshots.filter { snapshot in
+                statusPredicate(snapshot) && domainPredicate(snapshot)
+            }
+            loadedRecords = matching
+            total = matching.count
+            series = await seriesResult
+            domainOptions = await domainsResult
         }
-        let series = store.fetchDailyCountSeries()
+
         records = loadedRecords
+        recordsByID = Dictionary(uniqueKeysWithValues: loadedRecords.map { ($0.id, $0) })
         totalRecordCount = total
         dailyCountSeries = series
-        hasMoreRecords = selectedFilter == .all && loadedRecords.count == pageSize
-        if selectedRecordID == nil || !filteredRecords.contains(where: { $0.id == selectedRecordID }) {
+        domains = domainOptions
+        hasMoreRecords = isPagedMode && loadedRecords.count == pageSize
+        let currentSelectionStillPresent = selectedRecordID.flatMap { recordsByID[$0] } != nil
+        if !currentSelectionStillPresent {
             selectedRecordID = filteredRecords.first?.id
         }
     }
 
     private func loadMoreAsync() async {
         guard selectedFilter == .all,
+              selectedDomain == nil,
+              selectedTimeRange == .all,
               !isLoading,
               !isLoadingMore,
               hasMoreRecords,
               let last = records.last else { return }
 
         isLoadingMore = true
-        let page = store.fetchPage(
-            limit: pageSize,
-            beforeStartedAt: last.startedAt
-        )
+        defer { isLoadingMore = false }
+
+        // Load the next page off the main actor.
+        let pageSize = self.pageSize
+        let cursor = last.startedAt
+        let store = self.store
+        let page = await Task.detached(priority: .userInitiated) {
+            store.loadSnapshotPage(limit: pageSize, beforeStartedAt: cursor)
+        }.value
+
         records.append(contentsOf: page)
+        for snapshot in page {
+            recordsByID[snapshot.id] = snapshot
+        }
         hasMoreRecords = page.count == pageSize
-        isLoadingMore = false
     }
 
     private var totalCountLabel: String {
@@ -492,12 +675,12 @@ public struct HTTPExchangeSettingsView: View {
         return "\(totalRecordCount) " + LumiPluginLocalization.string("HTTP exchanges", bundle: .module)
     }
 
-    private func statusText(for record: HTTPExchangeRecord) -> String {
+    private func statusText(for record: HTTPExchangeExportSnapshot) -> String {
         if let statusCode = record.responseStatusCode { return String(statusCode) }
         return record.errorDescription == nil ? LumiPluginLocalization.string("Pending", bundle: .module) : LumiPluginLocalization.string("Error", bundle: .module)
     }
 
-    private func statusColor(for record: HTTPExchangeRecord) -> Color {
+    private func statusColor(for record: HTTPExchangeExportSnapshot) -> Color {
         guard let statusCode = record.responseStatusCode else {
             return record.errorDescription == nil ? theme.textSecondary : .red
         }
@@ -512,7 +695,7 @@ public struct HTTPExchangeSettingsView: View {
         Self.dateFormatter.string(from: date)
     }
 
-    private func export(record: HTTPExchangeRecord) {
+    private func export(record: HTTPExchangeExportSnapshot) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.plainText]
         panel.canCreateDirectories = true
@@ -524,6 +707,53 @@ public struct HTTPExchangeSettingsView: View {
                 .write(to: url, atomically: true, encoding: .utf8)
         } catch {
             exportErrorMessage = error.localizedDescription
+        }
+    }
+
+    /// Exports every record matching the current domain (and status) filter
+    /// as one markdown file per record inside a user-chosen directory.
+    /// Only shown while a domain is selected.
+    ///
+    /// Records are snapshotted on the main actor, then formatted and written
+    /// on a background task so large batches don't block the UI; progress is
+    /// reported to the status bar via `HTTPExportProgress`.
+    private func exportFilteredLogs() {
+        let recordsToExport = filteredRecords
+        guard !recordsToExport.isEmpty else {
+            exportErrorMessage = LumiPluginLocalization.string("No matching HTTP exchanges", bundle: .module)
+            return
+        }
+
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = LumiPluginLocalization.string("Choose Export Folder", bundle: .module)
+        panel.prompt = LumiPluginLocalization.string("Export", bundle: .module)
+
+        guard panel.runModal() == .OK, let directory = panel.url else { return }
+
+        // `filteredRecords` are already snapshots, so no re-snapshot is needed.
+        let snapshots = recordsToExport
+        HTTPExportProgress.shared.begin(total: snapshots.count)
+
+        Task.detached(priority: .userInitiated) {
+            do {
+                for (index, snapshot) in snapshots.enumerated() {
+                    let document = HTTPExchangeExportFormatter.document(for: snapshot)
+                    let fileName = HTTPExchangeExportFormatter.exportFileName(for: snapshot, index: index)
+                    try document.write(
+                        to: directory.appendingPathComponent(fileName),
+                        atomically: true,
+                        encoding: .utf8
+                    )
+                    await MainActor.run { HTTPExportProgress.shared.advance() }
+                }
+                await MainActor.run { HTTPExportProgress.shared.finish() }
+            } catch {
+                await MainActor.run { HTTPExportProgress.shared.fail(message: error.localizedDescription) }
+            }
         }
     }
 

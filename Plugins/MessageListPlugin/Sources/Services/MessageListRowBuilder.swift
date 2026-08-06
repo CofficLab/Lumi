@@ -11,7 +11,7 @@ import LumiKernel
 /// - **`.sending`**(LLM 尚未响应):流式行是空壳不显示;只显示 status"正在发送…"。
 /// - **`.thinking`**(思考中):显示流式行(渲染思考文本),剔除 status。
 /// - **`.generating`**(正文生成中):显示流式行(渲染正文),剔除 status。
-/// - **`.idle`**(无流式):不显示流式行;status 由 sender 生命周期管理(回合产物 insert 时清除)。
+/// - **`.idle`**(无流式):不显示流式行;status 由 AgentTurn 生命周期结束时清除。
 ///
 /// 即:status 只在 `.sending` 窗口显示,流式实质内容一来就退场。
 ///

@@ -30,6 +30,12 @@ enum MessageViewHelpers {
         return "\(minutes)m \(seconds)s"
     }
 
+    /// Format a duration given in milliseconds (e.g. `latencyMs`) into a
+    /// human-readable string. Delegates to `formatDuration` on seconds.
+    static func formatMilliseconds(_ ms: Double) -> String {
+        formatDuration(ms / 1000.0)
+    }
+
     /// Pretty-print a tool-call's JSON argument string.
     ///
     /// Returns `nil` for empty / `"{}" / invalid JSON; otherwise a sorted,

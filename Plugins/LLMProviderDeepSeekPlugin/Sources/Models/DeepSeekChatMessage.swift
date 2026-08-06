@@ -18,6 +18,9 @@ import LumiKernel
 /// 3. 流结束时调用 `finalize(now:)` 把 timing 写入
 /// 4. 最后 `toLumiChatMessage()` 转成内核类型
 struct DeepSeekChatMessage: Sendable {
+    /// metadata 键:thinking block 签名(回传 assistant 消息时用于缓存前缀匹配)。
+    static let thinkingSignatureKey = "thinkingSignature"
+
     // MARK: - 本地派生字段
 
     let id: UUID
@@ -39,6 +42,9 @@ struct DeepSeekChatMessage: Sendable {
     var content: String
     /// 来自 `delta.reasoning_content` 的累加。
     var reasoningContent: String?
+    /// 当前 thinking block 的签名(来自 `signature_delta`),回传 assistant 消息时
+    /// 必须带上,否则 thinking block 与 DeepSeek 缓存落盘单元不一致 → 前缀失配。
+    var thinkingSignature: String?
     /// 来自 `delta.tool_calls` 的最终结构化结果。
     var toolCalls: [LumiToolCall]?
     /// 来自 `choice.finish_reason`。
@@ -86,6 +92,7 @@ struct DeepSeekChatMessage: Sendable {
         toolCalls: [LumiToolCall]? = nil,
         toolCallID: String? = nil,
         reasoningContent: String? = nil,
+        thinkingSignature: String? = nil,
         inputTokenCount: Int? = nil,
         outputTokenCount: Int? = nil,
         cachedInputTokens: Int? = nil,
@@ -109,6 +116,7 @@ struct DeepSeekChatMessage: Sendable {
         self.toolCalls = toolCalls
         self.toolCallID = toolCallID
         self.reasoningContent = reasoningContent
+        self.thinkingSignature = thinkingSignature
         self.inputTokenCount = inputTokenCount
         self.outputTokenCount = outputTokenCount
         self.cachedInputTokens = cachedInputTokens
@@ -252,6 +260,23 @@ struct DeepSeekChatMessage: Sendable {
         stopReason = value
     }
 
+    /// 是否「撞上输出上限且没有任何可见回复」。
+    ///
+    /// 典型场景（实测 2026-08-06）：`deepseek-v4-flash` 默认 thinking 无上限，
+    /// 4096 token 的输出预算全部被思考消耗，`stop_reason = max_tokens` 截断时
+    /// 连一个 `text` block 都没开始 → UI 误报 "empty response"，用户无从得知原因。
+    ///
+    /// 兼容两种协议命名：
+    /// - Anthropic 端点：`max_tokens`
+    /// - OpenAI 端点（`finish_reason`）：`length`
+    ///
+    /// 注意：只判定「无可见输出」的截断（content 与 toolCalls 均为空）。
+    /// 若已产生部分文本，截断内容仍有价值，保留而非报错。
+    var hitMaxTokensWithoutOutput: Bool {
+        guard stopReason == "max_tokens" || stopReason == "length" else { return false }
+        return content.isEmpty && (toolCalls?.isEmpty ?? true)
+    }
+
     /// 合并 Anthropic usage（`message_start` / `message_delta` 中的 usage 字段）。
     ///
     /// Anthropic 协议里 `input_tokens` / `output_tokens` 是分阶段给出的：
@@ -259,11 +284,19 @@ struct DeepSeekChatMessage: Sendable {
     /// - `message_delta.usage` 通常仅含 `output_tokens`
     ///
     /// 因此两个字段独立累加（用最后一个非空值覆盖）。
+    /// ⚠️ 实测（2026-08-06，deepseek-v4-flash）：DeepSeek Anthropic 端点返回的
+    /// `input_tokens` 是「未命中」部分，**不含** `cache_read_input_tokens`——与 Anthropic
+    /// 官方语义（input_tokens 含命中）相反。例：总输入 580 = input_tokens(68) +
+    /// cache_read(512)。因此缓存率分母必须用两者之和，否则命中率高时显示会虚高到 >100%。
     mutating func mergeUsage(_ usage: DeepSeekAnthropicUsage) {
         if let input = usage.inputTokens { inputTokenCount = input }
         if let output = usage.outputTokens { outputTokenCount = output }
-        if let cached = usage.cacheReadInputTokens { cachedInputTokens = cached }
-        // cacheTotalInputTokens 在 Anthropic 协议下无对应字段，保持不变。
+        if let cached = usage.cacheReadInputTokens {
+            cachedInputTokens = cached
+            if let input = usage.inputTokens {
+                cacheTotalInputTokens = input + cached + (usage.cacheCreationInputTokens ?? 0)
+            }
+        }
     }
 
     /// 把累积结果转成内核统一消息。
@@ -276,6 +309,11 @@ struct DeepSeekChatMessage: Sendable {
         var metadata = metadata
         if let stopReason, metadata["stopReason"] == nil {
             metadata["stopReason"] = stopReason
+        }
+        // thinking 签名需要随消息持久化,回传 assistant 消息时原样带上,
+        // 否则缓存前缀单元失配(见 AnthropicRequestBuilder.message)。
+        if let thinkingSignature, metadata[Self.thinkingSignatureKey] == nil {
+            metadata[Self.thinkingSignatureKey] = thinkingSignature
         }
         let usage = MessageTokenMetadata.metadata(
             inputTokens: inputTokenCount,

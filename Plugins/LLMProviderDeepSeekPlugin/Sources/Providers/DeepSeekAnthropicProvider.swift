@@ -1,5 +1,4 @@
 import Foundation
-import KeychainKit
 import LLMKit
 import LumiKernel
 
@@ -9,7 +8,7 @@ import LumiKernel
 /// 鉴权：`x-api-key` + `anthropic-version: 2023-06-01`
 ///
 /// 与 `DeepSeekOpenAIProvider`（OpenAI-compatible）共享：
-/// - API Key（`apiKeyStorageKey = DevAssistant_ApiKey_DeepSeek`）
+/// - API Key（见 `DeepSeekPlugin.apiKeyStorageKey`）
 /// - 模型列表（`deepseek-v4-flash` / `deepseek-v4-pro`）
 /// - 上下文窗口与能力
 ///
@@ -36,7 +35,7 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
             "deepseek-v4-pro": .init(supportsVision: false, supportsTools: true),
         ],
         websiteURL: URL(string: "https://www.deepseek.com/")!,
-        apiKeyStorageKey: "DevAssistant_ApiKey_DeepSeek"
+        apiKeyStorageKey: DeepSeekPlugin.apiKeyStorageKey
     )
 
     private let apiService: DeepSeekAnthropicService
@@ -51,33 +50,27 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
     // MARK: - LumiLLMProvider Protocol
 
     public func lumiResolveAPIKey() throws -> String {
-        guard let key = Self.info._apiKeyStorageKey else {
+        let key = DeepSeekPlugin.currentApiKey
+        guard !key.isEmpty else {
             throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }
-        guard let value = KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: key), !value.isEmpty else {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return value
+        return key
     }
 
     public func hasApiKey() -> Bool {
-        guard let key = Self.info._apiKeyStorageKey else { return false }
-        return !(KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: key) ?? "").isEmpty
+        DeepSeekPlugin.hasApiKey
     }
 
     public func getApiKey() -> String {
-        guard let key = Self.info._apiKeyStorageKey else { return "" }
-        return KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: key) ?? ""
+        DeepSeekPlugin.currentApiKey
     }
 
     public func setApiKey(_ apiKey: String) {
-        guard let key = Self.info._apiKeyStorageKey else { return }
-        KeychainStore.shared.set(apiKey, forKey: key)
+        DeepSeekPlugin.setApiKey(apiKey)
     }
 
     public func removeApiKey() {
-        guard let key = Self.info._apiKeyStorageKey else { return }
-        KeychainStore.shared.remove(forKey: key)
+        DeepSeekPlugin.removeApiKey()
     }
 
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
@@ -89,12 +82,21 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
         guard let conversationID = request.messages.first?.conversationID else {
-            throw DeepSeekAnthropicProviderError.invalidRequest("Conversation is empty")
+            throw AnthropicProviderError.invalidRequest("Conversation is empty")
         }
 
-        // 构造请求体（已编码成 JSON Data）
-        let body = DeepSeekAnthropicRequestBuilder.body(for: request)
-        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        // 构造请求体(已编码成 JSON Data)
+        let body = AnthropicRequestBuilder.body(for: request)
+        // 工具名映射:请求发送时被转义为 ^[a-zA-Z0-9_-]+$ 兼容形式,
+        // 响应解析时据此还原为 Lumi 注册名,保证工具执行路由正确。
+        let toolNameMap = AnthropicRequestBuilder.toolNameMap(for: request)
+        // 关键: .sortedKeys 递归排序所有 JSON key。
+        // Swift 的 [String: Any] 字典是无序的,若不加 sortedKeys,每次请求序列化出的
+        // JSON 字节序列(顶层及嵌套 key 顺序)都不同;DeepSeek 硬盘缓存按「从 token 0
+        // 起的前缀 token 序列」精确匹配(包含 JSON 结构),key 顺序一变整段前缀失配,
+        // 缓存命中率会从 90%+ 崩到 2-5%(已实测复现:同内容不同 key 序命中 2.9%,
+        // 同 key 序命中 99.3%)。
+        let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
         let apiKey = try lumiResolveAPIKey()
 
         let requestStartedAt = Date()
@@ -128,8 +130,12 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
                     message.mergeThinkingDelta(thinking, now: Date())
                     emittedReasoning = thinking
                 }
+                if let signature = event.thinkingSignature, !signature.isEmpty {
+                    message.thinkingSignature = signature
+                }
                 if let toolID = event.toolID {
-                    message.beginToolCall(id: toolID, name: event.toolName ?? "")
+                    let rawName = event.toolName ?? ""
+                    message.beginToolCall(id: toolID, name: toolNameMap[rawName] ?? rawName)
                 }
                 if let toolJSON = event.toolInputJSONDelta, !toolJSON.isEmpty {
                     message.appendToolArguments(toolJSON)
@@ -160,10 +166,17 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
 
         let message = collector.snapshot()
         if message.isError {
-            throw DeepSeekAnthropicProviderError.api(message.rawErrorDetail ?? "DeepSeek Anthropic returned an error")
+            throw AnthropicProviderError.api(message.rawErrorDetail ?? "DeepSeek Anthropic returned an error")
+        }
+        // 撞上 max_tokens 上限且没有任何可见输出(典型:thinking 吃掉全部输出预算)。
+        // 必须先于 empty response 检查抛出,否则 UI 只会看到笼统的 "empty response",
+        // 用户无法得知是输出预算耗尽(实测 2026-08-06:deepseek-v4-flash 4096 token
+        // 全被 thinking 消耗,text 块从未开始)。
+        if message.hitMaxTokensWithoutOutput {
+            throw AnthropicProviderError.maxTokensExceeded(message.outputTokenCount)
         }
         if message.content.isEmpty && (message.toolCalls?.isEmpty ?? true) {
-            throw DeepSeekAnthropicProviderError.invalidResponse("DeepSeek Anthropic returned an empty response")
+            throw AnthropicProviderError.invalidResponse("DeepSeek Anthropic returned an empty response")
         }
         return message.toLumiChatMessage()
     }
@@ -178,7 +191,7 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
             ]],
             "stream": false,
         ]
-        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
         _ = try await apiService.sendOnce(apiKey: try lumiResolveAPIKey(), body: bodyData)
     }
 
@@ -191,7 +204,7 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
     }
 
     public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
-        if let error = error as? DeepSeekAnthropicProviderError {
+        if let error = error as? AnthropicProviderError {
             return error.llmErrorDisposition
         }
         return context.attempt < context.maxAttempts
@@ -200,7 +213,18 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
     }
 
     public func errorRenderKind(for error: Error) -> String? {
-        nil
+        // 先从错误类型中提取状态码
+        if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: error) {
+            return DeepSeekRenderKind.http(statusCode)
+        }
+        // 如果错误类型不支持，尝试从错误描述中提取
+        if let localized = error as? LocalizedError,
+           let description = localized.errorDescription {
+            if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: description) {
+                return DeepSeekRenderKind.http(statusCode)
+            }
+        }
+        return nil
     }
 
     public func makeErrorMessage(
@@ -220,28 +244,3 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
     }
 }
 
-// MARK: - Provider Error
-
-/// DeepSeek Anthropic 协议的 provider 错误。
-///
-/// 与 `DeepSeekOpenAIProviderError`（OpenAI 协议）平行存在，独立命名以便重试策略按 flavor 区分。
-enum DeepSeekAnthropicProviderError: LocalizedError, LumiLLMErrorDispositionProviding {
-    case invalidRequest(String)
-    case invalidResponse(String)
-    case api(String)
-
-    var errorDescription: String? {
-        switch self {
-        case let .invalidRequest(value), let .invalidResponse(value), let .api(value): value
-        }
-    }
-
-    var statusCode: Int? { nil }
-
-    var llmErrorDisposition: LumiLLMErrorDisposition {
-        switch self {
-        case .api: .retryable()
-        case .invalidRequest, .invalidResponse: .nonRetryable
-        }
-    }
-}

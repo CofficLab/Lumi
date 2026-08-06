@@ -222,6 +222,12 @@ public struct MarkdownBlockRenderer: View {
 /// ScrollView can measure the message's height correctly. The cache keeps that
 /// necessary first parse from repeating whenever SwiftUI reconstructs a View
 /// value during scrolling.
+///
+/// For the streaming row the content changes on every token, so a full-content
+/// key would miss every frame and re-parse the whole document each time. A
+/// dedicated streaming slot therefore remembers the last streamed content and,
+/// when the new content is a prefix-append of it (the common token-by-token
+/// case), re-parses only the still-changing tail instead of the whole string.
 private final class MarkdownBlockCache: @unchecked Sendable {
     static let shared = MarkdownBlockCache()
 
@@ -230,27 +236,76 @@ private final class MarkdownBlockCache: @unchecked Sendable {
     private var cache: [String: [MarkdownBlock]] = [:]
     private var keys: [String] = []
 
+    /// Streaming slot: the source up to the last stable block boundary and the
+    /// blocks parsed from just that stable prefix. Everything after the boundary
+    /// may still be growing, so on each append only the tail is re-parsed.
+    private var streamingSlot: (stableSource: String, stableBlocks: [MarkdownBlock])?
+
     func blocks(for markdown: String) -> [MarkdownBlock] {
         lock.lock()
         defer { lock.unlock() }
 
+        // 1) Exact hit — the common case for stable history rows.
         if let cached = cache[markdown] {
             return cached
         }
 
+        // 2) Streaming append — new content starts with the last content seen.
+        //    Re-parse only the tail beyond the stable boundary.
+        if let slot = streamingSlot,
+           markdown.hasPrefix(slot.stableSource) {
+            let stableLength = slot.stableSource.count
+            let tail = markdown.count > stableLength
+                ? String(markdown.dropFirst(stableLength))
+                : ""
+            let tailBlocks = tail.isEmpty ? [] : MarkdownParser.parse(tail)
+            let merged = slot.stableBlocks + tailBlocks
+            // Advance the stable boundary for the next append. Do not write into
+            // the bounded history cache — this content is still changing.
+            let boundary = nextStableBoundary(in: markdown)
+            streamingSlot = (
+                stableSource: String(markdown.prefix(boundary)),
+                stableBlocks: boundary == stableLength
+                    ? slot.stableBlocks
+                    : MarkdownParser.parse(String(markdown.prefix(boundary)))
+            )
+            return merged
+        }
+
+        // 3) Miss — full parse. Seed the streaming slot so the next append can
+        //    reuse the stable prefix.
         let parsed = MarkdownParser.parse(markdown)
         cache[markdown] = parsed
         keys.append(markdown)
-
-        if keys.count > limit {
-            let overflow = keys.count - limit
-            for key in keys.prefix(overflow) {
-                cache.removeValue(forKey: key)
-            }
-            keys.removeFirst(overflow)
-        }
-
+        evictIfNeeded()
+        let boundary = nextStableBoundary(in: markdown)
+        streamingSlot = (
+            stableSource: String(markdown.prefix(boundary)),
+            stableBlocks: boundary == markdown.count
+                ? parsed
+                : MarkdownParser.parse(String(markdown.prefix(boundary)))
+        )
         return parsed
+    }
+
+    /// Returns the length of the prefix of `markdown` that ends at the last
+    /// block boundary (a blank line). Content after it may still be growing and
+    /// must be re-parsed on the next append; content before it is stable.
+    /// Falls back to 0 (re-parse everything) when there is no boundary yet.
+    private func nextStableBoundary(in markdown: String) -> Int {
+        if let range = markdown.range(of: "\n\n", options: .backwards) {
+            return markdown.distance(from: markdown.startIndex, to: range.upperBound)
+        }
+        return 0
+    }
+
+    private func evictIfNeeded() {
+        guard keys.count > limit else { return }
+        let overflow = keys.count - limit
+        for key in keys.prefix(overflow) {
+            cache.removeValue(forKey: key)
+        }
+        keys.removeFirst(overflow)
     }
 }
 

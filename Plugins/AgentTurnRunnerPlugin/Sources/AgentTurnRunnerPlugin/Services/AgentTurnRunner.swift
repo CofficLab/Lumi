@@ -342,10 +342,18 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             orderedIDs = Array(allTurnIDs.suffix(limit).reversed())
         }
 
-        // 3. Aggregate each turn
+        // 3. Read the conversation once, then aggregate each turn from that
+        // shared snapshot. Reading the full history once per turn creates an
+        // avoidable N+1 query when a UI requests a page of records.
+        let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
         var records: [AgentTurnRecord] = []
         for tid in orderedIDs {
-            let record = await aggregateTurnRecord(turnID: tid, conversationID: conversationID, store: store)
+            let record = await aggregateTurnRecord(
+                turnID: tid,
+                conversationID: conversationID,
+                store: store,
+                messages: messages
+            )
             records.append(record)
         }
 
@@ -357,7 +365,13 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
         // Check if this is a currently active turn
         for (conversationID, currentTurnID) in turnIDs where currentTurnID == turnID {
-            return await aggregateTurnRecord(turnID: turnID, conversationID: conversationID, store: store)
+            let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
+            return await aggregateTurnRecord(
+                turnID: turnID,
+                conversationID: conversationID,
+                store: store,
+                messages: messages
+            )
         }
 
         // For completed turns, caller should use turnRecords(for:) with known conversationID
@@ -378,7 +392,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     private func aggregateTurnRecord(
         turnID: UUID,
         conversationID: UUID,
-        store: AgentTurnRecordStore
+        store: AgentTurnRecordStore,
+        messages: [LumiChatMessage]
     ) async -> AgentTurnRecord {
         // Timestamps from LLM request records
         let startedAt = await store.fetchTurnStartedAt(turnID: turnID) ?? Date()
@@ -388,13 +403,11 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         var inputTokens = 0
         var outputTokens = 0
         var triggerMessageID: UUID?
-        if let messages = kernel?.messageManager?.messages(for: conversationID) {
-            for message in messages where message.turnID == turnID {
-                inputTokens += message.inputTokenCount ?? 0
-                outputTokens += message.outputTokenCount ?? 0
-                if message.role == .user && triggerMessageID == nil {
-                    triggerMessageID = message.id
-                }
+        for message in messages where message.turnID == turnID {
+            inputTokens += message.inputTokenCount ?? 0
+            outputTokens += message.outputTokenCount ?? 0
+            if message.role == .user && triggerMessageID == nil {
+                triggerMessageID = message.id
             }
         }
 
@@ -564,7 +577,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             //
             // 每一轮 LLM 调用前 insert 一条 status:第一轮覆盖 sender 的"正在发送…"
             // (同会话只保留最新),后续轮次(工具结果发回 LLM)补上"正在思考…"指示。
-            // 流式 thinking/generating 阶段由 RowBuilder 剔除 status,改由流式行承载。
+            // V1 始终只展示 status；V2 可在流式 thinking/generating 阶段
+            // 用 RowBuilder 将其替换为流式行。
             insertStatusMessage(
                 conversationID: conversationID,
                 content: String(localized: "status.thinking", defaultValue: "正在思考…")
@@ -592,12 +606,13 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                     for: error,
                     context: LumiLLMRetryContext(attempt: 1, maxAttempts: 1)
                 )
-                let errorMessage = targetProvider.makeErrorMessage(
+                var errorMessage = targetProvider.makeErrorMessage(
                     conversationID: conversationID,
                     request: request,
                     error: error,
                     disposition: disposition
                 )
+                errorMessage.turnID = turnID
                 kernel.messageManager?.insertMessage(errorMessage, to: conversationID)
                 postMessageSavedNotification(message: errorMessage, conversationID: conversationID)
                 failedConversations.insert(conversationID)
@@ -648,8 +663,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 }
 
                 // 流式已结束(endStreaming),工具执行期间没有流式行 —— insert 一条
-                // 瞬时 status("正在执行: X…")让 UI 有进度指示。工具结果(tool 消息)
-                // insert 时 MessageManager 自动清除此 status;下一个工具再 insert 新的。
+                // 瞬时 status("正在执行: X…")让 UI 有进度指示；下一个阶段的
+                // status 直接覆盖它，整个 Turn 始终至多存在一条。
                 insertStatusMessage(
                     conversationID: conversationID,
                     content: String(

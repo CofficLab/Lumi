@@ -98,6 +98,49 @@ final class AnthropicCompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(parameters["type"] as? String, "object")
     }
 
+    func testFormatToolSanitizesDottedName() throws {
+        // Kimi 等 Anthropic 兼容端点拒绝带点号的函数名(400 invalid_request_error)，
+        // app-store-connect.* 这类 MCP 工具名必须转义
+        let adapter = makeAdapter()
+        let tool = MockAnthropicTool(
+            name: "app-store-connect.list-apps",
+            toolDescription: "List App Store Connect apps",
+            inputSchema: ["type": "object"]
+        )
+
+        let body = try adapter.buildRequestBody(
+            messages: [ChatMessage(role: .user, content: "List apps")],
+            model: "k3",
+            tools: [tool],
+            systemPrompt: ""
+        )
+
+        let tools = try XCTUnwrap(body["tools"] as? [[String: Any]])
+        XCTAssertEqual(tools[0]["name"] as? String, "app-store-connect_list-apps")
+    }
+
+    func testTransformMessageSanitizesToolUseNameOnReplay() {
+        // 历史 assistant 消息回传 tool_use 时同样要转义，否则下一轮请求仍会被拒绝
+        let adapter = makeAdapter()
+        let message = ChatMessage(
+            role: .assistant,
+            content: "Calling tool",
+            toolCalls: [
+                ToolCall(
+                    id: "call_1",
+                    name: "app-store-connect.list-apps",
+                    arguments: "{}"
+                ),
+            ]
+        )
+
+        let encoded = adapter.transformMessage(message)
+        let content = try! XCTUnwrap(encoded["content"] as? [[String: Any]])
+        let toolUse = try! XCTUnwrap(content.first { ($0["type"] as? String) == "tool_use" })
+
+        XCTAssertEqual(toolUse["name"] as? String, "app-store-connect_list-apps")
+    }
+
     func testBuildStreamingRequestBodySetsStreamTrue() throws {
         let adapter = makeAdapter()
 
@@ -312,7 +355,19 @@ final class AnthropicCompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(chunk?.inputTokens, 50)
         XCTAssertEqual(chunk?.cachedInputTokens, 30)
         XCTAssertEqual(chunk?.cacheWriteInputTokens, 20)
-        XCTAssertEqual(chunk?.cacheTotalInputTokens, 100)
+        // Anthropic 官方语义:input_tokens(50) 已含 read(30)+write(20),直接作分母
+        XCTAssertEqual(chunk?.cacheTotalInputTokens, 50)
+    }
+
+    func testParseStreamMessageStartDeepSeekSemantics() throws {
+        // DeepSeek 兼容层实测语义:input_tokens 是「未命中」部分,总输入 = input + read + write
+        let chunk = try makeAdapter().parseStreamChunk(
+            data: Data("event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"usage\":{\"input_tokens\":68,\"cache_read_input_tokens\":512}}}\n\n".utf8)
+        )
+        XCTAssertEqual(chunk?.eventType, .messageStart)
+        XCTAssertEqual(chunk?.inputTokens, 68)
+        XCTAssertEqual(chunk?.cachedInputTokens, 512)
+        XCTAssertEqual(chunk?.cacheTotalInputTokens, 580)
     }
 
     func testParseStreamMessageStop() throws {

@@ -154,6 +154,185 @@ import Foundation
     #expect(document.contains("retryable"))
 }
 
+@MainActor
+@Test func fetchDomainsCollectsDistinctHostsFromRecentRecords() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("HTTPExchangeStore-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    let store = HTTPExchangeStore(directory: directory)
+    store.begin(request: URLRequest(url: URL(string: "https://api.github.com/users/octocat")!))
+    store.begin(request: URLRequest(url: URL(string: "https://api.github.com/gists")!))
+    store.begin(request: URLRequest(url: URL(string: "https://www.google.com/search?q=lumi")!))
+    // Hostless URL (file scheme) must be skipped, not crash the aggregation.
+    store.begin(request: URLRequest(url: URL(string: "file:///tmp/lumi")!))
+
+    let domains = store.fetchDomains()
+    #expect(domains == ["api.github.com", "www.google.com"])
+}
+
+@MainActor
+@Test func searchPageAndCountFilterByExactHost() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("HTTPExchangeStore-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    let store = HTTPExchangeStore(directory: directory)
+    store.begin(request: URLRequest(url: URL(string: "https://api.github.com/users")!))
+    store.begin(request: URLRequest(url: URL(string: "https://github.com/octocat")!))
+    store.begin(request: URLRequest(url: URL(string: "https://www.google.com/")!))
+
+    let page = store.searchPage(limit: 100, domain: "api.github.com")
+    #expect(page.count == 1)
+    #expect(page.first?.requestURL == "https://api.github.com/users")
+
+    // Exact-host matching: api.github.com must NOT match the github.com filter.
+    #expect(store.searchCount(domain: "github.com") == 1)
+    #expect(store.searchCount(domain: "api.github.com") == 1)
+    #expect(store.searchCount(domain: "google.com") == 0)
+}
+
+@Test func httpExchangeBatchExportIncludesAllRecordsWithNumberedHeaders() {
+    let record1 = HTTPExchangeRecord(
+        startedAt: Date(timeIntervalSince1970: 1),
+        requestMethod: "GET",
+        requestURL: "https://api.github.com/users",
+        requestHeadersJSON: Data("{}".utf8),
+        requestBody: nil,
+        requestDetailsJSON: Data("{}".utf8)
+    )
+    record1.responseStatusCode = 200
+    let record2 = HTTPExchangeRecord(
+        startedAt: Date(timeIntervalSince1970: 2),
+        requestMethod: "POST",
+        requestURL: "https://api.github.com/gists",
+        requestHeadersJSON: Data("{}".utf8),
+        requestBody: nil,
+        requestDetailsJSON: Data("{}".utf8)
+    )
+    record2.responseStatusCode = 201
+
+    let document = HTTPExchangeExportFormatter.document(for: [record1, record2], filterTitle: "api.github.com")
+
+    #expect(document.contains("# HTTP Exchange Logs"))
+    #expect(document.contains("- Filter: `api.github.com`"))
+    #expect(document.contains("- Total: 2"))
+    #expect(document.contains("# 1. GET https://api.github.com/users"))
+    #expect(document.contains("# 2. POST https://api.github.com/gists"))
+    // Per-record sections survive inside the batch document.
+    #expect(document.contains("## Summary"))
+    #expect(document.contains("200"))
+    #expect(document.contains("201"))
+}
+
+@Test func httpExchangeSnapshotExportMatchesRecordExport() {
+    let record = HTTPExchangeRecord(
+        startedAt: Date(timeIntervalSince1970: 0),
+        requestMethod: "POST",
+        requestURL: "https://example.com/api",
+        requestHeadersJSON: Data("{\"Authorization\":\"Bearer test\"}".utf8),
+        requestBody: Data("{\"prompt\":\"hello\"}".utf8),
+        requestDetailsJSON: Data("{\"timeout\":30}".utf8)
+    )
+    record.responseStatusCode = 201
+    record.responseHeadersJSON = Data("{\"content-type\":\"application/json\"}".utf8)
+    record.responseBody = Data("{\"ok\":true}".utf8)
+    record.duration = 1.25
+    record.errorDescription = "server warning"
+    record.errorDomain = "Test"
+    record.errorCode = 7
+    record.errorDetailsJSON = Data("{\"retryable\":true}".utf8)
+
+    let snapshot = HTTPExchangeExportSnapshot(record: record)
+    #expect(HTTPExchangeExportFormatter.document(for: snapshot) == HTTPExchangeExportFormatter.document(for: record))
+}
+
+@Test func batchExportFromSnapshotsReportsProgressPerRecord() {
+    let record1 = HTTPExchangeRecord(
+        startedAt: Date(timeIntervalSince1970: 1),
+        requestMethod: "GET",
+        requestURL: "https://api.github.com/users",
+        requestHeadersJSON: Data("{}".utf8),
+        requestBody: nil,
+        requestDetailsJSON: Data("{}".utf8)
+    )
+    let record2 = HTTPExchangeRecord(
+        startedAt: Date(timeIntervalSince1970: 2),
+        requestMethod: "POST",
+        requestURL: "https://api.github.com/gists",
+        requestHeadersJSON: Data("{}".utf8),
+        requestBody: nil,
+        requestDetailsJSON: Data("{}".utf8)
+    )
+    let snapshots = [HTTPExchangeExportSnapshot(record: record1), HTTPExchangeExportSnapshot(record: record2)]
+
+    var progressCount = 0
+    let document = HTTPExchangeExportFormatter.document(for: snapshots, filterTitle: "api.github.com") {
+        progressCount += 1
+    }
+
+    #expect(progressCount == 2)
+    #expect(document.contains("- Total: 2"))
+    #expect(document.contains("# 1. GET https://api.github.com/users"))
+    #expect(document.contains("# 2. POST https://api.github.com/gists"))
+}
+
+@Test func exportFileNameIsStableUniqueAndSanitized() {
+    let record = HTTPExchangeRecord(
+        startedAt: Date(timeIntervalSince1970: 1),
+        requestMethod: "GET",
+        requestURL: "https://api.github.com/users/octocat",
+        requestHeadersJSON: Data("{}".utf8),
+        requestBody: nil,
+        requestDetailsJSON: Data("{}".utf8)
+    )
+    let snapshot = HTTPExchangeExportSnapshot(record: record)
+
+    let name0 = HTTPExchangeExportFormatter.exportFileName(for: snapshot, index: 0)
+    let name1 = HTTPExchangeExportFormatter.exportFileName(for: snapshot, index: 1)
+
+    #expect(name0 == "00001-GET-api.github.com-users-octocat.md")
+    #expect(name1 == "00002-GET-api.github.com-users-octocat.md")
+    #expect(name0 != name1)
+}
+
+@Test func timeRangeFilterCutOffsAreCorrect() {
+    let now = Date(timeIntervalSince1970: 1_700_000_000)
+
+    #expect(HTTPExchangeSettingsView.TimeRangeFilter.all.cutOff(relativeTo: now) == nil)
+    #expect(HTTPExchangeSettingsView.TimeRangeFilter.lastHour.cutOff(relativeTo: now) == now.addingTimeInterval(-3600))
+    #expect(HTTPExchangeSettingsView.TimeRangeFilter.lastTenMinutes.cutOff(relativeTo: now) == now.addingTimeInterval(-600))
+    #expect(HTTPExchangeSettingsView.TimeRangeFilter.today.cutOff(relativeTo: now) == Calendar.current.startOfDay(for: now))
+}
+
+@MainActor
+@Test func exportProgressTracksLifecycleAndFailure() {
+    let progress = HTTPExportProgress.shared
+
+    progress.begin(total: 3)
+    #expect(progress.isExporting)
+    #expect(progress.completed == 0)
+    progress.advance()
+    progress.advance()
+    #expect(progress.completed == 2)
+    #expect(progress.statusText.contains("2/3"))
+    progress.finish()
+    #expect(!progress.isExporting)
+    #expect(progress.completed == 3)
+    #expect(progress.errorMessage == nil)
+
+    progress.begin(total: 5)
+    progress.fail(message: "disk full")
+    #expect(!progress.isExporting)
+    #expect(progress.errorMessage == "disk full")
+    progress.clearError()
+    #expect(progress.errorMessage == nil)
+}
+
 private actor PublicIPFetcherStub {
     private(set) var count = 0
     private let values: [String]

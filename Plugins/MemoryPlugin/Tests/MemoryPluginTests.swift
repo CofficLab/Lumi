@@ -9,9 +9,9 @@ struct PluginMemoryTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
         #expect(MemoryPlugin().id == "com.coffic.lumi.plugin.memory")
-        #expect(MemoryPlugin().name == "Memory")
+        #expect(MemoryPlugin().name == LumiPluginLocalization.string("Memory", bundle: .module))
         #expect(MemoryPlugin().category == .agent)
-        #expect(MemoryPlugin().order == 15)
+        #expect(MemoryPlugin().order == 4)
     }
 
     @Test("plugin registers four memory tools")

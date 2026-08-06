@@ -111,7 +111,11 @@ private struct AppSplitDividerHoverCoordinator: NSViewRepresentable {
         nsView.onHoverChanged = { hovering in
             isHovered = hovering
         }
-        nsView.attachToSplitViewIfPossible()
+        // 只在尚未 attach 成功时才探测。已 attach 的 SwiftUI 更新不重跑坐标搜索,
+        // 避免流式/滚动等高频更新反复触发 `enclosingSplitView` + `dividerIndex`。
+        if nsView.splitView == nil {
+            nsView.attachToSplitViewIfPossible()
+        }
     }
 
     static func dismantleNSView(_ nsView: AppSplitDividerHoverCoordinatorView, coordinator: ()) {
@@ -127,12 +131,18 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
     var edge: AppSplitDividerEdge
     var onHoverChanged: ((Bool) -> Void)?
 
-    private weak var splitView: NSSplitView?
+    fileprivate weak var splitView: NSSplitView?
     private var dividerIndex: Int?
     private var trackingArea: NSTrackingArea?
     private var resizeObserver: NSObjectProtocol?
     private var isOverNativeDivider = false
     private var measuredTrackingThickness: CGFloat?
+
+    /// 已尝试 attach 的次数。未挂到 NSSplitView 时用指数退避重试,超过上限放弃,
+    /// 避免在「视图根本不在 split view 里」时形成每帧 `DispatchQueue.main.async`
+    /// 重调自己的主线程忙循环(实测会把主线程打满数秒,UI 完全卡住)。
+    private var attachAttemptCount: Int = 0
+    private var isScheduledForRetry = false
 
     init(edge: AppSplitDividerEdge) {
         self.edge = edge
@@ -146,23 +156,39 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        attachToSplitViewIfPossible()
+        if window != nil {
+            // 新挂到 window:重置重试计数,允许重新探测。
+            attachAttemptCount = 0
+            isScheduledForRetry = false
+            attachToSplitViewIfPossible()
+        } else {
+            cancelRetry()
+        }
     }
 
     func attachToSplitViewIfPossible() {
-        guard window != nil else { return }
+        // 已成功 attach 且未变化时,`updateNSView` 的反复调用会直接命中这里 return,
+        /// 不会每帧重跑坐标搜索。
+        guard window != nil else {
+            cancelRetry()
+            return
+        }
         guard let resolvedSplitView = enclosingSplitView(),
               let resolvedDividerIndex = dividerIndex(in: resolvedSplitView)
         else {
-            DispatchQueue.main.async { [weak self] in
-                self?.attachToSplitViewIfPossible()
-            }
+            // 还没挂到 split view(布局未完成,或本就不在 split view 里)。
+            // 指数退避重试,超过上限后放弃 —— 不再 `async` 重调自己。
+            scheduleRetryIfNeeded()
             return
         }
 
         guard splitView !== resolvedSplitView || dividerIndex != resolvedDividerIndex else {
             return
         }
+
+        // 成功定位:清掉重试状态。
+        attachAttemptCount = 0
+        isScheduledForRetry = false
 
         detach()
         splitView = resolvedSplitView
@@ -189,6 +215,7 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
     }
 
     func detach() {
+        cancelRetry()
         onHoverChanged?(false)
         isOverNativeDivider = false
         if let trackingArea, let splitView {
@@ -202,6 +229,36 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
         dividerIndex = nil
         splitView = nil
         measuredTrackingThickness = nil
+    }
+
+    // MARK: - Retry (指数退避,有上限)
+
+    /// 探测失败(尚未挂到 split view)时调度一次退避重试。
+    ///
+    /// 旧实现无条件 `DispatchQueue.main.async { self?.attach... }`,在视图根本
+    /// 不在 NSSplitView 里(或布局未完成)时会形成**每帧重调自己的主线程忙循环**,
+    /// 把主线程 runloop 填满、UI 卡死数秒。这里改为:
+    /// - 最多重试 8 次;
+    /// - 退避间隔从 4ms 指数增长到约 1s(2^(n-1) ms 量级),越往后越稀疏;
+    /// - 同一时间只挂一个重试。
+    private func scheduleRetryIfNeeded() {
+        let maxAttempts = 8
+        guard attachAttemptCount < maxAttempts, !isScheduledForRetry else { return }
+        attachAttemptCount += 1
+        isScheduledForRetry = true
+        // 4ms, 8, 16, 32, 64, 128, 256, 512 —— 总跨度约 1s。
+        let delayNanoseconds = UInt64(min(1_000_000_000, 4_000_000 * (1 << (attachAttemptCount - 1))))
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double(delayNanoseconds) / 1_000_000_000) { [weak self] in
+            guard let self else { return }
+            self.isScheduledForRetry = false
+            self.attachToSplitViewIfPossible()
+        }
+    }
+
+    private func cancelRetry() {
+        isScheduledForRetry = false
+        // asyncAfter 无法取消,但 isScheduledForRetry 标志位让过期回调变成空操作
+        // (回调里会重新检查状态,且 attach 成功/窗口消失都会重置)。
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
@@ -375,10 +432,11 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
                 runs.append([coordinate])
             }
         }
-        guard let nearestRun = runs.min(by: {
-            abs((($0.first ?? center) + ($0.last ?? center)) / 2 - center)
-                < abs((($1.first ?? center) + ($1.last ?? center)) / 2 - center)
-        }),
+        func distanceFromCenter(_ run: [CGFloat]) -> CGFloat {
+            let mid = ((run.first ?? center) + (run.last ?? center)) / 2
+            return abs(mid - center)
+        }
+        guard let nearestRun = runs.min(by: { distanceFromCenter($0) < distanceFromCenter($1) }),
         let first = nearestRun.first,
         let last = nearestRun.last
         else { return dividerRect }

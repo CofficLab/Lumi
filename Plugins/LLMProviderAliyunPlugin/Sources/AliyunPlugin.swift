@@ -20,7 +20,6 @@ public final class AliyunPlugin: LumiPlugin {
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
-        ProviderRenderKindManager.shared.registerProviderPrefix("aliyun-", for: "aliyun")
         if let storage = kernel.storage {
             AvailabilityDiskCacheDirectoryResolver.set(
                 pluginName: "LLMProviderAliyun",
