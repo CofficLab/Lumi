@@ -27,9 +27,9 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
     /// 应用列表 / 选中状态，避免"在侧边栏选了应用但详情没同步"的问题。
     private let sharedViewModel = AppManagerViewModel()
 
-    /// 数据根目录解析器
-    nonisolated(unsafe) public static var databaseRootURLProvider: () -> URL = {
-        AppManagerPluginRuntimeBridge.fallbackRootDirectory
+    /// 插件数据目录解析器（由 storage.pluginDataDirectory(for:) 提供）
+    nonisolated(unsafe) public static var pluginDataDirectoryProvider: () -> URL = {
+        AppManagerPluginRuntimeBridge.fallbackPluginDataDirectory
     }
 
     // MARK: - Initialization
@@ -41,10 +41,9 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        // 设置数据目录
+        // 设置插件数据目录
         if let storage = kernel.storage {
-            AppManagerPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
-            Self.databaseRootURLProvider = { storage.dataRootDirectory }
+            Self.pluginDataDirectoryProvider = { storage.pluginDataDirectory(for: "AppManagerPlugin") }
         }
     }
 
@@ -111,12 +110,12 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
 // MARK: - Runtime Bridge
 
 enum AppManagerPluginRuntimeBridge {
-    nonisolated(unsafe) static var dataRootDirectory: URL?
-
-    static let fallbackRootDirectory: URL = {
+    static let fallbackPluginDataDirectory: URL = {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
-        return appSupport.appendingPathComponent(bundleID, isDirectory: true)
+        return appSupport
+            .appendingPathComponent(bundleID, isDirectory: true)
+            .appendingPathComponent("AppManagerPlugin", isDirectory: true)
     }()
 }
