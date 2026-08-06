@@ -4,7 +4,7 @@ import LumiUI
 import SwiftUI
 
 @MainActor
-public final class VerbosityPlugin: LumiPlugin {
+public final class ConversationVerbosityPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.verbosity"
     public var name: String {
         LumiPluginLocalization.string("Verbosity", bundle: .module)

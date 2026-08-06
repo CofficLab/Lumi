@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "VerbosityPlugin",
+    name: "ConversationVerbosityPlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "VerbosityPlugin",
-            targets: ["VerbosityPlugin"]
+            name: "ConversationVerbosityPlugin",
+            targets: ["ConversationVerbosityPlugin"]
         )
     ],
     dependencies: [
@@ -20,7 +20,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "VerbosityPlugin",
+            name: "ConversationVerbosityPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
@@ -32,8 +32,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "VerbosityPluginTests",
-            dependencies: ["VerbosityPlugin"],
+            name: "ConversationVerbosityPluginTests",
+            dependencies: ["ConversationVerbosityPlugin"],
             path: "Tests"
         )
     ]

@@ -1,10 +1,10 @@
 import Testing
 import LumiKernel
-@testable import VerbosityPlugin
+@testable import ConversationVerbosityPlugin
 
 @MainActor
 @Test func pluginPolicyIsAlwaysOn() {
-    #expect(VerbosityPlugin().policy == .alwaysOn)
+    #expect(ConversationVerbosityPlugin().policy == .alwaysOn)
 }
 
 @MainActor

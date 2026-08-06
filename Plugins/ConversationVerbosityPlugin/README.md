@@ -1,4 +1,4 @@
-# VerbosityPlugin
+# ConversationVerbosityPlugin
 
 响应详细程度切换插件。
 
@@ -14,7 +14,7 @@
 
 ```
 Sources/
-├── VerbosityPlugin.swift       # 插件入口
+├── ConversationVerbosityPlugin.swift   # 插件入口
 └── Resources/
     └── Verbosity.xcstrings
 ```

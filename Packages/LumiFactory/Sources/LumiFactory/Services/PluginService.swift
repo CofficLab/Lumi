@@ -140,7 +140,7 @@ import ThemeVoidPlugin
 import ThemeVscodePlugin
 import ThemeWinterPlugin
 import ToolManagerPlugin
-import VerbosityPlugin
+import ConversationVerbosityPlugin
 import VideoConverterPlugin
 import WebFetchPlugin
 import WebSearchPlugin
@@ -236,7 +236,7 @@ public enum PluginService {
             DiskManagerPlugin(),
             HostsManagerPlugin(),
             ConversationReasoningPlugin(),
-            VerbosityPlugin(),
+            ConversationVerbosityPlugin(),
             ConversationSpeedPlugin(),
             ChatModePlugin(),
             ConversationLanguagePlugin(),
