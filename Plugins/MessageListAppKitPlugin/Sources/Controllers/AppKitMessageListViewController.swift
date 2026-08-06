@@ -17,6 +17,7 @@ final class AppKitMessageListViewController: NSViewController {
     private var tableView: NSTableView!
     private var dataSource: AppKitMessageListDataSource!
     private var tableDelegate: AppKitMessageTableDelegate!
+    private var scrollAnchor: AppKitScrollAnchor!
     private var emptyStateView: AppKitEmptyStateView!
     private var loadingView: AppKitLoadingView!
 
@@ -82,12 +83,21 @@ final class AppKitMessageListViewController: NSViewController {
         dataSource = AppKitMessageListDataSource()
         dataSource.onLoadEarlier = { [weak self] in
             guard let self else { return }
-            Task { await self.coordinator.loadEarlier(isAtBottom: self.isAtBottom) }
+            // Capture the top visible row before prepending, restore after the
+            // snapshot lands so the viewport does not jump.
+            self.scrollAnchor.captureAnchor()
+            Task { @MainActor in
+                await self.coordinator.loadEarlier(isAtBottom: self.scrollAnchor.isAtBottom())
+                self.scrollAnchor.restoreAnchor()
+            }
         }
         dataSource.attach(tableView: tableView)
 
         tableDelegate = AppKitMessageTableDelegate()
         tableDelegate.attach(tableView: tableView, dataSource: dataSource)
+
+        scrollAnchor = AppKitScrollAnchor(scrollView: scrollView, tableView: tableView)
+        scrollAnchor.startObserving()
 
         let emptyState = AppKitEmptyStateView()
         emptyState.translatesAutoresizingMaskIntoConstraints = false
@@ -128,22 +138,14 @@ final class AppKitMessageListViewController: NSViewController {
         dataSource.apply(snapshot: snapshot)
         updateOverlays(snapshot: snapshot)
 
-        if snapshot.displayRows.last != nil, !snapshot.isLoading, isAtBottom {
-            tableView.scrollRowToVisible(max(0, tableView.numberOfRows - 1))
+        // Bottom-follow: only follow while the user was already at the bottom.
+        if snapshot.displayRows.last != nil, !snapshot.isLoading, scrollAnchor.isAtBottom() {
+            scrollAnchor.scrollToBottom()
         }
     }
 
     private func updateOverlays(snapshot: AppKitMessageListSnapshot) {
         loadingView.isHidden = !snapshot.isLoading
         emptyStateView.isHidden = !(snapshot.isEmpty && !snapshot.isLoading)
-    }
-
-    /// Bottom-follow heuristic (refined by the scroll anchor in Task 7).
-    private var isAtBottom: Bool {
-        guard let clipView = scrollView.contentView as NSClipView? else { return true }
-        let documentHeight = scrollView.documentView?.bounds.height ?? 0
-        let visibleHeight = clipView.bounds.height
-        let offsetY = clipView.bounds.origin.y
-        return documentHeight - (offsetY + visibleHeight) < 48
     }
 }
