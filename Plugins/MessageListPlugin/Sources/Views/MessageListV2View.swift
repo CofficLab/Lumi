@@ -28,19 +28,33 @@ struct MessageListV2View: View {
 
     private let scrollCoordinator = MessageListScrollCoordinator()
 
+    /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
+    ///
+    /// 仅用于驱动「切会话/首屏内容出现后滚到底」。
+    /// 之所以不用 `.task(id:)` 里抢跑 scroll：loadFirstPage 是异步 DB 读,
+    /// 慢时会超过重试窗口,导致 scroll 打在旧会话布局上作废、新内容到后再无人 scroll → 空白。
+    /// 改为「内容首尾 id 变化且锚点已布局」时再 scroll,锚点存在即内容已就绪,必然有效。
+    @State private var scrollTick: Int = 0
+
     init(kernel: LumiKernel) {
         self.kernel = kernel
         _viewModel = StateObject(wrappedValue: MessageListViewModel(kernel: kernel))
     }
 
     var body: some View {
-        Group {
+        // 不用 isLoading/空态做三分支切换:那会让整个 ScrollView 在加载态变化时
+        // 被销毁重建,macOS 14 上重建后首次 scrollTo 常静默失败 → 整页空白。
+        // 改为列表常驻,loading 用蒙层覆盖,空态由 hasPersistedMessages 决定。
+        ZStack {
+            if viewModel.hasPersistedMessages {
+                messageScrollView
+            } else {
+                MessageEmptyStateView()
+            }
             if viewModel.isLoading {
                 MessageLoadingView()
-            } else if !viewModel.hasPersistedMessages {
-                MessageEmptyStateView()
-            } else {
-                messageScrollView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(theme.surface.opacity(0.6))
             }
         }
         .task(id: viewModel.selectedConversationID) {
@@ -86,10 +100,20 @@ struct MessageListV2View: View {
                     // 那套机制在流式(行高连续变化)下会让 LazyVStack 每帧做
                     // 尺寸变更平移,触发 AttributeGraph 活锁。是否在底部改由
                     // `ScrollViewBottomTracker`(观察 NSScrollView)判定。
+                    //
+                    // scrollTick 变化(切会话/首屏内容已加载)时在此滚到底。
+                    // 挂在锚点上是因为:锚点是内容末尾,它存在即内容已完成布局,
+                    // 此时 scrollTo 必然有效 —— 这是修复「切换对话偶发空白」的关键。
                     Color.clear
                         .frame(height: 16)
                         .id(MessageListScrollCoordinator.bottomAnchorID)
                         .accessibilityHidden(true)
+                        .onChange(of: scrollTick) { _, _ in
+                            proxy.scrollTo(
+                                MessageListScrollCoordinator.bottomAnchorID,
+                                anchor: .bottom
+                            )
+                        }
                 }
                 // Keep a top inset without leaving scrollable space after
                 // the bottom anchor; the anchor must be the true content end.
@@ -101,14 +125,25 @@ struct MessageListV2View: View {
             // 「是否在底部」由观察 NSScrollView 的 tracker 报告,写入非 Observable
             // 的 `atBottomBox`,不触发 SwiftUI invalidation —— 切断布局反馈环。
             .background(ScrollViewBottomTracker { atBottomBox.value = $0 })
+            // 切会话只重置「在底部」语义,不在此抢跑 scroll。
+            // 旧实现立刻 scroll,但 loadFirstPage 是异步 DB 读,慢时 scroll 打在
+            // 旧会话布局上作废、新内容到后再无人 scroll → 空白。改为下方
+            // historyBoundary 变化驱动 scrollTick,内容就绪后由锚点滚到底。
             .task(id: viewModel.selectedConversationID) {
-                // 切会话重置:回到「在底部」语义,等首屏就绪后滚到底。
                 atBottomBox.value = true
-                scrollCoordinator.scrollToBottom(
-                    proxy: proxy,
-                    messages: viewModel.historyRows,
-                    animated: false
-                )
+            }
+            // 内容首尾消息 id 变化 = 新会话首屏/尾部刷新已加载。
+            // 只要用户在底部,就推进 scrollTick,触发锚点滚到底。
+            .onChange(of: historyBoundary) { _, _ in
+                if atBottomBox.value {
+                    scrollTick &+= 1
+                }
+            }
+            // 兜底:锚点出现(内容从无到有)时也补一次,覆盖首屏/慢加载。
+            .onAppear {
+                if atBottomBox.value {
+                    scrollTick &+= 1
+                }
             }
             .onLumiMessagesDidChange { eventConversationID in
                 guard MessageListNotificationFilter.shouldHandle(
@@ -137,9 +172,15 @@ struct MessageListV2View: View {
             }
             // 流式跟随滚动:流式行内容变化时,
             // 若用户停在底部则跟随滚到底(无动画,避免高频 delta 抖动)。
+            // 走 coordinator 的 scrollToBottom,带重试以兼容 macOS 14 LazyVStack
+            // 未布局时 scrollTo 静默失败的问题。
             .onChange(of: viewModel.tailStreamingContent) { _, _ in
                 if atBottomBox.value {
-                    proxy.scrollTo(MessageListScrollCoordinator.bottomAnchorID, anchor: .bottom)
+                    scrollCoordinator.scrollToBottom(
+                        proxy: proxy,
+                        messages: viewModel.historyRows,
+                        animated: false
+                    )
                 }
             }
         }
@@ -182,6 +223,14 @@ struct MessageListV2View: View {
     /// 底部锚点行已内联到 `messageScrollView` 的 LazyVStack 末尾(纯 `Color.clear`
     /// 占位 + 稳定 id),不再需要独立的偏好报告视图。
 
+    /// 内容首尾消息 id 对,作为「首屏/新会话内容已加载」的就绪信号。
+    ///
+    /// 用首尾 id 而非整个数组:流式 token 只改内容不改 id,不会误触发;
+    /// 而切会话/尾部刷新导致首尾 id 变化时,才真正需要重新滚到底。
+    private var historyBoundary: HistoryBoundary {
+        HistoryBoundary(first: viewModel.historyRows.first?.id, last: viewModel.historyRows.last?.id)
+    }
+
     // MARK: - Pagination Trigger
 
     /// 向上翻页:View 只负责触发加载并把锚点行钉回视口顶部,
@@ -200,4 +249,11 @@ struct MessageListV2View: View {
 @MainActor
 final class AtBottomBox {
     var value: Bool = true
+}
+
+/// 消息列表首尾 id 对,用于 `onChange` 检测「首屏/新会话内容已加载」。
+/// 元组无法遵循 `Equatable`,故用结构体承载。
+private struct HistoryBoundary: Equatable {
+    let first: UUID?
+    let last: UUID?
 }

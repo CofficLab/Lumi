@@ -42,12 +42,25 @@ struct MessageListScrollCoordinator {
     /// prepend 之后,等一帧让新行布局再钉回视口顶部的延迟。
     static let postPrependDelayNs: UInt64 = 50_000_000
 
+    /// macOS 14 上 LazyVStack 尚未完成首次布局时,`scrollTo` 会静默失败,
+    /// 导致整页空白、用户手动滚动后才恢复。首次调用后补一次重试即可覆盖该窗口期。
+    static let scrollRetryDelayNs: UInt64 = 100_000_000
+
     /// 滚动到底部锚点。
     ///
     /// `animated == true` 时裹一层 `.easeOut(0.2s)`;
     /// `messages.isEmpty` 时不做任何滚动(无锚点可钉)。
     func scrollToBottom(proxy: ScrollViewProxy, messages: [LumiChatMessage], animated: Bool) {
         guard !messages.isEmpty else { return }
+        performScrollToBottom(proxy: proxy, animated: animated)
+        // macOS 14 首次布局未完成时 scrollTo 会静默丢失,补一次重试。
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: Self.scrollRetryDelayNs)
+            performScrollToBottom(proxy: proxy, animated: animated)
+        }
+    }
+
+    private func performScrollToBottom(proxy: ScrollViewProxy, animated: Bool) {
         if animated {
             withAnimation(.easeOut(duration: 0.2)) {
                 proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
