@@ -312,8 +312,19 @@ final class AnthropicCompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(chunk?.inputTokens, 50)
         XCTAssertEqual(chunk?.cachedInputTokens, 30)
         XCTAssertEqual(chunk?.cacheWriteInputTokens, 20)
-        // input_tokens 已包含命中与写入部分,直接作为分母,而非三者相加
+        // Anthropic 官方语义:input_tokens(50) 已含 read(30)+write(20),直接作分母
         XCTAssertEqual(chunk?.cacheTotalInputTokens, 50)
+    }
+
+    func testParseStreamMessageStartDeepSeekSemantics() throws {
+        // DeepSeek 兼容层实测语义:input_tokens 是「未命中」部分,总输入 = input + read + write
+        let chunk = try makeAdapter().parseStreamChunk(
+            data: Data("event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"usage\":{\"input_tokens\":68,\"cache_read_input_tokens\":512}}}\n\n".utf8)
+        )
+        XCTAssertEqual(chunk?.eventType, .messageStart)
+        XCTAssertEqual(chunk?.inputTokens, 68)
+        XCTAssertEqual(chunk?.cachedInputTokens, 512)
+        XCTAssertEqual(chunk?.cacheTotalInputTokens, 580)
     }
 
     func testParseStreamMessageStop() throws {

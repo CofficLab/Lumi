@@ -367,21 +367,30 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
 
     /// 缓存命中率的分母 = 输入总 token 数。
     ///
-    /// Anthropic 语义下 `input_tokens` 已包含 `cache_read_input_tokens` 与
-    /// `cache_creation_input_tokens`(命中部分是其子集),直接用它即可;
-    /// 不能把三者相加,否则分母被重复放大、缓存率系统性低估。
-    /// 仅在 `input_tokens` 缺失(理论不会发生)时退化为缓存相关字段之和。
+    /// 不同 Anthropic 兼容端点的 `input_tokens` 语义不一致，需按值推断：
+    /// - Anthropic 官方：`input_tokens` 已含 `cache_read` 与 `cache_creation`
+    ///   （故 `input_tokens >= cache_read + cache_creation`），直接用它即可；
+    /// - DeepSeek 等兼容层（实测 2026-08-06）：`input_tokens` 是「未命中」部分，
+    ///   总输入 = `input_tokens + cache_read + cache_creation`
+    ///   （例：总 580 = input 68 + read 512，此时 input < read）。
+    /// 用 `input_tokens` 与 `cache_read + cache_creation` 的大小关系做启发式区分。
+    /// 切勿无条件把三者相加——那会让官方语义下的分母被重复放大、缓存率系统性低估。
     private static func cacheTotalInputTokens(
         inputTokens: Int?,
         cachedInputTokens: Int?,
         cacheWriteInputTokens: Int?
     ) -> Int? {
-        if let inputTokens {
-            return inputTokens
+        guard let inputTokens else {
+            let values = [cachedInputTokens, cacheWriteInputTokens].compactMap { $0 }
+            guard !values.isEmpty else { return nil }
+            return values.reduce(0, +)
         }
-        let values = [cachedInputTokens, cacheWriteInputTokens].compactMap { $0 }
-        guard !values.isEmpty else { return nil }
-        return values.reduce(0, +)
+        let read = cachedInputTokens ?? 0
+        let write = cacheWriteInputTokens ?? 0
+        if inputTokens < read + write {
+            return inputTokens + read + write
+        }
+        return inputTokens
     }
 
     // MARK: - 消息转换
