@@ -14,6 +14,7 @@ public final class MiniMaxPlugin: LumiPlugin {
     public var category: LumiPluginCategory { .llmProvider }
 
     private var videoRecordStore: MiniMaxVideoRecordStore?
+    private var imageRecordStore: MiniMaxImageRecordStore?
 
     public init() {}
 
@@ -25,9 +26,14 @@ public final class MiniMaxPlugin: LumiPlugin {
             )
 
             // 初始化视频记录存储
-            let databaseURL = storage.pluginDataDirectory(for: "LLMProviderMiniMax")
+            let videoDatabaseURL = storage.pluginDataDirectory(for: "LLMProviderMiniMax")
                 .appendingPathComponent("video_records", isDirectory: true)
-            videoRecordStore = MiniMaxVideoRecordStore(databaseRootURL: databaseURL)
+            videoRecordStore = MiniMaxVideoRecordStore(databaseRootURL: videoDatabaseURL)
+
+            // 初始化图片记录存储
+            let imageDatabaseURL = storage.pluginDataDirectory(for: "LLMProviderMiniMax")
+                .appendingPathComponent("image_records", isDirectory: true)
+            imageRecordStore = MiniMaxImageRecordStore(databaseRootURL: imageDatabaseURL)
         }
     }
 
@@ -119,6 +125,21 @@ public final class MiniMaxPlugin: LumiPlugin {
         if let store = videoRecordStore {
             tools.append(MiniMaxListVideosTool(store: store))
             tools.append(MiniMaxGetVideoTool(store: store))
+        }
+
+        // 注册图片生成工具
+        if let network = kernel.network {
+            let imageClient = MiniMaxImageClient(network: network, apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxImageTool(client: imageClient, recordStore: imageRecordStore))
+        } else {
+            let imageClient = MiniMaxImageClient(apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxImageTool(client: imageClient, recordStore: imageRecordStore))
+        }
+
+        // 注册图片记录查询工具
+        if let store = imageRecordStore {
+            tools.append(MiniMaxListImagesTool(store: store))
+            tools.append(MiniMaxGetImageTool(store: store))
         }
 
         return tools
