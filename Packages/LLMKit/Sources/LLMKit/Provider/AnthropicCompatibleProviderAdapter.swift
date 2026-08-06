@@ -441,7 +441,8 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                 } else {
                     inputObject = [:]
                 }
-                content.append(["type": "tool_use", "id": tc.id, "name": tc.name, "input": inputObject])
+                // 历史消息回传同样要转义，否则下一轮请求仍会被供应商 400 拒绝
+                content.append(["type": "tool_use", "id": tc.id, "name": LLMToolNameSanitizer.sanitize(tc.name), "input": inputObject])
             }
 
             return ["role": "assistant", "content": content]
@@ -475,9 +476,15 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
     // MARK: - 工具格式
 
     /// 将工具转换为 Anthropic API 格式
+    ///
+    /// 工具名经 `LLMToolNameSanitizer.sanitize` 转义：Anthropic 兼容端点严格校验
+    /// `tools[].name` 只允许字母/数字/下划线/短横线（Kimi Coding 端点实测 2026-08-06，
+    /// 带点号的 `app-store-connect.list-apps` 等 MCP 工具名直接发送会被 400 拒绝）。
+    /// 模型返回的 tool_use 名字由 `LumiStreamingRequestSupport` 用反查映射还原为
+    /// 原始注册名后再执行工具。
     public func formatTool(_ tool: any LLMToolSchemaProviding) -> [String: Any] {
         [
-            "name": tool.name,
+            "name": LLMToolNameSanitizer.sanitize(tool.name),
             "description": tool.toolDescription,
             "input_schema": tool.inputSchema,
         ]

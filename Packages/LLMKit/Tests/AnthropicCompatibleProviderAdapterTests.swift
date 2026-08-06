@@ -98,6 +98,49 @@ final class AnthropicCompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(parameters["type"] as? String, "object")
     }
 
+    func testFormatToolSanitizesDottedName() throws {
+        // Kimi 等 Anthropic 兼容端点拒绝带点号的函数名(400 invalid_request_error)，
+        // app-store-connect.* 这类 MCP 工具名必须转义
+        let adapter = makeAdapter()
+        let tool = MockAnthropicTool(
+            name: "app-store-connect.list-apps",
+            toolDescription: "List App Store Connect apps",
+            inputSchema: ["type": "object"]
+        )
+
+        let body = try adapter.buildRequestBody(
+            messages: [ChatMessage(role: .user, content: "List apps")],
+            model: "k3",
+            tools: [tool],
+            systemPrompt: ""
+        )
+
+        let tools = try XCTUnwrap(body["tools"] as? [[String: Any]])
+        XCTAssertEqual(tools[0]["name"] as? String, "app-store-connect_list-apps")
+    }
+
+    func testTransformMessageSanitizesToolUseNameOnReplay() {
+        // 历史 assistant 消息回传 tool_use 时同样要转义，否则下一轮请求仍会被拒绝
+        let adapter = makeAdapter()
+        let message = ChatMessage(
+            role: .assistant,
+            content: "Calling tool",
+            toolCalls: [
+                ToolCall(
+                    id: "call_1",
+                    name: "app-store-connect.list-apps",
+                    arguments: "{}"
+                ),
+            ]
+        )
+
+        let encoded = adapter.transformMessage(message)
+        let content = try! XCTUnwrap(encoded["content"] as? [[String: Any]])
+        let toolUse = try! XCTUnwrap(content.first { ($0["type"] as? String) == "tool_use" })
+
+        XCTAssertEqual(toolUse["name"] as? String, "app-store-connect_list-apps")
+    }
+
     func testBuildStreamingRequestBodySetsStreamTrue() throws {
         let adapter = makeAdapter()
 

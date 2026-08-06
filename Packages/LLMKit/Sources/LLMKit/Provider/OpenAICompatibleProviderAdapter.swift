@@ -168,7 +168,8 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                     "id": toolCall.id,
                     "type": "function",
                     "function": [
-                        "name": toolCall.name,
+                        // 历史消息回传同样要转义，否则下一轮请求仍会被供应商 400 拒绝
+                        "name": LLMToolNameSanitizer.sanitize(toolCall.name),
                         "arguments": toolCall.arguments,
                     ],
                 ]
@@ -189,7 +190,9 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         [
             "type": "function",
             "function": [
-                "name": tool.name,
+                // OpenAI 协议同样要求函数名只含字母/数字/下划线/短横线，
+                // 带点号的 MCP 工具名（如 app-store-connect.list-apps）须转义
+                "name": LLMToolNameSanitizer.sanitize(tool.name),
                 "description": tool.toolDescription,
                 "parameters": tool.inputSchema,
             ],
