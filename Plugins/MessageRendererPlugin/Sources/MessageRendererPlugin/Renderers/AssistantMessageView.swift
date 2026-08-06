@@ -18,6 +18,7 @@ struct AssistantMessageView: View {
 
 private struct AssistantMessageBody: View {
     @LumiTheme private var theme
+    @State private var isReasoningExpanded = false
 
     let kernel: LumiKernel
     let message: LumiChatMessage
@@ -61,22 +62,38 @@ private struct AssistantMessageBody: View {
     @ViewBuilder
     private func reasoningBlock(_ reasoning: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(LumiPluginLocalization.string("思考过程", bundle: .module))
-                .font(.appCaptionEmphasized)
-                .foregroundColor(theme.textSecondary)
+            Button {
+                isReasoningExpanded.toggle()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundColor(theme.textSecondary)
+                        .rotationEffect(.degrees(isReasoningExpanded ? 90 : 0))
+                    Text(LumiPluginLocalization.string("思考过程", bundle: .module))
+                        .font(.appCaptionEmphasized)
+                        .foregroundColor(theme.textSecondary)
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
 
-            MarkdownBlockRenderer(
-                markdown: reasoning,
-                theme: ChatMarkdownTheme.make(from: theme)
-            )
-            .fixedSize(horizontal: false, vertical: true)
-            .textSelection(.enabled)
-            .font(.appBody)
-            .foregroundColor(theme.textSecondary)
+            if isReasoningExpanded {
+                MarkdownBlockRenderer(
+                    markdown: reasoning,
+                    theme: ChatMarkdownTheme.make(from: theme)
+                )
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+                .font(.appBody)
+                .foregroundColor(theme.textSecondary)
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(theme.elevatedSurface.opacity(0.55))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .animation(.easeInOut(duration: 0.2), value: isReasoningExpanded)
     }
 }
