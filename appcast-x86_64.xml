@@ -3,30 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.7.5</title>
-            <pubDate>Thu, 06 Aug 2026 02:39:34 +0000</pubDate>
-            <sparkle:version>520</sparkle:version>
-            <sparkle:shortVersionString>5.7.5</sparkle:shortVersionString>
+            <title>5.7.6</title>
+            <pubDate>Thu, 06 Aug 2026 11:30:52 +0000</pubDate>
+            <sparkle:version>521</sparkle:version>
+            <sparkle:shortVersionString>5.7.6</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.7.5</h2>
-<h3>Changes since v5.7.4</h3>
+            <description><![CDATA[<h2>Release v5.7.6</h2>
+<h3>Changes since v5.7.5</h3>
 <ul>
-<li>docs(MessageList): add V1 AgentTurn summaries implementation plan</li>
-<li>feat(AgentTurnRunner): add turn-level record aggregation from LLM request history</li>
-<li>feat(Git): register viewContainer and move commit list to rail sidebar</li>
-<li>feat(LLMProviderDeepSeek): rename protocol files, add render kinds and HTTP 401 renderer</li>
-<li>feat(LumiKernel): add persisted agent turn records and activity summary enhancements</li>
-<li>feat(MessageList): project V1 to one row per AgentTurn with legacy fallback</li>
-<li>feat(MessageManager,AgentTurnRunner): persist message turn identity and aggregate records per page</li>
-<li>feat(MessageRenderer): display AI reasoning/thinking process in assistant messages</li>
-<li>feat(RClickPlugin): enable plugin and add rail preview sidebar</li>
-<li>fix: add minimum height to tool call result popover to prevent it from being too short when content is minimal</li>
-<li>fix: resolve compiler type-check timeout in AppSplitDivider</li>
-<li>fix(LumiUI): measure native divider hit area and hide native divider for accurate hover tracking</li>
-<li>refactor(MessageList): split MessageListView into V1/V2 sub-views by verbosity</li>
+<li>docs(MessageListAppKit): native plugin implementation plan</li>
+<li>feat(ConversationManager): add markConversationActive to bump conversations to top on new messages</li>
+<li>feat(ConversationManaging,StateMonitorPlugin): introduce global verbosity with bidirectional sync</li>
+<li>feat(DeepSeek): add DeepSeek LLM provider plugin with OpenAI and Anthropic support</li>
+<li>feat(DeepSeek): stabilize prompt prefix and echo thinking blocks to raise cache hit rate</li>
+<li>feat(LumiKernel,MessageRenderer): explicit renderer routing via preferredRendererID</li>
+<li>feat(MessageList,MessageManager,AgentTurnRunner): let status message span an entire AgentTurn</li>
+<li>feat(MessageList): scroll performance optimization — LazyVStack, incremental streaming parse, sender signal debounce</li>
+<li>feat(MessageListAppKit): add immutable row snapshots and V1/V2 projectors</li>
+<li>feat(MessageListAppKit): add narrow subscriptions, pagination, and refresh coalescing</li>
+<li>feat(MessageListAppKit): add native code, table, and mermaid block views</li>
+<li>feat(MessageListAppKit): add native markdown document and layout cache pipeline</li>
+<li>feat(MessageListAppKit): add native scroll anchoring and bottom-follow</li>
+<li>feat(MessageListAppKit): add native table shell with incremental data source</li>
+<li>feat(MessageListAppKit): add native TextKit markdown prose rendering</li>
+<li>feat(MessageListAppKit): add native tool, tool-group, attachment, and ask_user renderers</li>
+<li>feat(MessageListAppKit): add renderer registry and core native renderers</li>
+<li>feat(MessageListAppKit): integrate streaming with dynamic heights and stable-ID swaps</li>
+<li>feat(MessageListAppKit): scaffold disabled native plugin</li>
+<li>feat(MessageRenderer): add collapsible reasoning block for assistant messages</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.7.5</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.7.5/Lumi_5.7.5_x86_64.dmg" length="45490464" type="application/octet-stream" sparkle:edSignature="+GebhMTBkmvXEBObI/EQWwJcs0N8QHm3XMla3jVAN7fAZCmZb9N5/IxL7YPS8CHhYx3LhS+Q/uKMeERuHe8PAA=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.7.6</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.7.6/Lumi_5.7.6_x86_64.dmg" length="45721874" type="application/octet-stream" sparkle:edSignature="c46irgmNpWe7b3dH8ALdbp4DRXsP+JTtcat9ryRwrot8Q5boTgPm3ZKUVO/tXnGRTv824+GBIGvkAVthDa3jDg=="/>
         </item>
     </channel>
 </rss>
