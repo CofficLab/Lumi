@@ -16,6 +16,8 @@ public final class DeepSeekPlugin: LumiPlugin {
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
+        ProviderRenderKindManager.shared.registerProviderPrefix("deepseek-", for: DeepSeekOpenAIProvider.info.id)
+        ProviderRenderKindManager.shared.registerProviderPrefix("deepseek-", for: DeepSeekAnthropicProvider.info.id)
         if let storage = kernel.storage {
             AvailabilityDiskCacheDirectoryResolver.set(
                 pluginName: "LLMProviderDeepSeekPlugin",
@@ -33,7 +35,11 @@ public final class DeepSeekPlugin: LumiPlugin {
         ]
     }
 
-    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
+    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] {
+        [
+            Http401Renderer.item,
+        ]
+    }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }

@@ -14,7 +14,7 @@ import LumiKernel
 /// - `tools[]` 是 `{name, description, input_schema}`，没有 OpenAI 的 `type:function` 包装
 /// - `max_tokens` 为 Anthropic 必填项；未指定时取保守默认值
 /// - `thinking` 在 `reasoningEffort != nil && != .automatic` 时启用
-enum DeepSeekAnthropicRequestBuilder {
+enum AnthropicRequestBuilder {
     /// Anthropic Messages API 必填 `max_tokens` 的默认预算。
     /// 用户未在请求中提供时使用；过大不必要，过小会被服务端拒绝。
     static let defaultMaxTokens = 4096

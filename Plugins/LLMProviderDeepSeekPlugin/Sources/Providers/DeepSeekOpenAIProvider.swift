@@ -165,7 +165,18 @@ public final class DeepSeekOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
     }
 
     public func errorRenderKind(for error: Error) -> String? {
-        nil
+        // 先从错误类型中提取状态码
+        if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: error) {
+            return DeepSeekRenderKind.http(statusCode)
+        }
+        // 如果错误类型不支持，尝试从错误描述中提取
+        if let localized = error as? LocalizedError,
+           let description = localized.errorDescription {
+            if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: description) {
+                return DeepSeekRenderKind.http(statusCode)
+            }
+        }
+        return nil
     }
 
     public func makeErrorMessage(
