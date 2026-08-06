@@ -10,6 +10,9 @@ import Foundation
 /// results when the view is reused for a different source.
 @MainActor
 final class AppKitMermaidView: NSView {
+    /// Height reserved while a diagram renders (or for the diagnostic fallback).
+    static let placeholderHeight: CGFloat = 140
+
     private let imageView = NSImageView()
     private let fallbackLabel = NSTextField(wrappingLabelWithString: "")
     private let fallbackScroll = NSScrollView()

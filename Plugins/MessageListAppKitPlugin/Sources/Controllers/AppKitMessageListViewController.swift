@@ -18,6 +18,9 @@ final class AppKitMessageListViewController: NSViewController {
     private var dataSource: AppKitMessageListDataSource!
     private var tableDelegate: AppKitMessageTableDelegate!
     private var scrollAnchor: AppKitScrollAnchor!
+    private var rendererRegistry: AppKitMessageRendererRegistry!
+    private var layoutCache = AppKitMessageLayoutCache()
+    private var mermaidCache = AppKitMermaidCache()
     private var emptyStateView: AppKitEmptyStateView!
     private var loadingView: AppKitLoadingView!
 
@@ -98,6 +101,18 @@ final class AppKitMessageListViewController: NSViewController {
 
         scrollAnchor = AppKitScrollAnchor(scrollView: scrollView, tableView: tableView)
         scrollAnchor.startObserving()
+
+        rendererRegistry = AppKitMessageRendererRegistry(environment: .init(
+            theme: AppKitMessageTheme.systemDefault(), // Task 14 snapshots LumiUI.
+            mermaidCache: mermaidCache,
+            layoutCache: layoutCache,
+            outerScrollView: scrollView
+        ))
+        let rendererFor: (AppKitMessageRow) -> any AppKitMessageRenderer = { [weak self] row in
+            self?.rendererRegistry.renderer(for: row) ?? AppKitFallbackRenderer()
+        }
+        dataSource.rendererFor = rendererFor
+        tableDelegate.rendererFor = rendererFor
 
         let emptyState = AppKitEmptyStateView()
         emptyState.translatesAutoresizingMaskIntoConstraints = false
