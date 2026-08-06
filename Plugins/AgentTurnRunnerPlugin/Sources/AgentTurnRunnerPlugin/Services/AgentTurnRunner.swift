@@ -312,6 +312,148 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
     // MARK: - Turn Loop
 
+    // MARK: - Historical Records (AgentTurnManaging protocol)
+
+    /// Aggregates `AgentTurnRecord` from existing data sources:
+    /// - `AgentTurnRecordStore`: turnIDs + timestamps (from LLM request records)
+    /// - `MessageManaging`: token statistics (from messages with matching turnID)
+    /// - `ToolManaging`: tool call statistics (from tool call records)
+    /// - Memory `turnStates`: live state overlay for active turns
+    public func turnRecords(
+        for conversationID: UUID,
+        limit: Int,
+        before turnID: UUID?
+    ) async -> [AgentTurnRecord] {
+        guard let store = AgentTurnRunnerRecordStoreBridge.shared.store else { return [] }
+
+        // 1. Get all turn IDs from LLM request records
+        let allTurnIDs = await store.fetchTurnIDs(for: conversationID)
+        guard !allTurnIDs.isEmpty else { return [] }
+
+        // 2. Apply pagination (before cursor)
+        let orderedIDs: [UUID]
+        if let turnID {
+            // Find the cursor position and take IDs before it
+            guard let cursorIndex = allTurnIDs.firstIndex(of: turnID) else { return [] }
+            let startIndex = max(0, cursorIndex - limit)
+            orderedIDs = Array(allTurnIDs[startIndex..<cursorIndex].reversed())
+        } else {
+            // Take the last `limit` IDs (newest first)
+            orderedIDs = Array(allTurnIDs.suffix(limit).reversed())
+        }
+
+        // 3. Read the conversation once, then aggregate each turn from that
+        // shared snapshot. Reading the full history once per turn creates an
+        // avoidable N+1 query when a UI requests a page of records.
+        let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
+        var records: [AgentTurnRecord] = []
+        for tid in orderedIDs {
+            let record = await aggregateTurnRecord(
+                turnID: tid,
+                conversationID: conversationID,
+                store: store,
+                messages: messages
+            )
+            records.append(record)
+        }
+
+        return records
+    }
+
+    public func turnRecord(id turnID: UUID) async -> AgentTurnRecord? {
+        guard let store = AgentTurnRunnerRecordStoreBridge.shared.store else { return nil }
+
+        // Check if this is a currently active turn
+        for (conversationID, currentTurnID) in turnIDs where currentTurnID == turnID {
+            let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
+            return await aggregateTurnRecord(
+                turnID: turnID,
+                conversationID: conversationID,
+                store: store,
+                messages: messages
+            )
+        }
+
+        // For completed turns, caller should use turnRecords(for:) with known conversationID
+        // since we don't have a global turn index
+        return nil
+    }
+
+    public func deleteTurnRecords(for conversationID: UUID) async {
+        // Turn data is derived from LLM request records + messages + tool calls.
+        // Conversation deletion already cascades to those sources:
+        // - ToolManaging.deleteToolCalls(for:) handles tool records
+        // - ConversationStore deletion handles messages
+        // - LLM request records are per-conversation but not critical for UI
+        // No explicit deletion needed here.
+    }
+
+    /// Builds an `AgentTurnRecord` by aggregating data from multiple sources.
+    private func aggregateTurnRecord(
+        turnID: UUID,
+        conversationID: UUID,
+        store: AgentTurnRecordStore,
+        messages: [LumiChatMessage]
+    ) async -> AgentTurnRecord {
+        // Timestamps from LLM request records
+        let startedAt = await store.fetchTurnStartedAt(turnID: turnID) ?? Date()
+        let endedAt = await store.fetchTurnEndedAt(turnID: turnID)
+
+        // Token statistics from messages
+        var inputTokens = 0
+        var outputTokens = 0
+        var triggerMessageID: UUID?
+        for message in messages where message.turnID == turnID {
+            inputTokens += message.inputTokenCount ?? 0
+            outputTokens += message.outputTokenCount ?? 0
+            if message.role == .user && triggerMessageID == nil {
+                triggerMessageID = message.id
+            }
+        }
+
+        // Tool call statistics
+        var toolCallCount = 0
+        var toolCallCompletedCount = 0
+        if let toolManager = kernel?.toolManager {
+            let toolCalls = await toolManager.toolCalls(for: turnID)
+            toolCallCount = toolCalls.count
+            toolCallCompletedCount = toolCalls.filter { $0.completedAt != nil }.count
+        }
+
+        // State: overlay live state for active turns, otherwise derive
+        let state: AgentTurnState
+        if let liveState = turnStates[conversationID],
+           turnIDs[conversationID] == turnID {
+            state = liveState
+        } else {
+            // Completed if we have endedAt; otherwise idle (legacy/unknown)
+            state = endedAt != nil ? .completed : .idle
+        }
+
+        // Parent turn ID
+        let parentTurnID = parentConversationIDs[conversationID].flatMap { _ in
+            // If this conversation was created by a parent turn, we could track it
+            // For now, return nil unless we have explicit tracking
+            nil as UUID?
+        }
+
+        return AgentTurnRecord(
+            id: turnID,
+            conversationID: conversationID,
+            parentTurnID: parentTurnID,
+            triggerMessageID: triggerMessageID,
+            state: state,
+            startedAt: startedAt,
+            endedAt: endedAt,
+            inputTokenCount: inputTokens,
+            outputTokenCount: outputTokens,
+            toolCallCount: toolCallCount,
+            toolCallCompletedCount: toolCallCompletedCount,
+            title: nil,
+            errorMessage: nil
+        )
+    }
+
     private func executeTurnLoop(conversationID: UUID) async {
         let turnID = turnIDs[conversationID]
         while !cancelledConversations.contains(conversationID) {
@@ -423,6 +565,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             await AgentTurnRunnerRecordStoreBridge.shared.store?.record(
                 request: request,
                 conversationID: conversationID,
+                turnID: turnID,
                 providerID: providerID
             )
 
@@ -462,12 +605,13 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                     for: error,
                     context: LumiLLMRetryContext(attempt: 1, maxAttempts: 1)
                 )
-                let errorMessage = targetProvider.makeErrorMessage(
+                var errorMessage = targetProvider.makeErrorMessage(
                     conversationID: conversationID,
                     request: request,
                     error: error,
                     disposition: disposition
                 )
+                errorMessage.turnID = turnID
                 kernel.messageManager?.insertMessage(errorMessage, to: conversationID)
                 postMessageSavedNotification(message: errorMessage, conversationID: conversationID)
                 failedConversations.insert(conversationID)

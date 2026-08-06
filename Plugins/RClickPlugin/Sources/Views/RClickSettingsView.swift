@@ -8,23 +8,9 @@ public struct RClickSettingsView: View {
     @State private var showingAddTemplateSheet = false
 
     public var body: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 20) {
-                Text(LumiPluginLocalization.string("Preview", bundle: .module))
-                    .font(.appBodyEmphasized)
-                    .foregroundColor(theme.textSecondary)
-
-                RClickPreviewView(config: configManager.config)
-                    .shadow(color: Color.black.opacity(0.09), radius: 12, x: 0, y: 4)
-            }
-            .padding()
-
-            .frame(width: 260)
-
-            settingsDivider
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                    // MARK: - Finder Extension
                     AppCard {
                         VStack(spacing: 8) {
                             HStack(spacing: 8) {
@@ -57,42 +43,30 @@ public struct RClickSettingsView: View {
                         }
                     }
 
+                    // MARK: - General Actions
                     AppCard {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(LumiPluginLocalization.string("General Actions", bundle: .module))
-                                .font(.appTitle)
-                                .foregroundColor(theme.textPrimary)
-
-                            VStack(spacing: 4) {
-                                ForEach(configManager.config.items) { item in
-                                    if item.type != .newFile {
-                                        AppSettingsRow {
-                                            HStack {
-                                                Image(systemName: item.type.iconName)
-                                                    .frame(width: 20)
-                                                    .foregroundColor(theme.textSecondary)
-                                                Text(item.title)
-                                                    .font(.appBody)
-                                                    .foregroundColor(theme.textPrimary)
-                                                Spacer()
-                                                Toggle("", isOn: Binding(
-                                                    get: { item.isEnabled },
-                                                    set: { _ in configManager.toggleItem(item) }
-                                                ))
-                                                .labelsHidden()
-                                            }
-                                        }
-                                    }
+                        AppSettingsSection(title: LumiPluginLocalization.string("General Actions", bundle: .module)) {
+                            ForEach(configManager.config.items) { item in
+                                if item.type != .newFile {
+                                    AppSettingsToggleRow(
+                                        item.title,
+                                        systemImage: item.type.iconName,
+                                        isOn: Binding(
+                                            get: { item.isEnabled },
+                                            set: { _ in configManager.toggleItem(item) }
+                                        )
+                                    )
                                 }
                             }
                         }
                     }
 
+                    // MARK: - New File Menu
                     AppCard {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text(LumiPluginLocalization.string("New File Menu", bundle: .module))
-                                    .font(.appTitle)
+                                    .font(.appSectionTitle)
                                     .foregroundColor(theme.textPrimary)
                                 Spacer()
                                 AppButton(LumiPluginLocalization.string("Add Template", bundle: .module), style: .secondary, fillsWidth: true, action: { showingAddTemplateSheet = true })
@@ -100,43 +74,27 @@ public struct RClickSettingsView: View {
                             }
 
                             if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }) {
-                                AppSettingsRow {
-                                    HStack {
-                                        Image(systemName: newFileItem.type.iconName)
-                                            .frame(width: 20)
-                                            .foregroundColor(theme.textSecondary)
-                                        Text(LumiPluginLocalization.string("Enable 'New File' Submenu", bundle: .module))
-                                            .font(.appBody)
-                                            .foregroundColor(theme.textPrimary)
-                                        Spacer()
-                                        Toggle("", isOn: Binding(
-                                            get: { newFileItem.isEnabled },
-                                            set: { _ in configManager.toggleItem(newFileItem) }
-                                        ))
-                                        .labelsHidden()
-                                    }
-                                }
+                                AppSettingsToggleRow(
+                                    LumiPluginLocalization.string("Enable 'New File' Submenu", bundle: .module),
+                                    systemImage: newFileItem.type.iconName,
+                                    isOn: Binding(
+                                        get: { newFileItem.isEnabled },
+                                        set: { _ in configManager.toggleItem(newFileItem) }
+                                    )
+                                )
                             }
 
                             if configManager.config.items.first(where: { $0.type == .newFile })?.isEnabled == true {
                                 List {
                                     ForEach(configManager.config.fileTemplates) { template in
-                                        HStack {
-                                            VStack(alignment: .leading) {
-                                                Text(template.name)
-                                                    .font(.appBody)
-                                                    .foregroundColor(theme.textPrimary)
-                                                Text(".\(template.extensionName)")
-                                                    .font(.appMicro)
-                                                    .foregroundColor(theme.textTertiary)
-                                            }
-                                            Spacer()
-                                            Toggle("", isOn: Binding(
+                                        AppToggleRow(
+                                            title: LocalizedStringKey(template.name),
+                                            description: LocalizedStringKey(".\(template.extensionName)"),
+                                            isOn: Binding(
                                                 get: { template.isEnabled },
                                                 set: { _ in configManager.toggleTemplate(template) }
-                                            ))
-                                            .labelsHidden()
-                                        }
+                                            )
+                                        )
                                     }
                                     .onDelete { indexSet in
                                         configManager.deleteTemplate(at: indexSet)
@@ -147,6 +105,7 @@ public struct RClickSettingsView: View {
                         }
                     }
 
+                    // MARK: - Reset
                     AppCard {
                         HStack {
                             Text(LumiPluginLocalization.string("Reset to Defaults", bundle: .module))
@@ -166,13 +125,6 @@ public struct RClickSettingsView: View {
                     configManager.addTemplate(template)
                 }
             }
-        }
-    }
-
-    private var settingsDivider: some View {
-        Rectangle()
-            .fill(theme.appDivider)
-            .frame(height: 1)
     }
 
     // MARK: - Private

@@ -7,7 +7,7 @@ import Foundation
 // 相关错误类型 `AgentTurnManagingError` 已在 `Errors/AgentTurnManagingError.swift` 中导出。
 
 /// The lifecycle state of an agent turn managed by the kernel.
-public enum AgentTurnState: Sendable, Equatable {
+public enum AgentTurnState: Sendable, Equatable, Codable {
     case idle
     case running
     case suspended(AgentTurnSuspension)

@@ -349,6 +349,7 @@ private struct ToolDetailPopoverView<Content: View>: View {
         }
         .padding(12)
         .frame(width: 520)
+        .frame(minHeight: 200)
         .appSurface(style: .popover, cornerRadius: 0, borderColor: theme.divider)
         .appThemedAppearance()
         .background {

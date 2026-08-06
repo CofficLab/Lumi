@@ -55,6 +55,9 @@ struct AgentTurnRecordDTO: Identifiable, Sendable {
 /// 存储目录规律与 ConversationStore 一致:数据库根目录取
 /// `kernel.storage.pluginDataDirectory(for: "AgentTurnRunner")`,
 /// SQLite 文件名沿用 `app.sqlite`。
+///
+/// Turn 级聚合:本 store 同时提供按 `turnID` 分组的查询能力,
+/// 使 `AgentTurnRunner` 可以从 LLM 请求记录中聚合出 `AgentTurnRecord`。
 actor AgentTurnRecordStore {
     static var defaultDatabaseRootURL: URL {
         FileManager.default
@@ -88,10 +91,17 @@ actor AgentTurnRecordStore {
     }
 
     /// 记录一次发出的请求。
-    func record(request: LumiLLMRequest, conversationID: UUID, providerID: String?) {
+    ///
+    /// - Parameters:
+    ///   - request: LLM 请求快照
+    ///   - conversationID: 所属对话
+    ///   - turnID: 所属 AgentTurn (nil 表示 turn 跟踪之前的遗留请求)
+    ///   - providerID: LLM 供应商标识
+    func record(request: LumiLLMRequest, conversationID: UUID, turnID: UUID? = nil, providerID: String?) {
         let model = AgentTurnRecordModel(
             id: UUID().uuidString,
             conversationID: conversationID.uuidString,
+            turnID: turnID?.uuidString,
             createdAt: Date(),
             model: request.model,
             providerID: providerID,
@@ -108,6 +118,68 @@ actor AgentTurnRecordStore {
             // SwiftData + NSFileCoordinator 有时会产生无害的 warning,忽略即可。
         }
     }
+
+    // MARK: - Turn Aggregation Queries
+
+    /// Returns all distinct turn IDs for a conversation, ordered by first-seen ascending.
+    ///
+    /// 用于 `AgentTurnRunner.turnRecords(for:)` 聚合:拿到所有 turnID 后,
+    /// runner 可逐条从消息表和工具表中聚合统计,再叠加内存中的实时状态。
+    func fetchTurnIDs(for conversationID: UUID) -> [UUID] {
+        let conversationIDString = conversationID.uuidString
+        let descriptor = FetchDescriptor<AgentTurnRecordModel>(
+            predicate: #Predicate<AgentTurnRecordModel> {
+                $0.conversationID == conversationIDString && $0.turnID != nil
+            },
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+        )
+        guard let models = try? modelContext.fetch(descriptor) else { return [] }
+
+        var seen: Set<UUID> = []
+        var ordered: [UUID] = []
+        for model in models {
+            guard let idString = model.turnID, let id = UUID(uuidString: idString) else { continue }
+            if seen.insert(id).inserted {
+                ordered.append(id)
+            }
+        }
+        return ordered
+    }
+
+    /// Returns the earliest request timestamp for a given turn ID.
+    func fetchTurnStartedAt(turnID: UUID) -> Date? {
+        let turnIDString = turnID.uuidString
+        var descriptor = FetchDescriptor<AgentTurnRecordModel>(
+            predicate: #Predicate<AgentTurnRecordModel> { $0.turnID == turnIDString },
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+        )
+        descriptor.fetchLimit = 1
+        guard let first = try? modelContext.fetch(descriptor).first else { return nil }
+        return first.createdAt
+    }
+
+    /// Returns the latest request timestamp for a given turn ID.
+    func fetchTurnEndedAt(turnID: UUID) -> Date? {
+        let turnIDString = turnID.uuidString
+        var descriptor = FetchDescriptor<AgentTurnRecordModel>(
+            predicate: #Predicate<AgentTurnRecordModel> { $0.turnID == turnIDString },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        guard let last = try? modelContext.fetch(descriptor).first else { return nil }
+        return last.createdAt
+    }
+
+    /// Returns the number of LLM requests made within a given turn.
+    func fetchTurnRequestCount(turnID: UUID) -> Int {
+        let turnIDString = turnID.uuidString
+        let descriptor = FetchDescriptor<AgentTurnRecordModel>(
+            predicate: #Predicate<AgentTurnRecordModel> { $0.turnID == turnIDString }
+        )
+        return (try? modelContext.fetchCount(descriptor)) ?? 0
+    }
+
+    // MARK: - Legacy Queries
 
     /// Fetch one page of records using a keyset cursor.
     func fetchPage(limit: Int, beforeCreatedAt: Date? = nil, beforeID: String? = nil) -> [AgentTurnRecordDTO] {

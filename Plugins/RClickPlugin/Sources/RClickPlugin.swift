@@ -16,7 +16,7 @@ public final class RClickPlugin: LumiPlugin {
         LumiPluginLocalization.string("Right Click", bundle: .module)
     }
     public let order = 50
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .optIn
 
     public init() {}
 
@@ -34,9 +34,25 @@ public final class RClickPlugin: LumiPlugin {
                 id: id,
                 title: "Right Click",
                 systemImage: "cursorarrow.click.2",
-                panelHeaderVisibility: .unsupported
+                railVisibility: .alwaysVisible,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
             ) {
                 RClickSettingsView()
+            },
+        ]
+    }
+
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        [
+            PanelRailTabItem(
+                id: "\(id).preview",
+                title: "Preview",
+                systemImage: "eye",
+                visibility: .viewContainer(id: id)
+            ) {
+                RClickRailView()
             },
         ]
     }
@@ -51,7 +67,6 @@ public final class RClickPlugin: LumiPlugin {
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }

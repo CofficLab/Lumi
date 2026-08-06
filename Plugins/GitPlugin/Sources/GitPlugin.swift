@@ -37,9 +37,40 @@ public final class GitPlugin: LumiPlugin, SuperLog {
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        guard let project = kernel.project else { return [] }
+        return [
+            PanelRailTabItem(
+                id: "\(id).history",
+                title: LumiPluginLocalization.string("History", bundle: .module),
+                systemImage: "clock",
+                visibility: .viewContainer(id: id),
+                requiresProjectSupport: true
+            ) {
+                let gitVM = GitRuntimeBridge.gitVM
+                GitCommitHistorySidebarView(project: project, gitVM: gitVM)
+                    .environmentObject(gitVM)
+            },
+        ]
+    }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        guard let project = kernel.project else { return [] }
+        return [
+            ViewContainerItem(
+                id: id,
+                title: name,
+                systemImage: "arrow.triangle.branch",
+                supportsProject: true,
+                railVisibility: .alwaysVisible,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
+            ) {
+                GitPanelHostView(project: project)
+            },
+        ]
+    }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
