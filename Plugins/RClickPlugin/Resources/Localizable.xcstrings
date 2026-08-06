@@ -1210,36 +1210,36 @@
         }
       }
     },
-    "System Settings → Privacy & Security → Extensions → Added Extensions" : {
+    "System Settings → General → Login Items & Extensions → Finder Extensions" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "System Settings → Privacy & Security → Extensions → Added Extensions"
+            "value" : "System Settings → General → Login Items & Extensions → Finder Extensions"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "系统设置 → 隐私与安全性 → 扩展 → 已添加的扩展"
+            "value" : "系统设置 → 通用 → 登录项与扩展 → Finder 扩展"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "系統設定 → 隐私与安全性 → 擴充 → 已新增的擴充"
+            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → Finder 擴充功能"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "系統設定 → 隐私与安全性 → 擴充 → 已新增的擴充"
+            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → Finder 擴充功能"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "系統設定 → 隐私与安全性 → 擴充 → 已新增的擴充"
+            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → Finder 擴充功能"
           }
         }
       }

@@ -43,7 +43,7 @@ public struct RClickSettingsView: View {
 
                     Spacer()
 
-                    Text(LumiPluginLocalization.string("System Settings → Privacy & Security → Extensions → Added Extensions", bundle: .module))
+                    Text(LumiPluginLocalization.string("System Settings → General → Login Items & Extensions → Finder Extensions", bundle: .module))
                         .font(.appMicro)
                         .foregroundColor(theme.textTertiary)
                 }
@@ -159,8 +159,8 @@ public struct RClickSettingsView: View {
     // MARK: - Private
 
     private func openFinderExtensionSettings() {
-        // macOS 13+ use new System Settings URL
-        if let url = URL(string: "x-apple.systempreferences:com.apple.ExtensionsPreferences") {
+        // macOS 15+: General → Login Items & Extensions → Finder Extensions
+        if let url = URL(string: "x-apple.systempreferences:com.apple.Extensions-List") {
             NSWorkspace.shared.open(url)
         }
     }
