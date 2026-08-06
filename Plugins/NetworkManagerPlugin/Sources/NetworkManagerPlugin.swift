@@ -81,7 +81,19 @@ public final class NetworkManagerPlugin: LumiPlugin {
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
-    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        [
+            StatusBarItem(
+                id: "\(id).export-progress",
+                title: LumiPluginLocalization.string("HTTP Export Progress", bundle: .module),
+                systemImage: "square.and.arrow.down",
+                placement: .trailing,
+                statusBarView: {
+                    HTTPExportStatusBarView()
+                }
+            ),
+        ]
+    }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }

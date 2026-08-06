@@ -97,6 +97,27 @@ public final class HTTPExchangeStore {
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    /// Collect distinct host names from recent records.
+    ///
+    /// SwiftData offers no single-column projection, so this walks a bounded
+    /// window of the newest records instead of the full table, keeping the
+    /// cost constant as history grows. Hosts are lowercased so they line up
+    /// with `searchPage`'s `domain` filter.
+    public func fetchDomains(limit: Int = 5_000) -> [String] {
+        guard let context = self.context, limit > 0 else { return [] }
+        var descriptor = FetchDescriptor<HTTPExchangeRecord>(
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = limit
+        let records = (try? context.fetch(descriptor)) ?? []
+        var domains = Set<String>()
+        for record in records {
+            guard let host = URL(string: record.requestURL)?.host?.lowercased() else { continue }
+            domains.insert(host)
+        }
+        return domains.sorted()
+    }
+
     /// Search HTTP exchanges with optional filters.
     ///
     /// The keyset cursor (`beforeStartedAt`) is applied via SwiftData predicate
@@ -110,7 +131,8 @@ public final class HTTPExchangeStore {
         beforeStartedAt: Date? = nil,
         urlContains: String? = nil,
         method: String? = nil,
-        statusCode: Int? = nil
+        statusCode: Int? = nil,
+        domain: String? = nil
     ) -> [HTTPExchangeRecord] {
         guard let context = self.context, limit > 0 else { return [] }
 
@@ -121,6 +143,7 @@ public final class HTTPExchangeStore {
         let windowSize = max(limit * 4, limit)
         let normalizedURL = urlContains?.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedMethod = method?.uppercased()
+        let normalizedDomain = domain?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
         let cursor = beforeStartedAt
         let rawRecords: [HTTPExchangeRecord]
@@ -141,6 +164,10 @@ public final class HTTPExchangeStore {
         }
 
         let filtered = rawRecords.filter { record in
+            if let normalizedDomain, !normalizedDomain.isEmpty {
+                guard let host = URL(string: record.requestURL)?.host?.lowercased(),
+                      host == normalizedDomain else { return false }
+            }
             if let normalizedURL, !normalizedURL.isEmpty {
                 if !record.requestURL.localizedCaseInsensitiveContains(normalizedURL),
                    !(record.errorDescription?.localizedCaseInsensitiveContains(normalizedURL) ?? false) {
@@ -167,15 +194,18 @@ public final class HTTPExchangeStore {
     public func searchCount(
         urlContains: String? = nil,
         method: String? = nil,
-        statusCode: Int? = nil
+        statusCode: Int? = nil,
+        domain: String? = nil
     ) -> Int {
         guard let context = self.context else { return 0 }
 
         let normalizedURL = urlContains?.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedMethod = method?.uppercased()
+        let normalizedDomain = domain?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let isFiltered = (normalizedURL?.isEmpty == false)
             || normalizedMethod != nil
             || statusCode != nil
+            || (normalizedDomain?.isEmpty == false)
 
         if !isFiltered {
             return (try? context.fetchCount(FetchDescriptor<HTTPExchangeRecord>())) ?? 0
@@ -190,6 +220,10 @@ public final class HTTPExchangeStore {
         descriptor.fetchLimit = 5_000
         let records = (try? context.fetch(descriptor)) ?? []
         return records.filter { record in
+            if let normalizedDomain, !normalizedDomain.isEmpty {
+                guard let host = URL(string: record.requestURL)?.host?.lowercased(),
+                      host == normalizedDomain else { return false }
+            }
             if let normalizedURL, !normalizedURL.isEmpty {
                 if !record.requestURL.localizedCaseInsensitiveContains(normalizedURL),
                    !(record.errorDescription?.localizedCaseInsensitiveContains(normalizedURL) ?? false) {
