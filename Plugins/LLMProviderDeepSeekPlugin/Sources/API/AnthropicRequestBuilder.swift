@@ -127,6 +127,20 @@ enum AnthropicRequestBuilder {
             ]
         case .assistant:
             var blocks: [[String: Any]] = []
+            // 回传 reasoning:DeepSeek V4 默认 thinking 模式,第一轮请求「输出结束位置」
+            // 落盘的缓存前缀单元包含 thinking 内容;若回传 assistant 消息时不带 thinking
+            // blocks,后续请求的 token 序列与该单元失配,缓存无法命中。
+            // Anthropic 协议用 type=thinking block 承载思考内容。
+            if let reasoning = message.reasoningContent, !reasoning.isEmpty {
+                blocks.append([
+                    "type": "thinking",
+                    "thinking": reasoning,
+                    // DeepSeek 兼容端点对 anthropic-version / signature 均宽松处理
+                    // (见官方兼容表),给出占位以兼容严格校验方;若实测被 400 拒绝,
+                    // 改为透传响应中的 signature 或去掉该字段。
+                    "signature": message.metadata["thinkingSignature"] ?? "",
+                ])
+            }
             if !message.content.isEmpty {
                 blocks.append(contentsOf: textContentBlocks(for: message.content))
             }

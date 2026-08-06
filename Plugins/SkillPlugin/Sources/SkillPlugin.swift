@@ -62,20 +62,39 @@ public final class SkillPlugin: LumiPlugin, SuperLog {
 
         let prompt = SkillPromptBuilder.buildPrompt(skills: skills)
 
-        // 找到最后一条 user 消息的位置，在其后插入 skill 上下文
-        guard let conversationID = messages.last?.conversationID else { return messages }
-        let skillMessage = LumiChatMessage(
-            conversationID: conversationID,
-            role: .system,
-            content: prompt
-        )
-
+        // 仅当末尾已是 user 消息时才合并注入(与记忆注入同一策略):
+        // 1) 保持 system 前缀逐轮稳定,最大化 DeepSeek 缓存命中率
+        //    (硬盘缓存要求「从第 1 个 token 起」完整匹配前缀单元);
+        // 2) 工具调用中间轮次(末尾是 assistant(tool_use) / tool 消息)跳过,
+        //    避免在 tool_use 与 tool_result 之间插入 user 文本破坏协议配对。
+        guard messages.last?.role == .user else { return messages }
         var result = messages
-        if let lastUserIndex = result.lastIndex(where: { $0.role == .user }) {
-            result.insert(skillMessage, at: lastUserIndex + 1)
-        } else {
-            result.append(skillMessage)
-        }
+        let removed = result.removeLast()
+        result.append(LumiChatMessage(
+            id: removed.id,
+            conversationID: removed.conversationID,
+            role: removed.role,
+            content: removed.content + "\n\n" + prompt,
+            turnID: removed.turnID,
+            createdAt: removed.createdAt,
+            providerID: removed.providerID,
+            modelName: removed.modelName,
+            isError: removed.isError,
+            rawErrorDetail: removed.rawErrorDetail,
+            httpStatusCode: removed.httpStatusCode,
+            httpBody: removed.httpBody,
+            renderKind: removed.renderKind,
+            preferredRendererID: removed.preferredRendererID,
+            metadata: removed.metadata,
+            toolCalls: removed.toolCalls,
+            toolCallID: removed.toolCallID,
+            reasoningContent: removed.reasoningContent,
+            inputTokenCount: removed.inputTokenCount,
+            outputTokenCount: removed.outputTokenCount,
+            latencyMs: removed.latencyMs,
+            timeToFirstTokenMs: removed.timeToFirstTokenMs,
+            streamingDurationMs: removed.streamingDurationMs
+        ))
         return result
     }
 
