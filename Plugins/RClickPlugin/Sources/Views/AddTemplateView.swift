@@ -15,9 +15,10 @@ public struct AddTemplateView: View {
 
     public var body: some View {
         VStack(spacing: 20) {
-            Text(LumiPluginLocalization.string("Add New Template", bundle: .module))
-                .font(.appBodyEmphasized)
-                .foregroundColor(theme.textPrimary)
+            GlassSectionHeader(
+                icon: "doc.badge.plus",
+                title: LumiPluginLocalization.string("Add New Template", bundle: .module)
+            )
 
             VStack(spacing: 12) {
                 GlassTextField(
