@@ -63,7 +63,10 @@ let package = Package(
         .testTarget(
             name: "MessageListAppKitPluginTests",
             dependencies: ["MessageListAppKitPlugin"],
-            path: "Tests"
+            path: "Tests",
+            resources: [
+                .process("Fixtures"),
+            ]
         ),
     ]
 )

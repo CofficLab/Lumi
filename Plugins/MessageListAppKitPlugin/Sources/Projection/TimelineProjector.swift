@@ -57,10 +57,13 @@ public struct TimelineProjector: Sendable {
     }
 
     /// The live streaming tail row, when the stage makes it visible.
+    ///
+    /// The row uses the process-wide stable `LumiStreamingRowID` so its identity
+    /// never collides with persisted message UUIDs and survives token updates.
     public func projectStreamingRow(_ input: Input) -> AppKitMessageRow? {
         guard shouldShowStreamingRow(input), let row = input.streamingRow else { return nil }
         return AppKitMessageRow(
-            id: "streaming-\(row.conversationID.uuidString)",
+            id: LumiStreamingRowID.uuidString,
             kind: .streaming,
             message: row,
             sourceTurnID: row.turnID

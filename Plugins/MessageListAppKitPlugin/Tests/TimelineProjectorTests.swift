@@ -88,7 +88,7 @@ struct TimelineProjectorTests {
 
         let tail = rows.last
         #expect(tail?.kind == .streaming)
-        #expect(tail?.id == "streaming-\(f.conversationID.uuidString)")
+        #expect(tail?.id == LumiStreamingRowID.uuidString)
         #expect(tail?.content == "正在生成回复…")
     }
 
