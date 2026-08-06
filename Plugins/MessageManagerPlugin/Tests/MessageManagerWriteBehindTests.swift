@@ -158,7 +158,7 @@ struct MessageManagerWriteBehindTests {
 /// 锁定 status 走 insert 模式后的语义:
 /// - status 只入内存、不落盘(磁盘查不到);
 /// - status 从读路径可见(合并到 messagePage 末尾);
-/// - insert 回合产物(assistant/error)时自动清除该会话 status;user/tool 不清;
+/// - user/assistant/tool/error 都不清 status，status 覆盖整个 AgentTurn；
 /// - clearStatusMessage 显式清除(取消等场景兜底)。
 @MainActor
 @Suite("MessageManager Status Message", .serialized)
@@ -199,8 +199,8 @@ struct MessageManagerStatusMessageTests {
         #expect(page.first?.role == .status)
     }
 
-    @Test("user 不清 status;tool/assistant/error 清 status(阶段产物退场)")
-    func autoClearOnTurnProductOnly() async throws {
+    @Test("回合过程消息不清 status")
+    func turnProcessMessagesKeepStatus() async throws {
         let (_, directory) = try installTemporaryStore()
         defer {
             MessageStoreRuntimeBridge.shared.store = nil
@@ -234,12 +234,25 @@ struct MessageManagerStatusMessageTests {
         )
         #expect(hasStatus())
 
-        // tool 消息(工具结果)→ status 自动清除。
+        // 工具结果、过程 assistant 和 error 都不能让 status 提前退场；
+        // AgentTurn 结束时由生命周期显式清理。
         manager.insertMessage(
             LumiChatMessage(conversationID: conversationID, role: .tool, content: "工具结果"),
             to: conversationID
         )
-        #expect(!hasStatus(), "tool 消息应清除 status")
+        #expect(hasStatus(), "tool 消息不应清除 status")
+
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .assistant, content: "过程回复"),
+            to: conversationID
+        )
+        #expect(hasStatus(), "assistant 消息不应清除 status")
+
+        manager.insertMessage(
+            LumiChatMessage(conversationID: conversationID, role: .error, content: "失败"),
+            to: conversationID
+        )
+        #expect(hasStatus(), "error 消息不应清除 status")
     }
 
     @Test("clearStatusMessage 显式清除(取消场景兜底)")

@@ -577,7 +577,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             //
             // 每一轮 LLM 调用前 insert 一条 status:第一轮覆盖 sender 的"正在发送…"
             // (同会话只保留最新),后续轮次(工具结果发回 LLM)补上"正在思考…"指示。
-            // 流式 thinking/generating 阶段由 RowBuilder 剔除 status,改由流式行承载。
+            // V1 始终只展示 status；V2 可在流式 thinking/generating 阶段
+            // 用 RowBuilder 将其替换为流式行。
             insertStatusMessage(
                 conversationID: conversationID,
                 content: String(localized: "status.thinking", defaultValue: "正在思考…")
@@ -662,8 +663,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 }
 
                 // 流式已结束(endStreaming),工具执行期间没有流式行 —— insert 一条
-                // 瞬时 status("正在执行: X…")让 UI 有进度指示。工具结果(tool 消息)
-                // insert 时 MessageManager 自动清除此 status;下一个工具再 insert 新的。
+                // 瞬时 status("正在执行: X…")让 UI 有进度指示；下一个阶段的
+                // status 直接覆盖它，整个 Turn 始终至多存在一条。
                 insertStatusMessage(
                     conversationID: conversationID,
                     content: String(

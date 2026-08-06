@@ -19,7 +19,7 @@ extension AgentTurnRunner {
     }
 
     /// 插入一条瞬时 status 消息(如"正在执行: X…"),由 `MessageManaging` 仅存内存、不落盘。
-    /// 工具结果/回合产物 insert 时自动清除。不发送 messageSaved 通知(status 是瞬时的,无需回看)。
+    /// 后续 status 会覆盖它，AgentTurn 结束时统一清除。不发送 messageSaved 通知。
     func insertStatusMessage(conversationID: UUID, content: String) {
         guard let kernel else { return }
         let status = LumiChatMessage(
