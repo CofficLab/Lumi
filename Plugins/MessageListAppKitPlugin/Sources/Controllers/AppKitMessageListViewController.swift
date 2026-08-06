@@ -55,11 +55,15 @@ final class AppKitMessageListViewController: NSViewController {
         tableView.headerView = nil
         tableView.rowSizeStyle = .custom
         tableView.floatsGroupRows = false
+        // Last column fills the table width; otherwise the single column stays
+        // at its initial width (often 0 when sized before layout).
+        tableView.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
 
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("message"))
         column.resizingMask = .autoresizingMask
+        column.width = 300
+        column.minWidth = 80
         tableView.addTableColumn(column)
-        tableView.sizeLastColumnToFit()
 
         scrollView.documentView = tableView
         root.addSubview(scrollView)
@@ -166,6 +170,10 @@ final class AppKitMessageListViewController: NSViewController {
     private func apply(snapshot: AppKitMessageListSnapshot) {
         dataSource.apply(snapshot: snapshot)
         updateOverlays(snapshot: snapshot)
+
+        // Temporary geometry diagnostics for the blank-table investigation.
+        let colWidth = tableView.tableColumns.first?.width ?? -1
+        print("[MessageListAppKit] apply: rows=\(dataSource.rows.count) frame=\(tableView.frame) numRows=\(tableView.numberOfRows) visible=\(tableView.visibleRect) colW=\(colWidth) scrollH=\(scrollView.frame.height) scrollW=\(scrollView.frame.width)")
 
         // Bottom-follow: only follow while the user was already at the bottom.
         if snapshot.displayRows.last != nil, !snapshot.isLoading, scrollAnchor.isAtBottom() {
