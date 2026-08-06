@@ -8,7 +8,10 @@ public final class HTTPExchangeStore {
     public static let databaseFileName = "http-exchanges.sqlite"
     public static let didChangeNotification = Notification.Name("com.coffic.lumi.networkManagerHTTPExchangeDidChange")
 
-    private let container: ModelContainer?
+    /// Backing container. `ModelContainer` is `Sendable` and safe to touch off
+    /// the main actor, so this is exposed `nonisolated` to let the background
+    /// snapshot readers build their own private `ModelContext`.
+    private nonisolated let container: ModelContainer?
     private let context: ModelContext?
 
     public let directory: URL
@@ -270,6 +273,120 @@ public final class HTTPExchangeStore {
             return HTTPExchangeDailyCountPoint(day: day, count: count)
         }
         return HTTPExchangeDailyCountSeries(points: points)
+    }
+
+    // MARK: - Background snapshot reads
+
+    /// Snapshot readers for the settings UI. Each is `nonisolated` so callers
+    /// can run them on a detached task without bouncing back onto the main
+    /// actor. They build their own private `ModelContext` from the shared
+    /// container (the supported SwiftData background-read pattern) and return
+    /// value-type snapshots, which keeps `@Model` objects off the main thread
+    /// entirely. The synchronous APIs above remain untouched for the write
+    /// path, the agent tools, and the existing tests.
+
+    private nonisolated func makeBackgroundContext() -> ModelContext? {
+        guard let container else { return nil }
+        return ModelContext(container)
+    }
+
+    /// One page of newest exchanges as snapshots.
+    ///
+    /// Uses the same keyset cursor as `fetchPage(limit:beforeStartedAt:)` so
+    /// pagination boundaries stay identical to the synchronous path.
+    nonisolated func loadSnapshotPage(
+        limit: Int,
+        beforeStartedAt: Date? = nil
+    ) -> [HTTPExchangeExportSnapshot] {
+        guard limit > 0, let context = makeBackgroundContext() else { return [] }
+
+        let cursorDate = beforeStartedAt
+        var descriptor: FetchDescriptor<HTTPExchangeRecord>
+        if let cursorDate {
+            descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                predicate: #Predicate<HTTPExchangeRecord> { $0.startedAt < cursorDate },
+                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+            )
+        } else {
+            descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+            )
+        }
+        descriptor.fetchLimit = limit
+        let records = (try? context.fetch(descriptor)) ?? []
+        return records.map(HTTPExchangeExportSnapshot.init(record:))
+    }
+
+    /// Total number of stored exchanges, without materializing bodies.
+    nonisolated func loadSnapshotCount() -> Int {
+        guard let context = makeBackgroundContext() else { return 0 }
+        return (try? context.fetchCount(FetchDescriptor<HTTPExchangeRecord>())) ?? 0
+    }
+
+    /// Distinct host names from the most recent records.
+    ///
+    /// Mirrors `fetchDomains(limit:)`, run off the main actor.
+    nonisolated func loadRecentDomains(limit: Int = 5_000) -> [String] {
+        guard limit > 0, let context = makeBackgroundContext() else { return [] }
+        var descriptor = FetchDescriptor<HTTPExchangeRecord>(
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = limit
+        let records = (try? context.fetch(descriptor)) ?? []
+        var domains = Set<String>()
+        for record in records {
+            guard let host = URL(string: record.requestURL)?.host?.lowercased() else { continue }
+            domains.insert(host)
+        }
+        return domains.sorted()
+    }
+
+    /// Every exchange as snapshots, for in-memory filtered mode.
+    ///
+    /// The settings view applies status/domain/time filtering in memory (the
+    /// `#Predicate` macro can't express these optionals cleanly). Returning
+    /// snapshots instead of `@Model` objects keeps that filtering cheap and
+    /// off the main thread.
+    nonisolated func loadAllSnapshots() -> [HTTPExchangeExportSnapshot] {
+        guard let context = makeBackgroundContext() else { return [] }
+        let descriptor = FetchDescriptor<HTTPExchangeRecord>(
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        let records = (try? context.fetch(descriptor)) ?? []
+        return records.map(HTTPExchangeExportSnapshot.init(record:))
+    }
+
+    /// Recent activity chart, built with a single fetch + in-memory bucketing
+    /// instead of one count query per day.
+    ///
+    /// The synchronous `fetchDailyCountSeries` issues N separate `fetchCount`
+    /// queries (one per day); this collapses them into one bounded fetch of
+    /// the window and reuses `HTTPExchangeDailyCountSeries.build` to bucket.
+    nonisolated func loadDailyCountSeries(
+        days: Int = 14,
+        endingAt date: Date = Date()
+    ) -> HTTPExchangeDailyCountSeries {
+        guard days > 0, let context = makeBackgroundContext() else {
+            return HTTPExchangeDailyCountSeries(points: [])
+        }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: date)
+        guard let firstDay = calendar.date(byAdding: .day, value: -(days - 1), to: today) else {
+            return HTTPExchangeDailyCountSeries(points: [])
+        }
+
+        let descriptor = FetchDescriptor<HTTPExchangeRecord>(
+            predicate: #Predicate<HTTPExchangeRecord> { $0.startedAt >= firstDay },
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        let records = (try? context.fetch(descriptor)) ?? []
+        return HTTPExchangeDailyCountSeries.build(
+            records: records,
+            calendar: calendar,
+            days: days,
+            endingAt: date
+        )
     }
 
     public func finish(

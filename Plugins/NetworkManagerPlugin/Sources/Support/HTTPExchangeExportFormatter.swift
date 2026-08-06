@@ -5,7 +5,7 @@ import Foundation
 /// SwiftData models are not safe to read off the context's main actor, so the
 /// settings view snapshots records into this `Sendable` struct before handing
 /// them to a background export task.
-public struct HTTPExchangeExportSnapshot: Sendable {
+public struct HTTPExchangeExportSnapshot: Sendable, Identifiable {
     public let id: UUID
     public let method: String
     public let url: String
