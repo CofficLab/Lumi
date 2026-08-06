@@ -293,13 +293,14 @@ public final class AppKitMessageListCoordinator {
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     let selected = self.dependencies.conversations?.selectedConversationID
-                    // Only react once we already hold a non-nil active session —
-                    // avoids a race where the controller's first activate and
-                    // the very first conversationsDidChange notification both
-                    // run concurrently and the nil branch never reaches
-                    // publish(.empty).
-                    guard let current = self.activeConversationID else { return }
-                    if selected != current { await self.activate(conversationID: selected) }
+                    // React to every change, including the nil → conversation
+                    // transition (user picks a conversation after the view
+                    // appeared with no selection). activate(nil) publishes an
+                    // empty snapshot as its own terminal state, so a nil
+                    // selected value here is always safe.
+                    if selected != self.activeConversationID {
+                        await self.activate(conversationID: selected)
+                    }
                 }
             }
             .store(in: &cancellables)
