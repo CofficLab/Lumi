@@ -62,40 +62,18 @@ public final class SkillPlugin: LumiPlugin, SuperLog {
 
         let prompt = SkillPromptBuilder.buildPrompt(skills: skills)
 
-        // 仅当末尾已是 user 消息时才合并注入(与记忆注入同一策略):
-        // 1) 保持 system 前缀逐轮稳定,最大化 DeepSeek 缓存命中率
-        //    (硬盘缓存要求「从第 1 个 token 起」完整匹配前缀单元);
-        // 2) 工具调用中间轮次(末尾是 assistant(tool_use) / tool 消息)跳过,
-        //    避免在 tool_use 与 tool_result 之间插入 user 文本破坏协议配对。
-        guard messages.last?.role == .user else { return messages }
-        var result = messages
-        let removed = result.removeLast()
-        result.append(LumiChatMessage(
-            id: removed.id,
-            conversationID: removed.conversationID,
-            role: removed.role,
-            content: removed.content + "\n\n" + prompt,
-            turnID: removed.turnID,
-            createdAt: removed.createdAt,
-            providerID: removed.providerID,
-            modelName: removed.modelName,
-            isError: removed.isError,
-            rawErrorDetail: removed.rawErrorDetail,
-            httpStatusCode: removed.httpStatusCode,
-            httpBody: removed.httpBody,
-            renderKind: removed.renderKind,
-            preferredRendererID: removed.preferredRendererID,
-            metadata: removed.metadata,
-            toolCalls: removed.toolCalls,
-            toolCallID: removed.toolCallID,
-            reasoningContent: removed.reasoningContent,
-            inputTokenCount: removed.inputTokenCount,
-            outputTokenCount: removed.outputTokenCount,
-            latencyMs: removed.latencyMs,
-            timeToFirstTokenMs: removed.timeToFirstTokenMs,
-            streamingDurationMs: removed.streamingDurationMs
-        ))
-        return result
+        // 注入为 system 消息(由 AgentTurnRunner 合并进顶层 system 前缀):
+        // - skill 列表是项目级稳定配置(会话内不变),放 system 前缀可被 DeepSeek 缓存持续命中;
+        // - 曾改为合并进「最后一条 user 消息」→ 该消息下一轮在历史中变回原文,
+        //   从历史第一条起前缀失配 → 缓存近乎全 miss(实测命中率仅 ~35%)。
+        // - system role 消息不进入 messages[](被 partition 提取),不会破坏 tool_use/tool_result 配对。
+        guard let conversationID = messages.last?.conversationID else { return messages }
+        let skillMessage = LumiChatMessage(
+            conversationID: conversationID,
+            role: .system,
+            content: prompt
+        )
+        return [skillMessage] + messages
     }
 
     // MARK: - LumiPlugin stubs

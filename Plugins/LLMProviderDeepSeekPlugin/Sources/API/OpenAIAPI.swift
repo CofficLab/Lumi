@@ -28,7 +28,7 @@ final class DeepSeekOpenAIService: @unchecked Sendable {
         guard let network else {
             throw DeepSeekTransportError.networkUnavailable
         }
-        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
         let networkRequest = HTTPRequest(
             url: request.url!,
             method: .post,
@@ -36,23 +36,35 @@ final class DeepSeekOpenAIService: @unchecked Sendable {
             body: bodyData,
             timeout: max(request.timeoutInterval, 300)
         )
+        // 网络层按 ~16KB 回调原始字节,不保证 SSE 帧完整;必须跨 chunk 累积成
+        // 完整帧再解析,否则大 delta 会丢失,内容不完整、历史回传前缀失配、
+        // 缓存命中率崩盘(与 Anthropic flavor 同一问题,见 SSESequenceAccumulator)。
+        let accumulator = SSESequenceAccumulator()
         try await network.stream(
             networkRequest,
             onResponse: { _ in },
             onChunk: { data in
-                for event in DeepSeekEventParser.parse(data) {
-                    if !(await onChunk(event)) { return false }
+                for frame in accumulator.appendAndDrain(data) {
+                    for event in DeepSeekEventParser.parse(frame) {
+                        if !(await onChunk(event)) { return false }
+                    }
                 }
                 return true
             }
         )
+        if let remaining = accumulator.drainRemaining() {
+            for event in DeepSeekEventParser.parse(remaining) {
+                _ = await onChunk(event)
+            }
+        }
     }
 
     func sendOnce(request: URLRequest, body: [String: Any]) async throws -> Data {
         guard let network else {
             throw DeepSeekTransportError.networkUnavailable
         }
-        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        // 与 send() 一致:sortedKeys 保证 JSON 字节序列稳定,缓存可命中
+        let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
         let response = try await network.request(HTTPRequest(
             url: request.url!,
             method: .post,

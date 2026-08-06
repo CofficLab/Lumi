@@ -38,40 +38,22 @@ public enum MemoryContextService {
         \(sections.joined(separator: "\n\n"))
         </lumi-memory>
         """
-        // 仅当末尾已是 user 消息时才合并注入(而不是注入 system 前缀):
-        // 1) DeepSeek 硬盘缓存要求「从第 1 个 token 起」完整匹配缓存前缀单元,而记忆按
-        //    当前 user 消息检索、内容每轮变化;若作为 system 注入会从 token 0 破坏整个前缀,
-        //    导致后续轮次全部 miss。合并进末尾 user 消息后,system + 历史前缀保持稳定,可持续命中;
-        // 2) 工具调用中间轮次(末尾是 assistant(tool_use) / tool 消息)直接跳过,
-        //    避免在 tool_use 与 tool_result 之间插入 user 文本破坏协议配对(DeepSeek 严格校验)。
+        // 追加为【独立的 user 消息】到 messages 末尾,绝不改写任何历史消息。
+        //
+        // 实测教训(2026-08-06, Lumi 请求日志 + API 复现):
+        // - 曾把记忆合并进「最后一条 user 消息」→ 该消息下一轮在历史中"变回原文"
+        //   (注入移到了新的最后一条 user)→ 从历史第一条起前缀失配 → 缓存近乎全 miss;
+        // - 独立追加在末尾时,失配点只在新注入处,前面 system+tools+全部历史持续命中
+        //   (API 实测:第二轮命中率从 ~35% 提升到 ~85%);
+        // - 仅当末尾是 user 时注入(连续 user 消息已实测被 DeepSeek anthropic 端点接受);
+        //   工具中间轮次(末尾 assistant(tool_use) / tool)跳过,避免破坏 tool_use/tool_result 配对。
         guard messages.last?.role == .user else { return messages }
-        var result = messages
-        let removed = result.removeLast()
-        result.append(LumiChatMessage(
-            id: removed.id,
-            conversationID: removed.conversationID,
-            role: removed.role,
-            content: removed.content + "\n\n" + context,
-            turnID: removed.turnID,
-            createdAt: removed.createdAt,
-            providerID: removed.providerID,
-            modelName: removed.modelName,
-            isError: removed.isError,
-            rawErrorDetail: removed.rawErrorDetail,
-            httpStatusCode: removed.httpStatusCode,
-            httpBody: removed.httpBody,
-            renderKind: removed.renderKind,
-            preferredRendererID: removed.preferredRendererID,
-            metadata: removed.metadata,
-            toolCalls: removed.toolCalls,
-            toolCallID: removed.toolCallID,
-            reasoningContent: removed.reasoningContent,
-            inputTokenCount: removed.inputTokenCount,
-            outputTokenCount: removed.outputTokenCount,
-            latencyMs: removed.latencyMs,
-            timeToFirstTokenMs: removed.timeToFirstTokenMs,
-            streamingDurationMs: removed.streamingDurationMs
-        ))
-        return result
+        let conversationID = messages.last?.conversationID ?? UUID()
+        let memoryMessage = LumiChatMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: context
+        )
+        return messages + [memoryMessage]
     }
 }

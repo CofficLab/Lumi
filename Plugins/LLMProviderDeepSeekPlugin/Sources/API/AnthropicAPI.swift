@@ -14,6 +14,12 @@ struct AnthropicEvent: Sendable {
     let textDelta: String?
     /// 来自 `content_block_delta(type=thinking)` 的思考增量（如果 DeepSeek 透传）。
     let thinkingDelta: String?
+    /// 来自 `content_block_delta(type=signature_delta)` 的思考签名。
+    ///
+    /// DeepSeek 为每个 thinking block 返回 `signature`(实测 2026-08-06)。
+    /// 若回传 assistant 消息时不带真实 signature(用空串),thinking block 与
+    /// DeepSeek 落盘的缓存前缀单元不一致 → 从第一条 assistant 起前缀失配、缓存全 miss。
+    let thinkingSignature: String?
     /// 来自 `content_block_delta(type=input_json_delta)` 累积后的工具入参。
     /// Anthropic 把工具入参以增量 JSON 字符串形式发出；这里保留累积视图。
     let toolInputJSONDelta: String?
@@ -31,6 +37,33 @@ struct AnthropicEvent: Sendable {
     let done: Bool
     /// 协议层错误（来自 SSE `event: error` 或顶层 JSON `error` 字段）。
     let error: String?
+
+    /// 统一构造入口：`thinkingSignature` 等字段带默认值，避免每个构造点重复传参。
+    init(
+        textDelta: String? = nil,
+        thinkingDelta: String? = nil,
+        thinkingSignature: String? = nil,
+        toolInputJSONDelta: String? = nil,
+        toolName: String? = nil,
+        toolID: String? = nil,
+        stopReason: String? = nil,
+        stopSequence: String? = nil,
+        usage: DeepSeekAnthropicUsage? = nil,
+        done: Bool = false,
+        error: String? = nil
+    ) {
+        self.textDelta = textDelta
+        self.thinkingDelta = thinkingDelta
+        self.thinkingSignature = thinkingSignature
+        self.toolInputJSONDelta = toolInputJSONDelta
+        self.toolName = toolName
+        self.toolID = toolID
+        self.stopReason = stopReason
+        self.stopSequence = stopSequence
+        self.usage = usage
+        self.done = done
+        self.error = error
+    }
 }
 
 /// Anthropic 协议 usage 字段的合并视图。
@@ -109,16 +142,27 @@ final class DeepSeekAnthropicService: @unchecked Sendable {
             body: request.httpBody,
             timeout: max(request.timeoutInterval, 300)
         )
+        // 网络层按 ~16KB 回调原始字节,不保证 SSE 帧完整;必须跨 chunk 累积成
+        // 完整帧再解析,否则大 content_block_delta 会丢失,thinking/text 不完整,
+        // 导致存储的消息与模型输出不一致、历史回传前缀失配、缓存命中率崩盘。
+        let accumulator = SSESequenceAccumulator()
         try await network.stream(
             networkRequest,
             onResponse: { _ in },
             onChunk: { data in
-                for event in DeepSeekAnthropicEventParser.parse(data) {
-                    if !(await onChunk(event)) { return false }
+                for frame in accumulator.appendAndDrain(data) {
+                    for event in DeepSeekAnthropicEventParser.parse(frame) {
+                        if !(await onChunk(event)) { return false }
+                    }
                 }
                 return true
             }
         )
+        if let remaining = accumulator.drainRemaining() {
+            for event in DeepSeekAnthropicEventParser.parse(remaining) {
+                _ = await onChunk(event)
+            }
+        }
     }
 
     /// 非流式请求（用于 ping / availability check）。
@@ -267,6 +311,19 @@ enum DeepSeekAnthropicEventParser {
                     events.append(AnthropicEvent(
                         textDelta: nil,
                         thinkingDelta: delta?["thinking"] as? String,
+                        toolInputJSONDelta: nil,
+                        toolName: nil, toolID: nil,
+                        stopReason: nil, stopSequence: nil,
+                        usage: nil,
+                        done: false, error: nil
+                    ))
+                case "signature_delta":
+                    // DeepSeek 为每个 thinking block 回传签名(实测 2026-08-06)。
+                    // 必须保存并在回传 assistant 消息时带上,否则 thinking block 与
+                    // 缓存落盘单元不一致,从该消息起前缀失配、缓存全 miss。
+                    events.append(AnthropicEvent(
+                        textDelta: nil, thinkingDelta: nil,
+                        thinkingSignature: delta?["signature"] as? String,
                         toolInputJSONDelta: nil,
                         toolName: nil, toolID: nil,
                         stopReason: nil, stopSequence: nil,

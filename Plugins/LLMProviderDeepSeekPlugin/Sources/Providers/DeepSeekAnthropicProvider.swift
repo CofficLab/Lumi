@@ -90,7 +90,13 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
         // 工具名映射:请求发送时被转义为 ^[a-zA-Z0-9_-]+$ 兼容形式,
         // 响应解析时据此还原为 Lumi 注册名,保证工具执行路由正确。
         let toolNameMap = AnthropicRequestBuilder.toolNameMap(for: request)
-        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        // 关键: .sortedKeys 递归排序所有 JSON key。
+        // Swift 的 [String: Any] 字典是无序的,若不加 sortedKeys,每次请求序列化出的
+        // JSON 字节序列(顶层及嵌套 key 顺序)都不同;DeepSeek 硬盘缓存按「从 token 0
+        // 起的前缀 token 序列」精确匹配(包含 JSON 结构),key 顺序一变整段前缀失配,
+        // 缓存命中率会从 90%+ 崩到 2-5%(已实测复现:同内容不同 key 序命中 2.9%,
+        // 同 key 序命中 99.3%)。
+        let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
         let apiKey = try lumiResolveAPIKey()
 
         let requestStartedAt = Date()
@@ -123,6 +129,9 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
                 if let thinking = event.thinkingDelta, !thinking.isEmpty {
                     message.mergeThinkingDelta(thinking, now: Date())
                     emittedReasoning = thinking
+                }
+                if let signature = event.thinkingSignature, !signature.isEmpty {
+                    message.thinkingSignature = signature
                 }
                 if let toolID = event.toolID {
                     let rawName = event.toolName ?? ""
@@ -175,7 +184,7 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
             ]],
             "stream": false,
         ]
-        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
         _ = try await apiService.sendOnce(apiKey: try lumiResolveAPIKey(), body: bodyData)
     }
 

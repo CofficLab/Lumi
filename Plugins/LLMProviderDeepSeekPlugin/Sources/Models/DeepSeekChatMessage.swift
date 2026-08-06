@@ -18,6 +18,9 @@ import LumiKernel
 /// 3. 流结束时调用 `finalize(now:)` 把 timing 写入
 /// 4. 最后 `toLumiChatMessage()` 转成内核类型
 struct DeepSeekChatMessage: Sendable {
+    /// metadata 键:thinking block 签名(回传 assistant 消息时用于缓存前缀匹配)。
+    static let thinkingSignatureKey = "thinkingSignature"
+
     // MARK: - 本地派生字段
 
     let id: UUID
@@ -39,6 +42,9 @@ struct DeepSeekChatMessage: Sendable {
     var content: String
     /// 来自 `delta.reasoning_content` 的累加。
     var reasoningContent: String?
+    /// 当前 thinking block 的签名(来自 `signature_delta`),回传 assistant 消息时
+    /// 必须带上,否则 thinking block 与 DeepSeek 缓存落盘单元不一致 → 前缀失配。
+    var thinkingSignature: String?
     /// 来自 `delta.tool_calls` 的最终结构化结果。
     var toolCalls: [LumiToolCall]?
     /// 来自 `choice.finish_reason`。
@@ -86,6 +92,7 @@ struct DeepSeekChatMessage: Sendable {
         toolCalls: [LumiToolCall]? = nil,
         toolCallID: String? = nil,
         reasoningContent: String? = nil,
+        thinkingSignature: String? = nil,
         inputTokenCount: Int? = nil,
         outputTokenCount: Int? = nil,
         cachedInputTokens: Int? = nil,
@@ -109,6 +116,7 @@ struct DeepSeekChatMessage: Sendable {
         self.toolCalls = toolCalls
         self.toolCallID = toolCallID
         self.reasoningContent = reasoningContent
+        self.thinkingSignature = thinkingSignature
         self.inputTokenCount = inputTokenCount
         self.outputTokenCount = outputTokenCount
         self.cachedInputTokens = cachedInputTokens
@@ -284,6 +292,11 @@ struct DeepSeekChatMessage: Sendable {
         var metadata = metadata
         if let stopReason, metadata["stopReason"] == nil {
             metadata["stopReason"] = stopReason
+        }
+        // thinking 签名需要随消息持久化,回传 assistant 消息时原样带上,
+        // 否则缓存前缀单元失配(见 AnthropicRequestBuilder.message)。
+        if let thinkingSignature, metadata[Self.thinkingSignatureKey] == nil {
+            metadata[Self.thinkingSignatureKey] = thinkingSignature
         }
         let usage = MessageTokenMetadata.metadata(
             inputTokens: inputTokenCount,

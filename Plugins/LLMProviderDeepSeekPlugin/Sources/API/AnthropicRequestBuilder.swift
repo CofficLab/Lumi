@@ -131,13 +131,13 @@ enum AnthropicRequestBuilder {
             // 落盘的缓存前缀单元包含 thinking 内容;若回传 assistant 消息时不带 thinking
             // blocks,后续请求的 token 序列与该单元失配,缓存无法命中。
             // Anthropic 协议用 type=thinking block 承载思考内容。
+            // ⚠️ signature 必须用响应中 signature_delta 返回的真实值(存于
+            // metadata["thinkingSignature"]);用空串或缺失会导致 thinking block 与
+            // 缓存落盘单元不一致,从该消息起前缀失配、缓存近乎全 miss(实测 2026-08-06)。
             if let reasoning = message.reasoningContent, !reasoning.isEmpty {
                 blocks.append([
                     "type": "thinking",
                     "thinking": reasoning,
-                    // DeepSeek 兼容端点对 anthropic-version / signature 均宽松处理
-                    // (见官方兼容表),给出占位以兼容严格校验方;若实测被 400 拒绝,
-                    // 改为透传响应中的 signature 或去掉该字段。
                     "signature": message.metadata["thinkingSignature"] ?? "",
                 ])
             }
