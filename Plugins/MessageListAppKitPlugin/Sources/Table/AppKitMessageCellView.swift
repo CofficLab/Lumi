@@ -19,11 +19,6 @@ final class AppKitMessageCellView: NSTableCellView {
     /// Configures the cell for a row, swapping the root view when the
     /// renderer's reuse identifier changes.
     func configure(row: AppKitMessageRow, renderer: any AppKitMessageRenderer) {
-        // Temporary diagnostic background so the user can see whether cells
-        // are created and laid out at all.
-        wantsLayer = true
-        layer?.backgroundColor = NSColor.systemRed.withAlphaComponent(0.15).cgColor
-
         if renderer.reuseIdentifier != self.renderer?.reuseIdentifier {
             removeRootView()
             self.renderer = renderer

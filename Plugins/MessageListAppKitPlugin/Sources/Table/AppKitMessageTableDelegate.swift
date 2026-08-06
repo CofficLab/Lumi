@@ -23,6 +23,17 @@ final class AppKitMessageTableDelegate: NSObject, NSTableViewDelegate {
         self.dataSource = dataSource
     }
 
+    /// Recent SDKs declare `tableView:viewForTableColumn:row:` on the
+    /// *delegate* protocol (it used to live on the data source). Forward to
+    /// the data source so runtimes that query the delegate still get cells.
+    func tableView(
+        _ tableView: NSTableView,
+        viewFor tableColumn: NSTableColumn?,
+        row: Int
+    ) -> NSView? {
+        dataSource?.tableView(tableView, viewFor: tableColumn, row: row)
+    }
+
     func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
         guard let rows = dataSource?.rows, rows.indices.contains(row) else {
             return Self.fixedRowHeight
@@ -35,9 +46,7 @@ final class AppKitMessageTableDelegate: NSObject, NSTableViewDelegate {
             if width != availableWidth {
                 availableWidth = width
             }
-            let height = rendererFor(messageRow).measure(row: messageRow, width: width)
-            print("[MessageListAppKit] heightOfRow row=\(row) h=\(height)")
-            return height
+            return rendererFor(messageRow).measure(row: messageRow, width: width)
         }
     }
 

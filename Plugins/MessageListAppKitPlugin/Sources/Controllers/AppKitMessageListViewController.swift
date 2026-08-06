@@ -191,18 +191,6 @@ final class AppKitMessageListViewController: NSViewController {
         dataSource.apply(snapshot: snapshot)
         updateOverlays(snapshot: snapshot)
 
-        // Temporary geometry diagnostic.
-        let colWidth = tableView.tableColumns.first?.width ?? -1
-        let visible = tableView.visibleRect
-        let row0Rect = tableView.numberOfRows > 0 ? tableView.rect(ofRow: 0) : .zero
-        print("[MessageListAppKit] apply: rows=\(dataSource.rows.count) numRows=\(tableView.numberOfRows) colW=\(colWidth) clipY=\(scrollView.contentView.bounds.origin.y) tableH=\(tableView.frame.height) visible=\(visible) rect0=\(row0Rect) scrollWin=\(scrollView.convert(scrollView.bounds, to: nil))")
-
-        // Force a synchronous draw so the table is forced to request row
-        // views for the visible range.
-        if snapshot.isLoading == false, tableView.numberOfRows > 0 {
-            tableView.display()
-        }
-
         // First page with real content: pin to the top so the first row is
         // visible and gets drawn. Only follow the bottom when content already
         // existed and the user was already at the bottom (streaming tail).

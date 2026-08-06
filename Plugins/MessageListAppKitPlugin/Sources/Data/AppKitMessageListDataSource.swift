@@ -95,12 +95,20 @@ final class AppKitMessageListDataSource: NSObject, NSTableViewDataSource {
         rows.count
     }
 
+    // NOTE: recent SDKs moved `tableView:viewForTableColumn:row:` from
+    // NSTableViewDataSource to NSTableViewDelegate. Implemented here it
+    // satisfies no protocol requirement, so Swift does NOT infer @objc and
+    // the Objective-C runtime cannot see it — `respondsToSelector` returns
+    // NO and NSTableView silently falls back to cell-based mode: it asks for
+    // row counts and row heights but never creates a single row view,
+    // leaving the list blank. The explicit @objc keeps the method visible to
+    // runtimes that query the data source; the delegate forwards as well.
+    @objc(tableView:viewForTableColumn:row:)
     func tableView(
         _ tableView: NSTableView,
         viewFor tableColumn: NSTableColumn?,
         row: Int
     ) -> NSView? {
-        print("[MessageListAppKit] VIEWFOR row=\(row) rowsCount=\(rows.count) tableRows=\(tableView.numberOfRows) tableH=\(tableView.frame.height)")
         guard rows.indices.contains(row) else { return nil }
         switch rows[row] {
         case .loadEarlier:
@@ -119,8 +127,6 @@ final class AppKitMessageListDataSource: NSObject, NSTableViewDataSource {
                 owner: self
             ) as? AppKitMessageCellView ?? AppKitMessageCellView(frame: .zero)
             cell.configure(row: messageRow, renderer: renderer)
-            // Temporary diagnostics for the blank-cell investigation.
-            print("[MessageListAppKit] viewFor: row=\(row) cellFrame=\(cell.frame) subs=\(cell.subviews.count) rootSubs=\(cell.subviews.first?.subviews.count ?? -1)")
             return cell
         }
     }

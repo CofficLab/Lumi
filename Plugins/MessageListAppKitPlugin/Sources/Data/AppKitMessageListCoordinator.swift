@@ -299,9 +299,6 @@ public final class AppKitMessageListCoordinator {
     }
 
     private func publish(_ snapshot: AppKitMessageListSnapshot) {
-        // Temporary diagnostic for "stuck on loading" investigation.
-        let conv = snapshot.conversationID?.uuidString ?? "nil"
-        print("[MessageListAppKit] publish: isLoading=\(snapshot.isLoading) rows=\(snapshot.rows.count) streaming=\(snapshot.streamingRow != nil) conv=\(conv)")
         latestSnapshot = snapshot
         onSnapshot?(snapshot)
     }
