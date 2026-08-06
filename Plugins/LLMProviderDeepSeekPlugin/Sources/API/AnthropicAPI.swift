@@ -9,7 +9,7 @@ import LumiKernel
 /// 这里承载的是 Anthropic Messages API 的事件：
 /// `message_start` / `content_block_start` / `content_block_delta` /
 /// `content_block_stop` / `message_delta` / `message_stop` / 顶层 `error`。
-struct DeepSeekAnthropicEvent: Sendable {
+struct AnthropicEvent: Sendable {
     /// 来自 `content_block_delta(type=text)` 的文本增量。
     let textDelta: String?
     /// 来自 `content_block_delta(type=thinking)` 的思考增量（如果 DeepSeek 透传）。
@@ -96,7 +96,7 @@ final class DeepSeekAnthropicService: @unchecked Sendable {
     func send(
         apiKey: String,
         body: Data,
-        onChunk: @Sendable @escaping (DeepSeekAnthropicEvent) async -> Bool
+        onChunk: @Sendable @escaping (AnthropicEvent) async -> Bool
     ) async throws {
         guard let network else {
             throw DeepSeekAnthropicTransportError.networkUnavailable
@@ -174,9 +174,9 @@ enum DeepSeekAnthropicTransportError: LocalizedError {
 /// `event:` 行，数据在 `data:` 行）。`message_stop` 的 `data` 为空，但仍需触发
 /// `done` 事件以通知上层收尾。
 enum DeepSeekAnthropicEventParser {
-    static func parse(_ data: Data) -> [DeepSeekAnthropicEvent] {
+    static func parse(_ data: Data) -> [AnthropicEvent] {
         let text = String(decoding: data, as: UTF8.self)
-        var events: [DeepSeekAnthropicEvent] = []
+        var events: [AnthropicEvent] = []
         // 按空行分段（SSE 帧分隔符）
         let frames = text
             .components(separatedBy: "\n\n")
@@ -208,7 +208,7 @@ enum DeepSeekAnthropicEventParser {
             if eventType == "error", let json = decode(payload) {
                 let message = (json["error"] as? [String: Any])?["message"] as? String
                     ?? json["message"] as? String
-                events.append(DeepSeekAnthropicEvent(
+                events.append(AnthropicEvent(
                     textDelta: nil,
                     thinkingDelta: nil,
                     toolInputJSONDelta: nil,
@@ -228,7 +228,7 @@ enum DeepSeekAnthropicEventParser {
             switch eventType {
             case "message_start":
                 let usage = parseUsage(json["message"] as? [String: Any])
-                events.append(DeepSeekAnthropicEvent(
+                events.append(AnthropicEvent(
                     textDelta: nil, thinkingDelta: nil,
                     toolInputJSONDelta: nil, toolName: nil, toolID: nil,
                     stopReason: nil, stopSequence: nil,
@@ -239,7 +239,7 @@ enum DeepSeekAnthropicEventParser {
                 let block = json["content_block"] as? [String: Any]
                 let type = block?["type"] as? String
                 if type == "tool_use" {
-                    events.append(DeepSeekAnthropicEvent(
+                    events.append(AnthropicEvent(
                         textDelta: nil, thinkingDelta: nil,
                         toolInputJSONDelta: nil,
                         toolName: block?["name"] as? String,
@@ -254,7 +254,7 @@ enum DeepSeekAnthropicEventParser {
                 let type = delta?["type"] as? String
                 switch type {
                 case "text_delta":
-                    events.append(DeepSeekAnthropicEvent(
+                    events.append(AnthropicEvent(
                         textDelta: delta?["text"] as? String,
                         thinkingDelta: nil,
                         toolInputJSONDelta: nil,
@@ -264,7 +264,7 @@ enum DeepSeekAnthropicEventParser {
                         done: false, error: nil
                     ))
                 case "thinking_delta":
-                    events.append(DeepSeekAnthropicEvent(
+                    events.append(AnthropicEvent(
                         textDelta: nil,
                         thinkingDelta: delta?["thinking"] as? String,
                         toolInputJSONDelta: nil,
@@ -274,7 +274,7 @@ enum DeepSeekAnthropicEventParser {
                         done: false, error: nil
                     ))
                 case "input_json_delta":
-                    events.append(DeepSeekAnthropicEvent(
+                    events.append(AnthropicEvent(
                         textDelta: nil, thinkingDelta: nil,
                         toolInputJSONDelta: delta?["partial_json"] as? String,
                         toolName: nil, toolID: nil,
@@ -292,7 +292,7 @@ enum DeepSeekAnthropicEventParser {
             case "message_delta":
                 let delta = json["delta"] as? [String: Any]
                 let usage = parseUsage(json)
-                events.append(DeepSeekAnthropicEvent(
+                events.append(AnthropicEvent(
                     textDelta: nil, thinkingDelta: nil,
                     toolInputJSONDelta: nil,
                     toolName: nil, toolID: nil,
@@ -302,7 +302,7 @@ enum DeepSeekAnthropicEventParser {
                     done: false, error: nil
                 ))
             case "message_stop":
-                events.append(DeepSeekAnthropicEvent(
+                events.append(AnthropicEvent(
                     textDelta: nil, thinkingDelta: nil,
                     toolInputJSONDelta: nil,
                     toolName: nil, toolID: nil,

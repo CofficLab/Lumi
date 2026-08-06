@@ -13,6 +13,9 @@ public final class MessageModel: @unchecked Sendable {
     /// Conversation ID
     public var conversationId: String
 
+    /// AgentTurn ID (optional for messages created before turn tracking).
+    public var turnId: String?
+
     /// Message role (user, assistant, system, tool, etc.)
     public var role: String
 
@@ -73,6 +76,7 @@ public final class MessageModel: @unchecked Sendable {
     public init(
         id: String = UUID().uuidString,
         conversationId: String,
+        turnId: String? = nil,
         role: String,
         content: String,
         createdAt: TimeInterval = Date().timeIntervalSince1970,
@@ -95,6 +99,7 @@ public final class MessageModel: @unchecked Sendable {
     ) {
         self.id = id
         self.conversationId = conversationId
+        self.turnId = turnId
         self.role = role
         self.content = content
         self.createdAt = createdAt
@@ -141,6 +146,7 @@ public extension MessageModel {
         return MessageModel(
             id: message.id.uuidString,
             conversationId: message.conversationID.uuidString,
+            turnId: message.turnID?.uuidString,
             role: message.role.rawValue,
             content: message.content,
             createdAt: message.createdAt.timeIntervalSince1970,
@@ -184,6 +190,7 @@ public extension MessageModel {
             conversationID: conversationUUID,
             role: chatRole,
             content: content,
+            turnID: turnId.flatMap(UUID.init(uuidString:)),
             createdAt: Date(timeIntervalSince1970: createdAt),
             providerID: providerId,
             modelName: modelName,

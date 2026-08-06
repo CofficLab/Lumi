@@ -89,11 +89,11 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
         guard let conversationID = request.messages.first?.conversationID else {
-            throw DeepSeekAnthropicProviderError.invalidRequest("Conversation is empty")
+            throw AnthropicProviderError.invalidRequest("Conversation is empty")
         }
 
         // 构造请求体（已编码成 JSON Data）
-        let body = DeepSeekAnthropicRequestBuilder.body(for: request)
+        let body = AnthropicRequestBuilder.body(for: request)
         let bodyData = try JSONSerialization.data(withJSONObject: body)
         let apiKey = try lumiResolveAPIKey()
 
@@ -160,10 +160,10 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
 
         let message = collector.snapshot()
         if message.isError {
-            throw DeepSeekAnthropicProviderError.api(message.rawErrorDetail ?? "DeepSeek Anthropic returned an error")
+            throw AnthropicProviderError.api(message.rawErrorDetail ?? "DeepSeek Anthropic returned an error")
         }
         if message.content.isEmpty && (message.toolCalls?.isEmpty ?? true) {
-            throw DeepSeekAnthropicProviderError.invalidResponse("DeepSeek Anthropic returned an empty response")
+            throw AnthropicProviderError.invalidResponse("DeepSeek Anthropic returned an empty response")
         }
         return message.toLumiChatMessage()
     }
@@ -191,7 +191,7 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
     }
 
     public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
-        if let error = error as? DeepSeekAnthropicProviderError {
+        if let error = error as? AnthropicProviderError {
             return error.llmErrorDisposition
         }
         return context.attempt < context.maxAttempts
@@ -200,7 +200,18 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
     }
 
     public func errorRenderKind(for error: Error) -> String? {
-        nil
+        // 先从错误类型中提取状态码
+        if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: error) {
+            return DeepSeekRenderKind.http(statusCode)
+        }
+        // 如果错误类型不支持，尝试从错误描述中提取
+        if let localized = error as? LocalizedError,
+           let description = localized.errorDescription {
+            if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: description) {
+                return DeepSeekRenderKind.http(statusCode)
+            }
+        }
+        return nil
     }
 
     public func makeErrorMessage(
@@ -220,28 +231,3 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
     }
 }
 
-// MARK: - Provider Error
-
-/// DeepSeek Anthropic 协议的 provider 错误。
-///
-/// 与 `DeepSeekOpenAIProviderError`（OpenAI 协议）平行存在，独立命名以便重试策略按 flavor 区分。
-enum DeepSeekAnthropicProviderError: LocalizedError, LumiLLMErrorDispositionProviding {
-    case invalidRequest(String)
-    case invalidResponse(String)
-    case api(String)
-
-    var errorDescription: String? {
-        switch self {
-        case let .invalidRequest(value), let .invalidResponse(value), let .api(value): value
-        }
-    }
-
-    var statusCode: Int? { nil }
-
-    var llmErrorDisposition: LumiLLMErrorDisposition {
-        switch self {
-        case .api: .retryable()
-        case .invalidRequest, .invalidResponse: .nonRetryable
-        }
-    }
-}
