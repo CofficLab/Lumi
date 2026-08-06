@@ -32,7 +32,7 @@ import Testing
 }
 
 @MainActor
-@Test func coreErrorRendererDefersToZhipuRenderKind() async throws {
+@Test func coreErrorRendererMatchesProviderSpecificRenderKind() async throws {
     let renderers = try await bootedRenderers()
     let conversationID = UUID()
     let zhipuError = LumiChatMessage(
@@ -44,7 +44,7 @@ import Testing
         renderKind: "zhipu-http-403"
     )
 
-    #expect(renderers.first { $0.id == "core-error-message" }?.canRender(zhipuError) == false)
+    #expect(renderers.first { $0.id == "core-error-message" }?.canRender(zhipuError) == true)
 }
 
 @MainActor
@@ -62,7 +62,7 @@ import Testing
 }
 
 @MainActor
-@Test func coreErrorRendererDefersToAliyunRenderKind() async throws {
+@Test func coreErrorRendererMatchesAliyunRenderKind() async throws {
     let renderers = try await bootedRenderers()
     let conversationID = UUID()
     let aliyunError = LumiChatMessage(
@@ -74,11 +74,11 @@ import Testing
         renderKind: "aliyun-http-403"
     )
 
-    #expect(renderers.first { $0.id == "core-error-message" }?.canRender(aliyunError) == false)
+    #expect(renderers.first { $0.id == "core-error-message" }?.canRender(aliyunError) == true)
 }
 
 @MainActor
-@Test func coreErrorRendererDefersToXiaomiRenderKind() async throws {
+@Test func coreErrorRendererMatchesXiaomiRenderKind() async throws {
     let renderers = try await bootedRenderers()
     let conversationID = UUID()
     let xiaomiAPIKeyError = LumiChatMessage(
@@ -90,17 +90,11 @@ import Testing
         renderKind: "xiaomi-api-key-missing"
     )
 
-    #expect(renderers.first { $0.id == "core-error-message" }?.canRender(xiaomiAPIKeyError) == false)
+    #expect(renderers.first { $0.id == "core-error-message" }?.canRender(xiaomiAPIKeyError) == true)
 }
 
 @MainActor
 private func bootedRenderers() async throws -> [LumiMessageRendererItem] {
-    // Provider plugins register these prefixes during their own onBoot hooks.
-    // This package test boots only the core renderer, so mirror that runtime state.
-    ProviderRenderKindManager.shared.registerProviderPrefix("zhipu-", for: "zhipu")
-    ProviderRenderKindManager.shared.registerProviderPrefix("aliyun-", for: "aliyun")
-    ProviderRenderKindManager.shared.registerProviderPrefix("xiaomi-", for: "xiaomi-api")
-
     let kernel = LumiKernel()
     try await MessageRendererOnBootHook().execute(kernel)
     return kernel.messageRendererManager?.allMessageRenderers() ?? []
@@ -181,6 +175,38 @@ private enum AssistantMarkdownContrastTestSupport {
                 - perceptualLuminance(surface, appearance: systemAppearance)
         ) >= minimumDelta
     }
+}
+
+// MARK: - Default fallback renderer
+
+/// 兜底渲染器 `core-default-markdown` 必须接住所有消息,
+/// 否则 MessageRowView 会显示 "No renderer for message: xx"。
+@MainActor
+@Test func defaultFallbackRendererAlwaysMatches() async throws {
+    let renderers = try await bootedRenderers()
+    let fallback = try #require(renderers.first { $0.id == "core-default-markdown" })
+    let conversationID = UUID()
+
+    // 空 content 也要接住(之前的 bug:条件是 `!message.content.isEmpty` → 漏接)
+    let empty = LumiChatMessage(conversationID: conversationID, role: .assistant, content: "")
+    #expect(fallback.canRender(empty) == true)
+
+    // 已有内容也要接住
+    let plain = LumiChatMessage(conversationID: conversationID, role: .user, content: "hi")
+    #expect(fallback.canRender(plain) == true)
+
+    // 各种 role 都要接住
+    for role in LumiChatMessageRole.allCases {
+        let message = LumiChatMessage(conversationID: conversationID, role: role, content: "")
+        #expect(fallback.canRender(message) == true, "fallback must match role=\(role.rawValue)")
+    }
+
+    // 端到端:manager 单独只注册 fallback 时,任意消息都能命中,
+    // 模拟"没有任何更具体 renderer 接管"的真实场景。
+    let manager = MessageRendererManager()
+    manager.registerMessageRenderer(fallback)
+    let matched = manager.renderer(for: empty)
+    #expect(matched?.id == "core-default-markdown")
 }
 
 // MARK: - Preferred renderer ID (explicit routing)

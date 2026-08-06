@@ -85,8 +85,11 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
             throw AnthropicProviderError.invalidRequest("Conversation is empty")
         }
 
-        // 构造请求体（已编码成 JSON Data）
+        // 构造请求体(已编码成 JSON Data)
         let body = AnthropicRequestBuilder.body(for: request)
+        // 工具名映射:请求发送时被转义为 ^[a-zA-Z0-9_-]+$ 兼容形式,
+        // 响应解析时据此还原为 Lumi 注册名,保证工具执行路由正确。
+        let toolNameMap = AnthropicRequestBuilder.toolNameMap(for: request)
         let bodyData = try JSONSerialization.data(withJSONObject: body)
         let apiKey = try lumiResolveAPIKey()
 
@@ -122,7 +125,8 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
                     emittedReasoning = thinking
                 }
                 if let toolID = event.toolID {
-                    message.beginToolCall(id: toolID, name: event.toolName ?? "")
+                    let rawName = event.toolName ?? ""
+                    message.beginToolCall(id: toolID, name: toolNameMap[rawName] ?? rawName)
                 }
                 if let toolJSON = event.toolInputJSONDelta, !toolJSON.isEmpty {
                     message.appendToolArguments(toolJSON)

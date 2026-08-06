@@ -60,12 +60,7 @@ public struct MessageRendererOnBootHook {
                 id: "core-error-message",
                 order: base + 290,
                 canRender: { message in
-                    guard message.role == .error || message.isError else { return false }
-                    if let renderKind = message.renderKind,
-                       ProviderRenderKindManager.shared.isProviderSpecificRenderKind(renderKind) {
-                        return false
-                    }
-                    return true
+                    message.role == .error || message.isError
                 },
                 render: { message, verbosity in
                     ErrorMessageView(message: message, verbosity: verbosity)
@@ -144,14 +139,12 @@ public struct MessageRendererOnBootHook {
             )
         )
 
-        // 兜底 Markdown 渲染
+        // 兜底渲染器:order 最低,只要没有任何更高优先级的 renderer 能处理,就由它接管。
         manager.registerMessageRenderer(
             LumiMessageRendererItem(
                 id: "core-default-markdown",
                 order: base - 10,
-                canRender: { message in
-                    !message.content.isEmpty
-                },
+                canRender: { _ in true },
                 render: { message, verbosity in
                     DefaultMessageView(message: message, verbosity: verbosity)
                 }

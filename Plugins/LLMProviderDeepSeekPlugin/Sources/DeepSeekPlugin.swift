@@ -17,8 +17,6 @@ public final class DeepSeekPlugin: LumiPlugin {
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
-        ProviderRenderKindManager.shared.registerProviderPrefix("deepseek-", for: DeepSeekOpenAIProvider.info.id)
-        ProviderRenderKindManager.shared.registerProviderPrefix("deepseek-", for: DeepSeekAnthropicProvider.info.id)
         if let storage = kernel.storage {
             AvailabilityDiskCacheDirectoryResolver.set(
                 pluginName: "LLMProviderDeepSeekPlugin",
