@@ -2,12 +2,27 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
-/// 错误消息的通用外壳布局：图标 + 标题 + 供应商标签 + 复制按钮 + 自定义内容。
+// 泛型 View 不能持有 static 存储属性，格式化器放到非泛型枚举里。
+private enum ErrorMessageTimestampFormat {
+    static let formatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
+}
+
+/// DeepSeek 错误消息外壳：与 core-user-message / core-assistant-message 等
+/// 核心渲染器保持一致的 header（头像 + 身份行 + 复制 + 时间戳，含 hover 动效）
+/// + 错误正文两段式布局。
 struct ErrorMessageLayout<Content: View>: View {
     @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
 
     let message: LumiChatMessage
     @ViewBuilder let content: () -> Content
+
+    @State private var isHovered = false
+    @State private var didCopy = false
 
     private var copyContent: String {
         var sections: [String] = []
@@ -24,36 +39,65 @@ struct ErrorMessageLayout<Content: View>: View {
         return sections.joined(separator: "\n\n")
     }
 
+    private var headerBackgroundColor: Color {
+        isHovered
+            ? theme.textSecondary.opacity(0.14)
+            : theme.textSecondary.opacity(0.08)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .center, spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(theme.error)
+                HStack(alignment: .center, spacing: 6) {
+                    ChatAvatarView(kind: .error)
 
-                Text(verbatim: LumiPluginLocalization.string("Error", bundle: .module))
-                    .font(.appMicroEmphasized)
-                    .foregroundColor(theme.textTertiary)
-
-                ProviderBadge()
+                    AppIdentityRow(
+                        title: LumiPluginLocalization.string("Error", bundle: .module),
+                        metadata: [
+                            message.providerID ?? DeepSeekOpenAIProvider.info.id,
+                            message.modelName ?? "",
+                        ]
+                    )
+                }
 
                 Spacer()
 
-                Button {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(copyContent, forType: .string)
-                } label: {
-                    Image(systemName: "doc.on.doc")
-                        .font(.appMicro)
+                HStack(alignment: .center, spacing: 12) {
+                    CopyMessageButton(content: copyContent, showFeedback: $didCopy)
+
+                    AppIdentityRow(
+                        title: ErrorMessageTimestampFormat.formatter.string(from: message.createdAt),
+                        titleColor: theme.textSecondary
+                    )
                 }
-                .buttonStyle(.plain)
-                .foregroundColor(theme.textSecondary)
-                .help(LumiPluginLocalization.string("Copy", bundle: .module))
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .appSurface(
+                style: .custom(headerBackgroundColor),
+                cornerRadius: 8,
+                borderColor: theme.divider.opacity(isHovered ? 1.0 : 0.65)
+            )
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
+                    isHovered = hovering
+                }
             }
 
             content()
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    theme.error.opacity(0.10),
+                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(theme.error.opacity(0.16), lineWidth: 1)
+                )
         }
-        .padding(12)
-        .frame(maxWidth: 680, alignment: .leading)
-        .appSurface(style: .listRow, cornerRadius: 8, borderColor: theme.error.opacity(0.28))
+        // 与普通消息流一致：占满整行宽度，而不是居中显示一条窄错误卡片。
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
