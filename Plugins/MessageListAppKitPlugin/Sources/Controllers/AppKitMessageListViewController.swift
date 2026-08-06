@@ -44,7 +44,10 @@ final class AppKitMessageListViewController: NSViewController {
         scrollView.borderType = .noBorder
 
         let tableView = NSTableView()
-        tableView.translatesAutoresizingMaskIntoConstraints = false
+        // NOTE: do NOT set translatesAutoresizingMaskIntoConstraints = false.
+        // As an NSScrollView documentView, the table is frame-managed by the
+        // scroll view; with Auto Layout on and no clip-view constraints its
+        // frame never updates and the table stays invisible (blank area).
         tableView.allowsMultipleSelection = false
         tableView.allowsEmptySelection = true
         tableView.usesAlternatingRowBackgroundColors = false
@@ -56,6 +59,7 @@ final class AppKitMessageListViewController: NSViewController {
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("message"))
         column.resizingMask = .autoresizingMask
         tableView.addTableColumn(column)
+        tableView.sizeLastColumnToFit()
 
         scrollView.documentView = tableView
         root.addSubview(scrollView)
