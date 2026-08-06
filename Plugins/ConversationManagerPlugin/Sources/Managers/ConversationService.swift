@@ -12,6 +12,7 @@ public final class ConversationService: ConversationManaging {
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID?
     @Published public private(set) var currentTitle: String = "No conversation"
+    @Published public private(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
 
     public var dataDirectory: URL { storageDirectory }
 
@@ -213,6 +214,10 @@ public final class ConversationService: ConversationManaging {
     }
 
     // MARK: - Verbosity
+
+    public func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) {
+        globalVerbosity = verbosity
+    }
 
     public func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
         guard let conversationID else {

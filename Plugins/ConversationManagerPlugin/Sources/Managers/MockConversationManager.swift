@@ -13,6 +13,7 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID?
     @Published public private(set) var currentTitle: String = "No conversation"
+    @Published public private(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
 
     public var dataDirectory: URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("MockConversations")
@@ -193,6 +194,10 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
     }
 
     // MARK: - Verbosity
+
+    public func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) {
+        globalVerbosity = verbosity
+    }
 
     public func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
         guard let conversationID else {

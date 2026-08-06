@@ -18,6 +18,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     @Published public private(set) var selectedConversationID: UUID?
     @Published public private(set) var currentTitle: String = "No conversation"
     @Published public private(set) var isLoadingConversations = true
+    @Published public private(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
 
     /// Notification posted when conversations list changes
     static let conversationsDidChangeNotification = Notification.Name.lumiConversationsDidChange
@@ -86,6 +87,8 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                    !loaded.contains(where: { $0.id == selectedID }) {
                     self.selectedConversationID = loaded.first?.id
                 }
+                // 初始化全局详细程度为当前选中对话的详细程度
+                self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
                 self.updateCurrentTitle()
                 self.persistSelectedConversationID()
                 self.isLoadingConversations = false
@@ -214,8 +217,8 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         let effectiveProviderID = providerID ?? kernel?.llmProvider?.selectedProviderID
         // 如果未指定 modelName，则自动使用当前选中的模型
         let effectiveModelName = modelName ?? kernel?.llmProvider?.selectedModel
-        // 继承上一个对话的设置（详细程度、推理强度、语言、自动化程度）
-        let effectiveVerbosity = self.verbosity(for: selectedConversationID)
+        // 继承全局设置（详细程度、推理强度、语言、自动化程度）
+        let effectiveVerbosity = self.globalVerbosity
         let effectiveReasoningEffort = self.reasoningEffort(for: selectedConversationID)
         let effectiveLanguage = self.language(for: selectedConversationID)
         let effectiveAutomationLevel = self.automationLevel(for: selectedConversationID)
@@ -421,6 +424,14 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     }
 
     // MARK: - Verbosity
+
+    public func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) {
+        globalVerbosity = verbosity
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setGlobalVerbosity: verbosity=\(verbosity.rawValue)")
+        }
+    }
 
     public func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
         guard let conversationID else {

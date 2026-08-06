@@ -122,6 +122,18 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
 
     // MARK: - Verbosity
 
+    /// 全局详细程度（单一数据源）
+    ///
+    /// 由 `StateMonitorPlugin` 负责与当前对话的双向同步：
+    /// - 全局变化 → 同步到当前对话
+    /// - 切换对话 → 用新对话的详细程度更新全局
+    var globalVerbosity: LumiResponseVerbosity { get }
+
+    /// 设置全局详细程度
+    ///
+    /// 由 `ConversationVerbosityPlugin` 调用，不直接操作某个对话。
+    func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity)
+
     /// 获取指定对话的详细程度
     func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity
 

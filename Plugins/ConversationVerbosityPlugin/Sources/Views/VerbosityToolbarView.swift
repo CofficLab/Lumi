@@ -10,12 +10,9 @@ struct VerbosityToolbarView: View {
         kernel.conversations
     }
 
-    private var selectedConversationID: UUID? {
-        conversations?.selectedConversationID
-    }
-
+    /// 使用全局详细程度，不再依赖具体对话
     private var selectedLevel: LumiResponseVerbosity {
-        conversations?.verbosity(for: selectedConversationID) ?? .defaultVerbosity
+        conversations?.globalVerbosity ?? .defaultVerbosity
     }
 
     @State private var isPopoverPresented = false
@@ -61,7 +58,8 @@ struct VerbosityToolbarView: View {
         .help(selectedLevel.description)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VerbosityPopover(selectedLevel: selectedLevel) { level in
-                conversations?.setVerbosity(level, for: selectedConversationID)
+                // 写入全局详细程度，不再直接操作某个对话
+                conversations?.setGlobalVerbosity(level)
                 isPopoverPresented = false
             }
         }

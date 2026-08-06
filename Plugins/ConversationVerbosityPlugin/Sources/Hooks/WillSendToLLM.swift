@@ -19,16 +19,17 @@ public struct VerbosityWillSendToLLMHook {
         let conversationID = messages.first?.conversationID
             ?? kernel.conversations?.selectedConversationID
 
-        guard let conversationID else { return messages }
+        guard conversationID != nil else { return messages }
 
-        let verbosity = kernel.conversations?.verbosity(for: conversationID)
+        // 使用全局详细程度，不再读取具体对话的 verbosity
+        let verbosity = kernel.conversations?.globalVerbosity
             ?? .defaultVerbosity
         let withoutPreviousPrompt = messages.filter {
             $0.metadata[Self.promptMarker] != "true"
         }
 
         let prompt = LumiChatMessage(
-            conversationID: conversationID,
+            conversationID: conversationID!,
             role: .system,
             content: Self.responseStylePrompt(for: verbosity),
             metadata: [Self.promptMarker: "true"]
