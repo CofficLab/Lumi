@@ -104,7 +104,12 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     @Published public var isPanelBodyVisible: Bool = true
 
     /// 底部 Panel 底部是否可见
-    @Published public var isPanelBottomVisible: Bool = true
+    @Published public var isPanelBottomVisible: Bool = true {
+        didSet {
+            guard isPanelBottomVisible != oldValue else { return }
+            NotificationCenter.postBottomPanelVisibleDidChange(visible: isPanelBottomVisible)
+        }
+    }
 
     // MARK: - Visibility Overrides (per-container)
 

@@ -27,18 +27,25 @@ public struct LayoutMenuButton: View {
         }
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 0) {
-                LayoutPopoverToggle(
+                AppToggleRow(
+                    title: LocalizedStringKey(LumiPluginLocalization.string("Right Sidebar")),
+                    systemImage: "rectangle.rightthird.inset.filled",
                     isOn: Binding(
                         get: { layoutManager?.isChatVisible ?? true },
                         set: { layoutManager?.setChatVisible($0) }
-                    ),
-                    icon: "rectangle.rightthird.inset.filled",
-                    title: LumiPluginLocalization.string("Right Sidebar")
+                    )
                 )
 
+                AppToggleRow(
+                    title: LocalizedStringKey(LumiPluginLocalization.string("Bottom Panel")),
+                    systemImage: "rectangle.bottomthird.inset.filled",
+                    isOn: Binding(
+                        get: { layoutManager?.isPanelBottomVisible ?? true },
+                        set: { layoutManager?.setPanelBottomVisible($0) }
+                    )
+                )
             }
-            .padding(12)
-            .frame(minWidth: 180, alignment: .leading)
+            .frame(minWidth: 220, alignment: .leading)
             .appSurface(style: .popover, cornerRadius: 8, borderColor: theme.divider)
             .appThemedAppearance()
             .background {
@@ -48,4 +55,3 @@ public struct LayoutMenuButton: View {
         .help(LumiPluginLocalization.string("Layout"))
     }
 }
-
