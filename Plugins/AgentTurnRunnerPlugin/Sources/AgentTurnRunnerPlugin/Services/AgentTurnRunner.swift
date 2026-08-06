@@ -342,10 +342,18 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             orderedIDs = Array(allTurnIDs.suffix(limit).reversed())
         }
 
-        // 3. Aggregate each turn
+        // 3. Read the conversation once, then aggregate each turn from that
+        // shared snapshot. Reading the full history once per turn creates an
+        // avoidable N+1 query when a UI requests a page of records.
+        let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
         var records: [AgentTurnRecord] = []
         for tid in orderedIDs {
-            let record = await aggregateTurnRecord(turnID: tid, conversationID: conversationID, store: store)
+            let record = await aggregateTurnRecord(
+                turnID: tid,
+                conversationID: conversationID,
+                store: store,
+                messages: messages
+            )
             records.append(record)
         }
 
@@ -357,7 +365,13 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
         // Check if this is a currently active turn
         for (conversationID, currentTurnID) in turnIDs where currentTurnID == turnID {
-            return await aggregateTurnRecord(turnID: turnID, conversationID: conversationID, store: store)
+            let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
+            return await aggregateTurnRecord(
+                turnID: turnID,
+                conversationID: conversationID,
+                store: store,
+                messages: messages
+            )
         }
 
         // For completed turns, caller should use turnRecords(for:) with known conversationID
@@ -378,7 +392,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     private func aggregateTurnRecord(
         turnID: UUID,
         conversationID: UUID,
-        store: AgentTurnRecordStore
+        store: AgentTurnRecordStore,
+        messages: [LumiChatMessage]
     ) async -> AgentTurnRecord {
         // Timestamps from LLM request records
         let startedAt = await store.fetchTurnStartedAt(turnID: turnID) ?? Date()
@@ -388,13 +403,11 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         var inputTokens = 0
         var outputTokens = 0
         var triggerMessageID: UUID?
-        if let messages = kernel?.messageManager?.messages(for: conversationID) {
-            for message in messages where message.turnID == turnID {
-                inputTokens += message.inputTokenCount ?? 0
-                outputTokens += message.outputTokenCount ?? 0
-                if message.role == .user && triggerMessageID == nil {
-                    triggerMessageID = message.id
-                }
+        for message in messages where message.turnID == turnID {
+            inputTokens += message.inputTokenCount ?? 0
+            outputTokens += message.outputTokenCount ?? 0
+            if message.role == .user && triggerMessageID == nil {
+                triggerMessageID = message.id
             }
         }
 
@@ -592,12 +605,13 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                     for: error,
                     context: LumiLLMRetryContext(attempt: 1, maxAttempts: 1)
                 )
-                let errorMessage = targetProvider.makeErrorMessage(
+                var errorMessage = targetProvider.makeErrorMessage(
                     conversationID: conversationID,
                     request: request,
                     error: error,
                     disposition: disposition
                 )
+                errorMessage.turnID = turnID
                 kernel.messageManager?.insertMessage(errorMessage, to: conversationID)
                 postMessageSavedNotification(message: errorMessage, conversationID: conversationID)
                 failedConversations.insert(conversationID)

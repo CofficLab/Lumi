@@ -6,6 +6,29 @@ import Testing
 @Suite(.serialized)
 struct MessageStorePaginationTests {
     @Test
+    func persistsAgentTurnIdentity() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MessageStoreTurnIdentityTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try MessageStore(databaseRootURL: directory)
+        let conversationID = UUID()
+        let turnID = UUID()
+        let message = LumiChatMessage(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "Final answer",
+            turnID: turnID
+        )
+
+        _ = try store.insertMessage(message)
+
+        let persisted = try #require(store.fetchMessage(id: message.id))
+        #expect(persisted.turnID == turnID)
+    }
+
+    @Test
     func fetchesLatestPageAndEarlierPageWithoutLoadingEverything() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("MessageStorePaginationTests-\(UUID().uuidString)", isDirectory: true)
