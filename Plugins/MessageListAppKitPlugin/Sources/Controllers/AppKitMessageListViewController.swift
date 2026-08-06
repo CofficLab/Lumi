@@ -115,7 +115,8 @@ final class AppKitMessageListViewController: NSViewController {
             theme: AppKitMessageTheme.systemDefault(), // Task 14 snapshots LumiUI.
             mermaidCache: mermaidCache,
             layoutCache: layoutCache,
-            outerScrollView: scrollView
+            outerScrollView: scrollView,
+            messageSender: kernel.messageSender
         ))
         let rendererFor: (AppKitMessageRow) -> any AppKitMessageRenderer = { [weak self] row in
             self?.rendererRegistry.renderer(for: row) ?? AppKitFallbackRenderer()

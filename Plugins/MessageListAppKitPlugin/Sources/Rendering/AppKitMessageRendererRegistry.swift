@@ -17,6 +17,8 @@ final class AppKitMessageRendererRegistry {
         weak var outerScrollView: NSScrollView?
         /// Resend handler wired by the controller (V1/V2 chrome action).
         var onResend: ((LumiChatMessage) -> Void)?
+        /// Used by the ask_user renderer to resume suspended turns.
+        weak var messageSender: (any MessageSending)?
     }
 
     private let environment: Environment
@@ -32,9 +34,14 @@ final class AppKitMessageRendererRegistry {
         case .error:
             return AppKitErrorRenderer(theme: environment.theme)
         case .tool:
-            return AppKitFallbackRenderer() // Native tool rows land in Task 12.
+            // Suspended ask_user calls get the interactive renderer; all other
+            // tool calls get the generic one.
+            if Self.isPendingAskUser(row.message) {
+                return AppKitAskUserRenderer(environment: environment)
+            }
+            return AppKitToolRenderer(environment: environment)
         case .toolStepGroup:
-            return AppKitFallbackRenderer()
+            return AppKitToolGroupRenderer(environment: environment)
         case .user:
             return AppKitUserRenderer(environment: environment)
         case .assistant, .conclusion:
@@ -46,5 +53,17 @@ final class AppKitMessageRendererRegistry {
         case .fallback:
             return AppKitFallbackRenderer()
         }
+    }
+
+    /// True when the message carries a suspended `ask_user` tool call whose
+    /// result content parses into an interactive payload.
+    static func isPendingAskUser(_ message: LumiChatMessage) -> Bool {
+        guard let call = message.toolCalls?.first(where: { $0.name == "ask_user" }),
+              let result = call.result,
+              !result.turnControl.isSuspended == false
+        else { return false }
+        // Suspended interaction: result content carries the pending payload.
+        return result.turnControl.isSuspended
+            && AppKitAskUserPayload.parse(from: result.content) != nil
     }
 }
