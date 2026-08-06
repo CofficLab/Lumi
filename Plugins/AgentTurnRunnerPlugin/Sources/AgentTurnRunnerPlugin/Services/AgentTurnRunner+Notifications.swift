@@ -38,6 +38,9 @@ extension AgentTurnRunner {
     }
 
     func postTurnFinishedNotification(conversationID: UUID, reason: LumiTurnEndReason) async {
+        // brief 模式用 status 表示整个活跃 Turn。runTurn 已先写入终态，
+        // 此处清除会触发 UI 将 status 替换为最终结论。
+        kernel?.messageManager?.clearStatusMessage(in: conversationID)
         kernel?.eventManager.postTurnFinished(
             conversationID: conversationID,
             turnID: turnIDs[conversationID],

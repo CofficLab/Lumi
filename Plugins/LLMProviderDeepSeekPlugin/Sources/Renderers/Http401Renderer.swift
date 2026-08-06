@@ -45,7 +45,7 @@ struct Http401View: View {
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
-                                LumiAPIKeyTools.set(newValue, storageKey: DeepSeekOpenAIProvider.info._apiKeyStorageKey)
+                                DeepSeekPlugin.setApiKey(newValue)
                             }
                         ),
                         fieldType: isApiKeyVisible ? .plain : .secure
@@ -68,7 +68,7 @@ struct Http401View: View {
             }
         }
         .onAppear {
-            apiKey = LumiAPIKeyTools.get(storageKey: DeepSeekOpenAIProvider.info._apiKeyStorageKey)
+            apiKey = DeepSeekPlugin.currentApiKey
         }
     }
 }

@@ -24,16 +24,16 @@ actor CacheManager: SuperLog {
     private(set) var stats = CacheStats()
 
     private init() {
-        self.container = Self.makeContainer(databaseRootURL: AppManagerPlugin.databaseRootURLProvider())
+        self.container = Self.makeContainer(pluginDataDirectory: AppManagerPlugin.pluginDataDirectoryProvider())
     }
 
-    init(databaseRootURL: URL) {
-        self.container = Self.makeContainer(databaseRootURL: databaseRootURL)
+    init(pluginDataDirectory: URL) {
+        self.container = Self.makeContainer(pluginDataDirectory: pluginDataDirectory)
     }
 
-    static func makeContainer(databaseRootURL: URL) -> ModelContainer {
+    static func makeContainer(pluginDataDirectory: URL) -> ModelContainer {
         let schema = Schema([AppCacheItem.self])
-        let dbDir = databaseRootURL.appendingPathComponent("AppManagerPlugin", isDirectory: true)
+        let dbDir = pluginDataDirectory
         let dbURL = dbDir.appendingPathComponent("AppCache.sqlite")
         let fileManager = FileManager.default
 

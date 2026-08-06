@@ -306,11 +306,43 @@
         }
       }
     },
+    "Choose Export Folder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a folder to export the HTTP logs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择导出 HTTP 日志的文件夹"
+          }
+        }
+      }
+    },
     "Daily HTTP request count chart" : {
 
     },
     "Daily HTTP requests" : {
 
+    },
+    "Domain" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Domain"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "域名"
+          }
+        }
+      }
     },
     "Down" : {
       "localizations" : {
@@ -518,6 +550,22 @@
         }
       }
     },
+    "Exporting" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exporting"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出中"
+          }
+        }
+      }
+    },
     "Fetching..." : {
       "localizations" : {
         "en" : {
@@ -616,6 +664,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "HTTP 交換"
+          }
+        }
+      }
+    },
+    "HTTP Export Progress" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP Export Progress"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP 导出进度"
           }
         }
       }
@@ -855,6 +919,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "從選單列監控流量"
+          }
+        }
+      }
+    },
+    "Last 10 Minutes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 10 Minutes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 10 分钟"
+          }
+        }
+      }
+    },
+    "Last Hour" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Hour"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 1 小时"
           }
         }
       }
@@ -2437,6 +2533,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Time Range"
+          }
+        }
+      }
+    },
+    "Today" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天"
           }
         }
       }

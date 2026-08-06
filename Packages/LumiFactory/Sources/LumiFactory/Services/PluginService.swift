@@ -88,6 +88,7 @@ import MemoryPlugin
 import MenuBarManagerPlugin
 import MenuBarHelperPlugin
 import MessageListPlugin
+import MessageListAppKitPlugin
 import MessageRendererPlugin
 import MessageStreamingPlugin
 import MessageManagerPlugin
@@ -140,7 +141,7 @@ import ThemeVoidPlugin
 import ThemeVscodePlugin
 import ThemeWinterPlugin
 import ToolManagerPlugin
-import VerbosityPlugin
+import ConversationVerbosityPlugin
 import VideoConverterPlugin
 import WebFetchPlugin
 import WebSearchPlugin
@@ -207,6 +208,11 @@ public enum PluginService {
             ChatPanelPlugin(),
             ModelSelectorPlugin(),
             MessageListPlugin(),
+            // Parallel native AppKit message list. Ships as `.disabled`; the
+            // PluginManager filters it out until parity and performance
+            // gates pass, so the host app continues to render the SwiftUI
+            // message list above.
+            MessageListAppKitPlugin(),
             ConversationInputPlugin(),
             ConversationAttachmentPlugin(),
             ConversationPendingMessagePlugin(),
@@ -236,7 +242,7 @@ public enum PluginService {
             DiskManagerPlugin(),
             HostsManagerPlugin(),
             ConversationReasoningPlugin(),
-            VerbosityPlugin(),
+            ConversationVerbosityPlugin(),
             ConversationSpeedPlugin(),
             ChatModePlugin(),
             ConversationLanguagePlugin(),

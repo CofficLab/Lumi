@@ -4,17 +4,19 @@ import SwiftUI
 
 /// Message List V1 View (brief / 简洁模式)
 ///
-/// 当前 MessageListView 的完整实现,对应 verbosity = .brief。
-/// 行渲染由 `MessageRowView` + verbosity 控制,本视图负责滚动、分页、流式跟随等全部逻辑。
+/// 历史中每个 AgentTurn 只展示最终结论；运行中的 Turn 只展示一条动态 status。
+/// 流式正文、工具调用和工具结果均不进入 V1 展示投影。
 struct MessageListV1View: View {
     @ObservedObject var kernel: LumiKernel
-    @StateObject private var timelineViewModel: MessageListViewModel
     @StateObject private var turnViewModel: MessageListV1ViewModel
 
     @LumiTheme private var theme
 
     /// 用户是否停在列表底部附近;用于决定新消息到达时是否自动滚到底部。
-    @State private var isAtBottom = true
+    ///
+    /// 故意不用 `@State`,以切断底部锚点 Preference → body 重建 → 偏好重报的
+    /// 反馈环(详见 `MessageListV2View` 同名注释)。
+    private let atBottomBox = AtBottomBox()
 
     // MARK: - Services
 
@@ -22,129 +24,107 @@ struct MessageListV1View: View {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
-        _timelineViewModel = StateObject(wrappedValue: MessageListViewModel(kernel: kernel))
         _turnViewModel = StateObject(wrappedValue: MessageListV1ViewModel(kernel: kernel))
     }
 
     var body: some View {
         Group {
-            if timelineViewModel.isLoading || turnViewModel.isLoading {
+            if turnViewModel.isLoading {
                 MessageLoadingView()
-            } else if !timelineViewModel.hasPersistedMessages {
+            } else if !turnViewModel.hasVisibleContent {
                 MessageEmptyStateView()
             } else {
                 messageScrollView
             }
         }
-        .task(id: timelineViewModel.selectedConversationID) {
+        .task(id: selectedConversationID) {
             // 切换会话:重置滚动位置,通知 viewmodel 加载最近一页。
-            isAtBottom = true
-            let conversationID = timelineViewModel.selectedConversationID
-            await timelineViewModel.activate(conversationID: conversationID)
-            await turnViewModel.activate(conversationID: conversationID)
+            atBottomBox.value = true
+            await turnViewModel.activate(conversationID: selectedConversationID)
         }
     }
 
     // MARK: - Scroll View
 
     private var messageScrollView: some View {
-        // 外层 GeometryReader 捕获视口 max-Y,用于 isAtBottom 判断。
-        GeometryReader { viewport in
-            ScrollViewReader { proxy in
-                ScrollView {
-                    // Keep the paginated message window eager. LazyVStack can
-                    // enter an AttributeGraph layout livelock when the live tail
-                    // is replaced by its persisted history row at turn completion.
-                    VStack(spacing: 0) {
-                        historyRows(proxy: proxy)
+        ScrollViewReader { proxy in
+            ScrollView {
+                // Lazy so only visible conclusion rows are materialized; see
+                // MessageListV2View for the rationale (stable ids only, live
+                // status rendered outside the history `ForEach`).
+                LazyVStack(spacing: 0) {
+                    historyRows(proxy: proxy)
 
-                        if let message = timelineViewModel.streamingRow {
-                            MessageRowView(
-                                kernel: kernel,
-                                message: message,
-                                verbosity: timelineViewModel.verbosity
-                            )
-                            .id(message.id)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 4)
-                        }
+                    if let message = turnViewModel.statusMessage {
+                        MessageRowView(
+                            kernel: kernel,
+                            message: message,
+                            verbosity: verbosity
+                        )
+                        .id(message.id)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 4)
+                    }
 
-                        bottomAnchor
-                    }
-                    // Keep a top inset without leaving scrollable space after
-                    // the bottom anchor; the anchor must be the true content end.
-                    .padding(.top, 4)
-                    // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
-                    .environment(\.lumiActiveToolGroupIDs, timelineViewModel.activeStepGroupMessageIDs)
-                    .environment(\.lumiTurnActivitySummaries, timelineViewModel.turnActivitySummaries)
+                    // 底部锚点行:纯占位 + 稳定 id(供 scrollTo 用),不再报偏好。
+                    // 是否在底部由 `ScrollViewBottomTracker` 观察NSScrollView 判定,
+                    // 避免 GeometryReader + Preference 在流式下触发 LazyVStack 活锁。
+                    Color.clear
+                        .frame(height: 16)
+                        .id(MessageListScrollCoordinator.bottomAnchorID)
+                        .accessibilityHidden(true)
                 }
-                .onPreferenceChange(MessageListBottomAnchorPositionKey.self) { bottomMaxY in
-                    let viewMaxY = viewport.frame(in: .global).maxY
-                    // 仅在布尔值真正翻转时才写 state:底部锚点在滚动/流式刷新期间每帧
-                    // 都会重报 maxY,若每帧都赋值会触发 body 重建 → preference 重发,
-                    // 进而命中 "Bound preference ... tried to update multiple times per frame"。
-                    let next = scrollCoordinator.resolveIsAtBottom(
-                        bottomMaxY: bottomMaxY,
-                        viewMaxY: viewMaxY,
-                        current: isAtBottom
-                    )
-                    if next != isAtBottom {
-                        isAtBottom = next
-                    }
-                }
-                .task(id: timelineViewModel.selectedConversationID) {
-                    // 首屏数据就绪后,滚到最底部(无动画)。
-                    scrollCoordinator.scrollToBottom(
-                        proxy: proxy,
-                        messages: displayedHistoryMessages,
-                        animated: false
-                    )
-                }
-                .onLumiMessagesDidChange { eventConversationID in
-                    guard MessageListNotificationFilter.shouldHandle(
-                        eventConversationID: eventConversationID,
-                        selectedConversationID: timelineViewModel.selectedConversationID
-                    ) else { return }
+                // Keep a top inset without leaving scrollable space after
+                // the bottom anchor; the anchor must be the true content end.
+                .padding(.top, 4)
+            }
+            // 「是否在底部」由观察 NSScrollView 的 tracker 报告,写入非 Observable
+            // 的 `atBottomBox`,不触发 SwiftUI invalidation —— 切断布局反馈环。
+            .background(ScrollViewBottomTracker { atBottomBox.value = $0 })
+            .task(id: selectedConversationID) {
+                // 切会话重置:回到「在底部」语义,等首屏就绪后滚到底。
+                atBottomBox.value = true
+                scrollCoordinator.scrollToBottom(
+                    proxy: proxy,
+                    messages: displayedHistoryMessages,
+                    animated: false
+                )
+            }
+            .onLumiMessagesDidChange { eventConversationID in
+                guard MessageListNotificationFilter.shouldHandle(
+                    eventConversationID: eventConversationID,
+                    selectedConversationID: selectedConversationID
+                ) else { return }
 
-                    // 同一轮发送会连续产生 status/user/tool/assistant 事件。
-                    // ViewModel 合并重叠刷新；只有拥有刷新且快照实际变化的调用方滚动。
-                    let targetConversationID = timelineViewModel.selectedConversationID
-                    Task {
-                        let wasAtBottom = isAtBottom
-                        let timelineDidChange = await timelineViewModel.refreshTail()
-                        let turnDidChange = await turnViewModel.refresh()
-                        let didChange = turnViewModel.usesTurnProjection
-                            ? turnDidChange
-                            : timelineDidChange
-                        if didChange,
-                           wasAtBottom,
-                           timelineViewModel.selectedConversationID == targetConversationID {
-                            await scrollCoordinator.scrollToBottomAfterLayout(
-                                proxy: proxy,
-                                messages: displayedHistoryMessages
-                            )
-                        }
-                    }
-                }
-                // 流式跟随滚动:流式行内容变化时,
-                // 若用户停在底部则跟随滚到底(无动画,避免高频 delta 抖动)。
-                .onChange(of: timelineViewModel.tailStreamingContent) { _, _ in
-                    if isAtBottom {
-                        proxy.scrollTo(MessageListScrollCoordinator.bottomAnchorID, anchor: .bottom)
+                // 同一轮发送会连续产生 status/user/tool/assistant 事件。
+                // ViewModel 合并重叠刷新；只有拥有刷新且快照实际变化的调用方滚动。
+                // 流式期间用非动画滚动,避免动画 scrollTo 永不收敛。
+                let targetConversationID = selectedConversationID
+                let wasAtBottom = atBottomBox.value
+                Task {
+                    let didChange = await turnViewModel.refresh()
+                    if didChange,
+                       wasAtBottom,
+                       atBottomBox.value,
+                       selectedConversationID == targetConversationID {
+                        await scrollCoordinator.scrollToBottomAfterLayout(
+                            proxy: proxy,
+                            messages: displayedHistoryMessages,
+                            animated: false
+                        )
                     }
                 }
             }
         }
     }
 
-    /// Stable historical rows. The live streaming tail is rendered separately
-    /// so token updates do not rebuild this collection.
+    /// Stable conclusion rows. Live work is represented separately by one status.
     @ViewBuilder
     private func historyRows(proxy: ScrollViewProxy) -> some View {
         if turnViewModel.usesTurnProjection {
             turnSummaryRows(proxy: proxy)
         } else {
-            legacyMessageRows(proxy: proxy)
+            legacyConclusionRows
         }
     }
 
@@ -160,7 +140,7 @@ struct MessageListV1View: View {
             MessageRowView(
                 kernel: kernel,
                 message: item.message,
-                verbosity: timelineViewModel.verbosity
+                verbosity: verbosity
             )
             .id(item.id)
             .padding(.horizontal, 16)
@@ -169,19 +149,12 @@ struct MessageListV1View: View {
     }
 
     @ViewBuilder
-    private func legacyMessageRows(proxy: ScrollViewProxy) -> some View {
-        // 顶部"加载更早消息":仅在还有更早消息时显示。
-        if timelineViewModel.hasEarlierMessages {
-            loadEarlierButton(isLoading: timelineViewModel.isLoadingEarlier) {
-                Task { await loadEarlier(proxy: proxy) }
-            }
-        }
-
-        ForEach(timelineViewModel.historyRows) { message in
+    private var legacyConclusionRows: some View {
+        ForEach(turnViewModel.conclusionMessages) { message in
             MessageRowView(
                 kernel: kernel,
                 message: message,
-                verbosity: timelineViewModel.verbosity
+                verbosity: verbosity
             )
             .id(message.id)
             .padding(.horizontal, 16)
@@ -207,28 +180,19 @@ struct MessageListV1View: View {
         .padding(.vertical, 8)
     }
 
-    private var displayedHistoryMessages: [LumiChatMessage] {
-        turnViewModel.usesTurnProjection
-            ? turnViewModel.displayMessages
-            : timelineViewModel.historyRows
+    private var displayedHistoryMessages: [LumiChatMessage] { turnViewModel.displayMessages }
+
+    private var selectedConversationID: UUID? {
+        kernel.conversations?.selectedConversationID
     }
 
-    /// 底部锚点行:1pt 高的透明视图,报告其全局 max-Y。
-    private var bottomAnchor: some View {
-        GeometryReader { geometry in
-            Color.clear
-                .preference(
-                    key: MessageListBottomAnchorPositionKey.self,
-                    value: geometry.frame(in: .global).maxY
-                )
-        }
-        // Keep the spacer inside the anchor so automatic scrolling includes
-        // the visual bottom breathing room instead of leaving extra scrollable
-        // content below the target.
-        .frame(height: 16)
-        .id(MessageListScrollCoordinator.bottomAnchorID)
-        .accessibilityHidden(true)
+    private var verbosity: LumiResponseVerbosity {
+        kernel.conversationManager?
+            .verbosity(for: selectedConversationID) ?? .defaultVerbosity
     }
+
+    /// 底部锚点行已内联到 `messageScrollView` 的 LazyVStack 末尾(纯 `Color.clear`
+    /// 占位 + 稳定 id),不再需要独立的偏好报告视图。
 
     // MARK: - Pagination Trigger
 
@@ -236,11 +200,9 @@ struct MessageListV1View: View {
     /// 数据加载与窗口回收由 viewmodel 完成。
     private func loadEarlier(proxy: ScrollViewProxy) async {
         let anchorID: UUID?
-        if turnViewModel.usesTurnProjection {
-            anchorID = await turnViewModel.loadEarlier()
-        } else {
-            anchorID = await timelineViewModel.loadEarlier(isAtBottom: isAtBottom)
-        }
+        anchorID = turnViewModel.usesTurnProjection
+            ? await turnViewModel.loadEarlier()
+            : nil
         guard let anchorID else { return }
         await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
     }

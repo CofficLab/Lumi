@@ -33,9 +33,8 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
 
     /// 瞬时 status 消息缓冲(每会话最多一条,永不落盘)。
     ///
-    /// `role == .status` 的消息(如"正在发送…")是视图层瞬时态,不进磁盘:
-    /// insert 时只入此缓冲;同会话一旦 insert 任何**非 status**消息(回合推进的标志),
-    /// 本缓冲里该会话的 status 立即被清除(manager 自动清理,调用方无需关心)。
+    /// `role == .status` 的消息(如"正在发送…")是视图层瞬时态,不进磁盘。
+    /// insert 时覆盖上一条；它覆盖整个 AgentTurn，只能在 Turn 结束时显式清除。
     private nonisolated let statusBuffer = StatusMessageBuffer()
 
     /// 后台落盘串行队列,保证同一会话内消息落盘顺序与插入顺序一致。
@@ -238,22 +237,15 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
         }
 
         // status 消息:纯内存瞬时态,不落盘。每会话最多一条(insert 即替换)。
-        // 见 StatusMessageBuffer。回合产物(assistant/error)insert 时由下方自动清理移除。
+        // 见 StatusMessageBuffer；AgentTurn 结束前不会被过程消息清除。
         if messageToInsert.role == .status {
             statusBuffer.set(messageToInsert, conversationID: conversationID)
             kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)
             return
         }
 
-        // 回合产物(assistant/tool/error)到来 = 当前阶段结束,自动清除该会话的瞬时 status。
-        // 注意:user 消息不清 status —— user 是发送发起点(与 status 同属一轮),
-        // 清掉会让"正在发送…"瞬间消失。assistant(模型回复)/tool(工具结果)/error
-        // 都是阶段产物:它们落库意味着对应阶段(生成/工具执行/出错)结束,status 退场。
-        if messageToInsert.role == .assistant
-            || messageToInsert.role == .tool
-            || messageToInsert.role == .error {
-            statusBuffer.clear(conversationID: conversationID)
-        }
+        // 0) 非瞬时消息:刷新会话更新时间,让「最近有消息的对话」在列表中置顶。
+        kernel?.conversationManager?.markConversationActive(id: conversationID)
 
         // 1) 写入内存缓冲,立即通知 UI —— UI 这一刻就能从读路径看到它(read-your-writes)。
         enqueuePending(messageToInsert, conversationID: conversationID)

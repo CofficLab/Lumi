@@ -11,14 +11,14 @@ public struct RClickRailView: View {
     public var body: some View {
         VStack(spacing: 0) {
             // 标题栏
-            HStack {
-                Text(LumiPluginLocalization.string("Preview", bundle: .module))
-                    .font(.appBodyEmphasized)
-                    .foregroundColor(theme.textPrimary)
-                Spacer()
+            AppToolbarContainer {
+                HStack {
+                    Text(LumiPluginLocalization.string("Preview", bundle: .module))
+                        .font(.appBodyEmphasized)
+                        .foregroundColor(theme.textPrimary)
+                    Spacer()
+                }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
 
             AppDivider()
 
@@ -26,35 +26,42 @@ public struct RClickRailView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     RClickPreviewView(config: configManager.config)
-                        .shadow(color: Color.black.opacity(0.09), radius: 12, x: 0, y: 4)
+                        .shadowLg()
 
                     // 状态统计
-                    VStack(alignment: .leading, spacing: 12) {
-                        // 启用的操作数量
-                        let enabledActions = configManager.config.items.filter { $0.isEnabled && $0.type != .newFile }.count
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(theme.success)
-                                .font(.appCallout)
-                            Text("\(enabledActions) \(LumiPluginLocalization.string("actions enabled", bundle: .module))")
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
+                    AppCard {
+                        AppSettingsSection(title: LumiPluginLocalization.string("Status", bundle: .module), spacing: 8) {
+                            let enabledActions = configManager.config.items.filter { $0.isEnabled && $0.type != .newFile }.count
 
-                        // 启用的模板数量
-                        if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }), newFileItem.isEnabled {
-                            let enabledTemplates = configManager.config.fileTemplates.filter { $0.isEnabled }.count
-                            HStack(spacing: 8) {
-                                Image(systemName: "doc.badge.plus")
-                                    .foregroundColor(theme.info)
-                                    .font(.appCallout)
-                                Text("\(enabledTemplates) \(LumiPluginLocalization.string("templates enabled", bundle: .module))")
-                                    .font(.appCaption)
-                                    .foregroundColor(theme.textSecondary)
+                            AppSettingsRow {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.appCallout)
+                                        .foregroundColor(theme.success)
+                                    Text("\(enabledActions) \(LumiPluginLocalization.string("actions enabled", bundle: .module))")
+                                        .font(.appBody)
+                                        .foregroundColor(theme.textSecondary)
+                                    Spacer()
+                                }
+                            }
+
+                            if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }), newFileItem.isEnabled {
+                                let enabledTemplates = configManager.config.fileTemplates.filter { $0.isEnabled }.count
+
+                                AppSettingsRow {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "doc.badge.plus")
+                                            .font(.appCallout)
+                                            .foregroundColor(theme.info)
+                                        Text("\(enabledTemplates) \(LumiPluginLocalization.string("templates enabled", bundle: .module))")
+                                            .font(.appBody)
+                                            .foregroundColor(theme.textSecondary)
+                                        Spacer()
+                                    }
+                                }
                             }
                         }
                     }
-                    .padding(.horizontal, 8)
                 }
                 .padding(16)
             }

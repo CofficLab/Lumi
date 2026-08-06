@@ -45,6 +45,12 @@ struct MessageInfoPopoverContent: View {
                     infoRow("角色", value: message.role.rawValue)
                     infoRow("创建时间", value: Self.fullTimestampFormatter.string(from: message.createdAt))
                     infoRow("渲染类型", value: displayValue(message.renderKind))
+                    if let preferred = message.preferredRendererID, !preferred.isEmpty {
+                        infoRow("期望渲染器", value: preferred, isMono: true)
+                    }
+                    if let turnID = message.turnID {
+                        infoRow("轮次 ID", value: turnID.uuidString, isMono: true)
+                    }
                     infoRow("错误标记", value: message.isError ? "是" : "否")
                 }
 
@@ -53,15 +59,36 @@ struct MessageInfoPopoverContent: View {
                     infoRow("模型", value: displayValue(message.modelName))
                 }
 
+                if message.latencyMs != nil || message.timeToFirstTokenMs != nil || message.streamingDurationMs != nil {
+                    infoSection("性能") {
+                        if let latency = message.latencyMs {
+                            infoRow("总耗时", value: MessageViewHelpers.formatMilliseconds(latency))
+                        }
+                        if let ttft = message.timeToFirstTokenMs {
+                            infoRow("首 Token 延迟", value: MessageViewHelpers.formatMilliseconds(ttft))
+                        }
+                        if let streaming = message.streamingDurationMs {
+                            infoRow("流式时长", value: MessageViewHelpers.formatMilliseconds(streaming))
+                        }
+                    }
+                }
+
                 if message.toolCallID != nil {
                     infoSection("工具关联") {
                         infoRow("Tool Call ID", value: displayValue(message.toolCallID), isMono: true)
                     }
                 }
 
+                let hasHttpDetail = message.httpStatusCode != nil
+                    || (message.httpBody?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false)
                 if let detail = errorDetailSummary(for: message), !detail.isEmpty {
                     infoSection("错误详情") {
                         infoMultilineRow("原始错误", value: detail)
+                        httpDetailRows()
+                    }
+                } else if hasHttpDetail {
+                    infoSection("错误详情") {
+                        httpDetailRows()
                     }
                 }
 
@@ -197,6 +224,16 @@ struct MessageInfoPopoverContent: View {
         let resolved = ErrorTransportDetailsResolver.resolve(for: message)
         let summary = resolved.displaySummary
         return summary.isEmpty ? nil : summary
+    }
+
+    @ViewBuilder
+    private func httpDetailRows() -> some View {
+        if let status = message.httpStatusCode {
+            infoRow("HTTP 状态码", value: "\(status)", isMono: true)
+        }
+        if let body = message.httpBody, !body.isEmpty {
+            infoMultilineRow("HTTP 响应体", value: body)
+        }
     }
 
     private func displayValue(_ value: String?) -> String {

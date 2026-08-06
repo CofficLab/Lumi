@@ -80,6 +80,41 @@ struct AgentTurnSummaryBuilderTests {
         #expect(items.first?.message.id == prompt.id)
     }
 
+    @Test("运行中的 Turn 不提前展示过程消息")
+    func runningTurnDoesNotExposeProcessMessages() throws {
+        let turnID = UUID()
+        let process = message(
+            turnID: turnID,
+            content: "calling a tool",
+            toolCalls: [LumiToolCall(id: "tool", name: "search", arguments: "{}")],
+            offset: 1
+        )
+
+        let items = builder.build(
+            records: [record(id: turnID, state: .running, offset: 0)],
+            messages: [process]
+        )
+
+        #expect(items.isEmpty)
+    }
+
+    @Test("旧对话回退也只保留结论消息")
+    func legacyProjectionKeepsConclusionsOnly() throws {
+        let turnID = UUID()
+        let user = message(turnID: turnID, role: .user, content: "question", offset: 0)
+        let process = message(
+            turnID: turnID,
+            content: "calling a tool",
+            toolCalls: [LumiToolCall(id: "tool", name: "search", arguments: "{}")],
+            offset: 1
+        )
+        let final = message(turnID: turnID, content: "final conclusion", offset: 2)
+
+        let conclusions = builder.legacyConclusions(from: [user, process, final])
+
+        #expect(conclusions.map(\.id) == [final.id])
+    }
+
     @Test("没有关联消息的 Turn 不生成空白行，结果按时间正序")
     func omitsMissingMessagesAndSortsChronologically() throws {
         let olderTurnID = UUID()

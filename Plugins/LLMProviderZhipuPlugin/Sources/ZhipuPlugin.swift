@@ -16,7 +16,6 @@ public final class ZhipuPlugin: LumiPlugin {
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
-        ProviderRenderKindManager.shared.registerProviderPrefix("zhipu-", for: "zhipu")
         if let storage = kernel.storage {
             AvailabilityDiskCacheDirectoryResolver.set(
                 pluginName: "LLMProviderZhipuPlugin",

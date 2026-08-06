@@ -1,0 +1,156 @@
+{
+  "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+  "messages": [
+    {
+      "id": "B0000000-0000-0000-0000-000000000001",
+      "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+      "role": "system",
+      "content": "你是 Lumi，一个高效的编程助手。",
+      "createdAt": 808010000.0,
+      "providerID": null,
+      "modelName": null,
+      "isError": false,
+      "renderKind": "system",
+      "metadata": {}
+    },
+    {
+      "id": "B0000000-0000-0000-0000-000000000002",
+      "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+      "role": "user",
+      "content": "用 markdown 给我介绍一下这个项目的目录结构",
+      "turnID": "77777777-7777-7777-7777-777777777777",
+      "createdAt": 808010010.0,
+      "providerID": "zhipu",
+      "modelName": null,
+      "isError": false,
+      "metadata": { "source": "chat", "language": "zh-CN" }
+    },
+    {
+      "id": "B0000000-0000-0000-0000-000000000003",
+      "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+      "role": "assistant",
+      "content": "项目结构如下：\n\n```\nLumi/\n├── Packages/     # 核心库\n├── Plugins/      # 插件\n└── docs/         # 文档\n```",
+      "turnID": "77777777-7777-7777-7777-777777777777",
+      "createdAt": 808010020.0,
+      "providerID": "zhipu",
+      "modelName": "glm-4-plus",
+      "isError": false,
+      "reasoningContent": "用户想看目录结构，直接给出简洁树状图。",
+      "inputTokenCount": 2100,
+      "outputTokenCount": 480,
+      "latencyMs": 4100.0,
+      "timeToFirstTokenMs": 900.0,
+      "streamingDurationMs": 3200.0,
+      "metadata": { "cache_cached_input_tokens": "1200", "cache_total_input_tokens": "2100" }
+    },
+    {
+      "id": "B0000000-0000-0000-0000-000000000004",
+      "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+      "role": "assistant",
+      "content": "...",
+      "turnID": "88888888-8888-8888-8888-888888888888",
+      "createdAt": 808011000.0,
+      "providerID": "zhipu",
+      "modelName": "glm-4-plus",
+      "isError": false,
+      "metadata": {},
+      "toolCalls": [
+        {
+          "id": "call_search_1",
+          "name": "search_files",
+          "arguments": "{\"query\": \"Package.swift\"}",
+          "displayDescription": "搜索 Package.swift 文件"
+        }
+      ]
+    },
+    {
+      "id": "B0000000-0000-0000-0000-000000000005",
+      "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+      "role": "tool",
+      "content": "找到 3 个 Package.swift",
+      "turnID": "88888888-8888-8888-8888-888888888888",
+      "createdAt": 808011030.0,
+      "providerID": null,
+      "modelName": null,
+      "isError": false,
+      "toolCallID": "call_search_1",
+      "metadata": {}
+    },
+    {
+      "id": "B0000000-0000-0000-0000-000000000006",
+      "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+      "role": "assistant",
+      "content": "",
+      "turnID": "88888888-8888-8888-8888-888888888888",
+      "createdAt": 808011040.0,
+      "providerID": "zhipu",
+      "modelName": "glm-4-plus",
+      "isError": false,
+      "renderKind": "tool-step-group",
+      "metadata": {}
+    },
+    {
+      "id": "B0000000-0000-0000-0000-000000000007",
+      "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+      "role": "assistant",
+      "content": "本次查询没有找到额外结果。",
+      "turnID": "88888888-8888-8888-8888-888888888888",
+      "createdAt": 808011050.0,
+      "providerID": "zhipu",
+      "modelName": "glm-4-plus",
+      "isError": false,
+      "metadata": {}
+    },
+    {
+      "id": "B0000000-0000-0000-0000-000000000008",
+      "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+      "role": "status",
+      "content": "正在生成文档摘要…",
+      "createdAt": 808012000.0,
+      "providerID": null,
+      "modelName": null,
+      "isError": false,
+      "renderKind": "status",
+      "metadata": { "isTransientStatus": "true" }
+    },
+    {
+      "id": "B0000000-0000-0000-0000-000000000009",
+      "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+      "role": "error",
+      "content": "请求失败：503 Service Unavailable",
+      "createdAt": 808013000.0,
+      "providerID": "zhipu",
+      "modelName": null,
+      "isError": true,
+      "renderKind": "llm-error",
+      "rawErrorDetail": "Upstream model overloaded\n\n--- Request / Response Details ---\nPOST https://api.zhipu.ai/v4/chat/completions\nResponse Status: 503\n{\"error\": \"overloaded\"}",
+      "httpStatusCode": 503,
+      "httpBody": "{\"error\": \"overloaded\"}",
+      "metadata": { "llm.transport.request": "POST https://api.zhipu.ai/v4/chat/completions", "llm.transport.response": "Response Status: 503" }
+    },
+    {
+      "id": "B0000000-0000-0000-0000-000000000010",
+      "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+      "role": "user",
+      "content": "这是一段很长的中文文本，用来验证换行和性能。我们需要确保在窄宽度下 CJK 字符能正确换行，不会出现溢出或截断，同时行高计算必须精确，避免滚动跳动。这个段落要足够长，长到需要换行多次，才能真实反映布局缓存的命中情况与测量开销。继续补充内容让它更长，这里再加一些无关紧要的描述文字，纯粹是为了撑起长度，让测试数据更接近真实场景。",
+      "turnID": "99999999-9999-9999-9999-999999999999",
+      "createdAt": 808014000.0,
+      "providerID": "zhipu",
+      "modelName": null,
+      "isError": false,
+      "metadata": { "hasImages": "true", "imageAttachments": "W3siZGF0YSI6ICJiYXNlNjQifV0=" }
+    },
+    {
+      "id": "B0000000-0000-0000-0000-000000000011",
+      "conversationID": "7C2D5E8F-1A3B-4C5D-9E0F-6A7B8C9D0E1F",
+      "role": "assistant",
+      "content": "已根据你的要求生成，详见上面的表格和代码。",
+      "turnID": "99999999-9999-9999-9999-999999999999",
+      "createdAt": 808014020.0,
+      "providerID": "zhipu",
+      "modelName": "glm-4-plus",
+      "isError": false,
+      "metadata": {}
+    }
+  ]
+}

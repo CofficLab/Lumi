@@ -180,6 +180,46 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(function["arguments"], #"{"path":"README.md"}"#)
     }
 
+    func testFormatToolSanitizesDottedName() throws {
+        // OpenAI 协议同样要求函数名只含字母/数字/下划线/短横线，
+        // 带点号的 MCP 工具名（如 app-store-connect.list-apps）必须转义
+        let adapter = makeAdapter()
+        let tool = MockTool(
+            name: "app-store-connect.list-apps",
+            toolDescription: "List App Store Connect apps",
+            inputSchema: ["type": "object"]
+        )
+
+        let body = try adapter.buildRequestBody(
+            messages: [ChatMessage(role: .user, content: "List apps")],
+            model: "k3",
+            tools: [tool],
+            systemPrompt: ""
+        )
+
+        let tools = try XCTUnwrap(body["tools"] as? [[String: Any]])
+        let function = try XCTUnwrap(tools[0]["function"] as? [String: Any])
+        XCTAssertEqual(function["name"] as? String, "app-store-connect_list-apps")
+    }
+
+    func testTransformMessageSanitizesToolCallNameOnReplay() throws {
+        // 历史 assistant 消息回传 tool_calls 时同样要转义，否则下一轮请求仍会被拒绝
+        let adapter = makeAdapter()
+        let message = adapter.transformMessage(
+            ChatMessage(
+                role: .assistant,
+                content: "",
+                toolCalls: [
+                    ToolCall(id: "call_1", name: "app-store-connect.list-apps", arguments: "{}"),
+                ]
+            )
+        )
+
+        let toolCalls = try XCTUnwrap(message["tool_calls"] as? [[String: Any]])
+        let function = try XCTUnwrap(toolCalls[0]["function"] as? [String: String])
+        XCTAssertEqual(function["name"], "app-store-connect_list-apps")
+    }
+
     func testTransformAssistantMessageOmitsReasoningContentByDefault() {
         let message = makeAdapter().transformMessage(
             ChatMessage(

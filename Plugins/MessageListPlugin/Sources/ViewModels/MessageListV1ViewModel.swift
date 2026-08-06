@@ -1,12 +1,19 @@
 import Foundation
 import LumiKernel
 
+private struct MessageListV1Presentation: Equatable {
+    var turnItems: [AgentTurnSummaryItem] = []
+    var legacyConclusions: [LumiChatMessage] = []
+    var statusMessage: LumiChatMessage?
+}
+
 /// V1-only data source that pages AgentTurns and projects each turn to one
-/// user-facing response. The regular MessageListViewModel remains responsible
-/// for live streaming and for legacy conversations without turn metadata.
+/// user-facing response. While a Turn is active, its process is represented by
+/// exactly one replaceable status message; streaming/process messages are never
+/// part of this presentation.
 @MainActor
 final class MessageListV1ViewModel: ObservableObject {
-    @Published private(set) var items: [AgentTurnSummaryItem] = []
+    @Published private var presentation = MessageListV1Presentation()
     @Published private(set) var isLoading = true
     @Published private(set) var isLoadingEarlier = false
     @Published private(set) var hasEarlierTurns = false
@@ -23,13 +30,23 @@ final class MessageListV1ViewModel: ObservableObject {
         self.pageSize = pageSize
     }
 
-    var usesTurnProjection: Bool { !items.isEmpty }
-    var displayMessages: [LumiChatMessage] { items.map(\.message) }
+    var items: [AgentTurnSummaryItem] { presentation.turnItems }
+    var statusMessage: LumiChatMessage? { presentation.statusMessage }
+    var usesTurnProjection: Bool { !records.isEmpty }
+    var conclusionMessages: [LumiChatMessage] {
+        usesTurnProjection
+            ? presentation.turnItems.map(\.message)
+            : presentation.legacyConclusions
+    }
+    var displayMessages: [LumiChatMessage] {
+        conclusionMessages + (statusMessage.map { [$0] } ?? [])
+    }
+    var hasVisibleContent: Bool { !displayMessages.isEmpty }
 
     func activate(conversationID: UUID?) async {
         activeConversationID = conversationID
         records = []
-        items = []
+        presentation = MessageListV1Presentation()
         hasEarlierTurns = false
         isLoading = true
         defer { isLoading = false }
@@ -70,7 +87,7 @@ final class MessageListV1ViewModel: ObservableObject {
         )
         guard activeConversationID == conversationID else { return false }
 
-        let previousItems = items
+        let previousPresentation = presentation
         var byID = Dictionary(uniqueKeysWithValues: records.map { ($0.id, $0) })
         for record in latest.prefix(pageSize) {
             byID[record.id] = record
@@ -80,7 +97,7 @@ final class MessageListV1ViewModel: ObservableObject {
             hasEarlierTurns = latest.count > pageSize
         }
         await rebuildItems(for: conversationID)
-        return items != previousItems
+        return presentation != previousPresentation
     }
 
     /// Prepends one older Turn page and returns the previously oldest visible
@@ -119,14 +136,25 @@ final class MessageListV1ViewModel: ObservableObject {
 
     private func rebuildItems(for conversationID: UUID) async {
         guard let messageManager = kernel.messageManager else {
-            items = []
+            presentation = MessageListV1Presentation()
             return
         }
-        let messages = await Task.detached(priority: .userInitiated) {
-            messageManager.messages(for: conversationID)
+        let snapshot = await Task.detached(priority: .userInitiated) {
+            let messages = messageManager.messages(for: conversationID)
+            let status = messageManager.messagePage(
+                for: conversationID,
+                limit: 1,
+                beforeMessageID: nil,
+                includesToolMessages: false
+            ).last(where: { $0.role == .status })
+            return (messages, status)
         }.value
         guard activeConversationID == conversationID else { return }
-        items = builder.build(records: records, messages: messages)
+        presentation = MessageListV1Presentation(
+            turnItems: builder.build(records: records, messages: snapshot.0),
+            legacyConclusions: builder.legacyConclusions(from: snapshot.0),
+            statusMessage: snapshot.1
+        )
     }
 
     private func newestRecordFirst(_ lhs: AgentTurnRecord, _ rhs: AgentTurnRecord) -> Bool {

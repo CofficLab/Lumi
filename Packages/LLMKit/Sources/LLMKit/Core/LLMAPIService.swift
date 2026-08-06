@@ -40,7 +40,11 @@ public class LLMAPIService: @unchecked Sendable {
     ) async throws -> Data {
         let bodyData: Data
         do {
-            bodyData = try JSONSerialization.data(withJSONObject: body)
+            // .sortedKeys 保证 JSON 字节序列稳定:Swift 的 [String: Any] 字典无序,
+            // 若不加此选项,每次请求序列化出的 key 顺序不同;支持前缀缓存的端点
+            // (DeepSeek/Anthropic/Kimi 等)按「从 token 0 起的前缀 token 序列」匹配,
+            // key 顺序一变整段缓存失配(命中率从 90%+ 崩到 2-5%,已实测复现)。
+            bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
         } catch {
             throw HTTPClientError.jsonSerializationFailed(underlying: error)
         }
@@ -65,7 +69,11 @@ public class LLMAPIService: @unchecked Sendable {
     ) async throws {
         let bodyData: Data
         do {
-            bodyData = try JSONSerialization.data(withJSONObject: body)
+            // .sortedKeys 保证 JSON 字节序列稳定:Swift 的 [String: Any] 字典无序,
+            // 若不加此选项,每次请求序列化出的 key 顺序不同;支持前缀缓存的端点
+            // (DeepSeek/Anthropic/Kimi 等)按「从 token 0 起的前缀 token 序列」匹配,
+            // key 顺序一变整段缓存失配(命中率从 90%+ 崩到 2-5%,已实测复现)。
+            bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
         } catch {
             throw HTTPClientError.jsonSerializationFailed(underlying: error)
         }

@@ -16,6 +16,12 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
     public var httpStatusCode: Int?
     public var httpBody: String?
     public var renderKind: String?
+    /// 期望的渲染器 ID。
+    ///
+    /// 由消息生产者（通常是 LLM Provider 插件）设置，用于显式路由到某个具体渲染器。
+    /// `MessageRendererManager.renderer(for:)` 在匹配时优先按此 ID 查找；未命中或为空时
+    /// 仍按原来的 `canRender` 链兜底，保证兼容性。
+    public var preferredRendererID: String?
     public var metadata: [String: String]
     public var toolCalls: [LumiToolCall]?
     public var toolCallID: String?
@@ -40,6 +46,7 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         httpStatusCode: Int? = nil,
         httpBody: String? = nil,
         renderKind: String? = nil,
+        preferredRendererID: String? = nil,
         metadata: [String: String] = [:],
         toolCalls: [LumiToolCall]? = nil,
         toolCallID: String? = nil,
@@ -63,6 +70,7 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         self.httpStatusCode = httpStatusCode
         self.httpBody = httpBody
         self.renderKind = renderKind
+        self.preferredRendererID = preferredRendererID
         self.metadata = metadata
         self.toolCalls = toolCalls
         self.toolCallID = toolCallID
@@ -88,6 +96,7 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
         httpStatusCode: Int? = nil,
         httpBody: String? = nil,
         renderKind: String? = nil,
+        preferredRendererID: String? = nil,
         metadata: [String: String] = [:],
         toolCalls: [LumiToolCall]? = nil,
         toolCallID: String? = nil,
@@ -112,6 +121,7 @@ public struct LumiChatMessage: Identifiable, Codable, Equatable, Sendable {
             httpStatusCode: httpStatusCode,
             httpBody: httpBody,
             renderKind: renderKind,
+            preferredRendererID: preferredRendererID,
             metadata: metadata,
             toolCalls: toolCalls,
             toolCallID: toolCallID,

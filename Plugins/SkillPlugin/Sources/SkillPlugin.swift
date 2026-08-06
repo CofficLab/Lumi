@@ -62,21 +62,18 @@ public final class SkillPlugin: LumiPlugin, SuperLog {
 
         let prompt = SkillPromptBuilder.buildPrompt(skills: skills)
 
-        // 找到最后一条 user 消息的位置，在其后插入 skill 上下文
+        // 注入为 system 消息(由 AgentTurnRunner 合并进顶层 system 前缀):
+        // - skill 列表是项目级稳定配置(会话内不变),放 system 前缀可被 DeepSeek 缓存持续命中;
+        // - 曾改为合并进「最后一条 user 消息」→ 该消息下一轮在历史中变回原文,
+        //   从历史第一条起前缀失配 → 缓存近乎全 miss(实测命中率仅 ~35%)。
+        // - system role 消息不进入 messages[](被 partition 提取),不会破坏 tool_use/tool_result 配对。
         guard let conversationID = messages.last?.conversationID else { return messages }
         let skillMessage = LumiChatMessage(
             conversationID: conversationID,
             role: .system,
             content: prompt
         )
-
-        var result = messages
-        if let lastUserIndex = result.lastIndex(where: { $0.role == .user }) {
-            result.insert(skillMessage, at: lastUserIndex + 1)
-        } else {
-            result.append(skillMessage)
-        }
-        return result
+        return [skillMessage] + messages
     }
 
     // MARK: - LumiPlugin stubs

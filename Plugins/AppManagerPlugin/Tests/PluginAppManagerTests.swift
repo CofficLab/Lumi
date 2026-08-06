@@ -65,7 +65,7 @@ struct PluginAppManagerTests {
         let blockedDirectory = root.appendingPathComponent("AppManagerPlugin", isDirectory: true)
         try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
 
-        let container = CacheManager.makeContainer(databaseRootURL: root)
+        let container = CacheManager.makeContainer(pluginDataDirectory: blockedDirectory)
         let context = ModelContext(container)
         let item = AppCacheItem(
             bundlePath: "/Applications/Test.app",
@@ -92,7 +92,7 @@ struct PluginAppManagerTests {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
 
-        let manager = CacheManager(databaseRootURL: root)
+        let manager = CacheManager(pluginDataDirectory: root)
         let bundleURL = root.appendingPathComponent("Test.app", isDirectory: true)
         let modifiedAt = Date()
         let app = AppModel(

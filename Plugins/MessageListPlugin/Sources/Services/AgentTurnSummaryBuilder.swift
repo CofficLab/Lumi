@@ -46,8 +46,21 @@ struct AgentTurnSummaryBuilder {
             return finalAssistant ?? latestError ?? latestAssistant
         case .failed:
             return latestError ?? finalAssistant ?? latestAssistant
-        case .idle, .running, .suspended, .cancelled:
+        case .suspended:
             return latestAssistant ?? latestError
+        case .cancelled:
+            return finalAssistant ?? latestError
+        case .idle, .running:
+            return nil
+        }
+    }
+
+    /// Compatibility projection for conversations created before messages
+    /// persisted AgentTurn identity.
+    func legacyConclusions(from messages: [LumiChatMessage]) -> [LumiChatMessage] {
+        messages.filter { message in
+            if message.role == .error || message.isError { return true }
+            return isFinalAssistant(message)
         }
     }
 

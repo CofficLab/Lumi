@@ -65,7 +65,7 @@ final class PendingMessageBuffer: @unchecked Sendable {
 /// 瞬时 status 消息缓冲(每会话最多一条,永不落盘)。
 ///
 /// `role == .status` 的消息(如"正在发送…")是视图层瞬时态。每会话只保留最新一条:
-/// `set` 直接覆盖旧的;回合推进(MessageManager insert 任一非 status 消息)时 `clear`。
+/// `set` 直接覆盖旧的；AgentTurn 生命周期结束时由拥有者显式 `clear`。
 /// 锁保护、Sendable,供 MessageManager 的 nonisolated 读路径与 @MainActor 写路径共用。
 final class StatusMessageBuffer: @unchecked Sendable {
     private let lock = NSLock()

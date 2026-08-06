@@ -178,4 +178,26 @@ public struct StreamChunk: Sendable, Equatable {
             stopReason: stopReason
         )
     }
+
+    /// 用替换后的 toolCalls 重建 chunk（其余字段保持不变）。
+    ///
+    /// 供流式请求支持层把模型返回的 sanitize 后工具名反查为原始注册名时使用。
+    public func withToolCalls(_ newToolCalls: [ToolCall]?) -> StreamChunk {
+        StreamChunk(
+            content: content,
+            isDone: isDone,
+            toolCalls: newToolCalls,
+            error: error,
+            partialJson: partialJson,
+            eventType: eventType,
+            rawEvent: rawEvent,
+            rawStreamPayload: rawStreamPayload,
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            cachedInputTokens: cachedInputTokens,
+            cacheWriteInputTokens: cacheWriteInputTokens,
+            cacheTotalInputTokens: cacheTotalInputTokens,
+            stopReason: stopReason
+        )
+    }
 }
