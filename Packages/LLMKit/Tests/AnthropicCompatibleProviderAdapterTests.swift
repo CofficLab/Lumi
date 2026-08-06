@@ -312,7 +312,8 @@ final class AnthropicCompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(chunk?.inputTokens, 50)
         XCTAssertEqual(chunk?.cachedInputTokens, 30)
         XCTAssertEqual(chunk?.cacheWriteInputTokens, 20)
-        XCTAssertEqual(chunk?.cacheTotalInputTokens, 100)
+        // input_tokens 已包含命中与写入部分,直接作为分母,而非三者相加
+        XCTAssertEqual(chunk?.cacheTotalInputTokens, 50)
     }
 
     func testParseStreamMessageStop() throws {

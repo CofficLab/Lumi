@@ -259,11 +259,16 @@ struct DeepSeekChatMessage: Sendable {
     /// - `message_delta.usage` 通常仅含 `output_tokens`
     ///
     /// 因此两个字段独立累加（用最后一个非空值覆盖）。
+    /// `cacheTotalInputTokens` 在 Anthropic 协议下无独立字段——`input_tokens`
+    /// 本身已包含缓存命中(`cache_read`)与写入(`cache_creation`)部分，直接
+    /// 用它作为缓存率分母，保证 UI 的 cache % 口径正确。
     mutating func mergeUsage(_ usage: DeepSeekAnthropicUsage) {
-        if let input = usage.inputTokens { inputTokenCount = input }
+        if let input = usage.inputTokens {
+            inputTokenCount = input
+            cacheTotalInputTokens = input
+        }
         if let output = usage.outputTokens { outputTokenCount = output }
         if let cached = usage.cacheReadInputTokens { cachedInputTokens = cached }
-        // cacheTotalInputTokens 在 Anthropic 协议下无对应字段，保持不变。
     }
 
     /// 把累积结果转成内核统一消息。

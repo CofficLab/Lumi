@@ -365,12 +365,21 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         }
     }
 
+    /// 缓存命中率的分母 = 输入总 token 数。
+    ///
+    /// Anthropic 语义下 `input_tokens` 已包含 `cache_read_input_tokens` 与
+    /// `cache_creation_input_tokens`(命中部分是其子集),直接用它即可;
+    /// 不能把三者相加,否则分母被重复放大、缓存率系统性低估。
+    /// 仅在 `input_tokens` 缺失(理论不会发生)时退化为缓存相关字段之和。
     private static func cacheTotalInputTokens(
         inputTokens: Int?,
         cachedInputTokens: Int?,
         cacheWriteInputTokens: Int?
     ) -> Int? {
-        let values = [inputTokens, cachedInputTokens, cacheWriteInputTokens].compactMap { $0 }
+        if let inputTokens {
+            return inputTokens
+        }
+        let values = [cachedInputTokens, cacheWriteInputTokens].compactMap { $0 }
         guard !values.isEmpty else { return nil }
         return values.reduce(0, +)
     }
