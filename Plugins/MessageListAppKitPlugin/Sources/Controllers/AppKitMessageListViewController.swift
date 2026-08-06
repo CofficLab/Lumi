@@ -48,6 +48,11 @@ final class AppKitMessageListViewController: NSViewController {
         // As an NSScrollView documentView, the table is frame-managed by the
         // scroll view; with Auto Layout on and no clip-view constraints its
         // frame never updates and the table stays invisible (blank area).
+        // Width follows the clip view; HEIGHT stays self-managed — an
+        // autoresizingMask containing .height makes NSScrollView compress the
+        // table to the viewport height, clipping every row below the fold and
+        // leaving a blank screen with a dead scrollbar.
+        tableView.autoresizingMask = [.width]
         tableView.allowsMultipleSelection = false
         tableView.allowsEmptySelection = true
         tableView.usesAlternatingRowBackgroundColors = false
@@ -151,6 +156,16 @@ final class AppKitMessageListViewController: NSViewController {
         }
     }
 
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        // Defensive: SwiftUI may not drive the frame of an NSViewController's
+        // view consistently for representable bridges; keep the scroll view
+        // pinned to the root bounds so the table is never laid out off-screen.
+        if !view.bounds.isEmpty {
+            scrollView.frame = view.bounds
+        }
+    }
+
     override func viewDidAppear() {
         super.viewDidAppear()
         // Fallback: the kernel services are almost certainly ready by the time
@@ -163,21 +178,41 @@ final class AppKitMessageListViewController: NSViewController {
                 await self?.coordinator.activate(conversationID: selected)
             }
         }
+        // The view is on screen now; make sure the table actually draws its
+        // rows (protects against snapshots applied while off-screen).
+        tableView.reloadData()
+        tableView.layoutSubtreeIfNeeded()
     }
 
     // MARK: - Snapshot application
 
     private func apply(snapshot: AppKitMessageListSnapshot) {
+        let hadRowsBefore = !dataSource.rows.isEmpty
         dataSource.apply(snapshot: snapshot)
         updateOverlays(snapshot: snapshot)
 
-        // Temporary geometry diagnostics for the blank-table investigation.
+        // Temporary geometry diagnostic.
         let colWidth = tableView.tableColumns.first?.width ?? -1
-        print("[MessageListAppKit] apply: rows=\(dataSource.rows.count) frame=\(tableView.frame) numRows=\(tableView.numberOfRows) visible=\(tableView.visibleRect) colW=\(colWidth) scrollH=\(scrollView.frame.height) scrollW=\(scrollView.frame.width)")
+        let visible = tableView.visibleRect
+        let row0Rect = tableView.numberOfRows > 0 ? tableView.rect(ofRow: 0) : .zero
+        print("[MessageListAppKit] apply: rows=\(dataSource.rows.count) numRows=\(tableView.numberOfRows) colW=\(colWidth) clipY=\(scrollView.contentView.bounds.origin.y) tableH=\(tableView.frame.height) visible=\(visible) rect0=\(row0Rect) scrollWin=\(scrollView.convert(scrollView.bounds, to: nil))")
 
-        // Bottom-follow: only follow while the user was already at the bottom.
-        if snapshot.displayRows.last != nil, !snapshot.isLoading, scrollAnchor.isAtBottom() {
-            scrollAnchor.scrollToBottom()
+        // Force a synchronous draw so the table is forced to request row
+        // views for the visible range.
+        if snapshot.isLoading == false, tableView.numberOfRows > 0 {
+            tableView.display()
+        }
+
+        // First page with real content: pin to the top so the first row is
+        // visible and gets drawn. Only follow the bottom when content already
+        // existed and the user was already at the bottom (streaming tail).
+        guard snapshot.isLoading == false, snapshot.displayRows.last != nil else { return }
+        if hadRowsBefore {
+            if scrollAnchor.isAtBottom() {
+                scrollAnchor.scrollToBottom()
+            }
+        } else {
+            scrollAnchor.scrollToTop()
         }
     }
 

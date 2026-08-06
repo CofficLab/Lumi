@@ -20,7 +20,7 @@ public final class MessageListAppKitPlugin: LumiPlugin {
 
     public let order = 82
 
-    public let policy: LumiPluginPolicy = .disabled
+    public let policy: LumiPluginPolicy = .alwaysOn
 
     public let pluginDescription: String =
         "Native AppKit message list. Disabled by default; used for evaluation alongside the SwiftUI message list."

@@ -35,7 +35,9 @@ final class AppKitMessageTableDelegate: NSObject, NSTableViewDelegate {
             if width != availableWidth {
                 availableWidth = width
             }
-            return rendererFor(messageRow).measure(row: messageRow, width: width)
+            let height = rendererFor(messageRow).measure(row: messageRow, width: width)
+            print("[MessageListAppKit] heightOfRow row=\(row) h=\(height)")
+            return height
         }
     }
 

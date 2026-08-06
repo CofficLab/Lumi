@@ -123,16 +123,24 @@ final class AppKitScrollAnchor {
     }
 
     func scrollToBottom() {
-        guard let scrollView, let tableView else { return }
+        guard let tableView else { return }
         let rowCount = tableView.numberOfRows
         guard rowCount > 0 else { return }
+        // Use the table's own row-based scrolling — manual clipView math is
+        // wrong for a flipped NSTableView document view.
         tableView.scrollRowToVisible(rowCount - 1)
-        // Force the clip to the very bottom edge (scrollRowToVisible can land
-        // short when the last row is taller than the viewport).
-        if let clipView = scrollView.contentView as NSClipView? {
-            let maxY = max(0, (scrollView.documentView?.bounds.height ?? 0) - clipView.bounds.height)
-            clipView.scroll(to: NSPoint(x: 0, y: maxY))
+        if let clipView = tableView.enclosingScrollView?.contentView as NSClipView? {
+            clipView.scroll(to: NSPoint(
+                x: 0,
+                y: max(0, (tableView.bounds.height) - clipView.bounds.height)
+            ))
         }
+    }
+
+    /// Scrolls back to the very top (first page / initial load).
+    func scrollToTop() {
+        guard let scrollView, let clipView = scrollView.contentView as NSClipView? else { return }
+        clipView.scroll(to: NSPoint(x: 0, y: 0))
     }
 
     // MARK: - Private

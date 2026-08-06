@@ -100,6 +100,7 @@ final class AppKitMessageListDataSource: NSObject, NSTableViewDataSource {
         viewFor tableColumn: NSTableColumn?,
         row: Int
     ) -> NSView? {
+        print("[MessageListAppKit] VIEWFOR row=\(row) rowsCount=\(rows.count) tableRows=\(tableView.numberOfRows) tableH=\(tableView.frame.height)")
         guard rows.indices.contains(row) else { return nil }
         switch rows[row] {
         case .loadEarlier:
@@ -116,8 +117,10 @@ final class AppKitMessageListDataSource: NSObject, NSTableViewDataSource {
             let cell = tableView.makeView(
                 withIdentifier: renderer.reuseIdentifier,
                 owner: self
-            ) as? AppKitMessageCellView ?? AppKitMessageCellView()
+            ) as? AppKitMessageCellView ?? AppKitMessageCellView(frame: .zero)
             cell.configure(row: messageRow, renderer: renderer)
+            // Temporary diagnostics for the blank-cell investigation.
+            print("[MessageListAppKit] viewFor: row=\(row) cellFrame=\(cell.frame) subs=\(cell.subviews.count) rootSubs=\(cell.subviews.first?.subviews.count ?? -1)")
             return cell
         }
     }
