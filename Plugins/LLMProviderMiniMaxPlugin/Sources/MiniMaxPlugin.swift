@@ -15,6 +15,7 @@ public final class MiniMaxPlugin: LumiPlugin {
 
     private var videoRecordStore: MiniMaxVideoRecordStore?
     private var imageRecordStore: MiniMaxImageRecordStore?
+    private var musicRecordStore: MiniMaxMusicRecordStore?
 
     public init() {}
 
@@ -34,6 +35,11 @@ public final class MiniMaxPlugin: LumiPlugin {
             let imageDatabaseURL = storage.pluginDataDirectory(for: "LLMProviderMiniMax")
                 .appendingPathComponent("image_records", isDirectory: true)
             imageRecordStore = MiniMaxImageRecordStore(databaseRootURL: imageDatabaseURL)
+
+            // 初始化音乐记录存储
+            let musicDatabaseURL = storage.pluginDataDirectory(for: "LLMProviderMiniMax")
+                .appendingPathComponent("music_records", isDirectory: true)
+            musicRecordStore = MiniMaxMusicRecordStore(databaseRootURL: musicDatabaseURL)
         }
     }
 
@@ -140,6 +146,21 @@ public final class MiniMaxPlugin: LumiPlugin {
         if let store = imageRecordStore {
             tools.append(MiniMaxListImagesTool(store: store))
             tools.append(MiniMaxGetImageTool(store: store))
+        }
+
+        // 注册音乐生成工具
+        if let network = kernel.network {
+            let musicClient = MiniMaxMusicClient(network: network, apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxMusicTool(client: musicClient, recordStore: musicRecordStore))
+        } else {
+            let musicClient = MiniMaxMusicClient(apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxMusicTool(client: musicClient, recordStore: musicRecordStore))
+        }
+
+        // 注册音乐记录查询工具
+        if let store = musicRecordStore {
+            tools.append(MiniMaxListMusicTool(store: store))
+            tools.append(MiniMaxGetMusicTool(store: store))
         }
 
         return tools
