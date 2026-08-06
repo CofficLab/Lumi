@@ -445,15 +445,7 @@ public struct HTTPExchangeSettingsView: View {
                 data: record.responseHeadersJSON,
                 fallback: "<no response headers>"
             )
-            payloadSection(
-                title: LumiPluginLocalization.string("Response Body", bundle: .module),
-                subtitle: String(format: LumiPluginLocalization.string("Original response body bytes (%@)", bundle: .module), byteCount(record.responseBody)),
-                data: record.responseBody,
-                fallback: "<empty>",
-                bodyKind: .response,
-                recordID: record.id,
-                mimeType: record.responseMIMEType
-            )
+            responseBodySection(for: record)
             errorSection(for: record)
         }
     }
@@ -476,6 +468,32 @@ public struct HTTPExchangeSettingsView: View {
                         HTTPExchangePayloadView(data: details, fallback: "{}")
                     }
                 }
+            }
+        }
+    }
+
+    /// Response body section that detects JSON content and shows a tabbed
+    /// view with "Raw" and "Parsed" options when applicable.
+    @ViewBuilder
+    private func responseBodySection(for record: HTTPExchangeExportSnapshot) -> some View {
+        let isJSON = record.responseMIMEType?.contains("json") == true
+        let isLargePayload = (record.responseBody?.count ?? 0) > largePayloadByteThreshold
+
+        AppSettingsSection(
+            title: LumiPluginLocalization.string("Response Body", bundle: .module),
+            subtitle: String(format: LumiPluginLocalization.string("Original response body bytes (%@)", bundle: .module), byteCount(record.responseBody))
+        ) {
+            if isLargePayload {
+                HTTPExchangeLargePayloadView(
+                    bodyKind: .response,
+                    bodyData: record.responseBody,
+                    mimeType: record.responseMIMEType,
+                    recordID: record.id
+                )
+            } else if isJSON {
+                HTTPExchangeJSONBodyTabs(data: record.responseBody, fallback: "<empty>")
+            } else {
+                HTTPExchangePayloadView(data: record.responseBody, fallback: "<empty>")
             }
         }
     }

@@ -164,6 +164,14 @@ enum HTTPExchangeExportFormatter {
         return data.map { String(format: "%02x", $0) }.joined(separator: " ")
     }
 
+    /// Returns the raw text representation without JSON pretty-printing.
+    /// Falls back to UTF-8 text, then hex dump.
+    static func rawText(_ data: Data?) -> String {
+        guard let data, !data.isEmpty else { return "<empty>" }
+        if let text = String(data: data, encoding: .utf8) { return text }
+        return data.map { String(format: "%02x", $0) }.joined(separator: " ")
+    }
+
     private static func fenced(_ value: String, language: String) -> String {
         "```\(language)\n\(value)\n```"
     }
