@@ -72,10 +72,11 @@ final class AppKitMarkdownView: NSView, NSTextViewDelegate {
         textView.textStorage?.setAttributedString(attributed)
         textView.layoutManager?.ensureLayout(for: textContainer)
 
-        // Fit the view to the laid-out height.
+        // Fit the view to the laid-out height; width is set explicitly so
+        // frame-managed containers never leave us at a zero width.
         let used = layoutManager.usedRect(for: textContainer).height
-        frame.size.height = used
-        textView.frame.size.height = used
+        frame.size = NSSize(width: effectiveWidth, height: used)
+        textView.frame.size = NSSize(width: effectiveWidth, height: used)
     }
 
     /// Deterministically measures the height a document would take at `width`.

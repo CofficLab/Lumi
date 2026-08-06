@@ -86,6 +86,10 @@ final class AppKitAssistantRenderer: AppKitMessageRenderer {
     }
 
     private func effectiveWidth(in view: NSView) -> CGFloat {
-        max(80, view.bounds.width - 24)
+        // Use the scroll view's laid-out width: the cell's own bounds may
+        // still be zero when configure runs, which would render content at a
+        // tiny fallback width.
+        let base = view.enclosingScrollView?.contentView.bounds.width ?? view.bounds.width
+        return max(80, base - 24)
     }
 }

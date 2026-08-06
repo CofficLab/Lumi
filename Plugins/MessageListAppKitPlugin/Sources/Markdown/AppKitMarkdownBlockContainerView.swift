@@ -51,7 +51,10 @@ final class AppKitMarkdownBlockContainerView: NSView {
             view.render(document: proseDocument, width: effectiveWidth, theme: theme) { [weak self] url in
                 self?.onOpenLink?(url)
             }
-            view.frame.origin.y = y
+            // The markdown view is frame-managed here: give it the full width,
+            // or its internal NSTextView (constrained to its edges) renders at
+            // zero width and the prose is invisible.
+            view.frame = NSRect(x: 0, y: y, width: effectiveWidth, height: view.frame.height)
             addSubview(view)
             y += view.frame.height + Self.blockSpacing
             proseBlocks = []

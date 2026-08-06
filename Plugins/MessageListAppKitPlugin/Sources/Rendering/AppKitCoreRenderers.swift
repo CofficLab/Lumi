@@ -34,7 +34,8 @@ final class AppKitUserRenderer: AppKitMessageRenderer {
         guard let container = view.subviews.compactMap({ $0 as? AppKitMarkdownBlockContainerView }).first else { return }
         container.onOpenLink = { url in NSWorkspace.shared.open(url) }
         let document = environment.layoutCache.document(for: row.content)
-        container.configure(document: document, width: max(80, view.bounds.width - 24), theme: environment.theme)
+        let base = view.enclosingScrollView?.contentView.bounds.width ?? view.bounds.width
+        container.configure(document: document, width: max(80, base - 24), theme: environment.theme)
     }
 
     func prepareForReuse(view: NSView) {
