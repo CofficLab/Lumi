@@ -260,6 +260,23 @@ struct DeepSeekChatMessage: Sendable {
         stopReason = value
     }
 
+    /// 是否「撞上输出上限且没有任何可见回复」。
+    ///
+    /// 典型场景（实测 2026-08-06）：`deepseek-v4-flash` 默认 thinking 无上限，
+    /// 4096 token 的输出预算全部被思考消耗，`stop_reason = max_tokens` 截断时
+    /// 连一个 `text` block 都没开始 → UI 误报 "empty response"，用户无从得知原因。
+    ///
+    /// 兼容两种协议命名：
+    /// - Anthropic 端点：`max_tokens`
+    /// - OpenAI 端点（`finish_reason`）：`length`
+    ///
+    /// 注意：只判定「无可见输出」的截断（content 与 toolCalls 均为空）。
+    /// 若已产生部分文本，截断内容仍有价值，保留而非报错。
+    var hitMaxTokensWithoutOutput: Bool {
+        guard stopReason == "max_tokens" || stopReason == "length" else { return false }
+        return content.isEmpty && (toolCalls?.isEmpty ?? true)
+    }
+
     /// 合并 Anthropic usage（`message_start` / `message_delta` 中的 usage 字段）。
     ///
     /// Anthropic 协议里 `input_tokens` / `output_tokens` 是分阶段给出的：

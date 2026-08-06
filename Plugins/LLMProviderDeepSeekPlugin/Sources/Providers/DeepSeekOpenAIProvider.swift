@@ -115,6 +115,11 @@ public final class DeepSeekOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
         if message.isError {
             throw DeepSeekOpenAIProviderError.api(message.rawErrorDetail ?? "DeepSeek returned an error")
         }
+        // 撞上 max_tokens 上限且没有任何可见输出(OpenAI 端点 finish_reason="length",
+        // 典型:thinking 吃掉全部输出预算)。先于 empty response 检查抛出,给出明确原因。
+        if message.hitMaxTokensWithoutOutput {
+            throw DeepSeekOpenAIProviderError.maxTokensExceeded(message.outputTokenCount)
+        }
         if message.content.isEmpty && (message.toolCalls?.isEmpty ?? true) {
             throw DeepSeekOpenAIProviderError.invalidResponse("DeepSeek returned an empty response")
         }

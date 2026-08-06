@@ -19,6 +19,18 @@ enum AnthropicRequestBuilder {
     /// 用户未在请求中提供时使用；过大不必要，过小会被服务端拒绝。
     static let defaultMaxTokens = 4096
 
+    /// `reasoningEffort` 为 nil 或 `.automatic` 时使用的思考预算。
+    ///
+    /// 实测(2026-08-06)：DeepSeek V4 服务端**默认开启 thinking 且无预算上限**；
+    /// 若请求不显式传 `thinking` 参数，4096 token 输出预算会被思考全部消耗，
+    /// 导致 `stop_reason = max_tokens` 且 text 块从未开始(UI 误报 empty response)。
+    /// 因此默认档也显式给出保守预算，保证至少留出 text 空间。
+    static let defaultThinkingBudget = 1024
+
+    /// 思考预算上限 = max_tokens 预留 text 空间后的余量。
+    /// Anthropic 协议要求 `budget_tokens` 严格小于 `max_tokens`。
+    static let maxThinkingBudget = defaultMaxTokens - 1024
+
     /// 把整个 `LumiLLMRequest` 编码为 `[String: Any]` 请求体。
     static func body(for request: LumiLLMRequest) -> [String: Any] {
         var body: [String: Any] = [
@@ -38,14 +50,15 @@ enum AnthropicRequestBuilder {
             body["tools"] = request.tools.map(tool)
         }
 
-        if let effort = request.generationOptions.reasoningEffort,
-           let budget = thinkingBudget(for: effort)
-        {
-            body["thinking"] = [
-                "type": "enabled",
-                "budget_tokens": budget,
-            ]
-        }
+        // 始终显式给出 thinking 预算(含 nil / .automatic),防止服务端默认
+        // thinking 无上限吃掉全部输出预算。clamp 到 maxThinkingBudget,
+        // 避免 high(8192) 或 medium(4096) 超过 max_tokens(4096)。
+        let requested = thinkingBudget(for: request.generationOptions.reasoningEffort)
+            ?? defaultThinkingBudget
+        body["thinking"] = [
+            "type": "enabled",
+            "budget_tokens": min(requested, maxThinkingBudget),
+        ]
 
         return body
     }
@@ -225,11 +238,13 @@ enum AnthropicRequestBuilder {
 
     /// 把 `LumiReasoningEffort` 翻译为 Anthropic `thinking.budget_tokens`。
     ///
-    /// Anthropic 的 `thinking` 是显式 budget 控制；不存在 `.automatic` 这种"让模型决定"的语义，
-    /// 因此 `.automatic` 返回 `nil`（不启用 thinking），其余档位按经验映射到 token 预算。
-    private static func thinkingBudget(for effort: LumiReasoningEffort) -> Int? {
+    /// Anthropic 的 `thinking` 是显式 budget 控制；`nil` / `.automatic` 返回 `nil`，
+    /// 由调用方回退到 `defaultThinkingBudget`（绝不能"不传 thinking"，否则 DeepSeek
+    /// V4 服务端默认 thinking 无上限，会吃掉全部输出预算——实测 2026-08-06）。
+    /// 其余档位按经验映射到 token 预算。
+    private static func thinkingBudget(for effort: LumiReasoningEffort?) -> Int? {
         switch effort {
-        case .automatic: nil
+        case nil, .automatic: nil
         case .minimal: 1024
         case .low: 2048
         case .medium: 4096

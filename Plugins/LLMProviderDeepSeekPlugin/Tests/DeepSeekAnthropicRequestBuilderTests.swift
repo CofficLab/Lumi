@@ -191,20 +191,53 @@ struct AnthropicRequestBuilderTests {
         #expect(first["type"] == nil, "Anthropic tools 不应有 type:function 包装")
     }
 
-    @Test("thinking 在非 automatic 时启用，自动时不启用")
-    func thinkingEnabledByReasoningEffort() {
+    @Test("默认(nil)与 automatic 也启用 thinking 且带保守预算(防服务端无上限吃光预算)")
+    func thinkingEnabledByDefaultAndAutomatic() {
         let conversation = UUID()
         let base = LumiChatMessage(conversationID: conversation, role: .user, content: "hi")
-        let auto = AnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .automatic))
-        #expect(auto["thinking"] == nil, "automatic 不应启用 thinking")
+
+        // nil(绝大多数请求):必须显式传 thinking,否则 DeepSeek V4 服务端默认
+        // thinking 无上限,4096 输出预算全被思考消耗 → stop_reason=max_tokens
+        // 且 text 块从未开始(实测 2026-08-06)。
+        let defaultBody = AnthropicRequestBuilder.body(for: makeRequest(messages: [base]))
+        guard let defaultThinking = defaultBody["thinking"] as? [String: Any] else {
+            Issue.record("默认档应显式启用 thinking")
+            return
+        }
+        #expect(defaultThinking["type"] as? String == "enabled")
+        #expect(defaultThinking["budget_tokens"] as? Int == AnthropicRequestBuilder.defaultThinkingBudget)
+
+        let autoBody = AnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .automatic))
+        guard let autoThinking = autoBody["thinking"] as? [String: Any] else {
+            Issue.record("automatic 也应显式启用 thinking")
+            return
+        }
+        #expect(autoThinking["type"] as? String == "enabled")
+        #expect(autoThinking["budget_tokens"] as? Int == AnthropicRequestBuilder.defaultThinkingBudget)
+    }
+
+    @Test("显式档位按映射设置 budget，且 clamp 到 max_tokens 之内")
+    func thinkingBudgetClampedToMaxTokens() {
+        let conversation = UUID()
+        let base = LumiChatMessage(conversationID: conversation, role: .user, content: "hi")
 
         let high = AnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .high))
-        guard let thinking = high["thinking"] as? [String: Any] else {
+        guard let highThinking = high["thinking"] as? [String: Any] else {
             Issue.record("high 应启用 thinking")
             return
         }
-        #expect(thinking["type"] as? String == "enabled")
-        #expect(thinking["budget_tokens"] as? Int == 8192)
+        #expect(highThinking["type"] as? String == "enabled")
+        // high 请求 8192,但 max_tokens=4096,必须 clamp,不能超过 max_tokens
+        let budget = highThinking["budget_tokens"] as? Int ?? 0
+        #expect(budget <= AnthropicRequestBuilder.defaultMaxTokens)
+        #expect(budget == AnthropicRequestBuilder.maxThinkingBudget)
+
+        let low = AnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .low))
+        guard let lowThinking = low["thinking"] as? [String: Any] else {
+            Issue.record("low 应启用 thinking")
+            return
+        }
+        #expect(lowThinking["budget_tokens"] as? Int == 2048)
     }
 
     @Test("max_tokens 与 stream 是必填顶层字段")

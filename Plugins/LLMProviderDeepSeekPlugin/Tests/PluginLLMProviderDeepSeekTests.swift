@@ -50,6 +50,65 @@ struct PluginLLMProviderDeepSeekTests {
         #expect(message.cachedInputTokens == 512)
         #expect(message.cacheTotalInputTokens == 580)
     }
+
+    // MARK: - max_tokens 截断判定(hitMaxTokensWithoutOutput)
+
+    private func makeMessage() -> DeepSeekChatMessage {
+        DeepSeekChatMessage.assembling(
+            conversationID: UUID(),
+            providerID: "deepseek-anthropic",
+            modelName: "deepseek-v4-flash"
+        )
+    }
+
+    @Test("max_tokens + 无任何可见输出 → 判定命中(Anthropic 命名)")
+    func maxTokensWithoutOutputAnthropicNaming() {
+        var message = makeMessage()
+        message.setStopReason("max_tokens")
+        #expect(message.hitMaxTokensWithoutOutput)
+    }
+
+    @Test("length + 无任何可见输出 → 判定命中(OpenAI 端点 finish_reason 命名)")
+    func maxTokensWithoutOutputOpenAINaming() {
+        var message = makeMessage()
+        message.setStopReason("length")
+        #expect(message.hitMaxTokensWithoutOutput)
+    }
+
+    @Test("max_tokens 但已有部分文本 → 不判定(保留部分输出)")
+    func maxTokensWithPartialText() {
+        var message = makeMessage()
+        message.setStopReason("max_tokens")
+        message.mergeTextDelta("partial answer", now: Date())
+        #expect(message.hitMaxTokensWithoutOutput == false)
+    }
+
+    @Test("max_tokens 但已有工具调用 → 不判定")
+    func maxTokensWithToolCall() {
+        var message = makeMessage()
+        message.setStopReason("max_tokens")
+        message.beginToolCall(id: "call_01", name: "search")
+        #expect(message.hitMaxTokensWithoutOutput == false)
+    }
+
+    @Test("正常结束(end_turn)即使无输出也不判定")
+    func normalStopNotTruncated() {
+        var message = makeMessage()
+        message.setStopReason("end_turn")
+        #expect(message.hitMaxTokensWithoutOutput == false)
+    }
+
+    @Test("maxTokensExceeded 错误文案与重试策略")
+    func maxTokensExceededErrorMetadata() {
+        let error = AnthropicProviderError.maxTokensExceeded(4096)
+        #expect(error.errorDescription?.contains("max_tokens") == true)
+        #expect(error.errorDescription?.contains("4096") == true)
+        #expect(error.llmErrorDisposition.isRetryable == false)
+
+        let openAIError = DeepSeekOpenAIProviderError.maxTokensExceeded(nil)
+        #expect(openAIError.errorDescription?.contains("max_tokens") == true)
+        #expect(openAIError.llmErrorDisposition.isRetryable == false)
+    }
 }
 
 @Suite("SSESequenceAccumulator")

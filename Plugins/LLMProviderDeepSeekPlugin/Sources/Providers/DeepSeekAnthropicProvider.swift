@@ -168,6 +168,13 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
         if message.isError {
             throw AnthropicProviderError.api(message.rawErrorDetail ?? "DeepSeek Anthropic returned an error")
         }
+        // 撞上 max_tokens 上限且没有任何可见输出(典型:thinking 吃掉全部输出预算)。
+        // 必须先于 empty response 检查抛出,否则 UI 只会看到笼统的 "empty response",
+        // 用户无法得知是输出预算耗尽(实测 2026-08-06:deepseek-v4-flash 4096 token
+        // 全被 thinking 消耗,text 块从未开始)。
+        if message.hitMaxTokensWithoutOutput {
+            throw AnthropicProviderError.maxTokensExceeded(message.outputTokenCount)
+        }
         if message.content.isEmpty && (message.toolCalls?.isEmpty ?? true) {
             throw AnthropicProviderError.invalidResponse("DeepSeek Anthropic returned an empty response")
         }
