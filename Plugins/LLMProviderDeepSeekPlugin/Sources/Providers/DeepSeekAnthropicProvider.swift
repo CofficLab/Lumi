@@ -1,5 +1,4 @@
 import Foundation
-import KeychainKit
 import LLMKit
 import LumiKernel
 
@@ -9,7 +8,7 @@ import LumiKernel
 /// 鉴权：`x-api-key` + `anthropic-version: 2023-06-01`
 ///
 /// 与 `DeepSeekOpenAIProvider`（OpenAI-compatible）共享：
-/// - API Key（`apiKeyStorageKey = DevAssistant_ApiKey_DeepSeek`）
+/// - API Key（见 `DeepSeekPlugin.apiKeyStorageKey`）
 /// - 模型列表（`deepseek-v4-flash` / `deepseek-v4-pro`）
 /// - 上下文窗口与能力
 ///
@@ -36,7 +35,7 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
             "deepseek-v4-pro": .init(supportsVision: false, supportsTools: true),
         ],
         websiteURL: URL(string: "https://www.deepseek.com/")!,
-        apiKeyStorageKey: "DevAssistant_ApiKey_DeepSeek"
+        apiKeyStorageKey: DeepSeekPlugin.apiKeyStorageKey
     )
 
     private let apiService: DeepSeekAnthropicService
@@ -51,33 +50,27 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
     // MARK: - LumiLLMProvider Protocol
 
     public func lumiResolveAPIKey() throws -> String {
-        guard let key = Self.info._apiKeyStorageKey else {
+        let key = DeepSeekPlugin.currentApiKey
+        guard !key.isEmpty else {
             throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
         }
-        guard let value = KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: key), !value.isEmpty else {
-            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
-        }
-        return value
+        return key
     }
 
     public func hasApiKey() -> Bool {
-        guard let key = Self.info._apiKeyStorageKey else { return false }
-        return !(KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: key) ?? "").isEmpty
+        DeepSeekPlugin.hasApiKey
     }
 
     public func getApiKey() -> String {
-        guard let key = Self.info._apiKeyStorageKey else { return "" }
-        return KeychainStore.shared.loadMigratingLegacyUserDefaults(forKey: key) ?? ""
+        DeepSeekPlugin.currentApiKey
     }
 
     public func setApiKey(_ apiKey: String) {
-        guard let key = Self.info._apiKeyStorageKey else { return }
-        KeychainStore.shared.set(apiKey, forKey: key)
+        DeepSeekPlugin.setApiKey(apiKey)
     }
 
     public func removeApiKey() {
-        guard let key = Self.info._apiKeyStorageKey else { return }
-        KeychainStore.shared.remove(forKey: key)
+        DeepSeekPlugin.removeApiKey()
     }
 
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
