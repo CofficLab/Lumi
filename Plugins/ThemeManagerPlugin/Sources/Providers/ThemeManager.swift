@@ -250,7 +250,7 @@ public final class ThemeManager: UIThemeProviding {
 
         let group = CommandMenuGroup(
             id: Self.commandGroupId,
-            name: String(localized: "Theme"),
+            name: LumiPluginLocalization.string("Theme", bundle: .module),
             items: items,
             placement: .topLevelMenu
         )

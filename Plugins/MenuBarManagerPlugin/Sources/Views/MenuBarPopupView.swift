@@ -42,7 +42,7 @@ struct MenuBarPopupView: View {
     private var appActionsSection: some View {
         VStack(spacing: 0) {
             MenuBarActionRow(
-                title: "Open Lumi",
+                title: LumiPluginLocalization.string("Open Lumi", bundle: .module),
                 icon: "macwindow",
                 color: .accentColor,
                 showCheckmark: false,
@@ -53,7 +53,7 @@ struct MenuBarPopupView: View {
                 .padding(.leading, 36)
 
             MenuBarActionRow(
-                title: "Check for Updates",
+                title: LumiPluginLocalization.string("Check for Updates", bundle: .module),
                 icon: "arrow.down.circle",
                 color: .accentColor,
                 showCheckmark: false,
@@ -64,7 +64,7 @@ struct MenuBarPopupView: View {
                 .padding(.leading, 36)
 
             MenuBarActionRow(
-                title: "Quit Lumi",
+                title: LumiPluginLocalization.string("Quit Lumi", bundle: .module),
                 icon: "power",
                 color: .red,
                 showCheckmark: false,

@@ -19,29 +19,29 @@ public struct DebugCommands {
     public func register(into kernel: LumiKernel) {
         let group = CommandMenuGroup(
             id: "com.coffic.lumi.plugin.command.debug",
-            name: "Debug",
+            name: LumiPluginLocalization.string("Debug", bundle: .module),
             items: [
                 CommandItem(
                     id: "debug.openAppSupport",
-                    title: String(localized: "Open App Support Directory")
+                    title: LumiPluginLocalization.string("Open App Support Directory", bundle: .module)
                 ) {
                     Self.openAppSupportDirectory()
                 },
                 CommandItem(
                     id: "debug.openContainer",
-                    title: String(localized: "Open Container Directory")
+                    title: LumiPluginLocalization.string("Open Container Directory", bundle: .module)
                 ) {
                     Self.openContainerDirectory()
                 },
                 CommandItem(
                     id: "debug.openDocuments",
-                    title: String(localized: "Open Documents Directory")
+                    title: LumiPluginLocalization.string("Open Documents Directory", bundle: .module)
                 ) {
                     Self.openDocumentsDirectory()
                 },
                 CommandItem(
                     id: "debug.openDatabase",
-                    title: String(localized: "Open Database Directory")
+                    title: LumiPluginLocalization.string("Open Database Directory", bundle: .module)
                 ) {
                     Self.openDatabaseDirectory(kernel: kernel)
                 },
@@ -64,8 +64,8 @@ public struct DebugCommands {
         }
         guard let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             showMissingDirectoryAlert(
-                title: String(localized: "Error Opening App Support Directory"),
-                message: String(localized: "App Support directory does not exist")
+                title: LumiPluginLocalization.string("Error Opening App Support Directory", bundle: .module),
+                message: LumiPluginLocalization.string("App Support directory does not exist", bundle: .module)
             )
             return
         }
@@ -80,8 +80,8 @@ public struct DebugCommands {
             forSecurityApplicationGroupIdentifier: Bundle.main.bundleIdentifier ?? ""
         ) else {
             showMissingDirectoryAlert(
-                title: String(localized: "Error Opening Container Directory"),
-                message: String(localized: "Container directory does not exist")
+                title: LumiPluginLocalization.string("Error Opening Container Directory", bundle: .module),
+                message: LumiPluginLocalization.string("Container directory does not exist", bundle: .module)
             )
             return
         }
@@ -94,8 +94,8 @@ public struct DebugCommands {
         }
         guard let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
             showMissingDirectoryAlert(
-                title: String(localized: "Error Opening Documents Directory"),
-                message: String(localized: "Documents directory does not exist")
+                title: LumiPluginLocalization.string("Error Opening Documents Directory", bundle: .module),
+                message: LumiPluginLocalization.string("Documents directory does not exist", bundle: .module)
             )
             return
         }
@@ -108,8 +108,8 @@ public struct DebugCommands {
         }
         guard let url = kernel.storage?.dataRootDirectory else {
             showMissingDirectoryAlert(
-                title: String(localized: "Error Opening Database Directory"),
-                message: String(localized: "Storage service not available")
+                title: LumiPluginLocalization.string("Error Opening Database Directory", bundle: .module),
+                message: LumiPluginLocalization.string("Storage service not available", bundle: .module)
             )
             return
         }
@@ -121,7 +121,7 @@ public struct DebugCommands {
         alert.messageText = title
         alert.informativeText = message
         alert.alertStyle = .warning
-        alert.addButton(withTitle: String(localized: "OK"))
+        alert.addButton(withTitle: LumiPluginLocalization.string("OK", bundle: .module))
         alert.runModal()
     }
 }
