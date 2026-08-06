@@ -74,13 +74,9 @@ final class AppKitMessageListViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let dependencies = AppKitMessageListCoordinator.Dependencies(
-            conversations: kernel.conversations,
-            messageManager: kernel.messageManager,
-            agentTurnManager: kernel.agentTurnManager,
-            messageStreaming: kernel.messageStreaming,
-            messageSender: kernel.messageSender
-        )
+        // Services resolve lazily from the kernel inside the coordinator, so
+        // late-registering services (kernel still booting) are still picked up.
+        let dependencies = AppKitMessageListCoordinator.Dependencies(kernel: kernel)
         coordinator = AppKitMessageListCoordinator(dependencies: dependencies)
 
         dataSource = AppKitMessageListDataSource()
@@ -144,6 +140,20 @@ final class AppKitMessageListViewController: NSViewController {
             await self?.coordinator.activate(
                 conversationID: self?.kernel.conversations?.selectedConversationID
             )
+        }
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        // Fallback: the kernel services are almost certainly ready by the time
+        // the view appears, so re-sync the selection in case the first
+        // activate ran before services registered (and no change event
+        // followed). No-op when nothing changed.
+        let selected = kernel.conversations?.selectedConversationID
+        if selected != coordinator.latestSnapshot.conversationID {
+            Task { [weak self] in
+                await self?.coordinator.activate(conversationID: selected)
+            }
         }
     }
 

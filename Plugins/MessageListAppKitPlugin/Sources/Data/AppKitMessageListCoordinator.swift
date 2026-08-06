@@ -16,25 +16,49 @@ import LumiKernel
 /// - Drops results that arrive after the active conversation moved on.
 @MainActor
 public final class AppKitMessageListCoordinator {
+    @MainActor
     public struct Dependencies {
-        public let conversations: (any ConversationManaging)?
-        public let messageManager: (any MessageManaging)?
-        public let agentTurnManager: (any AgentTurnManaging)?
-        public let messageStreaming: (any MessageStreaming)?
-        public let messageSender: (any MessageSending)?
+        /// Kernel used for live service resolution (production). Services are
+        /// resolved on every access, so late-registering services (e.g. the
+        /// kernel finishing boot after the view appeared) are picked up.
+        public let kernel: LumiKernel?
+
+        private let conversationsOverride: (any ConversationManaging)?
+        private let messageManagerOverride: (any MessageManaging)?
+        private let agentTurnManagerOverride: (any AgentTurnManaging)?
+        private let messageStreamingOverride: (any MessageStreaming)?
+        private let messageSenderOverride: (any MessageSending)?
 
         public init(
+            kernel: LumiKernel? = nil,
             conversations: (any ConversationManaging)? = nil,
             messageManager: (any MessageManaging)? = nil,
             agentTurnManager: (any AgentTurnManaging)? = nil,
             messageStreaming: (any MessageStreaming)? = nil,
             messageSender: (any MessageSending)? = nil
         ) {
-            self.conversations = conversations
-            self.messageManager = messageManager
-            self.agentTurnManager = agentTurnManager
-            self.messageStreaming = messageStreaming
-            self.messageSender = messageSender
+            self.kernel = kernel
+            self.conversationsOverride = conversations
+            self.messageManagerOverride = messageManager
+            self.agentTurnManagerOverride = agentTurnManager
+            self.messageStreamingOverride = messageStreaming
+            self.messageSenderOverride = messageSender
+        }
+
+        var conversations: (any ConversationManaging)? {
+            conversationsOverride ?? kernel?.conversations
+        }
+        var messageManager: (any MessageManaging)? {
+            messageManagerOverride ?? kernel?.messageManager
+        }
+        var agentTurnManager: (any AgentTurnManaging)? {
+            agentTurnManagerOverride ?? kernel?.agentTurnManager
+        }
+        var messageStreaming: (any MessageStreaming)? {
+            messageStreamingOverride ?? kernel?.messageStreaming
+        }
+        var messageSender: (any MessageSending)? {
+            messageSenderOverride ?? kernel?.messageSender
         }
     }
 
@@ -59,7 +83,10 @@ public final class AppKitMessageListCoordinator {
     /// V1: whether an earlier turn page exists above the turn window.
     private var hasEarlierTurns = false
     private var isLoadingEarlier = false
-    private var didBind = false
+    private var didBindNotifications = false
+    private var didBindConversations = false
+    private var didBindStreaming = false
+    private var didBindSender = false
     /// Coalesces streaming bursts to at most one update per display frame.
     private var streamingRefreshTask: Task<Void, Never>?
     private var cancellables: Set<AnyCancellable> = []
@@ -282,65 +309,88 @@ public final class AppKitMessageListCoordinator {
     // MARK: - Narrow subscriptions
 
     private func bindServicesIfNeeded() {
-        guard !didBind else { return }
-
         // Sinks hop back onto the main actor via `Task { @MainActor }` instead
         // of `receive(on: DispatchQueue.main)`: events may originate on any
         // thread, and a Task scheduled on the MainActor executor cooperates
         // reliably with both the app run loop and Swift Testing.
-        NotificationCenter.default.publisher(for: .lumiConversationsDidChange)
-            .sink { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    let selected = self.dependencies.conversations?.selectedConversationID
-                    // React to every change, including the nil → conversation
-                    // transition (user picks a conversation after the view
-                    // appeared with no selection). activate(nil) publishes an
-                    // empty snapshot as its own terminal state, so a nil
-                    // selected value here is always safe.
-                    if selected != self.activeConversationID {
-                        await self.activate(conversationID: selected)
-                    }
-                }
-            }
-            .store(in: &cancellables)
 
-        let messageNotifications: [Notification.Name] = [
-            .lumiMessagesDidChange,
-            .lumiMessageSaved,
-            .lumiTurnStarted,
-            .lumiTurnCompleted,
-            .lumiTurnFinished,
-        ]
-        for name in messageNotifications {
-            NotificationCenter.default.publisher(for: name)
-                .sink { [weak self] notification in
+        // One-time notification subscriptions.
+        if !didBindNotifications {
+            NotificationCenter.default.publisher(for: .lumiConversationsDidChange)
+                .sink { [weak self] _ in
                     Task { @MainActor [weak self] in
-                        guard let self,
-                              AppKitMessageNotificationFilter.shouldHandle(
-                                eventConversationID: notification.lumiConversationID,
-                                selectedConversationID: self.activeConversationID
-                              )
-                        else { return }
-                        await self.refresh()
+                        guard let self else { return }
+                        let selected = self.dependencies.conversations?.selectedConversationID
+                        if selected != self.activeConversationID {
+                            await self.activate(conversationID: selected)
+                        }
                     }
                 }
                 .store(in: &cancellables)
+
+            let messageNotifications: [Notification.Name] = [
+                .lumiMessagesDidChange,
+                .lumiMessageSaved,
+                .lumiTurnStarted,
+                .lumiTurnCompleted,
+                .lumiTurnFinished,
+            ]
+            for name in messageNotifications {
+                NotificationCenter.default.publisher(for: name)
+                    .sink { [weak self] notification in
+                        Task { @MainActor [weak self] in
+                            guard let self,
+                                  AppKitMessageNotificationFilter.shouldHandle(
+                                    eventConversationID: notification.lumiConversationID,
+                                    selectedConversationID: self.activeConversationID
+                                  )
+                            else { return }
+                            await self.refresh()
+                        }
+                    }
+                    .store(in: &cancellables)
+            }
+
+            NotificationCenter.default.publisher(for: .lumiConversationDidDelete)
+                .sink { [weak self] notification in
+                    Task { @MainActor [weak self] in
+                        guard let self,
+                              let deleted = notification.lumiConversationID,
+                              deleted == self.activeConversationID
+                        else { return }
+                        await self.activate(conversationID: nil)
+                    }
+                }
+                .store(in: &cancellables)
+
+            didBindNotifications = true
         }
 
-        NotificationCenter.default.publisher(for: .lumiConversationDidDelete)
-            .sink { [weak self] notification in
-                Task { @MainActor [weak self] in
-                    guard let self,
-                          let deleted = notification.lumiConversationID,
-                          deleted == self.activeConversationID
-                    else { return }
-                    await self.activate(conversationID: nil)
+        // Narrow-cast service subscriptions. Each is retried on every activate
+        // until the service exists, so late-registering kernel services are
+        // picked up without a fixed retry loop.
+        //
+        // The conversations subscription is the primary selection-change
+        // channel: `selectConversation(id:)` only mutates `@Published
+        // selectedConversationID` and never posts `lumiConversationsDidChange`.
+        if let conversations = dependencies.conversations, !didBindConversations {
+            conversations.objectWillChange
+                .sink { [weak self] _ in
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        // objectWillChange fires in willSet; the Task hop runs
+                        // after the write completes, so we read the new value.
+                        let selected = self.dependencies.conversations?.selectedConversationID
+                        if selected != self.activeConversationID {
+                            await self.activate(conversationID: selected)
+                        }
+                    }
                 }
-            }
-            .store(in: &cancellables)
+                .store(in: &cancellables)
+            didBindConversations = true
+        }
 
-        if let streaming = dependencies.messageStreaming {
+        if let streaming = dependencies.messageStreaming, !didBindStreaming {
             streaming.objectWillChange
                 .sink { [weak self] _ in
                     Task { @MainActor [weak self] in
@@ -348,8 +398,10 @@ public final class AppKitMessageListCoordinator {
                     }
                 }
                 .store(in: &cancellables)
+            didBindStreaming = true
         }
-        if let sender = dependencies.messageSender {
+
+        if let sender = dependencies.messageSender, !didBindSender {
             sender.objectWillChange
                 .sink { [weak self] _ in
                     Task { @MainActor [weak self] in
@@ -358,9 +410,8 @@ public final class AppKitMessageListCoordinator {
                     }
                 }
                 .store(in: &cancellables)
+            didBindSender = true
         }
-
-        didBind = true
     }
 
     /// Coalesces streaming bursts to one presentation update per frame.
