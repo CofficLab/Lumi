@@ -41,6 +41,9 @@ private final class MockMessageSender: MessageSending {
     }
 }
 
+/// Serialized: submission spawns MainActor tasks that must not interleave
+/// with other suites' MainActor work.
+@Suite(.serialized)
 @MainActor
 struct AppKitAskUserRendererTests {
     private let conversationID = UUID(uuidString: "3D9E7F2A-5B6C-4D8E-9F0A-1B2C3D4E5F6A")!

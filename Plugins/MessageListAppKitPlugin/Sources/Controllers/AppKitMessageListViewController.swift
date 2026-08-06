@@ -189,8 +189,17 @@ final class AppKitMessageListViewController: NSViewController {
 
     private func apply(snapshot: AppKitMessageListSnapshot) {
         let hadRowsBefore = !dataSource.rows.isEmpty
+        let streamingRowID = snapshot.streamingRow?.id
         dataSource.apply(snapshot: snapshot)
         updateOverlays(snapshot: snapshot)
+
+        // Dynamic height: the streaming tail grows with every token. Tell the
+        // table the streaming row's height may have changed (measure is cached,
+        // so this is cheap) so the viewport follows without a full reload.
+        if let streamingRowID,
+           let index = dataSource.rows.firstIndex(where: { $0.id == streamingRowID }) {
+            tableView.noteHeightOfRows(withIndexesChanged: IndexSet(integer: index))
+        }
 
         // First page with real content: pin to the top so the first row is
         // visible and gets drawn. Only follow the bottom when content already
