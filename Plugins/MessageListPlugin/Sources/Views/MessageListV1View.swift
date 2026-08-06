@@ -8,7 +8,8 @@ import SwiftUI
 /// 行渲染由 `MessageRowView` + verbosity 控制,本视图负责滚动、分页、流式跟随等全部逻辑。
 struct MessageListV1View: View {
     @ObservedObject var kernel: LumiKernel
-    @StateObject private var viewModel: MessageListViewModel
+    @StateObject private var timelineViewModel: MessageListViewModel
+    @StateObject private var turnViewModel: MessageListV1ViewModel
 
     @LumiTheme private var theme
 
@@ -21,23 +22,26 @@ struct MessageListV1View: View {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
-        _viewModel = StateObject(wrappedValue: MessageListViewModel(kernel: kernel))
+        _timelineViewModel = StateObject(wrappedValue: MessageListViewModel(kernel: kernel))
+        _turnViewModel = StateObject(wrappedValue: MessageListV1ViewModel(kernel: kernel))
     }
 
     var body: some View {
         Group {
-            if viewModel.isLoading {
+            if timelineViewModel.isLoading || turnViewModel.isLoading {
                 MessageLoadingView()
-            } else if !viewModel.hasPersistedMessages {
+            } else if !timelineViewModel.hasPersistedMessages {
                 MessageEmptyStateView()
             } else {
                 messageScrollView
             }
         }
-        .task(id: viewModel.selectedConversationID) {
+        .task(id: timelineViewModel.selectedConversationID) {
             // 切换会话:重置滚动位置,通知 viewmodel 加载最近一页。
             isAtBottom = true
-            await viewModel.activate(conversationID: viewModel.selectedConversationID)
+            let conversationID = timelineViewModel.selectedConversationID
+            await timelineViewModel.activate(conversationID: conversationID)
+            await turnViewModel.activate(conversationID: conversationID)
         }
     }
 
@@ -54,11 +58,11 @@ struct MessageListV1View: View {
                     VStack(spacing: 0) {
                         historyRows(proxy: proxy)
 
-                        if let message = viewModel.streamingRow {
+                        if let message = timelineViewModel.streamingRow {
                             MessageRowView(
                                 kernel: kernel,
                                 message: message,
-                                verbosity: viewModel.verbosity
+                                verbosity: timelineViewModel.verbosity
                             )
                             .id(message.id)
                             .padding(.horizontal, 16)
@@ -71,8 +75,8 @@ struct MessageListV1View: View {
                     // the bottom anchor; the anchor must be the true content end.
                     .padding(.top, 4)
                     // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
-                    .environment(\.lumiActiveToolGroupIDs, viewModel.activeStepGroupMessageIDs)
-                    .environment(\.lumiTurnActivitySummaries, viewModel.turnActivitySummaries)
+                    .environment(\.lumiActiveToolGroupIDs, timelineViewModel.activeStepGroupMessageIDs)
+                    .environment(\.lumiTurnActivitySummaries, timelineViewModel.turnActivitySummaries)
                 }
                 .onPreferenceChange(MessageListBottomAnchorPositionKey.self) { bottomMaxY in
                     let viewMaxY = viewport.frame(in: .global).maxY
@@ -88,39 +92,43 @@ struct MessageListV1View: View {
                         isAtBottom = next
                     }
                 }
-                .task(id: viewModel.selectedConversationID) {
+                .task(id: timelineViewModel.selectedConversationID) {
                     // 首屏数据就绪后,滚到最底部(无动画)。
                     scrollCoordinator.scrollToBottom(
                         proxy: proxy,
-                        messages: viewModel.historyRows,
+                        messages: displayedHistoryMessages,
                         animated: false
                     )
                 }
                 .onLumiMessagesDidChange { eventConversationID in
                     guard MessageListNotificationFilter.shouldHandle(
                         eventConversationID: eventConversationID,
-                        selectedConversationID: viewModel.selectedConversationID
+                        selectedConversationID: timelineViewModel.selectedConversationID
                     ) else { return }
 
                     // 同一轮发送会连续产生 status/user/tool/assistant 事件。
                     // ViewModel 合并重叠刷新；只有拥有刷新且快照实际变化的调用方滚动。
-                    let targetConversationID = viewModel.selectedConversationID
+                    let targetConversationID = timelineViewModel.selectedConversationID
                     Task {
                         let wasAtBottom = isAtBottom
-                        let didChange = await viewModel.refreshTail()
+                        let timelineDidChange = await timelineViewModel.refreshTail()
+                        let turnDidChange = await turnViewModel.refresh()
+                        let didChange = turnViewModel.usesTurnProjection
+                            ? turnDidChange
+                            : timelineDidChange
                         if didChange,
                            wasAtBottom,
-                           viewModel.selectedConversationID == targetConversationID {
+                           timelineViewModel.selectedConversationID == targetConversationID {
                             await scrollCoordinator.scrollToBottomAfterLayout(
                                 proxy: proxy,
-                                messages: viewModel.historyRows
+                                messages: displayedHistoryMessages
                             )
                         }
                     }
                 }
                 // 流式跟随滚动:流式行内容变化时,
                 // 若用户停在底部则跟随滚到底(无动画,避免高频 delta 抖动)。
-                .onChange(of: viewModel.tailStreamingContent) { _, _ in
+                .onChange(of: timelineViewModel.tailStreamingContent) { _, _ in
                     if isAtBottom {
                         proxy.scrollTo(MessageListScrollCoordinator.bottomAnchorID, anchor: .bottom)
                     }
@@ -133,34 +141,76 @@ struct MessageListV1View: View {
     /// so token updates do not rebuild this collection.
     @ViewBuilder
     private func historyRows(proxy: ScrollViewProxy) -> some View {
-        // 顶部"加载更早消息":仅在还有更早消息时显示。
-        if viewModel.hasEarlierMessages {
-            Button {
+        if turnViewModel.usesTurnProjection {
+            turnSummaryRows(proxy: proxy)
+        } else {
+            legacyMessageRows(proxy: proxy)
+        }
+    }
+
+    @ViewBuilder
+    private func turnSummaryRows(proxy: ScrollViewProxy) -> some View {
+        if turnViewModel.hasEarlierTurns {
+            loadEarlierButton(isLoading: turnViewModel.isLoadingEarlier) {
                 Task { await loadEarlier(proxy: proxy) }
-            } label: {
-                if viewModel.isLoadingEarlier {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Text(LumiPluginLocalization.string("Load earlier messages", bundle: .module))
-                        .font(.appCaption)
-                        .foregroundColor(theme.textSecondary)
-                }
             }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
         }
 
-        ForEach(viewModel.historyRows) { message in
+        ForEach(turnViewModel.items) { item in
+            MessageRowView(
+                kernel: kernel,
+                message: item.message,
+                verbosity: timelineViewModel.verbosity
+            )
+            .id(item.id)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
+        }
+    }
+
+    @ViewBuilder
+    private func legacyMessageRows(proxy: ScrollViewProxy) -> some View {
+        // 顶部"加载更早消息":仅在还有更早消息时显示。
+        if timelineViewModel.hasEarlierMessages {
+            loadEarlierButton(isLoading: timelineViewModel.isLoadingEarlier) {
+                Task { await loadEarlier(proxy: proxy) }
+            }
+        }
+
+        ForEach(timelineViewModel.historyRows) { message in
             MessageRowView(
                 kernel: kernel,
                 message: message,
-                verbosity: viewModel.verbosity
+                verbosity: timelineViewModel.verbosity
             )
             .id(message.id)
             .padding(.horizontal, 16)
             .padding(.vertical, 4)
         }
+    }
+
+    private func loadEarlierButton(
+        isLoading: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            if isLoading {
+                ProgressView().controlSize(.small)
+            } else {
+                Text(LumiPluginLocalization.string("Load earlier messages", bundle: .module))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+    }
+
+    private var displayedHistoryMessages: [LumiChatMessage] {
+        turnViewModel.usesTurnProjection
+            ? turnViewModel.displayMessages
+            : timelineViewModel.historyRows
     }
 
     /// 底部锚点行:1pt 高的透明视图,报告其全局 max-Y。
@@ -185,7 +235,13 @@ struct MessageListV1View: View {
     /// 向上翻页:View 只负责触发加载并把锚点行钉回视口顶部,
     /// 数据加载与窗口回收由 viewmodel 完成。
     private func loadEarlier(proxy: ScrollViewProxy) async {
-        guard let anchorID = await viewModel.loadEarlier(isAtBottom: isAtBottom) else { return }
+        let anchorID: UUID?
+        if turnViewModel.usesTurnProjection {
+            anchorID = await turnViewModel.loadEarlier()
+        } else {
+            anchorID = await timelineViewModel.loadEarlier(isAtBottom: isAtBottom)
+        }
+        guard let anchorID else { return }
         await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
     }
 }
