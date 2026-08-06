@@ -324,6 +324,29 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         persistSelectedConversationID()
     }
 
+    /// 标记对话为活跃：刷新 `updatedAt`，使其在「最近更新」排序中置顶。
+    ///
+    /// 由消息写入路径在会话收到新消息时调用(见 `MessageManager.insertMessage`)。
+    /// - 内存：更新缓存中的 `updatedAt` 并广播 `conversationsDidChange`，
+    ///   驱动对话列表(ConversationListPlugin)重新加载并按最新时间重排；
+    /// - 持久化：异步 touch 数据库时间戳，保证重启后排序一致。
+    public func markConversationActive(id: UUID) {
+        let now = Date()
+
+        if let index = conversations.firstIndex(where: { $0.id == id }) {
+            conversations[index].updatedAt = now
+            notifyConversationsChanged()
+        }
+
+        Task {
+            _ = await store?.touchConversation(id: id)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)markConversationActive: conversation=\(id.uuidString.prefix(8))")
+        }
+    }
+
     public func deleteConversation(id: UUID) {
         if Self.verbose {
             Self.logger.info("\(Self.t)Deleting conversation \(id.uuidString.prefix(8))...")

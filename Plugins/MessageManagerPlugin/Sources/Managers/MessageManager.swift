@@ -244,6 +244,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
             return
         }
 
+        // 0) 非瞬时消息:刷新会话更新时间,让「最近有消息的对话」在列表中置顶。
+        kernel?.conversationManager?.markConversationActive(id: conversationID)
+
         // 1) 写入内存缓冲,立即通知 UI —— UI 这一刻就能从读路径看到它(read-your-writes)。
         enqueuePending(messageToInsert, conversationID: conversationID)
         kernel?.eventManager.postMessagesDidChange(object: self, conversationID: conversationID)

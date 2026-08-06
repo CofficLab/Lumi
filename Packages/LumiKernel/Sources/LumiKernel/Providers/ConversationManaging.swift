@@ -103,6 +103,14 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     /// - Returns: 更新成功返回 `true`，对话不存在返回 `false`
     func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool
 
+    // MARK: - Activity
+
+    /// 标记对话为活跃(收到新消息)，刷新其更新时间使其在「最近更新」排序中置顶。
+    ///
+    /// 由消息写入路径在会话收到非 status 消息时调用。实现应更新内存缓存与
+    /// 持久化时间戳，并广播 `conversationsDidChange` 以便对话列表重新排序。
+    func markConversationActive(id: UUID)
+
     /// 检查对话是否正在发送中
     func isSending(for conversationID: UUID?) -> Bool
 
@@ -229,4 +237,7 @@ public extension ConversationManaging {
 
     /// 默认空实现，测试 mock 无需自行实现即可编译通过
     func deselectConversation() {}
+
+    /// 默认空实现，测试 mock 无需自行实现即可编译通过
+    func markConversationActive(id: UUID) {}
 }
