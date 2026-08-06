@@ -266,13 +266,18 @@ public final class AppKitMessageListCoordinator {
     private func bindServicesIfNeeded() {
         guard !didBind else { return }
 
+        // Sinks hop back onto the main actor via `Task { @MainActor }` instead
+        // of `receive(on: DispatchQueue.main)`: events may originate on any
+        // thread, and a Task scheduled on the MainActor executor cooperates
+        // reliably with both the app run loop and Swift Testing.
         NotificationCenter.default.publisher(for: .lumiConversationsDidChange)
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
-                let selected = self.dependencies.conversations?.selectedConversationID
-                if selected != self.activeConversationID {
-                    Task { await self.activate(conversationID: selected) }
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    let selected = self.dependencies.conversations?.selectedConversationID
+                    if selected != self.activeConversationID {
+                        await self.activate(conversationID: selected)
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -286,44 +291,48 @@ public final class AppKitMessageListCoordinator {
         ]
         for name in messageNotifications {
             NotificationCenter.default.publisher(for: name)
-                .receive(on: DispatchQueue.main)
                 .sink { [weak self] notification in
-                    guard let self,
-                          AppKitMessageNotificationFilter.shouldHandle(
-                            eventConversationID: notification.lumiConversationID,
-                            selectedConversationID: self.activeConversationID
-                          )
-                    else { return }
-                    Task { await self.refresh() }
+                    Task { @MainActor [weak self] in
+                        guard let self,
+                              AppKitMessageNotificationFilter.shouldHandle(
+                                eventConversationID: notification.lumiConversationID,
+                                selectedConversationID: self.activeConversationID
+                              )
+                        else { return }
+                        await self.refresh()
+                    }
                 }
                 .store(in: &cancellables)
         }
 
         NotificationCenter.default.publisher(for: .lumiConversationDidDelete)
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
-                guard let self,
-                      let deleted = notification.lumiConversationID,
-                      deleted == self.activeConversationID
-                else { return }
-                Task { await self.activate(conversationID: nil) }
+                Task { @MainActor [weak self] in
+                    guard let self,
+                          let deleted = notification.lumiConversationID,
+                          deleted == self.activeConversationID
+                    else { return }
+                    await self.activate(conversationID: nil)
+                }
             }
             .store(in: &cancellables)
 
         if let streaming = dependencies.messageStreaming {
             streaming.objectWillChange
-                .receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in
-                    self?.scheduleStreamingPresentation()
+                    Task { @MainActor [weak self] in
+                        self?.scheduleStreamingPresentation()
+                    }
                 }
                 .store(in: &cancellables)
         }
         if let sender = dependencies.messageSender {
             sender.objectWillChange
-                .receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in
-                    guard let self else { return }
-                    Task { await self.refresh() }
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        await self.refresh()
+                    }
                 }
                 .store(in: &cancellables)
         }

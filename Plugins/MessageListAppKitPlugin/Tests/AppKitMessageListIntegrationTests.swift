@@ -3,6 +3,10 @@ import Testing
 import LumiKernel
 @testable import MessageListAppKitPlugin
 
+/// Serialized: these tests rely on MainActor-scheduled subscription work and
+/// must not interleave with other suites' MainActor tests (e.g. window layout
+/// in the cell-reuse suite), which starves their coalesced tasks.
+@Suite(.serialized)
 @MainActor
 struct AppKitMessageListIntegrationTests {
     @MainActor
@@ -142,7 +146,7 @@ struct AppKitMessageListIntegrationTests {
             object: nil,
             userInfo: [LumiNotificationUserInfoKey.conversationID: h.conversationB]
         )
-        await Task.yield()
+        try? await Task.sleep(nanoseconds: 40_000_000)
         #expect(h.coordinator.latestSnapshot.rows.count == 1)
 
         // 插入到 A 并广播 A 的变更 → 快照更新。
@@ -152,7 +156,7 @@ struct AppKitMessageListIntegrationTests {
             object: nil,
             userInfo: [LumiNotificationUserInfoKey.conversationID: h.conversationA]
         )
-        await Task.yield()
+        try? await Task.sleep(nanoseconds: 40_000_000)
         #expect(h.coordinator.latestSnapshot.rows.count == 2)
     }
 
