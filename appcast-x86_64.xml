@@ -3,31 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.7.3</title>
-            <pubDate>Wed, 05 Aug 2026 05:22:11 +0000</pubDate>
-            <sparkle:version>518</sparkle:version>
-            <sparkle:shortVersionString>5.7.3</sparkle:shortVersionString>
+            <title>5.7.4</title>
+            <pubDate>Wed, 05 Aug 2026 11:19:09 +0000</pubDate>
+            <sparkle:version>519</sparkle:version>
+            <sparkle:shortVersionString>5.7.4</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.7.3</h2>
-<h3>Changes since v5.7.2</h3>
+            <description><![CDATA[<h2>Release v5.7.4</h2>
+<h3>Changes since v5.7.3</h3>
 <ul>
-<li>feat(BookletMakerPlugin): add booklet maker plugin and register in LumiFactory</li>
-<li>feat(DatabaseManagerPlugin): add connection persistence and sidebar mode toggle</li>
-<li>feat(ImageToPDFPlugin): add image-to-PDF conversion plugin and register in LumiFactory</li>
-<li>feat(SkillPlugin): hide status bar item unless current view container supports project</li>
-<li>fix(ConversationListPlugin): always show attention dot regardless of selection state</li>
-<li>fix(DatabaseManagerPlugin): update QueryResultView</li>
-<li>fix(DatabaseManagerPlugin): update SQLiteTableView</li>
-<li>fix(ImageToPDFPlugin): capture self.id in toolbar title closure to keep title scoped to plugin instance</li>
-<li>fix(TerminalPlugin): fix terminal black screen by deferring shell startup and isolating view models</li>
-<li>refactor(ConversationListPlugin): inject conversationManager as required dependency instead of optional state</li>
-<li>refactor(ConversationListPlugin): reorganize Views into subdirectories and extract RailView</li>
-<li>refactor(DatabaseManagerPlugin): reorganize views into subdirectories and extract sub-views</li>
-<li>refactor(ImageToPDFPlugin): conditionally show toolbar title only when container is active</li>
-<li>refactor(ImageToPDFPlugin): remove inline header and inject title via toolbar center</li>
+<li>feat(A4PaperView): support custom content as container view</li>
+<li>feat(activityheatmap): make ActivityHeatmapSettingsStore public for external access</li>
+<li>feat(ActivityHeatmapPlugin): persist selected period and default to last 30 days</li>
+<li>feat(AppManagerPlugin): enable rail visibility for app list panel</li>
+<li>feat(AppManagerPlugin): move refresh button to title toolbar with notification-based trigger</li>
+<li>feat(LLMProviderMLXPlugin): display model description in model list UI</li>
+<li>feat(LLMProviderMLXPlugin): register separate LLM provider per model series</li>
+<li>feat(LLMProviderMLXPlugin): update Qwen models list with latest Qwen3 series</li>
+<li>feat(LumiKernel): add conversation-scoped onLumiMessagesDidChange overload</li>
+<li>feat(ModelSelector): show model capability badges and context window size in model list</li>
+<li>feat(ThemeManager): 注册主题菜单到菜单栏</li>
+<li>fix(BookletMaker): use landscape orientation for output sheets and update explanation diagrams</li>
+<li>fix(BookletMakerPlugin): safely handle PDF drops via loadFileRepresentation</li>
+<li>fix(ConversationSpeed): scope message-change notifications to selected conversation</li>
+<li>fix(DatabaseManager): adjust saved connections section layout in empty state view</li>
+<li>fix(LLMProviderMLX): mark localization extractionState as stale</li>
+<li>fix(LLMProviderMLXPlugin): filter SettingsView to show only the current provider's series</li>
+<li>fix(MessageList): gate overlapping tail refreshes and scope notifications to selected conversation</li>
+<li>fix(MessageManager): merge pending in-memory messages with disk reads</li>
+<li>fix(MiniMax): buffer SSE frames across network chunks + extract nested provider message</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.7.3</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.7.3/Lumi_5.7.3_x86_64.dmg" length="45337911" type="application/octet-stream" sparkle:edSignature="vfp4F8mN7FRjj5ovgkBIAB4D0cgB7sXQW/BQKlXLD+f/iaFprtbCmFJxZmldvwqAeyFTRnCQQhq5h3vZ6fZ7Bw=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.7.4</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.7.4/Lumi_5.7.4_x86_64.dmg" length="45771520" type="application/octet-stream" sparkle:edSignature="iZVdDrgedWO5tCjTgDI0J+4JCrKvETCjlKjBVsQqB7j0tW7EnJnXUSJvgrhRPLvweqYW0kOYPWi/IKziSL4RCA=="/>
         </item>
     </channel>
 </rss>
