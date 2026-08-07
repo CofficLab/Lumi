@@ -503,18 +503,20 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             }
 
             let targetProvider: any LumiLLMProvider
-            if let conversationProviderID = kernel.conversations?.providerID(for: conversationID),
-               let conversationProvider = kernel.llmProvider?.llmProvider(id: conversationProviderID) {
-                targetProvider = conversationProvider
-            } else if let selectedProviderID = kernel.llmProvider?.selectedProviderID,
-                      let selectedProvider = kernel.llmProvider?.llmProvider(id: selectedProviderID) {
+            // 优先使用全局选择的 provider（与 ModelSelectorPlugin 一致）
+            if let selectedProviderID = kernel.llmProvider?.selectedProviderID,
+               let selectedProvider = kernel.llmProvider?.llmProvider(id: selectedProviderID) {
                 targetProvider = selectedProvider
+            } else if let conversationProviderID = kernel.conversations?.providerID(for: conversationID),
+                      let conversationProvider = kernel.llmProvider?.llmProvider(id: conversationProviderID) {
+                targetProvider = conversationProvider
             } else {
                 targetProvider = provider
             }
 
-            let model = kernel.conversations?.modelName(for: conversationID)
-                ?? kernel.llmProvider?.selectedModel
+            // 优先使用全局选择的 model（与 ModelSelectorPlugin 一致）
+            let model = kernel.llmProvider?.selectedModel
+                ?? kernel.conversations?.modelName(for: conversationID)
                 ?? type(of: targetProvider).info.defaultModel
 
             // 抽取最近一条 user message 的图片附件(由 MessageSender 写入 metadata["imageAttachments"])。
@@ -554,7 +556,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 imageAttachments: pendingImages,
                 fileAttachments: pendingFiles,
                 generationOptions: LumiLLMGenerationOptions(
-                    reasoningEffort: type(of: targetProvider).info.modelCapabilities[model]?.supportsReasoningEffort == true
+                    reasoningEffort: type(of: targetProvider).info.modelCapabilities[model]?.supportsThinking == true
                         ? kernel.conversations?.reasoningEffort(for: conversationID)
                         : nil
                 )
