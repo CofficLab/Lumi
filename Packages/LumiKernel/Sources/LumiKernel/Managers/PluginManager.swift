@@ -94,6 +94,21 @@ public final class PluginManager: ObservableObject {
         }
     }
 
+    /// 将外部打开的文件分发给已启用的插件。
+    ///
+    /// 按插件 `order` 从小到大询问，第一个返回 `true` 的插件接管该文件。
+    /// - Returns: 是否有插件接管了该文件。
+    @discardableResult
+    public func dispatchOpenFile(_ url: URL, kernel: LumiKernel) -> Bool {
+        for plugin in allPlugins {
+            guard effectiveEnabled(for: plugin) else { continue }
+            if plugin.openFile(kernel: kernel, url: url) {
+                return true
+            }
+        }
+        return false
+    }
+
     public func plugin(id: String) -> LumiPlugin? {
         plugins[id]
     }
@@ -160,6 +175,7 @@ public final class PluginManager: ObservableObject {
                     systemImage: item.systemImage,
                     visibility: item.visibility,
                     requiresProjectSupport: item.requiresProjectSupport,
+                    requiresChatSupport: item.requiresChatSupport,
                     content: item.makeView
                 )
                 railItem.order = pluginOrder

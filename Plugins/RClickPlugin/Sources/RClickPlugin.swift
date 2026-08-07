@@ -37,7 +37,7 @@ public final class RClickPlugin: LumiPlugin {
                 railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
                 panelHeaderVisibility: .unsupported,
-                panelBottomVisibility: .unsupported
+                panelBottomVisibility: .unsupported,
             ) {
                 RClickSettingsView()
             },

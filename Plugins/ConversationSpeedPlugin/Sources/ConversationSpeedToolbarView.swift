@@ -3,7 +3,12 @@ import SwiftUI
 import LocalizationKit
 
 struct ConversationSpeedToolbarView: View {
-    @ObservedObject var kernel: LumiKernel
+    // selectedConversationID 由 .onLumiSelectedConversationDidChange 事件更新；
+    // 消息变更由 .onLumiMessagesDidChange 精确覆盖。
+    // 不挂 kernel 全局总线，project/settings 等无关服务变更不会触发这里刷新。
+    let kernel: LumiKernel
+    @State private var selectedConversationID: UUID?
+
     @State private var cachedTPS: Double?
     @State private var hasShownTPSAtLeastOnce = false
     @State private var popoverShown = false
@@ -15,10 +20,6 @@ struct ConversationSpeedToolbarView: View {
     @State private var streamingDurationMs: Double?
     @State private var timeToFirstTokenMs: Double?
     @State private var providerID: String?
-
-    private var selectedConversationID: UUID? {
-        kernel.conversations?.selectedConversationID
-    }
 
     var body: some View {
         Group {
@@ -64,6 +65,16 @@ struct ConversationSpeedToolbarView: View {
         }
         .onAppear {
             self.updateTPS()
+        }
+        .onChange(of: selectedConversationID) { _, _ in
+            // 切换会话时重算速度（消息变更由 onLumiMessagesDidChange 覆盖）。
+            self.updateTPS()
+        }
+        .task {
+            selectedConversationID = kernel.conversations?.selectedConversationID
+        }
+        .onLumiSelectedConversationDidChange { newID in
+            selectedConversationID = newID
         }
     }
 

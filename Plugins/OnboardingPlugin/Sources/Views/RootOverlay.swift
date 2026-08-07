@@ -59,8 +59,7 @@ private struct PresentedContent<Content: View>: View {
 
     var body: some View {
         content
-            .onReceive(NotificationCenter.default.publisher(for: .lumiShowOnboarding)) { notification in
-                let forceReset = notification.userInfo?[LumiOnboardingNotification.resetKey] as? Bool ?? false
+            .onLumiShowOnboarding { forceReset in
                 viewModel.show(forceReset: forceReset)
             }
             .sheet(isPresented: $viewModel.isPresentingOnboarding) {

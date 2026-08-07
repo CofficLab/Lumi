@@ -99,6 +99,8 @@ public struct PanelRailTabItem: Identifiable, Sendable {
     public let visibility: PanelRailTabVisibility
     /// 是否仅在支持项目的 ViewContainer 中展示。
     public let requiresProjectSupport: Bool
+    /// 是否仅在支持 Chat 的 ViewContainer 中展示。
+    public let requiresChatSupport: Bool
     public let makeView: @MainActor @Sendable () -> AnyView
 
     /// 公开初始化器（不包含 order）
@@ -108,6 +110,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         systemImage: String,
         visibility: PanelRailTabVisibility = .always,
         requiresProjectSupport: Bool = false,
+        requiresChatSupport: Bool = false,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
@@ -116,6 +119,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         self.systemImage = systemImage
         self.visibility = visibility
         self.requiresProjectSupport = requiresProjectSupport
+        self.requiresChatSupport = requiresChatSupport
         self.makeView = { AnyView(content()) }
     }
 
@@ -127,6 +131,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         systemImage: String,
         visibility: PanelRailTabVisibility = .always,
         requiresProjectSupport: Bool = false,
+        requiresChatSupport: Bool = false,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
@@ -135,6 +140,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         self.systemImage = systemImage
         self.visibility = visibility
         self.requiresProjectSupport = requiresProjectSupport
+        self.requiresChatSupport = requiresChatSupport
         self.makeView = { AnyView(content()) }
     }
 }

@@ -40,6 +40,20 @@ public final class EventManager: ObservableObject, SuperLog {
         post(.conversationsDidChange, object: object)
     }
 
+    /// 发送 `.lumiSelectedConversationDidChange` 通知。
+    ///
+    /// 在 `selectedConversationID` 发生变化时调用（select/deselect/create 自动选中/
+    /// 启动恢复/delete 回退）。`conversationID` 为 nil 表示取消选中。
+    /// 与 `.lumiConversationsDidChange`（列表增删/标题/活跃标记）区分：本事件只关心
+    /// 「当前选中会话」的切换，供关心 selectedConversationID 的视图精确订阅，
+    /// 避免被无关的列表变更打扰。
+    public func postSelectedConversationDidChange(object: Any? = nil, conversationID: UUID?) {
+        let userInfo = conversationID.map {
+            [LumiNotificationUserInfoKey.conversationID: $0] as [AnyHashable: Any]
+        }
+        post(.selectedConversationDidChange, object: object, userInfo: userInfo)
+    }
+
     public func postConversationTitleDidChange(object: Any? = nil, conversationID: UUID?) {
         let userInfo = conversationID.map {
             [LumiNotificationUserInfoKey.conversationID: $0] as [AnyHashable: Any]

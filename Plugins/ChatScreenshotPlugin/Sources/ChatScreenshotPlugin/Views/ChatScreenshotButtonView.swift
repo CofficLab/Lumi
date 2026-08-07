@@ -6,7 +6,6 @@ import SwiftUI
 ///
 /// 视觉风格:与 `ConversationInputPlugin.SendButtonView` 协调的圆形图标按钮
 struct ChatScreenshotButtonView: View {
-    @ObservedObject var kernel: LumiKernel
     @State private var isPreparing = false
     @LumiTheme private var theme
 

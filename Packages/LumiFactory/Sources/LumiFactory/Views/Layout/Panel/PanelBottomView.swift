@@ -8,6 +8,7 @@ struct PanelBottomView: View {
 
     @LumiTheme private var theme
     @State private var selectedTabIDs: [String: String] = [:]
+    @State private var isPanelBottomVisible: Bool = true
 
     init(layoutManager: WorkspaceProviding) {
         self.layoutManager = layoutManager
@@ -28,37 +29,43 @@ struct PanelBottomView: View {
     }
 
     var body: some View {
-        if layoutManager.isPanelBottomVisible {
-            VStack(spacing: 0) {
-                AppTabBar(
-                    tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
-                    selectedTab: Binding(
-                        get: { selectedTabID },
-                        set: { newValue in
-                            selectedTabIDs[viewContainerID] = newValue
-                            layoutManager.presentBottomTab(id: newValue, viewContainerID: viewContainerID)
-                        }
+        Group {
+            if isPanelBottomVisible {
+                VStack(spacing: 0) {
+                    AppTabBar(
+                        tabs: tabs.map { AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id) },
+                        selectedTab: Binding(
+                            get: { selectedTabID },
+                            set: { newValue in
+                                selectedTabIDs[viewContainerID] = newValue
+                                layoutManager.presentBottomTab(id: newValue, viewContainerID: viewContainerID)
+                            }
+                        )
                     )
-                )
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 8)
-                .background(theme.surface.opacity(0.85))
-                AppDivider()
-                tabContent
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 8)
+                    .background(theme.surface.opacity(0.85))
+                    AppDivider()
+                    tabContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .frame(minHeight: 80)
+                .background(theme.surface)
+                .onAppear {
+                    isPanelBottomVisible = layoutManager.isPanelBottomVisible
+                    syncSelectedTab()
+                }
+                .onActiveViewContainerIDDidChange { _ in
+                    syncSelectedTab()
+                }
+                .onActiveBottomTabIDDidChange { containerID, tabID in
+                    guard containerID == viewContainerID else { return }
+                    selectedTabIDs[containerID] = tabID
+                }
             }
-            .frame(minHeight: 80)
-            .background(theme.surface)
-            .onAppear {
-                syncSelectedTab()
-            }
-            .onActiveViewContainerIDDidChange { _ in
-                syncSelectedTab()
-            }
-            .onActiveBottomTabIDDidChange { containerID, tabID in
-                guard containerID == viewContainerID else { return }
-                selectedTabIDs[containerID] = tabID
-            }
+        }
+        .onBottomPanelVisibleDidChange { visible in
+            isPanelBottomVisible = visible
         }
     }
 

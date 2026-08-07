@@ -110,6 +110,43 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+
+    // MARK: - External File Opening
+
+    /// SQLite 可识别的文件扩展名（与 Info.plist 中 `com.coffic.lumi.sqlite` 的声明保持一致）。
+    private static let sqliteExtensions: Set<String> = ["sqlite", "sqlite3", "db"]
+
+    /// 接管外部打开的 SQLite 数据库文件：
+    /// 1. 记录/复用该文件的连接配置；
+    /// 2. 激活 `database-manager` 视图容器；
+    /// 3. 自动建立连接。
+    public func openFile(kernel: LumiKernel, url: URL) -> Bool {
+        let ext = url.pathExtension.lowercased()
+        guard Self.sqliteExtensions.contains(ext) else { return false }
+
+        let path = url.path
+        Self.logger.info("\(Self.t)Opening SQLite database file: \(path)")
+
+        let config: DatabaseConfig
+        if let existing = sharedViewModel.configs.first(where: {
+            $0.type == .sqlite && $0.database == path
+        }) {
+            config = existing
+        } else {
+            config = DatabaseConfig(
+                name: url.deletingPathExtension().lastPathComponent,
+                type: .sqlite,
+                database: path
+            )
+            sharedViewModel.addConfig(config)
+        }
+
+        kernel.workspace?.activateContainer(id: "database-manager")
+        Task { @MainActor in
+            await sharedViewModel.connect(config: config)
+        }
+        return true
+    }
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

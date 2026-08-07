@@ -17,6 +17,11 @@ public enum ViewContainerVisibility: Sendable {
     /// 支持且始终展示，用户不能将其隐藏。
     case alwaysVisible
 
+    /// 该容器是否支持此区域（即非 `.unsupported`）。
+    public var isSupported: Bool {
+        self != .unsupported
+    }
+
     /// 该容器是否允许用户改变该区域的可见性。
     public var allowsUserVisibilityOverride: Bool {
         switch self {

@@ -14,8 +14,15 @@ public struct ListView: View {
     @State private var reloadPending = false
     @State private var hasMore = true
     @State private var paginationCursor: ConversationPageCursor?
+    /// 点击时立刻写入的乐观选中 ID：不等 selectConversation 的同步持久化/通知
+    /// 链路，让选中高亮即时跟上点击；随后由 onChange 与管理器真实状态对齐。
+    @State private var immediateSelectionID: UUID?
+    /// conversationManager 是协议存在类型，无法直接 @ObservedObject；
+    /// 通过 onReceive(objectWillChange) 递增它来强制 body 重新求值。
+    @State private var managerRevision = 0
     @ObservedObject private var kernel: LumiKernel
     @ObservedObject private var attentionStore: ConversationAttentionStore
+    @ObservedObject private var sortStabilizer: ConversationSortStabilizer
     private let conversationManager: ConversationManaging
 
     /// The project path to filter by, or nil if showing all conversations.
@@ -25,10 +32,12 @@ public struct ListView: View {
         kernel: LumiKernel,
         conversationManager: ConversationManaging,
         attentionStore: ConversationAttentionStore,
+        sortStabilizer: ConversationSortStabilizer,
         projectPath: String? = nil
     ) {
         self._kernel = ObservedObject(wrappedValue: kernel)
         self._attentionStore = ObservedObject(wrappedValue: attentionStore)
+        self._sortStabilizer = ObservedObject(wrappedValue: sortStabilizer)
         self.conversationManager = conversationManager
         self.projectPath = projectPath
     }
@@ -55,6 +64,15 @@ public struct ListView: View {
                 await reload()
             }
         }
+        // 外部选中变化（删除自动选中、启动恢复、其他入口切换）时对齐乐观状态
+        .onChange(of: conversationManager.selectedConversationID) { _, newID in
+            immediateSelectionID = newID
+        }
+        // 管理器是协议存在类型，无法 @ObservedObject；用 Combine 订阅
+        // objectWillChange 并递增 revision，强制 body 重新求值读取最新选中。
+        .onReceive(conversationManager.objectWillChange) { _ in
+            managerRevision += 1
+        }
     }
 
     @ViewBuilder
@@ -69,10 +87,12 @@ public struct ListView: View {
                     ForEach(conversations, id: \.id) { conversation in
                         ItemView(
                             conversation: conversation,
-                            isSelected: conversationManager.selectedConversationID == conversation.id,
+                            isSelected: (immediateSelectionID ?? conversationManager.selectedConversationID) == conversation.id,
                             isActive: kernel.agentTurnManager?.isRunning(for: conversation.id) == true,
                             needsAttention: attentionStore.needsAttention(for: conversation.id),
                             onSelect: {
+                                // 先同步写入乐观选中，立刻高亮，不等管理器链路
+                                immediateSelectionID = conversation.id
                                 Task { @MainActor in
                                     conversationManager.selectConversation(id: conversation.id)
                                     attentionStore.markRead(conversationID: conversation.id)
@@ -155,7 +175,15 @@ public struct ListView: View {
 
         // 没有实际变化时不触发 SwiftUI 列表替换。
         if snapshot != conversations {
-            conversations = snapshot
+            // 粘性排序：用 stabilizer 重新计算排序时间，防止高频消息导致列表跳动
+            let stabilized = snapshot
+                .map { conv -> (LumiConversationSummary, Date) in
+                    (conv, sortStabilizer.effectiveSortTime(for: conv.id, updatedAt: conv.updatedAt))
+                }
+                .sorted { $0.1 > $1.1 }
+                .map { $0.0 }
+            conversations = stabilized
+            sortStabilizer.cleanup()
             paginationCursor = snapshot.last.map {
                 ConversationPageCursor(updatedAt: $0.updatedAt, id: $0.id)
             }

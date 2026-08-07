@@ -28,6 +28,20 @@ public struct RClickSettingsView: View {
 
     // MARK: - Finder Extension
 
+    private static var isMacOS15OrLater: Bool {
+        if #available(macOS 15.0, *) { return true }
+        return false
+    }
+
+    /// macOS 15+ 将扩展入口拆分为「扩展 → 文件提供程序」等子页面
+    private static var extensionSettingsPath: String {
+        if isMacOS15OrLater {
+            return LumiPluginLocalization.string("Finder Extension Settings Path (macOS 15+)", bundle: .module)
+        } else {
+            return LumiPluginLocalization.string("Finder Extension Settings Path", bundle: .module)
+        }
+    }
+
     private var finderExtensionCard: some View {
         AppCard {
             VStack(alignment: .leading, spacing: 16) {
@@ -43,7 +57,7 @@ public struct RClickSettingsView: View {
 
                     Spacer()
 
-                    Text(LumiPluginLocalization.string("System Settings → Privacy & Security → Extensions → Added Extensions", bundle: .module))
+                    Text(Self.extensionSettingsPath)
                         .font(.appMicro)
                         .foregroundColor(theme.textTertiary)
                 }
@@ -159,8 +173,15 @@ public struct RClickSettingsView: View {
     // MARK: - Private
 
     private func openFinderExtensionSettings() {
-        // macOS 13+ use new System Settings URL
-        if let url = URL(string: "x-apple.systempreferences:com.apple.ExtensionsPreferences") {
+        let urlString: String
+        if Self.isMacOS15OrLater {
+            // macOS 15+: 通用 → 登录项与扩展 → 扩展 → 文件提供程序
+            urlString = "x-apple.systempreferences:com.apple.Extensions-List"
+        } else {
+            // macOS 13–14: 通用 → 登录项与扩展 → Finder 扩展
+            urlString = "x-apple.systempreferences:com.apple.Extensions-List"
+        }
+        if let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
         }
     }

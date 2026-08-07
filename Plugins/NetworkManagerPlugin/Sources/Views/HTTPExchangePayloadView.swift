@@ -9,6 +9,9 @@ struct HTTPExchangePayloadView: View {
 
     let data: Data?
     let fallback: String
+    /// When `true`, skips JSON pretty-printing and shows the original bytes
+    /// as UTF-8 text (or hex dump). Defaults to `false`.
+    var rawMode: Bool = false
 
     @State private var renderedText: String?
 
@@ -27,7 +30,7 @@ struct HTTPExchangePayloadView: View {
                 .frame(maxWidth: .infinity, minHeight: 100, alignment: .leading)
             }
         }
-        .task(id: data) {
+        .task(id: "\(data?.count ?? 0)-\(rawMode)") {
             await renderPayload()
         }
     }
@@ -38,8 +41,13 @@ struct HTTPExchangePayloadView: View {
             return
         }
 
+        let isRaw = rawMode
         let rendered = await Task.detached(priority: .utility) {
-            HTTPExchangeExportFormatter.text(data)
+            if isRaw {
+                HTTPExchangeExportFormatter.rawText(data)
+            } else {
+                HTTPExchangeExportFormatter.text(data)
+            }
         }.value
         renderedText = rendered
     }

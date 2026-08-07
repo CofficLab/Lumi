@@ -170,6 +170,19 @@ public protocol LumiPlugin: AnyObject {
     /// 容器激活时被回调
     func onContainerActivated(kernel: LumiKernel, containerID: String)
 
+    // MARK: - External File Opening
+
+    /// 外部文件打开请求（Finder 打开方式、Dock 拖入等）。
+    ///
+    /// 宿主在收到非项目目录的文件打开请求时，按启用顺序询问所有插件，
+    /// 第一个返回 `true` 的插件接管该文件，后续插件不再收到通知。
+    ///
+    /// - Parameters:
+    ///   - kernel: 内核
+    ///   - url: 已确认存在的本地文件 URL（不会是目录）
+    /// - Returns: 返回 `true` 表示该插件已接管此文件；返回 `false` 表示无法处理，交给下一个插件。
+    func openFile(kernel: LumiKernel, url: URL) -> Bool
+
     // MARK: - Editor Extension
 
     /// 注册编辑器扩展
@@ -222,4 +235,7 @@ public extension LumiPlugin {
 
     /// 默认不贡献编辑器运行时插件。
     func editorPlugins(kernel: LumiKernel) -> [any EditorPlugin] { [] }
+
+    /// 默认不处理任何外部文件打开请求。
+    func openFile(kernel: LumiKernel, url: URL) -> Bool { false }
 }

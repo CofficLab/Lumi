@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "%@ (%lld)" : {
       "localizations" : {
         "en" : {
@@ -238,6 +241,22 @@
         }
       }
     },
+    "Choose Export Folder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a folder to export the HTTP logs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择导出 HTTP 日志的文件夹"
+          }
+        }
+      }
+    },
     "Collecting data..." : {
       "localizations" : {
         "en" : {
@@ -302,22 +321,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "收集中..."
-          }
-        }
-      }
-    },
-    "Choose Export Folder" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose a folder to export the HTTP logs"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择导出 HTTP 日志的文件夹"
           }
         }
       }
@@ -939,22 +942,6 @@
         }
       }
     },
-    "Last Hour" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Last Hour"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最近 1 小时"
-          }
-        }
-      }
-    },
     "Last 60 seconds" : {
       "localizations" : {
         "en" : {
@@ -985,6 +972,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最近 60 秒"
+          }
+        }
+      }
+    },
+    "Last Hour" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Hour"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近 1 小时"
           }
         }
       }
@@ -1610,6 +1613,40 @@
         }
       }
     },
+    "Parsed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parsed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解析"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解析"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解析"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解析"
+          }
+        }
+      }
+    },
     "Peak" : {
       "localizations" : {
         "en" : {
@@ -1779,6 +1816,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "公网 IP"
+          }
+        }
+      }
+    },
+    "Raw" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raw"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始"
           }
         }
       }

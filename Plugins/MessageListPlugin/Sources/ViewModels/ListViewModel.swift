@@ -45,7 +45,7 @@ private struct MessageFingerprint: Equatable {
 /// - SeeAlso: `MessageListPaginationService`(分页策略)、
 ///   `MessageListRowBuilder`(行合并规则)。
 @MainActor
-final class MessageListViewModel: ObservableObject, SuperLog {
+final class ListViewModel: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-list.viewmodel")
     nonisolated static let emoji = "📜"
     nonisolated static let verbose = false
@@ -180,6 +180,15 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         }
     }
 
+    /// 会话设置(verbosity 等)变化后的轻量刷新。
+    ///
+    /// 由 `.lumiConversationsDidChange` 驱动(切换 verbosity 等会广播该事件)。
+    /// `rebuildHistoryRows` 的 signature 内含 verbosity,未变化时 O(rows) 比较后
+    /// 直接跳过,因此该事件即使被高频触发(如消息活跃标记)也无碍。
+    func refreshConversationSettingsIfNeeded() {
+        rebuildHistoryRows()
+    }
+
     // MARK: - Pagination
 
     /// 向上翻页:加载更早一页并 prepend,触发窗口回收。
@@ -200,7 +209,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
             hasEarlier: hasEarlierMessages
         ) else { return nil }
         // 加载期间用户可能切了会话,丢弃过期结果。
-        guard activeConversationID == conversationID else { return nil }
+        guard selectedConversationID == conversationID else { return nil }
         persistedMessages = result.earlier + persistedMessages
         hasEarlierMessages = result.hasEarlierMessages
         persistedMessages = pagination.evictTailIfNeeded(
@@ -231,7 +240,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
             messageManager: kernel.messageManager,
             current: persistedMessages
         ) else { return false }
-        guard activeConversationID == conversationID else { return false }
+        guard selectedConversationID == conversationID else { return false }
 
         let messagesChanged = persistedMessages != result.merged
         let hasEarlierChanged = result.hasEarlierMessages.map { $0 != hasEarlierMessages } ?? false
@@ -264,7 +273,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
             messageManager: kernel.messageManager
         )
         // 切换会话期间用户可能又选了别的会话,丢弃过期结果。
-        guard activeConversationID == conversationID else { return }
+        guard selectedConversationID == conversationID else { return }
         persistedMessages = result.messages
         hasEarlierMessages = result.hasEarlierMessages
         isLoading = false
@@ -304,7 +313,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
                 totalDuration: durations.isEmpty ? nil : durations.reduce(0, +)
             )
         }
-        guard activeConversationID == conversationID else { return }
+        guard selectedConversationID == conversationID else { return }
         if turnActivitySummaries != summaries {
             turnActivitySummaries = summaries
         }

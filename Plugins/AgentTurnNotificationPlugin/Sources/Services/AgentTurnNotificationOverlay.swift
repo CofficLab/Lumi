@@ -14,10 +14,8 @@ public struct AgentTurnNotificationOverlay<Content: View>: View {
             .onAppear {
                 handler.bind()
             }
-            .onReceive(NotificationCenter.default.publisher(for: .lumiTurnCompleted)) { notification in
-                guard let conversationId = notification.userInfo?[LumiMessageSavedNotification.conversationIDKey] as? UUID else {
-                    return
-                }
+            .onLumiTurnCompleted { conversationId in
+                guard let conversationId else { return }
                 handler.postTurnFinishedNotification(conversationId: conversationId)
             }
     }

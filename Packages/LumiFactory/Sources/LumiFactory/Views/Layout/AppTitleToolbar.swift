@@ -5,13 +5,22 @@ import SwiftUI
 
 struct AppTitleToolbar: View {
     @LumiTheme private var theme
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+
+    // 不订阅 workspace 服务的 `objectWillChange`，
+    // 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
+    // 重新拉取 titleToolbarItems。
+    @State private var items: [TitleToolbarItem] = []
 
     private let height: CGFloat = 44
     private let trafficLightReserveWidth: CGFloat = 76
 
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        _items = State(initialValue: kernel.workspace?.allTitleToolbarItems ?? [])
+    }
+
     var body: some View {
-        let items = kernel.workspace?.allTitleToolbarItems ?? []
         let leadingItems = items.filter { $0.placement == .leading }
         let centerItems = items.filter { $0.placement == .center }
         let trailingItems = items.filter { $0.placement == .trailing }
@@ -50,6 +59,9 @@ struct AppTitleToolbar: View {
                 .allowsHitTesting(false)
         )
         #endif
+        .onWorkspaceContributionsDidChange {
+            items = kernel.workspace?.allTitleToolbarItems ?? []
+        }
     }
 
     private func toolbarGroup(_ items: [TitleToolbarItem]) -> some View {

@@ -31,7 +31,7 @@ struct PopoverContent: View {
             )
             .frame(width: 300)
 
-            Divider()
+            AppDivider(.vertical)
 
             // Right: Model List for selected provider
             ModelListView(

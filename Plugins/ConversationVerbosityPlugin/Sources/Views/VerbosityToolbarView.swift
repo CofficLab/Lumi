@@ -3,19 +3,18 @@ import LumiUI
 import SwiftUI
 
 struct VerbosityToolbarView: View {
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+
+    // globalVerbosity 随当前会话切换可能变化（由 StateMonitorPlugin 双向同步）。
+    // 用事件 + @State 缓存，不挂 kernel 全局总线。
+    @State private var selectedLevel: LumiResponseVerbosity = .defaultVerbosity
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+
+    @State private var isPopoverPresented = false
 
     private var conversations: (any ConversationManaging)? {
         kernel.conversations
     }
-
-    /// 使用全局详细程度，不再依赖具体对话
-    private var selectedLevel: LumiResponseVerbosity {
-        conversations?.globalVerbosity ?? .defaultVerbosity
-    }
-
-    @State private var isPopoverPresented = false
 
     private var foregroundColor: Color {
         switch selectedLevel {
@@ -60,8 +59,15 @@ struct VerbosityToolbarView: View {
             VerbosityPopover(selectedLevel: selectedLevel) { level in
                 // 写入全局详细程度，不再直接操作某个对话
                 conversations?.setGlobalVerbosity(level)
+                selectedLevel = level
                 isPopoverPresented = false
             }
         }
+        .task { refreshLevel() }
+        .onLumiSelectedConversationDidChange { refreshLevel() }
+    }
+
+    private func refreshLevel() {
+        selectedLevel = conversations?.globalVerbosity ?? .defaultVerbosity
     }
 }

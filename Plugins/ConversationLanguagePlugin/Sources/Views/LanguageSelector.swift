@@ -3,20 +3,16 @@ import SwiftUI
 
 /// 语言切换按钮：每个对话保存独立语言偏好。
 struct LanguageToggleButton: View {
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+
+    // language 随当前会话切换变化。用事件 + @State 缓存，不挂 kernel 全局总线。
+    @State private var selectedConversationID: UUID?
+    @State private var currentLanguage: LumiConversationLanguage = .chinese
 
     @State private var isPopoverPresented = false
 
     private var conversations: (any ConversationManaging)? {
         kernel.conversations
-    }
-
-    private var selectedConversationID: UUID? {
-        conversations?.selectedConversationID
-    }
-
-    private var currentLanguage: LumiConversationLanguage {
-        conversations?.language(for: selectedConversationID) ?? .chinese
     }
 
     var body: some View {
@@ -40,9 +36,18 @@ struct LanguageToggleButton: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             LanguagePopover(selectedLanguage: currentLanguage) { language in
                 conversations?.setLanguage(language, for: selectedConversationID)
+                currentLanguage = language
                 isPopoverPresented = false
             }
         }
+        .task { refreshState() }
+        .onLumiSelectedConversationDidChange { refreshState() }
+    }
+
+    private func refreshState() {
+        let id = conversations?.selectedConversationID
+        selectedConversationID = id
+        currentLanguage = conversations?.language(for: id) ?? .chinese
     }
 
     private var foregroundColor: Color {

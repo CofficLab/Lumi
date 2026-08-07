@@ -1,5 +1,5 @@
-import SwiftUI
 import LumiUI
+import SwiftUI
 
 /// 侧边栏预览视图，显示右键菜单的实时预览
 public struct RClickRailView: View {
@@ -7,6 +7,14 @@ public struct RClickRailView: View {
     @StateObject private var configManager = RClickConfigManager.shared
 
     public init() {}
+
+    /// 是否显示新建文件子菜单预览
+    private var shouldShowNewFilePreview: Bool {
+        let config = configManager.config
+        let isNewFileEnabled = config.items.contains { $0.type == .newFile && $0.isEnabled }
+        let hasEnabledTemplates = config.fileTemplates.contains { $0.isEnabled }
+        return isNewFileEnabled && hasEnabledTemplates
+    }
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -21,52 +29,39 @@ public struct RClickRailView: View {
             }
 
             AppDivider()
+            
+            VStack {
+                
+                Spacer()
+                
+                // 预览内容
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // 主菜单预览
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(LumiPluginLocalization.string("Menu", bundle: .module))
+                                .font(.appCaptionEmphasized)
+                                .foregroundColor(theme.textSecondary)
 
-            // 预览内容
-            ScrollView {
-                VStack(spacing: 16) {
-                    RClickPreviewView(config: configManager.config)
-                        .shadowLg()
+                            RClickPreviewView(config: configManager.config)
+                        }
 
-                    // 状态统计
-                    AppCard {
-                        AppSettingsSection(title: LumiPluginLocalization.string("Status", bundle: .module), spacing: 8) {
-                            let enabledActions = configManager.config.items.filter { $0.isEnabled && $0.type != .newFile }.count
+                        // 新建文件子菜单展开预览（仅在新建文件启用且有模板时显示）
+                        if shouldShowNewFilePreview {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(LumiPluginLocalization.string("New File Submenu", bundle: .module))
+                                    .font(.appCaptionEmphasized)
+                                    .foregroundColor(theme.textSecondary)
 
-                            AppSettingsRow {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.appCallout)
-                                        .foregroundColor(theme.success)
-                                    Text("\(enabledActions) \(LumiPluginLocalization.string("actions enabled", bundle: .module))")
-                                        .font(.appBody)
-                                        .foregroundColor(theme.textSecondary)
-                                    Spacer()
-                                }
-                            }
-
-                            if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }), newFileItem.isEnabled {
-                                let enabledTemplates = configManager.config.fileTemplates.filter { $0.isEnabled }.count
-
-                                AppSettingsRow {
-                                    HStack(spacing: 12) {
-                                        Image(systemName: "doc.badge.plus")
-                                            .font(.appCallout)
-                                            .foregroundColor(theme.info)
-                                        Text("\(enabledTemplates) \(LumiPluginLocalization.string("templates enabled", bundle: .module))")
-                                            .font(.appBody)
-                                            .foregroundColor(theme.textSecondary)
-                                        Spacer()
-                                    }
-                                }
+                                RClickNewFilePreviewView(config: configManager.config)
                             }
                         }
                     }
+                    .padding(.horizontal, 12)
                 }
-                .padding(16)
+                
+                Spacer()
             }
-
-            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
