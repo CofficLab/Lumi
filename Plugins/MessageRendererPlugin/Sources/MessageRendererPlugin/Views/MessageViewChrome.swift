@@ -90,7 +90,7 @@ struct MessageViewChrome<Content: View>: View {
                             ResendMessageButton(kernel: kernel, message: message)
                         }
 
-                        if hasThinkingContent {
+                        if hasThinkingContent, isBrief {
                             AppIconButton(
                                 systemImage: "brain",
                                 tint: showThinkingPopover ? theme.textPrimary : theme.textSecondary,
