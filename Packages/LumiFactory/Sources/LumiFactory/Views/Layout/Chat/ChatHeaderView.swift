@@ -2,22 +2,22 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
+/// 聊天分区标题栏视图
+///
+/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 改为「快照 + 事件刷新」：
+/// - `init` 阶段读一次初值：启动注册贡献时不发通知，且父视图 ChatView 是条件 body，
+///   切换容器时本视图可能被重建，同步读初值可避免 .task 异步绑定的时序竞争；
+/// - 监听 `.workspaceContributionsDidChange`：任一 UI 贡献清单（含 chat section
+///   header items）注册/注销/全量重建完成后由 workspace 服务广播，此处重新拉取。
 struct ChatHeaderView: View {
     let kernel: LumiKernel
 
-    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/conversations/settings 等无关服务变更不会触发这里刷新。
-    // 父视图 ChatView 是条件 body，切换容器时本视图可能被重建，
-    // 在 init 阶段同步绑定以避免 .task 异步绑定的时序竞争。
-    @StateObject private var workspaceBox: ObservableWorkspaceBox
+    @State private var items: [ChatSectionHeaderItem] = []
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
-        _workspaceBox = StateObject(wrappedValue: ObservableWorkspaceBox(service: kernel.workspace))
-    }
-
-    private var items: [ChatSectionHeaderItem] {
-        workspaceBox.service?.allChatSectionHeaderItems ?? []
+        _items = State(initialValue: kernel.workspace?.allChatSectionHeaderItems ?? [])
     }
 
     var body: some View {
@@ -35,5 +35,8 @@ struct ChatHeaderView: View {
             }
         }
         .borderBottom()
+        .onWorkspaceContributionsDidChange {
+            items = kernel.workspace?.allChatSectionHeaderItems ?? []
+        }
     }
 }

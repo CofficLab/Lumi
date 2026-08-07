@@ -46,6 +46,17 @@ extension Notification.Name {
     /// object: nil
     /// userInfo: ["containerID": String, "position": CGFloat]
     public static let bottomPanelDividerDidChange = Notification.Name("BottomPanelDividerDidChange")
+
+    /// 工作区 UI 贡献清单已变更（标题栏 / 聊天分区 / 状态栏 / 面板 / 菜单栏 /
+    /// 根覆盖层 / 视图容器等任一清单注册、注销或全量重建后触发）。
+    ///
+    /// object: nil
+    /// userInfo: nil
+    ///
+    /// 与 `objectWillChange` 的区别：本事件是**变更完成后**的广播，消费视图
+    /// （如 ChatHeaderView）可在 handler 里从 workspace 服务重新拉取自己关心的
+    /// 清单快照，无需再经 `ObservableWorkspaceBox` 窄播包装。
+    public static let workspaceContributionsDidChange = Notification.Name("WorkspaceContributionsDidChange")
 }
 
 // MARK: - Layout NotificationCenter Extensions
@@ -125,6 +136,14 @@ extension NotificationCenter {
             object: nil,
             userInfo: ["containerID": containerID, "position": position]
         )
+    }
+
+    /// 广播工作区 UI 贡献清单已变更。
+    ///
+    /// 由 workspace 服务（LayoutManager）在**贡献清单更新完成后**调用一次，
+    /// 消费视图收到后从服务重新拉取快照。
+    public static func postWorkspaceContributionsDidChange() {
+        NotificationCenter.default.post(name: .workspaceContributionsDidChange, object: nil)
     }
 }
 
@@ -224,6 +243,16 @@ public extension View {
                   let position = LayoutEventPayload.cgFloat(from: notification.userInfo?["position"])
             else { return }
             action(containerID, position)
+        }
+    }
+
+    /// 监听工作区 UI 贡献清单变更（贡献注册 / 注销 / 全量重建后触发）。
+    ///
+    /// 消费方在 handler 里从 workspace 服务重新拉取自己关心的清单快照，
+    /// 无需再经 `ObservableWorkspaceBox` 订阅 service 的 `objectWillChange`。
+    func onWorkspaceContributionsDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .workspaceContributionsDidChange)) { _ in
+            action()
         }
     }
 }

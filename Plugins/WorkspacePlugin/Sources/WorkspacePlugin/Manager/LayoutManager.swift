@@ -218,6 +218,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     private func updateSortedViewContainers() {
         sortedViewContainers = viewContainerOrder.compactMap { viewContainers[$0] }
             .sorted { $0.order < $1.order }
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     // MARK: - Container Observers
@@ -572,6 +573,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
                 }
                 return $0.order < $1.order
             }
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     // MARK: - Chat Section
@@ -700,6 +702,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allStatusBarItems = statusBarItemOrder.compactMap { statusBarItems[$0] }
             .sorted(by: { $0.order < $1.order })
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     // MARK: - Panel
@@ -707,11 +710,13 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     public func registerPanelHeaderItem(_ item: PanelHeaderItem) {
         panelHeaderItems[item.id] = item
         allPanelHeaderItems = Array(panelHeaderItems.values)
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     public func unregisterPanelHeaderItem(id: String) {
         panelHeaderItems.removeValue(forKey: id)
         allPanelHeaderItems = Array(panelHeaderItems.values)
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     public func registerPanelBottomTabItem(_ item: PanelBottomTabItem) {
@@ -732,6 +737,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allPanelBottomTabItems = panelBottomTabOrder.compactMap { panelBottomTabItems[$0] }
             .sorted(by: { $0.order < $1.order })
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     public func registerPanelRailTabItem(_ item: PanelRailTabItem) {
@@ -752,6 +758,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allPanelRailTabItems = panelRailTabOrder.compactMap { panelRailTabItems[$0] }
             .sorted(by: { $0.order < $1.order })
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     // MARK: - Menu Bar
@@ -774,6 +781,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allMenuBarContents = menuBarContentOrder.compactMap { menuBarContents[$0] }
             .sorted(by: { $0.order < $1.order })
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     public func registerMenuBarPopup(_ popup: MenuBarPopupItem) {
@@ -794,6 +802,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allMenuBarPopups = menuBarPopupOrder.compactMap { menuBarPopups[$0] }
             .sorted(by: { $0.order < $1.order })
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     // MARK: - Root Overlays
@@ -816,6 +825,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allRootOverlays = rootOverlayOrder.compactMap { rootOverlays[$0] }
             .sorted(by: { $0.order < $1.order })
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     // MARK: - Clear
@@ -898,29 +908,34 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allChatSectionItems = chatSectionItemOrder.compactMap { chatSectionItems[$0] }
             .sorted(by: { $0.order < $1.order })
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     private func updateSortedChatSectionToolbarItems() {
         objectWillChange.send()
         allChatSectionToolbarItems = chatSectionToolbarItemOrder.compactMap { chatSectionToolbarItems[$0] }
             .sorted(by: { $0.order < $1.order })
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     private func updateSortedChatSectionToolbarBars() {
         objectWillChange.send()
         allChatSectionToolbarBarItems = chatSectionToolbarBarOrder.compactMap { chatSectionToolbarBars[$0] }
             .sorted(by: { $0.order < $1.order })
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     private func updateSortedChatSectionHeaders() {
         objectWillChange.send()
         allChatSectionHeaderItems = chatSectionHeaderOrder.compactMap { chatSectionHeaders[$0] }
             .sorted(by: { $0.order < $1.order })
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 
     private func updateSortedChatSectionActionBars() {
         objectWillChange.send()
         allChatSectionActionBarItems = chatSectionActionBarOrder.compactMap { chatSectionActionBars[$0] }
             .sorted(by: { $0.order < $1.order })
+        NotificationCenter.postWorkspaceContributionsDidChange()
     }
 }
