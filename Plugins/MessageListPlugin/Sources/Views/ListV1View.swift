@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// 历史中每个 AgentTurn 只展示最终结论；运行中的 Turn 只展示一条动态 status。
 /// 流式正文、工具调用和工具结果均不进入 V1 展示投影。
-struct MessageListV1View: View, SuperLog {
+struct ListV1View: View, SuperLog {
     nonisolated static let logger = MessageListPlugin.logger
     nonisolated static let emoji = "📃"
     nonisolated static let verbose: Bool = true

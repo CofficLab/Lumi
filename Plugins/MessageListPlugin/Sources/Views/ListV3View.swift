@@ -4,14 +4,17 @@ import os
 import SuperLogKit
 import SwiftUI
 
-/// Message List V2 View (standard / 标准模式)
-struct ListV2View: View, SuperLog {
+/// Message List V3 View (detailed / 详细模式)
+///
+/// 与 V2(standard)的差异:V3 **显示思考内容**(`reasoningContent`),V2 不显示。
+/// 当前是 V2 的复制(行为暂与 V2 一致),思考内容显示逻辑后续在此基础上增量加入。
+struct ListV3View: View, SuperLog {
     nonisolated static let logger = MessageListPlugin.logger
-    nonisolated static let emoji = "📄"
+    nonisolated static let emoji = "🗂️"
     nonisolated static let verbose: Bool = true
 
     let kernel: LumiKernel
-    @StateObject private var viewModel: ListViewModel
+    @StateObject private var viewModel: ListV3ViewModel
 
     @LumiTheme private var theme
 
@@ -30,7 +33,7 @@ struct ListV2View: View, SuperLog {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
-        _viewModel = StateObject(wrappedValue: ListViewModel(kernel: kernel))
+        _viewModel = StateObject(wrappedValue: ListV3ViewModel(kernel: kernel))
     }
 
     var body: some View {
@@ -89,7 +92,7 @@ struct ListV2View: View, SuperLog {
                 // pattern was an AttributeGraph livelock source and has been
                 // removed entirely (streaming content only lands here once it
                 // is persisted at turn end).
-                VStack(spacing: 0) {
+                LazyVStack(spacing: 0) {
                     historyRows(proxy: proxy)
 
                     Color.clear
@@ -152,8 +155,8 @@ struct ListV2View: View, SuperLog {
         }
     }
 
-    /// Stable historical rows. The live streaming tail is rendered separately
-    /// so token updates do not rebuild this collection.
+    /// Stable historical rows. Pure database-driven; rebuilt only when the
+    /// persisted window changes.
     @ViewBuilder
     private func historyRows(proxy: ScrollViewProxy) -> some View {
         // 顶部"加载更早消息":仅在还有更早消息时显示。
@@ -195,8 +198,8 @@ struct ListV2View: View, SuperLog {
         }
     }
 
-    private var historyBoundary: HistoryBoundary {
-        HistoryBoundary(first: viewModel.historyRows.first?.id, last: viewModel.historyRows.last?.id)
+    private var historyBoundary: HistoryBoundaryV3 {
+        HistoryBoundaryV3(first: viewModel.historyRows.first?.id, last: viewModel.historyRows.last?.id)
     }
 
     private func loadEarlier(proxy: ScrollViewProxy) async {
@@ -207,7 +210,7 @@ struct ListV2View: View, SuperLog {
 
 /// 消息列表首尾 id 对,用于 `onChange` 检测「首屏/新会话内容已加载」。
 /// 元组无法遵循 `Equatable`,故用结构体承载。
-private struct HistoryBoundary: Equatable {
+private struct HistoryBoundaryV3: Equatable {
     let first: UUID?
     let last: UUID?
 }

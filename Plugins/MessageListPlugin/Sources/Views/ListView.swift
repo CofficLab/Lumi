@@ -7,8 +7,9 @@ import SwiftUI
 /// Message List View (入口)
 ///
 /// 根据当前会话的 verbosity 分发到对应的消息列表子视图:
-/// - `.brief` (V1) → `MessageListV1View`
-/// - `.standard` (V2) / `.detailed` (V3) → `MessageListV2View`
+/// - `.brief` (V1) → `ListV1View`
+/// - `.standard` (V2) → `ListV2View`
+/// - `.detailed` (V3) → `ListV3View`(显示思考内容)
 ///
 /// 本视图只负责通用状态判断(无会话选择)和路由分发,
 /// loading / 空态 / 消息列表的滚动、分页、流式等全部逻辑由各子视图各自承担。
@@ -72,9 +73,11 @@ struct ListView: View, SuperLog {
     private var routedMessageList: some View {
         switch verbosity {
         case .brief:
-            MessageListV1View(kernel: kernel)
-        case .standard, .detailed:
+            ListV1View(kernel: kernel)
+        case .standard:
             ListV2View(kernel: kernel)
+        case .detailed:
+            ListV3View(kernel: kernel)
         }
     }
 }

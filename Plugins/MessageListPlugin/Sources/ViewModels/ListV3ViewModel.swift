@@ -7,23 +7,23 @@ import SuperLogKit
 /// Cheap fingerprint of the inputs that decide `MessageListRowBuilder.buildHistory`
 /// output, used to skip the (O(rows × content) memberwise) `historyRows` array
 /// comparison when nothing relevant changed between calls.
-private struct HistoryBuildSignature: Equatable {
+private struct HistoryBuildSignatureV3: Equatable {
     let conversationID: UUID?
     let verbosity: LumiResponseVerbosity
     /// Per persisted message — captures additions/removals/reordering AND
     /// content edits while staying far cheaper than comparing full content
     /// strings.
-    let fingerprints: [MessageFingerprint]
+    let fingerprints: [MessageFingerprintV3]
 }
 
-private struct MessageFingerprint: Equatable {
+private struct MessageFingerprintV3: Equatable {
     let id: UUID
     let contentLength: Int
     let role: LumiChatMessageRole
     let isToolExecutionOnly: Bool
 }
 
-/// Message List View Model
+/// Message List V3 View Model (detailed / 详细模式)
 ///
 /// 消息列表 UI 的**视图模型**:持有全部视图状态(`historyRows`/`isLoading`/分页窗口),
 /// 把数据层服务(`MessageManaging`/`MessageSending`)合并成可直接展示的行序列,
@@ -34,6 +34,10 @@ private struct MessageFingerprint: Equatable {
 /// 整段回复落库后由 `.lumiMessagesDidChange` → `refreshTail()` 路径一次性刷新。
 /// 这样从根上消除「流式 token 高频重建富文本」导致的 AttributeGraph 活锁。
 ///
+/// 与 V2 的差异:V3(detailed)会**显示思考内容**(`reasoningContent`),
+/// V2(standard)不显示。本类当前是 V2 的复制(行为暂与 V2 一致),
+/// 思考内容显示逻辑后续在此基础上增量加入,独立于 V2 viewmodel。
+///
 /// - **分页数据**:首屏加载 / 向上翻页 / 尾部刷新 / 窗口回收,
 ///   委托给 `MessageListPaginationService`,本类只持有状态与过期结果丢弃判定。
 /// - **行合并**:真实落库消息 + 状态行,委托给 `MessageListRowBuilder`;
@@ -42,11 +46,11 @@ private struct MessageFingerprint: Equatable {
 ///   并透传 `verbosity`,本 viewmodel 不参与渲染。
 ///
 /// - SeeAlso: `MessageListPaginationService`(分页策略)、
-///   `MessageListRowBuilder`(行合并规则)。
+///   `MessageListRowBuilder`(行合并规则)、`ListViewModel`(V2 对应物)。
 @MainActor
-final class ListViewModel: ObservableObject, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-list.viewmodel")
-    nonisolated static let emoji = "📜"
+final class ListV3ViewModel: ObservableObject, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-list.viewmodel.v3")
+    nonisolated static let emoji = "🗂️"
     nonisolated static let verbose = false
 
     // MARK: - Published State (供 View 展示)
@@ -92,7 +96,7 @@ final class ListViewModel: ObservableObject, SuperLog {
     /// Signature of the inputs used to build the last `historyRows`. When the
     /// next `rebuildHistoryRows` call sees the same signature, the (expensive,
     /// O(rows × content) memberwise) array comparison is skipped entirely.
-    private var lastHistoryBuildSignature: HistoryBuildSignature?
+    private var lastHistoryBuildSignature: HistoryBuildSignatureV3?
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
@@ -361,11 +365,11 @@ final class ListViewModel: ObservableObject, SuperLog {
     private func rebuildHistoryRows() {
         let verbosity = self.verbosity
         let conversationID = selectedConversationID
-        let signature = HistoryBuildSignature(
+        let signature = HistoryBuildSignatureV3(
             conversationID: conversationID,
             verbosity: verbosity,
             fingerprints: persistedMessages.map {
-                MessageFingerprint(
+                MessageFingerprintV3(
                     id: $0.id,
                     contentLength: $0.content.count,
                     role: $0.role,
