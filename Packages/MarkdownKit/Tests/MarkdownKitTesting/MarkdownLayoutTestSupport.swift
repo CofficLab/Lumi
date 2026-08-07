@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import LumiUI
 @testable import MarkdownKit
 
 /// Shared AppKit layout measurement helpers for Markdown + List integration tests.
