@@ -7,14 +7,17 @@ struct MessageCountToolbarView: View {
     @LumiTheme private var theme
     let kernel: LumiKernel
 
-    // 只订阅 conversations + messageManager 两个 service：count 同时依赖
-    // 「当前对话 ID」与「该对话的消息列表」，任一变化都需重算。
-    // 不挂在 kernel 全局总线上，project/settings 等无关服务变更不会触发这里刷新。
+    // 只订阅 conversations（selectedConversationID 无命名事件，必须 box）。
+    // 消息增删由 .onLumiMessagesDidChange 精确覆盖，count 缓存进 @State，
+    // 无需 messageManagerBox。不挂在 kernel 全局总线上。
     @StateObject private var conversationsBox = ObservableConversationsBox()
-    @StateObject private var messageManagerBox = ObservableMessageManagerBox()
+    @State private var count: Int = 0
+
+    private var selectedConversationID: UUID? {
+        conversationsBox.service?.selectedConversationID
+    }
 
     var body: some View {
-        let count = currentMessageCount()
         HStack(spacing: 4) {
             Image(systemName: "number")
                 .font(.system(size: 11))
@@ -32,15 +35,26 @@ struct MessageCountToolbarView: View {
         .help("Messages in current conversation: \(count)")
         .task {
             conversationsBox.bind(kernel.conversations)
-            messageManagerBox.bind(kernel.messageManager)
+            refreshCount()
+        }
+        .onLumiMessagesDidChange { eventConversationID in
+            // 只关心当前会话的消息变更（nil 表示全量刷新）。
+            guard eventConversationID == nil
+                || eventConversationID == selectedConversationID else { return }
+            refreshCount()
+        }
+        .onChange(of: selectedConversationID) { _, _ in
+            // 切换会话时重算计数。
+            refreshCount()
         }
     }
 
-    private func currentMessageCount() -> Int {
-        guard let conversationID = conversationsBox.service?.selectedConversationID,
-              let messageManager = messageManagerBox.service else {
-            return 0
+    private func refreshCount() {
+        guard let conversationID = selectedConversationID,
+              let messageManager = kernel.messageManager else {
+            count = 0
+            return
         }
-        return messageManager.messages(for: conversationID).count
+        count = messageManager.messages(for: conversationID).count
     }
 }
