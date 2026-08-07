@@ -16,4 +16,12 @@ struct ViewContainerVisibilityTests {
         #expect(ViewContainerVisibility.visibleByDefault.resolvedVisibility(userOverride: nil) == true)
         #expect(ViewContainerVisibility.visibleByDefault.resolvedVisibility(userOverride: false) == false)
     }
+
+    @Test("isSupported 仅在 unsupported 时为 false")
+    func isSupportedReturnsFalseOnlyForUnsupported() {
+        #expect(ViewContainerVisibility.unsupported.isSupported == false)
+        #expect(ViewContainerVisibility.hiddenByDefault.isSupported == true)
+        #expect(ViewContainerVisibility.visibleByDefault.isSupported == true)
+        #expect(ViewContainerVisibility.alwaysVisible.isSupported == true)
+    }
 }
