@@ -13,6 +13,7 @@ struct ConversationContextSizeToolbarView: View {
     // （provider 选择变化由 provider 事件驱动）。size 缓存进 @State。
     // 不挂 kernel 全局总线。
     @State private var size: Int?
+    @State private var isPopoverPresented = false
 
     var body: some View {
         // 用 Group 包裹条件分支，并把 .task 挂在 Group 上：
@@ -20,21 +21,30 @@ struct ConversationContextSizeToolbarView: View {
         // 若把 .task 挂进 if 内，分支不渲染时初始化永不执行（死锁）。Group 恒存在，保证初始化。
         Group {
             if let size, size > 0 {
-                HStack(spacing: 4) {
-                    Image(systemName: "text.viewfinder")
-                        .font(.system(size: 11))
-                    Text(Self.formatContextSize(size))
-                        .font(.system(size: 12, weight: .medium))
-                        .monospacedDigit()
+                Button {
+                    isPopoverPresented.toggle()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "text.viewfinder")
+                            .font(.system(size: 11))
+                        Text(Self.formatContextSize(size))
+                            .font(.system(size: 12, weight: .medium))
+                            .monospacedDigit()
+                    }
+                    .foregroundColor(theme.textSecondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(theme.surface.opacity(0.5))
+                    )
+                    .contentShape(RoundedRectangle(cornerRadius: 6))
                 }
-                .foregroundColor(theme.textSecondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(theme.surface.opacity(0.5))
-                )
+                .buttonStyle(.plain)
                 .help("Context window: \(size.formatted()) tokens")
+                .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+                    ContextSizePopover(size: size)
+                }
             }
         }
         .task { refreshSize() }
@@ -76,5 +86,60 @@ struct ConversationContextSizeToolbarView: View {
         }
         let k = tokens / 1_000
         return "\(k)K ctx"
+    }
+}
+
+private struct ContextSizePopover: View {
+    let size: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Context Window")
+                .font(.system(size: 12, weight: .semibold))
+
+            VStack(alignment: .leading, spacing: 6) {
+                explanationRow(icon: "brain", text: "Maximum tokens the model can process in a single request.")
+                explanationRow(icon: "arrow.left.arrow.right", text: "Includes both input (messages) and output (response).")
+                explanationRow(icon: "chart.bar", text: "Larger context allows more conversation history to be sent.")
+                explanationRow(icon: "exclamationmark.triangle", text: "When nearing the limit, older messages may be truncated.")
+            }
+
+            Divider()
+
+            HStack {
+                Text("Model limit:")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                Text(Self.formatContextSize(size))
+                    .font(.system(size: 11, weight: .semibold))
+                    .monospacedDigit()
+            }
+        }
+        .padding(10)
+        .frame(width: 260)
+    }
+
+    private func explanationRow(icon: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.secondary)
+                .frame(width: 16)
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundColor(.primary)
+        }
+    }
+
+    private static func formatContextSize(_ tokens: Int) -> String {
+        if tokens >= 1_000_000 {
+            let m = Double(tokens) / 1_000_000
+            if m == m.rounded() {
+                return "\(Int(m))M tokens"
+            }
+            return String(format: "%.1fM tokens", m)
+        }
+        let k = tokens / 1_000
+        return "\(k)K tokens"
     }
 }
