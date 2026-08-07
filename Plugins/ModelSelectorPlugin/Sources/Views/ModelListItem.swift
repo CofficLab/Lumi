@@ -15,16 +15,16 @@ struct ModelListItem: View {
     let onSelect: () -> Void
 
     var body: some View {
-        Button(action: onSelect) {
+        AppListRow(isSelected: isSelected, action: onSelect) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(displayName)
-                            .font(.system(size: 13))
+                            .font(.appCallout)
                             .foregroundColor(isSelected ? theme.primary : theme.textPrimary)
 
                         Text(model)
-                            .font(.system(size: 11))
+                            .font(.appMicro)
                             .foregroundColor(theme.textTertiary)
                     }
 
@@ -41,12 +41,7 @@ struct ModelListItem: View {
                     capabilityRow(capabilities: capabilities, contextWindowSize: contextWindowSize)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(isSelected ? theme.primary.opacity(0.1) : Color.clear)
-            .cornerRadius(6)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Capability Row
@@ -63,16 +58,16 @@ struct ModelListItem: View {
         HStack(spacing: 6) {
             if let capabilities {
                 if capabilities.supportsVision {
-                    capabilityBadge(icon: "eye", label: "Vision")
+                    AppTag("Vision", systemImage: "eye")
                 }
                 if capabilities.supportsTools {
-                    capabilityBadge(icon: "wrench.and.screwdriver", label: "Tools")
+                    AppTag("Tools", systemImage: "wrench.and.screwdriver")
                 }
                 if capabilities.supportsReasoningEffort {
-                    capabilityBadge(icon: "brain", label: "Reasoning")
+                    AppTag("Reasoning", systemImage: "brain")
                 }
                 if capabilities.supportsTTS {
-                    capabilityBadge(icon: "speaker.wave.2", label: "TTS")
+                    AppTag("TTS", systemImage: "speaker.wave.2")
                 }
             }
 
@@ -80,26 +75,10 @@ struct ModelListItem: View {
 
             if let contextWindowSize {
                 Text(formatContextWindow(contextWindowSize))
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.appMicroEmphasized)
                     .foregroundColor(theme.textTertiary)
             }
         }
-    }
-
-    private func capabilityBadge(icon: String, label: String) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: icon)
-                .font(.system(size: 9))
-            Text(label)
-                .font(.system(size: 10))
-        }
-        .foregroundColor(theme.textSecondary)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .background(
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(theme.textTertiary.opacity(0.15))
-        )
     }
 
     private func formatContextWindow(_ tokens: Int) -> String {

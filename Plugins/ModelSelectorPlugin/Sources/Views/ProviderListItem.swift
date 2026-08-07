@@ -10,7 +10,7 @@ struct ProviderListItem: View {
     let onSelect: () -> Void
 
     var body: some View {
-        Button(action: onSelect) {
+        AppListRow(isSelected: isSelected, action: onSelect) {
             HStack(spacing: 10) {
                 // 左侧图标：本地用芯片，远程用云
                 Image(systemName: info.isLocal ? "cpu" : "cloud")
@@ -20,11 +20,11 @@ struct ProviderListItem: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(info.displayName)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.appCallout)
                         .foregroundColor(isSelected ? theme.primary : theme.textPrimary)
 
                     Text("\(info.availableModels.count) models")
-                        .font(.system(size: 11))
+                        .font(.appMicro)
                         .foregroundColor(theme.textTertiary)
                 }
 
@@ -36,11 +36,6 @@ struct ProviderListItem: View {
                         .foregroundColor(theme.primary)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(isSelected ? theme.primary.opacity(0.1) : Color.clear)
-            .cornerRadius(6)
         }
-        .buttonStyle(.plain)
     }
 }
