@@ -40,7 +40,7 @@ struct ConversationReasoningActionBarButton: View {
         }
         let info = type(of: provider).info
         let model = selectedModel ?? info.defaultModel
-        return info.modelCapabilities[model]
+        return info.modelInfo(for: model)?.capabilities
     }
 
     private var supportsThinking: Bool {
@@ -59,21 +59,21 @@ struct ConversationReasoningActionBarButton: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "brain")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.appCallout)
                         Text(localEffort.levelCode)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.appCaptionEmphasized)
                         Image(systemName: isPopoverPresented ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.appMicroEmphasized)
                             .foregroundColor(theme.textTertiary)
                     }
                     .foregroundColor(theme.textSecondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(theme.textTertiary.opacity(0.2))
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                            .fill(theme.appStatusMutedFill)
                     )
-                    .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .help("Reasoning: \(localEffort.displayName)")

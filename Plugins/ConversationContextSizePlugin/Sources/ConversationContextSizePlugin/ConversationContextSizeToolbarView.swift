@@ -22,17 +22,17 @@ struct ConversationContextSizeToolbarView: View {
             if let size, size > 0 {
                 HStack(spacing: 4) {
                     Image(systemName: "text.viewfinder")
-                        .font(.system(size: 11))
+                        .font(.appCallout)
                     Text(Self.formatContextSize(size))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.appCaptionEmphasized)
                         .monospacedDigit()
                 }
                 .foregroundColor(theme.textSecondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
                 .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(theme.surface.opacity(0.5))
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                        .fill(theme.appStatusMutedFill)
                 )
                 .help("Context window: \(size.formatted()) tokens")
             }
@@ -62,7 +62,7 @@ struct ConversationContextSizeToolbarView: View {
             size = nil
             return
         }
-        size = info.contextWindowSizes[modelName]
+        size = info.modelInfo(for: modelName)?.contextWindowSize
     }
 
     /// 格式化上下文大小：128000 → "128K"
