@@ -372,11 +372,32 @@ private struct CachedMarkdownInlineText: View {
 ///
 /// 关键设计：使用 `sizeThatFits` 让 SwiftUI 布局系统感知到内容的真实高度，
 /// 避免 NSScrollView 作为 documentView 时高度被外层 List 行高估算截断。
+///
+/// 性能优化：`NSHostingView.fittingSize` 是昂贵操作（每帧调用会阻塞主线程）。
+/// 这里按 proposal.width 分桶（16pt 一档）缓存高度。只要代码内容不变（`updateNSView`
+/// 不被调用），窗口缩放期间直接返回缓存高度，避免每帧重新测量。
 struct HorizontalScrollView<Content: View>: NSViewRepresentable {
     let content: Content
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
+    }
+
+    // MARK: - Coordinator
+
+    /// 持有按宽度分桶的高度缓存，避免每帧调用 `fittingSize`。
+    final class Coordinator {
+        /// 最近一次测量的缓存。`bucketedWidth` 是 proposal.width 按 16pt 分桶后的值。
+        var cachedSize: CachedSize?
+
+        struct CachedSize {
+            let bucketedWidth: CGFloat
+            let height: CGFloat
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
     }
 
     func sizeThatFits(
@@ -387,9 +408,24 @@ struct HorizontalScrollView<Content: View>: NSViewRepresentable {
         guard let hostingView = nsView.documentView as? NSHostingView<Content> else {
             return nil
         }
-        // 让 NSHostingView 根据内容计算自身所需尺寸
+
+        let proposalWidth = proposal.width ?? 0
+        // 按 16pt 分桶，容忍小幅宽度变化，避免每帧重新测量
+        let bucketedWidth = (proposalWidth / 16).rounded(.down) * 16
+
+        // 检查缓存：如果宽度在同一分桶内，直接返回缓存高度
+        if let cached = context.coordinator.cachedSize,
+           cached.bucketedWidth == bucketedWidth {
+            return CGSize(width: proposalWidth, height: cached.height)
+        }
+
+        // 缓存未命中：调用 fittingSize 并缓存结果
         let size = hostingView.fittingSize
-        return CGSize(width: proposal.width ?? size.width, height: size.height)
+        context.coordinator.cachedSize = Coordinator.CachedSize(
+            bucketedWidth: bucketedWidth,
+            height: size.height
+        )
+        return CGSize(width: proposalWidth, height: size.height)
     }
 
     func makeNSView(context: Context) -> HorizontalOnlyScrollView {
@@ -424,6 +460,9 @@ struct HorizontalScrollView<Content: View>: NSViewRepresentable {
         if let hostingView = nsView.documentView as? NSHostingView<Content> {
             hostingView.rootView = content
         }
+        // Content changed — invalidate the cached measurement so the next
+        // `sizeThatFits` call recomputes the height for the new content.
+        context.coordinator.cachedSize = nil
     }
 }
 
