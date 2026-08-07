@@ -48,13 +48,13 @@ struct ActionBarButton: View {
             )
         }
         .accessibilityLabel("Select Model")
-        .onReceive(NotificationCenter.default.publisher(for: .lumiSelectedRemoteProviderIDDidChange)) { _ in
+        .onLumiSelectedRemoteProviderIDDidChange {
             updateSelection()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiSelectedLocalProviderIDDidChange)) { _ in
+        .onLumiSelectedLocalProviderIDDidChange {
             updateSelection()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiSelectedModelsDidChange)) { _ in
+        .onLumiSelectedModelsDidChange {
             updateSelection()
         }
         .onAppear {

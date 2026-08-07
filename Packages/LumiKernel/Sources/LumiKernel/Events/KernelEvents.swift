@@ -153,4 +153,33 @@ public extension View {
             action(notification.lumiConversationID)
         }
     }
+
+    /// 监听 `.lumiSelectedRemoteProviderIDDidChange` 通知
+    func onLumiSelectedRemoteProviderIDDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedRemoteProviderIDDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiSelectedLocalProviderIDDidChange` 通知
+    func onLumiSelectedLocalProviderIDDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedLocalProviderIDDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiSelectedModelsDidChange` 通知
+    func onLumiSelectedModelsDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedModelsDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiShowOnboarding` 通知，并传出是否要求强制重置（`userInfo["reset"]`）。
+    func onLumiShowOnboarding(perform action: @escaping (Bool) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiShowOnboarding)) { notification in
+            let forceReset = notification.userInfo?[LumiOnboardingNotification.resetKey] as? Bool ?? false
+            action(forceReset)
+        }
+    }
 }

@@ -44,13 +44,11 @@ struct PanelView: View {
         .onAppear {
             syncVisibilityState()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .activeViewContainerIDDidChange)) { _ in
+        .onActiveViewContainerIDDidChange { _ in
             syncVisibilityState()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .bottomPanelVisibleDidChange)) { notification in
-            if let visible = notification.userInfo?["visible"] as? Bool {
-                isPanelBottomVisible = visible
-            }
+        .onBottomPanelVisibleDidChange { visible in
+            isPanelBottomVisible = visible
         }
     }
 
