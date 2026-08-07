@@ -24,6 +24,13 @@ struct MessageListV2View: View {
     /// 读路径(滚动跟随)直接读这个 box;切会话/发消息路径走 `.task` 重置。
     private let atBottomBox = AtBottomBox()
 
+    // MARK: - Live-Resize 降级渲染
+
+    /// 窗口是否在 live resize 中。为 true 时 LazyVStack 渲染轻量占位行而非富文本,
+    /// 使 SwiftUI 在 resize 期间不再遍历昂贵的富文本子树 layout。
+    /// 翻转触发 body 重建一次(有意为之),重建后子树已是轻量占位,后续帧零开销。
+    @State private var isLiveResizing: Bool = false
+
     // MARK: - Services
 
     private let scrollCoordinator = MessageListScrollCoordinator()
@@ -57,6 +64,9 @@ struct MessageListV2View: View {
                     .background(theme.surface.opacity(0.6))
             }
         }
+        // Live-resize 检测:翻转 isLiveResizing,驱动 LazyVStack 在 resize 期间
+        // 降级为轻量占位行,移除富文本子树以消除 layout 遍历开销。
+        .background(LiveResizeDetector(isLiveResizing: $isLiveResizing))
         .task(id: viewModel.selectedConversationID) {
             // 切换会话:重置滚动位置,通知 viewmodel 加载最近一页。
             atBottomBox.value = true
@@ -85,14 +95,21 @@ struct MessageListV2View: View {
                     historyRows(proxy: proxy)
 
                     if let message = viewModel.streamingRow {
-                        MessageRowView(
-                            kernel: kernel,
-                            message: message,
-                            verbosity: viewModel.verbosity
-                        )
-                        .id(message.id)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 4)
+                        if isLiveResizing {
+                            MessageResizePlaceholder(message: message)
+                                .id(message.id)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 4)
+                        } else {
+                            MessageRowView(
+                                kernel: kernel,
+                                message: message,
+                                verbosity: viewModel.verbosity
+                            )
+                            .id(message.id)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 4)
+                        }
                     }
 
                     // 底部锚点行:纯占位,仅保留 scrollTo 用的稳定 id。
@@ -124,7 +141,17 @@ struct MessageListV2View: View {
             }
             // 「是否在底部」由观察 NSScrollView 的 tracker 报告,写入非 Observable
             // 的 `atBottomBox`,不触发 SwiftUI invalidation —— 切断布局反馈环。
-            .background(ScrollViewBottomTracker { atBottomBox.value = $0 })
+            // live-resize 的滚动位置恢复完全由 tracker 在 AppKit 层负责:
+            // - 底部场景:tracker 持续把 contentOffset 钉到 documentView 底部,
+            //   直到富文本行 lazy materialize 完成、几何真正稳定,期间 suppress
+            //   onChange 防止 atBottomBox 被污染。
+            // - 非底部场景:tracker 恢复 resize 前保存的 contentOffset。
+            // 宿主无需在 onLiveResizeEnd 里做任何滚动。
+            .background(
+                ScrollViewBottomTracker(
+                    onChange: { atBottomBox.value = $0 }
+                )
+            )
             // 切会话只重置「在底部」语义,不在此抢跑 scroll。
             // 旧实现立刻 scroll,但 loadFirstPage 是异步 DB 读,慢时 scroll 打在
             // 旧会话布局上作废、新内容到后再无人 scroll → 空白。改为下方
@@ -145,6 +172,8 @@ struct MessageListV2View: View {
                     scrollTick &+= 1
                 }
             }
+            // 注意:live-resize 的滚动位置保持由 `LiveResizeScrollRestorer` 统一负责,
+            // 这里不再用 onChange(isLiveResizing) 推 scrollTick,避免与 restorer 冲突。
             .onLumiMessagesDidChange { eventConversationID in
                 guard MessageListNotificationFilter.shouldHandle(
                     eventConversationID: eventConversationID,
@@ -209,14 +238,23 @@ struct MessageListV2View: View {
         }
 
         ForEach(viewModel.historyRows) { message in
-            MessageRowView(
-                kernel: kernel,
-                message: message,
-                verbosity: viewModel.verbosity
-            )
-            .id(message.id)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 4)
+            if isLiveResizing {
+                // Live-resize 降级:渲染轻量占位行,移除富文本子树。
+                // 这样 SwiftUI 在 resize 每帧不再遍历昂贵的 Markdown layout。
+                MessageResizePlaceholder(message: message)
+                    .id(message.id)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 4)
+            } else {
+                MessageRowView(
+                    kernel: kernel,
+                    message: message,
+                    verbosity: viewModel.verbosity
+                )
+                .id(message.id)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 4)
+            }
         }
     }
 
