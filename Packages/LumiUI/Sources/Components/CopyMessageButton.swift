@@ -20,6 +20,7 @@ public struct CopyMessageButton: View {
             HStack(spacing: 4) {
                 Image(systemName: iconName)
                     .font(.system(size: 10, weight: .medium))
+                    .frame(width: 10, height: 10)
                 if showFeedback {
                     Text("Copied")
                         .font(.system(size: 10, weight: .medium))
