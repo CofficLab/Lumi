@@ -50,12 +50,22 @@ struct MessageListScrollCoordinator {
     ///
     /// `animated == true` 时裹一层 `.easeOut(0.2s)`;
     /// `messages.isEmpty` 时不做任何滚动(无锚点可钉)。
-    func scrollToBottom(proxy: ScrollViewProxy, messages: [LumiChatMessage], animated: Bool) {
-        guard !messages.isEmpty else { return }
+    ///
+    /// - Parameter condition: 每次真正滚动前(含重试)调用的前置条件,默认永真。
+    ///   用于流式场景:用户手动滚离底部后,重试不应再把他们拉回底部。
+    func scrollToBottom(
+        proxy: ScrollViewProxy,
+        messages: [LumiChatMessage],
+        animated: Bool,
+        condition: @escaping @MainActor () -> Bool = { true }
+    ) {
+        guard !messages.isEmpty, condition() else { return }
         performScrollToBottom(proxy: proxy, animated: animated)
         // macOS 14 首次布局未完成时 scrollTo 会静默丢失,补一次重试。
+        // 重试前再次检查条件 —— 用户可能在 100ms 窗口内手动滚离了底部。
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: Self.scrollRetryDelayNs)
+            guard condition() else { return }
             performScrollToBottom(proxy: proxy, animated: animated)
         }
     }
@@ -78,13 +88,16 @@ struct MessageListScrollCoordinator {
     /// 流式期间(`animated == false`)不要动画:tail 刷新在流式中每条消息都会
     /// 触发,带动画的 `scrollTo` 会不断把目标重定到正在增长的底部,动画永不收敛,
     /// 是 AttributeGraph 活锁的诱因之一。仅在用户发完消息、非流式刷新时用动画。
+    ///
+    /// - Parameter condition: 每次真正滚动前(含重试)调用的前置条件,默认永真。
     func scrollToBottomAfterLayout(
         proxy: ScrollViewProxy,
         messages: [LumiChatMessage],
-        animated: Bool = true
+        animated: Bool = true,
+        condition: @escaping @MainActor () -> Bool = { true }
     ) async {
         try? await Task.sleep(nanoseconds: Self.postAppendDelayNs)
-        scrollToBottom(proxy: proxy, messages: messages, animated: animated)
+        scrollToBottom(proxy: proxy, messages: messages, animated: animated, condition: condition)
     }
 
     /// 等待 `postPrependDelayNs` 让 prepend 的新行完成布局,再把指定 id 钉回视口顶部。

@@ -7,15 +7,19 @@ import SwiftUI
 /// 历史中每个 AgentTurn 只展示最终结论；运行中的 Turn 只展示一条动态 status。
 /// 流式正文、工具调用和工具结果均不进入 V1 展示投影。
 struct MessageListV1View: View {
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
     @StateObject private var turnViewModel: MessageListV1ViewModel
 
     @LumiTheme private var theme
 
+    /// 快照 + 事件刷新(同 ChatHeaderView 模式):不订阅 kernel 的 objectWillChange。
+    /// init 同步读初值,之后由事件驱动更新。
+    @State private var verbosity: LumiResponseVerbosity = .defaultVerbosity
+
     /// 用户是否停在列表底部附近;用于决定新消息到达时是否自动滚到底部。
     ///
     /// 故意不用 `@State`,以切断底部锚点 Preference → body 重建 → 偏好重报的
-    /// 反馈环(详见 `MessageListV2View` 同名注释)。
+    /// 反馈环(详见 `ListV2View` 同名注释)。
     private let atBottomBox = AtBottomBox()
 
     // MARK: - Services
@@ -25,6 +29,9 @@ struct MessageListV1View: View {
     init(kernel: LumiKernel) {
         self.kernel = kernel
         _turnViewModel = StateObject(wrappedValue: MessageListV1ViewModel(kernel: kernel))
+        _verbosity = State(
+            initialValue: kernel.conversationManager?.verbosity(for: kernel.conversations?.selectedConversationID) ?? .defaultVerbosity
+        )
     }
 
     var body: some View {
@@ -37,10 +44,22 @@ struct MessageListV1View: View {
                 messageScrollView
             }
         }
-        .task(id: selectedConversationID) {
-            // 切换会话:重置滚动位置,通知 viewmodel 加载最近一页。
+        // 快照 + 事件刷新:首次出现/视图重建加载当前会话,
+        // 选中切换与 verbosity 变化由事件驱动。
+        .task {
+            // 首次出现/容器切换重建:重置滚动位置,加载当前选中会话。
             atBottomBox.value = true
             await turnViewModel.activate(conversationID: selectedConversationID)
+        }
+        .onLumiSelectedConversationDidChange { newID in
+            atBottomBox.value = true
+            verbosity = kernel.conversationManager?.verbosity(for: newID) ?? .defaultVerbosity
+            Task { @MainActor in
+                await turnViewModel.activate(conversationID: newID)
+            }
+        }
+        .onLumiConversationsDidChange {
+            refreshVerbosity()
         }
     }
 
@@ -81,14 +100,17 @@ struct MessageListV1View: View {
             // 「是否在底部」由观察 NSScrollView 的 tracker 报告,写入非 Observable
             // 的 `atBottomBox`,不触发 SwiftUI invalidation —— 切断布局反馈环。
             .background(ScrollViewBottomTracker { atBottomBox.value = $0 })
-            .task(id: selectedConversationID) {
-                // 切会话重置:回到「在底部」语义,等首屏就绪后滚到底。
-                atBottomBox.value = true
-                scrollCoordinator.scrollToBottom(
-                    proxy: proxy,
-                    messages: displayedHistoryMessages,
-                    animated: false
-                )
+            // 切会话/首屏加载完成:messageScrollView 在 isLoading 翻转时会销毁重建,
+            // 重建后 onAppear 触发。此时 atBottomBox 已被事件 handler 重置为 true,
+            // 内容就绪即滚到底 —— 不抢跑 scroll(避免打在旧会话布局上作废)。
+            .onAppear {
+                if atBottomBox.value {
+                    scrollCoordinator.scrollToBottom(
+                        proxy: proxy,
+                        messages: displayedHistoryMessages,
+                        animated: false
+                    )
+                }
             }
             .onLumiMessagesDidChange { eventConversationID in
                 guard MessageListNotificationFilter.shouldHandle(
@@ -110,7 +132,10 @@ struct MessageListV1View: View {
                         await scrollCoordinator.scrollToBottomAfterLayout(
                             proxy: proxy,
                             messages: displayedHistoryMessages,
-                            animated: false
+                            animated: false,
+                            condition: { [weak atBottomBox] in
+                                atBottomBox?.value == true
+                            }
                         )
                     }
                 }
@@ -186,9 +211,10 @@ struct MessageListV1View: View {
         kernel.conversations?.selectedConversationID
     }
 
-    private var verbosity: LumiResponseVerbosity {
-        kernel.conversationManager?
-            .verbosity(for: selectedConversationID) ?? .defaultVerbosity
+    /// 事件驱动刷新 verbosity 快照(路由与行渲染共用)。
+    private func refreshVerbosity() {
+        let selectedID = kernel.conversations?.selectedConversationID
+        verbosity = kernel.conversationManager?.verbosity(for: selectedID) ?? .defaultVerbosity
     }
 
     /// 底部锚点行已内联到 `messageScrollView` 的 LazyVStack 末尾(纯 `Color.clear`

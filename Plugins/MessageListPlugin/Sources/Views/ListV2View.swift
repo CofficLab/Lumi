@@ -3,12 +3,9 @@ import LumiUI
 import SwiftUI
 
 /// Message List V2 View (standard / 标准模式)
-///
-/// 对应 verbosity = .standard 的消息列表视图。
-/// 与 V1 共享相同的滚动、分页、流式跟随逻辑,行渲染由 `MessageRowView` + verbosity 控制。
-struct MessageListV2View: View {
-    @ObservedObject var kernel: LumiKernel
-    @StateObject private var viewModel: MessageListViewModel
+struct ListV2View: View {
+    let kernel: LumiKernel
+    @StateObject private var viewModel: ListViewModel
 
     @LumiTheme private var theme
 
@@ -45,13 +42,10 @@ struct MessageListV2View: View {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
-        _viewModel = StateObject(wrappedValue: MessageListViewModel(kernel: kernel))
+        _viewModel = StateObject(wrappedValue: ListViewModel(kernel: kernel))
     }
 
     var body: some View {
-        // 不用 isLoading/空态做三分支切换:那会让整个 ScrollView 在加载态变化时
-        // 被销毁重建,macOS 14 上重建后首次 scrollTo 常静默失败 → 整页空白。
-        // 改为列表常驻,loading 用蒙层覆盖,空态由 hasPersistedMessages 决定。
         ZStack {
             if viewModel.hasPersistedMessages {
                 messageScrollView
@@ -67,10 +61,24 @@ struct MessageListV2View: View {
         // Live-resize 检测:翻转 isLiveResizing,驱动 LazyVStack 在 resize 期间
         // 降级为轻量占位行,移除富文本子树以消除 layout 遍历开销。
         .background(LiveResizeDetector(isLiveResizing: $isLiveResizing))
-        .task(id: viewModel.selectedConversationID) {
-            // 切换会话:重置滚动位置,通知 viewmodel 加载最近一页。
+        // 快照 + 事件刷新(同 ChatHeaderView 模式):不订阅 kernel 的 objectWillChange。
+        // - `.task` 仅在首次出现/视图重建时加载当前会话;
+        // - 选中切换由 `.lumiSelectedConversationDidChange` 事件驱动(事件发出时
+        //   `selectedConversationID` 已是新值,直接传给 activate,无需读 kernel);
+        // - 会话设置(verbosity 等)变化由 `.lumiConversationsDidChange` 驱动轻量重建。
+        .task {
+            // 首次出现/容器切换重建:重置滚动位置,加载当前选中会话。
             atBottomBox.value = true
             await viewModel.activate(conversationID: viewModel.selectedConversationID)
+        }
+        .onLumiSelectedConversationDidChange { newID in
+            atBottomBox.value = true
+            Task { @MainActor in
+                await viewModel.activate(conversationID: newID)
+            }
+        }
+        .onLumiConversationsDidChange {
+            viewModel.refreshConversationSettingsIfNeeded()
         }
     }
 
@@ -156,9 +164,7 @@ struct MessageListV2View: View {
             // 旧实现立刻 scroll,但 loadFirstPage 是异步 DB 读,慢时 scroll 打在
             // 旧会话布局上作废、新内容到后再无人 scroll → 空白。改为下方
             // historyBoundary 变化驱动 scrollTick,内容就绪后由锚点滚到底。
-            .task(id: viewModel.selectedConversationID) {
-                atBottomBox.value = true
-            }
+            // (atBottomBox 重置已由外层 .onLumiSelectedConversationDidChange 负责。)
             // 内容首尾消息 id 变化 = 新会话首屏/尾部刷新已加载。
             // 只要用户在底部,就推进 scrollTick,触发锚点滚到底。
             .onChange(of: historyBoundary) { _, _ in
@@ -194,7 +200,10 @@ struct MessageListV2View: View {
                         await scrollCoordinator.scrollToBottomAfterLayout(
                             proxy: proxy,
                             messages: viewModel.historyRows,
-                            animated: false
+                            animated: false,
+                            condition: { [weak atBottomBox] in
+                                atBottomBox?.value == true
+                            }
                         )
                     }
                 }
@@ -203,14 +212,16 @@ struct MessageListV2View: View {
             // 若用户停在底部则跟随滚到底(无动画,避免高频 delta 抖动)。
             // 走 coordinator 的 scrollToBottom,带重试以兼容 macOS 14 LazyVStack
             // 未布局时 scrollTo 静默失败的问题。
+            // condition 确保用户手动滚离底部后,100ms 重试不会把他们拉回底部。
             .onChange(of: viewModel.tailStreamingContent) { _, _ in
-                if atBottomBox.value {
-                    scrollCoordinator.scrollToBottom(
-                        proxy: proxy,
-                        messages: viewModel.historyRows,
-                        animated: false
-                    )
-                }
+                scrollCoordinator.scrollToBottom(
+                    proxy: proxy,
+                    messages: viewModel.historyRows,
+                    animated: false,
+                    condition: { [weak atBottomBox] in
+                        atBottomBox?.value == true
+                    }
+                )
             }
         }
     }

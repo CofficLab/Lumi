@@ -45,7 +45,7 @@ private struct MessageFingerprint: Equatable {
 /// - SeeAlso: `MessageListPaginationService`(分页策略)、
 ///   `MessageListRowBuilder`(行合并规则)。
 @MainActor
-final class MessageListViewModel: ObservableObject, SuperLog {
+final class ListViewModel: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-list.viewmodel")
     nonisolated static let emoji = "📜"
     nonisolated static let verbose = false
@@ -178,6 +178,15 @@ final class MessageListViewModel: ObservableObject, SuperLog {
         } else {
             turnActivitySummaries = [:]
         }
+    }
+
+    /// 会话设置(verbosity 等)变化后的轻量刷新。
+    ///
+    /// 由 `.lumiConversationsDidChange` 驱动(切换 verbosity 等会广播该事件)。
+    /// `rebuildHistoryRows` 的 signature 内含 verbosity,未变化时 O(rows) 比较后
+    /// 直接跳过,因此该事件即使被高频触发(如消息活跃标记)也无碍。
+    func refreshConversationSettingsIfNeeded() {
+        rebuildHistoryRows()
     }
 
     // MARK: - Pagination
