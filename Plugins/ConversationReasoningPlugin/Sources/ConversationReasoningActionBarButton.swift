@@ -59,7 +59,7 @@ struct ConversationReasoningActionBarButton: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "brain")
-                            .font(.appCallout)
+                            .font(.system(size: 11, weight: .medium))
                         Text(localEffort.levelCode)
                             .font(.appCaptionEmphasized)
                         Image(systemName: isPopoverPresented ? "chevron.up" : "chevron.down")
