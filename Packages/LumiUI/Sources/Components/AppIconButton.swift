@@ -38,6 +38,7 @@ public struct AppIconButton: View {
             HStack(spacing: 4) {
                 Image(systemName: systemImage)
                     .font(iconFont)
+                    .frame(width: 14, height: 14)
                 if let label {
                     Text(label)
                         .font(labelFont)
