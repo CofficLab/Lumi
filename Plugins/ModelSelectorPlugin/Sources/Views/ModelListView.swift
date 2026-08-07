@@ -36,28 +36,21 @@ struct ModelListView: View {
             // Header
             HStack {
                 Text(selectedProviderDisplayName ?? "Models")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.appCallout)
                 Spacer()
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(theme.surface)
 
-            Divider()
+            AppDivider()
 
             // Search
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 12))
-                    .foregroundColor(theme.textTertiary)
-                TextField("Search models", text: $searchText)
-                    .font(.system(size: 13))
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(theme.surface.opacity(0.5))
+            AppSearchBar(text: $searchText, placeholder: "Search models")
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
 
-            Divider()
+            AppDivider()
 
             // Model items
             if let providerID = selectedProviderID, let llmProvider {
@@ -95,7 +88,7 @@ struct ModelListView: View {
             } else {
                 Spacer()
                 Text("Select a provider")
-                    .font(.system(size: 13))
+                    .font(.appCallout)
                     .foregroundColor(theme.textTertiary)
                 Spacer()
             }

@@ -94,6 +94,8 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
     public var preview: String
     public var createdAt: Date
     public var updatedAt: Date
+    /// Timestamp of the last message received (used for conversation list sorting)
+    public var lastMessageAt: Date
     public var verbosity: LumiResponseVerbosity?
     public var reasoningEffort: LumiReasoningEffort?
     public var language: LumiConversationLanguage?
@@ -110,6 +112,7 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         preview: String = "",
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
+        lastMessageAt: Date? = nil,
         verbosity: LumiResponseVerbosity? = nil,
         reasoningEffort: LumiReasoningEffort? = nil,
         language: LumiConversationLanguage? = nil,
@@ -124,6 +127,7 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         self.preview = preview
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.lastMessageAt = lastMessageAt ?? createdAt
         self.verbosity = verbosity
         self.reasoningEffort = reasoningEffort
         self.language = language

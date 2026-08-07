@@ -21,9 +21,17 @@ public struct VerbosityWillSendToLLMHook {
 
         guard conversationID != nil else { return messages }
 
-        // 使用全局详细程度，不再读取具体对话的 verbosity
-        let verbosity = kernel.conversations?.globalVerbosity
-            ?? .defaultVerbosity
+        // 优先使用对话级别的详细程度；无选中对话时回退到全局设置
+        let verbosity: LumiResponseVerbosity = {
+            guard let conversations = kernel.conversations else {
+                return .defaultVerbosity
+            }
+            if let conversationID,
+               conversations.selectedConversationID == conversationID {
+                return conversations.verbosity(for: conversationID)
+            }
+            return conversations.globalVerbosity
+        }()
         let withoutPreviousPrompt = messages.filter {
             $0.metadata[Self.promptMarker] != "true"
         }

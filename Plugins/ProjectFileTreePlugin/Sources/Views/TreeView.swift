@@ -13,6 +13,11 @@ public struct TreeView: View, SuperLog {
     public nonisolated static var verbose: Bool { ProjectFileTreePlugin.verbose }
     nonisolated static let logger = ProjectFileTreePlugin.logger
 
+    // 本视图已是窄播：kernel 用 let（非 @ObservedObject），body 不订阅 kernel 总线，
+    // 只通过下方 .onReceive + guard 把关心的 projectPath 缓存进 @State，
+    // 故 kernel 上其他服务的变更不会触发 body 重算。
+    // 未采用 ObservableProjectBox 是因为本视图刷新链路较复杂（NSCollectionView 桥接），
+    // 当前手写去重已足够；如需统一风格可后续迁移。
     let kernel: LumiKernel
 
     /// 当前项目路径缓存，用于驱动 SwiftUI 刷新。

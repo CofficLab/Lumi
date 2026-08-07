@@ -22,6 +22,10 @@ final public class ConversationModel: @unchecked Sendable {
     /// Last update timestamp
     public var updatedAt: TimeInterval
 
+    /// Timestamp of the last message received (used for conversation list sorting)
+    /// Optional to allow lightweight migration — old records have NULL; callers default to `createdAt`.
+    public var lastMessageAt: TimeInterval?
+
     /// Verbosity level
     public var verbosityRaw: String?
 
@@ -52,6 +56,7 @@ final public class ConversationModel: @unchecked Sendable {
         preview: String = "",
         createdAt: TimeInterval = Date().timeIntervalSince1970,
         updatedAt: TimeInterval = Date().timeIntervalSince1970,
+        lastMessageAt: TimeInterval? = nil,
         verbosityRaw: String? = nil,
         reasoningEffortRaw: String? = nil,
         languageRaw: String? = nil,
@@ -66,6 +71,7 @@ final public class ConversationModel: @unchecked Sendable {
         self.preview = preview
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.lastMessageAt = lastMessageAt ?? createdAt
         self.verbosityRaw = verbosityRaw
         self.reasoningEffortRaw = reasoningEffortRaw
         self.languageRaw = languageRaw
@@ -89,6 +95,7 @@ public extension ConversationModel {
             preview: summary.preview,
             createdAt: summary.createdAt.timeIntervalSince1970,
             updatedAt: summary.updatedAt.timeIntervalSince1970,
+            lastMessageAt: summary.lastMessageAt.timeIntervalSince1970,
             verbosityRaw: summary.verbosity?.rawValue,
             reasoningEffortRaw: summary.reasoningEffort?.rawValue,
             languageRaw: summary.language?.rawValue,
@@ -123,6 +130,7 @@ public extension ConversationModel {
             preview: preview,
             createdAt: Date(timeIntervalSince1970: createdAt),
             updatedAt: Date(timeIntervalSince1970: updatedAt),
+            lastMessageAt: Date(timeIntervalSince1970: lastMessageAt ?? createdAt),
             verbosity: verbosity,
             reasoningEffort: reasoningEffort,
             language: language,

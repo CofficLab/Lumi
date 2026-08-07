@@ -1,6 +1,6 @@
 import Foundation
 
 struct ConversationPageCursor {
-    let updatedAt: Date
+    let lastMessageAt: Date
     let id: UUID
 }

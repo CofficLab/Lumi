@@ -485,7 +485,7 @@ public struct ConversationStoreSettingsView: View {
         isLoadingMoreConversations = true
         let page = await conversationManager.fetchConversationPage(
             limit: conversationPageSize,
-            beforeUpdatedAt: last.updatedAt,
+            beforeUpdatedAt: last.lastMessageAt,
             beforeID: last.id,
             includingChildConversations: true
         )

@@ -1,10 +1,16 @@
+import Combine
 import Foundation
 
 /// LLM Provider 注册服务
 ///
 /// 由 LLM Provider 插件实现,负责把 LLMProvider 实例注册到内核。
+///
+/// `ObjectWillChangePublisher == ObservableObjectPublisher` 约束与
+/// `WorkspaceProviding`/`ConversationManaging` 一致,用于让协议存在类型
+/// (`any LLMProviderManaging`)的 `objectWillChange` 可被订阅,
+/// 从而支持消费视图用 `ObservableLLMProviderBox` 精确窄播,绕开 kernel 全局总线。
 @MainActor
-public protocol LLMProviderManaging: AnyObject {
+public protocol LLMProviderManaging: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 所有已注册的 LLM Provider
     func allLLMProviders() -> [any LumiLLMProvider]
 

@@ -86,7 +86,7 @@ public struct ItemView: View {
                             .foregroundColor(theme.textTertiary)
                     }
 
-                    Text(conversation.updatedAt.relativeTime)
+                    Text(conversation.lastMessageAt.relativeTime)
                         .font(.footnote)
                         .foregroundColor(theme.textTertiary)
                 }

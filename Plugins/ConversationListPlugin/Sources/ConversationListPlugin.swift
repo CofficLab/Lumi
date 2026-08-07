@@ -17,9 +17,11 @@ public final class ConversationListPlugin: LumiPlugin {
     public static let verbose = false
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
     public let attentionStore: ConversationAttentionStore
+    public let sortStabilizer: ConversationSortStabilizer
 
     public init() {
         attentionStore = ConversationAttentionStore()
+        sortStabilizer = ConversationSortStabilizer()
     }
 
     public func onBoot(kernel: LumiKernel) async throws {}
@@ -34,21 +36,24 @@ public final class ConversationListPlugin: LumiPlugin {
 
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
         let attentionStore = self.attentionStore
+        let sortStabilizer = self.sortStabilizer
         return [
             PanelRailTabItem(
                 id: "chats",
                 title: "Chats",
-                systemImage: "message.fill"
+                systemImage: "message.fill",
+                requiresChatSupport: true
             ) {
-                RailView(kernel: kernel, attentionStore: attentionStore)
+                RailView(kernel: kernel, attentionStore: attentionStore, sortStabilizer: sortStabilizer)
             },
             PanelRailTabItem(
                 id: "project-chats",
                 title: "Project",
                 systemImage: "folder.fill",
-                requiresProjectSupport: true
+                requiresProjectSupport: true,
+                requiresChatSupport: true
             ) {
-                RailView(kernel: kernel, attentionStore: attentionStore, scopeToCurrentProject: true)
+                RailView(kernel: kernel, attentionStore: attentionStore, sortStabilizer: sortStabilizer, scopeToCurrentProject: true)
             },
         ]
     }
@@ -59,6 +64,7 @@ public final class ConversationListPlugin: LumiPlugin {
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
         let attentionStore = self.attentionStore
+        let sortStabilizer = self.sortStabilizer
         return [
             LumiTitleToolbarItem(
                 id: "\(id).conversation-list",
@@ -66,7 +72,7 @@ public final class ConversationListPlugin: LumiPlugin {
                 placement: .trailing,
                 order: 200
             ) {
-                ToolbarButton(kernel: kernel, attentionStore: attentionStore)
+                ToolbarButton(kernel: kernel, attentionStore: attentionStore, sortStabilizer: sortStabilizer)
             },
         ]
     }

@@ -189,27 +189,28 @@ public actor ConversationStore: SuperLog {
         let cursorID = beforeID?.uuidString
         var descriptor: FetchDescriptor<ConversationModel>
 
+        // Use `createdAt` for DB-level cursor pagination (non-optional, safe for #Predicate).
         if let cursorTimestamp, let cursorID {
             if includingChildConversations {
                 descriptor = FetchDescriptor<ConversationModel>(
                     predicate: #Predicate<ConversationModel> {
-                        $0.updatedAt < cursorTimestamp ||
-                        ($0.updatedAt == cursorTimestamp && $0.id < cursorID)
+                        $0.createdAt < cursorTimestamp ||
+                        ($0.createdAt == cursorTimestamp && $0.id < cursorID)
                     },
                     sortBy: [
-                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
                         SortDescriptor(\.id, order: .reverse),
                     ]
                 )
             } else {
                 descriptor = FetchDescriptor<ConversationModel>(
                     predicate: #Predicate<ConversationModel> {
-                        ($0.updatedAt < cursorTimestamp ||
-                        ($0.updatedAt == cursorTimestamp && $0.id < cursorID)) &&
+                        ($0.createdAt < cursorTimestamp ||
+                        ($0.createdAt == cursorTimestamp && $0.id < cursorID)) &&
                         $0.parentConversationID == nil
                     },
                     sortBy: [
-                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
                         SortDescriptor(\.id, order: .reverse),
                     ]
                 )
@@ -217,14 +218,14 @@ public actor ConversationStore: SuperLog {
         } else {
             if includingChildConversations {
                 descriptor = FetchDescriptor<ConversationModel>(sortBy: [
-                    SortDescriptor(\.updatedAt, order: .reverse),
+                    SortDescriptor(\.createdAt, order: .reverse),
                     SortDescriptor(\.id, order: .reverse),
                 ])
             } else {
                 descriptor = FetchDescriptor<ConversationModel>(
                     predicate: #Predicate<ConversationModel> { $0.parentConversationID == nil },
                     sortBy: [
-                        SortDescriptor(\.updatedAt, order: .reverse),
+                        SortDescriptor(\.createdAt, order: .reverse),
                         SortDescriptor(\.id, order: .reverse),
                     ]
                 )
@@ -235,7 +236,15 @@ public actor ConversationStore: SuperLog {
 
         do {
             let models = try context.fetch(descriptor)
-            return models.compactMap { $0.toLumiConversationSummary() }
+            // Re-sort in-memory by lastMessageAt (optional, falls back to createdAt)
+            let summaries = models.compactMap { $0.toLumiConversationSummary() }
+            return summaries.sorted { lhs, rhs in
+                let lTime = lhs.lastMessageAt
+                let rTime = rhs.lastMessageAt
+                return lTime == rTime
+                    ? lhs.createdAt > rhs.createdAt
+                    : lTime > rTime
+            }
         } catch {
             Self.logger.error("\(Self.t)查询对话分页失败：\(error.localizedDescription)")
             return []
@@ -261,13 +270,13 @@ public actor ConversationStore: SuperLog {
         if let cursorTimestamp, let cursorID {
             descriptor = FetchDescriptor<ConversationModel>(
                 predicate: #Predicate<ConversationModel> {
-                    ($0.updatedAt < cursorTimestamp ||
-                    ($0.updatedAt == cursorTimestamp && $0.id < cursorID)) &&
+                    ($0.createdAt < cursorTimestamp ||
+                    ($0.createdAt == cursorTimestamp && $0.id < cursorID)) &&
                     $0.projectPath == projectPath &&
                     (includingChildConversations || $0.parentConversationID == nil)
                 },
                 sortBy: [
-                    SortDescriptor(\.updatedAt, order: .reverse),
+                    SortDescriptor(\.createdAt, order: .reverse),
                     SortDescriptor(\.id, order: .reverse),
                 ]
             )
@@ -278,7 +287,7 @@ public actor ConversationStore: SuperLog {
                     (includingChildConversations || $0.parentConversationID == nil)
                 },
                 sortBy: [
-                    SortDescriptor(\.updatedAt, order: .reverse),
+                    SortDescriptor(\.createdAt, order: .reverse),
                     SortDescriptor(\.id, order: .reverse),
                 ]
             )
@@ -288,7 +297,14 @@ public actor ConversationStore: SuperLog {
 
         do {
             let models = try context.fetch(descriptor)
-            return models.compactMap { $0.toLumiConversationSummary() }
+            let summaries = models.compactMap { $0.toLumiConversationSummary() }
+            return summaries.sorted { lhs, rhs in
+                let lTime = lhs.lastMessageAt
+                let rTime = rhs.lastMessageAt
+                return lTime == rTime
+                    ? lhs.createdAt > rhs.createdAt
+                    : lTime > rTime
+            }
         } catch {
             Self.logger.error("\(Self.t)按项目查询对话分页失败：\(error.localizedDescription)")
             return []
@@ -411,8 +427,8 @@ public actor ConversationStore: SuperLog {
         return save(context, operation: "更新预览")
     }
 
-    /// Update conversation timestamp (mark as active)
-    func touchConversation(id: UUID) -> Bool {
+    /// Update conversation last message timestamp (when a new message is received)
+    func updateLastMessageAt(id: UUID, messageDate: Date) -> Bool {
         let context = ModelContext(container)
         let idString = id.uuidString
 
@@ -424,8 +440,9 @@ public actor ConversationStore: SuperLog {
             return false
         }
 
+        model.lastMessageAt = messageDate.timeIntervalSince1970
         model.updatedAt = Date().timeIntervalSince1970
-        return save(context, operation: "更新活动时间")
+        return save(context, operation: "更新最后消息时间")
     }
 
     /// Update conversation provider and model

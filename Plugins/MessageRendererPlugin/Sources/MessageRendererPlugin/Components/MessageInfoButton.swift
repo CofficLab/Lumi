@@ -13,7 +13,7 @@ struct MessageInfoButton: View {
         AppIconButton(
             systemImage: "info.circle",
             tint: isPresented ? theme.textPrimary : theme.textSecondary,
-            size: .regular,
+            size: .compact,
             isActive: isPresented
         ) {
             isPresented.toggle()

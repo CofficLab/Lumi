@@ -29,7 +29,7 @@ public final class OpenProjectHandler: SuperLog {
         let paths = pendingPaths
         pendingPaths.removeAll()
         for path in paths {
-            openProject(path: path, using: kernel)
+            routeOpen(path: path, using: kernel)
         }
     }
 
@@ -51,7 +51,30 @@ public final class OpenProjectHandler: SuperLog {
             return
         }
 
-        openProject(path: normalized, using: kernel)
+        routeOpen(path: normalized, using: kernel)
+    }
+
+    /// 外部打开请求的统一路由：
+    /// - 目录：沿用原有语义，作为项目目录打开。
+    /// - 文件：分发给已启用的插件（如 DatabaseManager 接管 .sqlite），无插件接管时记日志忽略。
+    private func routeOpen(path: String, using kernel: LumiKernel) {
+        var isDirectory: ObjCBool = false
+        FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
+
+        if isDirectory.boolValue {
+            openProject(path: path, using: kernel)
+        } else {
+            openFile(path: path, using: kernel)
+        }
+    }
+
+    private func openFile(path: String, using kernel: LumiKernel) {
+        let url = URL(fileURLWithPath: path)
+        Self.logger.info("\(Self.t)Dispatching external file to plugins: \(path)")
+        let handled = kernel.pluginManager.dispatchOpenFile(url, kernel: kernel)
+        if !handled {
+            Self.logger.warning("\(Self.t)No plugin handled external file: \(path)")
+        }
     }
 
     private func openProject(path: String, using kernel: LumiKernel) {

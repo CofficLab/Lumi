@@ -20,18 +20,24 @@ public struct CopyMessageButton: View {
             HStack(spacing: 4) {
                 Image(systemName: iconName)
                     .font(.system(size: 10, weight: .medium))
+                    .frame(width: 14, height: 14)
                 if showFeedback {
                     Text("Copied")
                         .font(.system(size: 10, weight: .medium))
                 }
             }
             .foregroundColor(buttonColor)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(6)
             .background(
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(backgroundColor)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(borderColor, lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+            .scaleEffect(isHovered && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
         }
         .buttonStyle(.plain)
         .help("Copy message content")
@@ -59,7 +65,15 @@ public struct CopyMessageButton: View {
         if showFeedback {
             theme.success.opacity(0.1)
         } else {
-            isHovered ? theme.textSecondary.opacity(0.08) : theme.textSecondary.opacity(0.05)
+            isHovered ? theme.textSecondary.opacity(0.12) : theme.textSecondary.opacity(0.08)
+        }
+    }
+
+    private var borderColor: Color {
+        if showFeedback {
+            theme.success.opacity(0.2)
+        } else {
+            isHovered ? theme.textSecondary.opacity(0.14) : .clear
         }
     }
 

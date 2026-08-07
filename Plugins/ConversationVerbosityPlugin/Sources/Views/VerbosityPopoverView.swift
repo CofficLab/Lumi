@@ -3,11 +3,15 @@ import SwiftUI
 
 struct VerbosityPopover: View {
     let selectedLevel: LumiResponseVerbosity
+    /// 当前操作对象是否为某个对话（true）还是全局设置（false）
+    let isConversationScope: Bool
     let onSelect: (LumiResponseVerbosity) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Verbosity Level")
+            Text(isConversationScope
+                 ? LumiPluginLocalization.string("Conversation Verbosity", bundle: .module)
+                 : LumiPluginLocalization.string("Global Verbosity", bundle: .module))
                 .font(.system(size: 12, weight: .semibold))
 
             ForEach(LumiResponseVerbosity.allCases) { level in
@@ -20,6 +24,6 @@ struct VerbosityPopover: View {
             }
         }
         .padding(10)
-        .frame(width: 260)
+        .frame(width: 280)
     }
 }

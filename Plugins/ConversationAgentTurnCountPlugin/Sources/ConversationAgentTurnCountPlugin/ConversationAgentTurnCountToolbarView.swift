@@ -6,13 +6,14 @@ import SwiftUI
 @MainActor
 struct ConversationAgentTurnCountToolbarView: View {
     @LumiTheme private var theme
-    @ObservedObject var kernel: LumiKernel
+    // agentTurnManager 的实现 AgentTurnRunner 不是 ObservableObject（其变更经
+    // .lumiTurnStarted/.lumiTurnFinished 事件广播），用 refreshID token 驱动重算；
+    // selectedConversationID 由 .onLumiSelectedConversationDidChange 事件更新。
+    // 不挂 kernel 全局总线。
+    let kernel: LumiKernel
+    @State private var selectedConversationID: UUID?
     @State private var refreshID = UUID()
     @State private var isPopoverPresented = false
-
-    private var selectedConversationID: UUID? {
-        kernel.conversations?.selectedConversationID
-    }
 
     private var activeCount: Int {
         _ = refreshID
@@ -53,17 +54,23 @@ struct ConversationAgentTurnCountToolbarView: View {
                 }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiTurnStarted)) { _ in
+        .onLumiTurnStarted { _ in
             refreshID = UUID()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiTurnFinished)) { _ in
+        .onLumiTurnFinished { _ in
             refreshID = UUID()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
+        .onLumiConversationsDidChange {
             refreshID = UUID()
         }
         .onAppear {
             refreshID = UUID()
+        }
+        .task {
+            selectedConversationID = kernel.conversations?.selectedConversationID
+        }
+        .onLumiSelectedConversationDidChange { newID in
+            selectedConversationID = newID
         }
     }
 }

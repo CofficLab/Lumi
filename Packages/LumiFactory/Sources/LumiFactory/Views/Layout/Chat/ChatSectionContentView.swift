@@ -3,15 +3,26 @@ import LumiUI
 import SwiftUI
 
 /// 只负责渲染插件注册的 ChatSection 内容区（stack + bottomFixed）
+///
+/// 不订阅 workspace 服务的 `objectWillChange`，
+/// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
+/// 重新拉取 chatSectionItems。
 struct ChatSectionContentView: View {
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+
+    @State private var allItems: [ChatSectionItem] = []
 
     private var stackItems: [ChatSectionItem] {
-        kernel.workspace?.allChatSectionItems.filter { $0.placement == .stack } ?? []
+        allItems.filter { $0.placement == .stack }
     }
 
     private var bottomItems: [ChatSectionItem] {
-        kernel.workspace?.allChatSectionItems.filter { $0.placement == .bottomFixed } ?? []
+        allItems.filter { $0.placement == .bottomFixed }
+    }
+
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        _allItems = State(initialValue: kernel.workspace?.allChatSectionItems ?? [])
     }
 
     var body: some View {
@@ -47,5 +58,8 @@ struct ChatSectionContentView: View {
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)
+        .onWorkspaceContributionsDidChange {
+            allItems = kernel.workspace?.allChatSectionItems ?? []
+        }
     }
 }

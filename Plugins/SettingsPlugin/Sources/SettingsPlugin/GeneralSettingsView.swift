@@ -1,3 +1,4 @@
+import AppKit
 import LocalizationKit
 import LumiKernel
 import LumiUI
@@ -70,6 +71,28 @@ struct GeneralSettingsView: View {
                             icon: "hammer"
                         ) {
                             EmptyView()
+                        }
+                    }
+                }
+
+                AppSettingSection(
+                    title: LumiPluginLocalization.string("Website", bundle: .module),
+                    titleAlignment: .leading
+                ) {
+                    AppSettingRow(
+                        title: LumiPluginLocalization.string("Official Website", bundle: .module),
+                        description: "coffic.cn/lumi",
+                        icon: "globe"
+                    ) {
+                        AppButton(
+                            LumiPluginLocalization.string("Visit", bundle: .module),
+                            systemImage: "arrow.up.forward.square",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            if let url = URL(string: "https://coffic.cn/lumi") {
+                                NSWorkspace.shared.open(url)
+                            }
                         }
                     }
                 }

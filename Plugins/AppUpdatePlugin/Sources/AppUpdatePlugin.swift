@@ -52,7 +52,7 @@ public final class AppUpdatePlugin: LumiPlugin {
                 items: [
                     CommandItem(
                         id: "\(id).checkForUpdates",
-                        title: String(localized: "Check for Updates...")
+                        title: LumiPluginLocalization.string("Check for Updates...", bundle: .module)
                     ) {
                         updateService.checkForUpdates()
                     },

@@ -4,18 +4,14 @@ import SwiftUI
 
 /// Chat 工具栏视图
 ///
-/// 自己从 `kernel.sharedUI` 取出 toolbar items 与 bar items，
-/// 按 leading / trailing / bar 三个位置渲染。
+/// 不订阅 workspace 服务的 `objectWillChange`，
+/// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
+/// 重新拉取两个清单（toolbar items + toolbar bar items）。
 struct ChatToolbarView: View {
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
 
-    private var toolbarItems: [ChatSectionToolbarItem] {
-        kernel.workspace?.allChatSectionToolbarItems ?? []
-    }
-
-    private var toolbarBarItems: [ChatSectionToolbarBarItem] {
-        kernel.workspace?.allChatSectionToolbarBarItems ?? []
-    }
+    @State private var toolbarItems: [ChatSectionToolbarItem] = []
+    @State private var toolbarBarItems: [ChatSectionToolbarBarItem] = []
 
     private var leadingToolbarItems: [ChatSectionToolbarItem] {
         toolbarItems.filter { $0.placement == .leading }
@@ -27,6 +23,13 @@ struct ChatToolbarView: View {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
+        _toolbarItems = State(initialValue: kernel.workspace?.allChatSectionToolbarItems ?? [])
+        _toolbarBarItems = State(initialValue: kernel.workspace?.allChatSectionToolbarBarItems ?? [])
+    }
+
+    private func reload() {
+        toolbarItems = kernel.workspace?.allChatSectionToolbarItems ?? []
+        toolbarBarItems = kernel.workspace?.allChatSectionToolbarBarItems ?? []
     }
 
     var body: some View {
@@ -61,5 +64,6 @@ struct ChatToolbarView: View {
         }
         .borderBottom()
         .shadowMd()
+        .onWorkspaceContributionsDidChange { reload() }
     }
 }

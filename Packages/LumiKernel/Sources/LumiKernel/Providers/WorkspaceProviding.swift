@@ -1,3 +1,4 @@
+import Combine
 import CoreGraphics
 import Foundation
 import SwiftUI
@@ -12,7 +13,7 @@ import SwiftUI
 /// 由 `LayoutManager` 实现。布局状态直接内联在 `LayoutManager` 上，故本协议
 /// 不再暴露 `layoutState`——消费者通过下方的访问器读写。
 @MainActor
-public protocol WorkspaceProviding: ObservableObject {
+public protocol WorkspaceProviding: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 持久化数据目录（供设置视图等消费者展示/打开数据目录用）。
     var settingsDirectory: URL { get }
 

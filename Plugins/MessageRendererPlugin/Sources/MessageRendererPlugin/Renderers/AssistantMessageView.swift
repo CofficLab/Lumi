@@ -34,7 +34,7 @@ private struct AssistantMessageBody: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if let reasoningContent {
+            if let reasoningContent, self.verbosity == .detailed {
                 reasoningBlock(reasoningContent)
             }
 

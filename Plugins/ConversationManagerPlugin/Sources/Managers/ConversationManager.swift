@@ -10,6 +10,11 @@ import os
 @MainActor
 public final class ConversationManager: ObservableObject, ConversationManaging, SuperLog {
     private static let initialPageSize = 40
+    /// 选中状态写盘队列：串行执行，保证连续切换会话时最后一次写入生效。
+    nonisolated private static let stateWriteQueue = DispatchQueue(
+        label: "com.coffic.lumi.conversation-manager.state-write",
+        qos: .utility
+    )
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
     nonisolated public static let emoji = "💬"
     public nonisolated static let verbose = false
@@ -93,6 +98,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                 self.persistSelectedConversationID()
                 self.isLoadingConversations = false
                 self.notifyConversationsChanged()
+                self.notifySelectedConversationChanged()
 
 
                 if Self.verbose {
@@ -187,6 +193,14 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         kernel?.eventManager.postConversationsDidChange(object: self)
     }
 
+    /// Notify observers that the selected conversation changed.
+    ///
+    /// 与 `notifyConversationsChanged()`（列表增删/标题）区分：本通知只在
+    /// `selectedConversationID` 变化时发，让关心「当前会话」的视图精确订阅。
+    private func notifySelectedConversationChanged() {
+        kernel?.eventManager.postSelectedConversationDidChange(object: self, conversationID: selectedConversationID)
+    }
+
     // MARK: - ConversationManaging
 
     public func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID {
@@ -249,6 +263,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             selectedConversationID = id
             updateCurrentTitle()
             persistSelectedConversationID()
+            notifySelectedConversationChanged()
         }
 
         // Persist first, then notify the list. Otherwise the list may query the
@@ -288,6 +303,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         selectedConversationID = id
         updateCurrentTitle()
         persistSelectedConversationID()
+        notifySelectedConversationChanged()
     }
 
     private func cache(_ summary: LumiConversationSummary) {
@@ -302,9 +318,9 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
         let selectedID = selectedConversationID
         let sorted = conversations.sorted { lhs, rhs in
-            lhs.updatedAt == rhs.updatedAt
+            lhs.lastMessageAt == rhs.lastMessageAt
                 ? lhs.createdAt > rhs.createdAt
-                : lhs.updatedAt > rhs.updatedAt
+                : lhs.lastMessageAt > rhs.lastMessageAt
         }
         conversations = Array(sorted.prefix(Self.initialPageSize * 2))
 
@@ -322,24 +338,24 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         selectedConversationID = nil
         updateCurrentTitle()
         persistSelectedConversationID()
+        notifySelectedConversationChanged()
     }
 
-    /// 标记对话为活跃：刷新 `updatedAt`，使其在「最近更新」排序中置顶。
+    /// 标记对话为活跃：刷新 `lastMessageAt` 和 `updatedAt`，使其在对话列表排序中置顶。
     ///
     /// 由消息写入路径在会话收到新消息时调用(见 `MessageManager.insertMessage`)。
-    /// - 内存：更新缓存中的 `updatedAt` 并广播 `conversationsDidChange`，
+    /// - 内存：更新缓存中的 `lastMessageAt` 和 `updatedAt` 并广播 `conversationsDidChange`，
     ///   驱动对话列表(ConversationListPlugin)重新加载并按最新时间重排；
-    /// - 持久化：异步 touch 数据库时间戳，保证重启后排序一致。
-    public func markConversationActive(id: UUID) {
-        let now = Date()
-
+    /// - 持久化：异步写入数据库，保证重启后排序一致。
+    public func markConversationActive(id: UUID, messageDate: Date) {
         if let index = conversations.firstIndex(where: { $0.id == id }) {
-            conversations[index].updatedAt = now
+            conversations[index].lastMessageAt = messageDate
+            conversations[index].updatedAt = Date()
             notifyConversationsChanged()
         }
 
         Task {
-            _ = await store?.touchConversation(id: id)
+            _ = await store?.updateLastMessageAt(id: id, messageDate: messageDate)
         }
 
         if Self.verbose {
@@ -358,6 +374,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             selectedConversationID = conversations.first?.id
             updateCurrentTitle()
             persistSelectedConversationID()
+            notifySelectedConversationChanged()
         }
 
         // Delete every storage owned by the conversation. The list is updated
@@ -638,13 +655,16 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     // MARK: - Private
 
     private func updateCurrentTitle() {
-        guard let selectedID = selectedConversationID,
-              let conversation = conversations.first(where: { $0.id == selectedID })
-        else {
-            currentTitle = "No conversation"
-            return
+        let newTitle: String
+        if let selectedID = selectedConversationID,
+           let conversation = conversations.first(where: { $0.id == selectedID }) {
+            newTitle = conversation.displayTitle
+        } else {
+            newTitle = "No conversation"
         }
-        let newTitle = conversation.displayTitle
+        // @Published 无条件发布 objectWillChange；值没变时跳过赋值，
+        // 避免 selectConversation 触发第二次 kernel 全局广播。
+        guard currentTitle != newTitle else { return }
         currentTitle = newTitle
     }
 
@@ -657,14 +677,16 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     }
 
     private func persistSelectedConversationID() {
-        let state = ConversationState(selectedConversationID: selectedConversationID)
-        guard let data = try? JSONEncoder().encode(state) else {
-            return
+        // 主线程零 I/O：编码与原子写盘全部移出点击链路（异步队列）。
+        let selectedID = selectedConversationID
+        let fileURL = stateFileURL
+        let directory = fileURL.deletingLastPathComponent()
+        Self.stateWriteQueue.async {
+            let state = ConversationState(selectedConversationID: selectedID)
+            guard let data = try? JSONEncoder().encode(state) else { return }
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try? data.write(to: fileURL, options: .atomic)
         }
-
-        let directory = stateFileURL.deletingLastPathComponent()
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try? data.write(to: stateFileURL, options: .atomic)
     }
 
     private var stateFileURL: URL {

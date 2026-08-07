@@ -24,7 +24,7 @@ import SuperLogKit
 public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-turn-runner")
     public nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - Properties
 
@@ -622,6 +622,10 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             // Resolve user-facing descriptions before persisting the assistant message.
             // The UI must not need to look up tools or execute tool formatting logic.
             assistantMessage.turnID = turnID
+            // Fix: sendAnthropicCompatibleStreaming sets providerID to request.model
+            // because LumiLLMRequest lacks a providerID field. Correct it here using
+            // the actual provider's ID so the message header displays the right supplier.
+            assistantMessage.providerID = type(of: targetProvider).info.id
             if let toolManager = kernel.toolManager,
                let toolCalls = assistantMessage.toolCalls {
                 assistantMessage.toolCalls = toolCalls.map { toolCall in

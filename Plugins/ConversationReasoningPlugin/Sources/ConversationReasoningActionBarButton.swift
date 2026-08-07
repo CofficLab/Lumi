@@ -4,20 +4,24 @@ import SwiftUI
 
 struct ConversationReasoningActionBarButton: View {
     @LumiTheme private var theme
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+
+    // 推理强度的能力判定与持久化同时依赖「当前对话的 provider/model」（随会话切换变化，
+    // 由 .onLumiSelectedConversationDidChange 事件驱动）与「provider 注册表的能力元数据」
+    // （provider 选择变化由 provider 事件驱动）。不挂 kernel 全局总线。
     @State private var isPopoverPresented = false
     @State private var localEffort: LumiReasoningEffort = .defaultEffort
+    @State private var selectedConversationID: UUID?
+    // provider 选择变化时 bump 此 token 触发 computed 重算。
+    @State private var providerRefreshID = UUID()
 
     private var conversations: (any ConversationManaging)? {
         kernel.conversations
     }
 
     private var llmProvider: (any LLMProviderManaging)? {
-        kernel.resolveService((any LLMProviderManaging).self)
-    }
-
-    private var selectedConversationID: UUID? {
-        conversations?.selectedConversationID
+        _ = providerRefreshID
+        return kernel.resolveService((any LLMProviderManaging).self)
     }
 
     private var selectedProviderID: String? {
@@ -100,6 +104,15 @@ struct ConversationReasoningActionBarButton: View {
                 isPopoverPresented = false
             }
         }
+        .task {
+            selectedConversationID = kernel.conversations?.selectedConversationID
+        }
+        .onLumiSelectedConversationDidChange { newID in
+            selectedConversationID = newID
+        }
+        .onLumiSelectedRemoteProviderIDDidChange { providerRefreshID = UUID() }
+        .onLumiSelectedLocalProviderIDDidChange { providerRefreshID = UUID() }
+        .onLumiSelectedModelsDidChange { providerRefreshID = UUID() }
     }
 
     private func select(_ effort: LumiReasoningEffort) {

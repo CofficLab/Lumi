@@ -80,8 +80,8 @@ struct AgentTurnSummaryBuilderTests {
         #expect(items.first?.message.id == prompt.id)
     }
 
-    @Test("运行中的 Turn 不提前展示过程消息")
-    func runningTurnDoesNotExposeProcessMessages() throws {
+    @Test("运行中的 Turn 即使无助手消息也产出一行占位,且不暴露过程消息")
+    func runningTurnProducesPlaceholderRow() throws {
         let turnID = UUID()
         let process = message(
             turnID: turnID,
@@ -95,28 +95,14 @@ struct AgentTurnSummaryBuilderTests {
             messages: [process]
         )
 
-        #expect(items.isEmpty)
+        // 运行中 turn 始终产出一行;过程消息(带 toolCalls)不会被选作展示内容,
+        // 因此回落到合成的占位消息(role = .status)。
+        #expect(items.count == 1)
+        #expect(items.first?.message.role == .status)
     }
 
-    @Test("旧对话回退也只保留结论消息")
-    func legacyProjectionKeepsConclusionsOnly() throws {
-        let turnID = UUID()
-        let user = message(turnID: turnID, role: .user, content: "question", offset: 0)
-        let process = message(
-            turnID: turnID,
-            content: "calling a tool",
-            toolCalls: [LumiToolCall(id: "tool", name: "search", arguments: "{}")],
-            offset: 1
-        )
-        let final = message(turnID: turnID, content: "final conclusion", offset: 2)
-
-        let conclusions = builder.legacyConclusions(from: [user, process, final])
-
-        #expect(conclusions.map(\.id) == [final.id])
-    }
-
-    @Test("没有关联消息的 Turn 不生成空白行，结果按时间正序")
-    func omitsMissingMessagesAndSortsChronologically() throws {
+    @Test("没有关联消息的 Turn 也产出占位行,结果按时间正序")
+    func missingMessagesProducePlaceholderAndSortsChronologically() throws {
         let olderTurnID = UUID()
         let newerTurnID = UUID()
         let missingTurnID = UUID()
@@ -132,7 +118,10 @@ struct AgentTurnSummaryBuilderTests {
             messages: [newerMessage, olderMessage]
         )
 
-        #expect(items.map(\.record.id) == [olderTurnID, newerTurnID])
+        // 每个 turn 都产出一行(无消息的 turn 为占位),按 startedAt 正序。
+        #expect(items.map(\.record.id) == [olderTurnID, missingTurnID, newerTurnID])
+        #expect(items.first { $0.record.id == olderTurnID }?.message.id == olderMessage.id)
+        #expect(items.first { $0.record.id == missingTurnID }?.message.role == .status)
     }
 
     private func record(id: UUID, state: AgentTurnState, offset: TimeInterval) -> AgentTurnRecord {

@@ -5,6 +5,7 @@ import SwiftUI
 
 public extension Notification.Name {
     static let lumiConversationsDidChange = LumiKernelEvent.conversationsDidChange.notificationName
+    static let lumiSelectedConversationDidChange = LumiKernelEvent.selectedConversationDidChange.notificationName
     static let lumiConversationTitleDidChange = LumiKernelEvent.conversationTitleDidChange.notificationName
     static let lumiConversationDidDelete = LumiKernelEvent.conversationDidDelete.notificationName
     static let lumiConversationWillDelete = LumiKernelEvent.conversationWillDelete.notificationName
@@ -111,6 +112,27 @@ public extension View {
     func onLumiConversationsDidChange(perform action: @escaping () -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
             action()
+        }
+    }
+
+    /// 监听 `.lumiSelectedConversationDidChange` 通知（当前选中会话切换）。
+    ///
+    /// 与 `onLumiConversationsDidChange`（列表增删/标题/活跃标记）区分：本事件只在
+    /// `selectedConversationID` 变化时触发。关心「当前会话」的工具栏应优先用它，
+    /// 避免被无关的列表变更打扰。
+    func onLumiSelectedConversationDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedConversationDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiSelectedConversationDidChange` 通知，并传出当前选中的会话 ID。
+    ///
+    /// `conversationID` 为 nil 表示已取消选中（deselect）。需要按会话过滤或缓存
+    /// 当前 ID 的消费者应使用此重载。
+    func onLumiSelectedConversationDidChange(perform action: @escaping (UUID?) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedConversationDidChange)) { notification in
+            action(notification.lumiConversationID)
         }
     }
 

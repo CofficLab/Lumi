@@ -9,6 +9,7 @@ public enum LumiKernelEvent: String, CaseIterable, Sendable {
     case enabledPluginsDidChange = "com.coffic.lumi.enabledPluginsDidChange"
     case messagesDidChange = "com.coffic.lumi.messagesDidChange"
     case conversationsDidChange = "com.coffic.lumi.conversationsDidChange"
+    case selectedConversationDidChange = "com.coffic.lumi.selectedConversationDidChange"
     case conversationTitleDidChange = "com.coffic.lumi.conversationTitleDidChange"
     case conversationDidDelete = "com.coffic.lumi.conversationDidDelete"
     case conversationWillDelete = "com.coffic.lumi.conversationWillDelete"
@@ -106,6 +107,80 @@ public extension View {
     func onLumiThemeDidChange(perform action: @escaping () -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .lumiThemeDidChange)) { _ in
             action()
+        }
+    }
+
+    /// 监听 `.lumiTurnStarted` 通知
+    func onLumiTurnStarted(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnStarted)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiTurnStarted` 通知，并传出该 turn 所属的会话 ID。
+    ///
+    /// 与 `onLumiMessagesDidChange(perform: (UUID?) -> Void)` 同理：高成本消费者
+    /// 可借此过滤掉其他会话的 turn 事件，避免无关刷新。
+    func onLumiTurnStarted(perform action: @escaping (UUID?) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnStarted)) { notification in
+            action(notification.lumiConversationID)
+        }
+    }
+
+    /// 监听 `.lumiTurnCompleted` 通知
+    func onLumiTurnCompleted(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnCompleted)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiTurnCompleted` 通知，并传出该 turn 所属的会话 ID。
+    func onLumiTurnCompleted(perform action: @escaping (UUID?) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnCompleted)) { notification in
+            action(notification.lumiConversationID)
+        }
+    }
+
+    /// 监听 `.lumiTurnFinished` 通知
+    func onLumiTurnFinished(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnFinished)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiTurnFinished` 通知，并传出该 turn 所属的会话 ID。
+    func onLumiTurnFinished(perform action: @escaping (UUID?) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnFinished)) { notification in
+            action(notification.lumiConversationID)
+        }
+    }
+
+    /// 监听 `.lumiSelectedRemoteProviderIDDidChange` 通知
+    func onLumiSelectedRemoteProviderIDDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedRemoteProviderIDDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiSelectedLocalProviderIDDidChange` 通知
+    func onLumiSelectedLocalProviderIDDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedLocalProviderIDDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiSelectedModelsDidChange` 通知
+    func onLumiSelectedModelsDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedModelsDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiShowOnboarding` 通知，并传出是否要求强制重置（`userInfo["reset"]`）。
+    func onLumiShowOnboarding(perform action: @escaping (Bool) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiShowOnboarding)) { notification in
+            let forceReset = notification.userInfo?[LumiOnboardingNotification.resetKey] as? Bool ?? false
+            action(forceReset)
         }
     }
 }

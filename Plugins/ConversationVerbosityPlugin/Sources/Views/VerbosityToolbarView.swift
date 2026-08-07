@@ -3,19 +3,21 @@ import LumiUI
 import SwiftUI
 
 struct VerbosityToolbarView: View {
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+
+    @State private var selectedLevel: LumiResponseVerbosity = .defaultVerbosity
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+
+    @State private var isPopoverPresented = false
 
     private var conversations: (any ConversationManaging)? {
         kernel.conversations
     }
 
-    /// 使用全局详细程度，不再依赖具体对话
-    private var selectedLevel: LumiResponseVerbosity {
-        conversations?.globalVerbosity ?? .defaultVerbosity
+    /// 当前是否有选中对话
+    private var hasSelectedConversation: Bool {
+        conversations?.selectedConversationID != nil
     }
-
-    @State private var isPopoverPresented = false
 
     private var foregroundColor: Color {
         switch selectedLevel {
@@ -57,11 +59,45 @@ struct VerbosityToolbarView: View {
         .buttonStyle(.plain)
         .help(selectedLevel.description)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            VerbosityPopover(selectedLevel: selectedLevel) { level in
-                // 写入全局详细程度，不再直接操作某个对话
-                conversations?.setGlobalVerbosity(level)
+            VerbosityPopover(
+                selectedLevel: selectedLevel,
+                isConversationScope: hasSelectedConversation
+            ) { level in
+                updateVerbosity(level)
                 isPopoverPresented = false
             }
+        }
+        .task { refreshLevel() }
+        .onLumiSelectedConversationDidChange { refreshLevel() }
+    }
+
+    // MARK: - Actions
+
+    /// 根据是否有选中对话，写入对话级别或全局详细程度
+    private func updateVerbosity(_ level: LumiResponseVerbosity) {
+        guard let conversations else { return }
+        if let conversationID = conversations.selectedConversationID {
+            // 有选中对话：同步到该对话的详细程度
+            conversations.setVerbosity(level, for: conversationID)
+            // 同时更新全局详细程度，使后续新建对话继承此设置
+            conversations.setGlobalVerbosity(level)
+        } else {
+            // 无选中对话：直接修改全局详细程度
+            conversations.setGlobalVerbosity(level)
+        }
+        selectedLevel = level
+    }
+
+    /// 刷新显示值：有对话时读取对话的详细程度，否则读取全局详细程度
+    private func refreshLevel() {
+        guard let conversations else {
+            selectedLevel = .defaultVerbosity
+            return
+        }
+        if let conversationID = conversations.selectedConversationID {
+            selectedLevel = conversations.verbosity(for: conversationID)
+        } else {
+            selectedLevel = conversations.globalVerbosity
         }
     }
 }

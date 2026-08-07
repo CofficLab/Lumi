@@ -22,23 +22,23 @@ struct ActionBarButton: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "globe")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.appCallout)
                 Text(buttonLabel)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.appCaptionEmphasized)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Image(systemName: isPopoverPresented ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.appMicroEmphasized)
                     .foregroundColor(theme.textTertiary)
             }
             .foregroundColor(theme.textSecondary)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(theme.textTertiary.opacity(0.2))
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(theme.appStatusMutedFill)
             )
-            .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .top) {
@@ -48,13 +48,13 @@ struct ActionBarButton: View {
             )
         }
         .accessibilityLabel("Select Model")
-        .onReceive(NotificationCenter.default.publisher(for: .lumiSelectedRemoteProviderIDDidChange)) { _ in
+        .onLumiSelectedRemoteProviderIDDidChange {
             updateSelection()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiSelectedLocalProviderIDDidChange)) { _ in
+        .onLumiSelectedLocalProviderIDDidChange {
             updateSelection()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiSelectedModelsDidChange)) { _ in
+        .onLumiSelectedModelsDidChange {
             updateSelection()
         }
         .onAppear {

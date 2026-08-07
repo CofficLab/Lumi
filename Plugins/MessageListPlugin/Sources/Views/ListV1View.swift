@@ -1,0 +1,227 @@
+import LumiKernel
+import LumiUI
+import os
+import SuperLogKit
+import SwiftUI
+
+/// Message List V1 View (brief / 简洁模式)
+///
+/// 每个 AgentTurn 渲染成一组:触发该 turn 的用户消息 + turn 的最终回复。
+/// 运行中的 turn 也产出一行占位(在列表里),不再有漂浮 status 行。
+/// 流式正文、工具调用和工具结果均不进入 V1 展示投影。
+struct ListV1View: View, SuperLog {
+    nonisolated static let logger = MessageListPlugin.logger
+    nonisolated static let emoji = "📃"
+    nonisolated static let verbose: Bool = true
+
+    let kernel: LumiKernel
+    @StateObject private var turnViewModel: ListV1ViewModel
+
+    @LumiTheme private var theme
+
+    /// 快照 + 事件刷新(同 ChatHeaderView 模式):不订阅 kernel 的 objectWillChange。
+    /// init 同步读初值,之后由事件驱动更新。
+    @State private var verbosity: LumiResponseVerbosity = .defaultVerbosity
+
+    /// 用户是否停在列表底部附近;用于决定新消息到达时是否自动滚到底部。
+    ///
+    /// 故意不用 `@State`,以切断底部锚点 Preference → body 重建 → 偏好重报的
+    /// 反馈环(详见 `ListV2View` 同名注释)。
+    private let atBottomBox = AtBottomBox()
+
+    // MARK: - Services
+
+    private let scrollCoordinator = MessageListScrollCoordinator()
+
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        _turnViewModel = StateObject(wrappedValue: ListV1ViewModel(kernel: kernel))
+        _verbosity = State(
+            initialValue: kernel.conversationManager?.verbosity(for: kernel.conversations?.selectedConversationID) ?? .defaultVerbosity
+        )
+    }
+
+    var body: some View {
+        Group {
+            if turnViewModel.isLoading {
+                MessageLoadingView()
+            } else if !turnViewModel.hasVisibleContent {
+                MessageEmptyStateView()
+            } else {
+                messageScrollView
+            }
+        }
+        // 快照 + 事件刷新:首次出现/视图重建加载当前会话,
+        // 选中切换与 verbosity 变化由事件驱动。
+        .task {
+            if Self.verbose {
+                Self.logger.info("\(self.t)首次出现,conversationID: \(selectedConversationID?.uuidString ?? "nil")")
+            }
+            // 首次出现/容器切换重建:重置滚动位置,加载当前选中会话。
+            atBottomBox.value = true
+            await turnViewModel.activate(conversationID: selectedConversationID)
+        }
+        .onLumiSelectedConversationDidChange { newID in
+            if Self.verbose {
+                Self.logger.info("\(self.t)选中会话切换：\(newID?.uuidString ?? "nil")")
+            }
+            atBottomBox.value = true
+            verbosity = kernel.conversationManager?.verbosity(for: newID) ?? .defaultVerbosity
+            Task { @MainActor in
+                await turnViewModel.activate(conversationID: newID)
+            }
+        }
+        .onLumiConversationsDidChange {
+            if Self.verbose {
+                Self.logger.info("\(self.t)会话设置变更,刷新 verbosity")
+            }
+            refreshVerbosity()
+        }
+    }
+
+    // MARK: - Scroll View
+
+    private var messageScrollView: some View {
+        ScrollViewReader { proxy in
+            // List(NSTableView)自带 cell 复用:只有可见行被 materialize。
+            //
+            // Safe because the list is pure database-driven: the `ForEach`
+            // contains only stable, persisted ids. There is no live streaming
+            // row swapping a transient id for its persisted counterpart inside
+            // the same collection (streaming content only lands here once it
+            // is persisted at turn end).
+            List {
+                historyRows(proxy: proxy)
+
+                // 底部锚点行:纯占位 + 稳定 id(供 scrollTo 用),不再报偏好。
+                // 是否在底部由 `ScrollViewBottomTracker` 观察 NSScrollView 判定。
+                Color.clear
+                    .frame(height: 16)
+                    .id(MessageListScrollCoordinator.bottomAnchorID)
+                    .accessibilityHidden(true)
+                    .plainMessageListRow(insets: EdgeInsets())
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            // 「是否在底部」由观察 NSScrollView 的 tracker 报告,写入非 Observable
+            // 的 `atBottomBox`,不触发 SwiftUI invalidation —— 切断布局反馈环。
+            .background(ScrollViewBottomTracker { atBottomBox.value = $0 })
+            // 切会话/首屏加载完成:messageScrollView 在 isLoading 翻转时会销毁重建,
+            // 重建后 onAppear 触发。此时 atBottomBox 已被事件 handler 重置为 true,
+            // 内容就绪即滚到底 —— 不抢跑 scroll(避免打在旧会话布局上作废)。
+            .onAppear {
+                if atBottomBox.value {
+                    scrollCoordinator.scrollToBottom(
+                        proxy: proxy,
+                        messages: displayedHistoryMessages,
+                        animated: false
+                    )
+                }
+            }
+            .onLumiMessagesDidChange { eventConversationID in
+                guard MessageListNotificationFilter.shouldHandle(
+                    eventConversationID: eventConversationID,
+                    selectedConversationID: selectedConversationID
+                ) else { return }
+
+                // 同一轮发送会连续产生 status/user/tool/assistant 事件。
+                // ViewModel 合并重叠刷新；只有拥有刷新且快照实际变化的调用方滚动。
+                // 流式期间用非动画滚动,避免动画 scrollTo 永不收敛。
+                let targetConversationID = selectedConversationID
+                let wasAtBottom = atBottomBox.value
+                Task {
+                    let didChange = await turnViewModel.refresh()
+                    if didChange,
+                       wasAtBottom,
+                       atBottomBox.value,
+                       selectedConversationID == targetConversationID {
+                        await scrollCoordinator.scrollToBottomAfterLayout(
+                            proxy: proxy,
+                            messages: displayedHistoryMessages,
+                            animated: false,
+                            condition: { [weak atBottomBox] in
+                                atBottomBox?.value == true
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /// 每个 turn 渲染成一组:用户消息(若有) + turn 回复/占位。
+    /// 运行中的 turn 也在此产出一行占位,不再有漂浮 status。
+    @ViewBuilder
+    private func historyRows(proxy: ScrollViewProxy) -> some View {
+        if turnViewModel.hasEarlierTurns {
+            loadEarlierButton(isLoading: turnViewModel.isLoadingEarlier) {
+                Task { await loadEarlier(proxy: proxy) }
+            }
+            .plainMessageListRow(insets: EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+        }
+
+        ForEach(turnViewModel.items) { item in
+            // 用户消息:turn 的提问(按时间回溯匹配,可能为 nil)。
+            if let userMessage = item.userMessage {
+                MessageRowView(
+                    kernel: kernel,
+                    message: userMessage,
+                    verbosity: verbosity
+                )
+                .id(userMessage.id)
+                .plainMessageListRow()
+            }
+
+            // turn 回复 / 运行中占位。
+            MessageRowView(
+                kernel: kernel,
+                message: item.message,
+                verbosity: verbosity
+            )
+            .id(item.message.id)
+            .plainMessageListRow()
+        }
+    }
+
+    private func loadEarlierButton(
+        isLoading: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            if isLoading {
+                ProgressView().controlSize(.small)
+            } else {
+                Text(LumiPluginLocalization.string("Load earlier messages", bundle: .module))
+                    .font(.appCaption)
+                    .foregroundColor(theme.textSecondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+    }
+
+    private var displayedHistoryMessages: [LumiChatMessage] { turnViewModel.displayMessages }
+
+    private var selectedConversationID: UUID? {
+        kernel.conversations?.selectedConversationID
+    }
+
+    /// 事件驱动刷新 verbosity 快照(路由与行渲染共用)。
+    private func refreshVerbosity() {
+        let selectedID = kernel.conversations?.selectedConversationID
+        verbosity = kernel.conversationManager?.verbosity(for: selectedID) ?? .defaultVerbosity
+    }
+
+    /// 底部锚点行已内联到 `messageScrollView` 的 LazyVStack 末尾(纯 `Color.clear`
+    /// 占位 + 稳定 id),不再需要独立的偏好报告视图。
+
+    // MARK: - Pagination Trigger
+
+    /// 向上翻页:View 只负责触发加载并把锚点行钉回视口顶部,
+    /// 数据加载与窗口回收由 viewmodel 完成。
+    private func loadEarlier(proxy: ScrollViewProxy) async {
+        guard let anchorID = await turnViewModel.loadEarlier() else { return }
+        await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
+    }
+}

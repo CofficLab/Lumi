@@ -1,5 +1,6 @@
 import LumiKernel
 import SwiftUI
+import LumiUI
 
 /// Renders a single message using the injected message renderer,
 /// or a fallback if no renderer is available.
@@ -22,17 +23,52 @@ struct MessageRowView: View {
     var body: some View {
         Group {
             if let renderer {
-                #if DEBUG
                 renderer.render(message, verbosity)
                     .messageRendererIdBadge(renderer.id)
-                #else
-                renderer.render(message, verbosity)
-                #endif
             } else {
                 Text("No renderer for message: \(message.id)")
                     .foregroundColor(.orange)
                     .padding(12)
             }
         }
+    }
+}
+
+/// 在消息行的右上角显示当前 `LumiMessageRendererItem.id` 的小徽章。
+struct MessageRendererIdBadge: View {
+    @LumiTheme private var theme
+
+    /// renderer id,来自 `LumiMessageRendererItem.id`。
+    let id: String
+
+    var body: some View {
+        Text(id)
+            .font(.system(size: 9, weight: .medium, design: .monospaced))
+            .foregroundColor(theme.textSecondary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(
+                theme.textSecondary.opacity(0.10),
+                in: Capsule(style: .continuous)
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(theme.textSecondary.opacity(0.18), lineWidth: 0.5)
+            )
+            .fixedSize()
+    }
+}
+
+extension View {
+    /// 在视图右上角叠加当前 renderer 的 `id` 徽章。
+    ///
+    /// 仅 Debug 构建有效;Release 构建下此方法为 no-op。
+    func messageRendererIdBadge(_ id: String) -> some View {
+        #if DEBUG
+            overlay(alignment: .topTrailing) {
+                MessageRendererIdBadge(id: id)
+            }
+        #else
+        #endif
     }
 }
