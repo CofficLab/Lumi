@@ -6,14 +6,16 @@ struct ImageToPDFToolbarTitleView: View {
     let containerID: String
     let kernel: LumiKernel
 
-    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/conversations/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var workspaceBox = ObservableWorkspaceBox()
+    // 在 init 阶段同步绑定：本视图是条件 body，异步 .task 绑定会导致时序竞争。
+    @StateObject private var workspaceBox: ObservableWorkspaceBox
+
+    init(containerID: String, kernel: LumiKernel) {
+        self.containerID = containerID
+        self.kernel = kernel
+        _workspaceBox = StateObject(wrappedValue: ObservableWorkspaceBox(service: kernel.workspace))
+    }
 
     var body: some View {
-        // 用 Group 包裹条件分支，并把 .task 挂在 Group 上：
-        // 条件依赖 workspaceBox.service（绑定前为 nil），分支首次必为 false。
-        // 若把 .task 挂进 if 内，分支不渲染时 bind 永不执行（死锁）。Group 恒存在，保证绑定。
         Group {
             if workspaceBox.service?.activeViewContainerID == containerID {
                 HStack(spacing: 6) {
@@ -23,6 +25,5 @@ struct ImageToPDFToolbarTitleView: View {
                 }
             }
         }
-        .task { workspaceBox.bind(kernel.workspace) }
     }
 }

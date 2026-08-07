@@ -29,6 +29,15 @@ public final class ObservableWorkspaceBox: ObservableObject {
 
     public init() {}
 
+    /// 便捷构造：创建并立即绑定 service。
+    ///
+    /// 供需要在视图 `init` 阶段（而非 `.task`）就完成绑定的场景使用，
+    /// 避免条件 body 视图因绑定时序竞争导致首次渲染为空。
+    public convenience init(service: (any WorkspaceProviding)?) {
+        self.init()
+        bind(service)
+    }
+
     /// 绑定（或重新绑定）一个 `WorkspaceProviding` 服务。
     /// 重复绑定同一实例为 no-op；绑定不同实例会切换订阅。
     public func bind(_ service: (any WorkspaceProviding)?) {

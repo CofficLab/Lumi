@@ -13,9 +13,16 @@ struct RailTabBarView: View {
 
     // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
     // project/conversations/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var workspaceBox = ObservableWorkspaceBox()
+    // 在 init 阶段同步绑定：本视图是条件 body（if showsTabBar），异步 .task 绑定会导致
+    // 首次 body 求值时 service 为 nil → 条件为 false → 时序竞争。
+    @StateObject private var workspaceBox: ObservableWorkspaceBox
 
     @LumiTheme private var theme
+
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        _workspaceBox = StateObject(wrappedValue: ObservableWorkspaceBox(service: kernel.workspace))
+    }
 
     private var tabs: [PanelRailTabItem] {
         guard let workspace = workspaceBox.service else { return [] }
@@ -76,7 +83,6 @@ struct RailTabBarView: View {
                 }
             }
         }
-        .task { workspaceBox.bind(kernel.workspace) }
     }
 
     private func ensureValidSelection() {

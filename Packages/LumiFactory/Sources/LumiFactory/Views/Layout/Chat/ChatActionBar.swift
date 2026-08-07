@@ -27,6 +27,10 @@ struct ChatActionBar: View {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
+        // 在 init 阶段就绑定 workspace：本视图是条件 body（if !actionBarItems.isEmpty），
+        // 若用 .task 异步绑定，首次 body 求值时 service 仍为 nil → 条件为 false → 分支不渲染。
+        // 构造时同步绑定可避免此时序竞争。
+        _workspaceBox = StateObject(wrappedValue: ObservableWorkspaceBox(service: kernel.workspace))
     }
 
     var body: some View {
@@ -63,6 +67,5 @@ struct ChatActionBar: View {
                 .borderTop()
             }
         }
-        .task { workspaceBox.bind(kernel.workspace) }
     }
 }
