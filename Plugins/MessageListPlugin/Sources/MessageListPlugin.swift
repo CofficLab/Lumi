@@ -1,11 +1,17 @@
-import SwiftUI
 import LumiKernel
+import SuperLogKit
+import SwiftUI
+import os
 
 /// Message List Plugin
 ///
 /// Provides the chat message list view in the ChatSection.
 @MainActor
-public final class MessageListPlugin: LumiPlugin {
+public final class MessageListPlugin: LumiPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-list")
+    nonisolated public static let emoji = "💬"
+    nonisolated public static let verbose = false
+
     public let id = "com.coffic.lumi.plugin.message-list"
     public var name: String {
         LumiPluginLocalization.string("Message List", bundle: .module)
@@ -29,7 +35,7 @@ public final class MessageListPlugin: LumiPlugin {
                 placement: .stack,
                 fillsRemainingHeight: true
             ) {
-                MessageListView(kernel: kernel)
+                ListView(kernel: kernel)
             }
         ]
     }

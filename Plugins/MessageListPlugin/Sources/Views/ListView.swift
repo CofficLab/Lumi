@@ -1,5 +1,7 @@
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 import SwiftUI
 
 /// Message List View (入口)
@@ -10,7 +12,11 @@ import SwiftUI
 ///
 /// 本视图只负责通用状态判断(无会话选择)和路由分发,
 /// loading / 空态 / 消息列表的滚动、分页、流式等全部逻辑由各子视图各自承担。
-struct ListView: View {
+struct ListView: View, SuperLog {
+    nonisolated static let logger = MessageListPlugin.logger
+    nonisolated static let emoji = "📋"
+    nonisolated static let verbose: Bool = true
+
     let kernel: LumiKernel
 
     @LumiTheme private var theme
@@ -27,6 +33,9 @@ struct ListView: View {
         _verbosity = State(
             initialValue: kernel.conversationManager?.verbosity(for: selectedID) ?? .defaultVerbosity
         )
+        if Self.verbose {
+            Self.logger.info("\(Self.i)conversationID: \(selectedID?.uuidString ?? "nil")")
+        }
     }
 
     var body: some View {
@@ -41,13 +50,20 @@ struct ListView: View {
         .background(theme.surface)
         // 选中切换:更新空态/列表路由,并同步新会话的 verbosity。
         .onLumiSelectedConversationDidChange { newID in
+            if Self.verbose {
+                Self.logger.info("\(self.t)选中会话切换：\(newID?.uuidString ?? "nil")")
+            }
             selectedConversationID = newID
             verbosity = kernel.conversationManager?.verbosity(for: newID) ?? .defaultVerbosity
         }
         // 会话设置变化(setVerbosity 等广播 conversationsDidChange):刷新路由用 verbosity。
         .onLumiConversationsDidChange {
             let selectedID = kernel.conversations?.selectedConversationID
-            verbosity = kernel.conversationManager?.verbosity(for: selectedID) ?? .defaultVerbosity
+            let newVerbosity = kernel.conversationManager?.verbosity(for: selectedID) ?? .defaultVerbosity
+            if Self.verbose, newVerbosity != verbosity {
+                Self.logger.info("\(self.t)verbosity 变更：\(String(describing: verbosity)) → \(String(describing: newVerbosity))")
+            }
+            verbosity = newVerbosity
         }
     }
 
