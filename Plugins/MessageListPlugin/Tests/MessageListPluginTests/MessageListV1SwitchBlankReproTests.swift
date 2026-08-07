@@ -29,17 +29,17 @@ struct MessageListV1SwitchBlankReproTests {
         return kernel
     }
 
-    /// 断言 viewmodel 的展示消息必须属于指定对话（无外来残留）。
+    /// 断言 viewmodel 的结论消息必须属于指定对话（无外来残留）。
     private func expectConsistent(
         _ viewModel: MessageListV1ViewModel,
         selectedID: UUID?,
         sourceComment: String
     ) {
         if let selectedID {
-            let foreign = viewModel.displayMessages.filter { $0.conversationID != selectedID }
+            let foreign = viewModel.conclusionMessages.filter { $0.conversationID != selectedID }
             if !foreign.isEmpty {
                 Issue.record(
-                    "\(sourceComment): displayMessages 残留了非当前对话的消息(数据错配 → 可能空白)。外来消息数=\(foreign.count)"
+                    "\(sourceComment): conclusionMessages 残留了非当前对话的消息(数据错配 → 可能空白)。外来消息数=\(foreign.count)"
                 )
             }
             #expect(foreign.isEmpty)
@@ -87,7 +87,7 @@ struct MessageListV1SwitchBlankReproTests {
 
     // MARK: - Tests
 
-    @Test("长对话切短对话:激活后展示消息必须属于短对话,无外来残留")
+    @Test("长对话切短对话:激活后 conclusionMessages 必须属于短对话,无外来残留")
     func longToShort_noForeignRowsAfterSwitch() async throws {
         let messages = MockMessageManager()
         let conversations = MockConversationManager()
@@ -121,7 +121,7 @@ struct MessageListV1SwitchBlankReproTests {
         expectConsistent(viewModel, selectedID: shortID, sourceComment: "长切短后")
     }
 
-    @Test("快速来回切:最终激活的对话必须是展示消息的归属对话")
+    @Test("快速来回切:最终激活的对话必须是 conclusionMessages 的归属对话")
     func rapidSwitch_finalStateConsistent() async throws {
         let messages = MockMessageManager()
         let conversations = MockConversationManager()
@@ -160,7 +160,7 @@ struct MessageListV1SwitchBlankReproTests {
         expectConsistent(viewModel, selectedID: longID, sourceComment: "快速来回切后")
     }
 
-    @Test("isLoading 翻false后,hasVisibleContent 与 items 必须一致")
+    @Test("isLoading 翻false后,hasVisibleContent 与 conclusionMessages 必须一致")
     func afterLoading_consistentVisibleState() async throws {
         let messages = MockMessageManager()
         let conversations = MockConversationManager()
@@ -186,7 +186,7 @@ struct MessageListV1SwitchBlankReproTests {
 
         // 加载完成后状态一致性检查
         #expect(viewModel.isLoading == false)
-        #expect(viewModel.hasVisibleContent == !viewModel.items.isEmpty)
+        #expect(viewModel.hasVisibleContent == !viewModel.conclusionMessages.isEmpty)
         expectConsistent(viewModel, selectedID: shortID, sourceComment: "加载完成后")
     }
 }

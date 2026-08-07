@@ -24,6 +24,7 @@ struct MessageListRowBuilderMergeTests {
         let rows = builder.build(
             persisted: [m1, m2, m3],
             conversationID: conversation,
+            streaming: nil,
             verbosity: .brief
         )
         // 合并成 1 条。
@@ -45,6 +46,7 @@ struct MessageListRowBuilderMergeTests {
         let rows = builder.build(
             persisted: [g1a, g1b, reply, g2a],
             conversationID: conversation,
+            streaming: nil,
             verbosity: .brief
         )
         // [group(a,b), reply, group(c)]
@@ -62,6 +64,7 @@ struct MessageListRowBuilderMergeTests {
         let rows = builder.build(
             persisted: [m],
             conversationID: conversation,
+            streaming: nil,
             verbosity: .brief
         )
         #expect(rows.count == 1)
@@ -76,6 +79,7 @@ struct MessageListRowBuilderMergeTests {
         let rows = builder.build(
             persisted: [m1, m2],
             conversationID: conversation,
+            streaming: nil,
             verbosity: .standard
         )
         #expect(rows.count == 1)
@@ -92,6 +96,7 @@ struct MessageListRowBuilderMergeTests {
         let rows = builder.build(
             persisted: [m1, m2],
             conversationID: conversation,
+            streaming: nil,
             verbosity: .brief
         )
 
@@ -109,6 +114,7 @@ struct MessageListRowBuilderMergeTests {
         let rows = builder.build(
             persisted: [legacy, current],
             conversationID: conversation,
+            streaming: nil,
             verbosity: .brief
         )
 
@@ -130,6 +136,7 @@ struct MessageListRowBuilderMergeTests {
         let rows = builder.build(
             persisted: [first, text, second],
             conversationID: conversation,
+            streaming: nil,
             verbosity: .brief
         )
 
@@ -149,6 +156,7 @@ struct MessageListRowBuilderMergeTests {
         let rows = builder.build(
             persisted: [assistant, toolResult],
             conversationID: conversation,
+            streaming: nil,
             verbosity: .brief
         )
         // .tool 行被过滤,只剩合成消息。
@@ -163,6 +171,7 @@ struct MessageListRowBuilderMergeTests {
         let rows = builder.build(
             persisted: [m1, m2],
             conversationID: nil,
+            streaming: nil,
             verbosity: .brief
         )
         // guard early-return:原样返回,不合并。

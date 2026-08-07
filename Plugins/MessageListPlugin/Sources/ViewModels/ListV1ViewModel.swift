@@ -12,7 +12,7 @@ private struct MessageListV1Presentation: Equatable {
 /// 纯 turn 列表驱动,不再有 legacy 兼容路径,也不再用漂浮 status 行——
 /// 运行中的 turn 由 builder 产出占位行承担反馈。
 @MainActor
-final class MessageListV1ViewModel: ObservableObject, SuperLog {
+final class ListV1ViewModel: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-list.v1-viewmodel")
     nonisolated static let emoji = "📑"
     nonisolated static let verbose = false

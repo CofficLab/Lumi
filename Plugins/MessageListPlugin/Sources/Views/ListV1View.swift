@@ -6,8 +6,7 @@ import SwiftUI
 
 /// Message List V1 View (brief / 简洁模式)
 ///
-/// 每个 AgentTurn 渲染成一组:触发该 turn 的用户消息 + turn 的最终回复。
-/// 运行中的 turn 也产出一行占位(在列表里),不再有漂浮 status 行。
+/// 历史中每个 AgentTurn 只展示最终结论；运行中的 Turn 只展示一条动态 status。
 /// 流式正文、工具调用和工具结果均不进入 V1 展示投影。
 struct ListV1View: View, SuperLog {
     nonisolated static let logger = MessageListPlugin.logger
@@ -90,6 +89,17 @@ struct ListV1View: View, SuperLog {
                 LazyVStack(spacing: 0) {
                     historyRows(proxy: proxy)
 
+                    if let message = turnViewModel.statusMessage {
+                        MessageRowView(
+                            kernel: kernel,
+                            message: message,
+                            verbosity: verbosity
+                        )
+                        .id(message.id)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 4)
+                    }
+
                     // 底部锚点行:纯占位 + 稳定 id(供 scrollTo 用),不再报偏好。
                     // 是否在底部由 `ScrollViewBottomTracker` 观察NSScrollView 判定,
                     // 避免 GeometryReader + Preference 在流式下触发 LazyVStack 活锁。
@@ -148,10 +158,18 @@ struct ListV1View: View, SuperLog {
         }
     }
 
-    /// 每个 turn 渲染成一组:用户消息(若有) + turn 回复/占位。
-    /// 运行中的 turn 也在此产出一行占位,不再有漂浮 status。
+    /// Stable conclusion rows. Live work is represented separately by one status.
     @ViewBuilder
     private func historyRows(proxy: ScrollViewProxy) -> some View {
+        if turnViewModel.usesTurnProjection {
+            turnSummaryRows(proxy: proxy)
+        } else {
+            legacyConclusionRows
+        }
+    }
+
+    @ViewBuilder
+    private func turnSummaryRows(proxy: ScrollViewProxy) -> some View {
         if turnViewModel.hasEarlierTurns {
             loadEarlierButton(isLoading: turnViewModel.isLoadingEarlier) {
                 Task { await loadEarlier(proxy: proxy) }
@@ -159,25 +177,26 @@ struct ListV1View: View, SuperLog {
         }
 
         ForEach(turnViewModel.items) { item in
-            // 用户消息:turn 的提问(按时间回溯匹配,可能为 nil)。
-            if let userMessage = item.userMessage {
-                MessageRowView(
-                    kernel: kernel,
-                    message: userMessage,
-                    verbosity: verbosity
-                )
-                .id(userMessage.id)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 4)
-            }
-
-            // turn 回复 / 运行中占位。
             MessageRowView(
                 kernel: kernel,
                 message: item.message,
                 verbosity: verbosity
             )
-            .id(item.message.id)
+            .id(item.id)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
+        }
+    }
+
+    @ViewBuilder
+    private var legacyConclusionRows: some View {
+        ForEach(turnViewModel.conclusionMessages) { message in
+            MessageRowView(
+                kernel: kernel,
+                message: message,
+                verbosity: verbosity
+            )
+            .id(message.id)
             .padding(.horizontal, 16)
             .padding(.vertical, 4)
         }
@@ -221,7 +240,11 @@ struct ListV1View: View, SuperLog {
     /// 向上翻页:View 只负责触发加载并把锚点行钉回视口顶部,
     /// 数据加载与窗口回收由 viewmodel 完成。
     private func loadEarlier(proxy: ScrollViewProxy) async {
-        guard let anchorID = await turnViewModel.loadEarlier() else { return }
+        let anchorID: UUID?
+        anchorID = turnViewModel.usesTurnProjection
+            ? await turnViewModel.loadEarlier()
+            : nil
+        guard let anchorID else { return }
         await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
     }
 }
