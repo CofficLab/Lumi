@@ -191,8 +191,8 @@ struct AnthropicRequestBuilderTests {
         #expect(first["type"] == nil, "Anthropic tools 不应有 type:function 包装")
     }
 
-    @Test("默认(nil)与 automatic 也启用 thinking 且带保守预算(防服务端无上限吃光预算)")
-    func thinkingEnabledByDefaultAndAutomatic() {
+    @Test("默认(nil)也启用 thinking 且带保守预算(防服务端无上限吃光预算)")
+    func thinkingEnabledByDefault() {
         let conversation = UUID()
         let base = LumiChatMessage(conversationID: conversation, role: .user, content: "hi")
 
@@ -206,14 +206,6 @@ struct AnthropicRequestBuilderTests {
         }
         #expect(defaultThinking["type"] as? String == "enabled")
         #expect(defaultThinking["budget_tokens"] as? Int == AnthropicRequestBuilder.defaultThinkingBudget)
-
-        let autoBody = AnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .automatic))
-        guard let autoThinking = autoBody["thinking"] as? [String: Any] else {
-            Issue.record("automatic 也应显式启用 thinking")
-            return
-        }
-        #expect(autoThinking["type"] as? String == "enabled")
-        #expect(autoThinking["budget_tokens"] as? Int == AnthropicRequestBuilder.defaultThinkingBudget)
     }
 
     @Test("显式档位按映射设置 budget，且 clamp 到 max_tokens 之内")
@@ -221,14 +213,14 @@ struct AnthropicRequestBuilderTests {
         let conversation = UUID()
         let base = LumiChatMessage(conversationID: conversation, role: .user, content: "hi")
 
-        let high = AnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .high))
-        guard let highThinking = high["thinking"] as? [String: Any] else {
-            Issue.record("high 应启用 thinking")
+        let xhigh = AnthropicRequestBuilder.body(for: makeRequest(messages: [base], reasoning: .xhigh))
+        guard let xhighThinking = xhigh["thinking"] as? [String: Any] else {
+            Issue.record("xhigh 应启用 thinking")
             return
         }
-        #expect(highThinking["type"] as? String == "enabled")
-        // high 请求 8192,但 max_tokens=4096,必须 clamp,不能超过 max_tokens
-        let budget = highThinking["budget_tokens"] as? Int ?? 0
+        #expect(xhighThinking["type"] as? String == "enabled")
+        // xhigh 请求 8192,但 max_tokens=4096,必须 clamp,不能超过 max_tokens
+        let budget = xhighThinking["budget_tokens"] as? Int ?? 0
         #expect(budget <= AnthropicRequestBuilder.defaultMaxTokens)
         #expect(budget == AnthropicRequestBuilder.maxThinkingBudget)
 
