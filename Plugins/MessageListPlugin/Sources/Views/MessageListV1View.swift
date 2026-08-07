@@ -1,12 +1,18 @@
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 import SwiftUI
 
 /// Message List V1 View (brief / 简洁模式)
 ///
 /// 历史中每个 AgentTurn 只展示最终结论；运行中的 Turn 只展示一条动态 status。
 /// 流式正文、工具调用和工具结果均不进入 V1 展示投影。
-struct MessageListV1View: View {
+struct MessageListV1View: View, SuperLog {
+    nonisolated static let logger = MessageListPlugin.logger
+    nonisolated static let emoji = "📃"
+    nonisolated static let verbose: Bool = true
+
     let kernel: LumiKernel
     @StateObject private var turnViewModel: MessageListV1ViewModel
 
@@ -47,11 +53,17 @@ struct MessageListV1View: View {
         // 快照 + 事件刷新:首次出现/视图重建加载当前会话,
         // 选中切换与 verbosity 变化由事件驱动。
         .task {
+            if Self.verbose {
+                Self.logger.info("\(self.t)首次出现,conversationID: \(selectedConversationID?.uuidString ?? "nil")")
+            }
             // 首次出现/容器切换重建:重置滚动位置,加载当前选中会话。
             atBottomBox.value = true
             await turnViewModel.activate(conversationID: selectedConversationID)
         }
         .onLumiSelectedConversationDidChange { newID in
+            if Self.verbose {
+                Self.logger.info("\(self.t)选中会话切换：\(newID?.uuidString ?? "nil")")
+            }
             atBottomBox.value = true
             verbosity = kernel.conversationManager?.verbosity(for: newID) ?? .defaultVerbosity
             Task { @MainActor in
@@ -59,6 +71,9 @@ struct MessageListV1View: View {
             }
         }
         .onLumiConversationsDidChange {
+            if Self.verbose {
+                Self.logger.info("\(self.t)会话设置变更,刷新 verbosity")
+            }
             refreshVerbosity()
         }
     }

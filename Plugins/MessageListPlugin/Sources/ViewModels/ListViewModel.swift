@@ -169,10 +169,16 @@ final class ListViewModel: ObservableObject, SuperLog {
 
     /// 切换/进入会话:绑定服务订阅(幂等),记录目标会话,加载最近一页。
     func activate(conversationID: UUID?) async {
+        if Self.verbose {
+            Self.logger.info("\(self.t)激活会话：\(conversationID?.uuidString ?? "nil")")
+        }
         bindServicesIfNeeded()
         activeConversationID = conversationID
         isLoading = true
         await loadFirstPage(conversationID: conversationID)
+        if Self.verbose {
+            Self.logger.info("\(self.t)首屏加载完成,persistedMessages: \(self.persistedMessages.count)")
+        }
         if let conversationID {
             await refreshTurnActivitySummaries(conversationID: conversationID)
         } else {

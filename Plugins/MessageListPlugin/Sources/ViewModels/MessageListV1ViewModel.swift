@@ -1,5 +1,7 @@
 import Foundation
 import LumiKernel
+import os
+import SuperLogKit
 
 private struct MessageListV1Presentation: Equatable {
     var turnItems: [AgentTurnSummaryItem] = []
@@ -12,7 +14,11 @@ private struct MessageListV1Presentation: Equatable {
 /// exactly one replaceable status message; streaming/process messages are never
 /// part of this presentation.
 @MainActor
-final class MessageListV1ViewModel: ObservableObject {
+final class MessageListV1ViewModel: ObservableObject, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-list.v1-viewmodel")
+    nonisolated static let emoji = "📑"
+    nonisolated static let verbose = false
+
     @Published private var presentation = MessageListV1Presentation()
     @Published private(set) var isLoading = true
     @Published private(set) var isLoadingEarlier = false
@@ -53,6 +59,9 @@ final class MessageListV1ViewModel: ObservableObject {
     }
 
     func activate(conversationID: UUID?) async {
+        if Self.verbose {
+            Self.logger.info("\(self.t)激活会话：\(conversationID?.uuidString ?? "nil")")
+        }
         // 记录当前激活序列号，用于后续异步操作完成后检查是否过期
         activationSequence &+= 1
         let mySequence = activationSequence
@@ -84,6 +93,9 @@ final class MessageListV1ViewModel: ObservableObject {
         // 只在序列号匹配时更新状态，避免被后续 activate 的结果覆盖
         hasEarlierTurns = page.count > pageSize
         records = Array(page.prefix(pageSize))
+        if Self.verbose {
+            Self.logger.info("\(self.t)Turn 记录加载完成: \(self.records.count) 条")
+        }
         await rebuildItems(for: conversationID, sequence: mySequence)
     }
 
