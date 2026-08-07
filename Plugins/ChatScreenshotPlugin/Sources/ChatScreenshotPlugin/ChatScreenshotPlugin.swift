@@ -69,7 +69,7 @@ public final class ChatScreenshotPlugin: LumiPlugin, SuperLog {
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {
         [
             ChatSectionActionBarItem(id: "\(id).button") {
-                ChatScreenshotButtonView(kernel: kernel)
+                ChatScreenshotButtonView()
             }
         ]
     }

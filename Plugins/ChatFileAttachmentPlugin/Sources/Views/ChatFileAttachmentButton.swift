@@ -6,7 +6,9 @@ import SwiftUI
 ///
 /// 视觉风格:与 `ChatScreenshotButtonView` 协调的圆形图标按钮。
 struct ChatFileAttachmentButton: View {
-    @ObservedObject var kernel: LumiKernel
+    // 仅在 fileImporter 回调里用 kernel.messageSender 写附件；body 不读 kernel，
+    // 故用 let 而非 @ObservedObject——避免无谓挂上 kernel 全局总线。
+    let kernel: LumiKernel
     @LumiTheme private var theme
 
     /// 控制 `.fileImporter` 显隐
