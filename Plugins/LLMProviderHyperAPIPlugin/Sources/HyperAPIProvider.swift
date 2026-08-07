@@ -12,43 +12,61 @@ public final class HyperAPIProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("LLM Router by hyperapi.cc", bundle: .module),
         defaultModel: "gpt-5",
         availableModels: [
-            "gpt-5.1-codex-max",
-            "gpt-5.2-codex",
-            "gpt-5.4-mini",
-            "gpt-5",
-            "gpt-5.1-codex-mini",
-            "gpt-5.2",
-            "gpt-5.3-codex",
-            "gpt-5.4",
-            "gpt-5-codex",
-            "gpt-5.1",
-            "gpt-5.1-codex"
-        ],
-        contextWindowSizes: [
-            "gpt-5": 400_000,
-            "gpt-5-codex": 400_000,
-            "gpt-5.1": 400_000,
-            "gpt-5.1-codex": 400_000,
-            "gpt-5.1-codex-max": 400_000,
-            "gpt-5.1-codex-mini": 400_000,
-            "gpt-5.2": 400_000,
-            "gpt-5.2-codex": 400_000,
-            "gpt-5.3-codex": 400_000,
-            "gpt-5.4": 1_000_000,
-            "gpt-5.4-mini": 400_000
-        ],
-        modelCapabilities: [
-            "gpt-5": .init(supportsVision: true, supportsTools: true),
-            "gpt-5-codex": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.1": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.1-codex": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.1-codex-max": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.1-codex-mini": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.2": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.2-codex": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.3-codex": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.4": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true)
+            .init(
+                id: "gpt-5.1-codex-max",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5.2-codex",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5.4-mini",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5.1-codex-mini",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5.2",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5.3-codex",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5.4",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5-codex",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5.1",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5.1-codex",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
         ],
         websiteURL: URL(string: "https://hyperapi.cc")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_HyperAPI"

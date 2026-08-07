@@ -12,49 +12,71 @@ public final class MegaLLMProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("MegaLLM AI", bundle: .module),
         defaultModel: "gpt-5-mini",
         availableModels: [
-            "alibaba-qwen3.5-397b",
-            "claude-haiku-4-5-20251001",
-            "claude-opus-4-5-20251101",
-            "claude-opus-4-6",
-            "claude-sonnet-4-5-20250929",
-            "claude-sonnet-4-6",
-            "deepseek-ai/deepseek-v3.1",
-            "grok-4.1-fast-reasoning",
-            "gpt-5-mini",
-            "gpt-5.3-codex",
-            "llama3.3-70b-instruct",
-            "minimaxai/minimax-m2.1",
-            "newclaude-opus-4-6"
-        ],
-        contextWindowSizes: [
-            "alibaba-qwen3.5-397b": 131_072,
-            "claude-haiku-4-5-20251001": 200_000,
-            "claude-opus-4-5-20251101": 200_000,
-            "claude-opus-4-6": 200_000,
-            "claude-sonnet-4-5-20250929": 200_000,
-            "claude-sonnet-4-6": 200_000,
-            "deepseek-ai/deepseek-v3.1": 1_000_000,
-            "grok-4.1-fast-reasoning": 1_000_000,
-            "gpt-5-mini": 400_000,
-            "gpt-5.3-codex": 400_000,
-            "llama3.3-70b-instruct": 131_072,
-            "minimaxai/minimax-m2.1": 1_000_000,
-            "newclaude-opus-4-6": 200_000
-        ],
-        modelCapabilities: [
-            "alibaba-qwen3.5-397b": .init(supportsVision: false, supportsTools: true),
-            "claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "claude-opus-4-5-20251101": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "claude-opus-4-6": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "claude-sonnet-4-5-20250929": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "claude-sonnet-4-6": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "deepseek-ai/deepseek-v3.1": .init(supportsVision: false, supportsTools: true),
-            "grok-4.1-fast-reasoning": .init(supportsVision: true, supportsTools: true),
-            "gpt-5-mini": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "gpt-5.3-codex": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "llama3.3-70b-instruct": .init(supportsVision: false, supportsTools: true),
-            "minimaxai/minimax-m2.1": .init(supportsVision: false, supportsTools: true),
-            "newclaude-opus-4-6": .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            .init(
+                id: "alibaba-qwen3.5-397b",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "claude-haiku-4-5-20251001",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "claude-opus-4-5-20251101",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "claude-opus-4-6",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "claude-sonnet-4-5-20250929",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "claude-sonnet-4-6",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "deepseek-ai/deepseek-v3.1",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "grok-4.1-fast-reasoning",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5-mini",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "gpt-5.3-codex",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "llama3.3-70b-instruct",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "minimaxai/minimax-m2.1",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "newclaude-opus-4-6",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
         ],
         websiteURL: URL(string: "https://megallm.io")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_MegaLLM"

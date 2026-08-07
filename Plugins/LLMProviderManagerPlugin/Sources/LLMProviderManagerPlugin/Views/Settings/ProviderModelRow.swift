@@ -16,7 +16,7 @@ struct ProviderModelRow: View {
     let availability: ModelAvailabilityState
 
     private var modelDisplayName: String {
-        provider.modelDisplayNames[model] ?? model
+        provider.modelInfo(for: model)?.displayName ?? model
     }
 
     private var checkState: ModelCheckState {
@@ -98,7 +98,7 @@ struct ProviderModelRow: View {
 
     @ViewBuilder
     private var capabilityBadges: some View {
-        if let capabilities = provider.modelCapabilities[model] {
+        if let capabilities = provider.modelInfo(for: model)?.capabilities {
             HStack(spacing: 6) {
                 AppTag(
                     capabilities.supportsVision
@@ -129,7 +129,7 @@ struct ProviderModelRow: View {
             }
         }
 
-        if let contextSize = provider.contextWindowSizes[model] {
+        if let contextSize = provider.modelInfo(for: model)?.contextWindowSize {
             HStack(spacing: 6) {
                 Spacer(minLength: 0)
                 AppTag(ModelSelectorFormatService.contextSize(contextSize), systemImage: "text.viewfinder")

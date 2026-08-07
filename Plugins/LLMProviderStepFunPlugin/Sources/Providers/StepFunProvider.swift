@@ -18,37 +18,51 @@ public final class StepFunProvider: LumiLLMProvider, SuperLog, @unchecked Sendab
         description: LumiPluginLocalization.string("StepFun StepPlan AI", bundle: .module),
         defaultModel: "step-3.5-flash",
         availableModels: [
-            "step-3.7-flash",
-            "step-router-v1",
-            "stepaudio-2.5-chat",
-            "stepaudio-2.5-tts",
-            "stepaudio-2.5-asr",
-            "stepaudio-2.5-realtime",
-            "step-image-edit-2",
-            "step-3.5-flash-2603",
-            "step-3.5-flash",
-        ],
-        contextWindowSizes: [
-            "step-3.7-flash": 262144,
-            "step-router-v1": 262144,
-            "stepaudio-2.5-chat": 1000000,
-            "stepaudio-2.5-tts": 1000000,
-            "stepaudio-2.5-asr": 1000000,
-            "stepaudio-2.5-realtime": 1000000,
-            "step-image-edit-2": 1000000,
-            "step-3.5-flash-2603": 262144,
-            "step-3.5-flash": 262144,
-        ],
-        modelCapabilities: [
-            "step-3.7-flash": .init(supportsVision: true, supportsTools: true),
-            "step-router-v1": .init(supportsVision: false, supportsTools: false),
-            "stepaudio-2.5-chat": .init(supportsVision: false, supportsTools: true),
-            "stepaudio-2.5-tts": .init(supportsVision: false, supportsTools: false),
-            "stepaudio-2.5-asr": .init(supportsVision: false, supportsTools: false),
-            "stepaudio-2.5-realtime": .init(supportsVision: false, supportsTools: true),
-            "step-image-edit-2": .init(supportsVision: true, supportsTools: false),
-            "step-3.5-flash-2603": .init(supportsVision: true, supportsTools: true),
-            "step-3.5-flash": .init(supportsVision: true, supportsTools: true),
+            .init(
+                id: "step-3.7-flash",
+                contextWindowSize: 262_144,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "step-router-v1",
+                contextWindowSize: 262_144,
+                capabilities: .init(supportsVision: false, supportsTools: false)
+            ),
+            .init(
+                id: "stepaudio-2.5-chat",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "stepaudio-2.5-tts",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: false)
+            ),
+            .init(
+                id: "stepaudio-2.5-asr",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: false)
+            ),
+            .init(
+                id: "stepaudio-2.5-realtime",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "step-image-edit-2",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: false)
+            ),
+            .init(
+                id: "step-3.5-flash-2603",
+                contextWindowSize: 262_144,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "step-3.5-flash",
+                contextWindowSize: 262_144,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
         ],
         websiteURL: URL(string: "https://www.stepfun.com/")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_StepFun"

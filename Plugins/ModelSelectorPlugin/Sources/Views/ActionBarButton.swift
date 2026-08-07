@@ -76,7 +76,7 @@ struct ActionBarButton: View {
         }
         let info = type(of: provider).info
         if let model = selectedModel {
-            let displayModel = info.modelDisplayNames[model] ?? model
+            let displayModel = info.modelInfo(for: model)?.displayName ?? model
             return "\(info.displayName) · \(displayModel)"
         }
         return info.displayName

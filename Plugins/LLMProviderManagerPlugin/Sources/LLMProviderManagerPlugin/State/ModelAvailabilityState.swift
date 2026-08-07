@@ -21,8 +21,8 @@ public final class ModelAvailabilityState: ObservableObject {
     }
 
     public func availableCount(for provider: LumiLLMProviderInfo) -> Int {
-        provider.availableModels.reduce(0) { acc, model in
-            state(providerId: provider.id, modelId: model).isAvailable ? acc + 1 : acc
+        provider.availableModels.reduce(0) { acc, modelInfo in
+            state(providerId: provider.id, modelId: modelInfo.id).isAvailable ? acc + 1 : acc
         }
     }
 
@@ -31,8 +31,8 @@ public final class ModelAvailabilityState: ObservableObject {
     }
 
     public func firstReconfigurableFailure(for provider: LumiLLMProviderInfo) -> LumiLLMFailureDetail? {
-        for model in provider.availableModels {
-            let s = state(providerId: provider.id, modelId: model)
+        for modelInfo in provider.availableModels {
+            let s = state(providerId: provider.id, modelId: modelInfo.id)
             if s.isReconfigurableFailure, let f = s.failure {
                 return f
             }
@@ -63,13 +63,13 @@ public final class ModelAvailabilityState: ObservableObject {
         providerInstance: any LumiLLMProvider
     ) async {
         checkingProviderIDs.insert(provider.id)
-        for model in provider.availableModels {
-            setState(providerId: provider.id, modelId: model, ModelCheckState(phase: .checking))
+        for modelInfo in provider.availableModels {
+            setState(providerId: provider.id, modelId: modelInfo.id, ModelCheckState(phase: .checking))
         }
 
-        for model in provider.availableModels {
-            let result = await providerInstance.checkAvailability(model: model)
-            setState(providerId: provider.id, modelId: model, ModelCheckState(result: result))
+        for modelInfo in provider.availableModels {
+            let result = await providerInstance.checkAvailability(model: modelInfo.id)
+            setState(providerId: provider.id, modelId: modelInfo.id, ModelCheckState(result: result))
         }
 
         clearChecking(providerId: provider.id)
@@ -95,8 +95,8 @@ public final class ModelAvailabilityState: ObservableObject {
     public func markAllPending(_ providers: [LumiLLMProviderInfo]) {
         for provider in providers {
             checkingProviderIDs.insert(provider.id)
-            for model in provider.availableModels {
-                setState(providerId: provider.id, modelId: model, ModelCheckState(phase: .checking))
+            for modelInfo in provider.availableModels {
+                setState(providerId: provider.id, modelId: modelInfo.id, ModelCheckState(phase: .checking))
             }
         }
     }

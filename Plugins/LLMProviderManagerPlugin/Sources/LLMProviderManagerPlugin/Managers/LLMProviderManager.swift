@@ -145,7 +145,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             }
             return []
         }
-        return type(of: provider).info.availableModels
+        return type(of: provider).info.modelIDs
     }
 
     public var selectedModel: String? { _selectedModel }

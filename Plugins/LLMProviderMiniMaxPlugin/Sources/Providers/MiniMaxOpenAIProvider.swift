@@ -17,7 +17,7 @@ private func emitMiniMaxTextSegments(
 public final class MiniMaxOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     public static let shortName = "MiniMax"
     public static let apiKeyHelpURL: String? = "https://platform.minimaxi.com/user-center/basic-information/Interface-key"
-    public static let info = LumiLLMProviderInfo(id: "minimax-tokenplan", displayName: "MiniMax (OpenAI)", description: "MiniMax Token Plan via OpenAI-compatible API", defaultModel: "MiniMax-M2.7", availableModels: MiniMaxProviderCatalog.models, contextWindowSizes: MiniMaxProviderCatalog.contexts, modelCapabilities: MiniMaxProviderCatalog.capabilities, websiteURL: URL(string: "https://platform.minimaxi.com/")!, apiKeyStorageKey: MiniMaxProviderSupport.apiKeyStorageKey)
+    public static let info = LumiLLMProviderInfo(id: "minimax-tokenplan", displayName: "MiniMax (OpenAI)", description: "MiniMax Token Plan via OpenAI-compatible API", defaultModel: "MiniMax-M2.7", availableModels: MiniMaxProviderCatalog.models, websiteURL: URL(string: "https://platform.minimaxi.com/")!, apiKeyStorageKey: MiniMaxProviderSupport.apiKeyStorageKey)
     private let support = MiniMaxProviderSupport()
     private let service: MiniMaxOpenAIService
 

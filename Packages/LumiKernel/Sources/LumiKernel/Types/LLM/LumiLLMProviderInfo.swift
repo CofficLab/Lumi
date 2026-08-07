@@ -7,7 +7,7 @@ public enum LumiModelAvailabilityResult: Sendable, Equatable {
 }
 
 /// 模型能力声明
-public struct LumiModelCapabilities: Sendable, Equatable {
+public struct LumiModelCapabilities: Sendable, Equatable, Hashable {
     public let supportsVision: Bool
     public let supportsTools: Bool
     public let supportsTTS: Bool
@@ -26,31 +26,65 @@ public struct LumiModelCapabilities: Sendable, Equatable {
     }
 }
 
+/// 单个 LLM 模型的完整配置信息
+///
+/// 将模型 ID、显示名称、上下文窗口大小、能力声明集中到一个结构体中，
+/// 避免在 provider 定义中维护多个平行字典。
+public struct LumiModelInfo: Sendable, Equatable, Identifiable, Hashable {
+    /// 模型 ID（即发送给 API 的 model 字段值）
+    public let id: String
+
+    /// 人类可读的显示名称（nil 则消费端应使用 id 展示）
+    public let displayName: String?
+
+    /// 上下文窗口大小（token 数），nil 表示未指定
+    public let contextWindowSize: Int?
+
+    /// 模型能力声明，nil 表示未声明
+    public let capabilities: LumiModelCapabilities?
+
+    public init(
+        id: String,
+        displayName: String? = nil,
+        contextWindowSize: Int? = nil,
+        capabilities: LumiModelCapabilities? = nil
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.contextWindowSize = contextWindowSize
+        self.capabilities = capabilities
+    }
+}
+
 public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     public let id: String
     public let displayName: String
     public let description: String
     public let defaultModel: String
-    public let availableModels: [String]
+    public let availableModels: [LumiModelInfo]
     public let isLocal: Bool
-    public let contextWindowSizes: [String: Int]
-    public let modelCapabilities: [String: LumiModelCapabilities]
-    public let modelDisplayNames: [String: String]
     public let websiteURL: URL
     internal let apiKeyStorageKey: String?
 
     public var _apiKeyStorageKey: String? { apiKeyStorageKey }
+
+    /// 根据模型 ID 快速查找模型配置
+    public func modelInfo(for id: String) -> LumiModelInfo? {
+        availableModels.first(where: { $0.id == id })
+    }
+
+    /// 模型 ID 列表（便捷属性，供只需 ID 的消费端使用）
+    public var modelIDs: [String] {
+        availableModels.map(\.id)
+    }
 
     public init(
         id: String,
         displayName: String,
         description: String = "",
         defaultModel: String,
-        availableModels: [String],
+        availableModels: [LumiModelInfo],
         isLocal: Bool = false,
-        contextWindowSizes: [String: Int] = [:],
-        modelCapabilities: [String: LumiModelCapabilities] = [:],
-        modelDisplayNames: [String: String] = [:],
         websiteURL: URL,
         apiKeyStorageKey: String? = nil
     ) {
@@ -60,9 +94,6 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         self.defaultModel = defaultModel
         self.availableModels = availableModels
         self.isLocal = isLocal
-        self.contextWindowSizes = contextWindowSizes
-        self.modelCapabilities = modelCapabilities
-        self.modelDisplayNames = modelDisplayNames
         self.websiteURL = websiteURL
         if isLocal {
             self.apiKeyStorageKey = nil

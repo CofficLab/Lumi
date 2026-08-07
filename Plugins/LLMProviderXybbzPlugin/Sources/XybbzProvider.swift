@@ -10,16 +10,16 @@ public final class XybbzProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("AI API Gateway by xybbz", bundle: .module),
         defaultModel: "gpt-5.5",
         availableModels: [
-            "gpt-5.5",
-            "gpt-5.4",
-        ],
-        contextWindowSizes: [
-            "gpt-5.5": 1000000,
-            "gpt-5.4": 1000000,
-        ],
-        modelCapabilities: [
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "gpt-5.4": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            .init(
+                id: "gpt-5.5",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "gpt-5.4",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
         ],
         websiteURL: URL(string: "https://xybbz.xyz")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_Xybbz"

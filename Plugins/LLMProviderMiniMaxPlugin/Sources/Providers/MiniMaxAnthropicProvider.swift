@@ -11,8 +11,6 @@ public final class MiniMaxAnthropicProvider: LumiLLMProvider, @unchecked Sendabl
         description: "MiniMax Token Plan via Anthropic-compatible API",
         defaultModel: "MiniMax-M2.7",
         availableModels: MiniMaxProviderCatalog.models,
-        contextWindowSizes: MiniMaxProviderCatalog.contexts,
-        modelCapabilities: MiniMaxProviderCatalog.capabilities,
         websiteURL: URL(string: "https://platform.minimaxi.com/")!,
         apiKeyStorageKey: MiniMaxProviderSupport.apiKeyStorageKey
     )

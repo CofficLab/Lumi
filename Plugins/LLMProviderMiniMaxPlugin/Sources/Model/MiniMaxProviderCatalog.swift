@@ -2,9 +2,35 @@ import Foundation
 import LumiKernel
 
 enum MiniMaxProviderCatalog {
-    static let models = ["MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed", "MiniMax-M2.5", "MiniMax-M2", "MiniMax-Text-01"]
-    static let contexts = ["MiniMax-M3": 204800, "MiniMax-M2.7": 204800, "MiniMax-M2.7-highspeed": 204800, "MiniMax-M2.5": 204800, "MiniMax-M2": 131072, "MiniMax-Text-01": 4000000]
-    static let capabilities: [String: LumiModelCapabilities] = [
-        "MiniMax-M3": .init(supportsVision: true, supportsTools: true), "MiniMax-M2.7": .init(supportsVision: true, supportsTools: true), "MiniMax-M2.7-highspeed": .init(supportsVision: true, supportsTools: true), "MiniMax-M2.5": .init(supportsVision: false, supportsTools: true), "MiniMax-M2": .init(supportsVision: false, supportsTools: true), "MiniMax-Text-01": .init(supportsVision: false, supportsTools: false),
+    static let models: [LumiModelInfo] = [            .init(
+                id: "MiniMax-M3",
+                contextWindowSize: 204_800,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "MiniMax-M2.7",
+                contextWindowSize: 204_800,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "MiniMax-M2.7-highspeed",
+                contextWindowSize: 204_800,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "MiniMax-M2.5",
+                contextWindowSize: 204_800,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "MiniMax-M2",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "MiniMax-Text-01",
+                contextWindowSize: 4_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: false)
+            ),
     ]
 }

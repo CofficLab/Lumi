@@ -53,13 +53,13 @@ public struct CodexLocalProviderSettingsView: View {
     private var modelListCard: some View {
         AppSettingsSection(title: "可用模型", spacing: 12) {
             VStack(spacing: 0) {
-                ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
+                ForEach(Array(provider.availableModels.enumerated()), id: \.element.id) { index, modelInfo in
                     AppListRow {
                         readOnlyModelRow(
-                            model: model,
-                            supportsVision: provider.modelCapabilities[model]?.supportsVision,
-                            supportsTools: provider.modelCapabilities[model]?.supportsTools,
-                            supportsTTS: provider.modelCapabilities[model]?.supportsTTS
+                            model: modelInfo.id,
+                            supportsVision: modelInfo.capabilities?.supportsVision,
+                            supportsTools: modelInfo.capabilities?.supportsTools,
+                            supportsTTS: modelInfo.capabilities?.supportsTTS
                         )
                     }
 

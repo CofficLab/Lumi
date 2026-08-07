@@ -64,7 +64,7 @@ public enum LumiConversationContextCalculator {
     ) -> Int {
         guard let providerID,
               let modelName,
-              let providerLimit = providerInfos.first(where: { $0.id == providerID })?.contextWindowSizes[modelName],
+              let providerLimit = providerInfos.first(where: { $0.id == providerID })?.modelInfo(for: modelName)?.contextWindowSize,
               providerLimit > 0 else {
             return 0
         }

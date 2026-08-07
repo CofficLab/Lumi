@@ -125,12 +125,12 @@ struct RemoteProviderSettingsPage: View {
     private func modelSection(provider: LumiLLMProviderInfo) -> some View {
         AppSettingsSection(title: "可用模型", spacing: 12) {
             VStack(spacing: 0) {
-                ForEach(Array(provider.availableModels.enumerated()), id: \.element) { index, model in
+                ForEach(Array(provider.availableModels.enumerated()), id: \.element.id) { index, modelInfo in
                     ProviderModelRow(
                         provider: provider,
-                        model: model,
-                        stat: stat(for: provider.id, modelName: model),
-                        dailyUsage: dailyUsage(for: provider.id, modelName: model),
+                        model: modelInfo.id,
+                        stat: stat(for: provider.id, modelName: modelInfo.id),
+                        dailyUsage: dailyUsage(for: provider.id, modelName: modelInfo.id),
                         availability: availabilityState
                     )
 

@@ -208,12 +208,11 @@ public actor DeepIssueAnalyzer: SuperLog {
                     providerDisplayName: provider.displayName,
                     model: model,
                     availability: .unknown,
-                    contextWindowSizes: provider.contextWindowSizes
+                    contextWindowSize: provider.contextWindowSizes[model]
                 )
             }
         }
     }
-
 
     // MARK: - Prompts
 

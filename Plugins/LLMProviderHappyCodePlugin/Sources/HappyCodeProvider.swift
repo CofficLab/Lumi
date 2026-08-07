@@ -12,13 +12,11 @@ public final class HappyCodeProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("AI API Gateway by HappyCode", bundle: .module),
         defaultModel: "gpt-5.5",
         availableModels: [
-            "gpt-5.5"
-        ],
-        contextWindowSizes: [
-            "gpt-5.5": 1_000_000
-        ],
-        modelCapabilities: [
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true)
+            .init(
+                id: "gpt-5.5",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
         ],
         websiteURL: URL(string: "https://happycode.vip")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_HappyCode"

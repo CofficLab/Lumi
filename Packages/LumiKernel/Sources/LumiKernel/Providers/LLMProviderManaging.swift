@@ -42,7 +42,7 @@ public protocol LLMProviderManaging: ObservableObject where ObjectWillChangePubl
     /// 按 ID 查询 Provider 信息
     ///
     /// 返回 `LumiLLMProviderInfo` 值类型副本，可直接访问
-    /// `availableModels`、`contextWindowSizes`、`modelCapabilities` 等元数据，
+    /// `availableModels` 等元数据，
     /// 无需通过 existential 实例访问 `static info`。
     ///
     /// - Parameter id: Provider 唯一标识

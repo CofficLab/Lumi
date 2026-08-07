@@ -75,25 +75,31 @@ public final class SublyxProvider: LumiLLMProvider, SuperLog, @unchecked Sendabl
         description: LumiPluginLocalization.string("GPT API Gateway by Sublyx", bundle: .module),
         defaultModel: "gpt-5.5",
         availableModels: [
-            "gpt-5.5",
-            "gpt-5.4",
-            "gpt-5.4-mini",
-            "gpt-4o",
-            "gpt-4.1"
-        ],
-        contextWindowSizes: [
-            "gpt-5.5": 1_000_000,
-            "gpt-5.4": 1_000_000,
-            "gpt-5.4-mini": 1_000_000,
-            "gpt-4o": 128_000,
-            "gpt-4.1": 1_000_000
-        ],
-        modelCapabilities: [
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.4": .init(supportsVision: true, supportsTools: true),
-            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true),
-            "gpt-4o": .init(supportsVision: true, supportsTools: true),
-            "gpt-4.1": .init(supportsVision: true, supportsTools: true)
+            .init(
+                id: "gpt-5.5",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5.4",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5.4-mini",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-4o",
+                contextWindowSize: 128_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-4.1",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
         ],
         websiteURL: URL(string: "https://api.sublyx.org/")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_Sublyx"

@@ -12,28 +12,30 @@ public final class KimiCodeOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
         description: LumiPluginLocalization.string("Kimi Code API via OpenAI-compatible endpoint.", bundle: .module),
         defaultModel: "k3",
         availableModels: [
-            "k3",
-            "k3-256k",
-            "kimi-for-coding",
-            "kimi-for-coding-highspeed"
-        ],
-        contextWindowSizes: [
-            "k3": 1_000_000,
-            "k3-256k": 256_000,
-            "kimi-for-coding": 256_000,
-            "kimi-for-coding-highspeed": 256_000
-        ],
-        modelCapabilities: [
-            "k3": .init(supportsVision: true, supportsTools: true),
-            "k3-256k": .init(supportsVision: true, supportsTools: true),
-            "kimi-for-coding": .init(supportsVision: true, supportsTools: true),
-            "kimi-for-coding-highspeed": .init(supportsVision: true, supportsTools: true)
-        ],
-        modelDisplayNames: [
-            "k3": "Kimi K3",
-            "k3-256k": "Kimi K3 256K",
-            "kimi-for-coding": "Kimi K2.7 Code",
-            "kimi-for-coding-highspeed": "Kimi K2.7 Code High Speed"
+            .init(
+                id: "k3",
+                displayName: "Kimi K3",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "k3-256k",
+                displayName: "Kimi K3 256K",
+                contextWindowSize: 256_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "kimi-for-coding",
+                displayName: "Kimi K2.7 Code",
+                contextWindowSize: 256_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "kimi-for-coding-highspeed",
+                displayName: "Kimi K2.7 Code High Speed",
+                contextWindowSize: 256_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
         ],
         websiteURL: URL(string: "https://www.moonshot.cn/")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_KimiCode"

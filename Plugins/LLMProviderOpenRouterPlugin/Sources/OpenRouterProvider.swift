@@ -12,67 +12,101 @@ public final class OpenRouterProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("Multi-Provider LLM Router", bundle: .module),
         defaultModel: "alibaba/qwen3.5-397b",
         availableModels: [
-            "alibaba/qwen3.5-397b",
-            "anthropic/claude-haiku-4-5-20251001",
-            "anthropic/claude-opus-4-5-20251101",
-            "anthropic/claude-sonnet-4-5-20250929",
-            "bytedance-seed/seedream-4.5",
-            "deepseek/deepseek-v3.1",
-            "google/gemma-3-27b-it:free",
-            "google/gemini-pro-2.5",
-            "meta-llama/llama-3.3-70b-instruct",
-            "minimax/minimax-m2.1",
-            "minimax/minimax-m2.5:free",
-            "nvidia/nemotron-3-super-120b-a12b:free",
-            "openai/gpt-4o",
-            "openai/gpt-5",
-            "openai/gpt-5-mini",
-            "openai/gpt-oss-20b:free",
-            "qwen/qwen3.6-plus",
-            "stepfun/step-3.5-flash:free",
-            "z-ai/glm-4.5-air:free"
-        ],
-        contextWindowSizes: [
-            "alibaba/qwen3.5-397b": 131_072,
-            "anthropic/claude-haiku-4-5-20251001": 200_000,
-            "anthropic/claude-opus-4-5-20251101": 200_000,
-            "anthropic/claude-sonnet-4-5-20250929": 200_000,
-            "bytedance-seed/seedream-4.5": 32_000,
-            "deepseek/deepseek-v3.1": 1_000_000,
-            "google/gemma-3-27b-it:free": 131_072,
-            "google/gemini-pro-2.5": 1_000_000,
-            "meta-llama/llama-3.3-70b-instruct": 131_072,
-            "minimax/minimax-m2.1": 1_000_000,
-            "minimax/minimax-m2.5:free": 204_800,
-            "nvidia/nemotron-3-super-120b-a12b:free": 131_072,
-            "openai/gpt-4o": 128_000,
-            "openai/gpt-5": 400_000,
-            "openai/gpt-5-mini": 400_000,
-            "openai/gpt-oss-20b:free": 131_072,
-            "qwen/qwen3.6-plus": 1_000_000,
-            "stepfun/step-3.5-flash:free": 256_000,
-            "z-ai/glm-4.5-air:free": 131_000
-        ],
-        modelCapabilities: [
-            "alibaba/qwen3.5-397b": .init(supportsVision: false, supportsTools: true),
-            "anthropic/claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "anthropic/claude-opus-4-5-20251101": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "anthropic/claude-sonnet-4-5-20250929": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "bytedance-seed/seedream-4.5": .init(supportsVision: true, supportsTools: true),
-            "deepseek/deepseek-v3.1": .init(supportsVision: false, supportsTools: true),
-            "google/gemma-3-27b-it:free": .init(supportsVision: true, supportsTools: true),
-            "google/gemini-pro-2.5": .init(supportsVision: true, supportsTools: true),
-            "meta-llama/llama-3.3-70b-instruct": .init(supportsVision: false, supportsTools: true),
-            "minimax/minimax-m2.1": .init(supportsVision: false, supportsTools: true),
-            "minimax/minimax-m2.5:free": .init(supportsVision: false, supportsTools: true),
-            "nvidia/nemotron-3-super-120b-a12b:free": .init(supportsVision: false, supportsTools: true),
-            "openai/gpt-4o": .init(supportsVision: true, supportsTools: true),
-            "openai/gpt-5": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "openai/gpt-5-mini": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "openai/gpt-oss-20b:free": .init(supportsVision: false, supportsTools: true),
-            "qwen/qwen3.6-plus": .init(supportsVision: true, supportsTools: true),
-            "stepfun/step-3.5-flash:free": .init(supportsVision: true, supportsTools: true),
-            "z-ai/glm-4.5-air:free": .init(supportsVision: true, supportsTools: true)
+            .init(
+                id: "alibaba/qwen3.5-397b",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "anthropic/claude-haiku-4-5-20251001",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "anthropic/claude-opus-4-5-20251101",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "anthropic/claude-sonnet-4-5-20250929",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "bytedance-seed/seedream-4.5",
+                contextWindowSize: 32_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "deepseek/deepseek-v3.1",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "google/gemma-3-27b-it:free",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "google/gemini-pro-2.5",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "meta-llama/llama-3.3-70b-instruct",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "minimax/minimax-m2.1",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "minimax/minimax-m2.5:free",
+                contextWindowSize: 204_800,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "nvidia/nemotron-3-super-120b-a12b:free",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "openai/gpt-4o",
+                contextWindowSize: 128_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "openai/gpt-5",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "openai/gpt-5-mini",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "openai/gpt-oss-20b:free",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "qwen/qwen3.6-plus",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "stepfun/step-3.5-flash:free",
+                contextWindowSize: 256_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "z-ai/glm-4.5-air:free",
+                contextWindowSize: 131_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
         ],
         websiteURL: URL(string: "https://openrouter.ai/")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_OpenRouter"

@@ -15,64 +15,96 @@ public final class AliyunTokenPlanProvider: LumiLLMProvider, @unchecked Sendable
         description: LumiPluginLocalization.string("阿里云 DashScope Token Plan", bundle: .module),
         defaultModel: "qwen3.6-plus",
         availableModels: [
-            "qwen3.6-flash",
-            "qwen3.6-plus",
-            "qwen3.7-plus",
-            "qwen3.7-max",
-            "qwen-image-2.0",
-            "qwen-image-2.0-pro",
-            "wan2.7-image",
-            "wan2.7-image-pro",
-            "deepseek-v3.2",
-            "deepseek-v4-flash",
-            "deepseek-v4-pro",
-            "kimi-k2.5",
-            "kimi-k2.6",
-            "kimi-k2.7-code",
-            "glm-5",
-            "glm-5.1",
-            "glm-5.2",
-            "MiniMax-M2.5",
-        ],
-        contextWindowSizes: [
-            "qwen3.6-flash": 1_000_000,
-            "qwen3.6-plus": 1_000_000,
-            "qwen3.7-plus": 1_000_000,
-            "qwen3.7-max": 1_000_000,
-            "qwen-image-2.0": 32_768,
-            "qwen-image-2.0-pro": 32_768,
-            "wan2.7-image": 32_768,
-            "wan2.7-image-pro": 32_768,
-            "deepseek-v3.2": 131_072,
-            "deepseek-v4-flash": 131_072,
-            "deepseek-v4-pro": 131_072,
-            "kimi-k2.5": 262_144,
-            "kimi-k2.6": 262_144,
-            "kimi-k2.7-code": 262_144,
-            "glm-5": 1_000_000,
-            "glm-5.1": 1_000_000,
-            "glm-5.2": 1_000_000,
-            "MiniMax-M2.5": 204_800
-        ],
-        modelCapabilities: [
-            "qwen3.6-flash": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "qwen3.6-plus": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "qwen3.7-plus": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "qwen3.7-max": .init(supportsVision: false, supportsTools: true, supportsThinking: true),
-            "qwen-image-2.0": .init(supportsVision: true, supportsTools: false),
-            "qwen-image-2.0-pro": .init(supportsVision: true, supportsTools: false),
-            "wan2.7-image": .init(supportsVision: false, supportsTools: false),
-            "wan2.7-image-pro": .init(supportsVision: false, supportsTools: false),
-            "deepseek-v3.2": .init(supportsVision: false, supportsTools: true, supportsThinking: true),
-            "deepseek-v4-flash": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "deepseek-v4-pro": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
-            "kimi-k2.5": .init(supportsVision: false, supportsTools: true),
-            "kimi-k2.6": .init(supportsVision: true, supportsTools: true),
-            "kimi-k2.7-code": .init(supportsVision: true, supportsTools: true),
-            "glm-5": .init(supportsVision: true, supportsTools: true),
-            "glm-5.1": .init(supportsVision: true, supportsTools: true),
-            "glm-5.2": .init(supportsVision: true, supportsTools: true),
-            "MiniMax-M2.5": .init(supportsVision: false, supportsTools: true)
+            .init(
+                id: "qwen3.6-flash",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "qwen3.6-plus",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "qwen3.7-plus",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "qwen3.7-max",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "qwen-image-2.0",
+                contextWindowSize: 32_768,
+                capabilities: .init(supportsVision: true, supportsTools: false)
+            ),
+            .init(
+                id: "qwen-image-2.0-pro",
+                contextWindowSize: 32_768,
+                capabilities: .init(supportsVision: true, supportsTools: false)
+            ),
+            .init(
+                id: "wan2.7-image",
+                contextWindowSize: 32_768,
+                capabilities: .init(supportsVision: false, supportsTools: false)
+            ),
+            .init(
+                id: "wan2.7-image-pro",
+                contextWindowSize: 32_768,
+                capabilities: .init(supportsVision: false, supportsTools: false)
+            ),
+            .init(
+                id: "deepseek-v3.2",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: false, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "deepseek-v4-flash",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "deepseek-v4-pro",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+            ),
+            .init(
+                id: "kimi-k2.5",
+                contextWindowSize: 262_144,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "kimi-k2.6",
+                contextWindowSize: 262_144,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "kimi-k2.7-code",
+                contextWindowSize: 262_144,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "glm-5",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "glm-5.1",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "glm-5.2",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "MiniMax-M2.5",
+                contextWindowSize: 204_800,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
         ],
         websiteURL: URL(string: "https://www.aliyun.com/product/bailian")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_Aliyun"
