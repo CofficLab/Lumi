@@ -30,8 +30,8 @@ public final class AnthropicProvider: LumiLLMProvider, @unchecked Sendable {
             "claude-3-haiku-20240307": 200_000
         ],
         modelCapabilities: [
-            "claude-sonnet-4-20250514": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "claude-opus-4-20250514": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "claude-sonnet-4-20250514": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "claude-opus-4-20250514": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
             "claude-3-5-sonnet-20241022": .init(supportsVision: true, supportsTools: true),
             "claude-3-5-sonnet-20240620": .init(supportsVision: true, supportsTools: true),
             "claude-3-opus-20240229": .init(supportsVision: true, supportsTools: true),

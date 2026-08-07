@@ -17,8 +17,8 @@ public final class DeepSeekOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
             "deepseek-v4-pro": 1000000,
         ],
         modelCapabilities: [
-            "deepseek-v4-flash": .init(supportsVision: false, supportsTools: true),
-            "deepseek-v4-pro": .init(supportsVision: false, supportsTools: true),
+            "deepseek-v4-flash": .init(supportsVision: false, supportsTools: true, supportsThinking: true),
+            "deepseek-v4-pro": .init(supportsVision: false, supportsTools: true, supportsThinking: true),
         ],
         websiteURL: URL(string: "https://www.deepseek.com/")!,
         apiKeyStorageKey: DeepSeekPlugin.apiKeyStorageKey

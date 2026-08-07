@@ -26,11 +26,11 @@ public final class FeifeimiaoProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-5.2": 400_000
         ],
         modelCapabilities: [
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.4": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.3": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.2": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true)
+            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "gpt-5.4": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "gpt-5.3": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "gpt-5.2": .init(supportsVision: true, supportsTools: true, supportsThinking: true)
         ],
         websiteURL: URL(string: "https://feifeimiao.top")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_Feifeimiao"
@@ -54,7 +54,6 @@ public final class FeifeimiaoProvider: LumiLLMProvider, @unchecked Sendable {
             includeUsageInStreamOptions: true,
             returnsEmptyChunkWhenNoDelta: false,
             acceptsFunctionScopedToolCallID: false,
-            supportsReasoningEffort: true
         )
         self.adapter = OpenAICompatibleProviderAdapter(configuration: config)
         self.apiService = apiService

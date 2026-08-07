@@ -16,8 +16,8 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-5.4-mini": 400_000
         ],
         modelCapabilities: [
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true)
+            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true, supportsThinking: true)
         ],
         websiteURL: URL(string: "https://github.com/openai/codex")!
     )

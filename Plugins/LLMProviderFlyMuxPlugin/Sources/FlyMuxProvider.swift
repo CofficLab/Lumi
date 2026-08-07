@@ -20,8 +20,8 @@ public final class FlyMuxProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-5.4": 1_000_000
         ],
         modelCapabilities: [
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.4": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true)
+            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "gpt-5.4": .init(supportsVision: true, supportsTools: true, supportsThinking: true)
         ],
         websiteURL: URL(string: "https://flymux.ai")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_FlyMux"
@@ -45,7 +45,6 @@ public final class FlyMuxProvider: LumiLLMProvider, @unchecked Sendable {
             includeUsageInStreamOptions: true,
             returnsEmptyChunkWhenNoDelta: false,
             acceptsFunctionScopedToolCallID: false,
-            supportsReasoningEffort: true
         )
         self.adapter = OpenAICompatibleProviderAdapter(configuration: config)
         self.apiService = apiService

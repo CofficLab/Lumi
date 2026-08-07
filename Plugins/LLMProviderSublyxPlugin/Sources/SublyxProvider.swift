@@ -89,9 +89,9 @@ public final class SublyxProvider: LumiLLMProvider, SuperLog, @unchecked Sendabl
             "gpt-4.1": 1_000_000
         ],
         modelCapabilities: [
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.4": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "gpt-5.5": .init(supportsVision: true, supportsTools: true),
+            "gpt-5.4": .init(supportsVision: true, supportsTools: true),
+            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true),
             "gpt-4o": .init(supportsVision: true, supportsTools: true),
             "gpt-4.1": .init(supportsVision: true, supportsTools: true)
         ],
@@ -112,7 +112,6 @@ public final class SublyxProvider: LumiLLMProvider, SuperLog, @unchecked Sendabl
             includeUsageInStreamOptions: true,
             returnsEmptyChunkWhenNoDelta: false,
             acceptsFunctionScopedToolCallID: false,
-            supportsReasoningEffort: true
         )
         self.adapter = OpenAICompatibleProviderAdapter(configuration: config)
         self.apiService = apiService

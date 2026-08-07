@@ -50,7 +50,7 @@ struct ModelListItem: View {
         capabilities.supportsVision
             || capabilities.supportsTools
             || capabilities.supportsTTS
-            || capabilities.supportsReasoningEffort
+            || capabilities.supportsThinking
     }
 
     @ViewBuilder
@@ -63,11 +63,11 @@ struct ModelListItem: View {
                 if capabilities.supportsTools {
                     AppTag("Tools", systemImage: "wrench.and.screwdriver")
                 }
-                if capabilities.supportsReasoningEffort {
-                    AppTag("Reasoning", systemImage: "brain")
-                }
                 if capabilities.supportsTTS {
                     AppTag("TTS", systemImage: "speaker.wave.2")
+                }
+                if capabilities.supportsThinking {
+                    AppTag("Thinking", systemImage: "brain.head.profile")
                 }
             }
 
