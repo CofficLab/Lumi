@@ -1,9 +1,15 @@
 import LumiKernel
 import LumiUI
+import os
+import SuperLogKit
 import SwiftUI
 
 /// Message List V2 View (standard / 标准模式)
-struct ListV2View: View {
+struct ListV2View: View, SuperLog {
+    nonisolated static let logger = MessageListPlugin.logger
+    nonisolated static let emoji = "📄"
+    nonisolated static let verbose: Bool = true
+
     let kernel: LumiKernel
     @StateObject private var viewModel: ListViewModel
 
@@ -43,6 +49,9 @@ struct ListV2View: View {
     init(kernel: LumiKernel) {
         self.kernel = kernel
         _viewModel = StateObject(wrappedValue: ListViewModel(kernel: kernel))
+        if Self.verbose {
+            Self.logger.info("\(Self.i)conversationID: \(kernel.conversations?.selectedConversationID?.uuidString ?? "nil")")
+        }
     }
 
     var body: some View {
@@ -67,17 +76,26 @@ struct ListV2View: View {
         //   `selectedConversationID` 已是新值,直接传给 activate,无需读 kernel);
         // - 会话设置(verbosity 等)变化由 `.lumiConversationsDidChange` 驱动轻量重建。
         .task {
+            if Self.verbose {
+                Self.logger.info("\(self.t)首次出现,conversationID: \(viewModel.selectedConversationID?.uuidString ?? "nil")")
+            }
             // 首次出现/容器切换重建:重置滚动位置,加载当前选中会话。
             atBottomBox.value = true
             await viewModel.activate(conversationID: viewModel.selectedConversationID)
         }
         .onLumiSelectedConversationDidChange { newID in
+            if Self.verbose {
+                Self.logger.info("\(self.t)选中会话切换：\(newID?.uuidString ?? "nil")")
+            }
             atBottomBox.value = true
             Task { @MainActor in
                 await viewModel.activate(conversationID: newID)
             }
         }
         .onLumiConversationsDidChange {
+            if Self.verbose {
+                Self.logger.info("\(self.t)会话设置变更,刷新行投影")
+            }
             viewModel.refreshConversationSettingsIfNeeded()
         }
     }
