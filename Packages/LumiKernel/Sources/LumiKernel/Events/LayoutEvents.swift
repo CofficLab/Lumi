@@ -55,7 +55,7 @@ extension Notification.Name {
     ///
     /// 与 `objectWillChange` 的区别：本事件是**变更完成后**的广播，消费视图
     /// （如 ChatHeaderView）可在 handler 里从 workspace 服务重新拉取自己关心的
-    /// 清单快照，无需再经 `ObservableWorkspaceBox` 窄播包装。
+    /// 清单快照，由事件驱动刷新。
     public static let workspaceContributionsDidChange = Notification.Name("WorkspaceContributionsDidChange")
 }
 
@@ -249,7 +249,7 @@ public extension View {
     /// 监听工作区 UI 贡献清单变更（贡献注册 / 注销 / 全量重建后触发）。
     ///
     /// 消费方在 handler 里从 workspace 服务重新拉取自己关心的清单快照，
-    /// 无需再经 `ObservableWorkspaceBox` 订阅 service 的 `objectWillChange`。
+    /// 由事件驱动刷新。
     func onWorkspaceContributionsDidChange(perform action: @escaping () -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .workspaceContributionsDidChange)) { _ in
             action()

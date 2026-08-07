@@ -4,7 +4,7 @@ import SwiftUI
 
 /// 只负责渲染插件注册的 ChatSection 内容区（stack + bottomFixed）
 ///
-/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 不订阅 workspace 服务的 `objectWillChange`，
 /// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
 /// 重新拉取 chatSectionItems。
 struct ChatSectionContentView: View {

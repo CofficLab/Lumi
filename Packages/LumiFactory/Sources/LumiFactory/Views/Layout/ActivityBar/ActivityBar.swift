@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// 显示所有视图容器（插件注册的 ViewContainer），用户点击切换激活容器。
 ///
-/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 不订阅 workspace 服务的 `objectWillChange`，
 /// 改为「快照 + 事件刷新」：init 读一次初值，监听两个事件：
 /// - `.workspaceContributionsDidChange`：容器清单注册/注销/重建后更新；
 /// - `.activeViewContainerIDDidChange`：用户切换容器时同步高亮（保留原 onAppear 行为）。

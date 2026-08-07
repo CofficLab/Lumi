@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// 显示当前容器可用的 rail tabs，用户点击切换活跃 tab。
 ///
-/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 不订阅 workspace 服务的 `objectWillChange`，
 /// 改为「快照 + 事件刷新」：init 读一次初值，监听三个事件：
 /// - `.workspaceContributionsDidChange`：rail tab 清单变更；
 /// - `.activeViewContainerIDDidChange`：切换容器后过滤条件（supportsProject / chatVisibility）变化；

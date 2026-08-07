@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Chat 工具栏视图
 ///
-/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 不订阅 workspace 服务的 `objectWillChange`，
 /// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
 /// 重新拉取两个清单（toolbar items + toolbar bar items）。
 struct ChatToolbarView: View {

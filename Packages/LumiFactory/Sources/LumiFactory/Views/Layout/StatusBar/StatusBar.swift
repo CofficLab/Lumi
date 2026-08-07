@@ -7,7 +7,7 @@ import SwiftUI
 /// 显示所有插件注册的状态栏项，按位置分为左侧、中间、右侧三个区域。
 /// 如果工作区服务（WorkspaceProviding）不可用，显示错误提示。
 ///
-/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 不订阅 workspace 服务的 `objectWillChange`，
 /// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
 /// 重新拉取三个位置的 status bar items。
 struct StatusBar: View {

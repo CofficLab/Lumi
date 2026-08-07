@@ -4,7 +4,7 @@ import SwiftUI
 
 /// 聊天分区标题栏视图
 ///
-/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 不订阅 workspace 服务的 `objectWillChange`，
 /// 改为「快照 + 事件刷新」：
 /// - `init` 阶段读一次初值：启动注册贡献时不发通知，且父视图 ChatView 是条件 body，
 ///   切换容器时本视图可能被重建，同步读初值可避免 .task 异步绑定的时序竞争；

@@ -7,7 +7,7 @@ import SwiftUI
 /// 位于消息列表与输入框之间，用于显示插件贡献的动作栏按钮，
 /// 例如模型选择、快捷操作等功能入口。
 ///
-/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 不订阅 workspace 服务的 `objectWillChange`，
 /// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
 /// 重新拉取 action bar items。
 ///
