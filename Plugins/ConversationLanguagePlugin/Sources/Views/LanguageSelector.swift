@@ -3,12 +3,16 @@ import SwiftUI
 
 /// 语言切换按钮：每个对话保存独立语言偏好。
 struct LanguageToggleButton: View {
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+
+    // 只订阅 conversations 这一个 service：本视图不挂在 kernel 全局总线上，
+    // project/workspace/settings 等无关服务变更不会触发这里刷新。
+    @StateObject private var box = ObservableConversationsBox()
 
     @State private var isPopoverPresented = false
 
     private var conversations: (any ConversationManaging)? {
-        kernel.conversations
+        box.service
     }
 
     private var selectedConversationID: UUID? {
@@ -43,6 +47,7 @@ struct LanguageToggleButton: View {
                 isPopoverPresented = false
             }
         }
+        .task { box.bind(kernel.conversations) }
     }
 
     private var foregroundColor: Color {

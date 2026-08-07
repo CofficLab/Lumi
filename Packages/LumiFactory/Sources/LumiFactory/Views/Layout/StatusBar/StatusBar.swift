@@ -8,7 +8,11 @@ import SwiftUI
 /// 如果工作区服务（WorkspaceProviding）不可用，显示错误提示。
 struct StatusBar: View {
     @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+
+    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
+    // project/conversations/settings 等无关服务变更不会触发这里刷新。
+    @StateObject private var workspaceBox = ObservableWorkspaceBox()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,11 +30,14 @@ struct StatusBar: View {
         .overlay(alignment: .top) {
             AppDivider()
         }
+        .task {
+            workspaceBox.bind(kernel.workspace)
+        }
     }
 
     private var statusBarResult: Result<StatusBarItems, Error> {
         do {
-            guard let workspace = kernel.workspace else {
+            guard let workspace = workspaceBox.service else {
                 throw LumiKernelError.serviceNotAvailable(service: "Workspace")
             }
             let leading = workspace.statusBarItems(placement: .leading)

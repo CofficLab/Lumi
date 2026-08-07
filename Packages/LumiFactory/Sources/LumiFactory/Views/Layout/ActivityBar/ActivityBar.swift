@@ -11,12 +11,16 @@ struct ActivityBar: View, SuperLog {
 
     @LumiTheme private var theme
     @Environment(\.openWindow) private var openWindow
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
     @State private var highlightedContainerID: String?
+
+    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
+    // project/conversations/settings 等无关服务变更不会触发这里刷新。
+    @StateObject private var workspaceBox = ObservableWorkspaceBox()
 
     var body: some View {
         VStack(spacing: 6) {
-            if let workspace = kernel.workspace {
+            if let workspace = workspaceBox.service {
                 containerList(workspace: workspace)
             } else {
                 ActivityBarErrorView()
@@ -43,6 +47,7 @@ struct ActivityBar: View, SuperLog {
                 .allowsHitTesting(false)
         )
         #endif
+        .task { workspaceBox.bind(kernel.workspace) }
     }
 
     // MARK: - Container List

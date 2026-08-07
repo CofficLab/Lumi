@@ -7,14 +7,18 @@ import SwiftUI
 /// 自己从 `kernel.sharedUI` 取出 toolbar items 与 bar items，
 /// 按 leading / trailing / bar 三个位置渲染。
 struct ChatToolbarView: View {
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+
+    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
+    // project/conversations/settings 等无关服务变更不会触发这里刷新。
+    @StateObject private var workspaceBox = ObservableWorkspaceBox()
 
     private var toolbarItems: [ChatSectionToolbarItem] {
-        kernel.workspace?.allChatSectionToolbarItems ?? []
+        workspaceBox.service?.allChatSectionToolbarItems ?? []
     }
 
     private var toolbarBarItems: [ChatSectionToolbarBarItem] {
-        kernel.workspace?.allChatSectionToolbarBarItems ?? []
+        workspaceBox.service?.allChatSectionToolbarBarItems ?? []
     }
 
     private var leadingToolbarItems: [ChatSectionToolbarItem] {
@@ -61,5 +65,6 @@ struct ChatToolbarView: View {
         }
         .borderBottom()
         .shadowMd()
+        .task { workspaceBox.bind(kernel.workspace) }
     }
 }

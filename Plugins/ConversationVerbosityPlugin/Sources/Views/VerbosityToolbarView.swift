@@ -5,7 +5,7 @@ import SwiftUI
 struct VerbosityToolbarView: View {
     let kernel: LumiKernel
 
-    @StateObject private var box = ObservableConversationVerbosityBox()
+    @StateObject private var box = ObservableConversationsBox()
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @State private var isPopoverPresented = false

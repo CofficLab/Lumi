@@ -5,13 +5,17 @@ import SwiftUI
 
 struct AppTitleToolbar: View {
     @LumiTheme private var theme
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+
+    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
+    // project/conversations/settings 等无关服务变更不会触发这里刷新。
+    @StateObject private var workspaceBox = ObservableWorkspaceBox()
 
     private let height: CGFloat = 44
     private let trafficLightReserveWidth: CGFloat = 76
 
     var body: some View {
-        let items = kernel.workspace?.allTitleToolbarItems ?? []
+        let items = workspaceBox.service?.allTitleToolbarItems ?? []
         let leadingItems = items.filter { $0.placement == .leading }
         let centerItems = items.filter { $0.placement == .center }
         let trailingItems = items.filter { $0.placement == .trailing }
@@ -50,6 +54,7 @@ struct AppTitleToolbar: View {
                 .allowsHitTesting(false)
         )
         #endif
+        .task { workspaceBox.bind(kernel.workspace) }
     }
 
     private func toolbarGroup(_ items: [TitleToolbarItem]) -> some View {
