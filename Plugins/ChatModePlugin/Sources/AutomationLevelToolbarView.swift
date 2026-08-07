@@ -4,20 +4,12 @@ import SwiftUI
 struct AutomationLevelToolbarView: View {
     let kernel: LumiKernel
 
-    // 只订阅 conversations 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/workspace/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var box = ObservableConversationsBox()
+    // automationLevel 随当前会话切换变化。用事件 + @State 缓存，不挂 kernel 全局总线。
+    @State private var selectedConversationID: UUID?
+    @State private var selectedLevel: LumiAutomationLevel = .build
 
     private var conversations: (any ConversationManaging)? {
-        box.service
-    }
-
-    private var selectedConversationID: UUID? {
-        conversations?.selectedConversationID
-    }
-
-    private var selectedLevel: LumiAutomationLevel {
-        conversations?.automationLevel(for: selectedConversationID) ?? .build
+        kernel.conversations
     }
 
     @State private var isPopoverPresented = false
@@ -42,10 +34,18 @@ struct AutomationLevelToolbarView: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             AutomationLevelPopover(selectedLevel: selectedLevel) { level in
                 conversations?.setAutomationLevel(level, for: selectedConversationID)
+                selectedLevel = level
                 isPopoverPresented = false
             }
         }
-        .task { box.bind(kernel.conversations) }
+        .task { refreshState() }
+        .onLumiSelectedConversationDidChange { refreshState() }
+    }
+
+    private func refreshState() {
+        let id = conversations?.selectedConversationID
+        selectedConversationID = id
+        selectedLevel = conversations?.automationLevel(for: id) ?? .build
     }
 
     private var foregroundColor: Color {

@@ -3,11 +3,11 @@ import SwiftUI
 import LocalizationKit
 
 struct ConversationSpeedToolbarView: View {
-    // 只订阅 conversations（selectedConversationID 无命名事件，必须 box）。
-    // 消息变更由 .onLumiMessagesDidChange 精确覆盖，无需 messageManagerBox。
-    // 不挂在 kernel 全局总线上，project/settings 等无关服务变更不会触发这里刷新。
+    // selectedConversationID 由 .onLumiSelectedConversationDidChange 事件更新；
+    // 消息变更由 .onLumiMessagesDidChange 精确覆盖。
+    // 不挂 kernel 全局总线，project/settings 等无关服务变更不会触发这里刷新。
     let kernel: LumiKernel
-    @StateObject private var conversationsBox = ObservableConversationsBox()
+    @State private var selectedConversationID: UUID?
 
     @State private var cachedTPS: Double?
     @State private var hasShownTPSAtLeastOnce = false
@@ -20,10 +20,6 @@ struct ConversationSpeedToolbarView: View {
     @State private var streamingDurationMs: Double?
     @State private var timeToFirstTokenMs: Double?
     @State private var providerID: String?
-
-    private var selectedConversationID: UUID? {
-        conversationsBox.service?.selectedConversationID
-    }
 
     var body: some View {
         Group {
@@ -75,7 +71,10 @@ struct ConversationSpeedToolbarView: View {
             self.updateTPS()
         }
         .task {
-            conversationsBox.bind(kernel.conversations)
+            selectedConversationID = kernel.conversations?.selectedConversationID
+        }
+        .onLumiSelectedConversationDidChange { newID in
+            selectedConversationID = newID
         }
     }
 

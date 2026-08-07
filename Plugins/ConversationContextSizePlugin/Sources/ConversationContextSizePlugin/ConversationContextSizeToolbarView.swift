@@ -8,18 +8,18 @@ struct ConversationContextSizeToolbarView: View {
     @LumiTheme private var theme
     let kernel: LumiKernel
 
-    // 只订阅 conversations + llmProvider 两个 service：上下文窗口大小同时依赖
-    // 「当前对话选中的 provider/model」与「provider 注册表」。
-    // 不挂在 kernel 全局总线上，project/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var conversationsBox = ObservableConversationsBox()
+    // 上下文窗口大小同时依赖「当前对话选中的 provider/model」（随会话切换变化，
+    // 由 .onLumiSelectedConversationDidChange 事件驱动）与「provider 注册表」
+    // （由 providerBox 精确订阅）。size 缓存进 @State。不挂 kernel 全局总线。
     @StateObject private var providerBox = ObservableLLMProviderBox()
+    @State private var size: Int?
 
     var body: some View {
         // 用 Group 包裹条件分支，并把 .task 挂在 Group 上：
-        // 门控条件依赖 box（绑定前为 nil），分支首次必为 false。
-        // 若把 .task 挂进 if 内，分支不渲染时 bind 永不执行（死锁）。Group 恒存在，保证绑定。
+        // 门控条件依赖 size（绑定前为 nil），分支首次必为 false。
+        // 若把 .task 挂进 if 内，分支不渲染时初始化永不执行（死锁）。Group 恒存在，保证初始化。
         Group {
-            if let size = currentContextSize(), size > 0 {
+            if let size, size > 0 {
                 HStack(spacing: 4) {
                     Image(systemName: "text.viewfinder")
                         .font(.system(size: 11))
@@ -38,24 +38,34 @@ struct ConversationContextSizeToolbarView: View {
             }
         }
         .task {
-            conversationsBox.bind(kernel.conversations)
             providerBox.bind(kernel.llmProvider)
+            refreshSize()
         }
+        .onLumiSelectedConversationDidChange { refreshSize() }
+        .onLumiSelectedRemoteProviderIDDidChange { refreshSize() }
+        .onLumiSelectedLocalProviderIDDidChange { refreshSize() }
+        .onLumiSelectedModelsDidChange { refreshSize() }
     }
 
-    private func currentContextSize() -> Int? {
+    private func refreshSize() {
         // 在一次 MainActor 快照中读取服务，避免启动注册期间重复解析 service registry。
-        guard let providerManager = providerBox.service else { return nil }
-        let conversationManager = conversationsBox.service
+        guard let providerManager = providerBox.service else {
+            size = nil
+            return
+        }
+        let conversationManager = kernel.conversations
         let conversationID = conversationManager?.selectedConversationID
         let providerID = conversationID.flatMap { conversationManager?.providerID(for: $0) }
             ?? providerManager.selectedProviderID
         let modelName = conversationID.flatMap { conversationManager?.modelName(for: $0) }
             ?? providerManager.selectedModel
 
-        guard let providerID, let modelName else { return nil }
-        guard let info = providerManager.providerInfo(id: providerID) else { return nil }
-        return info.contextWindowSizes[modelName]
+        guard let providerID, let modelName,
+              let info = providerManager.providerInfo(id: providerID) else {
+            size = nil
+            return
+        }
+        size = info.contextWindowSizes[modelName]
     }
 
     /// 格式化上下文大小：128000 → "128K"

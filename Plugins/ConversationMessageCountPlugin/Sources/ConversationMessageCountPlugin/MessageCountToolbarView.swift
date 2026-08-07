@@ -7,15 +7,11 @@ struct MessageCountToolbarView: View {
     @LumiTheme private var theme
     let kernel: LumiKernel
 
-    // 只订阅 conversations（selectedConversationID 无命名事件，必须 box）。
-    // 消息增删由 .onLumiMessagesDidChange 精确覆盖，count 缓存进 @State，
-    // 无需 messageManagerBox。不挂在 kernel 全局总线上。
-    @StateObject private var conversationsBox = ObservableConversationsBox()
+    // selectedConversationID 由 .onLumiSelectedConversationDidChange 事件更新；
+    // 消息增删由 .onLumiMessagesDidChange 精确覆盖。count 缓存进 @State。
+    // 不挂 kernel 全局总线。
+    @State private var selectedConversationID: UUID?
     @State private var count: Int = 0
-
-    private var selectedConversationID: UUID? {
-        conversationsBox.service?.selectedConversationID
-    }
 
     var body: some View {
         HStack(spacing: 4) {
@@ -34,8 +30,11 @@ struct MessageCountToolbarView: View {
         )
         .help("Messages in current conversation: \(count)")
         .task {
-            conversationsBox.bind(kernel.conversations)
+            selectedConversationID = kernel.conversations?.selectedConversationID
             refreshCount()
+        }
+        .onLumiSelectedConversationDidChange { newID in
+            selectedConversationID = newID
         }
         .onLumiMessagesDidChange { eventConversationID in
             // 只关心当前会话的消息变更（nil 表示全量刷新）。

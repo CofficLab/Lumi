@@ -93,6 +93,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                 self.persistSelectedConversationID()
                 self.isLoadingConversations = false
                 self.notifyConversationsChanged()
+                self.notifySelectedConversationChanged()
 
 
                 if Self.verbose {
@@ -187,6 +188,14 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         kernel?.eventManager.postConversationsDidChange(object: self)
     }
 
+    /// Notify observers that the selected conversation changed.
+    ///
+    /// 与 `notifyConversationsChanged()`（列表增删/标题）区分：本通知只在
+    /// `selectedConversationID` 变化时发，让关心「当前会话」的视图精确订阅。
+    private func notifySelectedConversationChanged() {
+        kernel?.eventManager.postSelectedConversationDidChange(object: self, conversationID: selectedConversationID)
+    }
+
     // MARK: - ConversationManaging
 
     public func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID {
@@ -249,6 +258,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             selectedConversationID = id
             updateCurrentTitle()
             persistSelectedConversationID()
+            notifySelectedConversationChanged()
         }
 
         // Persist first, then notify the list. Otherwise the list may query the
@@ -288,6 +298,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         selectedConversationID = id
         updateCurrentTitle()
         persistSelectedConversationID()
+        notifySelectedConversationChanged()
     }
 
     private func cache(_ summary: LumiConversationSummary) {
@@ -322,6 +333,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         selectedConversationID = nil
         updateCurrentTitle()
         persistSelectedConversationID()
+        notifySelectedConversationChanged()
     }
 
     /// 标记对话为活跃：刷新 `updatedAt`，使其在「最近更新」排序中置顶。
@@ -358,6 +370,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             selectedConversationID = conversations.first?.id
             updateCurrentTitle()
             persistSelectedConversationID()
+            notifySelectedConversationChanged()
         }
 
         // Delete every storage owned by the conversation. The list is updated

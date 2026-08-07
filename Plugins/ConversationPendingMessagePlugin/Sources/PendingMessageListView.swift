@@ -7,13 +7,9 @@ struct PendingMessageListView: View {
     @ObservedObject var box: ObservableMessageSendingBox
     @LumiTheme private var theme
 
-    // 只订阅 conversations 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/workspace/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var conversationsBox = ObservableConversationsBox()
-
-    private var conversationID: UUID? {
-        conversationsBox.service?.selectedConversationID
-    }
+    // conversationID 由 .onLumiSelectedConversationDidChange 事件更新。
+    // 不挂 kernel 全局总线。
+    @State private var conversationID: UUID?
 
     private var messages: [LumiPendingMessage] {
         guard let conversationID else { return [] }
@@ -64,6 +60,11 @@ struct PendingMessageListView: View {
                 .background(theme.textPrimary.opacity(0.025))
             }
         }
-        .task { conversationsBox.bind(kernel.conversations) }
+        .task {
+            conversationID = kernel.conversations?.selectedConversationID
+        }
+        .onLumiSelectedConversationDidChange { newID in
+            conversationID = newID
+        }
     }
 }

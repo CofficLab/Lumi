@@ -5,14 +5,15 @@ import SwiftUI
 struct VerbosityToolbarView: View {
     let kernel: LumiKernel
 
-    @StateObject private var box = ObservableConversationsBox()
+    // globalVerbosity 随当前会话切换可能变化（由 StateMonitorPlugin 双向同步）。
+    // 用事件 + @State 缓存，不挂 kernel 全局总线。
+    @State private var selectedLevel: LumiResponseVerbosity = .defaultVerbosity
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     @State private var isPopoverPresented = false
 
-    /// 使用全局详细程度，不依赖具体对话
-    private var selectedLevel: LumiResponseVerbosity {
-        box.service?.globalVerbosity ?? .defaultVerbosity
+    private var conversations: (any ConversationManaging)? {
+        kernel.conversations
     }
 
     private var foregroundColor: Color {
@@ -57,14 +58,16 @@ struct VerbosityToolbarView: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VerbosityPopover(selectedLevel: selectedLevel) { level in
                 // 写入全局详细程度，不再直接操作某个对话
-                box.service?.setGlobalVerbosity(level)
+                conversations?.setGlobalVerbosity(level)
+                selectedLevel = level
                 isPopoverPresented = false
             }
         }
-        // 绑定到 conversations 这一个 service：本视图只订阅它的 objectWillChange，
-        // 不再挂在 kernel 全局总线上，workspace/settings 等变更不会触发这里刷新。
-        .task {
-            box.bind(kernel.conversations)
-        }
+        .task { refreshLevel() }
+        .onLumiSelectedConversationDidChange { refreshLevel() }
+    }
+
+    private func refreshLevel() {
+        selectedLevel = conversations?.globalVerbosity ?? .defaultVerbosity
     }
 }

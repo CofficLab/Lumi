@@ -7,19 +7,20 @@ struct ConversationTitleHeaderView: View {
     let kernel: LumiKernel
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    // 只订阅 conversations 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/workspace/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var box = ObservableConversationsBox()
+    // 标题随当前选中会话变化。用事件 + @State 缓存，不挂 kernel 全局总线。
+    @State private var displayTitle: String = ""
 
     var body: some View {
         Text(displayTitle)
             .font(.appMicroEmphasized)
             .foregroundColor(theme.textPrimary)
             .lineLimit(1)
-            .task { box.bind(kernel.conversations) }
+            .task { refreshTitle() }
+            .onLumiSelectedConversationDidChange { refreshTitle() }
+            .onLumiConversationTitleDidChange { _ in refreshTitle() }
     }
 
-    private var displayTitle: String {
-        box.service?.currentTitle ?? ""
+    private func refreshTitle() {
+        displayTitle = kernel.conversations?.currentTitle ?? ""
     }
 }

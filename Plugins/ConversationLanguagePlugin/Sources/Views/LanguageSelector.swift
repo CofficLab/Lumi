@@ -5,22 +5,14 @@ import SwiftUI
 struct LanguageToggleButton: View {
     let kernel: LumiKernel
 
-    // 只订阅 conversations 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/workspace/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var box = ObservableConversationsBox()
+    // language 随当前会话切换变化。用事件 + @State 缓存，不挂 kernel 全局总线。
+    @State private var selectedConversationID: UUID?
+    @State private var currentLanguage: LumiConversationLanguage = .chinese
 
     @State private var isPopoverPresented = false
 
     private var conversations: (any ConversationManaging)? {
-        box.service
-    }
-
-    private var selectedConversationID: UUID? {
-        conversations?.selectedConversationID
-    }
-
-    private var currentLanguage: LumiConversationLanguage {
-        conversations?.language(for: selectedConversationID) ?? .chinese
+        kernel.conversations
     }
 
     var body: some View {
@@ -44,10 +36,18 @@ struct LanguageToggleButton: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             LanguagePopover(selectedLanguage: currentLanguage) { language in
                 conversations?.setLanguage(language, for: selectedConversationID)
+                currentLanguage = language
                 isPopoverPresented = false
             }
         }
-        .task { box.bind(kernel.conversations) }
+        .task { refreshState() }
+        .onLumiSelectedConversationDidChange { refreshState() }
+    }
+
+    private func refreshState() {
+        let id = conversations?.selectedConversationID
+        selectedConversationID = id
+        currentLanguage = conversations?.language(for: id) ?? .chinese
     }
 
     private var foregroundColor: Color {
