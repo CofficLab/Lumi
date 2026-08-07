@@ -10,8 +10,8 @@ struct ConversationContextSizeToolbarView: View {
 
     // 上下文窗口大小同时依赖「当前对话选中的 provider/model」（随会话切换变化，
     // 由 .onLumiSelectedConversationDidChange 事件驱动）与「provider 注册表」
-    // （由 providerBox 精确订阅）。size 缓存进 @State。不挂 kernel 全局总线。
-    @StateObject private var providerBox = ObservableLLMProviderBox()
+    // （provider 选择变化由 provider 事件驱动）。size 缓存进 @State。
+    // 不挂 kernel 全局总线。
     @State private var size: Int?
 
     var body: some View {
@@ -37,10 +37,7 @@ struct ConversationContextSizeToolbarView: View {
                 .help("Context window: \(size.formatted()) tokens")
             }
         }
-        .task {
-            providerBox.bind(kernel.llmProvider)
-            refreshSize()
-        }
+        .task { refreshSize() }
         .onLumiSelectedConversationDidChange { refreshSize() }
         .onLumiSelectedRemoteProviderIDDidChange { refreshSize() }
         .onLumiSelectedLocalProviderIDDidChange { refreshSize() }
@@ -49,7 +46,7 @@ struct ConversationContextSizeToolbarView: View {
 
     private func refreshSize() {
         // 在一次 MainActor 快照中读取服务，避免启动注册期间重复解析 service registry。
-        guard let providerManager = providerBox.service else {
+        guard let providerManager = kernel.llmProvider else {
             size = nil
             return
         }
