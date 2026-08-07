@@ -38,6 +38,16 @@
         }
       }
     },
+    "%@ (.%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (.%2$@)"
+          }
+        }
+      }
+    },
     "actions enabled" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -656,6 +666,74 @@
         }
       }
     },
+    "Finder Extension Settings Path" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Settings → General → Login Items & Extensions → Finder Extensions"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统设置 → 通用 → 登录项与扩展 → Finder 扩展"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → Finder 擴充功能"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → Finder 擴充功能"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → Finder 擴充功能"
+          }
+        }
+      }
+    },
+    "Finder Extension Settings Path (macOS 15+)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Settings → General → Login Items & Extensions → Extensions → File Provider"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系统设置 → 通用 → 登录项与扩展 → 扩展 → 文件提供程序"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → 擴充功能 → 檔案提供者"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → 擴充功能 → 檔案提供者"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → 擴充功能 → 檔案提供者"
+          }
+        }
+      }
+    },
     "General Actions" : {
       "localizations" : {
         "en" : {
@@ -758,6 +836,40 @@
         }
       }
     },
+    "Menu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "菜单"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選單"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選單"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選單"
+          }
+        }
+      }
+    },
     "Name (e.g. Python Script)" : {
       "localizations" : {
         "en" : {
@@ -856,6 +968,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新建檔案菜单"
+          }
+        }
+      }
+    },
+    "New File Submenu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New File Submenu"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建文件子菜单"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建檔案子選單"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建檔案子選單"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建檔案子選單"
           }
         }
       }
@@ -1198,40 +1344,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "狀態"
-          }
-        }
-      }
-    },
-    "System Settings → General → Login Items & Extensions → Finder Extensions" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System Settings → General → Login Items & Extensions → Finder Extensions"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统设置 → 通用 → 登录项与扩展 → Finder 扩展"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → Finder 擴充功能"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → Finder 擴充功能"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系統設定 → 一般 → 登入項目與擴充功能 → Finder 擴充功能"
           }
         }
       }

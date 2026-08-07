@@ -8,6 +8,14 @@ public struct RClickRailView: View {
 
     public init() {}
 
+    /// 是否显示新建文件子菜单预览
+    private var shouldShowNewFilePreview: Bool {
+        let config = configManager.config
+        let isNewFileEnabled = config.items.contains { $0.type == .newFile && $0.isEnabled }
+        let hasEnabledTemplates = config.fileTemplates.contains { $0.isEnabled }
+        return isNewFileEnabled && hasEnabledTemplates
+    }
+
     public var body: some View {
         VStack(spacing: 0) {
             // 标题栏
@@ -28,7 +36,28 @@ public struct RClickRailView: View {
                 
                 // 预览内容
                 ScrollView {
-                    RClickPreviewView(config: configManager.config)
+                    VStack(alignment: .leading, spacing: 16) {
+                        // 主菜单预览
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(LumiPluginLocalization.string("Menu", bundle: .module))
+                                .font(.appCaptionEmphasized)
+                                .foregroundColor(theme.textSecondary)
+
+                            RClickPreviewView(config: configManager.config)
+                        }
+
+                        // 新建文件子菜单展开预览（仅在新建文件启用且有模板时显示）
+                        if shouldShowNewFilePreview {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(LumiPluginLocalization.string("New File Submenu", bundle: .module))
+                                    .font(.appCaptionEmphasized)
+                                    .foregroundColor(theme.textSecondary)
+
+                                RClickNewFilePreviewView(config: configManager.config)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12)
                 }
                 
                 Spacer()
