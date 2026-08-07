@@ -200,7 +200,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
             hasEarlier: hasEarlierMessages
         ) else { return nil }
         // 加载期间用户可能切了会话,丢弃过期结果。
-        guard activeConversationID == conversationID else { return nil }
+        guard selectedConversationID == conversationID else { return nil }
         persistedMessages = result.earlier + persistedMessages
         hasEarlierMessages = result.hasEarlierMessages
         persistedMessages = pagination.evictTailIfNeeded(
@@ -231,7 +231,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
             messageManager: kernel.messageManager,
             current: persistedMessages
         ) else { return false }
-        guard activeConversationID == conversationID else { return false }
+        guard selectedConversationID == conversationID else { return false }
 
         let messagesChanged = persistedMessages != result.merged
         let hasEarlierChanged = result.hasEarlierMessages.map { $0 != hasEarlierMessages } ?? false
@@ -264,7 +264,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
             messageManager: kernel.messageManager
         )
         // 切换会话期间用户可能又选了别的会话,丢弃过期结果。
-        guard activeConversationID == conversationID else { return }
+        guard selectedConversationID == conversationID else { return }
         persistedMessages = result.messages
         hasEarlierMessages = result.hasEarlierMessages
         isLoading = false
@@ -304,7 +304,7 @@ final class MessageListViewModel: ObservableObject, SuperLog {
                 totalDuration: durations.isEmpty ? nil : durations.reduce(0, +)
             )
         }
-        guard activeConversationID == conversationID else { return }
+        guard selectedConversationID == conversationID else { return }
         if turnActivitySummaries != summaries {
             turnActivitySummaries = summaries
         }
