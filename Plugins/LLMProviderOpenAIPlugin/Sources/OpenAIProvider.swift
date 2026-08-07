@@ -30,8 +30,8 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-3.5-turbo": 16_385
         ],
         modelCapabilities: [
-            "gpt-5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "gpt-5": .init(supportsVision: true, supportsTools: true),
+            "gpt-5-mini": .init(supportsVision: true, supportsTools: true),
             "gpt-4o": .init(supportsVision: true, supportsTools: true),
             "gpt-4o-mini": .init(supportsVision: true, supportsTools: true),
             "gpt-4-turbo": .init(supportsVision: true, supportsTools: true),
@@ -54,7 +54,6 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
                 includeUsageInStreamOptions: true,
                 returnsEmptyChunkWhenNoDelta: false,
                 acceptsFunctionScopedToolCallID: false,
-                supportsReasoningEffort: true
             )
         )
     ) {

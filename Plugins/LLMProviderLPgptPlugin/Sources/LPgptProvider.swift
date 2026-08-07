@@ -20,8 +20,8 @@ public final class LPgptProvider: LumiLLMProvider, @unchecked Sendable {
             "gpt-5.5": 1_000_000
         ],
         modelCapabilities: [
-            "gpt-5.4": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true)
+            "gpt-5.4": .init(supportsVision: true, supportsTools: true),
+            "gpt-5.5": .init(supportsVision: true, supportsTools: true)
         ],
         websiteURL: URL(string: "https://lpgpt.us")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_LPgpt"
@@ -45,7 +45,6 @@ public final class LPgptProvider: LumiLLMProvider, @unchecked Sendable {
             includeUsageInStreamOptions: true,
             returnsEmptyChunkWhenNoDelta: false,
             acceptsFunctionScopedToolCallID: false,
-            supportsReasoningEffort: true
         )
         self.adapter = OpenAICompatibleProviderAdapter(configuration: config)
         self.apiService = apiService

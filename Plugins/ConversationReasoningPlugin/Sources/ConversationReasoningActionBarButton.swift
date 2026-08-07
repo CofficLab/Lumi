@@ -6,13 +6,12 @@ struct ConversationReasoningActionBarButton: View {
     @LumiTheme private var theme
     let kernel: LumiKernel
 
-    // 推理强度的能力判定与持久化同时依赖「当前对话的 provider/model」（随会话切换变化，
-    // 由 .onLumiSelectedConversationDidChange 事件驱动）与「provider 注册表的能力元数据」
-    // （provider 选择变化由 provider 事件驱动）。不挂 kernel 全局总线。
+    // 推理强度的能力判定跟随全局模型选择（与 ModelSelectorPlugin 一致），
+    // 持久化按对话维度存储。
     @State private var isPopoverPresented = false
     @State private var localEffort: LumiReasoningEffort = .defaultEffort
     @State private var selectedConversationID: UUID?
-    // provider 选择变化时 bump 此 token 触发 computed 重算。
+    // provider/model 选择变化时 bump 此 token 触发 computed 重算。
     @State private var providerRefreshID = UUID()
 
     private var conversations: (any ConversationManaging)? {
@@ -24,20 +23,14 @@ struct ConversationReasoningActionBarButton: View {
         return kernel.resolveService((any LLMProviderManaging).self)
     }
 
+    /// 跟随全局模型选择（与 ModelSelectorPlugin 一致）
     private var selectedProviderID: String? {
-        if let conversationProviderID = selectedConversationID.flatMap({ conversations?.providerID(for: $0) }) {
-            return conversationProviderID
-        }
-        return llmProvider?.selectedProviderID
+        llmProvider?.selectedProviderID
     }
 
+    /// 跟随全局模型选择（与 ModelSelectorPlugin 一致）
     private var selectedModel: String? {
-        if let selectedConversationID,
-           conversations?.providerID(for: selectedConversationID) != nil,
-           let conversationModel = conversations?.modelName(for: selectedConversationID) {
-            return conversationModel
-        }
-        return llmProvider?.selectedModel
+        llmProvider?.selectedModel
     }
 
     private var selectedModelCapabilities: LumiModelCapabilities? {
@@ -50,8 +43,8 @@ struct ConversationReasoningActionBarButton: View {
         return info.modelCapabilities[model]
     }
 
-    private var supportsReasoningEffort: Bool {
-        selectedModelCapabilities?.supportsReasoningEffort == true
+    private var supportsThinking: Bool {
+        selectedModelCapabilities?.supportsThinking == true
     }
 
     private var persistedEffort: LumiReasoningEffort {
@@ -60,7 +53,7 @@ struct ConversationReasoningActionBarButton: View {
 
     var body: some View {
         Group {
-            if supportsReasoningEffort {
+            if supportsThinking {
                 Button {
                     isPopoverPresented.toggle()
                 } label: {
@@ -97,7 +90,7 @@ struct ConversationReasoningActionBarButton: View {
         .onChange(of: selectedConversationID) { _, _ in
             syncFromConversation()
         }
-        .onChange(of: supportsReasoningEffort) { _, supports in
+        .onChange(of: supportsThinking) { _, supports in
             if supports {
                 syncFromConversation()
             } else {

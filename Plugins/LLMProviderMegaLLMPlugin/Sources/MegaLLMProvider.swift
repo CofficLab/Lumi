@@ -43,18 +43,18 @@ public final class MegaLLMProvider: LumiLLMProvider, @unchecked Sendable {
         ],
         modelCapabilities: [
             "alibaba-qwen3.5-397b": .init(supportsVision: false, supportsTools: true),
-            "claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true),
-            "claude-opus-4-5-20251101": .init(supportsVision: true, supportsTools: true),
-            "claude-opus-4-6": .init(supportsVision: true, supportsTools: true),
-            "claude-sonnet-4-5-20250929": .init(supportsVision: true, supportsTools: true),
-            "claude-sonnet-4-6": .init(supportsVision: true, supportsTools: true),
+            "claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "claude-opus-4-5-20251101": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "claude-opus-4-6": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "claude-sonnet-4-5-20250929": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "claude-sonnet-4-6": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
             "deepseek-ai/deepseek-v3.1": .init(supportsVision: false, supportsTools: true),
             "grok-4.1-fast-reasoning": .init(supportsVision: true, supportsTools: true),
-            "gpt-5-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.3-codex": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
+            "gpt-5-mini": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "gpt-5.3-codex": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
             "llama3.3-70b-instruct": .init(supportsVision: false, supportsTools: true),
             "minimaxai/minimax-m2.1": .init(supportsVision: false, supportsTools: true),
-            "newclaude-opus-4-6": .init(supportsVision: true, supportsTools: true)
+            "newclaude-opus-4-6": .init(supportsVision: true, supportsTools: true, supportsThinking: true)
         ],
         websiteURL: URL(string: "https://megallm.io")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_MegaLLM"
@@ -78,7 +78,6 @@ public final class MegaLLMProvider: LumiLLMProvider, @unchecked Sendable {
             includeUsageInStreamOptions: false,
             returnsEmptyChunkWhenNoDelta: false,
             acceptsFunctionScopedToolCallID: false,
-            supportsReasoningEffort: true
         )
         self.adapter = OpenAICompatibleProviderAdapter(configuration: config)
         self.apiService = apiService

@@ -22,7 +22,7 @@ public struct CodexCLI: Sendable {
             "--skip-git-repo-check",
         ]
 
-        if let reasoningEffort, reasoningEffort != .automatic {
+        if let reasoningEffort {
             arguments.append(contentsOf: [
                 "-c",
                 "model_reasoning_effort=\"\(reasoningEffort.rawValue)\""

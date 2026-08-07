@@ -159,8 +159,8 @@ final class AutoConversationTitleService: SuperLog {
 
         let title = try await providerManager.generateText(
             request,
-            providerID: kernel.conversations?.providerID(for: conversationID),
-            model: kernel.conversations?.modelName(for: conversationID)
+            providerID: kernel.llmProvider?.selectedProviderID ?? kernel.conversations?.providerID(for: conversationID),
+            model: kernel.llmProvider?.selectedModel ?? kernel.conversations?.modelName(for: conversationID)
         )
         return Self.normalizeTitle(title)
     }

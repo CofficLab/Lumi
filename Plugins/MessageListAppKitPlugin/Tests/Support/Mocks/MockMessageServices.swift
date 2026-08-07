@@ -253,7 +253,7 @@ final class MockConversationManager: ConversationManaging {
     func modelName(for conversationID: UUID?) -> String? { nil }
     func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
 
-    func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { .medium }
+    func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { .high }
     func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
 
     func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { .chat }

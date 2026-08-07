@@ -87,11 +87,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             tools: tools,
             systemPrompt: systemPrompt
         )
-        var effectiveConfig = config
-        if !configuration.supportsReasoningEffort {
-            effectiveConfig.reasoningEffort = nil
-        }
-        OpenAICompatibleGenerationOptionsApplier.apply(config: effectiveConfig, model: model, to: &body)
+        OpenAICompatibleGenerationOptionsApplier.apply(config: config, model: model, to: &body)
         return body
     }
 

@@ -69,6 +69,7 @@ extension View {
                 MessageRendererIdBadge(id: id)
             }
         #else
+            self
         #endif
     }
 }
