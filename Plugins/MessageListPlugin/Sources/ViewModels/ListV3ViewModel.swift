@@ -46,7 +46,7 @@ private struct MessageFingerprintV3: Equatable {
 ///   并透传 `verbosity`,本 viewmodel 不参与渲染。
 ///
 /// - SeeAlso: `MessageListPaginationService`(分页策略)、
-///   `MessageListRowBuilder`(行合并规则)、`ListViewModel`(V2 对应物)。
+///   `MessageListRowBuilder`(行合并规则)、`ListV2ViewModel`(V2 对应物)。
 @MainActor
 final class ListV3ViewModel: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-list.viewmodel.v3")

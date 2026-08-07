@@ -11,7 +11,7 @@ struct ListV2View: View, SuperLog {
     nonisolated static let verbose: Bool = true
 
     let kernel: LumiKernel
-    @StateObject private var viewModel: ListViewModel
+    @StateObject private var viewModel: ListV2ViewModel
 
     @LumiTheme private var theme
 
@@ -30,7 +30,7 @@ struct ListV2View: View, SuperLog {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
-        _viewModel = StateObject(wrappedValue: ListViewModel(kernel: kernel))
+        _viewModel = StateObject(wrappedValue: ListV2ViewModel(kernel: kernel))
     }
 
     var body: some View {

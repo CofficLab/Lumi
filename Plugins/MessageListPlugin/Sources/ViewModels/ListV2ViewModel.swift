@@ -44,7 +44,7 @@ private struct MessageFingerprint: Equatable {
 /// - SeeAlso: `MessageListPaginationService`(分页策略)、
 ///   `MessageListRowBuilder`(行合并规则)。
 @MainActor
-final class ListViewModel: ObservableObject, SuperLog {
+final class ListV2ViewModel: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-list.viewmodel")
     nonisolated static let emoji = "📜"
     nonisolated static let verbose = false

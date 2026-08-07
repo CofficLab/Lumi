@@ -7,7 +7,14 @@ import SwiftUI
 /// Message List V3 View (detailed / 详细模式)
 ///
 /// 与 V2(standard)的差异:V3 **显示思考内容**(`reasoningContent`),V2 不显示。
-/// 当前是 V2 的复制(行为暂与 V2 一致),思考内容显示逻辑后续在此基础上增量加入。
+/// 思考内容显示逻辑在此基础上增量加入。
+///
+/// ## 为什么用 SwiftUI `List` 而不是 ScrollView + LazyVStack
+///
+/// V2 的教训:`LazyVStack` 在富文本长列表下反复触发 AttributeGraph 活锁
+/// (主线程 100% CPU 卡死),而普通 `VStack` 会 eager materialize 全部行,
+/// 滚动明显卡顿。macOS 上 `List` 底层是 `NSTableView`,有真正的 cell 复用:
+/// 懒加载但不经过 LazyStack 那套尺寸协商,天然避开已踩过的活锁。
 struct ListV3View: View, SuperLog {
     nonisolated static let logger = MessageListPlugin.logger
     nonisolated static let emoji = "🗂️"
@@ -21,8 +28,8 @@ struct ListV3View: View, SuperLog {
     /// 用户是否停在列表底部附近;用于决定新消息到达时是否自动滚到底部
     private let atBottomBox = AtBottomBox()
 
-    /// 窗口是否在 live resize 中。为 true 时 LazyVStack 渲染轻量占位行而非富文本,
-    /// 使 SwiftUI 在 resize 期间不再遍历昂贵的富文本子树 layout。
+    /// 窗口是否在 live resize 中。为 true 时渲染轻量占位行而非富文本,
+    /// 使 resize 期间不再遍历昂贵的富文本子树 layout。
     /// 翻转触发 body 重建一次(有意为之),重建后子树已是轻量占位,后续帧零开销。
     @State private var isLiveResizing: Bool = false
 
@@ -79,38 +86,35 @@ struct ListV3View: View, SuperLog {
 
     private var messageScrollView: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                // Lazy so only visible history rows are materialized — the
-                // window can hold hundreds of rows, each carrying a full
-                // Markdown view tree, and eager materialization is the main
-                // source of scroll jank in long conversations.
-                //
-                // Safe because the list is now pure database-driven: the
-                // `ForEach` contains only stable, persisted ids. There is no
-                // live streaming row swapping a transient id for its persisted
-                // counterpart inside the same collection — that earlier swap
-                // pattern was an AttributeGraph livelock source and has been
-                // removed entirely (streaming content only lands here once it
-                // is persisted at turn end).
-                LazyVStack(spacing: 0) {
-                    historyRows(proxy: proxy)
+            // List(NSTableView)自带 cell 复用:只有可见行被 materialize。
+            //
+            // Safe because the list is pure database-driven: the `ForEach`
+            // contains only stable, persisted ids. There is no live streaming
+            // row swapping a transient id for its persisted counterpart inside
+            // the same collection (streaming content only lands here once it
+            // is persisted at turn end).
+            List {
+                historyRows(proxy: proxy)
 
-                    Color.clear
-                        .frame(height: 16)
-                        .id(MessageListScrollCoordinator.bottomAnchorID)
-                        .accessibilityHidden(true)
-                        .onChange(of: scrollTick) { _, _ in
-                            proxy.scrollTo(
-                                MessageListScrollCoordinator.bottomAnchorID,
-                                anchor: .bottom
-                            )
-                        }
-                }
-                .padding(.top, 4)
-                // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
-                .environment(\.lumiActiveToolGroupIDs, viewModel.activeStepGroupMessageIDs)
-                .environment(\.lumiTurnActivitySummaries, viewModel.turnActivitySummaries)
+                // 底部锚点行:纯占位 + 稳定 id(供 scrollTo 用),不报偏好。
+                // 是否在底部由 `ScrollViewBottomTracker` 观察 NSScrollView 判定。
+                Color.clear
+                    .frame(height: 16)
+                    .id(MessageListScrollCoordinator.bottomAnchorID)
+                    .accessibilityHidden(true)
+                    .plainMessageListRow(insets: EdgeInsets())
+                    .onChange(of: scrollTick) { _, _ in
+                        proxy.scrollTo(
+                            MessageListScrollCoordinator.bottomAnchorID,
+                            anchor: .bottom
+                        )
+                    }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
+            .environment(\.lumiActiveToolGroupIDs, viewModel.activeStepGroupMessageIDs)
+            .environment(\.lumiTurnActivitySummaries, viewModel.turnActivitySummaries)
             .background(
                 ScrollViewBottomTracker(
                     onChange: { atBottomBox.value = $0 }
@@ -174,26 +178,22 @@ struct ListV3View: View, SuperLog {
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .plainMessageListRow(insets: EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
         }
 
         ForEach(viewModel.historyRows) { message in
             if isLiveResizing {
                 // Live-resize 降级:渲染轻量占位行,移除富文本子树。
-                // 这样 SwiftUI 在 resize 每帧不再遍历昂贵的 Markdown layout。
+                // 这样 resize 每帧不再遍历昂贵的 Markdown layout。
                 MessageResizePlaceholder(message: message)
-                    .id(message.id)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 4)
+                    .plainMessageListRow()
             } else {
                 MessageRowView(
                     kernel: kernel,
                     message: message,
                     verbosity: viewModel.verbosity
                 )
-                .id(message.id)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 4)
+                .plainMessageListRow()
             }
         }
     }
@@ -213,4 +213,16 @@ struct ListV3View: View, SuperLog {
 private struct HistoryBoundaryV3: Equatable {
     let first: UUID?
     let last: UUID?
+}
+
+private extension View {
+    /// 把 List 行还原成「裸内容」:去掉默认行背景/分隔线,并用统一的
+    /// 水平 16 / 垂直 4 内边距替代 List 默认行内边距(与原 VStack 行布局一致)。
+    func plainMessageListRow(
+        insets: EdgeInsets = EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16)
+    ) -> some View {
+        listRowInsets(insets)
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+    }
 }

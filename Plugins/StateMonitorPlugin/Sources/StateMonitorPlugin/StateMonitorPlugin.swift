@@ -20,8 +20,8 @@ import SwiftUI
 ///   `.lumiSelectedLocalProviderIDDidChange` / `.lumiSelectedModelsDidChange` →
 ///   `kernel.conversations.selectProvider(id:model:for:)`)。
 ///   仅在不一致时写入,避免覆盖用户刚手动选择的对话绑定。
-/// - `OnConversationVerbositySyncHook`:选中对话后,把对话绑定的详细程度
-///   同步到内核全局(`kernel.conversations.objectWillChange` →
+/// - `OnConversationVerbositySyncHook`:选中对话后或当前对话详细程度被修改时,
+///   把对话绑定的详细程度同步到内核全局(`kernel.conversations.objectWillChange` →
 ///   `kernel.conversations.setGlobalVerbosity`)。
 /// - `OnGlobalVerbositySyncHook`:全局详细程度变化时,把全局值同步到当前对话
 ///   (`kernel.conversations.objectWillChange` →
@@ -36,7 +36,7 @@ import SwiftUI
 ///   - 全局 Provider/Model 变化 → 把全局选择同步到当前对话,使对话绑定与全局一致。
 ///
 /// Verbosity 两条 hook 形成对称联动:
-///   - 选中对话 → 把对话的详细程度写入内核全局;
+///   - 选中对话或当前对话详细程度被修改 → 把对话的详细程度写入内核全局;
 ///   - 全局详细程度变化 → 把全局值同步到当前对话,使对话绑定与全局一致。
 ///
 /// 设计意图:
