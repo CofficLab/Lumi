@@ -105,11 +105,15 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
 
     // MARK: - Activity
 
-    /// 标记对话为活跃(收到新消息)，刷新其更新时间使其在「最近更新」排序中置顶。
+    /// 标记对话为活跃(收到新消息)，刷新其最后消息时间使其在对话列表排序中置顶。
     ///
     /// 由消息写入路径在会话收到非 status 消息时调用。实现应更新内存缓存与
     /// 持久化时间戳，并广播 `conversationsDidChange` 以便对话列表重新排序。
-    func markConversationActive(id: UUID)
+    ///
+    /// - Parameters:
+    ///   - id: 对话 ID
+    ///   - messageDate: 消息的创建时间，用作对话的最后消息时间
+    func markConversationActive(id: UUID, messageDate: Date)
 
     /// 检查对话是否正在发送中
     func isSending(for conversationID: UUID?) -> Bool
@@ -225,13 +229,13 @@ public extension ConversationManaging {
         try createConversation(title: title, projectPath: projectPath, providerID: providerID, modelName: modelName)
     }
 
-    /// 按更新时间倒序排序
+    /// 按最后消息时间倒序排序
     var sortedConversations: [LumiConversationSummary] {
         conversations.sorted { lhs, rhs in
-            if lhs.updatedAt == rhs.updatedAt {
+            if lhs.lastMessageAt == rhs.lastMessageAt {
                 return lhs.createdAt > rhs.createdAt
             }
-            return lhs.updatedAt > rhs.updatedAt
+            return lhs.lastMessageAt > rhs.lastMessageAt
         }
     }
 
@@ -239,5 +243,5 @@ public extension ConversationManaging {
     func deselectConversation() {}
 
     /// 默认空实现，测试 mock 无需自行实现即可编译通过
-    func markConversationActive(id: UUID) {}
+    func markConversationActive(id: UUID, messageDate: Date) {}
 }

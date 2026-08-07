@@ -33,7 +33,7 @@ struct ConversationSortStabilizerTests {
             now: { clock.date }
         )
 
-        let result = stabilizer.effectiveSortTime(for: id, updatedAt: updatedAt)
+        let result = stabilizer.effectiveSortTime(for: id, lastMessageAt: updatedAt)
         #expect(result == updatedAt)
     }
 
@@ -51,13 +51,13 @@ struct ConversationSortStabilizerTests {
 
         // 首次出现，建立锚点
         let firstUpdate = clock.date
-        let firstResult = stabilizer.effectiveSortTime(for: id, updatedAt: firstUpdate)
+        let firstResult = stabilizer.effectiveSortTime(for: id, lastMessageAt: firstUpdate)
         #expect(firstResult == firstUpdate)
 
         // 10 秒后收到新消息
         clock.advance(by: 10)
         let newUpdate = clock.date
-        let secondResult = stabilizer.effectiveSortTime(for: id, updatedAt: newUpdate)
+        let secondResult = stabilizer.effectiveSortTime(for: id, lastMessageAt: newUpdate)
 
         // 应该保持原锚点时间，而非新消息时间
         #expect(secondResult == firstUpdate)
@@ -74,12 +74,12 @@ struct ConversationSortStabilizerTests {
         )
 
         let firstUpdate = clock.date
-        _ = stabilizer.effectiveSortTime(for: id, updatedAt: firstUpdate)
+        _ = stabilizer.effectiveSortTime(for: id, lastMessageAt: firstUpdate)
 
         // 恰好 29.9 秒后
         clock.advance(by: 29.9)
         let newUpdate = clock.date
-        let result = stabilizer.effectiveSortTime(for: id, updatedAt: newUpdate)
+        let result = stabilizer.effectiveSortTime(for: id, lastMessageAt: newUpdate)
 
         #expect(result == firstUpdate)
     }
@@ -97,12 +97,12 @@ struct ConversationSortStabilizerTests {
         )
 
         let firstUpdate = clock.date
-        _ = stabilizer.effectiveSortTime(for: id, updatedAt: firstUpdate)
+        _ = stabilizer.effectiveSortTime(for: id, lastMessageAt: firstUpdate)
 
         // 31 秒后（超出窗口）
         clock.advance(by: 31)
         let newUpdate = clock.date
-        let result = stabilizer.effectiveSortTime(for: id, updatedAt: newUpdate)
+        let result = stabilizer.effectiveSortTime(for: id, lastMessageAt: newUpdate)
 
         #expect(result == newUpdate)
     }
@@ -126,7 +126,7 @@ struct ConversationSortStabilizerTests {
         // 10 秒后收到新消息
         clock.advance(by: 10)
         let newUpdate = clock.date
-        let result = stabilizer.effectiveSortTime(for: id, updatedAt: newUpdate)
+        let result = stabilizer.effectiveSortTime(for: id, lastMessageAt: newUpdate)
 
         // 应该保持查看时间，而非新消息时间
         #expect(result == viewedTime)
@@ -147,7 +147,7 @@ struct ConversationSortStabilizerTests {
         // 31 秒后（超出窗口）
         clock.advance(by: 31)
         let newUpdate = clock.date
-        let result = stabilizer.effectiveSortTime(for: id, updatedAt: newUpdate)
+        let result = stabilizer.effectiveSortTime(for: id, lastMessageAt: newUpdate)
 
         #expect(result == newUpdate)
     }
@@ -167,12 +167,12 @@ struct ConversationSortStabilizerTests {
 
         // A 先出现
         let timeA = clock.date
-        let sortA = stabilizer.effectiveSortTime(for: idA, updatedAt: timeA)
+        let sortA = stabilizer.effectiveSortTime(for: idA, lastMessageAt: timeA)
 
         // 1 秒后 B 出现
         clock.advance(by: 1)
         let timeB = clock.date
-        let sortB = stabilizer.effectiveSortTime(for: idB, updatedAt: timeB)
+        let sortB = stabilizer.effectiveSortTime(for: idB, lastMessageAt: timeB)
 
         // A 应在 B 前面（A 的排序时间更早，但降序排列时 A 在前是因为 B 更新）
         #expect(sortA < sortB)
@@ -180,7 +180,7 @@ struct ConversationSortStabilizerTests {
         // 5 秒后 A 收到新消息
         clock.advance(by: 5)
         let newTimeA = clock.date
-        let sortA2 = stabilizer.effectiveSortTime(for: idA, updatedAt: newTimeA)
+        let sortA2 = stabilizer.effectiveSortTime(for: idA, lastMessageAt: newTimeA)
 
         // A 应该保持在原锚点时间，不会跳到 B 前面
         #expect(sortA2 == timeA)
@@ -201,12 +201,12 @@ struct ConversationSortStabilizerTests {
 
         // A 先出现
         let timeA = clock.date
-        let sortA = stabilizer.effectiveSortTime(for: idA, updatedAt: timeA)
+        let sortA = stabilizer.effectiveSortTime(for: idA, lastMessageAt: timeA)
 
         // 5 秒后 B 出现
         clock.advance(by: 5)
         let timeB = clock.date
-        let sortB = stabilizer.effectiveSortTime(for: idB, updatedAt: timeB)
+        let sortB = stabilizer.effectiveSortTime(for: idB, lastMessageAt: timeB)
 
         // 当前 B 排在 A 前面（B 更新）
         #expect(sortA < sortB)
@@ -216,7 +216,7 @@ struct ConversationSortStabilizerTests {
         stabilizer.markViewed(conversationID: idA)
 
         // 再次查询 A 的排序时间
-        let sortA2 = stabilizer.effectiveSortTime(for: idA, updatedAt: timeA)
+        let sortA2 = stabilizer.effectiveSortTime(for: idA, lastMessageAt: timeA)
 
         // A 现在应该排在 B 前面（A 的排序时间更新）
         #expect(sortA2 > sortB)
@@ -235,7 +235,7 @@ struct ConversationSortStabilizerTests {
         )
 
         // 建立锚点
-        _ = stabilizer.effectiveSortTime(for: id, updatedAt: clock.date)
+        _ = stabilizer.effectiveSortTime(for: id, lastMessageAt: clock.date)
 
         // 61 秒后（超过 2 倍窗口）
         clock.advance(by: 61)
@@ -245,7 +245,7 @@ struct ConversationSortStabilizerTests {
 
         // 再次查询应该被视为新对话（因为旧锚点已被清理）
         let newUpdate = clock.date
-        let result = stabilizer.effectiveSortTime(for: id, updatedAt: newUpdate)
+        let result = stabilizer.effectiveSortTime(for: id, lastMessageAt: newUpdate)
 
         #expect(result == newUpdate)
     }

@@ -318,9 +318,9 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
         let selectedID = selectedConversationID
         let sorted = conversations.sorted { lhs, rhs in
-            lhs.updatedAt == rhs.updatedAt
+            lhs.lastMessageAt == rhs.lastMessageAt
                 ? lhs.createdAt > rhs.createdAt
-                : lhs.updatedAt > rhs.updatedAt
+                : lhs.lastMessageAt > rhs.lastMessageAt
         }
         conversations = Array(sorted.prefix(Self.initialPageSize * 2))
 
@@ -341,22 +341,21 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         notifySelectedConversationChanged()
     }
 
-    /// 标记对话为活跃：刷新 `updatedAt`，使其在「最近更新」排序中置顶。
+    /// 标记对话为活跃：刷新 `lastMessageAt` 和 `updatedAt`，使其在对话列表排序中置顶。
     ///
     /// 由消息写入路径在会话收到新消息时调用(见 `MessageManager.insertMessage`)。
-    /// - 内存：更新缓存中的 `updatedAt` 并广播 `conversationsDidChange`，
+    /// - 内存：更新缓存中的 `lastMessageAt` 和 `updatedAt` 并广播 `conversationsDidChange`，
     ///   驱动对话列表(ConversationListPlugin)重新加载并按最新时间重排；
-    /// - 持久化：异步 touch 数据库时间戳，保证重启后排序一致。
-    public func markConversationActive(id: UUID) {
-        let now = Date()
-
+    /// - 持久化：异步写入数据库，保证重启后排序一致。
+    public func markConversationActive(id: UUID, messageDate: Date) {
         if let index = conversations.firstIndex(where: { $0.id == id }) {
-            conversations[index].updatedAt = now
+            conversations[index].lastMessageAt = messageDate
+            conversations[index].updatedAt = Date()
             notifyConversationsChanged()
         }
 
         Task {
-            _ = await store?.touchConversation(id: id)
+            _ = await store?.updateLastMessageAt(id: id, messageDate: messageDate)
         }
 
         if Self.verbose {

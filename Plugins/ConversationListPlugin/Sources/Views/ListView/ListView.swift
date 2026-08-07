@@ -153,7 +153,7 @@ public struct ListView: View {
             if let projectPath = effectiveProjectPath {
                 page = await conversationManager.fetchConversationPage(
                     limit: Self.pageSize,
-                    beforeUpdatedAt: cursor?.updatedAt,
+                    beforeUpdatedAt: cursor?.lastMessageAt,
                     beforeID: cursor?.id,
                     includingChildConversations: false,
                     projectPath: projectPath
@@ -161,7 +161,7 @@ public struct ListView: View {
             } else {
                 page = await conversationManager.fetchConversationPage(
                     limit: Self.pageSize,
-                    beforeUpdatedAt: cursor?.updatedAt,
+                    beforeUpdatedAt: cursor?.lastMessageAt,
                     beforeID: cursor?.id
                 )
             }
@@ -170,7 +170,7 @@ public struct ListView: View {
             snapshot.append(contentsOf: page)
             guard page.count == Self.pageSize else { break }
             guard let last = page.last else { break }
-            cursor = ConversationPageCursor(updatedAt: last.updatedAt, id: last.id)
+            cursor = ConversationPageCursor(lastMessageAt: last.lastMessageAt, id: last.id)
         }
 
         // 没有实际变化时不触发 SwiftUI 列表替换。
@@ -178,14 +178,14 @@ public struct ListView: View {
             // 粘性排序：用 stabilizer 重新计算排序时间，防止高频消息导致列表跳动
             let stabilized = snapshot
                 .map { conv -> (LumiConversationSummary, Date) in
-                    (conv, sortStabilizer.effectiveSortTime(for: conv.id, updatedAt: conv.updatedAt))
+                    (conv, sortStabilizer.effectiveSortTime(for: conv.id, lastMessageAt: conv.lastMessageAt))
                 }
                 .sorted { $0.1 > $1.1 }
                 .map { $0.0 }
             conversations = stabilized
             sortStabilizer.cleanup()
             paginationCursor = snapshot.last.map {
-                ConversationPageCursor(updatedAt: $0.updatedAt, id: $0.id)
+                ConversationPageCursor(lastMessageAt: $0.lastMessageAt, id: $0.id)
             }
             hasMore = snapshot.count >= targetCount && snapshot.count > 0
                 ? snapshot.count == targetCount
@@ -203,7 +203,7 @@ public struct ListView: View {
         if let projectPath = effectiveProjectPath {
             page = await conversationManager.fetchConversationPage(
                 limit: Self.pageSize,
-                beforeUpdatedAt: paginationCursor?.updatedAt,
+                beforeUpdatedAt: paginationCursor?.lastMessageAt,
                 beforeID: paginationCursor?.id,
                 includingChildConversations: false,
                 projectPath: projectPath
@@ -211,7 +211,7 @@ public struct ListView: View {
         } else {
             page = await conversationManager.fetchConversationPage(
                 limit: Self.pageSize,
-                beforeUpdatedAt: paginationCursor?.updatedAt,
+                beforeUpdatedAt: paginationCursor?.lastMessageAt,
                 beforeID: paginationCursor?.id
             )
         }
@@ -219,7 +219,7 @@ public struct ListView: View {
         conversations.append(contentsOf: page)
         if let last = page.last {
             paginationCursor = ConversationPageCursor(
-                updatedAt: last.updatedAt,
+                lastMessageAt: last.lastMessageAt,
                 id: last.id
             )
         }
