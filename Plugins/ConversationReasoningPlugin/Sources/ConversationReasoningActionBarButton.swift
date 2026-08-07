@@ -125,7 +125,7 @@ private struct ConversationReasoningPopover: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Reasoning Effort")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.appCaptionEmphasized)
 
             ForEach(LumiReasoningEffort.allCases) { effort in
                 Button {
@@ -142,41 +142,42 @@ private struct ConversationReasoningPopover: View {
 }
 
 private struct ConversationReasoningRow: View {
+    @LumiTheme private var theme
     let effort: LumiReasoningEffort
     let isSelected: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: effort.iconName)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(isSelected ? .accentColor : .secondary)
+                .font(.appCallout)
+                .foregroundColor(isSelected ? theme.primary : theme.textSecondary)
                 .frame(width: 18)
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(effort.levelCode)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.appCaptionEmphasized)
                     Text(effort.displayName)
-                        .font(.system(size: 11))
+                        .font(.appMicro)
                 }
-                .foregroundColor(.primary)
+                .foregroundColor(theme.textPrimary)
 
                 Text(effort.description)
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
             }
 
             Spacer(minLength: 8)
 
             if isSelected {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.accentColor)
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.primary)
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 7)
-        .background(isSelected ? Color.accentColor.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .background(isSelected ? theme.appAccentSoftFill : Color.clear, in: RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
     }
 }
