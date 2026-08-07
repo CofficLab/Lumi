@@ -39,12 +39,12 @@ public final class AliyunProvider: LumiLLMProvider, @unchecked Sendable {
             "MiniMax-M2.5": 204_800
         ],
         modelCapabilities: [
-            "qwen3.7-plus": .init(supportsVision: true, supportsTools: true),
-            "qwen3.6-plus": .init(supportsVision: true, supportsTools: true),
-            "qwen3.5-plus": .init(supportsVision: true, supportsTools: true),
-            "qwen3-max-2026-01-23": .init(supportsVision: false, supportsTools: true),
-            "qwen3-coder-next": .init(supportsVision: false, supportsTools: false),
-            "qwen3-coder-plus": .init(supportsVision: false, supportsTools: false),
+            "qwen3.7-plus": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "qwen3.6-plus": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "qwen3.5-plus": .init(supportsVision: true, supportsTools: true, supportsThinking: true),
+            "qwen3-max-2026-01-23": .init(supportsVision: false, supportsTools: true, supportsThinking: true),
+            "qwen3-coder-next": .init(supportsVision: false, supportsTools: false, supportsThinking: true),
+            "qwen3-coder-plus": .init(supportsVision: false, supportsTools: false, supportsThinking: true),
             "kimi-k2.5": .init(supportsVision: true, supportsTools: true),
             "glm-5": .init(supportsVision: false, supportsTools: true),
             "glm-4.7": .init(supportsVision: false, supportsTools: true),
