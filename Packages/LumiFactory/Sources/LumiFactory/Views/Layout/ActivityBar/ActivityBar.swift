@@ -4,6 +4,14 @@ import os
 import SuperLogKit
 import SwiftUI
 
+/// Activity Bar 视图
+///
+/// 显示所有视图容器（插件注册的 ViewContainer），用户点击切换激活容器。
+///
+/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 改为「快照 + 事件刷新」：init 读一次初值，监听两个事件：
+/// - `.workspaceContributionsDidChange`：容器清单注册/注销/重建后更新；
+/// - `.activeViewContainerIDDidChange`：用户切换容器时同步高亮（保留原 onAppear 行为）。
 struct ActivityBar: View, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "ui.activity-bar")
     nonisolated static let emoji = "📍"
@@ -12,16 +20,20 @@ struct ActivityBar: View, SuperLog {
     @LumiTheme private var theme
     @Environment(\.openWindow) private var openWindow
     let kernel: LumiKernel
+
+    @State private var containers: [ViewContainerItem] = []
     @State private var highlightedContainerID: String?
 
-    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/conversations/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var workspaceBox = ObservableWorkspaceBox()
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        _containers = State(initialValue: kernel.workspace?.allViewContainers ?? [])
+        _highlightedContainerID = State(initialValue: kernel.workspace?.activeViewContainerID)
+    }
 
     var body: some View {
         VStack(spacing: 6) {
-            if let workspace = workspaceBox.service {
-                containerList(workspace: workspace)
+            if !containers.isEmpty {
+                containerList
             } else {
                 ActivityBarErrorView()
             }
@@ -47,28 +59,27 @@ struct ActivityBar: View, SuperLog {
                 .allowsHitTesting(false)
         )
         #endif
-        .task { workspaceBox.bind(kernel.workspace) }
+        .onWorkspaceContributionsDidChange {
+            containers = kernel.workspace?.allViewContainers ?? []
+        }
+        .onActiveViewContainerIDDidChange { activeID in
+            highlightedContainerID = activeID
+        }
     }
 
     // MARK: - Container List
 
     @ViewBuilder
-    private func containerList(workspace: any WorkspaceProviding) -> some View {
-        ForEach(workspace.allViewContainers) { container in
+    private var containerList: some View {
+        ForEach(containers) { container in
             AppActivityIconButton(
                 systemImage: container.systemImage,
                 label: container.title,
                 isActive: highlightedContainerID == container.id
             ) {
                 highlightedContainerID = container.id
-                workspace.activateContainer(id: container.id)
+                kernel.workspace?.activateContainer(id: container.id)
             }
-        }
-        .onAppear {
-            highlightedContainerID = workspace.activeViewContainerID
-        }
-        .onActiveViewContainerIDDidChange { activeID in
-            highlightedContainerID = activeID
         }
     }
 }

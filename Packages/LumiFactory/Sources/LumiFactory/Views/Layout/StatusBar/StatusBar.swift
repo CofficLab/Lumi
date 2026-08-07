@@ -6,13 +6,20 @@ import SwiftUI
 ///
 /// 显示所有插件注册的状态栏项，按位置分为左侧、中间、右侧三个区域。
 /// 如果工作区服务（WorkspaceProviding）不可用，显示错误提示。
+///
+/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
+/// 重新拉取三个位置的 status bar items。
 struct StatusBar: View {
     @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
     let kernel: LumiKernel
 
-    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/conversations/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var workspaceBox = ObservableWorkspaceBox()
+    @State private var statusBarResult: Result<StatusBarItems, Error>
+
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        _statusBarResult = State(initialValue: Self.makeStatusBarResult(workspace: kernel.workspace))
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,23 +37,19 @@ struct StatusBar: View {
         .overlay(alignment: .top) {
             AppDivider()
         }
-        .task {
-            workspaceBox.bind(kernel.workspace)
+        .onWorkspaceContributionsDidChange {
+            statusBarResult = Self.makeStatusBarResult(workspace: kernel.workspace)
         }
     }
 
-    private var statusBarResult: Result<StatusBarItems, Error> {
-        do {
-            guard let workspace = workspaceBox.service else {
-                throw LumiKernelError.serviceNotAvailable(service: "Workspace")
-            }
-            let leading = workspace.statusBarItems(placement: .leading)
-            let center = workspace.statusBarItems(placement: .center)
-            let trailing = workspace.statusBarItems(placement: .trailing)
-            return .success(StatusBarItems(leading: leading, center: center, trailing: trailing))
-        } catch {
-            return .failure(error)
+    private static func makeStatusBarResult(workspace: (any WorkspaceProviding)?) -> Result<StatusBarItems, Error> {
+        guard let workspace else {
+            return .failure(LumiKernelError.serviceNotAvailable(service: "Workspace"))
         }
+        let leading = workspace.statusBarItems(placement: .leading)
+        let center = workspace.statusBarItems(placement: .center)
+        let trailing = workspace.statusBarItems(placement: .trailing)
+        return .success(StatusBarItems(leading: leading, center: center, trailing: trailing))
     }
 
     private func statusBarContent(leading: [StatusBarItem], center: [StatusBarItem], trailing: [StatusBarItem]) -> some View {
