@@ -22,17 +22,17 @@ struct ConversationContextSizeToolbarView: View {
             if let size, size > 0 {
                 HStack(spacing: 4) {
                     Image(systemName: "text.viewfinder")
-                        .font(.appCallout)
+                        .font(.system(size: 11))
                     Text(Self.formatContextSize(size))
-                        .font(.appCaptionEmphasized)
+                        .font(.system(size: 12, weight: .medium))
                         .monospacedDigit()
                 }
                 .foregroundColor(theme.textSecondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
                 .background(
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
-                        .fill(theme.appStatusMutedFill)
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(theme.surface.opacity(0.5))
                 )
                 .help("Context window: \(size.formatted()) tokens")
             }
