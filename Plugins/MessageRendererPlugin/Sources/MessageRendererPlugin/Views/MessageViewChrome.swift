@@ -94,7 +94,7 @@ struct MessageViewChrome<Content: View>: View {
                             AppIconButton(
                                 systemImage: "brain",
                                 tint: showThinkingPopover ? theme.textPrimary : theme.textSecondary,
-                                size: .regular,
+                                size: .compact,
                                 isActive: showThinkingPopover
                             ) {
                                 showThinkingPopover.toggle()
