@@ -35,7 +35,7 @@ struct MessageCountToolbarView: View {
             .contentShape(RoundedRectangle(cornerRadius: 6))
         }
         .buttonStyle(.plain)
-        .help("Messages in current conversation: \(count)")
+        .help(LumiPluginLocalization.string("Messages in current conversation: %lld", bundle: .module).replacingOccurrences(of: "%lld", with: "\(count)"))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             MessageCountPopover(count: count)
         }
@@ -73,23 +73,35 @@ private struct MessageCountPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Message Count")
+            Text(LumiPluginLocalization.string("Message Count", bundle: .module))
                 .font(.system(size: 12, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 6) {
-                explanationRow(icon: "message", text: "Count includes all messages in the current conversation.")
-                explanationRow(icon: "arrow.left.arrow.right", text: "Each user + assistant pair counts as 2 messages.")
-                explanationRow(icon: "wrench.and.screwdriver", text: "Tool calls and results are also counted individually.")
-                explanationRow(icon: "clock.arrow.circlepath", text: "Updates in real-time as messages are sent or received.")
+                explanationRow(
+                    icon: "message",
+                    text: LumiPluginLocalization.string("Count includes all messages in the current conversation.", bundle: .module)
+                )
+                explanationRow(
+                    icon: "arrow.left.arrow.right",
+                    text: LumiPluginLocalization.string("Each user + assistant pair counts as 2 messages.", bundle: .module)
+                )
+                explanationRow(
+                    icon: "wrench.and.screwdriver",
+                    text: LumiPluginLocalization.string("Tool calls and results are also counted individually.", bundle: .module)
+                )
+                explanationRow(
+                    icon: "clock.arrow.circlepath",
+                    text: LumiPluginLocalization.string("Updates in real-time as messages are sent or received.", bundle: .module)
+                )
             }
 
             Divider()
 
             HStack {
-                Text("Current:")
+                Text(LumiPluginLocalization.string("Current:", bundle: .module))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
-                Text("\(count) messages")
+                Text(LumiPluginLocalization.string("%lld messages", bundle: .module).replacingOccurrences(of: "%lld", with: "\(count)"))
                     .font(.system(size: 11, weight: .semibold))
                     .monospacedDigit()
             }

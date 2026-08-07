@@ -41,7 +41,7 @@ struct ConversationContextSizeToolbarView: View {
                     .contentShape(RoundedRectangle(cornerRadius: 6))
                 }
                 .buttonStyle(.plain)
-                .help("Context window: \(size.formatted()) tokens")
+                .help(LumiPluginLocalization.string("Context window: %@ tokens", bundle: .module).replacingOccurrences(of: "%@", with: Self.formatContextSize(size)))
                 .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
                     ContextSizePopover(size: size)
                 }
@@ -94,23 +94,35 @@ private struct ContextSizePopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Context Window")
+            Text(LumiPluginLocalization.string("Context Window", bundle: .module))
                 .font(.system(size: 12, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 6) {
-                explanationRow(icon: "brain", text: "Maximum tokens the model can process in a single request.")
-                explanationRow(icon: "arrow.left.arrow.right", text: "Includes both input (messages) and output (response).")
-                explanationRow(icon: "chart.bar", text: "Larger context allows more conversation history to be sent.")
-                explanationRow(icon: "exclamationmark.triangle", text: "When nearing the limit, older messages may be truncated.")
+                explanationRow(
+                    icon: "brain",
+                    text: LumiPluginLocalization.string("Maximum tokens the model can process in a single request.", bundle: .module)
+                )
+                explanationRow(
+                    icon: "arrow.left.arrow.right",
+                    text: LumiPluginLocalization.string("Includes both input (messages) and output (response).", bundle: .module)
+                )
+                explanationRow(
+                    icon: "chart.bar",
+                    text: LumiPluginLocalization.string("Larger context allows more conversation history to be sent.", bundle: .module)
+                )
+                explanationRow(
+                    icon: "exclamationmark.triangle",
+                    text: LumiPluginLocalization.string("When nearing the limit, older messages may be truncated.", bundle: .module)
+                )
             }
 
             Divider()
 
             HStack {
-                Text("Model limit:")
+                Text(LumiPluginLocalization.string("Model limit:", bundle: .module))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
-                Text(Self.formatContextSize(size))
+                Text(Self.formatContextSizeDetail(size))
                     .font(.system(size: 11, weight: .semibold))
                     .monospacedDigit()
             }
@@ -131,7 +143,7 @@ private struct ContextSizePopover: View {
         }
     }
 
-    private static func formatContextSize(_ tokens: Int) -> String {
+    private static func formatContextSizeDetail(_ tokens: Int) -> String {
         if tokens >= 1_000_000 {
             let m = Double(tokens) / 1_000_000
             if m == m.rounded() {
