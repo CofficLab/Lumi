@@ -3,7 +3,13 @@ import SwiftUI
 import LocalizationKit
 
 struct ConversationSpeedToolbarView: View {
-    @ObservedObject var kernel: LumiKernel
+    // 只订阅 conversations + messageManager 两个 service：速度统计同时依赖
+    // 「当前对话 ID」与「该对话的消息列表」。
+    // 不挂在 kernel 全局总线上，project/settings 等无关服务变更不会触发这里刷新。
+    let kernel: LumiKernel
+    @StateObject private var conversationsBox = ObservableConversationsBox()
+    @StateObject private var messageManagerBox = ObservableMessageManagerBox()
+
     @State private var cachedTPS: Double?
     @State private var hasShownTPSAtLeastOnce = false
     @State private var popoverShown = false
@@ -17,7 +23,7 @@ struct ConversationSpeedToolbarView: View {
     @State private var providerID: String?
 
     private var selectedConversationID: UUID? {
-        kernel.conversations?.selectedConversationID
+        conversationsBox.service?.selectedConversationID
     }
 
     var body: some View {
@@ -65,6 +71,14 @@ struct ConversationSpeedToolbarView: View {
         .onAppear {
             self.updateTPS()
         }
+        .onChange(of: selectedConversationID) { _, _ in
+            // 切换会话时重算速度（消息变更由 onLumiMessagesDidChange 覆盖）。
+            self.updateTPS()
+        }
+        .task {
+            conversationsBox.bind(kernel.conversations)
+            messageManagerBox.bind(kernel.messageManager)
+        }
     }
 
     private func updateTPS() {
@@ -75,7 +89,7 @@ struct ConversationSpeedToolbarView: View {
             return
         }
 
-        guard let messageManager = kernel.messageManager else {
+        guard let messageManager = messageManagerBox.service else {
             return
         }
 

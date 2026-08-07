@@ -6,6 +6,14 @@ import SwiftUI
 @MainActor
 struct ConversationAgentTurnCountToolbarView: View {
     @LumiTheme private var theme
+    // 保持 @ObservedObject kernel 而未窄播：activeCount 依赖 conversations（已是
+    // ObservableObject，可窄播）+ agentTurnManager。但 AgentTurnManaging 的实现
+    // AgentTurnRunner 不是 ObservableObject（其变更经 NotificationCenter 的
+    // .lumiTurnStarted/.lumiTurnFinished 广播），无法用 Observable*Box 订阅。
+    // 故这里仍靠下方 refreshID + 3 个 .onReceive 做「半窄播」：实际刷新精度由
+    // refreshID token 控制，kernel 总线仅触发一次轻量 body 重算（activeCount 为
+    // 单次方法调用，代价可忽略）。若将来 AgentTurnRunner 改为 ObservableObject，
+    // 可按 MessageCountToolbarView 的双 box 模式迁移。
     @ObservedObject var kernel: LumiKernel
     @State private var refreshID = UUID()
     @State private var isPopoverPresented = false

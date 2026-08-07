@@ -4,16 +4,23 @@ import SwiftUI
 
 struct ConversationReasoningActionBarButton: View {
     @LumiTheme private var theme
-    @ObservedObject var kernel: LumiKernel
+    let kernel: LumiKernel
+
+    // 只订阅 conversations + llmProvider 两个 service：推理强度的能力判定与持久化
+    // 同时依赖「当前对话的 provider/model」与「provider 注册表的能力元数据」。
+    // 不挂在 kernel 全局总线上，project/settings 等无关服务变更不会触发这里刷新。
+    @StateObject private var conversationsBox = ObservableConversationsBox()
+    @StateObject private var providerBox = ObservableLLMProviderBox()
+
     @State private var isPopoverPresented = false
     @State private var localEffort: LumiReasoningEffort = .defaultEffort
 
     private var conversations: (any ConversationManaging)? {
-        kernel.conversations
+        conversationsBox.service
     }
 
     private var llmProvider: (any LLMProviderManaging)? {
-        kernel.resolveService((any LLMProviderManaging).self)
+        providerBox.service
     }
 
     private var selectedConversationID: UUID? {
@@ -99,6 +106,10 @@ struct ConversationReasoningActionBarButton: View {
             } else {
                 isPopoverPresented = false
             }
+        }
+        .task {
+            conversationsBox.bind(kernel.conversations)
+            providerBox.bind(kernel.resolveService((any LLMProviderManaging).self))
         }
     }
 

@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 /// 消息管理能力协议
@@ -11,7 +12,12 @@ import Foundation
 ///
 /// 继承 `Sendable`:读方法(`nonisolated`)不触碰任何可变状态,因此 manager 引用
 /// 可安全地跨线程传递(例如由 UI 在后台线程发起读取)。
-public protocol MessageManaging: ObservableObject, Sendable {
+///
+/// `ObjectWillChangePublisher == ObservableObjectPublisher` 约束与
+/// `ConversationManaging`/`WorkspaceProviding` 等一致,用于让协议存在类型
+/// (`any MessageManaging`)的 `objectWillChange` 可被订阅,从而支持消费视图用
+/// `ObservableMessageManagerBox` 精确窄播,绕开 kernel 全局总线。
+public protocol MessageManaging: ObservableObject, Sendable where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 获取指定对话的所有消息（原始数据,包含工具调用结果）
     ///
     /// 后端逻辑（如构建 LLM 上下文、生成摘要）应使用此方法,确保获得完整消息历史。
