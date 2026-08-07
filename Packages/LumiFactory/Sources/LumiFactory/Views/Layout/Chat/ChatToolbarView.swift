@@ -11,7 +11,9 @@ struct ChatToolbarView: View {
 
     // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
     // project/conversations/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var workspaceBox = ObservableWorkspaceBox()
+    // 父视图 ChatView 是条件 body，切换容器时本视图可能被重建，
+    // 在 init 阶段同步绑定以避免 .task 异步绑定的时序竞争。
+    @StateObject private var workspaceBox: ObservableWorkspaceBox
 
     private var toolbarItems: [ChatSectionToolbarItem] {
         workspaceBox.service?.allChatSectionToolbarItems ?? []
@@ -31,6 +33,7 @@ struct ChatToolbarView: View {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
+        _workspaceBox = StateObject(wrappedValue: ObservableWorkspaceBox(service: kernel.workspace))
     }
 
     var body: some View {
@@ -65,6 +68,5 @@ struct ChatToolbarView: View {
         }
         .borderBottom()
         .shadowMd()
-        .task { workspaceBox.bind(kernel.workspace) }
     }
 }
