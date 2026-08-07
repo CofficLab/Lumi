@@ -58,13 +58,13 @@ struct ConversationAgentTurnCountToolbarView: View {
                 }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiTurnStarted)) { _ in
+        .onLumiTurnStarted { _ in
             refreshID = UUID()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiTurnFinished)) { _ in
+        .onLumiTurnFinished { _ in
             refreshID = UUID()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
+        .onLumiConversationsDidChange {
             refreshID = UUID()
         }
         .onAppear {

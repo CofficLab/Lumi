@@ -108,4 +108,49 @@ public extension View {
             action()
         }
     }
+
+    /// 监听 `.lumiTurnStarted` 通知
+    func onLumiTurnStarted(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnStarted)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiTurnStarted` 通知，并传出该 turn 所属的会话 ID。
+    ///
+    /// 与 `onLumiMessagesDidChange(perform: (UUID?) -> Void)` 同理：高成本消费者
+    /// 可借此过滤掉其他会话的 turn 事件，避免无关刷新。
+    func onLumiTurnStarted(perform action: @escaping (UUID?) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnStarted)) { notification in
+            action(notification.lumiConversationID)
+        }
+    }
+
+    /// 监听 `.lumiTurnCompleted` 通知
+    func onLumiTurnCompleted(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnCompleted)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiTurnCompleted` 通知，并传出该 turn 所属的会话 ID。
+    func onLumiTurnCompleted(perform action: @escaping (UUID?) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnCompleted)) { notification in
+            action(notification.lumiConversationID)
+        }
+    }
+
+    /// 监听 `.lumiTurnFinished` 通知
+    func onLumiTurnFinished(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnFinished)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiTurnFinished` 通知，并传出该 turn 所属的会话 ID。
+    func onLumiTurnFinished(perform action: @escaping (UUID?) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnFinished)) { notification in
+            action(notification.lumiConversationID)
+        }
+    }
 }
