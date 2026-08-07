@@ -107,6 +107,7 @@ import OpenInXcodePlugin
 import OpenRemotePlugin
 import PluginManagerPlugin
 import PortManagerPlugin
+import ProjectFileBreadcrumbPlugin
 import ProjectFilesPlugin
 import ProjectFileTreePlugin
 import ProjectOverviewPlugin
@@ -232,6 +233,8 @@ public enum PluginService {
             EditorSwiftPlugin(),
             // Project files panel — 在 PanelHeader 显示项目已打开的文件。
             ProjectFilesPlugin(),
+            // Panel Header 面包屑导航 — 显示当前文件路径，点击跳转。仅依赖 LumiKernel。
+            ProjectFileBreadcrumbPlugin(),
             // Editor 预览面板 — 在 PanelBottom 显示文件预览。
             EditorPreviewBottomPanelPlugin(),
             TerminalPlugin(),

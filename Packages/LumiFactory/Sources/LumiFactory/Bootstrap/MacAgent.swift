@@ -28,6 +28,35 @@ public final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, 
     /// keeping MacAgent decoupled from specific plugins.
     public func applicationDidFinishLaunching(_ notification: Notification) {
         // Update feed detection is handled by AppUpdatePlugin.onBoot().
+        renameStandardMenuTitles()
+    }
+
+    /// SwiftUI 默认菜单(File / Edit / View / Window / Help)走框架自带本地化,
+    /// 不读 app 的 xcstrings,且 SwiftUI 会持续重置其管控的 NSMenuItem.title。
+    /// 直接改 title 会被下一秒覆盖,必须创建全新的 NSMenuItem 替换原有对象,
+    /// 将 submenu 转移过去 —— 新对象不受 SwiftUI 内部绑定,标题不会回弹。
+    private func renameStandardMenuTitles() {
+        let translations: [String: String] = [
+            "File": "文件", "Edit": "编辑", "View": "视图",
+            "Window": "窗口", "Help": "帮助",
+        ]
+        Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { _ in
+            guard let mainMenu = NSApplication.shared.mainMenu else { return }
+            // 先收集匹配项,再倒序替换,避免边遍历边改数组导致索引漂移。
+            var toReplace: [(Int, String)] = []
+            for (index, item) in mainMenu.items.enumerated() {
+                if let localized = translations[item.title] {
+                    toReplace.append((index, localized))
+                }
+            }
+            for (index, localized) in toReplace.reversed() {
+                let oldItem = mainMenu.items[index]
+                let newItem = NSMenuItem(title: localized, action: nil, keyEquivalent: "")
+                newItem.submenu = oldItem.submenu
+                mainMenu.removeItem(oldItem)
+                mainMenu.insertItem(newItem, at: index)
+            }
+        }
     }
 
     public func application(_ application: NSApplication, open urls: [URL]) {

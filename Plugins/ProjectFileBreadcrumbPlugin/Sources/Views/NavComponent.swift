@@ -7,6 +7,7 @@ import SwiftUI
 /// 单个面包屑路径段组件
 public struct NavComponent: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
+    @LumiMotionPreferenceReader private var motionPreference
 
     public let item: BreadcrumbItem
     public let isLastItem: Bool
@@ -15,6 +16,20 @@ public struct NavComponent: View {
 
     @State private var isHovering = false
     @State private var isSiblingPopoverPresented = false
+
+    private var surfaceStyle: AppSurfaceStyle {
+        if isSiblingPopoverPresented || isHovering {
+            return .listRowHover
+        }
+        return .listRow
+    }
+
+    private var borderColor: Color? {
+        if isSiblingPopoverPresented {
+            return theme.appSelectedBorder
+        }
+        return isHovering ? theme.appHoverBorder : nil
+    }
 
     public var body: some View {
         HStack(spacing: 0) {
@@ -35,9 +50,9 @@ public struct NavComponent: View {
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .appSurface(
-                    style: .custom(hoverBackground),
-                    cornerRadius: 4,
-                    borderColor: isSiblingPopoverPresented ? theme.primary.opacity(0.3) : Color.clear
+                    style: surfaceStyle,
+                    cornerRadius: 6,
+                    borderColor: borderColor
                 )
             }
             .buttonStyle(.plain)
@@ -77,7 +92,13 @@ public struct NavComponent: View {
                 )
             )
             .clipped()
-            .onHover { isHovering = $0 }
+            .scaleEffect(isHovering && motionPreference.allowsMotion ? LumiMotion.hoverScale : 1)
+            .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHovering)
+            .onHover { hovering in
+                LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
+                    isHovering = hovering
+                }
+            }
 
             // 分隔箭头
             if !isLastItem {
@@ -108,13 +129,7 @@ public struct NavComponent: View {
                     .imageScale(.large)
             }
         }
+        .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHovering)
         .padding(.trailing, 2)
-    }
-
-    // MARK: - Hover Background
-
-    private var hoverBackground: Color {
-        guard isHovering else { return .clear }
-        return theme.textPrimary.opacity(0.06)
     }
 }

@@ -151,6 +151,11 @@ private final class CommandMenuInstaller {
                     self.rebuild(in: mainMenu, groups: groups)
                     self.lastGroupsSignature = signature
                 }
+                // SwiftUI 的默认菜单(File/Edit/View/Window/Help)标题走框架自带
+                // 的本地化路径,不会读我们的 Localizable.xcstrings。这里在主菜单
+                // 就绪后把它们的 title 改成走 LumiLocalization 的本地化版本,
+                // 与"调试 / 主题"等自定义菜单一致。
+                self.localizeStandardMenuTitles(in: mainMenu)
                 try? await Task.sleep(nanoseconds: 250_000_000)
             }
         }
@@ -202,6 +207,29 @@ private final class CommandMenuInstaller {
                 mainMenu.addItem(menuItem)
                 installedMenus[group.id] = menuItem
             }
+        }
+    }
+
+    /// 把 SwiftUI 默认菜单(File / Edit / View / Window / Help)替换为中文标题。
+    /// SwiftUI 会持续重置其管控的 NSMenuItem.title,因此不能只设 title,
+    /// 必须创建全新的 NSMenuItem 脱离 SwiftUI 管控,把原 submenu 转移过去。
+    private func localizeStandardMenuTitles(in mainMenu: NSMenu) {
+        let translations: [String: String] = [
+            "File": "文件", "Edit": "编辑", "View": "视图",
+            "Window": "窗口", "Help": "帮助",
+        ]
+        var toReplace: [(Int, String)] = []
+        for (index, item) in mainMenu.items.enumerated() {
+            if let localized = translations[item.title] {
+                toReplace.append((index, localized))
+            }
+        }
+        for (index, localized) in toReplace.reversed() {
+            let oldItem = mainMenu.items[index]
+            let newItem = NSMenuItem(title: localized, action: nil, keyEquivalent: "")
+            newItem.submenu = oldItem.submenu
+            mainMenu.removeItem(oldItem)
+            mainMenu.insertItem(newItem, at: index)
         }
     }
 }
