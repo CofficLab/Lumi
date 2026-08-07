@@ -105,6 +105,8 @@ struct ListV2View: View, SuperLog {
             // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
             .environment(\.lumiActiveToolGroupIDs, viewModel.activeStepGroupMessageIDs)
             .environment(\.lumiTurnActivitySummaries, viewModel.turnActivitySummaries)
+            // 让 Markdown 代码块使用 HorizontalScrollView，不捕获垂直滚动
+            .environment(\.preferOuterScroll, true)
             .background(
                 ScrollViewBottomTracker(
                     onChange: { atBottomBox.value = $0 }
