@@ -96,7 +96,6 @@ public struct ListView: View {
                                 Task { @MainActor in
                                     conversationManager.selectConversation(id: conversation.id)
                                     attentionStore.markRead(conversationID: conversation.id)
-                                    sortStabilizer.markViewed(conversationID: conversation.id)
                                 }
                             },
                             onDelete: {
