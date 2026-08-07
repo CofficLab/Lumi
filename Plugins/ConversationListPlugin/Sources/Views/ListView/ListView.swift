@@ -16,6 +16,7 @@ public struct ListView: View {
     @State private var paginationCursor: ConversationPageCursor?
     @ObservedObject private var kernel: LumiKernel
     @ObservedObject private var attentionStore: ConversationAttentionStore
+    @ObservedObject private var sortStabilizer: ConversationSortStabilizer
     private let conversationManager: ConversationManaging
 
     /// The project path to filter by, or nil if showing all conversations.
@@ -25,10 +26,12 @@ public struct ListView: View {
         kernel: LumiKernel,
         conversationManager: ConversationManaging,
         attentionStore: ConversationAttentionStore,
+        sortStabilizer: ConversationSortStabilizer,
         projectPath: String? = nil
     ) {
         self._kernel = ObservedObject(wrappedValue: kernel)
         self._attentionStore = ObservedObject(wrappedValue: attentionStore)
+        self._sortStabilizer = ObservedObject(wrappedValue: sortStabilizer)
         self.conversationManager = conversationManager
         self.projectPath = projectPath
     }
@@ -76,6 +79,7 @@ public struct ListView: View {
                                 Task { @MainActor in
                                     conversationManager.selectConversation(id: conversation.id)
                                     attentionStore.markRead(conversationID: conversation.id)
+                                    sortStabilizer.markViewed(conversationID: conversation.id)
                                 }
                             },
                             onDelete: {
@@ -155,7 +159,15 @@ public struct ListView: View {
 
         // 没有实际变化时不触发 SwiftUI 列表替换。
         if snapshot != conversations {
-            conversations = snapshot
+            // 粘性排序：用 stabilizer 重新计算排序时间，防止高频消息导致列表跳动
+            let stabilized = snapshot
+                .map { conv -> (LumiConversationSummary, Date) in
+                    (conv, sortStabilizer.effectiveSortTime(for: conv.id, updatedAt: conv.updatedAt))
+                }
+                .sorted { $0.1 > $1.1 }
+                .map { $0.0 }
+            conversations = stabilized
+            sortStabilizer.cleanup()
             paginationCursor = snapshot.last.map {
                 ConversationPageCursor(updatedAt: $0.updatedAt, id: $0.id)
             }

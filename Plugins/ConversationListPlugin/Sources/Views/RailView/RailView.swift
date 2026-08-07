@@ -5,11 +5,18 @@ import SwiftUI
 struct RailView: View {
     @ObservedObject private var kernel: LumiKernel
     private let attentionStore: ConversationAttentionStore
+    @ObservedObject private var sortStabilizer: ConversationSortStabilizer
     private let scopeToCurrentProject: Bool
 
-    init(kernel: LumiKernel, attentionStore: ConversationAttentionStore, scopeToCurrentProject: Bool = false) {
+    init(
+        kernel: LumiKernel,
+        attentionStore: ConversationAttentionStore,
+        sortStabilizer: ConversationSortStabilizer,
+        scopeToCurrentProject: Bool = false
+    ) {
         self._kernel = ObservedObject(wrappedValue: kernel)
         self.attentionStore = attentionStore
+        self._sortStabilizer = ObservedObject(wrappedValue: sortStabilizer)
         self.scopeToCurrentProject = scopeToCurrentProject
     }
 
@@ -27,6 +34,7 @@ struct RailView: View {
                     kernel: kernel,
                     conversationManager: conversationManager,
                     attentionStore: attentionStore,
+                    sortStabilizer: sortStabilizer,
                     projectPath: projectPath
                 )
             } else {

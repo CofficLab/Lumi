@@ -9,6 +9,7 @@ import SwiftUI
 struct ToolbarButton: View {
     let kernel: LumiKernel
     let attentionStore: ConversationAttentionStore
+    let sortStabilizer: ConversationSortStabilizer
     @State private var isPresented = false
 
     /// ChatSection 是否可见；不可见时整个按钮不渲染。
@@ -23,7 +24,7 @@ struct ToolbarButton: View {
                     isPresented.toggle()
                 }
                 .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-                    ToolbarPopoverContent(kernel: kernel, attentionStore: attentionStore)
+                    ToolbarPopoverContent(kernel: kernel, attentionStore: attentionStore, sortStabilizer: sortStabilizer)
                 }
             }
         }

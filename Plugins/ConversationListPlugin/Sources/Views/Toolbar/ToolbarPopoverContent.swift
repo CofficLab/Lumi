@@ -13,6 +13,7 @@ import SwiftUI
 struct ToolbarPopoverContent: View {
     let kernel: LumiKernel
     let attentionStore: ConversationAttentionStore
+    @ObservedObject var sortStabilizer: ConversationSortStabilizer
 
     enum Scope: Hashable {
         case allProjects
@@ -91,7 +92,8 @@ struct ToolbarPopoverContent: View {
                 ListView(
                     kernel: kernel,
                     conversationManager: conversationManager,
-                    attentionStore: attentionStore
+                    attentionStore: attentionStore,
+                    sortStabilizer: sortStabilizer
                 )
                 // 固定 .id,确保两个 Tab 切换时 ListView 身份稳定,
                 // 各自的滚动/分页/加载任务互不重置。
@@ -101,6 +103,7 @@ struct ToolbarPopoverContent: View {
                     kernel: kernel,
                     conversationManager: conversationManager,
                     attentionStore: attentionStore,
+                    sortStabilizer: sortStabilizer,
                     projectPath: kernel.project?.currentProject?.path
                 )
                 .id(Scope.currentProject)
