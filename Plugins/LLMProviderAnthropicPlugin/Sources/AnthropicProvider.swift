@@ -55,8 +55,7 @@ public final class AnthropicProvider: LumiLLMProvider, @unchecked Sendable {
         apiService: LLMAPIService = LLMAPIService()
     ) {
         let config = configuration ?? AnthropicCompatibleProviderConfiguration(
-            baseURL: "https://api.anthropic.com/v1/messages",
-            supportsThinkingBudget: true
+            baseURL: "https://api.anthropic.com/v1/messages"
         )
         self.adapter = AnthropicCompatibleProviderAdapter(configuration: config)
         self.apiService = apiService

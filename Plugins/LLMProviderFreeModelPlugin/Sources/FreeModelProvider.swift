@@ -86,8 +86,7 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
             nodeLabel: "claude-t0",
             configuration: AnthropicCompatibleProviderConfiguration(
                 baseURL: Endpoints.claudeT0,
-                fallbackBaseURLs: [Endpoints.claudeT1],
-                supportsThinkingBudget: true
+                fallbackBaseURLs: [Endpoints.claudeT1]
             ),
             apiService: apiService
         )
@@ -95,8 +94,7 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
             nodeLabel: "claude-t1",
             configuration: AnthropicCompatibleProviderConfiguration(
                 baseURL: Endpoints.claudeT1,
-                fallbackBaseURLs: [Endpoints.claudeT0],
-                supportsThinkingBudget: true
+                fallbackBaseURLs: [Endpoints.claudeT0]
             ),
             apiService: apiService
         )
