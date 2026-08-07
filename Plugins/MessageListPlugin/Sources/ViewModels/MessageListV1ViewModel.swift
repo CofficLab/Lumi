@@ -5,14 +5,12 @@ import SuperLogKit
 
 private struct MessageListV1Presentation: Equatable {
     var turnItems: [AgentTurnSummaryItem] = []
-    var legacyConclusions: [LumiChatMessage] = []
-    var statusMessage: LumiChatMessage?
 }
 
 /// V1-only data source that pages AgentTurns and projects each turn to one
-/// user-facing response. While a Turn is active, its process is represented by
-/// exactly one replaceable status message; streaming/process messages are never
-/// part of this presentation.
+/// user-facing row (user message + turn reply / in-flight placeholder).
+/// 纯 turn 列表驱动,不再有 legacy 兼容路径,也不再用漂浮 status 行——
+/// 运行中的 turn 由 builder 产出占位行承担反馈。
 @MainActor
 final class MessageListV1ViewModel: ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-list.v1-viewmodel")
@@ -40,17 +38,11 @@ final class MessageListV1ViewModel: ObservableObject, SuperLog {
     }
 
     var items: [AgentTurnSummaryItem] { presentation.turnItems }
-    var statusMessage: LumiChatMessage? { presentation.statusMessage }
-    var usesTurnProjection: Bool { !records.isEmpty }
-    var conclusionMessages: [LumiChatMessage] {
-        usesTurnProjection
-            ? presentation.turnItems.map(\.message)
-            : presentation.legacyConclusions
-    }
+    /// 供滚动辅助器使用的展示消息(每个 turn 的回复/占位)。
     var displayMessages: [LumiChatMessage] {
-        conclusionMessages + (statusMessage.map { [$0] } ?? [])
+        presentation.turnItems.map(\.message)
     }
-    var hasVisibleContent: Bool { !displayMessages.isEmpty }
+    var hasVisibleContent: Bool { !items.isEmpty }
 
     /// 用户当前选中的对话 ID（来自内核状态，反映真实意图）。
     /// 用于替代 `activeConversationID` 做过期守卫，避免并发 `activate` 导致竞态。
@@ -174,23 +166,15 @@ final class MessageListV1ViewModel: ObservableObject, SuperLog {
             }
             return
         }
-        let snapshot = await Task.detached(priority: .userInitiated) {
-            let messages = messageManager.messages(for: conversationID)
-            let status = messageManager.messagePage(
-                for: conversationID,
-                limit: 1,
-                beforeMessageID: nil,
-                includesToolMessages: false
-            ).last(where: { $0.role == .status })
-            return (messages, status)
+        let messages = await Task.detached(priority: .userInitiated) {
+            messageManager.messages(for: conversationID)
         }.value
         // 检查序列号，确保本次重建仍然有效
         guard sequence == activationSequence,
               selectedConversationID == conversationID else { return }
+        // 运行中的 turn 由 builder 产出占位行承担反馈,不再叠加漂浮 status。
         presentation = MessageListV1Presentation(
-            turnItems: builder.build(records: records, messages: snapshot.0),
-            legacyConclusions: builder.legacyConclusions(from: snapshot.0),
-            statusMessage: snapshot.1
+            turnItems: builder.build(records: records, messages: messages)
         )
     }
 
