@@ -7,15 +7,20 @@ struct AppTitleToolbar: View {
     @LumiTheme private var theme
     let kernel: LumiKernel
 
-    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/conversations/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var workspaceBox = ObservableWorkspaceBox()
+    // 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+    // 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
+    // 重新拉取 titleToolbarItems。
+    @State private var items: [TitleToolbarItem] = []
 
     private let height: CGFloat = 44
     private let trafficLightReserveWidth: CGFloat = 76
 
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        _items = State(initialValue: kernel.workspace?.allTitleToolbarItems ?? [])
+    }
+
     var body: some View {
-        let items = workspaceBox.service?.allTitleToolbarItems ?? []
         let leadingItems = items.filter { $0.placement == .leading }
         let centerItems = items.filter { $0.placement == .center }
         let trailingItems = items.filter { $0.placement == .trailing }
@@ -54,7 +59,9 @@ struct AppTitleToolbar: View {
                 .allowsHitTesting(false)
         )
         #endif
-        .task { workspaceBox.bind(kernel.workspace) }
+        .onWorkspaceContributionsDidChange {
+            items = kernel.workspace?.allTitleToolbarItems ?? []
+        }
     }
 
     private func toolbarGroup(_ items: [TitleToolbarItem]) -> some View {

@@ -6,16 +6,17 @@ import SwiftUI
 ///
 /// 位于消息列表与输入框之间，用于显示插件贡献的动作栏按钮，
 /// 例如模型选择、快捷操作等功能入口。
+///
+/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
+/// 重新拉取 action bar items。
+///
+/// 注意：body 用 `if !actionBarItems.isEmpty` 条件渲染。事件修饰符挂在 Group 外层
+/// 而非 if 内，保证分支未渲染时仍能收到事件、下次 items 非空时能正确出现。
 struct ChatActionBar: View {
     let kernel: LumiKernel
 
-    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/conversations/settings 等无关服务变更不会触发这里刷新。
-    @StateObject private var workspaceBox = ObservableWorkspaceBox()
-
-    private var actionBarItems: [ChatSectionActionBarItem] {
-        workspaceBox.service?.allChatSectionActionBarItems ?? []
-    }
+    @State private var actionBarItems: [ChatSectionActionBarItem] = []
 
     private var leadingActionBarItems: [ChatSectionActionBarItem] {
         actionBarItems.filter { $0.placement == .leading }
@@ -27,16 +28,13 @@ struct ChatActionBar: View {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
-        // 在 init 阶段就绑定 workspace：本视图是条件 body（if !actionBarItems.isEmpty），
-        // 若用 .task 异步绑定，首次 body 求值时 service 仍为 nil → 条件为 false → 分支不渲染。
-        // 构造时同步绑定可避免此时序竞争。
-        _workspaceBox = StateObject(wrappedValue: ObservableWorkspaceBox(service: kernel.workspace))
+        _actionBarItems = State(initialValue: kernel.workspace?.allChatSectionActionBarItems ?? [])
     }
 
     var body: some View {
-        // 用 Group 包裹条件分支，并把 .task 挂在 Group 上：
-        // actionBarItems 依赖 workspaceBox.service（绑定前为 nil），分支首次必为 false。
-        // 若把 .task 挂进 if 内，分支不渲染时 bind 永不执行（死锁）。Group 恒存在，保证绑定。
+        // Group 恒存在 → `.onWorkspaceContributionsDidChange` 挂在 Group 上，
+        // 即使 if 分支未渲染（items 为空）也能持续接收事件，下一次 items 非空后
+        // 分支正常出现。若挂在 if 内，分支不渲染时修饰符永不绑定，永远无法恢复。
         Group {
             if !actionBarItems.isEmpty {
                 AppToolbarContainer(
@@ -66,6 +64,9 @@ struct ChatActionBar: View {
                 }
                 .borderTop()
             }
+        }
+        .onWorkspaceContributionsDidChange {
+            actionBarItems = kernel.workspace?.allChatSectionActionBarItems ?? []
         }
     }
 }

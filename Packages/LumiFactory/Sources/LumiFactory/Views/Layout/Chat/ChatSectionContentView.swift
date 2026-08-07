@@ -3,26 +3,26 @@ import LumiUI
 import SwiftUI
 
 /// 只负责渲染插件注册的 ChatSection 内容区（stack + bottomFixed）
+///
+/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
+/// 重新拉取 chatSectionItems。
 struct ChatSectionContentView: View {
     let kernel: LumiKernel
 
-    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/conversations/settings 等无关服务变更不会触发这里刷新。
-    // 父视图 ChatView 是条件 body，切换容器时本视图可能被重建，
-    // 在 init 阶段同步绑定以避免 .task 异步绑定的时序竞争。
-    @StateObject private var workspaceBox: ObservableWorkspaceBox
-
-    init(kernel: LumiKernel) {
-        self.kernel = kernel
-        _workspaceBox = StateObject(wrappedValue: ObservableWorkspaceBox(service: kernel.workspace))
-    }
+    @State private var allItems: [ChatSectionItem] = []
 
     private var stackItems: [ChatSectionItem] {
-        workspaceBox.service?.allChatSectionItems.filter { $0.placement == .stack } ?? []
+        allItems.filter { $0.placement == .stack }
     }
 
     private var bottomItems: [ChatSectionItem] {
-        workspaceBox.service?.allChatSectionItems.filter { $0.placement == .bottomFixed } ?? []
+        allItems.filter { $0.placement == .bottomFixed }
+    }
+
+    init(kernel: LumiKernel) {
+        self.kernel = kernel
+        _allItems = State(initialValue: kernel.workspace?.allChatSectionItems ?? [])
     }
 
     var body: some View {
@@ -58,5 +58,8 @@ struct ChatSectionContentView: View {
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)
+        .onWorkspaceContributionsDidChange {
+            allItems = kernel.workspace?.allChatSectionItems ?? []
+        }
     }
 }

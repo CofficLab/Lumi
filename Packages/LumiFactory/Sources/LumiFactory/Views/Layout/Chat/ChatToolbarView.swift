@@ -4,24 +4,14 @@ import SwiftUI
 
 /// Chat 工具栏视图
 ///
-/// 自己从 `kernel.sharedUI` 取出 toolbar items 与 bar items，
-/// 按 leading / trailing / bar 三个位置渲染。
+/// 不订阅 workspace 服务的 `objectWillChange`（无需 `ObservableWorkspaceBox` 包装），
+/// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
+/// 重新拉取两个清单（toolbar items + toolbar bar items）。
 struct ChatToolbarView: View {
     let kernel: LumiKernel
 
-    // 只订阅 workspace 这一个 service：本视图不挂在 kernel 全局总线上，
-    // project/conversations/settings 等无关服务变更不会触发这里刷新。
-    // 父视图 ChatView 是条件 body，切换容器时本视图可能被重建，
-    // 在 init 阶段同步绑定以避免 .task 异步绑定的时序竞争。
-    @StateObject private var workspaceBox: ObservableWorkspaceBox
-
-    private var toolbarItems: [ChatSectionToolbarItem] {
-        workspaceBox.service?.allChatSectionToolbarItems ?? []
-    }
-
-    private var toolbarBarItems: [ChatSectionToolbarBarItem] {
-        workspaceBox.service?.allChatSectionToolbarBarItems ?? []
-    }
+    @State private var toolbarItems: [ChatSectionToolbarItem] = []
+    @State private var toolbarBarItems: [ChatSectionToolbarBarItem] = []
 
     private var leadingToolbarItems: [ChatSectionToolbarItem] {
         toolbarItems.filter { $0.placement == .leading }
@@ -33,7 +23,13 @@ struct ChatToolbarView: View {
 
     init(kernel: LumiKernel) {
         self.kernel = kernel
-        _workspaceBox = StateObject(wrappedValue: ObservableWorkspaceBox(service: kernel.workspace))
+        _toolbarItems = State(initialValue: kernel.workspace?.allChatSectionToolbarItems ?? [])
+        _toolbarBarItems = State(initialValue: kernel.workspace?.allChatSectionToolbarBarItems ?? [])
+    }
+
+    private func reload() {
+        toolbarItems = kernel.workspace?.allChatSectionToolbarItems ?? []
+        toolbarBarItems = kernel.workspace?.allChatSectionToolbarBarItems ?? []
     }
 
     var body: some View {
@@ -68,5 +64,6 @@ struct ChatToolbarView: View {
         }
         .borderBottom()
         .shadowMd()
+        .onWorkspaceContributionsDidChange { reload() }
     }
 }
