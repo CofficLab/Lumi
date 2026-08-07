@@ -15,7 +15,7 @@ final class AppKitCodeBlockView: NSView {
     private let languageLabel = NSTextField(labelWithString: "")
     private let copyButton = NSButton(title: "复制", target: nil, action: nil)
     private let scrollView = CodeBlockScrollView()
-    private let textView = NSTextView()
+    private let textView = CodeBlockTextView()
 
     var onCopy: (() -> Void)?
 
@@ -94,6 +94,7 @@ final class AppKitCodeBlockView: NSView {
         onCopy: (() -> Void)? = nil
     ) {
         self.scrollView.outerScrollView = outerScrollView
+        self.textView.outerScrollView = outerScrollView
         self.onCopy = onCopy
 
         languageLabel.stringValue = language?.isEmpty == false ? language! : "code"
@@ -127,11 +128,8 @@ final class AppKitCodeBlockView: NSView {
 
 // MARK: - CodeBlockScrollView
 
-/// NSScrollView 子类：作为代码块的内部滚动容器，垂直方向的滚轮事件转发给外层消息列表，
-/// 水平方向由自身处理。
-///
-/// 关键设计：事件路由发生在 `hitTest` 确定的最深层视图上，因此必须在 NSScrollView
-/// 子类（而非外层 NSView）上重写 `scrollWheel(with:)`，才能正确拦截并转发事件。
+/// NSScrollView 子类：作为代码块的内部滚动容器，水平方向由自身处理，
+/// 垂直方向的滚轮事件转发给外层消息列表。
 private class CodeBlockScrollView: NSScrollView {
     /// 外层消息列表的 NSScrollView，由 `AppKitCodeBlockView.configure` 注入。
     weak var outerScrollView: NSScrollView?
@@ -152,6 +150,37 @@ private class CodeBlockScrollView: NSScrollView {
         }
 
         // 水平手势，或者没有外层列表时，由自身处理
+        super.scrollWheel(with: event)
+    }
+}
+
+// MARK: - CodeBlockTextView
+
+/// NSTextView 子类：垂直滚动事件转发给外层消息列表，防止代码块捕获滚动。
+///
+/// 在 AppKit 事件路由中，hitTest 找到的最深层视图首先接收事件。
+/// 代码块内的 NSTextView 会拦截滚动事件，导致外层消息列表无法滚动。
+/// 通过重写 scrollWheel，垂直滚动转发给外层列表，水平滚动由自身处理。
+private class CodeBlockTextView: NSTextView {
+    /// 外层消息列表的 NSScrollView。
+    weak var outerScrollView: NSScrollView?
+
+    override func scrollWheel(with event: NSEvent) {
+        let isVertical = abs(event.scrollingDeltaY) > abs(event.scrollingDeltaX)
+
+        if isVertical, let outerScrollView {
+            // 垂直滚动：转发给外层消息列表
+            if let clipView = outerScrollView.contentView as NSClipView? {
+                let newY = min(
+                    max(0, clipView.bounds.origin.y - event.scrollingDeltaY),
+                    max(0, (outerScrollView.documentView?.bounds.height ?? 0) - clipView.bounds.height)
+                )
+                clipView.scroll(to: NSPoint(x: clipView.bounds.origin.x, y: newY))
+            }
+            return
+        }
+
+        // 水平滚动由自身处理
         super.scrollWheel(with: event)
     }
 }
