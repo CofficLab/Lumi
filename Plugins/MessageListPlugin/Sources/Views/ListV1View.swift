@@ -83,25 +83,26 @@ struct ListV1View: View, SuperLog {
 
     private var messageScrollView: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                // Lazy so only visible conclusion rows are materialized; see
-                // MessageListV2View for the rationale (stable ids only, live
-                // status rendered outside the history `ForEach`).
-                VStack(spacing: 0) {
-                    historyRows(proxy: proxy)
+            // List(NSTableView)自带 cell 复用:只有可见行被 materialize。
+            //
+            // Safe because the list is pure database-driven: the `ForEach`
+            // contains only stable, persisted ids. There is no live streaming
+            // row swapping a transient id for its persisted counterpart inside
+            // the same collection (streaming content only lands here once it
+            // is persisted at turn end).
+            List {
+                historyRows(proxy: proxy)
 
-                    // 底部锚点行:纯占位 + 稳定 id(供 scrollTo 用),不再报偏好。
-                    // 是否在底部由 `ScrollViewBottomTracker` 观察NSScrollView 判定,
-                    // 避免 GeometryReader + Preference 在流式下触发 LazyVStack 活锁。
-                    Color.clear
-                        .frame(height: 16)
-                        .id(MessageListScrollCoordinator.bottomAnchorID)
-                        .accessibilityHidden(true)
-                }
-                // Keep a top inset without leaving scrollable space after
-                // the bottom anchor; the anchor must be the true content end.
-                .padding(.top, 4)
+                // 底部锚点行:纯占位 + 稳定 id(供 scrollTo 用),不再报偏好。
+                // 是否在底部由 `ScrollViewBottomTracker` 观察 NSScrollView 判定。
+                Color.clear
+                    .frame(height: 16)
+                    .id(MessageListScrollCoordinator.bottomAnchorID)
+                    .accessibilityHidden(true)
+                    .plainMessageListRow(insets: EdgeInsets())
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
             // 「是否在底部」由观察 NSScrollView 的 tracker 报告,写入非 Observable
             // 的 `atBottomBox`,不触发 SwiftUI invalidation —— 切断布局反馈环。
             .background(ScrollViewBottomTracker { atBottomBox.value = $0 })
@@ -156,6 +157,7 @@ struct ListV1View: View, SuperLog {
             loadEarlierButton(isLoading: turnViewModel.isLoadingEarlier) {
                 Task { await loadEarlier(proxy: proxy) }
             }
+            .plainMessageListRow(insets: EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
         }
 
         ForEach(turnViewModel.items) { item in
@@ -167,8 +169,7 @@ struct ListV1View: View, SuperLog {
                     verbosity: verbosity
                 )
                 .id(userMessage.id)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 4)
+                .plainMessageListRow()
             }
 
             // turn 回复 / 运行中占位。
@@ -178,8 +179,7 @@ struct ListV1View: View, SuperLog {
                 verbosity: verbosity
             )
             .id(item.message.id)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 4)
+            .plainMessageListRow()
         }
     }
 

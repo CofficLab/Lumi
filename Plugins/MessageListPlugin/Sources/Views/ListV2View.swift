@@ -76,38 +76,35 @@ struct ListV2View: View, SuperLog {
 
     private var messageScrollView: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                // Lazy so only visible history rows are materialized — the
-                // window can hold hundreds of rows, each carrying a full
-                // Markdown view tree, and eager materialization is the main
-                // source of scroll jank in long conversations.
-                //
-                // Safe because the list is now pure database-driven: the
-                // `ForEach` contains only stable, persisted ids. There is no
-                // live streaming row swapping a transient id for its persisted
-                // counterpart inside the same collection — that earlier swap
-                // pattern was an AttributeGraph livelock source and has been
-                // removed entirely (streaming content only lands here once it
-                // is persisted at turn end).
-                VStack(spacing: 0) {
-                    historyRows(proxy: proxy)
+            // List(NSTableView)自带 cell 复用:只有可见行被 materialize。
+            //
+            // Safe because the list is pure database-driven: the `ForEach`
+            // contains only stable, persisted ids. There is no live streaming
+            // row swapping a transient id for its persisted counterpart inside
+            // the same collection (streaming content only lands here once it
+            // is persisted at turn end).
+            List {
+                historyRows(proxy: proxy)
 
-                    Color.clear
-                        .frame(height: 16)
-                        .id(MessageListScrollCoordinator.bottomAnchorID)
-                        .accessibilityHidden(true)
-                        .onChange(of: scrollTick) { _, _ in
-                            proxy.scrollTo(
-                                MessageListScrollCoordinator.bottomAnchorID,
-                                anchor: .bottom
-                            )
-                        }
-                }
-                .padding(.top, 4)
-                // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
-                .environment(\.lumiActiveToolGroupIDs, viewModel.activeStepGroupMessageIDs)
-                .environment(\.lumiTurnActivitySummaries, viewModel.turnActivitySummaries)
+                // 底部锚点行:纯占位 + 稳定 id(供 scrollTo 用),不报偏好。
+                // 是否在底部由 `ScrollViewBottomTracker` 观察 NSScrollView 判定。
+                Color.clear
+                    .frame(height: 16)
+                    .id(MessageListScrollCoordinator.bottomAnchorID)
+                    .accessibilityHidden(true)
+                    .plainMessageListRow(insets: EdgeInsets())
+                    .onChange(of: scrollTick) { _, _ in
+                        proxy.scrollTo(
+                            MessageListScrollCoordinator.bottomAnchorID,
+                            anchor: .bottom
+                        )
+                    }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
+            .environment(\.lumiActiveToolGroupIDs, viewModel.activeStepGroupMessageIDs)
+            .environment(\.lumiTurnActivitySummaries, viewModel.turnActivitySummaries)
             .background(
                 ScrollViewBottomTracker(
                     onChange: { atBottomBox.value = $0 }
@@ -171,17 +168,16 @@ struct ListV2View: View, SuperLog {
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .plainMessageListRow(insets: EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
         }
 
         ForEach(viewModel.historyRows) { message in
             if isLiveResizing {
                 // Live-resize 降级:渲染轻量占位行,移除富文本子树。
-                // 这样 SwiftUI 在 resize 每帧不再遍历昂贵的 Markdown layout。
+                // 这样 resize 每帧不再遍历昂贵的 Markdown layout。
                 MessageResizePlaceholder(message: message)
                     .id(message.id)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 4)
+                    .plainMessageListRow()
             } else {
                 MessageRowView(
                     kernel: kernel,
@@ -189,8 +185,7 @@ struct ListV2View: View, SuperLog {
                     verbosity: viewModel.verbosity
                 )
                 .id(message.id)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 4)
+                .plainMessageListRow()
             }
         }
     }
