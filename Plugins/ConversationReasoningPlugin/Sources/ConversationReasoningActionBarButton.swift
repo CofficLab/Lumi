@@ -66,6 +66,19 @@ struct ConversationReasoningActionBarButton: View {
         LumiReasoningEffort.available(for: thinkingAndReasoning)
     }
 
+    /// 当前模型对应的选择项。Toggle 模型也沿用普通档位的弹出选择 UI，
+    /// 只是将档位集合替换成「开启 / 关闭」两个选项。
+    private var availableOptions: [ConversationReasoningOption] {
+        if isToggleModel {
+            return [.thinkingEnabled(true), .thinkingEnabled(false)]
+        }
+        return availableEfforts.map(ConversationReasoningOption.effort)
+    }
+
+    private var selectedOption: ConversationReasoningOption {
+        isToggleModel ? .thinkingEnabled(localIsThinkingEnabled) : .effort(localEffort)
+    }
+
     /// 多档模型：当前选中的档位（用于下拉按钮显示）。
     private var persistedEffort: LumiReasoningEffort {
         conversations?.reasoningEffort(for: selectedConversationID) ?? .defaultEffort
@@ -78,39 +91,14 @@ struct ConversationReasoningActionBarButton: View {
 
     var body: some View {
         Group {
-            if isToggleModel {
-                // Toggle 模型：显示简单的开关按钮
-                Toggle(isOn: $localIsThinkingEnabled) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "brain")
-                            .font(.system(size: 11, weight: .medium))
-                        Text("思考")
-                            .font(.appCaptionEmphasized)
-                    }
-                    .foregroundColor(theme.textSecondary)
-                }
-                .toggleStyle(.button)
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .onChange(of: localIsThinkingEnabled) { _, enabled in
-                    if enabled {
-                        // 开启：使用 high 作为默认档位
-                        selectEffort(.high)
-                    } else {
-                        // 关闭：清除推理设置
-                        clearEffort()
-                    }
-                }
-                .help(localIsThinkingEnabled ? "思考已开启，点击关闭" : "思考已关闭，点击开启")
-            } else if hasMultipleLevels {
-                // 多档模型：显示档位下拉按钮
+            if isToggleModel || hasMultipleLevels {
                 Button {
                     isPopoverPresented.toggle()
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "brain")
                             .font(.system(size: 11, weight: .medium))
-                        Text(localEffort.levelCode)
+                        Text(selectedOption.levelCode)
                             .font(.appCaptionEmphasized)
                         Image(systemName: isPopoverPresented ? "chevron.up" : "chevron.down")
                             .font(.appMicroEmphasized)
@@ -126,13 +114,13 @@ struct ConversationReasoningActionBarButton: View {
                     .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .help("Reasoning: \(localEffort.displayName)")
+                .help("Reasoning: \(selectedOption.displayName)")
                 .popover(isPresented: $isPopoverPresented, arrowEdge: .top) {
                     ConversationReasoningPopover(
-                        selectedEffort: localEffort,
-                        availableEfforts: availableEfforts
-                    ) { effort in
-                        selectEffort(effort)
+                        selectedOption: selectedOption,
+                        availableOptions: availableOptions
+                    ) { option in
+                        selectOption(option)
                         isPopoverPresented = false
                     }
                 }
@@ -146,7 +134,7 @@ struct ConversationReasoningActionBarButton: View {
         .onChange(of: thinkingAndReasoning) { _, support in
             // 档位集合变化（例如 4 档 → 3 档、3 档 → toggle）时，重算 localEffort，
             // 确保按钮显示的档位仍在当前可用集合内。
-            if support.hasMultipleLevels {
+            if support.isEnabled {
                 syncFromConversation()
             } else {
                 isPopoverPresented = false
@@ -167,6 +155,18 @@ struct ConversationReasoningActionBarButton: View {
     private func selectEffort(_ effort: LumiReasoningEffort) {
         localEffort = effort
         conversations?.setReasoningEffort(effort, for: selectedConversationID)
+    }
+
+    private func selectOption(_ option: ConversationReasoningOption) {
+        switch option {
+        case let .effort(effort):
+            selectEffort(effort)
+        case .thinkingEnabled(true):
+            localIsThinkingEnabled = true
+            selectEffort(.high)
+        case .thinkingEnabled(false):
+            clearEffort()
+        }
     }
 
     /// 清除/关闭推理（用于 toggle 模型关闭时）
@@ -196,21 +196,61 @@ struct ConversationReasoningActionBarButton: View {
     }
 }
 
+private enum ConversationReasoningOption: Identifiable, Equatable {
+    case effort(LumiReasoningEffort)
+    case thinkingEnabled(Bool)
+
+    var id: String {
+        switch self {
+        case let .effort(effort): effort.id
+        case let .thinkingEnabled(enabled): enabled ? "thinking-on" : "thinking-off"
+        }
+    }
+
+    var levelCode: String {
+        switch self {
+        case let .effort(effort): effort.levelCode
+        case let .thinkingEnabled(enabled): enabled ? "ON" : "OFF"
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case let .effort(effort): effort.displayName
+        case let .thinkingEnabled(enabled): enabled ? "开启" : "关闭"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case let .effort(effort): effort.iconName
+        case let .thinkingEnabled(enabled): enabled ? "brain.fill" : "brain"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case let .effort(effort): effort.description
+        case let .thinkingEnabled(enabled): enabled ? "启用模型思考" : "关闭模型思考"
+        }
+    }
+}
+
 private struct ConversationReasoningPopover: View {
-    let selectedEffort: LumiReasoningEffort
-    let availableEfforts: [LumiReasoningEffort]
-    let onSelect: (LumiReasoningEffort) -> Void
+    let selectedOption: ConversationReasoningOption
+    let availableOptions: [ConversationReasoningOption]
+    let onSelect: (ConversationReasoningOption) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Reasoning Effort")
                 .font(.appCaptionEmphasized)
 
-            ForEach(availableEfforts) { effort in
+            ForEach(availableOptions) { option in
                 Button {
-                    onSelect(effort)
+                    onSelect(option)
                 } label: {
-                    ConversationReasoningRow(effort: effort, isSelected: effort == selectedEffort)
+                    ConversationReasoningRow(option: option, isSelected: option == selectedOption)
                 }
                 .buttonStyle(.plain)
             }
@@ -222,26 +262,26 @@ private struct ConversationReasoningPopover: View {
 
 private struct ConversationReasoningRow: View {
     @LumiTheme private var theme
-    let effort: LumiReasoningEffort
+    let option: ConversationReasoningOption
     let isSelected: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: effort.iconName)
+            Image(systemName: option.iconName)
                 .font(.appCallout)
                 .foregroundColor(isSelected ? theme.primary : theme.textSecondary)
                 .frame(width: 18)
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(effort.levelCode)
+                    Text(option.levelCode)
                         .font(.appCaptionEmphasized)
-                    Text(effort.displayName)
+                    Text(option.displayName)
                         .font(.appMicro)
                 }
                 .foregroundColor(theme.textPrimary)
 
-                Text(effort.description)
+                Text(option.description)
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
             }
