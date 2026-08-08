@@ -46,6 +46,7 @@ Packages/*/Package.resolved
 
 # Local `swift build` output inside package directories
 Packages/SuperLogKit/build/
+Packages/LocalizationKit/build/
 
 # CocoaPods
 #

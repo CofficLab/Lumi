@@ -18,7 +18,7 @@ public final class Plugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.goal-task"
     public var name: String {
-        GoalTaskLocalization.string("GoalTask", bundle: .module)
+        LumiPluginLocalization.string("GoalTask", bundle: .module)
     }
     public let order = 91
     public let policy: LumiPluginPolicy = .alwaysOn
