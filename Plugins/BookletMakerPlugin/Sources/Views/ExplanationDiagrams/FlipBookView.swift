@@ -72,11 +72,6 @@ struct FlipBookView: View {
                 .frame(width: pageWidth * 2, height: pageHeight)
                 .contentShape(Rectangle())
                 .gesture(flipDrag(pageWidth: pageWidth))
-
-                // 页码指示
-                Text(pageIndicator)
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
@@ -225,17 +220,6 @@ struct FlipBookView: View {
                     }
                 }
             }
-    }
-
-    private var pageIndicator: String {
-        let spread = spreads[spreadIndex]
-        let pagesText = [spread.left, spread.right]
-            .compactMap { $0 }
-            .map(String.init)
-            .joined(separator: "–")
-        return BookletLocalization.string("Pages %@ of %lld",
-                                          pagesText,
-                                          Int64(SampleStory.pageCount))
     }
 }
 
