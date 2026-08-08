@@ -1,7 +1,4 @@
 import Foundation
-import HttpKit
-import LLMKit
-import LumiKernel
 import LumiKernel
 
 enum AvailabilityService {
@@ -16,16 +13,18 @@ enum AvailabilityService {
             return cached.result
         }
 
-        let result = await LumiOpenAICompatibleAvailability.chatPing(
-            model: model,
-            adapter: provider.internalAdapter,
-            apiService: provider.internalApiService,
-            buildRequest: { url, apiKey in
-                provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
-            },
-            resolveAPIKey: { try provider.lumiResolveAPIKey() }
-        )
+        let result = await ping(provider: provider, model: model)
         cache.write(model: model, result: result, timestamp: Date())
         return result
+    }
+    
+    /// 直接使用 StepFunService 的 sendOnce 进行 ping 检测。
+    private static func ping(provider: StepFunProvider, model: String) async -> LumiModelAvailabilityResult {
+        do {
+            try await provider.ping(model: model)
+            return .available
+        } catch {
+            return .unavailable(LumiLLMFailureDetail.message(error.localizedDescription))
+        }
     }
 }
