@@ -89,6 +89,17 @@ public struct ItemView: View {
                     Text(conversation.lastMessageAt.relativeTime)
                         .font(.footnote)
                         .foregroundColor(theme.textTertiary)
+
+                    if let reasoningEffort = conversation.reasoningEffort {
+                        Text("·")
+                            .foregroundColor(theme.textTertiary)
+
+                        Label(reasoningEffort.displayName, systemImage: reasoningEffort.iconName)
+                            .labelStyle(.titleAndIcon)
+                            .font(.footnote)
+                            .foregroundColor(theme.textTertiary)
+                            .lineLimit(1)
+                    }
                 }
             }
 
