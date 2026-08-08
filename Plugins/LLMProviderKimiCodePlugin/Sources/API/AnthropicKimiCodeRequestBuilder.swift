@@ -161,6 +161,7 @@ enum AnthropicKimiCodeRequestBuilder {
         switch effort {
         case nil: nil
         case .low: 2048
+        case .medium: 3072
         case .high: 4096
         case .xhigh: 8192
         case .max: 16384

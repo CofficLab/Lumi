@@ -20,17 +20,17 @@ public final class OpenRouterProvider: LumiLLMProvider, @unchecked Sendable {
             .init(
                 id: "anthropic/claude-haiku-4-5-20251001",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "anthropic/claude-opus-4-5-20251101",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "anthropic/claude-sonnet-4-5-20250929",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "bytedance-seed/seedream-4.5",
@@ -80,12 +80,12 @@ public final class OpenRouterProvider: LumiLLMProvider, @unchecked Sendable {
             .init(
                 id: "openai/gpt-5",
                 contextWindowSize: 400_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "openai/gpt-5-mini",
                 contextWindowSize: 400_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "openai/gpt-oss-20b:free",

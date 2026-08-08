@@ -48,52 +48,52 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
             .init(
                 id: "gpt-5.5",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "gpt-5.4",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "gpt-5.4-mini",
                 contextWindowSize: 400_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "gpt-5.3-codex",
                 contextWindowSize: 400_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "claude-fable-5",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "claude-opus-4-8",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "claude-opus-4-7",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "claude-opus-4-6",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "claude-sonnet-4-6",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "claude-haiku-4-5-20251001",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
             ),
         ],
         websiteURL: URL(string: "https://freemodel.dev/")!,

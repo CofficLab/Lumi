@@ -50,7 +50,7 @@ struct ModelListItem: View {
         capabilities.supportsVision
             || capabilities.supportsTools
             || capabilities.supportsTTS
-            || capabilities.supportsThinking
+            || capabilities.thinkingSupport.isEnabled
     }
 
     @ViewBuilder
@@ -66,8 +66,8 @@ struct ModelListItem: View {
                 if capabilities.supportsTTS {
                     AppTag("TTS", systemImage: "speaker.wave.2")
                 }
-                if capabilities.supportsThinking {
-                    AppTag("Thinking", systemImage: "brain.head.profile")
+                if capabilities.thinkingSupport.isEnabled {
+                    AppTag(thinkingTagLabel(for: capabilities.thinkingSupport), systemImage: "brain.head.profile")
                 }
             }
 
@@ -78,6 +78,16 @@ struct ModelListItem: View {
                     .font(.appMicroEmphasized)
                     .foregroundColor(theme.textTertiary)
             }
+        }
+    }
+
+    /// 按档位数量显示不同文案：3 档 / 4 档模型都打 `Thinking` 标签即可。
+    /// 如果未来需要区分，可在 `LumiThinkingSupport` 上加 `tagLabel` 字段。
+    private func thinkingTagLabel(for support: LumiThinkingSupport) -> String {
+        switch support {
+        case .unsupported: ""
+        case .threeLevel: "Thinking"
+        case .fourLevel: "Thinking"
         }
     }
 

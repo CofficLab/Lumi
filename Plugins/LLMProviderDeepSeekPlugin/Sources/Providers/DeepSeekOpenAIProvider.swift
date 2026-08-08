@@ -12,12 +12,12 @@ public final class DeepSeekOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
             .init(
                 id: "deepseek-v4-flash",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: false, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: false, supportsTools: true, thinkingSupport: .fourLevel)
             ),
             .init(
                 id: "deepseek-v4-pro",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: false, supportsTools: true, supportsThinking: true)
+                capabilities: .init(supportsVision: false, supportsTools: true, thinkingSupport: .fourLevel)
             ),
         ],
         websiteURL: URL(string: "https://www.deepseek.com/")!,

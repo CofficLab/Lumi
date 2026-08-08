@@ -6,23 +6,45 @@ public enum LumiModelAvailabilityResult: Sendable, Equatable {
     case unavailable(LumiLLMFailureDetail)
 }
 
+/// 模型对"思考 / 推理强度"能力的支持级别。
+///
+/// 不同的 LLM 提供方对推理强度的档位定义并不统一：
+/// - 有些模型完全不支持思考（如纯文本生成模型）。
+/// - 有些模型支持 3 档（low / medium / high），典型如 OpenAI GPT-5 / o-series。
+/// - 有些模型支持 4 档（low / high / xhigh / max），典型如 Anthropic Claude、DeepSeek V4、Qwen3。
+///
+/// 用枚举显式建模可用的档位数，避免消费端假设"开启思考 = 显示 4 档按钮"。
+public enum LumiThinkingSupport: String, Codable, Equatable, Hashable, Sendable, CaseIterable {
+    /// 不支持思考 / 推理强度可调
+    case unsupported
+    /// 支持 3 档推理强度：low / medium / high
+    case threeLevel
+    /// 支持 4 档推理强度：low / high / xhigh / max
+    case fourLevel
+
+    /// 是否启用思考（即至少有一档可选）
+    public var isEnabled: Bool {
+        self != .unsupported
+    }
+}
+
 /// 模型能力声明
 public struct LumiModelCapabilities: Sendable, Equatable, Hashable {
     public let supportsVision: Bool
     public let supportsTools: Bool
     public let supportsTTS: Bool
-    public let supportsThinking: Bool
+    public let thinkingSupport: LumiThinkingSupport
 
     public init(
         supportsVision: Bool,
         supportsTools: Bool,
         supportsTTS: Bool = false,
-        supportsThinking: Bool = false
+        thinkingSupport: LumiThinkingSupport = .unsupported
     ) {
         self.supportsVision = supportsVision
         self.supportsTools = supportsTools
         self.supportsTTS = supportsTTS
-        self.supportsThinking = supportsThinking
+        self.thinkingSupport = thinkingSupport
     }
 }
 

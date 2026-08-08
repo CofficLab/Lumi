@@ -556,7 +556,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 imageAttachments: pendingImages,
                 fileAttachments: pendingFiles,
                 generationOptions: LumiLLMGenerationOptions(
-                    reasoningEffort: type(of: targetProvider).info.modelInfo(for: model)?.capabilities?.supportsThinking == true
+                    reasoningEffort: (type(of: targetProvider).info.modelInfo(for: model)?.capabilities?.thinkingSupport.isEnabled == true)
                         ? kernel.conversations?.reasoningEffort(for: conversationID)
                         : nil
                 )
