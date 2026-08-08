@@ -3,37 +3,33 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.8.1</title>
-            <pubDate>Sat, 08 Aug 2026 08:32:42 +0000</pubDate>
-            <sparkle:version>523</sparkle:version>
-            <sparkle:shortVersionString>5.8.1</sparkle:shortVersionString>
+            <title>5.8.2</title>
+            <pubDate>Sat, 08 Aug 2026 13:40:28 +0000</pubDate>
+            <sparkle:version>524</sparkle:version>
+            <sparkle:shortVersionString>5.8.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.8.1</h2>
-<h3>Changes since v5.8.0</h3>
+            <description><![CDATA[<h2>Release v5.8.2</h2>
+<h3>Changes since v5.8.1</h3>
 <ul>
-<li>feat(agent-turn-runner): require approval for risky tools</li>
-<li>feat(AliyunPlugin): add AliyunTokenPlanProvider and reorganize provider files into Providers/</li>
-<li>feat(conversation-list): show reasoning effort in item view</li>
-<li>feat(conversation-manager): add reasoningEffortOptional and clearReasoningEffort methods</li>
-<li>feat(ConversationContextSizePlugin): display used/max context tokens in toolbar</li>
-<li>feat(kernel): add global reasoning effort and automation level</li>
-<li>feat(llm): add LumiThinkingSupport.toggle for on/off-only models</li>
-<li>feat(llm): replace supportsThinking Bool with LumiThinkingSupport enum</li>
-<li>feat(llm): update MiniMax model catalog with M3 1M context and add M2.1 series</li>
-<li>feat(LLMProviderMiniMax): add MiniMax Responses API provider</li>
-<li>feat(MessageListPlugin): gate live-resize skeleton placeholder behind a static flag</li>
-<li>feat(ModelSelector): add cloud/local scope filter with localization</li>
-<li>feat(ModelSelector): sort providers alphabetically by displayName</li>
-<li>feat(Plugins): add localization for MessageCount and ContextSize popover strings</li>
-<li>feat(Plugins): add popover explanations to MessageCount and ContextSize toolbar chips</li>
-<li>feat(reasoning): add toggle switch UI for .toggle models</li>
-<li>feat(store): add setReasoningEffortToNil parameter to updateConversationPreferences</li>
-<li>feat(ToolManaging): add riskLevel(for:) to protocol for tool risk evaluation</li>
-<li>fix(agent-turn-runner): pick reasoning effort by capability type</li>
-<li>fix(conversation-speed): explain unavailable metrics</li>
+<li>feat(ConversationLanguagePlugin): refactor to match ConversationVerbosityPlugin structure</li>
+<li>feat(RClickPlugin): add default menu items and cached URL support</li>
+<li>feat(WorkspacePlugin): persist per-container split layout</li>
+<li>fix: update Finder visibility actions and panel layout</li>
+<li>fix(AppSplitDivider): refresh tracking area after restoring divider position</li>
+<li>fix(BookletMakerPlugin): add missing localization keys for mode/sheet labels</li>
+<li>fix(BookletMakerPlugin): localize page count label in drop zone</li>
+<li>fix(GoalTaskPlugin): improve localization to match project standard</li>
+<li>fix(GoalTaskPlugin): localize toolbar strings and plugin description</li>
+<li>fix(layout): restore live split resizing behavior</li>
+<li>fix(LumiFinder): fix concurrency issue in FinderSync action</li>
+<li>fix(message-list): avoid freezing empty conversation state</li>
+<li>fix(RClickPlugin): embed Finder Sync extension and guard actions</li>
+<li>fix(split): defer kernel sync during drag, restore initial divider positions</li>
+<li>perf(MessageListPlugin): use CALayer for live-resize frozen frame</li>
+<li>refactor(BookletMakerPlugin): restructure BookletExplanationView layout</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.8.1</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.8.1/Lumi_5.8.1_x86_64.dmg" length="46792599" type="application/octet-stream" sparkle:edSignature="pbWu4HlvYuRuZmB6ACGwvACB6LNZWO8G2XQVkzcF5efoswtSR+JGgECzHgU9py1fNTgwMB96ylYTCmvmUV2xBw=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.8.2</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.8.2/Lumi_5.8.2_x86_64.dmg" length="47522914" type="application/octet-stream" sparkle:edSignature="MvXmN1TfvW52LhBx7jmP82aMrfFcJs4EY0mcu3F9/smQfU/MS/AsB3GKMA621iBfn8jzamDCiDb2L1rJFu4cAw=="/>
         </item>
     </channel>
 </rss>
