@@ -27,13 +27,13 @@ public struct MiniMaxImageTool: LumiAgentTool {
 
     public nonisolated static let emoji = "🖼️"
 
-    private let client: any MiniMaxImageClientProtocol
+    private let client: any MiniMaxImageAPIProtocol
     private let recordStore: MiniMaxImageRecordStore?
 
     // MARK: - Init
 
     init(
-        client: any MiniMaxImageClientProtocol = MiniMaxImageClient(apiKeyProvider: {
+        client: any MiniMaxImageAPIProtocol = MiniMaxImageAPI(apiKeyProvider: {
             APIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: "DevAssistant_ApiKey_MiniMax")
         }),
         recordStore: MiniMaxImageRecordStore? = nil

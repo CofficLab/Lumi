@@ -120,11 +120,11 @@ public final class MiniMaxPlugin: LumiPlugin {
         var tools: [any LumiAgentTool]
 
         if let network = kernel.network {
-            let client = MiniMaxVideoClient(network: network, apiKeyProvider: apiKeyProvider)
-            tools = [MiniMaxVideoTool(client: client, recordStore: videoRecordStore)]
+            let api = MiniMaxVideoAPI(network: network, apiKeyProvider: apiKeyProvider)
+            tools = [MiniMaxVideoTool(client: api, recordStore: videoRecordStore)]
         } else {
-            let client = MiniMaxVideoClient(apiKeyProvider: apiKeyProvider)
-            tools = [MiniMaxVideoTool(client: client, recordStore: videoRecordStore)]
+            let api = MiniMaxVideoAPI(apiKeyProvider: apiKeyProvider)
+            tools = [MiniMaxVideoTool(client: api, recordStore: videoRecordStore)]
         }
 
         // 注册视频记录查询工具
@@ -135,11 +135,11 @@ public final class MiniMaxPlugin: LumiPlugin {
 
         // 注册图片生成工具
         if let network = kernel.network {
-            let imageClient = MiniMaxImageClient(network: network, apiKeyProvider: apiKeyProvider)
-            tools.append(MiniMaxImageTool(client: imageClient, recordStore: imageRecordStore))
+            let imageAPI = MiniMaxImageAPI(network: network, apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxImageTool(client: imageAPI, recordStore: imageRecordStore))
         } else {
-            let imageClient = MiniMaxImageClient(apiKeyProvider: apiKeyProvider)
-            tools.append(MiniMaxImageTool(client: imageClient, recordStore: imageRecordStore))
+            let imageAPI = MiniMaxImageAPI(apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxImageTool(client: imageAPI, recordStore: imageRecordStore))
         }
 
         // 注册图片记录查询工具
@@ -150,11 +150,11 @@ public final class MiniMaxPlugin: LumiPlugin {
 
         // 注册音乐生成工具
         if let network = kernel.network {
-            let musicClient = MiniMaxMusicClient(network: network, apiKeyProvider: apiKeyProvider)
-            tools.append(MiniMaxMusicTool(client: musicClient, recordStore: musicRecordStore))
+            let musicAPI = MiniMaxMusicAPI(network: network, apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxMusicTool(client: musicAPI, recordStore: musicRecordStore))
         } else {
-            let musicClient = MiniMaxMusicClient(apiKeyProvider: apiKeyProvider)
-            tools.append(MiniMaxMusicTool(client: musicClient, recordStore: musicRecordStore))
+            let musicAPI = MiniMaxMusicAPI(apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxMusicTool(client: musicAPI, recordStore: musicRecordStore))
         }
 
         // 注册音乐记录查询工具

@@ -27,13 +27,13 @@ public struct MiniMaxMusicTool: LumiAgentTool {
 
     public nonisolated static let emoji = "🎵"
 
-    private let client: any MiniMaxMusicClientProtocol
+    private let client: any MiniMaxMusicAPIProtocol
     private let recordStore: MiniMaxMusicRecordStore?
 
     // MARK: - Init
 
     init(
-        client: any MiniMaxMusicClientProtocol = MiniMaxMusicClient(apiKeyProvider: {
+        client: any MiniMaxMusicAPIProtocol = MiniMaxMusicAPI(apiKeyProvider: {
             APIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: "DevAssistant_ApiKey_MiniMax")
         }),
         recordStore: MiniMaxMusicRecordStore? = nil
