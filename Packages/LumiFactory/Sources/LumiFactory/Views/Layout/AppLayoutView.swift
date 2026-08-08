@@ -88,7 +88,6 @@ struct AppLayoutView: View {
         if showRail(for: layoutManager) {
             HSplitView {
                 RailView(kernel: kernel)
-                    .frame(width: railWidth)
                     .frame(minWidth: 180, idealWidth: railWidth, maxWidth: 400)
                     // 必须挂在 HSplitView 左侧 pane，组件会直接识别原生可拖拽 divider。
                     .appSplitDivider(.trailing) { position in
