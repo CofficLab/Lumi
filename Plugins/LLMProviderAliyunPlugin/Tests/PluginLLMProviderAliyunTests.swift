@@ -1,6 +1,5 @@
 import Foundation
 import HttpKit
-import LumiKernel
 import LLMKit
 import LumiKernel
 import Testing
@@ -38,7 +37,7 @@ struct PluginLLMProviderAliyunTests {
 
     @Test func providerMetadata() {
         #expect(AliyunProvider.info.id == "aliyun")
-        #expect(AliyunProvider.info.name.isEmpty == false)
+        #expect(AliyunProvider.info.displayName.isEmpty == false)
         #expect(AliyunProvider.info.defaultModel.isEmpty == false)
         #expect(AliyunProvider.apiKeyHelpURL != nil)
     }
@@ -92,9 +91,9 @@ struct PluginLLMProviderAliyunTests {
     }
 
     @Test func buildRequestUsesAnthropicCompatibleHeaders() {
-        let provider = AliyunProvider()
-        let url = URL(string: "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1/messages")!
-        let request = provider.buildRequest(url: url, apiKey: "sk-sp-test")
+        let service = AliyunAnthropicService(baseURL: "https://coding.dashscope.aliyuncs.com/apps/anthropic")
+        let body = "{}".data(using: .utf8)!
+        let request = try! service.makeRequest(apiKey: "sk-sp-test", body: body)
 
         #expect(request.value(forHTTPHeaderField: "x-api-key") == "sk-sp-test")
         #expect(request.value(forHTTPHeaderField: "anthropic-version") == "2023-06-01")
@@ -126,7 +125,7 @@ struct PluginLLMProviderAliyunTests {
 
     @Test func errorMessageMapsMissingAPIKey() {
         let message = makeMessage(
-            for: LumiLLMProviderSupportError.missingAPIKey(AliyunProvider.info.name)
+            for: LumiLLMProviderSupportError.missingAPIKey(AliyunProvider.info.displayName)
         )
 
         #expect(message.renderKind == AliyunRenderKind.apiKeyMissing)
@@ -175,10 +174,10 @@ struct PluginLLMProviderAliyunTests {
         let body = #"{"error":{"code":"invalid_parameter_error","message":"model not supported"}}"#
         let error = HTTPClientError.httpError(statusCode: 400, message: body)
 
-        #expect(AvailabilityService.isUnsupportedModelError(error))
+        #expect(AliyunAvailabilityService.isUnsupportedModelError(error))
 
-        let mapped = AvailabilityService.mapUnsupportedModelResult(
-            .unavailable(LLMFailureDetailResolver.resolve(from: error))
+        let mapped = AliyunAvailabilityService.mapUnsupportedModelResult(
+            .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
         )
 
         guard case .unavailable(let failure) = mapped else {
@@ -186,7 +185,7 @@ struct PluginLLMProviderAliyunTests {
             return
         }
 
-        #expect(failure.reason == .unsupportedModel)
+        #expect(failure.reason == LumiLLMFailureReason.unsupportedModel)
         #expect(!failure.availabilityDisplayText.contains("invalid_parameter"))
         #expect(!failure.availabilityDisplayText.contains("URL:"))
         #expect(failure.hasTransportDiagnostics)

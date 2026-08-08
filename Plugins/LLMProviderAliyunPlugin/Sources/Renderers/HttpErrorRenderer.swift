@@ -1,4 +1,4 @@
-import LumiKernel
+import LLMKit
 import LumiKernel
 
 private let rendererOrder = 305
