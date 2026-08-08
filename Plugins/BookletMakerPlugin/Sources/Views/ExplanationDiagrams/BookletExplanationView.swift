@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 // MARK: - Booklet Explanation View
 
@@ -8,7 +9,7 @@ import SwiftUI
 /// - 左侧上方：「装订前 / 装订后」tab
 /// - 左侧下方：张数 tab（第一张 … 第四张）
 /// - 右侧：根据 tab 选择显示装订前的纸张拼版预览，或装订后的翻页小册子
-/// - 顶部：8 页原始 PDF 示例，带转换箭头
+/// - 顶部：8 页原始 PDF 示例
 struct BookletExplanationView: View {
     let settings: BookletSettings
 
@@ -31,11 +32,11 @@ struct BookletExplanationView: View {
                 // 顶部：8 页原始 PDF
                 inputStrip(pageHeight: inputStripHeight)
 
-                // 转换箭头
-                Image(systemName: "arrow.down")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.accentColor)
-                    .frame(height: 20)
+                // 分隔线
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.2))
+                    .frame(height: 1)
+                    .padding(.vertical, 4)
 
                 // 下方主体：左右布局
                 HStack(spacing: 0) {
@@ -47,6 +48,7 @@ struct BookletExplanationView: View {
                     Rectangle()
                         .fill(Color.secondary.opacity(0.2))
                         .frame(width: 1)
+                        .padding()
 
                     // 右侧：预览内容
                     rightContent
@@ -65,20 +67,14 @@ struct BookletExplanationView: View {
 
     /// 8 页示例故事，横向并排展示
     private func inputStrip(pageHeight: CGFloat) -> some View {
-        VStack(spacing: 4) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(SampleStory.pages) { page in
-                        StoryPageView(pageNumber: page.id, height: pageHeight)
-                    }
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(SampleStory.pages) { page in
+                    StoryPageView(pageNumber: page.id, height: pageHeight)
                 }
-                .padding(.horizontal, 2)
-                .frame(maxWidth: .infinity)
             }
-
-            Text(BookletLocalization.string("Original PDF · 8 pages"))
-                .font(.system(size: 10))
-                .foregroundColor(.secondary)
+            .padding(.horizontal, 2)
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -103,22 +99,45 @@ struct BookletExplanationView: View {
         }
     }
 
-    /// 装订前 / 装订后 Picker
+    /// 装订前 / 装订后 Picker（上下布局）
     private var bindingTabPicker: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(BookletLocalization.string("Mode"))
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(.secondary)
-
-            Picker("", selection: $selectedBindingTab) {
-                Text(BookletLocalization.string("Before"))
-                    .tag(BindingTab.beforeBinding)
-                Text(BookletLocalization.string("After"))
-                    .tag(BindingTab.afterBinding)
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+        VStack(spacing: 6) {
+            bindingTabButton(
+                title: BookletLocalization.string("Before"),
+                tab: .beforeBinding
+            )
+            bindingTabButton(
+                title: BookletLocalization.string("After"),
+                tab: .afterBinding
+            )
         }
+    }
+
+    private func bindingTabButton(title: String, tab: BindingTab) -> some View {
+        let isSelected = selectedBindingTab == tab
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedBindingTab = tab
+            }
+        } label: {
+            Text(title)
+                .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isSelected
+                            ? Color.accentColor.opacity(0.15)
+                            : Color.secondary.opacity(0.06))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+        .foregroundColor(isSelected ? .accentColor : .primary)
     }
 
     /// 张数 tab 列表（装订前模式时高亮显示）
@@ -171,8 +190,8 @@ struct BookletExplanationView: View {
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .fill(isSelected
-                          ? Color.accentColor.opacity(0.15)
-                          : Color.secondary.opacity(0.06))
+                        ? Color.accentColor.opacity(0.15)
+                        : Color.secondary.opacity(0.06))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
