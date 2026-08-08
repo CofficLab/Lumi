@@ -129,21 +129,32 @@ struct ListV1View: View, SuperLog {
                 // 流式期间用非动画滚动,避免动画 scrollTo 永不收敛。
                 let targetConversationID = selectedConversationID
                 let wasAtBottom = atBottomBox.value
+                // 记录刷新前最后一条用户消息 id,用于判定「用户本人刚发送了新消息」。
+                let previousLastUserMessageID = displayedHistoryMessages
+                    .last(where: { $0.role == .user })?.id
                 Task {
                     let didChange = await turnViewModel.refresh()
-                    if didChange,
-                       wasAtBottom,
-                       atBottomBox.value,
-                       selectedConversationID == targetConversationID {
-                        await scrollCoordinator.scrollToBottomAfterLayout(
-                            proxy: proxy,
-                            messages: displayedHistoryMessages,
-                            animated: false,
-                            condition: { [weak atBottomBox] in
-                                atBottomBox?.value == true
-                            }
-                        )
-                    }
+                    guard didChange, selectedConversationID == targetConversationID else { return }
+
+                    // 用户本人发送:像常见聊天软件一样无条件滚到底,
+                    // 并把底部判定重置回 true(tracker 会随后按几何自校准)。
+                    let lastUserMessageID = displayedHistoryMessages
+                        .last(where: { $0.role == .user })?.id
+                    let isOwnSend = lastUserMessageID != nil
+                        && lastUserMessageID != previousLastUserMessageID
+                    guard wasAtBottom || isOwnSend else { return }
+                    if isOwnSend { atBottomBox.value = true }
+
+                    // 不再用 `atBottomBox.value` 作为实时滚动条件:新行追加后
+                    // 首次 scrollTo 常落点偏上,此时内容底沿超出视口 > 离开阈值
+                    // 会让 tracker 把 atBottomBox 翻成 false,从而取消本应修正
+                    // 落点的 +100ms 重试,导致列表停在半路(「有时不滚到底部」)。
+                    await scrollCoordinator.scrollToBottomAfterLayout(
+                        proxy: proxy,
+                        messages: displayedHistoryMessages,
+                        animated: false,
+                        condition: { true }
+                    )
                 }
             }
         }

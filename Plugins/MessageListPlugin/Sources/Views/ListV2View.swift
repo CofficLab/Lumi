@@ -131,21 +131,35 @@ struct ListV2View: View, SuperLog {
 
                 let targetConversationID = viewModel.selectedConversationID
                 let wasAtBottom = atBottomBox.value
+                // 记录刷新前最后一条用户消息 id,用于判定「用户本人刚发送了新消息」。
+                let previousLastUserMessageID = viewModel.historyRows
+                    .last(where: { $0.role == .user })?.id
                 Task {
                     let didChange = await viewModel.refreshTail()
-                    if didChange,
-                       wasAtBottom,
-                       atBottomBox.value,
-                       viewModel.selectedConversationID == targetConversationID {
-                        await scrollCoordinator.scrollToBottomAfterLayout(
-                            proxy: proxy,
-                            messages: viewModel.historyRows,
-                            animated: false,
-                            condition: { [weak atBottomBox] in
-                                atBottomBox?.value == true
-                            }
-                        )
-                    }
+                    guard didChange,
+                          viewModel.selectedConversationID == targetConversationID else { return }
+
+                    // 用户本人发送:像常见聊天软件一样无条件滚到底,
+                    // 并把底部判定重置回 true(tracker 会随后按几何自校准)。
+                    let lastUserMessageID = viewModel.historyRows
+                        .last(where: { $0.role == .user })?.id
+                    let isOwnSend = lastUserMessageID != nil
+                        && lastUserMessageID != previousLastUserMessageID
+                    guard wasAtBottom || isOwnSend else { return }
+                    if isOwnSend { atBottomBox.value = true }
+
+                    // 注意:这里不再用 `atBottomBox.value` 作为实时滚动条件。
+                    // 原因:新行追加后首次 scrollTo 常落点偏上,此时内容底沿
+                    // 超出视口 > 离开阈值会让 tracker 把 atBottomBox 翻成 false,
+                    // 从而取消本应修正落点的 +100ms 重试,导致列表停在半路 ——
+                    // 这正是「有时不滚到底部」的根因。这里改用事件时刻的
+                    // wasAtBottom / isOwnSend 做一次性判定,让重试能正常完成。
+                    await scrollCoordinator.scrollToBottomAfterLayout(
+                        proxy: proxy,
+                        messages: viewModel.historyRows,
+                        animated: false,
+                        condition: { true }
+                    )
                 }
             }
         }
