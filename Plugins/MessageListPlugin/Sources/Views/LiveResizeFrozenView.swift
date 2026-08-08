@@ -26,8 +26,8 @@ struct LiveResizeFrozenView<Content: View>: NSViewRepresentable {
 @MainActor
 final class LiveResizeFrozenContainer<Content: View>: NSView {
     private let hostingView: NSHostingView<Content>
+    private let frozenLayer = CALayer()
     private var pendingRootView: Content?
-    private var frozenImage: NSImage?
     private var isFrozen = false
 
     init(rootView: Content) {
@@ -38,6 +38,10 @@ final class LiveResizeFrozenContainer<Content: View>: NSView {
         wantsLayer = true
         layer?.masksToBounds = true
         layerContentsRedrawPolicy = .duringViewResize
+        frozenLayer.contentsGravity = .resize
+        frozenLayer.masksToBounds = true
+        frozenLayer.isHidden = true
+        layer?.addSublayer(frozenLayer)
         addSubview(hostingView)
     }
 
@@ -52,7 +56,13 @@ final class LiveResizeFrozenContainer<Content: View>: NSView {
 
     override func layout() {
         super.layout()
-        guard !isFrozen else { return }
+        if isFrozen {
+            // Keep the cached frame in the compositor while the container
+            // follows the window's live-resize bounds. The hosting view is
+            // deliberately not laid out until live resize ends.
+            frozenLayer.frame = bounds
+            return
+        }
         hostingView.frame = bounds
     }
 
@@ -74,21 +84,6 @@ final class LiveResizeFrozenContainer<Content: View>: NSView {
         restoreHostedContent()
     }
 
-    override func draw(_ dirtyRect: NSRect) {
-        guard let frozenImage else {
-            super.draw(dirtyRect)
-            return
-        }
-
-        NSGraphicsContext.current?.imageInterpolation = .high
-        frozenImage.draw(
-            in: bounds,
-            from: NSRect(origin: .zero, size: frozenImage.size),
-            operation: .copy,
-            fraction: 1
-        )
-    }
-
     private func freezeCurrentFrame() {
         guard !isFrozen, !bounds.isEmpty else { return }
 
@@ -98,12 +93,14 @@ final class LiveResizeFrozenContainer<Content: View>: NSView {
         }
         hostingView.cacheDisplay(in: hostingView.bounds, to: bitmap)
 
-        let image = NSImage(size: hostingView.bounds.size)
-        image.addRepresentation(bitmap)
-        frozenImage = image
+        // Put the snapshot directly in a compositor layer. This avoids
+        // asking AppKit to invoke draw(_:) for every intermediate resize
+        // rect; during live resize only the layer's bounds change.
+        frozenLayer.contents = bitmap.cgImage
+        frozenLayer.frame = bounds
+        frozenLayer.isHidden = false
         isFrozen = true
         hostingView.isHidden = true
-        needsDisplay = true
     }
 
     private func restoreHostedContent() {
@@ -116,8 +113,8 @@ final class LiveResizeFrozenContainer<Content: View>: NSView {
         hostingView.frame = bounds
         hostingView.isHidden = false
         isFrozen = false
-        frozenImage = nil
+        frozenLayer.isHidden = true
+        frozenLayer.contents = nil
         needsLayout = true
-        needsDisplay = true
     }
 }
