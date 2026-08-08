@@ -9,7 +9,7 @@ import SwiftUI
 /// Responsibilities:
 /// - Initialize `UpdateService.shared` on boot
 /// - Trigger feed URL detection at app launch
-/// - Register "Check for Updates..." command via `kernel.command` with
+/// - Contribute the "Check for Updates..." command with
 ///   `.appMenu` placement so it appears in the Lumi menu after "About"
 /// - Provide the update service used by the General settings page
 ///
@@ -41,11 +41,13 @@ public final class AppUpdatePlugin: LumiPlugin {
         // This is a one-shot app-level action handled here in the plugin's
         // bootstrap lifecycle, keeping MacAgent decoupled from specific plugins.
         updateService.setupFeedURLIfNeeded()
+    }
 
-        // Register "Check for Updates..." command in the app menu.
+    public func commandMenuGroups(kernel: LumiKernel) -> [CommandMenuGroup] {
+        // Contribute "Check for Updates..." to the app menu.
         // `.appMenu` placement ensures it appears in the Lumi menu after "About",
         // matching the conventional macOS location for this action.
-        kernel.command?.registerCommandGroup(
+        [
             CommandMenuGroup(
                 id: "\(id).commands",
                 name: name,
@@ -54,12 +56,12 @@ public final class AppUpdatePlugin: LumiPlugin {
                         id: "\(id).checkForUpdates",
                         title: LumiPluginLocalization.string("Check for Updates...", bundle: .module)
                     ) {
-                        updateService.checkForUpdates()
+                        UpdateService.shared.checkForUpdates()
                     },
                 ],
                 placement: .appMenu
-            )
-        )
+            ),
+        ]
     }
 
     public func onReady(kernel: LumiKernel) async throws {}

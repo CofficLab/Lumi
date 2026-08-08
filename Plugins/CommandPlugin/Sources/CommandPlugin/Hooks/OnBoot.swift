@@ -18,8 +18,5 @@ public struct CommandOnBootHook {
         // 1. 注册 CommandService（内核服务）
         let commandServiceInstance = CommandManager()
         try kernel.registerCommandService(commandServiceInstance)
-
-        // 2. 注册内置 Debug 菜单命令
-        DebugCommands().register(into: kernel)
     }
 }
