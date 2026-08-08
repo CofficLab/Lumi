@@ -21,7 +21,20 @@ public final class MiniMaxOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         id: "minimax-tokenplan",
         displayName: "MiniMax (OpenAI)", description: "MiniMax Token Plan via OpenAI-compatible API",
         defaultModel: "MiniMax-M2.7",
-        availableModels: MiniMaxProviderCatalog.models,
+        availableModels: [
+            LumiModelInfo(
+                id: "MiniMax-M3",
+                contextWindowSize: 1000000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .toggle)),
+            LumiModelInfo(id: "MiniMax-M2.7", contextWindowSize: 204800, capabilities: .init(supportsVision: true, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2.7-highspeed", contextWindowSize: 204800, capabilities: .init(supportsVision: true, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2.5", contextWindowSize: 204800, capabilities: .init(supportsVision: false, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2.5-highspeed", contextWindowSize: 204800, capabilities: .init(supportsVision: false, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2.1", contextWindowSize: 204800, capabilities: .init(supportsVision: false, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2.1-highspeed", contextWindowSize: 204800, capabilities: .init(supportsVision: false, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2", contextWindowSize: 204800, capabilities: .init(supportsVision: false, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-Text-01", contextWindowSize: 4000000, capabilities: .init(supportsVision: false, supportsTools: false)),
+        ],
         websiteURL: URL(string: "https://platform.minimaxi.com/")!,
         apiKeyStorageKey: MiniMaxProviderSupport.apiKeyStorageKey)
     private let support = MiniMaxProviderSupport()

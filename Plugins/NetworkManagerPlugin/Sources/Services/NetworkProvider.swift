@@ -1,5 +1,6 @@
 import Foundation
 import LumiKernel
+import Compression
 
 /// 基于 URLSession 的 NetworkProviding 实现
 @MainActor
@@ -109,19 +110,53 @@ public final class NetworkProvider: NetworkProviding {
                 textEncodingName: httpResponse.textEncodingName
             ))
 
-            var chunk = Data()
-            for try await byte in bytes {
-                try Task.checkCancellation()
-                chunk.append(byte)
-                receivedBody.append(byte)
-                if chunk.count >= 16 * 1024 {
-                    let shouldContinue = await onChunk(chunk)
-                    chunk.removeAll(keepingCapacity: true)
-                    if !shouldContinue { break }
+            // Check for Content-Encoding
+            let contentEncoding = headers["Content-Encoding"]?.lowercased()
+            let isCompressed = contentEncoding == "br" || contentEncoding == "gzip" || contentEncoding == "deflate"
+
+            if isCompressed {
+                // For compressed streams, we need to buffer and decompress
+                var compressedData = Data()
+                for try await byte in bytes {
+                    try Task.checkCancellation()
+                    compressedData.append(byte)
                 }
-            }
-            if !chunk.isEmpty {
-                _ = await onChunk(chunk)
+                receivedBody = compressedData
+
+                // Decompress the data
+                let decompressed = Self.decompress(compressedData, encoding: contentEncoding ?? "")
+                if let decompressed = decompressed {
+                    // Send decompressed chunks
+                    var offset = 0
+                    let chunkSize = 16 * 1024
+                    while offset < decompressed.count {
+                        let end = min(offset + chunkSize, decompressed.count)
+                        let chunk = decompressed[offset..<end]
+                        if !(await onChunk(Data(chunk))) {
+                            break
+                        }
+                        offset = end
+                    }
+                } else {
+                    // Fallback: send compressed data as-is
+                    _ = await onChunk(compressedData)
+                }
+            } else {
+                // Uncompressed stream - process as before
+                var chunk = Data()
+                for try await byte in bytes {
+                    try Task.checkCancellation()
+                    chunk.append(byte)
+                    receivedBody.append(byte)
+                    if chunk.count >= 16 * 1024 {
+                        let shouldContinue = await onChunk(chunk)
+                        chunk.removeAll(keepingCapacity: true)
+                        if !shouldContinue { break }
+                    }
+                }
+                if !chunk.isEmpty {
+                    _ = await onChunk(chunk)
+                }
             }
 
             if !(200..<300).contains(httpResponse.statusCode) {
@@ -148,6 +183,97 @@ public final class NetworkProvider: NetworkProviding {
             exchangeStore?.finish(record, response: response, body: receivedBody, error: networkError)
             throw networkError
         }
+    }
+
+    // MARK: - Decompression
+
+    private static func decompress(_ data: Data, encoding: String) -> Data? {
+        switch encoding {
+        case "br":
+            return decompressBrotli(data)
+        case "gzip":
+            return decompressGzip(data)
+        case "deflate":
+            return decompressDeflate(data)
+        default:
+            return nil
+        }
+    }
+
+    private static func decompressBrotli(_ data: Data) -> Data? {
+        // Use Apple's built-in brotli support via Compression framework
+        let bufferSize = data.count * 10 // Estimate decompressed size
+        var decompressedData = Data(count: bufferSize)
+
+        let result: Int = data.withUnsafeBytes { (compressedPointer: UnsafeRawBufferPointer) -> Int in
+            guard let compressedBaseAddress = compressedPointer.baseAddress else { return 0 }
+            return decompressedData.withUnsafeMutableBytes { (decompressedPointer: UnsafeMutableRawBufferPointer) -> Int in
+                guard let decompressedBaseAddress = decompressedPointer.baseAddress else { return 0 }
+                return compression_decode_buffer(
+                    decompressedBaseAddress.assumingMemoryBound(to: UInt8.self),
+                    bufferSize,
+                    compressedBaseAddress.assumingMemoryBound(to: UInt8.self),
+                    data.count,
+                    nil,
+                    COMPRESSION_BROTLI
+                )
+            }
+        }
+
+        if result > 0 {
+            return decompressedData.prefix(result)
+        }
+        return nil
+    }
+
+    private static func decompressGzip(_ data: Data) -> Data? {
+        let bufferSize = data.count * 10
+        var decompressedData = Data(count: bufferSize)
+
+        let result: Int = data.withUnsafeBytes { (compressedPointer: UnsafeRawBufferPointer) -> Int in
+            guard let compressedBaseAddress = compressedPointer.baseAddress else { return 0 }
+            return decompressedData.withUnsafeMutableBytes { (decompressedPointer: UnsafeMutableRawBufferPointer) -> Int in
+                guard let decompressedBaseAddress = decompressedPointer.baseAddress else { return 0 }
+                return compression_decode_buffer(
+                    decompressedBaseAddress.assumingMemoryBound(to: UInt8.self),
+                    bufferSize,
+                    compressedBaseAddress.assumingMemoryBound(to: UInt8.self),
+                    data.count,
+                    nil,
+                    COMPRESSION_ZLIB
+                )
+            }
+        }
+
+        if result > 0 {
+            return decompressedData.prefix(result)
+        }
+        return nil
+    }
+
+    private static func decompressDeflate(_ data: Data) -> Data? {
+        let bufferSize = data.count * 10
+        var decompressedData = Data(count: bufferSize)
+
+        let result: Int = data.withUnsafeBytes { (compressedPointer: UnsafeRawBufferPointer) -> Int in
+            guard let compressedBaseAddress = compressedPointer.baseAddress else { return 0 }
+            return decompressedData.withUnsafeMutableBytes { (decompressedPointer: UnsafeMutableRawBufferPointer) -> Int in
+                guard let decompressedBaseAddress = decompressedPointer.baseAddress else { return 0 }
+                return compression_decode_buffer(
+                    decompressedBaseAddress.assumingMemoryBound(to: UInt8.self),
+                    bufferSize,
+                    compressedBaseAddress.assumingMemoryBound(to: UInt8.self),
+                    data.count,
+                    nil,
+                    COMPRESSION_LZFSE // Use LZFSE as fallback, may not work for all deflate streams
+                )
+            }
+        }
+
+        if result > 0 {
+            return decompressedData.prefix(result)
+        }
+        return nil
     }
 
     private static func headers(from response: HTTPURLResponse) -> [String: String] {

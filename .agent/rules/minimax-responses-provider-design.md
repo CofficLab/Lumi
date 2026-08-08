@@ -28,7 +28,7 @@ From final response `usage` object: `input_tokens`, `output_tokens`
 
 ## Files to Modify
 1. `Sources/MiniMaxPlugin.swift` — Register `MiniMaxResponsesProvider` in `llmProviders()`
-2. `Sources/Model/MiniMaxProviderCatalog.swift` — Add `MiniMax-M3` with `.levels` capability
+2. Provider files (`MiniMaxAnthropicProvider.swift`, `MiniMaxOpenAIProvider.swift`, `MiniMaxResponsesProvider.swift`) — Add `MiniMax-M3` with `.threeLevel` capability in `availableModels`
 
 ## Base URL
 `https://api.minimaxi.com/v1/responses`

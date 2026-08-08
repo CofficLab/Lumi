@@ -10,7 +10,21 @@ public final class MiniMaxAnthropicProvider: LumiLLMProvider, @unchecked Sendabl
         displayName: "MiniMax (Anthropic)",
         description: "MiniMax Token Plan via Anthropic-compatible API",
         defaultModel: "MiniMax-M2.7",
-        availableModels: MiniMaxProviderCatalog.models,
+        availableModels: [
+            LumiModelInfo(
+                id: "MiniMax-M3",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .toggle)
+            ),
+            LumiModelInfo(id: "MiniMax-M2.7", contextWindowSize: 204_800, capabilities: .init(supportsVision: true, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2.7-highspeed", contextWindowSize: 204_800, capabilities: .init(supportsVision: true, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2.5", contextWindowSize: 204_800, capabilities: .init(supportsVision: false, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2.5-highspeed", contextWindowSize: 204_800, capabilities: .init(supportsVision: false, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2.1", contextWindowSize: 204_800, capabilities: .init(supportsVision: false, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2.1-highspeed", contextWindowSize: 204_800, capabilities: .init(supportsVision: false, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-M2", contextWindowSize: 204_800, capabilities: .init(supportsVision: false, supportsTools: true)),
+            LumiModelInfo(id: "MiniMax-Text-01", contextWindowSize: 4_000_000, capabilities: .init(supportsVision: false, supportsTools: false)),
+        ],
         websiteURL: URL(string: "https://platform.minimaxi.com/")!,
         apiKeyStorageKey: MiniMaxProviderSupport.apiKeyStorageKey
     )
