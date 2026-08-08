@@ -7,7 +7,6 @@ import SwiftUI
 /// 由 `BookletMakerPlugin` 注册为 `PanelRailTabItem`，
 /// 仅在 Booklet Maker ViewContainer 中可见。
 struct BookletMakerRailView: View {
-
     @ObservedObject var viewModel: BookletMakerViewModel
     let onExport: () -> Void
 
@@ -53,7 +52,7 @@ struct BookletMakerRailView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Slider(value: $viewModel.settings.marginMM, in: 0...30, step: 1)
+                Slider(value: $viewModel.settings.marginMM, in: 0 ... 30, step: 1)
             }
 
             // Gutter
@@ -66,7 +65,7 @@ struct BookletMakerRailView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Slider(value: $viewModel.settings.gutterMM, in: 0...30, step: 1)
+                Slider(value: $viewModel.settings.gutterMM, in: 0 ... 30, step: 1)
             }
 
             // Toggles
@@ -78,6 +77,13 @@ struct BookletMakerRailView: View {
                 .font(.subheadline)
 
             Spacer()
+
+            // Drop zone
+            HStack {
+                Spacer()
+                BookletDropZoneView(viewModel: viewModel)
+                Spacer()
+            }
 
             // Export button
             Button(action: onExport) {

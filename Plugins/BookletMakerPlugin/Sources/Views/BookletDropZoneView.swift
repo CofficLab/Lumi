@@ -41,7 +41,7 @@ struct BookletDropZoneView: View {
                 .font(.system(size: 32))
                 .foregroundColor(.secondary)
 
-            Text(BookletLocalization.string("Drop PDF here or click to select"))
+            Text(BookletLocalization.string("Drop a PDF here or click to choose one"))
                 .font(.headline)
                 .foregroundColor(.secondary)
 
