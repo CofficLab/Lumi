@@ -33,7 +33,15 @@ public extension View {
     /// Hover feedback is limited to the native draggable area so the cursor never
     /// advertises resizing where `NSSplitView` cannot begin a drag.
     func appSplitDivider(_ edge: AppSplitDividerEdge) -> some View {
-        modifier(AppSplitDividerModifier(edge: edge))
+        appSplitDivider(edge, onResize: nil)
+    }
+
+    /// Adds interactive styling and reports the leading pane's native size after resize.
+    func appSplitDivider(
+        _ edge: AppSplitDividerEdge,
+        onResize: (@MainActor (CGFloat) -> Void)?
+    ) -> some View {
+        modifier(AppSplitDividerModifier(edge: edge, onResize: onResize))
     }
 }
 
@@ -42,13 +50,15 @@ private struct AppSplitDividerModifier: ViewModifier {
     @State private var isHovered = false
 
     let edge: AppSplitDividerEdge
+    let onResize: (@MainActor (CGFloat) -> Void)?
 
     func body(content: Content) -> some View {
         content
             .background(
                 AppSplitDividerHoverCoordinator(
                     edge: edge,
-                    isHovered: $isHovered
+                    isHovered: $isHovered,
+                    onResize: onResize
                 )
             )
             .overlay(alignment: edge.alignment) {
@@ -97,9 +107,10 @@ private struct AppSplitDividerModifier: ViewModifier {
 private struct AppSplitDividerHoverCoordinator: NSViewRepresentable {
     let edge: AppSplitDividerEdge
     @Binding var isHovered: Bool
+    let onResize: (@MainActor (CGFloat) -> Void)?
 
     func makeNSView(context: Context) -> AppSplitDividerHoverCoordinatorView {
-        let view = AppSplitDividerHoverCoordinatorView(edge: edge)
+        let view = AppSplitDividerHoverCoordinatorView(edge: edge, onResize: onResize)
         view.onHoverChanged = { hovering in
             isHovered = hovering
         }
@@ -108,6 +119,7 @@ private struct AppSplitDividerHoverCoordinator: NSViewRepresentable {
 
     func updateNSView(_ nsView: AppSplitDividerHoverCoordinatorView, context: Context) {
         nsView.edge = edge
+        nsView.onResize = onResize
         nsView.onHoverChanged = { hovering in
             isHovered = hovering
         }
@@ -130,6 +142,7 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
 
     var edge: AppSplitDividerEdge
     var onHoverChanged: ((Bool) -> Void)?
+    var onResize: (@MainActor (CGFloat) -> Void)?
 
     fileprivate weak var splitView: NSSplitView?
     private var dividerIndex: Int?
@@ -144,8 +157,9 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
     private var attachAttemptCount: Int = 0
     private var isScheduledForRetry = false
 
-    init(edge: AppSplitDividerEdge) {
+    init(edge: AppSplitDividerEdge, onResize: (@MainActor (CGFloat) -> Void)? = nil) {
         self.edge = edge
+        self.onResize = onResize
         super.init(frame: .zero)
     }
 
@@ -208,9 +222,11 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
                     Self.logger.info("didResizeSubviews refresh tracking")
                 }
                 self?.refreshTrackingArea()
+                self?.reportCurrentPosition()
             }
         }
         refreshTrackingArea()
+        reportCurrentPosition()
         hideNativeDivider()
     }
 
@@ -342,6 +358,16 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
             return
         }
         updateHoverState(trackingRect.contains(location))
+    }
+
+    private func reportCurrentPosition() {
+        guard let splitView, let dividerIndex,
+              splitView.arrangedSubviews.indices.contains(dividerIndex)
+        else { return }
+        let pane = splitView.arrangedSubviews[dividerIndex]
+        let position = splitView.isVertical ? pane.frame.width : pane.frame.height
+        guard position.isFinite, position > 0 else { return }
+        onResize?(position)
     }
 
     private func enclosingSplitView() -> NSSplitView? {

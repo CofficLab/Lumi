@@ -19,6 +19,8 @@ struct PanelView: View {
     }
 
     var body: some View {
+        let containerID = layoutManager.activeViewContainerID ?? ""
+        let bottomPanelHeight = layoutManager.bottomPanelDivider(for: containerID, fallback: 400)
         Group {
             if isPanelHeaderVisible || isPanelBodyVisible || isPanelBottomVisible {
                 VStack {
@@ -30,12 +32,17 @@ struct PanelView: View {
                     VSplitView {
                         if isPanelBodyVisible {
                             PanelBodyView(layoutManager: layoutManager)
+                                .frame(height: bottomPanelHeight)
                                 .frame(maxWidth: .infinity)
                                 .id(self.layoutManager.activeViewContainerID)
-                                .appSplitDivider(.bottom)
+                                .appSplitDivider(.bottom) { position in
+                                    guard let currentContainerID = layoutManager.activeViewContainerID else { return }
+                                    layoutManager.setBottomPanelDivider(position, for: currentContainerID)
+                                }
                         }
                         PanelBottomView(layoutManager: layoutManager)
                     }
+                    .id("host.bottomPanel.\(containerID)")
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)

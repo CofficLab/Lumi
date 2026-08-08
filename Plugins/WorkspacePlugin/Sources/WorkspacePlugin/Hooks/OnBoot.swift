@@ -39,6 +39,20 @@ public struct LayoutKernelOnBootHook: SuperLog {
             }
             // 恢复每个容器用户手动调整过的可见性覆盖。
             manager.restoreVisibilityOverrides(info.visibilityOverrides)
+            // 恢复每个容器的 split 尺寸到内核内存，UI 激活容器后按 ID 读取。
+            for (containerID, position) in info.railDividers {
+                manager.restoreRailDivider(position, for: containerID)
+            }
+            for (key, position) in info.chatSectionDividers {
+                let parts = key.split(separator: ".", maxSplits: 1).map(String.init)
+                guard parts.count == 2,
+                      let layout = LumiChatSectionLayout.from(persistenceKeySuffix: parts[1])
+                else { continue }
+                manager.restoreChatSectionDivider(position, for: parts[0], layout: layout)
+            }
+            for (containerID, position) in info.bottomPanelDividers {
+                manager.restoreBottomPanelDivider(position, for: containerID)
+            }
         } else {
             if Self.verbose {
                 Self.logger.info("\(Self.t)无已保存布局，使用默认值")

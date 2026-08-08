@@ -21,7 +21,7 @@ import SwiftUI
 public final class LayoutManager: WorkspaceProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout.service")
     nonisolated public static let emoji = "📐"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // MARK: - Persistence
 
@@ -403,6 +403,8 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         railDividers[viewContainerID] = position
     }
 
+    public var railDividersDictionary: [String: CGFloat] { railDividers }
+
     public func chatSectionDivider(
         for viewContainerID: String,
         layout: LumiChatSectionLayout,
@@ -446,6 +448,8 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         chatSectionDividers[chatSectionDividerKey(viewContainerID: viewContainerID, layout: layout)] = position
     }
 
+    public var chatSectionDividersDictionary: [String: CGFloat] { chatSectionDividers }
+
     public func bottomPanelDivider(for viewContainerID: String, fallback: CGFloat? = nil) -> CGFloat {
         bottomPanelDividers[viewContainerID] ?? fallback ?? defaultBottomPanelDivider
     }
@@ -466,6 +470,8 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     public func restoreBottomPanelDivider(_ position: CGFloat, for viewContainerID: String) {
         bottomPanelDividers[viewContainerID] = position
     }
+
+    public var bottomPanelDividersDictionary: [String: CGFloat] { bottomPanelDividers }
 
     private func chatSectionDividerKey(
         viewContainerID: String,
@@ -524,7 +530,10 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             panelBottomVisible: isPanelBottomVisible,
             activeRailTabIDs: activeRailTabIDsDictionary,
             activeBottomTabIDs: activeBottomTabIDsDictionary,
-            visibilityOverrides: visibilityOverridesDictionary
+            visibilityOverrides: visibilityOverridesDictionary,
+            railDividers: railDividersDictionary,
+            chatSectionDividers: chatSectionDividersDictionary,
+            bottomPanelDividers: bottomPanelDividersDictionary
         )
         store.saveLayoutInfo(info)
         if Self.verbose {
