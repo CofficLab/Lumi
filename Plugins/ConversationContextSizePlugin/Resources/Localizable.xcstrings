@@ -1,36 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Conversation Context Size" : {
+    "%@/%@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conversation Context Size"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "会话上下文大小"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "會話上下文大小"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "會話上下文大小"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "會話上下文大小"
+            "state" : "new",
+            "value" : "%1$@/%2$@"
           }
         }
       }
@@ -70,6 +46,7 @@
       }
     },
     "Context window: %@ tokens" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -103,70 +80,36 @@
         }
       }
     },
-    "Model limit:" : {
+    "Conversation Context Size" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Model limit:"
+            "state" : "translated",
+            "value" : "Conversation Context Size"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "模型限制："
+            "state" : "translated",
+            "value" : "会话上下文大小"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "模型限制："
+            "state" : "translated",
+            "value" : "會話上下文大小"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "模型限制："
+            "state" : "translated",
+            "value" : "會話上下文大小"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "模型限制："
-          }
-        }
-      }
-    },
-    "Maximum tokens the model can process in a single request." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Maximum tokens the model can process in a single request."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "模型单次请求可处理的最大 token 数。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "模型單次請求可處理的最大 token 數。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "模型單次請求可處理的最大 token 數。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "模型單次請求可處理的最大 token 數。"
+            "state" : "translated",
+            "value" : "會話上下文大小"
           }
         }
       }
@@ -235,6 +178,74 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "更大的上下文可以發送更多對話歷史。"
+          }
+        }
+      }
+    },
+    "Maximum tokens the model can process in a single request." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Maximum tokens the model can process in a single request."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型单次请求可处理的最大 token 数。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型單次請求可處理的最大 token 數。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型單次請求可處理的最大 token 數。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型單次請求可處理的最大 token 數。"
+          }
+        }
+      }
+    },
+    "Model limit:" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Model limit:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型限制："
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型限制："
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型限制："
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型限制："
           }
         }
       }
