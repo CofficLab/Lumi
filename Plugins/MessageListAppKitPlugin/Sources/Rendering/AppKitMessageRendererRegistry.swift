@@ -36,7 +36,7 @@ final class AppKitMessageRendererRegistry {
         case .tool:
             // Suspended ask_user calls get the interactive renderer; all other
             // tool calls get the generic one.
-            if Self.isPendingAskUser(row.message) {
+            if Self.isPendingUserInteraction(row.message) {
                 return AppKitAskUserRenderer(environment: environment)
             }
             return AppKitToolRenderer(environment: environment)
@@ -58,7 +58,18 @@ final class AppKitMessageRendererRegistry {
     /// True when the message carries a suspended `ask_user` tool call whose
     /// result content parses into an interactive payload.
     static func isPendingAskUser(_ message: LumiChatMessage) -> Bool {
-        guard let call = message.toolCalls?.first(where: { $0.name == "ask_user" }),
+        isPendingUserInteraction(message, restrictedToAskUser: true)
+    }
+
+    static func isPendingUserInteraction(
+        _ message: LumiChatMessage,
+        restrictedToAskUser: Bool = false
+    ) -> Bool {
+        guard let call = message.toolCalls?.first(where: {
+                  (!restrictedToAskUser || $0.name == "ask_user")
+                      && $0.result?.turnControl.isSuspended == true
+                      && AppKitAskUserPayload.parse(from: $0.result?.content) != nil
+              }),
               let result = call.result,
               !result.turnControl.isSuspended == false
         else { return false }

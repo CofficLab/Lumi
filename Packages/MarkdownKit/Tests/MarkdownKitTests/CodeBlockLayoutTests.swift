@@ -1,4 +1,5 @@
 import AppKit
+import LumiUI
 import MarkdownKitTesting
 import Testing
 import SwiftUI

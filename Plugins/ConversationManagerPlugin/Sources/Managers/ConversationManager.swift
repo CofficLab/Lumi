@@ -24,6 +24,8 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     @Published public private(set) var currentTitle: String = "No conversation"
     @Published public private(set) var isLoadingConversations = true
     @Published public private(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
+    @Published public private(set) var globalReasoningEffort: LumiReasoningEffort? = .defaultEffort
+    @Published public private(set) var globalAutomationLevel: LumiAutomationLevel = .build
 
     /// Notification posted when conversations list changes
     static let conversationsDidChangeNotification = Notification.Name.lumiConversationsDidChange
@@ -94,6 +96,10 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                 }
                 // 初始化全局详细程度为当前选中对话的详细程度
                 self.globalVerbosity = self.verbosity(for: self.selectedConversationID)
+                if self.selectedConversationID != nil {
+                    self.globalReasoningEffort = self.reasoningEffortOptional(for: self.selectedConversationID)
+                    self.globalAutomationLevel = self.automationLevel(for: self.selectedConversationID)
+                }
                 self.updateCurrentTitle()
                 self.persistSelectedConversationID()
                 self.isLoadingConversations = false
@@ -231,11 +237,11 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         let effectiveProviderID = providerID ?? kernel?.llmProvider?.selectedProviderID
         // 如果未指定 modelName，则自动使用当前选中的模型
         let effectiveModelName = modelName ?? kernel?.llmProvider?.selectedModel
-        // 继承全局设置（详细程度、推理强度、语言、自动化程度）
+        // 继承全局设置（详细程度、推理强度、对话模式）
         let effectiveVerbosity = self.globalVerbosity
-        let effectiveReasoningEffort = self.reasoningEffort(for: selectedConversationID)
+        let effectiveReasoningEffort = self.globalReasoningEffort
+        let effectiveAutomationLevel = self.globalAutomationLevel
         let effectiveLanguage = self.language(for: selectedConversationID)
-        let effectiveAutomationLevel = self.automationLevel(for: selectedConversationID)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)创建对话：\(normalizedTitle ?? "nil"), 项目：\(effectiveProjectPath ?? "nil"), 供应商：\(effectiveProviderID ?? "nil"), 模型：\(effectiveModelName ?? "nil"), 详细程度：\(effectiveVerbosity.rawValue)")
@@ -279,7 +285,9 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                     providerID: effectiveProviderID,
                     modelName: effectiveModelName,
                     projectPath: effectiveProjectPath,
-                    parentConversationID: parentConversationID
+                    parentConversationID: parentConversationID,
+                    reasoningEffort: effectiveReasoningEffort,
+                    automationLevel: effectiveAutomationLevel
                 )
                 self.notifyConversationsChanged()
             } catch {
@@ -505,6 +513,14 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
     // MARK: - Reasoning Effort
 
+    public func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?) {
+        globalReasoningEffort = reasoningEffort
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setGlobalReasoningEffort: effort=\(reasoningEffort?.rawValue ?? "off")")
+        }
+    }
+
     public func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort {
         guard let conversationID else {
             return .defaultEffort
@@ -532,7 +548,42 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
+    public func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? {
+        guard let conversationID else {
+            return nil
+        }
+        return conversations.first { $0.id == conversationID }?.reasoningEffort
+    }
+
+    public func clearReasoningEffort(for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].reasoningEffort = nil
+        conversations = conversations
+        notifyConversationsChanged()
+
+        Task {
+            await store?.updateConversationPreferences(id: conversationID, setReasoningEffortToNil: true)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)clearReasoningEffort: conversation=\(conversationID.uuidString.prefix(8))")
+        }
+    }
+
     // MARK: - Automation Level
+
+    public func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) {
+        globalAutomationLevel = automationLevel
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setGlobalAutomationLevel: level=\(automationLevel.rawValue)")
+        }
+    }
 
     public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {
         guard let conversationID else {
@@ -549,6 +600,12 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             return
         }
         conversations[index].automationLevel = automationLevel
+        conversations = conversations
+        notifyConversationsChanged()
+
+        Task {
+            await store?.updateConversationPreferences(id: conversationID, automationLevel: automationLevel)
+        }
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setAutomationLevel: conversation=\(conversationID.uuidString.prefix(8)), level=\(automationLevel.rawValue)")

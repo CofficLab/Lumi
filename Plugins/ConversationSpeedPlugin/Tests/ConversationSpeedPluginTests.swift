@@ -61,4 +61,36 @@ final class ConversationSpeedPluginTests: XCTestCase {
         XCTAssertEqual(samples.count, 1)
         XCTAssertEqual(samples[0].tokensPerSecond, 127.0 / 6.65, accuracy: 0.0001)
     }
+
+    func testUnavailableReasonIdentifiesMissingPerformanceData() {
+        let conversationID = UUID()
+
+        XCTAssertEqual(ConversationSpeedUnavailability.reason(for: nil), .waitingForResponse)
+        XCTAssertEqual(
+            ConversationSpeedUnavailability.reason(for: LumiChatMessage(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "missing all"
+            )),
+            .missingOutputTokensAndDuration
+        )
+        XCTAssertEqual(
+            ConversationSpeedUnavailability.reason(for: LumiChatMessage(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "missing tokens",
+                latencyMs: 1_000
+            )),
+            .missingOutputTokens
+        )
+        XCTAssertEqual(
+            ConversationSpeedUnavailability.reason(for: LumiChatMessage(
+                conversationID: conversationID,
+                role: .assistant,
+                content: "missing duration",
+                outputTokenCount: 20
+            )),
+            .missingDuration
+        )
+    }
 }

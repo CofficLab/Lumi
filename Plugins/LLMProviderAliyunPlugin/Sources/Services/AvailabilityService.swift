@@ -2,11 +2,10 @@ import Foundation
 import HttpKit
 import LLMKit
 import LumiKernel
-import LumiKernel
 
-// MARK: - AvailabilityService
+// MARK: - AliyunAvailabilityService
 
-enum AvailabilityService {
+enum AliyunAvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderAliyun")
 
     static func checkAvailability(
@@ -15,12 +14,7 @@ enum AvailabilityService {
     ) async -> LumiModelAvailabilityResult {
         await checkAvailability(
             model: model,
-            adapter: provider.internalAdapter,
-            apiService: provider.internalApiService,
-            buildRequest: { url, apiKey in
-                provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
-            },
-            resolveAPIKey: { try provider.lumiResolveAPIKey() }
+            ping: { try await provider.ping(model: $0) }
         )
     }
 
@@ -30,40 +24,46 @@ enum AvailabilityService {
     ) async -> LumiModelAvailabilityResult {
         await checkAvailability(
             model: model,
-            adapter: provider.internalAdapter,
-            apiService: provider.internalApiService,
-            buildRequest: { url, apiKey in
-                provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
-            },
-            resolveAPIKey: { try provider.lumiResolveAPIKey() }
+            ping: { try await provider.ping(model: $0) }
         )
     }
 
     private static func checkAvailability(
         model: String,
-        adapter: AnthropicCompatibleProviderAdapter,
-        apiService: LLMAPIService,
-        buildRequest: @escaping (URL, String) -> URLRequest,
-        resolveAPIKey: @escaping () throws -> String
+        ping: @escaping (String) async throws -> Void
     ) async -> LumiModelAvailabilityResult {
-        // 优先读磁盘缓存
         if let cached = cache.read(model: model),
            Date().timeIntervalSince(cached.timestamp) < cache.cacheInterval {
             return cached.result
         }
 
-        let result = await LumiAnthropicCompatibleAvailability.chatPing(
-            model: model,
-            adapter: adapter,
-            apiService: apiService,
-            buildRequest: buildRequest,
-            resolveAPIKey: resolveAPIKey
-        )
+        let result = await pingProvider(model: model, ping: ping)
         let mapped = mapUnsupportedModelResult(result)
 
         cache.write(model: model, result: mapped, timestamp: Date())
 
         return mapped
+    }
+
+    private static func pingProvider(
+        model: String,
+        ping: @escaping (String) async throws -> Void
+    ) async -> LumiModelAvailabilityResult {
+        do {
+            try await ping(model)
+            return .available
+        } catch {
+            if isUnsupportedModelError(error) {
+                return .unavailable(LumiLLMFailureDetail(
+                    summary: LumiPluginLocalization.string(
+                        "This model is not included in your Coding Plan",
+                        bundle: .module
+                    ),
+                    reason: .unsupportedModel
+                ))
+            }
+            return .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+        }
     }
 
     static func mapUnsupportedModelResult(

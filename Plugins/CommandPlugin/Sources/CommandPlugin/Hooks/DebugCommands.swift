@@ -4,9 +4,8 @@ import LumiKernel
 import SuperLogKit
 import os
 
-/// Debug 菜单命令注册
+/// Debug 菜单命令贡献
 ///
-/// 在 OnBoot 阶段注册 Debug 菜单命令到 CommandService。
 /// 这些命令允许用户快速打开各类应用目录。
 @MainActor
 public struct DebugCommands {
@@ -15,9 +14,9 @@ public struct DebugCommands {
 
     public init() {}
 
-    /// 注册 Debug 菜单命令
-    public func register(into kernel: LumiKernel) {
-        let group = CommandMenuGroup(
+    /// 创建 Debug 菜单命令组。
+    public func commandMenuGroup(kernel: LumiKernel) -> CommandMenuGroup {
+        CommandMenuGroup(
             id: "com.coffic.lumi.plugin.command.debug",
             name: LumiPluginLocalization.string("Debug", bundle: .module),
             items: [
@@ -48,12 +47,6 @@ public struct DebugCommands {
             ],
             placement: .topLevelMenu
         )
-
-        kernel.command?.registerCommandGroup(group)
-
-        if Self.verbose {
-            Self.logger.info("Registered Debug commands")
-        }
     }
 
     // MARK: - Actions

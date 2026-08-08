@@ -70,21 +70,21 @@ public struct RouteCandidate: Sendable, Equatable {
     /// 模型可用性
     public let availability: CandidateAvailability
 
-    /// 供应商的上下文窗口映射（模型名 → Token 数）
-    public let contextWindowSizes: [String: Int]
+    /// 模型的上下文窗口大小（Token 数）
+    public let contextWindowSize: Int?
 
     public init(
         providerId: String,
         providerDisplayName: String,
         model: String,
         availability: CandidateAvailability,
-        contextWindowSizes: [String: Int] = [:]
+        contextWindowSize: Int? = nil
     ) {
         self.providerId = providerId
         self.providerDisplayName = providerDisplayName
         self.model = model
         self.availability = availability
-        self.contextWindowSizes = contextWindowSizes
+        self.contextWindowSize = contextWindowSize
     }
 }
 

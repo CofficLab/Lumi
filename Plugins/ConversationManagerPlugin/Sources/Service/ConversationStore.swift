@@ -100,7 +100,7 @@ public actor ConversationStore: SuperLog {
 
     /// Create a new conversation with specific ID
     @discardableResult
-    func createConversation(id: UUID, title: String?, preview: String = "", createdAt: Date = Date(), providerID: String? = nil, modelName: String? = nil, projectPath: String? = nil, parentConversationID: UUID? = nil) throws -> ConversationModel {
+    func createConversation(id: UUID, title: String?, preview: String = "", createdAt: Date = Date(), providerID: String? = nil, modelName: String? = nil, projectPath: String? = nil, parentConversationID: UUID? = nil, reasoningEffort: LumiReasoningEffort? = nil, automationLevel: LumiAutomationLevel? = nil) throws -> ConversationModel {
         let context = ModelContext(container)
         let now = createdAt.timeIntervalSince1970
         let model = ConversationModel(
@@ -109,6 +109,8 @@ public actor ConversationStore: SuperLog {
             preview: preview,
             createdAt: now,
             updatedAt: now,
+            reasoningEffortRaw: reasoningEffort?.rawValue,
+            automationLevelRaw: automationLevel?.rawValue,
             providerId: providerID,
             modelName: modelName,
             projectPath: projectPath,
@@ -468,7 +470,9 @@ public actor ConversationStore: SuperLog {
     func updateConversationPreferences(
         id: UUID,
         verbosity: LumiResponseVerbosity? = nil,
-        reasoningEffort: LumiReasoningEffort? = nil
+        reasoningEffort: LumiReasoningEffort? = nil,
+        setReasoningEffortToNil: Bool = false,
+        automationLevel: LumiAutomationLevel? = nil
     ) -> Bool {
         let context = ModelContext(container)
         let idString = id.uuidString
@@ -486,6 +490,12 @@ public actor ConversationStore: SuperLog {
         }
         if let reasoningEffort {
             model.reasoningEffortRaw = reasoningEffort.rawValue
+        }
+        if setReasoningEffortToNil {
+            model.reasoningEffortRaw = nil
+        }
+        if let automationLevel {
+            model.automationLevelRaw = automationLevel.rawValue
         }
         model.updatedAt = Date().timeIntervalSince1970
         return save(context, operation: "更新对话偏好")

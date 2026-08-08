@@ -214,10 +214,28 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             throw AgentTurnManagingError.invalidResumeRequest
         }
 
-        let result = LumiToolResult(
-            content: suspension.payload,
-            turnControl: .resumed(suspension, answer: request.answer)
-        )
+        let suspendedToolCall = assistantMessage.toolCalls?.first(where: { $0.id == toolCallID })
+        let result: LumiToolResult
+        if suspension.kind == Self.toolApprovalSuspensionKind,
+           let suspendedToolCall {
+            if isToolApprovalGranted(request.answer) {
+                result = await executeApprovedToolCall(
+                    suspendedToolCall,
+                    conversationID: conversationID
+                )
+            } else {
+                result = LumiToolResult(
+                    content: "User rejected the tool execution request.",
+                    isError: true,
+                    turnControl: .resumed(suspension, answer: request.answer)
+                )
+            }
+        } else {
+            result = LumiToolResult(
+                content: suspension.payload,
+                turnControl: .resumed(suspension, answer: request.answer)
+            )
+        }
         kernel?.messageManager?.updateToolCallResult(
             result,
             toolCallID: toolCallID,
@@ -231,7 +249,9 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             kernel?.messageManager?.updateMessage(
                 id: pendingToolMessage.id,
                 in: conversationID,
-                content: request.answer
+                content: suspension.kind == Self.toolApprovalSuspensionKind
+                    ? result.content
+                    : request.answer
             )
         }
 
@@ -244,6 +264,20 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         }
         if pendingSuspensions[conversationID]?.isEmpty == true {
             pendingSuspensions.removeValue(forKey: conversationID)
+        }
+
+        // Approval can occur before later calls in the same assistant batch
+        // have run. Continue that batch now; a later risky/interactive call
+        // may suspend independently.
+        if let incompleteMessage = incompleteToolCallMessage(in: conversationID) {
+            let suspendedAgain = await executePendingToolCalls(
+                in: incompleteMessage,
+                conversationID: conversationID
+            )
+            if suspendedAgain {
+                turnStates[conversationID] = suspensions[conversationID].map(AgentTurnState.suspended) ?? .running
+                return .awaitingUserResponse
+            }
         }
 
         let latestToolCalls = latestAssistantToolCalls(in: conversationID)
@@ -487,7 +521,8 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
             // Build request with current message history
             let history = kernel.messageManager?.messages(for: conversationID) ?? []
-            let tools = (kernel.toolManager?.allAgentTools() ?? []).filter {
+            let automationLevel = kernel.conversations?.automationLevel(for: conversationID) ?? .build
+            let tools = (automationLevel.allowsTools ? kernel.toolManager?.allAgentTools() ?? [] : []).filter {
                 !turnCreationExcludedToolNames[conversationID, default: []].contains($0.name)
             }
 
@@ -549,17 +584,25 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 preparedMessages = [systemMessage] + nonSystem
             }
 
+            let reasoningSupport = type(of: targetProvider).info
+                .modelInfo(for: model)?.capabilities?.thinkingAndReasoning ?? .unsupported
+            let reasoningEffort: LumiReasoningEffort?
+            switch reasoningSupport {
+            case .unsupported:
+                reasoningEffort = nil
+            case .toggle:
+                reasoningEffort = kernel.conversations?.reasoningEffortOptional(for: conversationID)
+            case .threeLevel, .fourLevel:
+                reasoningEffort = kernel.conversations?.reasoningEffort(for: conversationID)
+            }
+
             let request = LumiLLMRequest(
                 messages: preparedMessages,
                 model: model,
                 tools: tools,
                 imageAttachments: pendingImages,
                 fileAttachments: pendingFiles,
-                generationOptions: LumiLLMGenerationOptions(
-                    reasoningEffort: type(of: targetProvider).info.modelCapabilities[model]?.supportsThinking == true
-                        ? kernel.conversations?.reasoningEffort(for: conversationID)
-                        : nil
-                )
+                reasoningEffort: reasoningEffort
             )
 
             // 记录本次发出的请求到磁盘(SwiftData),用于设置界面回看。
@@ -680,12 +723,12 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 )
 
                 // Execute tool
-                guard let toolManager = kernel.toolManager else {
+                guard kernel.toolManager != nil else {
                     Self.logger.error("\(Self.t)ToolManager 不可用")
                     continue
                 }
 
-                var result = await toolManager.execute(
+                var result = await executeToolCall(
                     toolCall,
                     conversationID: conversationID,
                     turnID: turnID

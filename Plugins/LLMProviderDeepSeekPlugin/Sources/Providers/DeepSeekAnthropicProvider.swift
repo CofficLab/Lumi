@@ -23,16 +23,16 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
         description: LumiPluginLocalization.string("DeepSeek AI via Anthropic-compatible API", bundle: .module),
         defaultModel: "deepseek-v4-flash",
         availableModels: [
-            "deepseek-v4-flash",
-            "deepseek-v4-pro",
-        ],
-        contextWindowSizes: [
-            "deepseek-v4-flash": 1000000,
-            "deepseek-v4-pro": 1000000,
-        ],
-        modelCapabilities: [
-            "deepseek-v4-flash": .init(supportsVision: false, supportsTools: true, supportsThinking: true),
-            "deepseek-v4-pro": .init(supportsVision: false, supportsTools: true, supportsThinking: true),
+            .init(
+                id: "deepseek-v4-flash",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "deepseek-v4-pro",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
         ],
         websiteURL: URL(string: "https://www.deepseek.com/")!,
         apiKeyStorageKey: DeepSeekPlugin.apiKeyStorageKey
@@ -243,4 +243,3 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
         )
     }
 }
-

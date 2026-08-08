@@ -101,12 +101,8 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             tools: tools,
             systemPrompt: systemPrompt
         )
-        var effectiveConfig = config
-        if !configuration.supportsThinkingBudget {
-            effectiveConfig.reasoningEffort = nil
-        }
         AnthropicCompatibleGenerationOptionsApplier.apply(
-            config: effectiveConfig,
+            config: config,
             model: model,
             defaultMaxTokens: configuration.defaultMaxTokens,
             to: &body

@@ -234,6 +234,86 @@
         }
       }
     },
+    "Speed unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unavailable"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速度不可用"
+          }
+        }
+      }
+    },
+    "Speed unavailable missing duration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The provider did not report a valid response duration, so generation speed cannot be calculated."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务商未返回有效的响应耗时，因此无法计算生成速度。"
+          }
+        }
+      }
+    },
+    "Speed unavailable missing output tokens": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The provider did not report the output token count, so generation speed cannot be calculated."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务商未返回输出 token 数量，因此无法计算生成速度。"
+          }
+        }
+      }
+    },
+    "Speed unavailable missing output tokens and duration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The provider did not report the output token count or a valid response duration, so generation speed cannot be calculated."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务商未返回输出 token 数量和有效的响应耗时，因此无法计算生成速度。"
+          }
+        }
+      }
+    },
+    "Speed unavailable waiting for response": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No assistant response with speed data is available yet. Send a message and wait for the response to finish."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前还没有包含速度数据的助手回复。请发送消息并等待回复完成。"
+          }
+        }
+      }
+    },
     "Time to first token": {
       "extractionState": "stale",
       "localizations": {

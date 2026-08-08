@@ -53,7 +53,7 @@ enum AnthropicRequestBuilder {
         // 始终显式给出 thinking 预算(含 nil),防止服务端默认
         // thinking 无上限吃掉全部输出预算。clamp 到 maxThinkingBudget,
         // 避免 xhigh/max 超过 max_tokens(4096)。
-        let requested = thinkingBudget(for: request.generationOptions.reasoningEffort)
+        let requested = thinkingBudget(for: request.reasoningEffort)
             ?? defaultThinkingBudget
         body["thinking"] = [
             "type": "enabled",
@@ -246,6 +246,7 @@ enum AnthropicRequestBuilder {
         switch effort {
         case nil: nil
         case .low: 2048
+        case .medium: 3072
         case .high: 4096
         case .xhigh: 8192
         case .max: 16384

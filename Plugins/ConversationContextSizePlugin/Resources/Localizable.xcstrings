@@ -1,8 +1,84 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@/%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@/%2$@"
+          }
+        }
+      }
+    },
+    "Context Window" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Context Window"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "上下文窗口"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "上下文窗口"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "上下文窗口"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "上下文窗口"
+          }
+        }
+      }
+    },
     "Context window: %@ tokens" : {
-
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Context window: %@ tokens"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "上下文窗口：%@ tokens"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "上下文窗口：%@ tokens"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "上下文窗口：%@ tokens"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "上下文窗口：%@ tokens"
+          }
+        }
+      }
     },
     "Conversation Context Size" : {
       "localizations" : {
@@ -21,19 +97,189 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "会话上下文大小"
+            "value" : "會話上下文大小"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "会话上下文大小"
+            "value" : "會話上下文大小"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "会话上下文大小"
+            "value" : "會話上下文大小"
+          }
+        }
+      }
+    },
+    "Includes both input (messages) and output (response)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Includes both input (messages) and output (response)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "包括输入（消息）和输出（回复）。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "包括輸入（消息）和輸出（回覆）。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "包括輸入（消息）和輸出（回覆）。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "包括輸入（消息）和輸出（回覆）。"
+          }
+        }
+      }
+    },
+    "Larger context allows more conversation history to be sent." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Larger context allows more conversation history to be sent."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "更大的上下文可以发送更多对话历史。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "更大的上下文可以發送更多對話歷史。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "更大的上下文可以發送更多對話歷史。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "更大的上下文可以發送更多對話歷史。"
+          }
+        }
+      }
+    },
+    "Maximum tokens the model can process in a single request." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Maximum tokens the model can process in a single request."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型单次请求可处理的最大 token 数。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型單次請求可處理的最大 token 數。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型單次請求可處理的最大 token 數。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型單次請求可處理的最大 token 數。"
+          }
+        }
+      }
+    },
+    "Model limit:" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Model limit:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型限制："
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型限制："
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型限制："
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "模型限制："
+          }
+        }
+      }
+    },
+    "When nearing the limit, older messages may be truncated." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "When nearing the limit, older messages may be truncated."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "接近上限时，较早的消息可能会被截断。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "接近上限時，較早的消息可能會被截斷。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "接近上限時，較早的消息可能會被截斷。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "接近上限時，較早的消息可能會被截斷。"
           }
         }
       }

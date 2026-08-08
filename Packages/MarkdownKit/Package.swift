@@ -25,6 +25,7 @@ let package = Package(
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.7.3"),
         .package(url: "https://github.com/lukilabs/beautiful-mermaid-swift", from: "1.0.0"),
         .package(path: "../LocalizationKit"),
+        .package(path: "../LumiUI"),
     ],
     targets: [
         .target(
@@ -53,6 +54,7 @@ let package = Package(
                 "MarkdownKitCore",
                 .product(name: "BeautifulMermaid", package: "beautiful-mermaid-swift"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: ".",
             exclude: [

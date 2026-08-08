@@ -34,6 +34,10 @@ public protocol ToolManaging: AnyObject {
     /// Resolve the user-facing description for a tool call.
     func displayDescription(for toolCall: LumiToolCall) -> String?
 
+    /// Evaluate a tool call before execution. Returns `nil` when the tool or
+    /// its arguments cannot be resolved, which callers must treat as risky.
+    func riskLevel(for toolCall: LumiToolCall) -> LumiCommandRiskLevel?
+
     /// Execute a tool call and return the result
     func execute(
         _ toolCall: LumiToolCall,
@@ -67,6 +71,10 @@ public extension ToolManaging {
     /// results yet. This keeps the new capability source-compatible while the
     /// concrete persistence layer is migrated incrementally.
     func toolCallResult(for toolCallID: String) async -> LumiToolResult? {
+        nil
+    }
+
+    func riskLevel(for toolCall: LumiToolCall) -> LumiCommandRiskLevel? {
         nil
     }
 

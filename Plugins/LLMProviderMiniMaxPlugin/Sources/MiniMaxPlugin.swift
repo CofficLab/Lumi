@@ -26,17 +26,14 @@ public final class MiniMaxPlugin: LumiPlugin {
                 directory: storage.pluginDataDirectory(for: "LLMProviderMiniMax")
             )
 
-            // 初始化视频记录存储
             let videoDatabaseURL = storage.pluginDataDirectory(for: "LLMProviderMiniMax")
                 .appendingPathComponent("video_records", isDirectory: true)
             videoRecordStore = MiniMaxVideoRecordStore(databaseRootURL: videoDatabaseURL)
 
-            // 初始化图片记录存储
             let imageDatabaseURL = storage.pluginDataDirectory(for: "LLMProviderMiniMax")
                 .appendingPathComponent("image_records", isDirectory: true)
             imageRecordStore = MiniMaxImageRecordStore(databaseRootURL: imageDatabaseURL)
 
-            // 初始化音乐记录存储
             let musicDatabaseURL = storage.pluginDataDirectory(for: "LLMProviderMiniMax")
                 .appendingPathComponent("music_records", isDirectory: true)
             musicRecordStore = MiniMaxMusicRecordStore(databaseRootURL: musicDatabaseURL)
@@ -47,6 +44,7 @@ public final class MiniMaxPlugin: LumiPlugin {
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
         [
+            MiniMaxResponsesProvider(network: kernel.network),
             MiniMaxOpenAIProvider(network: kernel.network),
             MiniMaxAnthropicProvider(network: kernel.network),
         ]
@@ -61,12 +59,14 @@ public final class MiniMaxPlugin: LumiPlugin {
             RequestFailedRenderer.item,
         ]
     }
+
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
         [
             StatusBarItem(
@@ -80,6 +80,7 @@ public final class MiniMaxPlugin: LumiPlugin {
             )
         ]
     }
+
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
@@ -120,44 +121,39 @@ public final class MiniMaxPlugin: LumiPlugin {
         var tools: [any LumiAgentTool]
 
         if let network = kernel.network {
-            let client = MiniMaxVideoClient(network: network, apiKeyProvider: apiKeyProvider)
-            tools = [MiniMaxVideoTool(client: client, recordStore: videoRecordStore)]
+            let api = MiniMaxVideoAPI(network: network, apiKeyProvider: apiKeyProvider)
+            tools = [MiniMaxVideoTool(client: api, recordStore: videoRecordStore)]
         } else {
-            let client = MiniMaxVideoClient(apiKeyProvider: apiKeyProvider)
-            tools = [MiniMaxVideoTool(client: client, recordStore: videoRecordStore)]
+            let api = MiniMaxVideoAPI(apiKeyProvider: apiKeyProvider)
+            tools = [MiniMaxVideoTool(client: api, recordStore: videoRecordStore)]
         }
 
-        // 注册视频记录查询工具
         if let store = videoRecordStore {
             tools.append(MiniMaxListVideosTool(store: store))
             tools.append(MiniMaxGetVideoTool(store: store))
         }
 
-        // 注册图片生成工具
         if let network = kernel.network {
-            let imageClient = MiniMaxImageClient(network: network, apiKeyProvider: apiKeyProvider)
-            tools.append(MiniMaxImageTool(client: imageClient, recordStore: imageRecordStore))
+            let imageAPI = MiniMaxImageAPI(network: network, apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxImageTool(client: imageAPI, recordStore: imageRecordStore))
         } else {
-            let imageClient = MiniMaxImageClient(apiKeyProvider: apiKeyProvider)
-            tools.append(MiniMaxImageTool(client: imageClient, recordStore: imageRecordStore))
+            let imageAPI = MiniMaxImageAPI(apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxImageTool(client: imageAPI, recordStore: imageRecordStore))
         }
 
-        // 注册图片记录查询工具
         if let store = imageRecordStore {
             tools.append(MiniMaxListImagesTool(store: store))
             tools.append(MiniMaxGetImageTool(store: store))
         }
 
-        // 注册音乐生成工具
         if let network = kernel.network {
-            let musicClient = MiniMaxMusicClient(network: network, apiKeyProvider: apiKeyProvider)
-            tools.append(MiniMaxMusicTool(client: musicClient, recordStore: musicRecordStore))
+            let musicAPI = MiniMaxMusicAPI(network: network, apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxMusicTool(client: musicAPI, recordStore: musicRecordStore))
         } else {
-            let musicClient = MiniMaxMusicClient(apiKeyProvider: apiKeyProvider)
-            tools.append(MiniMaxMusicTool(client: musicClient, recordStore: musicRecordStore))
+            let musicAPI = MiniMaxMusicAPI(apiKeyProvider: apiKeyProvider)
+            tools.append(MiniMaxMusicTool(client: musicAPI, recordStore: musicRecordStore))
         }
 
-        // 注册音乐记录查询工具
         if let store = musicRecordStore {
             tools.append(MiniMaxListMusicTool(store: store))
             tools.append(MiniMaxGetMusicTool(store: store))

@@ -12,23 +12,33 @@ struct MessageCountToolbarView: View {
     // 不挂 kernel 全局总线。
     @State private var selectedConversationID: UUID?
     @State private var count: Int = 0
+    @State private var isPopoverPresented = false
 
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "number")
-                .font(.system(size: 11))
-            Text("\(count)")
-                .font(.system(size: 12, weight: .medium))
-                .monospacedDigit()
+        Button {
+            isPopoverPresented.toggle()
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "number")
+                    .font(.system(size: 11))
+                Text("\(count)")
+                    .font(.system(size: 12, weight: .medium))
+                    .monospacedDigit()
+            }
+            .foregroundColor(theme.textSecondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(theme.surface.opacity(0.5))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 6))
         }
-        .foregroundColor(theme.textSecondary)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(theme.surface.opacity(0.5))
-        )
-        .help("Messages in current conversation: \(count)")
+        .buttonStyle(.plain)
+        .help(LumiPluginLocalization.string("Messages in current conversation: %lld", bundle: .module).replacingOccurrences(of: "%lld", with: "\(count)"))
+        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+            MessageCountPopover(count: count)
+        }
         .task {
             selectedConversationID = kernel.conversations?.selectedConversationID
             refreshCount()
@@ -55,5 +65,60 @@ struct MessageCountToolbarView: View {
             return
         }
         count = messageManager.messages(for: conversationID).count
+    }
+}
+
+private struct MessageCountPopover: View {
+    let count: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(LumiPluginLocalization.string("Message Count", bundle: .module))
+                .font(.system(size: 12, weight: .semibold))
+
+            VStack(alignment: .leading, spacing: 6) {
+                explanationRow(
+                    icon: "message",
+                    text: LumiPluginLocalization.string("Count includes all messages in the current conversation.", bundle: .module)
+                )
+                explanationRow(
+                    icon: "arrow.left.arrow.right",
+                    text: LumiPluginLocalization.string("Each user + assistant pair counts as 2 messages.", bundle: .module)
+                )
+                explanationRow(
+                    icon: "wrench.and.screwdriver",
+                    text: LumiPluginLocalization.string("Tool calls and results are also counted individually.", bundle: .module)
+                )
+                explanationRow(
+                    icon: "clock.arrow.circlepath",
+                    text: LumiPluginLocalization.string("Updates in real-time as messages are sent or received.", bundle: .module)
+                )
+            }
+
+            Divider()
+
+            HStack {
+                Text(LumiPluginLocalization.string("Current:", bundle: .module))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                Text(LumiPluginLocalization.string("%lld messages", bundle: .module).replacingOccurrences(of: "%lld", with: "\(count)"))
+                    .font(.system(size: 11, weight: .semibold))
+                    .monospacedDigit()
+            }
+        }
+        .padding(10)
+        .frame(width: 260)
+    }
+
+    private func explanationRow(icon: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.secondary)
+                .frame(width: 16)
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundColor(.primary)
+        }
     }
 }

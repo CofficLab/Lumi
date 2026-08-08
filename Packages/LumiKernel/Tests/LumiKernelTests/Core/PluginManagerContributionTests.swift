@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import Testing
 @testable import LumiKernel
@@ -53,5 +54,78 @@ struct PluginManagerContributionTests {
         manager.rebuildAllContributions(in: kernel)
 
         #expect(editor.replacedPluginIDs == ["swift"])
+    }
+
+    @Test("收集声明式命令菜单并在重建时撤回")
+    func registersAndWithdrawsCommandMenuContributions() async throws {
+        let kernel = KernelTestKit.makeKernel()
+        let command = MockCommandProviding()
+        try kernel.registerCommandService(command)
+
+        let imperativeGroup = CommandMenuGroup(
+            id: "imperative",
+            name: "Imperative",
+            items: []
+        )
+        command.registerCommandGroup(imperativeGroup)
+
+        let contributedGroup = CommandMenuGroup(
+            id: "plugin.commands",
+            name: "Plugin",
+            items: [],
+            placement: .topLevelMenu
+        )
+        let manager = PluginManager()
+        try await manager.initializePlugins([
+            MockLumiPlugin(
+                id: "command-plugin",
+                order: 10,
+                commandGroups: [contributedGroup]
+            ),
+        ], kernel: kernel)
+
+        manager.registerPluginCommandContributions(in: kernel)
+
+        #expect(command.allCommandGroups.map(\.id) == ["imperative", "plugin.commands"])
+
+        try await manager.initializePlugins([
+            MockLumiPlugin(
+                id: "command-plugin",
+                order: 10,
+                policy: .disabled,
+                commandGroups: [contributedGroup]
+            ),
+        ], kernel: kernel)
+        manager.registerPluginCommandContributions(in: kernel)
+
+        #expect(command.allCommandGroups.map(\.id) == ["imperative"])
+    }
+}
+
+@MainActor
+private final class MockCommandProviding: CommandProviding {
+    @Published private(set) var allCommandGroups: [CommandMenuGroup] = []
+
+    func commandGroup(named name: String) -> CommandMenuGroup? {
+        allCommandGroups.first { $0.id == name }
+    }
+
+    func registerCommandGroup(_ group: CommandMenuGroup) {
+        if let index = allCommandGroups.firstIndex(where: { $0.id == group.id }) {
+            allCommandGroups[index] = group
+        } else {
+            allCommandGroups.append(group)
+        }
+    }
+
+    func registerCommand(menu: String, item: CommandItem) {
+        let existingItems = commandGroup(named: menu)?.items ?? []
+        registerCommandGroup(
+            CommandMenuGroup(id: menu, name: menu, items: existingItems + [item])
+        )
+    }
+
+    func unregisterCommandGroup(id: String) {
+        allCommandGroups.removeAll { $0.id == id }
     }
 }

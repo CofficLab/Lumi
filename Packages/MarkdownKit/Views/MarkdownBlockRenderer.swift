@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import BeautifulMermaid
+import LumiUI
 import MarkdownKitCore
 
 /// Markdown 块级元素渲染器

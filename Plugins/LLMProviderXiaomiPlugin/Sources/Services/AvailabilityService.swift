@@ -2,8 +2,6 @@ import Foundation
 import HttpKit
 import LLMKit
 import LumiKernel
-import LumiKernel
-import LumiKernel
 
 // Type aliases to disambiguate between LumiCoreMessage and LumiCoreLLMProvider types
 typealias F = LumiLLMFailureDetail
@@ -41,15 +39,7 @@ enum AvailabilityService {
         }
 
         let result = await mapFriendlyFailureResult(
-            await LumiOpenAICompatibleAvailability.chatPing(
-                model: model,
-                adapter: provider.internalAdapter,
-                apiService: provider.internalApiService,
-                buildRequest: { url, apiKey in
-                    provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
-                },
-                resolveAPIKey: { try provider.lumiResolveAPIKey() }
-            ),
+            await ping(model: model, provider: provider),
             kind: .tokenPlan
         )
 
@@ -67,20 +57,60 @@ enum AvailabilityService {
         }
 
         let result = await mapFriendlyFailureResult(
-            await LumiOpenAICompatibleAvailability.chatPing(
-                model: model,
-                adapter: provider.internalAdapter,
-                apiService: provider.internalApiService,
-                buildRequest: { url, apiKey in
-                    provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
-                },
-                resolveAPIKey: { try provider.lumiResolveAPIKey() }
-            ),
+            await ping(model: model, provider: provider),
             kind: .api
         )
 
         cache.write(model: model, result: result, timestamp: Date())
         return result
+    }
+
+    private static func ping(model: String, provider: XiaomiProvider) async -> LumiModelAvailabilityResult {
+        do {
+            guard let url = URL(string: provider.internalAPIService.baseURL) else {
+                return .unavailable(LumiLLMFailureDetail(summary: "Invalid URL"))
+            }
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("Bearer \(try provider.lumiResolveAPIKey())", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            _ = try await provider.internalAPIService.sendOnce(
+                request: request,
+                body: [
+                    "model": model,
+                    "messages": [["role": "user", "content": "ping"]],
+                    "stream": false,
+                    "max_tokens": 1,
+                ]
+            )
+            return .available
+        } catch {
+            return .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+        }
+    }
+
+    private static func ping(model: String, provider: XiaomiAPIProvider) async -> LumiModelAvailabilityResult {
+        do {
+            guard let url = URL(string: provider.internalAPIService.baseURL) else {
+                return .unavailable(LumiLLMFailureDetail(summary: "Invalid URL"))
+            }
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("Bearer \(try provider.lumiResolveAPIKey())", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            _ = try await provider.internalAPIService.sendOnce(
+                request: request,
+                body: [
+                    "model": model,
+                    "messages": [["role": "user", "content": "ping"]],
+                    "stream": false,
+                    "max_tokens": 1,
+                ]
+            )
+            return .available
+        } catch {
+            return .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
+        }
     }
 
     static func mapFriendlyFailureResult(

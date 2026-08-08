@@ -1,129 +1,168 @@
 import Foundation
-import HttpKit
 import LLMKit
-import LumiKernel
-import LumiKernel
 import LumiKernel
 
 public final class XiaomiProvider: LumiLLMProvider, @unchecked Sendable {
     public static let apiKeyHelpURL: String? = "https://platform.xiaomimimo.com/"
-    
+
     public static let info = LumiLLMProviderInfo(
         id: "xiaomi",
         displayName: LumiPluginLocalization.string("Xiaomi TokenPlan", bundle: .module),
         description: LumiPluginLocalization.string("Xiaomi TokenPlan AI Models", bundle: .module),
         defaultModel: "mimo-v2.5-pro",
         availableModels: [
-            "mimo-v2.5-pro",
-            "mimo-v2.5",
-            "mimo-v2.5-tts",
-            "mimo-v2.5-tts-voiceclone",
-            "mimo-v2.5-tts-voicedesign"
-        ],
-        contextWindowSizes: [
-            "mimo-v2.5-pro": 1_000_000,
-            "mimo-v2.5": 1_000_000,
-            "mimo-v2.5-tts": 131_072,
-            "mimo-v2.5-tts-voiceclone": 131_072,
-            "mimo-v2.5-tts-voicedesign": 131_072
-        ],
-        modelCapabilities: [
-            "mimo-v2.5-pro": .init(supportsVision: true, supportsTools: true),
-            "mimo-v2.5": .init(supportsVision: false, supportsTools: true),
-            "mimo-v2.5-tts": .init(supportsVision: false, supportsTools: false, supportsTTS: true),
-            "mimo-v2.5-tts-voiceclone": .init(supportsVision: false, supportsTools: false, supportsTTS: true),
-            "mimo-v2.5-tts-voicedesign": .init(supportsVision: false, supportsTools: false, supportsTTS: true)
+            .init(
+                id: "mimo-v2.5-pro",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "mimo-v2.5",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "mimo-v2.5-tts",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: false, supportsTools: false, supportsTTS: true)
+            ),
+            .init(
+                id: "mimo-v2.5-tts-voiceclone",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: false, supportsTools: false, supportsTTS: true)
+            ),
+            .init(
+                id: "mimo-v2.5-tts-voicedesign",
+                contextWindowSize: 131_072,
+                capabilities: .init(supportsVision: false, supportsTools: false, supportsTTS: true)
+            ),
         ],
         websiteURL: URL(string: "https://www.mi.com")!,
-        apiKeyStorageKey: "DevAssistant_ApiKey_Xiaomi"
+        apiKeyStorageKey: XiaomiPlugin.apiKeyStorageKey
     )
-    
-    private let adapter: OpenAICompatibleProviderAdapter
-    private let apiService: LLMAPIService
-    
+
+    private let apiService: XiaomiAPIService
+
     public init(
-        configuration: OpenAICompatibleProviderConfiguration? = nil,
-        apiService: LLMAPIService = LLMAPIService()
+        baseURL: String = "https://token-plan-cn.xiaomimimo.com/v1/chat/completions",
+        network: (any NetworkProviding)? = nil
     ) {
-        let config = configuration ?? OpenAICompatibleProviderConfiguration(
-            baseURL: "https://token-plan-cn.xiaomimimo.com/v1/chat/completions",
-            additionalHeaders: [:],
-            includeUsageInStreamOptions: false,
-            returnsEmptyChunkWhenNoDelta: false,
-            acceptsFunctionScopedToolCallID: false
-        )
-        self.adapter = OpenAICompatibleProviderAdapter(configuration: config)
-        self.apiService = apiService
+        self.apiService = XiaomiAPIService(baseURL: baseURL, network: network)
     }
-    
+
     // MARK: - Internal Access for AvailabilityService
-    
-    var internalAdapter: OpenAICompatibleProviderAdapter { adapter }
-    var internalApiService: LLMAPIService { apiService }
-    
+
+    var internalAPIService: XiaomiAPIService { apiService }
+
     // MARK: - LumiLLMProvider Protocol
-    
+
     public func lumiResolveAPIKey() throws -> String {
-        try LumiAPIKeyTools.resolve(
-            storageKey: Self.info._apiKeyStorageKey,
-            displayName: Self.info.displayName
-        )
+        let key = XiaomiPlugin.currentApiKey
+        guard !key.isEmpty else {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
     }
-    
+
     public func hasApiKey() -> Bool {
-        LumiAPIKeyTools.has(storageKey: Self.info._apiKeyStorageKey)
+        XiaomiPlugin.hasApiKey
     }
-    
+
     public func getApiKey() -> String {
-        LumiAPIKeyTools.get(storageKey: Self.info._apiKeyStorageKey)
+        XiaomiPlugin.currentApiKey
     }
-    
+
     public func setApiKey(_ apiKey: String) {
-        LumiAPIKeyTools.set(apiKey, storageKey: Self.info._apiKeyStorageKey)
+        XiaomiPlugin.setApiKey(apiKey)
     }
-    
+
     public func removeApiKey() {
-        LumiAPIKeyTools.remove(storageKey: Self.info._apiKeyStorageKey)
+        XiaomiPlugin.removeApiKey()
     }
-    
+
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         try await sendStreaming(request) { _ in }
     }
-    
+
     public func sendStreaming(
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
-        try await LumiStreamingRequestSupport.sendOpenAICompatibleStreaming(
-            request,
-            
-            adapter: adapter,
-            apiService: apiService,
-            baseURLs: [adapter.configuration.baseURL] + adapter.configuration.fallbackBaseURLs,
-            resolveAPIKey: lumiResolveAPIKey,
-            buildRequest: { url, apiKey in
-                adapter.buildRequest(url: url, apiKey: apiKey)
-            },
-            onChunk: onChunk
+        guard let conversationID = request.messages.first?.conversationID else {
+            throw XiaomiOpenAIProviderError.invalidRequest("Conversation is empty")
+        }
+        let body = XiaomiRequestBuilder.body(for: request)
+        guard let url = URL(string: apiService.baseURL) else {
+            throw XiaomiOpenAIProviderError.invalidRequest("Invalid Xiaomi URL")
+        }
+        var httpRequest = URLRequest(url: url)
+        httpRequest.httpMethod = "POST"
+        httpRequest.setValue("Bearer \(try lumiResolveAPIKey())", forHTTPHeaderField: "Authorization")
+        httpRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let requestStartedAt = Date()
+        let collector = XiaomiChatMessageCollector(
+            message: XiaomiChatMessage.assembling(
+                conversationID: conversationID,
+                providerID: Self.info.id,
+                modelName: request.model,
+                requestStartedAt: requestStartedAt,
+                streamingStartedAt: nil
+            )
         )
+
+        try await apiService.send(request: httpRequest, body: body) { event in
+            // 协议层错误：标记消息为错误并停止消费。
+            if let error = event.error {
+                collector.mutate { $0.isError = true; $0.rawErrorDetail = error }
+                return false
+            }
+            collector.mutate { $0.merge(event) }
+            if let content = event.content, !content.isEmpty {
+                await onChunk(LumiStreamChunk(content: content, eventTitle: "生成中"))
+            }
+            if event.done {
+                collector.mutate { $0.finalize() }
+                await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束"))
+                return false
+            }
+            return true
+        }
+
+        let message = collector.snapshot()
+        if message.isError {
+            throw XiaomiOpenAIProviderError.api(message.rawErrorDetail ?? "Xiaomi returned an error")
+        }
+        if message.content.isEmpty && (message.toolCalls?.isEmpty ?? true) {
+            throw XiaomiOpenAIProviderError.invalidResponse("Xiaomi returned an empty response")
+        }
+        return message.toLumiChatMessage()
     }
-    
+
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
         await AvailabilityService.checkAvailability(provider: self, model: model)
     }
-    
+
     public func providerStatus() -> LumiLLMProviderStatus? {
         LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
     }
-    
+
     public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
-        ErrorDispositionResolver.disposition(for: error, context: context)
+        if let error = error as? XiaomiOpenAIProviderError {
+            return error.llmErrorDisposition
+        }
+        return context.attempt < context.maxAttempts
+            ? .retryable()
+            : .nonRetryable
     }
-    
+
     public func errorRenderKind(for error: Error) -> String? {
-        XiaomiErrorHandling.renderKind(for: error)
+        if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: error) {
+            return XiaomiRenderKind.http(statusCode)
+        }
+        return XiaomiErrorHandling.renderKind(for: error)
     }
-    
+
     public func makeErrorMessage(
         conversationID: UUID,
         request: LumiLLMRequest,
@@ -132,7 +171,6 @@ public final class XiaomiProvider: LumiLLMProvider, @unchecked Sendable {
     ) -> LumiChatMessage {
         LumiLLMProviderErrorSupport.makeErrorMessage(
             providerID: Self.info.id,
-            
             conversationID: conversationID,
             request: request,
             error: error,

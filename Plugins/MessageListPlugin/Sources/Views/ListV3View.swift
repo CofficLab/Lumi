@@ -28,11 +28,6 @@ struct ListV3View: View, SuperLog {
     /// 用户是否停在列表底部附近;用于决定新消息到达时是否自动滚到底部
     private let atBottomBox = AtBottomBox()
 
-    /// 窗口是否在 live resize 中。为 true 时渲染轻量占位行而非富文本,
-    /// 使 resize 期间不再遍历昂贵的富文本子树 layout。
-    /// 翻转触发 body 重建一次(有意为之),重建后子树已是轻量占位,后续帧零开销。
-    @State private var isLiveResizing: Bool = false
-
     private let scrollCoordinator = MessageListScrollCoordinator()
 
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
@@ -56,7 +51,6 @@ struct ListV3View: View, SuperLog {
                     .background(theme.surface.opacity(0.6))
             }
         }
-        .background(LiveResizeDetector(isLiveResizing: $isLiveResizing))
         .task {
             if Self.verbose {
                 Self.logger.info("\(self.t)首次出现,conversationID: \(viewModel.selectedConversationID?.uuidString ?? "nil")")
@@ -115,6 +109,8 @@ struct ListV3View: View, SuperLog {
             // 注入 V1「可折叠工具步骤组」的默认展开集合,供渲染层读取。
             .environment(\.lumiActiveToolGroupIDs, viewModel.activeStepGroupMessageIDs)
             .environment(\.lumiTurnActivitySummaries, viewModel.turnActivitySummaries)
+            // 让 Markdown 代码块使用 HorizontalScrollView，不捕获垂直滚动
+            .environment(\.preferOuterScroll, true)
             .background(
                 ScrollViewBottomTracker(
                     onChange: { atBottomBox.value = $0 }
@@ -139,21 +135,33 @@ struct ListV3View: View, SuperLog {
 
                 let targetConversationID = viewModel.selectedConversationID
                 let wasAtBottom = atBottomBox.value
+                // 记录刷新前最后一条用户消息 id,用于判定「用户本人刚发送了新消息」。
+                let previousLastUserMessageID = viewModel.historyRows
+                    .last(where: { $0.role == .user })?.id
                 Task {
                     let didChange = await viewModel.refreshTail()
-                    if didChange,
-                       wasAtBottom,
-                       atBottomBox.value,
-                       viewModel.selectedConversationID == targetConversationID {
-                        await scrollCoordinator.scrollToBottomAfterLayout(
-                            proxy: proxy,
-                            messages: viewModel.historyRows,
-                            animated: false,
-                            condition: { [weak atBottomBox] in
-                                atBottomBox?.value == true
-                            }
-                        )
-                    }
+                    guard didChange,
+                          viewModel.selectedConversationID == targetConversationID else { return }
+
+                    // 用户本人发送:像常见聊天软件一样无条件滚到底,
+                    // 并把底部判定重置回 true(tracker 会随后按几何自校准)。
+                    let lastUserMessageID = viewModel.historyRows
+                        .last(where: { $0.role == .user })?.id
+                    let isOwnSend = lastUserMessageID != nil
+                        && lastUserMessageID != previousLastUserMessageID
+                    guard wasAtBottom || isOwnSend else { return }
+                    if isOwnSend { atBottomBox.value = true }
+
+                    // 不再用 `atBottomBox.value` 作为实时滚动条件:新行追加后
+                    // 首次 scrollTo 常落点偏上,此时内容底沿超出视口 > 离开阈值
+                    // 会让 tracker 把 atBottomBox 翻成 false,从而取消本应修正
+                    // 落点的 +100ms 重试,导致列表停在半路(「有时不滚到底部」)。
+                    await scrollCoordinator.scrollToBottomAfterLayout(
+                        proxy: proxy,
+                        messages: viewModel.historyRows,
+                        animated: false,
+                        condition: { true }
+                    )
                 }
             }
         }
@@ -182,19 +190,12 @@ struct ListV3View: View, SuperLog {
         }
 
         ForEach(viewModel.historyRows) { message in
-            if isLiveResizing {
-                // Live-resize 降级:渲染轻量占位行,移除富文本子树。
-                // 这样 resize 每帧不再遍历昂贵的 Markdown layout。
-                MessageResizePlaceholder(message: message)
-                    .plainMessageListRow()
-            } else {
-                MessageRowView(
-                    kernel: kernel,
-                    message: message,
-                    verbosity: viewModel.verbosity
-                )
-                .plainMessageListRow()
-            }
+            MessageRowView(
+                kernel: kernel,
+                message: message,
+                verbosity: viewModel.verbosity
+            )
+            .plainMessageListRow()
         }
     }
 

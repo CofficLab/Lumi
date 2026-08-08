@@ -10,7 +10,7 @@ struct ConversationSpeedToolbarView: View {
     @State private var selectedConversationID: UUID?
 
     @State private var cachedTPS: Double?
-    @State private var hasShownTPSAtLeastOnce = false
+    @State private var unavailabilityReason: ConversationSpeedUnavailability = .waitingForResponse
     @State private var popoverShown = false
     @State private var speedHistory: [ConversationSpeedSample] = []
 
@@ -23,28 +23,31 @@ struct ConversationSpeedToolbarView: View {
 
     var body: some View {
         Group {
-            // Only show if we've seen a valid TPS at least once AND still have a cached value
-            if hasShownTPSAtLeastOnce, let tps = cachedTPS {
+            if selectedConversationID != nil {
                 Button {
                     popoverShown.toggle()
                 } label: {
                     HStack(spacing: ToolbarMetrics.chipSpacing) {
                         Image(systemName: "gauge.with.dots.needle.bottom.50percent")
                             .font(.system(size: ToolbarMetrics.chipIconSize, weight: .medium))
-                        Text(String(format: "%.1f tok/s", tps))
+                        Text(speedLabel)
                             .font(.system(size: ToolbarMetrics.chipTextSize, weight: ToolbarMetrics.chipTextWeight))
                             .contentTransition(.numericText())
                     }
-                    .foregroundColor(.orange)
+                    .foregroundColor(cachedTPS == nil ? .secondary : .orange)
                     .padding(.horizontal, ToolbarMetrics.chipHorizontalPadding)
                     .padding(.vertical, ToolbarMetrics.chipVerticalPadding)
-                    .background(Color.orange.opacity(0.22), in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
+                    .background(
+                        cachedTPS == nil ? Color.secondary.opacity(0.12) : Color.orange.opacity(0.22),
+                        in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous)
+                    )
                 }
                 .buttonStyle(.plain)
                 .help(LumiPluginLocalization.string("Streaming speed help", bundle: .module))
                 .popover(isPresented: $popoverShown, arrowEdge: .bottom) {
                     ConversationSpeedPopover(
-                        tps: tps,
+                        tps: cachedTPS,
+                        unavailabilityReason: unavailabilityReason,
                         modelName: modelName,
                         outputTokens: outputTokens,
                         streamingDurationMs: streamingDurationMs,
@@ -66,8 +69,14 @@ struct ConversationSpeedToolbarView: View {
         .onAppear {
             self.updateTPS()
         }
-        .onChange(of: selectedConversationID) { _, _ in
+        .onChange(of: selectedConversationID) { oldValue, newValue in
             // 切换会话时重算速度（消息变更由 onLumiMessagesDidChange 覆盖）。
+            if oldValue != newValue {
+                resetDisplayState()
+            }
+            if newValue == nil {
+                popoverShown = false
+            }
             self.updateTPS()
         }
         .task {
@@ -76,6 +85,24 @@ struct ConversationSpeedToolbarView: View {
         .onLumiSelectedConversationDidChange { newID in
             selectedConversationID = newID
         }
+    }
+
+    private var speedLabel: String {
+        guard let cachedTPS else {
+            return LumiPluginLocalization.string("Speed unavailable", bundle: .module)
+        }
+        return String(format: "%.1f tok/s", cachedTPS)
+    }
+
+    private func resetDisplayState() {
+        cachedTPS = nil
+        unavailabilityReason = .waitingForResponse
+        speedHistory = []
+        modelName = nil
+        outputTokens = nil
+        streamingDurationMs = nil
+        timeToFirstTokenMs = nil
+        providerID = nil
     }
 
     private func updateTPS() {
@@ -95,12 +122,15 @@ struct ConversationSpeedToolbarView: View {
         speedHistory = history
 
         guard let lastMessage = messages.last ?? messageManager.lastMessage(in: conversationID) else {
+            cachedTPS = nil
+            unavailabilityReason = .waitingForResponse
             if ConversationSpeedPlugin.verbose {
                 ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)No last message for conversation \(conversationID.uuidString.prefix(8))")
             }
             return
         }
-        let latestSpeedMessage = history.last?.message ?? lastMessage
+        let latestAssistantMessage = messages.last(where: { $0.role == .assistant })
+        let latestSpeedMessage = history.last?.message ?? latestAssistantMessage ?? lastMessage
 
         // Capture detail data for the popover.
         modelName = latestSpeedMessage.modelName
@@ -117,22 +147,55 @@ struct ConversationSpeedToolbarView: View {
                 ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)tokensPerSecond from property: \(tps)")
             }
             cachedTPS = tps
-            hasShownTPSAtLeastOnce = true
             return
         }
 
-        // Don't clear cachedTPS if we've already shown it once.
-        // This handles cases where subsequent messages (like tool results) don't have TPS data.
-        if !hasShownTPSAtLeastOnce {
-            if ConversationSpeedPlugin.verbose {
-                ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)Cannot calculate TPS (no cached value)")
-            }
-            cachedTPS = nil
-        } else {
-            if ConversationSpeedPlugin.verbose {
-                ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)Keeping cached TPS=\(cachedTPS ?? 0)")
-            }
+        cachedTPS = nil
+        unavailabilityReason = ConversationSpeedUnavailability.reason(for: latestAssistantMessage)
+        if ConversationSpeedPlugin.verbose {
+            ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)Cannot calculate TPS: \(self.unavailabilityReason.rawValue)")
         }
+    }
+}
+
+enum ConversationSpeedUnavailability: String, Equatable {
+    case waitingForResponse
+    case missingOutputTokens
+    case missingDuration
+    case missingOutputTokensAndDuration
+
+    static func reason(for message: LumiChatMessage?) -> ConversationSpeedUnavailability {
+        guard let message else { return .waitingForResponse }
+
+        let outputTokens = message.outputTokenCount
+            ?? Int(message.metadata["outputTokens"] ?? "")
+        let duration = message.conversationSpeedDurationMs.flatMap { $0 > 0 ? $0 : nil }
+
+        switch (outputTokens, duration) {
+        case (nil, nil):
+            return .missingOutputTokensAndDuration
+        case (nil, _):
+            return .missingOutputTokens
+        case (_, nil):
+            return .missingDuration
+        case (.some(_), .some(_)):
+            return .waitingForResponse
+        }
+    }
+
+    var localizedExplanation: String {
+        let key: String
+        switch self {
+        case .waitingForResponse:
+            key = "Speed unavailable waiting for response"
+        case .missingOutputTokens:
+            key = "Speed unavailable missing output tokens"
+        case .missingDuration:
+            key = "Speed unavailable missing duration"
+        case .missingOutputTokensAndDuration:
+            key = "Speed unavailable missing output tokens and duration"
+        }
+        return LumiPluginLocalization.string(key, bundle: .module)
     }
 }
 
@@ -209,7 +272,8 @@ private extension LumiChatMessage {
 // MARK: - Popover
 
 private struct ConversationSpeedPopover: View {
-    let tps: Double
+    let tps: Double?
+    let unavailabilityReason: ConversationSpeedUnavailability
     let modelName: String?
     let outputTokens: Int?
     let streamingDurationMs: Double?
@@ -228,20 +292,24 @@ private struct ConversationSpeedPopover: View {
                 Spacer()
             }
 
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(String(format: "%.1f", tps))
-                    .font(.system(size: 34, weight: .semibold, design: .rounded))
-                Text(LumiPluginLocalization.string("tokens / second", bundle: .module))
-                    .font(.subheadline)
+            if let tps {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(String(format: "%.1f", tps))
+                        .font(.system(size: 34, weight: .semibold, design: .rounded))
+                    Text(LumiPluginLocalization.string("tokens / second", bundle: .module))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                averageSpeedBlock
+
+                Text(LumiPluginLocalization.string("Streaming speed description", bundle: .module))
+                    .font(.callout)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                unavailableBlock
             }
-
-            averageSpeedBlock
-
-            Text(LumiPluginLocalization.string("Streaming speed description", bundle: .module))
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
 
             Divider()
 
@@ -284,6 +352,26 @@ private struct ConversationSpeedPopover: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var unavailableBlock: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.circle")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(LumiPluginLocalization.string("Speed unavailable", bundle: .module))
+                    .font(.subheadline.weight(.semibold))
+                Text(unavailabilityReason.localizedExplanation)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private func detailRow(_ label: String, value: String) -> some View {
