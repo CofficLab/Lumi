@@ -768,6 +768,22 @@
         }
       }
     },
+    "Unhide File" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unhide File"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消隐藏文件"
+          }
+        }
+      }
+    },
     "Hide File" : {
       "localizations" : {
         "en" : {
@@ -802,36 +818,36 @@
         }
       }
     },
-    "List Hidden Files" : {
+    "Do Not Show Hidden Files" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "List Hidden Files"
+            "value" : "Do Not Show Hidden Files"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "列出隐藏文件"
+            "value" : "不显示隐藏文件"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "列出隱藏檔案"
+            "value" : "不顯示隱藏檔案"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "列出隱藏檔案"
+            "value" : "不顯示隱藏檔案"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "列出隱藏檔案"
+            "value" : "不顯示隱藏檔案"
           }
         }
       }

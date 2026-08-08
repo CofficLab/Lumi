@@ -7,8 +7,10 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
     case openInVSCode = "openInVSCode"
     case deleteFile = "deleteFile"
     case hideFile = "hideFile"
+    case unhideFile = "unhideFile"
     case showHiddenFiles = "showHiddenFiles"
-    case listHiddenFiles = "listHiddenFiles"
+    /// Persisted as `listHiddenFiles` for compatibility with existing configs.
+    case hideHiddenFiles = "listHiddenFiles"
 
     public var id: String { rawValue }
 
@@ -20,8 +22,9 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
         case .openInVSCode: return LumiPluginLocalization.string("Open in VS Code", bundle: .module)
         case .deleteFile: return LumiPluginLocalization.string("Delete File", bundle: .module)
         case .hideFile: return LumiPluginLocalization.string("Hide File", bundle: .module)
+        case .unhideFile: return LumiPluginLocalization.string("Unhide File", bundle: .module)
         case .showHiddenFiles: return LumiPluginLocalization.string("Show Hidden Files", bundle: .module)
-        case .listHiddenFiles: return LumiPluginLocalization.string("List Hidden Files", bundle: .module)
+        case .hideHiddenFiles: return LumiPluginLocalization.string("Do Not Show Hidden Files", bundle: .module)
         }
     }
 
@@ -33,8 +36,9 @@ public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Senda
         case .openInVSCode: return "chevron.left.forwardslash.chevron.right"
         case .deleteFile: return "trash"
         case .hideFile: return "eye.slash"
+        case .unhideFile: return "eye"
         case .showHiddenFiles: return "eye"
-        case .listHiddenFiles: return "list.bullet"
+        case .hideHiddenFiles: return "eye.slash"
         }
     }
 }
@@ -126,8 +130,11 @@ public struct RClickConfig: Codable, Equatable, Sendable {
     public var fileTemplates: [NewFileTemplate]
 
     public var normalizedForStorage: RClickConfig {
-        RClickConfig(
-            items: items,
+        let existingTypes = Set(items.map(\.type))
+        let missingDefaultItems = Self.default.items.filter { !existingTypes.contains($0.type) }
+
+        return RClickConfig(
+            items: items + missingDefaultItems,
             fileTemplates: fileTemplates.compactMap(\.normalizedForStorage)
         )
     }
@@ -140,7 +147,9 @@ public struct RClickConfig: Codable, Equatable, Sendable {
             RClickMenuItem(type: .newFile),
             RClickMenuItem(type: .deleteFile, isEnabled: false),
             RClickMenuItem(type: .hideFile, isEnabled: false),
-            RClickMenuItem(type: .showHiddenFiles, isEnabled: false)
+            RClickMenuItem(type: .unhideFile, isEnabled: false),
+            RClickMenuItem(type: .showHiddenFiles, isEnabled: false),
+            RClickMenuItem(type: .hideHiddenFiles, isEnabled: false)
         ],
         fileTemplates: [
             NewFileTemplate(name: "Text File", extensionName: "txt"),

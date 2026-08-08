@@ -194,7 +194,8 @@ extension FinderSync {
                 FinderSync.logger.info("\(self.t)触发「删除文件」操作")
             }
         }
-        guard let items = getSelectedURLs(), !items.isEmpty else {
+        let items = cachedSelectedURLs.isEmpty ? (getSelectedURLs() ?? []) : cachedSelectedURLs
+        guard !items.isEmpty else {
             if Self.verbose {
                 if FinderSync.verbose {
                     FinderSync.logger.warning("\(self.t)没有选中要删除的项")
@@ -246,7 +247,8 @@ extension FinderSync {
                 FinderSync.logger.info("\(self.t)触发「隐藏文件」操作")
             }
         }
-        guard let items = getSelectedURLs(), !items.isEmpty else {
+        let items = cachedSelectedURLs.isEmpty ? (getSelectedURLs() ?? []) : cachedSelectedURLs
+        guard !items.isEmpty else {
             if Self.verbose {
                 if FinderSync.verbose {
                     FinderSync.logger.warning("\(self.t)没有选中要隐藏的项")
@@ -261,9 +263,10 @@ extension FinderSync {
                 resourceValues.isHidden = true
                 var mutableURL = url
                 try mutableURL.setResourceValues(resourceValues)
+                let isHidden = try mutableURL.resourceValues(forKeys: [.isHiddenKey]).isHidden == true
                 if Self.verbose {
                     if FinderSync.verbose {
-                        FinderSync.logger.info("\(self.t)已隐藏: \(url.path)")
+                        FinderSync.logger.info("\(self.t)已隐藏: \(url.path)，属性确认: \(isHidden)")
                     }
                 }
             } catch {
@@ -271,6 +274,41 @@ extension FinderSync {
                     if FinderSync.verbose {
                         FinderSync.logger.error("\(self.t)隐藏失败: \(url.path)，错误: \(error.localizedDescription)")
                     }
+                }
+            }
+        }
+    }
+
+    @IBAction nonisolated func unhideFile(_ sender: AnyObject?) {
+        performSelector(onMainThread: #selector(performUnhideFile(_:)), with: sender, waitUntilDone: false)
+    }
+
+    @objc @MainActor
+    private func performUnhideFile(_ sender: AnyObject?) {
+        if Self.verbose {
+            FinderSync.logger.info("\(self.t)触发「取消隐藏文件」操作")
+        }
+
+        let items = cachedSelectedURLs.isEmpty ? (getSelectedURLs() ?? []) : cachedSelectedURLs
+        guard !items.isEmpty else {
+            if Self.verbose {
+                FinderSync.logger.warning("\(self.t)没有选中要取消隐藏的项")
+            }
+            return
+        }
+
+        for url in items {
+            do {
+                var resourceValues = URLResourceValues()
+                resourceValues.isHidden = false
+                var mutableURL = url
+                try mutableURL.setResourceValues(resourceValues)
+                if Self.verbose {
+                    FinderSync.logger.info("\(self.t)已取消隐藏: \(url.path)")
+                }
+            } catch {
+                if Self.verbose {
+                    FinderSync.logger.error("\(self.t)取消隐藏失败: \(url.path)，错误: \(error.localizedDescription)")
                 }
             }
         }
@@ -287,125 +325,36 @@ extension FinderSync {
                 FinderSync.logger.info("\(self.t)触发「显示隐藏文件」操作")
             }
         }
-        guard let currentDir = getCurrentDirectoryURL() else {
-            if Self.verbose {
-                if FinderSync.verbose {
-                    FinderSync.logger.warning("\(self.t)未获取到当前目录")
-                }
-            }
-            return
-        }
-
-        do {
-            let urls = try FileManager.default.contentsOfDirectory(
-                at: currentDir,
-                includingPropertiesForKeys: [.isHiddenKey, .isDirectoryKey],
-                options: [.skipsSubdirectoryDescendants]
-            )
-
-            var revealedCount = 0
-
-            for url in urls where url.lastPathComponent.hasPrefix(".") {
-                do {
-                    var resourceValues = URLResourceValues()
-                    resourceValues.isHidden = false
-                    var mutableURL = url
-                    try mutableURL.setResourceValues(resourceValues)
-                    revealedCount += 1
-                } catch {
-                    if Self.verbose {
-                        if FinderSync.verbose {
-                            FinderSync.logger.error("\(self.t)取消隐藏失败: \(url.path)，错误: \(error.localizedDescription)")
-                        }
-                    }
-                }
-            }
-
-            if Self.verbose {
-                if FinderSync.verbose {
-                    FinderSync.logger.info("\(self.t)成功取消隐藏 \(revealedCount) 个以 . 开头的项目")
-                }
-            }
-        } catch {
-            if Self.verbose {
-                if FinderSync.verbose {
-                    FinderSync.logger.error("\(self.t)读取目录失败: \(currentDir.path)，错误: \(error.localizedDescription)")
-                }
-            }
-        }
+        setFinderShowsHiddenFiles(true)
     }
 
-    @IBAction nonisolated func listHiddenFiles(_ sender: AnyObject?) {
-        performSelector(onMainThread: #selector(performListHiddenFiles(_:)), with: sender, waitUntilDone: false)
+    @IBAction nonisolated func hideHiddenFiles(_ sender: AnyObject?) {
+        performSelector(onMainThread: #selector(performHideHiddenFiles(_:)), with: sender, waitUntilDone: false)
     }
 
     @objc @MainActor
-    private func performListHiddenFiles(_ sender: AnyObject?) {
+    private func performHideHiddenFiles(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
-                FinderSync.logger.info("\(self.t)触发「列出隐藏文件」操作")
+                FinderSync.logger.info("\(self.t)触发「不显示隐藏文件」操作")
             }
         }
-        guard let currentDir = getCurrentDirectoryURL() else {
-            if Self.verbose {
-                if FinderSync.verbose {
-                    FinderSync.logger.warning("\(self.t)未获取到当前目录")
-                }
-            }
+        setFinderShowsHiddenFiles(false)
+    }
+
+    @MainActor
+    private func setFinderShowsHiddenFiles(_ showHiddenFiles: Bool) {
+        guard let url = URL(string: "lumi://finder/show-hidden?value=\(showHiddenFiles ? "true" : "false")") else {
+            FinderSync.logger.error("\(self.t)无法生成 Finder 隐藏文件显示请求")
             return
         }
 
-        do {
-            let urls = try FileManager.default.contentsOfDirectory(
-                at: currentDir,
-                includingPropertiesForKeys: [.isHiddenKey],
-                options: [.skipsSubdirectoryDescendants]
-            )
-
-            let hiddenItems = urls.filter { url in
-                (try? url.resourceValues(forKeys: [.isHiddenKey]))?.isHidden == true
-            }
-
-            if Self.verbose {
-                if FinderSync.verbose {
-                    FinderSync.logger.info("\(self.t)在当前目录中找到 \(hiddenItems.count) 个隐藏文件")
-                }
-            }
-
-            // 在主线程显示对话框
-            DispatchQueue.main.async {
-                let alert = NSAlert()
-                alert.messageText = String(localized: "Hidden Files", table: "FinderSync")
-
-                if hiddenItems.isEmpty {
-                    alert.informativeText = String(format: String(localized: "No hidden files found in:\n%@", table: "FinderSync"), currentDir.path)
-                    alert.addButton(withTitle: String(localized: "OK", table: "FinderSync"))
-                } else {
-                    let fileNames = hiddenItems.map { $0.lastPathComponent }.sorted()
-                    let fileList = fileNames.joined(separator: "\n")
-
-                    alert.informativeText = String(format: String(localized: "Found %d hidden file(s) in:\n%@\n\n%@", table: "FinderSync"), hiddenItems.count, currentDir.path, fileList)
-                    alert.addButton(withTitle: String(localized: "OK", table: "FinderSync"))
-                }
-
-                alert.alertStyle = .informational
-                alert.runModal()
-            }
-        } catch {
-            if Self.verbose {
-                if FinderSync.verbose {
-                    FinderSync.logger.error("\(self.t)读取目录失败: \(currentDir.path)，错误: \(error.localizedDescription)")
-                }
-            }
-
-            DispatchQueue.main.async {
-                let alert = NSAlert()
-                alert.messageText = String(localized: "Error", table: "FinderSync")
-                alert.informativeText = String(format: String(localized: "Failed to read directory:\n%@", table: "FinderSync"), currentDir.path)
-                alert.alertStyle = .critical
-                alert.addButton(withTitle: String(localized: "OK", table: "FinderSync"))
-                alert.runModal()
-            }
+        guard NSWorkspace.shared.open(url) else {
+            FinderSync.logger.error("\(self.t)无法请求 Lumi 主应用更新 Finder 隐藏文件显示设置")
+            return
+        }
+        if Self.verbose {
+            FinderSync.logger.info("\(self.t)已请求 Lumi 主应用更新 Finder 隐藏文件显示设置: \(showHiddenFiles)")
         }
     }
 }

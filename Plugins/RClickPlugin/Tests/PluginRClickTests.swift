@@ -39,9 +39,12 @@ import Foundation
 
     let manager = RClickConfigManager(appGroupConfigFileURL: appGroupConfigURL, store: store)
 
-    #expect(manager.config == backupConfig)
+    #expect(Array(manager.config.items.prefix(1)) == backupConfig.items)
+    #expect(manager.config.items.contains { $0.type == .showHiddenFiles && !$0.isEnabled })
+    #expect(manager.config.items.contains { $0.type == .hideHiddenFiles && !$0.isEnabled })
+    #expect(manager.config.items.contains { $0.type == .unhideFile && !$0.isEnabled })
     #expect((try? Data(contentsOf: corruptURL)) == invalidData)
-    #expect((try? JSONDecoder().decode(RClickConfig.self, from: Data(contentsOf: appGroupConfigURL))) == backupConfig)
+    #expect((try? JSONDecoder().decode(RClickConfig.self, from: Data(contentsOf: appGroupConfigURL))) == manager.config)
 }
 
 @MainActor

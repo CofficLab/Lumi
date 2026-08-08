@@ -18,6 +18,7 @@ class FinderSync: FIFinderSync, SuperLog {
 
     /// Finder 菜单 action 回调时当前目录可能已经无法再次从控制器取得，提前缓存菜单对应目录。
     var cachedNewFileTargetURL: URL?
+    var cachedSelectedURLs: [URL] = []
 
     private enum ConfigLoadReason: String {
         case configNotFound = "config_not_found"
@@ -63,6 +64,7 @@ class FinderSync: FIFinderSync, SuperLog {
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu {
         cachedNewFileTargetURL = getCurrentDirectoryURL()
+        cachedSelectedURLs = getSelectedURLs() ?? []
         if Self.verbose {
             if FinderSync.verbose {
                             FinderSync.logger.info("\(self.t)菜单调用，类型: \(menuKind.rawValue)")
@@ -169,16 +171,22 @@ class FinderSync: FIFinderSync, SuperLog {
                     hideItem.image = menuIcon("eye.slash")
                 }
 
+            case .unhideFile:
+                let unhideItem = menu.addItem(withTitle: item.customTitle ?? "取消隐藏文件", action: #selector(unhideFile(_:)), keyEquivalent: "")
+                if showIcons {
+                    unhideItem.image = menuIcon("eye")
+                }
+
             case .showHiddenFiles:
                 let showHiddenFilesItem = menu.addItem(withTitle: item.customTitle ?? "显示隐藏文件", action: #selector(showHiddenFiles(_:)), keyEquivalent: "")
                 if showIcons {
                     showHiddenFilesItem.image = menuIcon("eye")
                 }
 
-            case .listHiddenFiles:
-                let listHiddenFilesItem = menu.addItem(withTitle: item.customTitle ?? "列出隐藏文件", action: #selector(listHiddenFiles(_:)), keyEquivalent: "")
+            case .hideHiddenFiles:
+                let hideHiddenFilesItem = menu.addItem(withTitle: item.customTitle ?? "不显示隐藏文件", action: #selector(hideHiddenFiles(_:)), keyEquivalent: "")
                 if showIcons {
-                    listHiddenFilesItem.image = menuIcon("list.bullet")
+                    hideHiddenFilesItem.image = menuIcon("eye.slash")
                 }
             }
         }
