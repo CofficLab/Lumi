@@ -81,11 +81,13 @@ struct ModelListItem: View {
         }
     }
 
-    /// 按档位数量显示不同文案：3 档 / 4 档模型都打 `Thinking` 标签即可。
-    /// 如果未来需要区分，可在 `LumiThinkingSupport` 上加 `tagLabel` 字段。
+    /// 按档位数量显示不同文案：3 档 / 4 档模型打 `Thinking` 标签；
+    /// `toggle` 模型打 `Thinking On/Off` 标签以提示用户它是开关语义。
+    /// 如果未来需要更细的区分，可在 `LumiThinkingSupport` 上加 `tagLabel` 字段。
     private func thinkingTagLabel(for support: LumiThinkingSupport) -> String {
         switch support {
         case .unsupported: ""
+        case .toggle: "Thinking"
         case .threeLevel: "Thinking"
         case .fourLevel: "Thinking"
         }

@@ -48,8 +48,9 @@ struct ConversationReasoningActionBarButton: View {
         selectedModelCapabilities?.thinkingSupport ?? .unsupported
     }
 
-    private var supportsThinking: Bool {
-        thinkingSupport.isEnabled
+    /// 是否存在多个推理档位（true → 渲染档位下拉按钮；false → 不渲染）。
+    private var hasMultipleLevels: Bool {
+        thinkingSupport.hasMultipleLevels
     }
 
     /// 当前模型实际可用的推理档位（用于过滤下拉项）。
@@ -63,7 +64,9 @@ struct ConversationReasoningActionBarButton: View {
 
     var body: some View {
         Group {
-            if supportsThinking {
+            // 仅当模型支持多档推理（3 档 / 4 档）时显示档位下拉按钮。
+            // toggle（仅开关）模型暂不在此处暴露，由后续专门的开关 UI 处理。
+            if hasMultipleLevels {
                 Button {
                     isPopoverPresented.toggle()
                 } label: {
@@ -104,9 +107,9 @@ struct ConversationReasoningActionBarButton: View {
             syncFromConversation()
         }
         .onChange(of: thinkingSupport) { _, support in
-            if support.isEnabled {
-                // 档位集合变化（例如 4 档 → 3 档）时，重算 localEffort，
-                // 确保按钮显示的档位仍在当前可用集合内。
+            // 档位集合变化（例如 4 档 → 3 档、3 档 → toggle）时，重算 localEffort，
+            // 确保按钮显示的档位仍在当前可用集合内。
+            if support.hasMultipleLevels {
                 syncFromConversation()
             } else {
                 isPopoverPresented = false
@@ -132,7 +135,10 @@ struct ConversationReasoningActionBarButton: View {
         let persisted = persistedEffort
         // 如果对话持久化的档位不在当前模型支持列表里，回退到当前模型的第一个可用档位，
         // 避免出现"按钮显示 XHIGH 但下拉里没有该项"的撕裂。
-        if availableEfforts.contains(persisted) {
+        // 没有可用档位（toggle / unsupported）时保持当前 localEffort 不变。
+        if availableEfforts.isEmpty {
+            return
+        } else if availableEfforts.contains(persisted) {
             localEffort = persisted
         } else {
             localEffort = availableEfforts.first ?? .defaultEffort

@@ -6,7 +6,9 @@ enum MiniMaxProviderCatalog {
             .init(
                 id: "MiniMax-M3",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: true, supportsTools: true)
+                // M3 only supports an on/off toggle (no levels); see
+                // MiniMaxThinkingOption.disabled / .adaptive for the wire format.
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .toggle)
             ),
             .init(
                 id: "MiniMax-M2.7",

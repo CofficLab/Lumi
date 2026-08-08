@@ -74,11 +74,13 @@ extension LumiReasoningEffort {
 
     /// 根据模型能力枚举，返回该模型可用的推理档位。
     ///
-    /// - Parameter support: 模型的能力声明（`unsupported` 表示模型不支持思考）。
-    /// - Returns: 对应档位集合；`unsupported` 返回空数组。
+    /// - Parameter support: 模型的能力声明。
+    /// - Returns: 对应档位集合；`unsupported` 与 `toggle`（仅开关、无档位）
+    ///   均返回空数组。
     public static func available(for support: LumiThinkingSupport) -> [LumiReasoningEffort] {
         switch support {
         case .unsupported: []
+        case .toggle: []
         case .threeLevel: threeLevels
         case .fourLevel: fourLevels
         }
