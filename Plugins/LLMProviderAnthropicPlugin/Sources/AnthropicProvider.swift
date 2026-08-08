@@ -15,12 +15,12 @@ public final class AnthropicProvider: LumiLLMProvider, @unchecked Sendable {
             .init(
                 id: "claude-sonnet-4-20250514",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "claude-opus-4-20250514",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "claude-3-5-sonnet-20241022",

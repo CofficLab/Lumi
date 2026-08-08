@@ -555,11 +555,9 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 tools: tools,
                 imageAttachments: pendingImages,
                 fileAttachments: pendingFiles,
-                generationOptions: LumiLLMGenerationOptions(
-                    reasoningEffort: (type(of: targetProvider).info.modelInfo(for: model)?.capabilities?.thinkingSupport.isEnabled == true)
-                        ? kernel.conversations?.reasoningEffort(for: conversationID)
-                        : nil
-                )
+                reasoningEffort: (type(of: targetProvider).info.modelInfo(for: model)?.capabilities?.thinkingAndReasoning.isEnabled == true)
+                    ? kernel.conversations?.reasoningEffort(for: conversationID)
+                    : nil
             )
 
             // 记录本次发出的请求到磁盘(SwiftData),用于设置界面回看。

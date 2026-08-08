@@ -13,12 +13,12 @@ public final class XybbzProvider: LumiLLMProvider, @unchecked Sendable {
             .init(
                 id: "gpt-5.5",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "gpt-5.4",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
         ],
         websiteURL: URL(string: "https://xybbz.xyz")!,

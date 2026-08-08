@@ -1,29 +1,6 @@
 import Foundation
 
-public struct LumiLLMRequest: Sendable {
-    public let messages: [LumiChatMessage]
-    public let model: String
-    public let tools: [any LumiAgentTool]
-    public let imageAttachments: [LumiImageAttachment]
-    public let fileAttachments: [LumiFileAttachment]
-    public let generationOptions: LumiLLMGenerationOptions
 
-    public init(
-        messages: [LumiChatMessage],
-        model: String,
-        tools: [any LumiAgentTool] = [],
-        imageAttachments: [LumiImageAttachment] = [],
-        fileAttachments: [LumiFileAttachment] = [],
-        generationOptions: LumiLLMGenerationOptions = LumiLLMGenerationOptions()
-    ) {
-        self.messages = messages
-        self.model = model
-        self.tools = tools
-        self.imageAttachments = imageAttachments
-        self.fileAttachments = fileAttachments
-        self.generationOptions = generationOptions
-    }
-}
 
 public protocol LumiLLMProvider: Sendable {
     static var info: LumiLLMProviderInfo { get }

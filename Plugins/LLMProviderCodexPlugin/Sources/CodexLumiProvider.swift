@@ -13,12 +13,12 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
             .init(
                 id: "gpt-5.5",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "gpt-5.4-mini",
                 contextWindowSize: 400_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
         ],
         isLocal: true,
@@ -69,7 +69,7 @@ public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
         let output = try await runCodexProcess(
             prompt: prompt,
             model: request.model,
-            reasoningEffort: request.generationOptions.reasoningEffort
+            reasoningEffort: request.reasoningEffort
         )
         let parsed = CodexOutputParser.parse(output)
 

@@ -47,7 +47,7 @@ struct AnthropicRequestBuilderTests {
             tools: tools,
             imageAttachments: [],
             fileAttachments: [],
-            generationOptions: LumiLLMGenerationOptions(reasoningEffort: reasoning)
+            reasoningEffort: reasoning
         )
     }
 

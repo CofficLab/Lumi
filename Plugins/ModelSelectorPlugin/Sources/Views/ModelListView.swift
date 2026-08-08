@@ -69,6 +69,7 @@ struct ModelListView: View {
                             let displayName = modelInfo?.displayName ?? model
                             let capabilities = modelInfo?.capabilities
                             let contextWindowSize = modelInfo?.contextWindowSize
+                            let parameterSize = modelInfo?.parameterSize
                             let isSelected = model == initialModel
 
                             ModelListItem(
@@ -77,6 +78,7 @@ struct ModelListView: View {
                                 isSelected: isSelected,
                                 capabilities: capabilities,
                                 contextWindowSize: contextWindowSize,
+                                parameterSize: parameterSize,
                                 onSelect: {
                                     onSelect?(providerID, model)
                                     llmProvider.selectModel(providerID: providerID, model: model)

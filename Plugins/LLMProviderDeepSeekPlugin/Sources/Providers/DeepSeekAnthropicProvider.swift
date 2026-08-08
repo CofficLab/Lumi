@@ -26,12 +26,12 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
             .init(
                 id: "deepseek-v4-flash",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: false, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: false, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "deepseek-v4-pro",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: false, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: false, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
         ],
         websiteURL: URL(string: "https://www.deepseek.com/")!,

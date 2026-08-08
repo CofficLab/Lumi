@@ -24,7 +24,7 @@ enum AnthropicKimiCodeRequestBuilder {
             body["tools"] = request.tools.map(tool)
         }
 
-        let requested = thinkingBudget(for: request.generationOptions.reasoningEffort)
+        let requested = thinkingBudget(for: request.reasoningEffort)
             ?? defaultThinkingBudget
         body["thinking"] = [
             "type": "enabled",

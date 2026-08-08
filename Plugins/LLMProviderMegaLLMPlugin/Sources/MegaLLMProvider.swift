@@ -20,27 +20,27 @@ public final class MegaLLMProvider: LumiLLMProvider, @unchecked Sendable {
             .init(
                 id: "claude-haiku-4-5-20251001",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "claude-opus-4-5-20251101",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "claude-opus-4-6",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "claude-sonnet-4-5-20250929",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "claude-sonnet-4-6",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "deepseek-ai/deepseek-v3.1",
@@ -55,12 +55,12 @@ public final class MegaLLMProvider: LumiLLMProvider, @unchecked Sendable {
             .init(
                 id: "gpt-5-mini",
                 contextWindowSize: 400_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "gpt-5.3-codex",
                 contextWindowSize: 400_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "llama3.3-70b-instruct",
@@ -75,7 +75,7 @@ public final class MegaLLMProvider: LumiLLMProvider, @unchecked Sendable {
             .init(
                 id: "newclaude-opus-4-6",
                 contextWindowSize: 200_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
         ],
         websiteURL: URL(string: "https://megallm.io")!,

@@ -195,7 +195,13 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             tools: request.tools,
             imageAttachments: request.imageAttachments,
             fileAttachments: request.fileAttachments,
-            generationOptions: request.generationOptions
+            reasoningEffort: request.reasoningEffort,
+            temperature: request.temperature,
+            topP: request.topP,
+            maxTokens: request.maxTokens,
+            serviceTier: request.serviceTier,
+            toolChoice: request.toolChoice,
+            userID: request.userID
         )
         return try await provider.send(selectedRequest)
     }
@@ -220,7 +226,13 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             tools: request.tools,
             imageAttachments: request.imageAttachments,
             fileAttachments: request.fileAttachments,
-            generationOptions: request.generationOptions
+            reasoningEffort: request.reasoningEffort,
+            temperature: request.temperature,
+            topP: request.topP,
+            maxTokens: request.maxTokens,
+            serviceTier: request.serviceTier,
+            toolChoice: request.toolChoice,
+            userID: request.userID
         )
         return try await resolved.provider.send(directRequest)
     }

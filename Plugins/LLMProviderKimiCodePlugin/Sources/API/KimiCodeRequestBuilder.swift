@@ -17,7 +17,7 @@ enum KimiCodeRequestBuilder {
                 ]]
             }
         }
-        if let effort = request.generationOptions.reasoningEffort {
+        if let effort = request.reasoningEffort {
             body["reasoning_effort"] = effort.rawValue
         }
         return body

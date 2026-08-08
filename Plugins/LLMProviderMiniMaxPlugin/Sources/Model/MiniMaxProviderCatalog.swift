@@ -6,9 +6,10 @@ enum MiniMaxProviderCatalog {
             .init(
                 id: "MiniMax-M3",
                 contextWindowSize: 1_000_000,
-                // M3 only supports an on/off toggle (no levels); see
-                // MiniMaxThinkingOption.disabled / .adaptive for the wire format.
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .toggle)
+                // M3 only supports an on/off toggle (no levels); the request-level
+                // `LumiThinkingAndReasoning` value is mapped to Anthropic `thinking.type`
+                // (disabled / adaptive) inside `MiniMaxRequestBuilder`.
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .toggle)
             ),
             .init(
                 id: "MiniMax-M2.7",

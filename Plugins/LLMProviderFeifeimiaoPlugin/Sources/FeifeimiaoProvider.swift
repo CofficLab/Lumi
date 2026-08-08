@@ -15,27 +15,27 @@ public final class FeifeimiaoProvider: LumiLLMProvider, @unchecked Sendable {
             .init(
                 id: "gpt-5.5",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "gpt-5.4",
                 contextWindowSize: 1_000_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "gpt-5.4-mini",
                 contextWindowSize: 400_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "gpt-5.3",
                 contextWindowSize: 400_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
             .init(
                 id: "gpt-5.2",
                 contextWindowSize: 400_000,
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingSupport: .fourLevel)
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
             ),
         ],
         websiteURL: URL(string: "https://feifeimiao.top")!,

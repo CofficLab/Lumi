@@ -27,7 +27,7 @@ enum AliyunAnthropicRequestBuilder {
         }
 
         // 思考预算
-        let requested = thinkingBudget(for: request.generationOptions.reasoningEffort)
+        let requested = thinkingBudget(for: request.reasoningEffort)
             ?? defaultThinkingBudget
         body["thinking"] = [
             "type": "enabled",

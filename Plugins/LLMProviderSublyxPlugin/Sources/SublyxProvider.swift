@@ -174,7 +174,13 @@ public final class SublyxProvider: LumiLLMProvider, SuperLog, @unchecked Sendabl
             tools: mappedTools,
             imageAttachments: request.imageAttachments,
             fileAttachments: request.fileAttachments,
-            generationOptions: request.generationOptions
+            reasoningEffort: request.reasoningEffort,
+            temperature: request.temperature,
+            topP: request.topP,
+            maxTokens: request.maxTokens,
+            serviceTier: request.serviceTier,
+            toolChoice: request.toolChoice,
+            userID: request.userID
         )
         
         // 日志：输出原始和适配后的工具名称

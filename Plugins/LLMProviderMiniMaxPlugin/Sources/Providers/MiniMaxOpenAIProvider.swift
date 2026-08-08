@@ -28,12 +28,31 @@ public final class MiniMaxOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     private let service: MiniMaxOpenAIService
 
     public init(baseURL: String = "https://api.minimaxi.com/v1/chat/completions", network: (any NetworkProviding)? = nil) { service = try! MiniMaxOpenAIService(baseURL: baseURL, network: network) }
-    public func lumiResolveAPIKey() throws -> String { try support.resolveAPIKey(displayName: Self.info.displayName) }
-    public func hasApiKey() -> Bool { support.hasAPIKey() }
-    public func getApiKey() -> String { support.getAPIKey() }
-    public func setApiKey(_ apiKey: String) { support.setAPIKey(apiKey) }
-    public func removeApiKey() { support.removeAPIKey() }
-    public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage { try await sendStreaming(request) { _ in } }
+
+    public func lumiResolveAPIKey() throws -> String {
+        try support.resolveAPIKey(displayName: Self.info.displayName)
+    }
+
+    public func hasApiKey() -> Bool {
+        support.hasAPIKey()
+    }
+
+    public func getApiKey() -> String {
+        support.getAPIKey()
+    }
+
+    public func setApiKey(_ apiKey: String) {
+        support.setAPIKey(apiKey)
+    }
+
+    public func removeApiKey() {
+        support.removeAPIKey()
+    }
+
+    public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
+        try await sendStreaming(request) { _ in }
+    }
+
     public func sendStreaming(_ request: LumiLLMRequest, onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void) async throws -> LumiChatMessage {
         guard let conversationID = request.messages.first?.conversationID else { throw MiniMaxProviderError.invalidRequest("Conversation is empty") }
         let body = try JSONSerialization.data(withJSONObject: MiniMaxRequestBuilder.openAI(request), options: [.sortedKeys])
@@ -55,14 +74,25 @@ public final class MiniMaxOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         return message
     }
 
-    public func checkAvailability(model: String) async -> LumiModelAvailabilityResult { await AvailabilityService.checkAvailability(provider: self, model: model) }
-    public func providerStatus() -> LumiLLMProviderStatus? { LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self) }
+    public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
+        await AvailabilityService.checkAvailability(provider: self, model: model)
+    }
+
+    public func providerStatus() -> LumiLLMProviderStatus? {
+        LumiLLMProviderStatusSupport.statusForRemoteAPIKeyProvider(provider: self)
+    }
+
     public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
         if case LumiLLMProviderSupportError.missingAPIKey = error { return .nonRetryable }
         if let status = LumiLLMHTTPErrorParsing.statusCode(from: error), [400, 401, 403].contains(status) { return .nonRetryable }
         return (error as? MiniMaxProviderError)?.llmErrorDisposition ?? (context.attempt < context.maxAttempts ? .retryable() : .nonRetryable)
     }
 
-    public func errorRenderKind(for error: Error) -> String? { support.errorKind(error) }
-    public func makeErrorMessage(conversationID: UUID, request: LumiLLMRequest, error: Error, disposition: LumiLLMErrorDisposition) -> LumiChatMessage { support.errorMessage(providerID: Self.info.id, conversationID: conversationID, request: request, error: error, disposition: disposition) }
+    public func errorRenderKind(for error: Error) -> String? {
+        support.errorKind(error)
+    }
+
+    public func makeErrorMessage(conversationID: UUID, request: LumiLLMRequest, error: Error, disposition: LumiLLMErrorDisposition) -> LumiChatMessage {
+        support.errorMessage(providerID: Self.info.id, conversationID: conversationID, request: request, error: error, disposition: disposition)
+    }
 }

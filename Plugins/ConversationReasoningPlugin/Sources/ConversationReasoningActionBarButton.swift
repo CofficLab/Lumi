@@ -44,18 +44,18 @@ struct ConversationReasoningActionBarButton: View {
     }
 
     /// 当前选中模型对思考能力的支持级别。
-    private var thinkingSupport: LumiThinkingSupport {
-        selectedModelCapabilities?.thinkingSupport ?? .unsupported
+    private var thinkingAndReasoning: LumiThinkingAndReasoning {
+        selectedModelCapabilities?.thinkingAndReasoning ?? .unsupported
     }
 
     /// 是否存在多个推理档位（true → 渲染档位下拉按钮；false → 不渲染）。
     private var hasMultipleLevels: Bool {
-        thinkingSupport.hasMultipleLevels
+        thinkingAndReasoning.hasMultipleLevels
     }
 
     /// 当前模型实际可用的推理档位（用于过滤下拉项）。
     private var availableEfforts: [LumiReasoningEffort] {
-        LumiReasoningEffort.available(for: thinkingSupport)
+        LumiReasoningEffort.available(for: thinkingAndReasoning)
     }
 
     private var persistedEffort: LumiReasoningEffort {
@@ -106,7 +106,7 @@ struct ConversationReasoningActionBarButton: View {
         .onChange(of: selectedConversationID) { _, _ in
             syncFromConversation()
         }
-        .onChange(of: thinkingSupport) { _, support in
+        .onChange(of: thinkingAndReasoning) { _, support in
             // 档位集合变化（例如 4 档 → 3 档、3 档 → toggle）时，重算 localEffort，
             // 确保按钮显示的档位仍在当前可用集合内。
             if support.hasMultipleLevels {

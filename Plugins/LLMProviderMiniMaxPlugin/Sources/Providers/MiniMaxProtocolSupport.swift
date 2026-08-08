@@ -341,31 +341,34 @@ enum MiniMaxRequestBuilder {
     static func openAI(_ request: LumiLLMRequest) -> [String: Any] {
         var body: [String: Any] = ["model": request.model, "messages": request.messages.compactMap(openAIMessage), "stream": true]
         if !request.tools.isEmpty { body["tools"] = request.tools.map { ["type": "function", "function": ["name": $0.name, "description": $0.toolDescription, "parameters": $0.inputSchema.anyValue]] } }
-        if let effort = request.generationOptions.reasoningEffort { body["reasoning_effort"] = effort.rawValue }
-        if let temperature = request.generationOptions.temperature { body["temperature"] = temperature }
-        if let topP = request.generationOptions.topP { body["top_p"] = topP }
-        if let maxTokens = request.generationOptions.maxTokens { body["max_tokens"] = maxTokens }
-        if let serviceTier = request.generationOptions.serviceTier { body["service_tier"] = serviceTier }
+        if let effort = request.reasoningEffort { body["reasoning_effort"] = effort.rawValue }
+        if let temperature = request.temperature { body["temperature"] = temperature }
+        if let topP = request.topP { body["top_p"] = topP }
+        if let maxTokens = request.maxTokens { body["max_tokens"] = maxTokens }
+        if let serviceTier = request.serviceTier { body["service_tier"] = serviceTier }
         return body
     }
 
     static func anthropic(_ request: LumiLLMRequest) -> [String: Any] {
         let system = request.messages.filter { $0.role == .system }.map(\.content).filter { !$0.isEmpty }.joined(separator: "\n\n")
         // Use dynamic max_tokens from options, with sensible defaults per model family
-        let maxTokens = request.generationOptions.maxTokens ?? (request.model.contains("M3") ? 131072 : 65536)
+        let maxTokens = request.maxTokens ?? (request.model.contains("M3") ? 131072 : 65536)
         var body: [String: Any] = ["model": request.model, "max_tokens": maxTokens, "messages": anthropicMessages(request.messages), "stream": true]
         if !system.isEmpty { body["system"] = system }
         if !request.tools.isEmpty { body["tools"] = request.tools.map { ["name": $0.name, "description": $0.toolDescription, "input_schema": $0.inputSchema.anyValue] } }
-        if let thinkingOption = request.generationOptions.miniMaxThinking {
-            body["thinking"] = ["type": thinkingOption.rawValue]
+        // MiniMax 的 Anthropic 协议：本次请求携带了 `reasoningEffort` 即认为启用 thinking 块；
+        // M2.x 与 M3 都发 `thinking.type="adaptive"`；若 `reasoningEffort == nil`，
+        // 不发送 `thinking` 字段，让服务端按模型默认（关闭）处理。
+        if request.reasoningEffort != nil {
+            body["thinking"] = ["type": "adaptive"]
         }
-        if let toolChoice = request.generationOptions.toolChoice {
+        if let toolChoice = request.toolChoice {
             body["tool_choice"] = ["type": toolChoice]
         }
-        if let temperature = request.generationOptions.temperature { body["temperature"] = temperature }
-        if let topP = request.generationOptions.topP { body["top_p"] = topP }
-        if let serviceTier = request.generationOptions.serviceTier { body["service_tier"] = serviceTier }
-        if let userID = request.generationOptions.userID {
+        if let temperature = request.temperature { body["temperature"] = temperature }
+        if let topP = request.topP { body["top_p"] = topP }
+        if let serviceTier = request.serviceTier { body["service_tier"] = serviceTier }
+        if let userID = request.userID {
             body["metadata"] = ["user_id": userID]
         }
         return body
