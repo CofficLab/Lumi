@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.8.0</title>
-            <pubDate>Fri, 07 Aug 2026 14:16:24 +0000</pubDate>
-            <sparkle:version>522</sparkle:version>
-            <sparkle:shortVersionString>5.8.0</sparkle:shortVersionString>
+            <title>5.8.1</title>
+            <pubDate>Sat, 08 Aug 2026 08:32:42 +0000</pubDate>
+            <sparkle:version>523</sparkle:version>
+            <sparkle:shortVersionString>5.8.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.8.0</h2>
-<h3>Changes since v5.7.6</h3>
+            <description><![CDATA[<h2>Release v5.8.1</h2>
+<h3>Changes since v5.8.0</h3>
 <ul>
-<li>feat: add K3-256K model to Kimi provider</li>
-<li>feat(ConversationListPlugin): add sticky sort stabilizer to prevent list jumping</li>
-<li>feat(ConversationManagerPlugin): add lastMessageAt field for conversation list sorting</li>
-<li>feat(ConversationVerbosityPlugin): support conversation-scoped and global verbosity read/write</li>
-<li>feat(DatabaseManagerPlugin): open external SQLite files via Finder/Dock</li>
-<li>feat(LumiKernel,LumiFactory): gate chat-only rail tabs to chat-supporting containers</li>
-<li>feat(MessageListPlugin): add SuperLog logging to ListV2View</li>
-<li>feat(MessageListPlugin): add SuperLog logging to MessageListPlugin and ListView</li>
-<li>feat(MessageListPlugin): add SuperLog logging to V1 views and ViewModels</li>
-<li>feat(MiniMaxPlugin): add image generation feature with record persistence</li>
-<li>feat(MiniMaxPlugin): add music generation feature with record persistence</li>
-<li>feat(NetworkManagerPlugin): add raw/parsed tab for JSON response body</li>
-<li>feat(ProjectFileBreadcrumbPlugin): add project file breadcrumb navigation plugin</li>
-<li>feat(RClickPlugin): add New File submenu preview in rail sidebar</li>
-<li>feat(SettingsPlugin): add official website link to General settings</li>
-<li>fix: correct providerID on assistant message after streaming</li>
-<li>fix: Localize menu bar items for Chinese locale</li>
-<li>fix(ConversationListPlugin): optimistic selection highlight on tap before manager sync</li>
-<li>fix(ConversationListPlugin): remove markViewed call on conversation selection</li>
-<li>fix(ConversationTitlePlugin): fence user message so auto title generation never answers it</li>
+<li>feat(agent-turn-runner): require approval for risky tools</li>
+<li>feat(AliyunPlugin): add AliyunTokenPlanProvider and reorganize provider files into Providers/</li>
+<li>feat(conversation-list): show reasoning effort in item view</li>
+<li>feat(conversation-manager): add reasoningEffortOptional and clearReasoningEffort methods</li>
+<li>feat(ConversationContextSizePlugin): display used/max context tokens in toolbar</li>
+<li>feat(kernel): add global reasoning effort and automation level</li>
+<li>feat(llm): add LumiThinkingSupport.toggle for on/off-only models</li>
+<li>feat(llm): replace supportsThinking Bool with LumiThinkingSupport enum</li>
+<li>feat(llm): update MiniMax model catalog with M3 1M context and add M2.1 series</li>
+<li>feat(LLMProviderMiniMax): add MiniMax Responses API provider</li>
+<li>feat(MessageListPlugin): gate live-resize skeleton placeholder behind a static flag</li>
+<li>feat(ModelSelector): add cloud/local scope filter with localization</li>
+<li>feat(ModelSelector): sort providers alphabetically by displayName</li>
+<li>feat(Plugins): add localization for MessageCount and ContextSize popover strings</li>
+<li>feat(Plugins): add popover explanations to MessageCount and ContextSize toolbar chips</li>
+<li>feat(reasoning): add toggle switch UI for .toggle models</li>
+<li>feat(store): add setReasoningEffortToNil parameter to updateConversationPreferences</li>
+<li>feat(ToolManaging): add riskLevel(for:) to protocol for tool risk evaluation</li>
+<li>fix(agent-turn-runner): pick reasoning effort by capability type</li>
+<li>fix(conversation-speed): explain unavailable metrics</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.8.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.8.0/Lumi_5.8.0_x86_64.dmg" length="45994323" type="application/octet-stream" sparkle:edSignature="yIn74liszivlSrQSV7vwBnBGjmkhMhdKbUaRiex5vwpMctjd7pY1PnAJESnD/3Ttekbw0fSovFA2pqsKclVHBA=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.8.1</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.8.1/Lumi_5.8.1_x86_64.dmg" length="46792599" type="application/octet-stream" sparkle:edSignature="pbWu4HlvYuRuZmB6ACGwvACB6LNZWO8G2XQVkzcF5efoswtSR+JGgECzHgU9py1fNTgwMB96ylYTCmvmUV2xBw=="/>
         </item>
     </channel>
 </rss>
