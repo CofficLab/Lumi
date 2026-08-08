@@ -6,10 +6,9 @@ enum MiniMaxProviderCatalog {
             .init(
                 id: "MiniMax-M3",
                 contextWindowSize: 1_000_000,
-                // M3 only supports an on/off toggle (no levels); the request-level
-                // `LumiThinkingAndReasoning` value is mapped to Anthropic `thinking.type`
-                // (disabled / adaptive) inside `MiniMaxRequestBuilder`.
-                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .toggle)
+                // M3 supports reasoning effort levels (minimal/low/medium/high) via Responses API
+                // reasoningEffort maps to `reasoning.effort` in the request body
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .levels)
             ),
             .init(
                 id: "MiniMax-M2.7",
