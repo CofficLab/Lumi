@@ -1,7 +1,6 @@
 import Foundation
-import LumiKernel
-import LumiKernel
 import LLMKit
+import LumiKernel
 
 enum XiaomiErrorHandling {
     static func renderKind(for error: Error) -> String {
@@ -9,7 +8,7 @@ enum XiaomiErrorHandling {
             return XiaomiRenderKind.apiKeyMissing
         }
 
-        if let statusCode = LumiLLMHTTPErrorParsing.statusCode(from: error) {
+        if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: error) {
             return XiaomiRenderKind.http(statusCode)
         }
 
