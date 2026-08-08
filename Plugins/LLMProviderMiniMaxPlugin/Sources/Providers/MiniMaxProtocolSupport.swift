@@ -51,6 +51,8 @@ struct MiniMaxAnthropicEvent: Sendable {
     let stopReason: String?
     let done: Bool
     let error: String?
+    let inputTokens: Int?
+    let outputTokens: Int?
 }
 
 struct MiniMaxTextSegments: Sendable {
@@ -262,19 +264,30 @@ enum MiniMaxAnthropicEventParser {
             let lines = frame.components(separatedBy: "\n")
             let type = lines.first(where: { $0.hasPrefix("event:") })?.dropFirst(6).trimmingCharacters(in: .whitespaces)
             guard let dataLine = lines.first(where: { $0.hasPrefix("data:") }) else {
-                return type == "message_stop" ? MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: nil, done: true, error: nil) : nil
+                return type == "message_stop" ? MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: nil, done: true, error: nil, inputTokens: nil, outputTokens: nil) : nil
             }
             let payload = dataLine.dropFirst(5).trimmingCharacters(in: .whitespaces)
             guard let json = try? JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any] else { return nil }
-            if type == "error" { return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: nil, done: false, error: (json["error"] as? [String: Any])?["message"] as? String) }
-            if type == "message_stop" { return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: nil, done: true, error: nil) }
-            if type == "content_block_start", let block = json["content_block"] as? [String: Any], block["type"] as? String == "tool_use" { return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: block["id"] as? String, toolName: block["name"] as? String, toolArguments: nil, stopReason: nil, done: false, error: nil) }
+            if type == "error" { return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: nil, done: false, error: (json["error"] as? [String: Any])?["message"] as? String, inputTokens: nil, outputTokens: nil) }
+            if type == "message_stop" { return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: nil, done: true, error: nil, inputTokens: nil, outputTokens: nil) }
+            if type == "message_start" {
+                let message = json["message"] as? [String: Any]
+                let usage = message?["usage"] as? [String: Any]
+                return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: message?["stop_reason"] as? String, done: false, error: nil, inputTokens: usage?["input_tokens"] as? Int, outputTokens: usage?["output_tokens"] as? Int)
+            }
+            if type == "content_block_start", let block = json["content_block"] as? [String: Any], block["type"] as? String == "tool_use" { return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: block["id"] as? String, toolName: block["name"] as? String, toolArguments: nil, stopReason: nil, done: false, error: nil, inputTokens: nil, outputTokens: nil) }
             let delta = json["delta"] as? [String: Any]
             switch delta?["type"] as? String {
-            case "text_delta": return MiniMaxAnthropicEvent(text: delta?["text"] as? String, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: nil, done: false, error: nil)
-            case "thinking_delta": return MiniMaxAnthropicEvent(text: nil, thinking: delta?["thinking"] as? String, toolID: nil, toolName: nil, toolArguments: nil, stopReason: nil, done: false, error: nil)
-            case "input_json_delta": return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: delta?["partial_json"] as? String, stopReason: nil, done: false, error: nil)
-            default: return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: (delta?["stop_reason"] as? String) ?? ((json["delta"] as? [String: Any])?["stop_reason"] as? String), done: false, error: nil)
+            case "text_delta": return MiniMaxAnthropicEvent(text: delta?["text"] as? String, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: nil, done: false, error: nil, inputTokens: nil, outputTokens: nil)
+            case "thinking_delta": return MiniMaxAnthropicEvent(text: nil, thinking: delta?["thinking"] as? String, toolID: nil, toolName: nil, toolArguments: nil, stopReason: nil, done: false, error: nil, inputTokens: nil, outputTokens: nil)
+            case "input_json_delta": return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: delta?["partial_json"] as? String, stopReason: nil, done: false, error: nil, inputTokens: nil, outputTokens: nil)
+            default:
+                // message_delta events carry usage at the top level (not inside delta)
+                if type == "message_delta" {
+                    let usage = json["usage"] as? [String: Any]
+                    return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: delta?["stop_reason"] as? String, done: false, error: nil, inputTokens: usage?["input_tokens"] as? Int, outputTokens: usage?["output_tokens"] as? Int)
+                }
+                return MiniMaxAnthropicEvent(text: nil, thinking: nil, toolID: nil, toolName: nil, toolArguments: nil, stopReason: (delta?["stop_reason"] as? String) ?? ((json["delta"] as? [String: Any])?["stop_reason"] as? String), done: false, error: nil, inputTokens: nil, outputTokens: nil)
             }
         }
     }
