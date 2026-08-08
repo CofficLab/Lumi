@@ -122,6 +122,12 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
 
     // MARK: - Reasoning Effort
 
+    /// 全局推理强度（用于新对话的默认值；nil 表示关闭思考）。
+    var globalReasoningEffort: LumiReasoningEffort? { get }
+
+    /// 设置全局推理强度（nil 表示关闭思考）。
+    func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?)
+
     /// 获取指定对话的推理强度
     func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort
 
@@ -137,6 +143,12 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     func clearReasoningEffort(for conversationID: UUID?)
 
     // MARK: - Automation Level
+
+    /// 全局对话模式（用于新对话的默认值）
+    var globalAutomationLevel: LumiAutomationLevel { get }
+
+    /// 设置全局对话模式
+    func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel)
 
     /// 获取指定对话的自动化程度
     func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel
@@ -227,4 +239,16 @@ public extension ConversationManaging {
     func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? {
         reasoningEffort(for: conversationID)
     }
+
+    /// 测试或轻量实现未维护全局推理状态时使用默认档位。
+    var globalReasoningEffort: LumiReasoningEffort? { .defaultEffort }
+
+    /// 默认空实现，测试 mock 无需自行实现即可编译通过。
+    func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?) {}
+
+    /// 测试或轻量实现未维护全局对话模式时使用默认构建模式。
+    var globalAutomationLevel: LumiAutomationLevel { .build }
+
+    /// 默认空实现，测试 mock 无需自行实现即可编译通过。
+    func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) {}
 }
