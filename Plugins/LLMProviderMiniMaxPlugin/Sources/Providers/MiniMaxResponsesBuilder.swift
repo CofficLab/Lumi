@@ -2,9 +2,6 @@ import Foundation
 import LumiKernel
 
 enum MiniMaxResponsesBuilder {
-    /// Maps LumiReasoningEffort to the wire format for Responses API.
-    /// - nil effort means use model/server default (which is "none" = no thinking)
-    /// - .low/.medium/.high/.xhigh/.max map to Responses API effort values
     static func reasoningEffort(_ effort: LumiReasoningEffort?) -> MiniMaxResponsesReasoning? {
         guard let effort else { return nil }
         let wireValue: String
@@ -12,44 +9,35 @@ enum MiniMaxResponsesBuilder {
         case .low: wireValue = "low"
         case .medium: wireValue = "medium"
         case .high: wireValue = "high"
-        case .xhigh: wireValue = "high"  // Responses API has no xhigh, cap at high
-        case .max: wireValue = "high"    // Responses API has no max, cap at high
+        case .xhigh: wireValue = "high"
+        case .max: wireValue = "high"
         }
         return MiniMaxResponsesReasoning(effort: wireValue)
     }
 
     static func build(_ request: LumiLLMRequest) throws -> MiniMaxResponsesRequest {
-        // Collect system messages for the instructions field
         let systemMessages = request.messages.filter { $0.role == .system }
-        let instructions = systemMessages
-            .map(\.content)
-            .filter { !$0.isEmpty }
-            .joined(separator: "\n\n")
+        let instructions = systemMessages.map(\.content).filter { !$0.isEmpty }.joined(separator: "\n\n")
 
-        // Collect non-system, non-error, non-status messages for input
         let nonSystem = request.messages.filter {
             $0.role != .system && $0.role != .error && $0.role != .status
         }
 
-        // Determine input format
         let input: MiniMaxResponsesInput
         if nonSystem.isEmpty {
-            // All messages were system/error/status — use empty history
             input = .history([])
         } else if nonSystem.count == 1, let only = nonSystem.first, only.role == .user {
-            // Simple single-user-message input → plain string
             input = .simple(only.content)
         } else {
-            // Multi-turn conversation → history array
             input = .history(try buildHistory(nonSystem))
         }
 
-        let tools: [MiniMaxResponsesTool]? = request.tools.isEmpty ? nil : request.tools.map {
-            MiniMaxResponsesTool(
-                name: $0.name,
-                description: $0.toolDescription,
-                parameters: $0.inputSchema.anyValue
-            )
+        let tools: [MiniMaxResponsesTool]? = request.tools.isEmpty ? nil : request.tools.map { tool in
+            let params: [String: Any] = {
+                if let dict = tool.inputSchema.anyValue as? [String: Any] { return dict }
+                return [:]
+            }()
+            return MiniMaxResponsesTool(name: tool.name, description: tool.toolDescription, parameters: params)
         }
 
         return MiniMaxResponsesRequest(
@@ -69,7 +57,6 @@ enum MiniMaxResponsesBuilder {
 
     private static func buildHistory(_ messages: [LumiChatMessage]) throws -> [MiniMaxResponsesInputItem] {
         var items: [MiniMaxResponsesInputItem] = []
-
         for message in messages {
             switch message.role {
             case .user:
@@ -81,7 +68,6 @@ enum MiniMaxResponsesBuilder {
                 }
                 if let toolCalls = message.toolCalls {
                     for call in toolCalls {
-                        // Assistant text before tool call
                         if !contentParts.isEmpty {
                             items.append(.init(role: "assistant", content: contentParts.joined(separator: "\n")))
                             contentParts = []
@@ -98,7 +84,6 @@ enum MiniMaxResponsesBuilder {
                 break
             }
         }
-
         return items
     }
 }
