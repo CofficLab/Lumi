@@ -113,10 +113,11 @@ struct ProviderListView: View {
 
     private func filteredProviders(_ provider: any LLMProviderManaging) -> [LumiLLMProviderInfo] {
         let providers = providers(in: provider).filter(selectedScope.includes)
+        let sorted = providers.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
         if searchText.isEmpty {
-            return providers
+            return sorted
         }
-        return providers.filter {
+        return sorted.filter {
             $0.displayName.localizedCaseInsensitiveContains(searchText)
                 || $0.id.localizedCaseInsensitiveContains(searchText)
         }
