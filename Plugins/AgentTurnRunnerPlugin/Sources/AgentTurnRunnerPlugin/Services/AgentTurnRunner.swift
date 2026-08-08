@@ -549,15 +549,25 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 preparedMessages = [systemMessage] + nonSystem
             }
 
+            let reasoningSupport = type(of: targetProvider).info
+                .modelInfo(for: model)?.capabilities?.thinkingAndReasoning ?? .unsupported
+            let reasoningEffort: LumiReasoningEffort?
+            switch reasoningSupport {
+            case .unsupported:
+                reasoningEffort = nil
+            case .toggle:
+                reasoningEffort = kernel.conversations?.reasoningEffortOptional(for: conversationID)
+            case .threeLevel, .fourLevel:
+                reasoningEffort = kernel.conversations?.reasoningEffort(for: conversationID)
+            }
+
             let request = LumiLLMRequest(
                 messages: preparedMessages,
                 model: model,
                 tools: tools,
                 imageAttachments: pendingImages,
                 fileAttachments: pendingFiles,
-                reasoningEffort: (type(of: targetProvider).info.modelInfo(for: model)?.capabilities?.thinkingAndReasoning.isEnabled == true)
-                    ? kernel.conversations?.reasoningEffort(for: conversationID)
-                    : nil
+                reasoningEffort: reasoningEffort
             )
 
             // 记录本次发出的请求到磁盘(SwiftData),用于设置界面回看。
