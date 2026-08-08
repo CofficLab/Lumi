@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "ChatModePlugin",
+    name: "ConversationModePlugin",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "ChatModePlugin",
-            targets: ["ChatModePlugin"]
+            name: "ConversationModePlugin",
+            targets: ["ConversationModePlugin"]
         )
     ],
     dependencies: [
@@ -20,7 +20,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "ChatModePlugin",
+            name: "ConversationModePlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
@@ -32,11 +32,12 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "ChatModePluginTests",
+            name: "ConversationModePluginTests",
             dependencies: [
-                "ChatModePlugin",
+                "ConversationModePlugin",
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),            ],
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+            ],
             path: "Tests"
         )
     ]

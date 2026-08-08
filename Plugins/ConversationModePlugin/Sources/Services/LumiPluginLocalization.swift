@@ -1,7 +1,7 @@
 import Foundation
 import LocalizationKit
 
-/// Runtime localization for ChatModePlugin bundle.
+/// Runtime localization for ConversationModePlugin bundle.
 ///
 /// Provides localization lookup scoped to this plugin by delegating to LumiLocalization.
 enum LumiPluginLocalization {

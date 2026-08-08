@@ -1,10 +1,10 @@
 import Testing
 import LumiKernel
-@testable import ChatModePlugin
+@testable import ConversationModePlugin
 
 @MainActor
 @Test func pluginMetadata() {
-    let plugin = ChatModePlugin()
+    let plugin = ConversationModePlugin()
     #expect(plugin.id.isEmpty == false)
     #expect(plugin.name.isEmpty == false)
     #expect(plugin.order == 84)

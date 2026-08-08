@@ -12,19 +12,6 @@ public final class MessageListPlugin: LumiPlugin, SuperLog {
     nonisolated public static let emoji = "💬"
     nonisolated public static let verbose = false
 
-    /// Live-resize 期间是否用轻量占位行（骨架视图）替换富文本子树。
-    ///
-    /// `true`:resize 时把 `MessageRowView` 换成 `MessageResizePlaceholder`,
-    ///        牺牲 resize 期间的视觉真实性,换取每帧富文本 layout 的 0 遍历,
-    ///        适合超长会话/老硬件。
-    /// `false`(默认):resize 期间始终渲染富文本子树,避免出现骨架视图带来的
-    ///        视觉跳动/与真实内容不一致的体验。
-    ///
-    /// 关闭后 `LiveResizeDetector` 仍会被挂载(零尺寸、不参与命中测试,
-    /// 代价可忽略),但 `isLiveResizing` 分支不再触发,`ForEach` 永远走
-    /// `MessageRowView` 分支。
-    nonisolated public static let enableLiveResizeSkeleton: Bool = false
-
     public let id = "com.coffic.lumi.plugin.message-list"
     public var name: String {
         LumiPluginLocalization.string("Message List", bundle: .module)

@@ -27,5 +27,13 @@ let package = Package(
                 .process("../Resources/Localizable.xcstrings")
             ]
         ),
+        .testTarget(
+            name: "ConversationManagerPluginTests",
+            dependencies: [
+                "ConversationManagerPlugin",
+                .product(name: "LumiKernel", package: "LumiKernel"),
+            ],
+            path: "Tests"
+        ),
     ]
 )

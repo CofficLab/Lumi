@@ -90,11 +90,11 @@ public struct ItemView: View {
                         .font(.footnote)
                         .foregroundColor(theme.textTertiary)
 
-                    if let reasoningEffort = conversation.reasoningEffort {
+                    if let automationLevel = conversation.automationLevel {
                         Text("·")
                             .foregroundColor(theme.textTertiary)
 
-                        Label(reasoningEffort.displayName, systemImage: reasoningEffort.iconName)
+                        Label(automationLevel.displayName, systemImage: automationLevel.iconName)
                             .labelStyle(.titleAndIcon)
                             .font(.footnote)
                             .foregroundColor(theme.textTertiary)

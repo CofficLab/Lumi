@@ -40,15 +40,18 @@ struct ListView: View, SuperLog {
     }
 
     var body: some View {
-        Group {
-            if selectedConversationID == nil {
-                NoConversationSelectedView()
-            } else {
-                routedMessageList
+        LiveResizeFrozenView {
+            Group {
+                if selectedConversationID == nil {
+                    NoConversationSelectedView()
+                } else {
+                    routedMessageList
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(theme.surface)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(theme.surface)
         // 选中切换:更新空态/列表路由,并同步新会话的 verbosity。
         .onLumiSelectedConversationDidChange { newID in
             if Self.verbose {

@@ -33,8 +33,7 @@ struct AutomationLevelToolbarView: View {
         .help(selectedLevel.description)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             AutomationLevelPopover(selectedLevel: selectedLevel) { level in
-                conversations?.setAutomationLevel(level, for: selectedConversationID)
-                selectedLevel = level
+                updateAutomationLevel(level)
                 isPopoverPresented = false
             }
         }
@@ -45,7 +44,24 @@ struct AutomationLevelToolbarView: View {
     private func refreshState() {
         let id = conversations?.selectedConversationID
         selectedConversationID = id
-        selectedLevel = conversations?.automationLevel(for: id) ?? .build
+        guard let conversations else {
+            selectedLevel = .build
+            return
+        }
+        if let id {
+            selectedLevel = conversations.automationLevel(for: id)
+        } else {
+            selectedLevel = conversations.globalAutomationLevel
+        }
+    }
+
+    private func updateAutomationLevel(_ level: LumiAutomationLevel) {
+        guard let conversations else { return }
+        if let conversationID = conversations.selectedConversationID {
+            conversations.setAutomationLevel(level, for: conversationID)
+        }
+        conversations.setGlobalAutomationLevel(level)
+        selectedLevel = level
     }
 
     private var foregroundColor: Color {

@@ -14,6 +14,8 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
     @Published public private(set) var selectedConversationID: UUID?
     @Published public private(set) var currentTitle: String = "No conversation"
     @Published public private(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
+    @Published public private(set) var globalReasoningEffort: LumiReasoningEffort? = .defaultEffort
+    @Published public private(set) var globalAutomationLevel: LumiAutomationLevel = .build
 
     public var dataDirectory: URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("MockConversations")
@@ -102,6 +104,8 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
             preview: "",
             createdAt: now,
             updatedAt: now,
+            reasoningEffort: globalReasoningEffort,
+            automationLevel: globalAutomationLevel,
             providerID: providerID,
             modelName: modelName,
             projectPath: projectPath
@@ -216,6 +220,10 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
         conversations[index].verbosity = verbosity
     }
 
+    public func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?) {
+        globalReasoningEffort = reasoningEffort
+    }
+
     public func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort {
         guard let conversationID else {
             return .defaultEffort
@@ -251,6 +259,10 @@ public final class MockConversationManager: ObservableObject, ConversationManagi
     }
 
     // MARK: - Automation Level
+
+    public func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) {
+        globalAutomationLevel = automationLevel
+    }
 
     public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {
         guard let conversationID else {

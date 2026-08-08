@@ -18,7 +18,7 @@ import CaffeinatePlugin
 import ConversationAttachmentPlugin
 import ConversationPendingMessagePlugin
 import ChatFileAttachmentPlugin
-import ChatModePlugin
+import ConversationModePlugin
 import ChatPanelPlugin
 import ChatScreenshotPlugin
 import ClipboardManagerPlugin
@@ -247,7 +247,7 @@ public enum PluginService {
             ConversationReasoningPlugin(),
             ConversationVerbosityPlugin(),
             ConversationSpeedPlugin(),
-            ChatModePlugin(),
+            ConversationModePlugin(),
             ConversationLanguagePlugin(),
             VideoConverterPlugin(),
             NettoPlugin(),

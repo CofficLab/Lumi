@@ -3,10 +3,10 @@ import LumiUI
 import SwiftUI
 
 @MainActor
-public final class ChatModePlugin: LumiPlugin {
-    public let id = "com.coffic.lumi.plugin.chat-mode"
+public final class ConversationModePlugin: LumiPlugin {
+    public let id = "com.coffic.lumi.plugin.conversation-mode"
     public var name: String {
-        LumiPluginLocalization.string("Chat Mode", bundle: .module)
+        LumiPluginLocalization.string("Conversation Mode", bundle: .module)
     }
     public let order = 84
     public let policy: LumiPluginPolicy = .alwaysOn

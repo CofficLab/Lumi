@@ -282,18 +282,18 @@
         }
       }
     },
-    "Chat Mode": {
+    "Conversation Mode": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chat Mode"
+            "value": "Conversation Mode"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "聊天模式"
+            "value": "对话模式"
           }
         },
         "zh-Hant": {
@@ -305,7 +305,7 @@
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "聊天模式"
+            "value": "對話模式"
           }
         },
         "zh-TW": {

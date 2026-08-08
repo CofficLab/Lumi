@@ -28,11 +28,6 @@ struct ListV3View: View, SuperLog {
     /// 用户是否停在列表底部附近;用于决定新消息到达时是否自动滚到底部
     private let atBottomBox = AtBottomBox()
 
-    /// 窗口是否在 live resize 中。为 true 时渲染轻量占位行而非富文本,
-    /// 使 resize 期间不再遍历昂贵的富文本子树 layout。
-    /// 翻转触发 body 重建一次(有意为之),重建后子树已是轻量占位,后续帧零开销。
-    @State private var isLiveResizing: Bool = false
-
     private let scrollCoordinator = MessageListScrollCoordinator()
 
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
@@ -56,7 +51,6 @@ struct ListV3View: View, SuperLog {
                     .background(theme.surface.opacity(0.6))
             }
         }
-        .background(LiveResizeDetector(isLiveResizing: $isLiveResizing))
         .task {
             if Self.verbose {
                 Self.logger.info("\(self.t)首次出现,conversationID: \(viewModel.selectedConversationID?.uuidString ?? "nil")")
@@ -196,21 +190,12 @@ struct ListV3View: View, SuperLog {
         }
 
         ForEach(viewModel.historyRows) { message in
-            if MessageListPlugin.enableLiveResizeSkeleton, isLiveResizing {
-                // Live-resize 降级:渲染轻量占位行,移除富文本子树。
-                // 这样 resize 每帧不再遍历昂贵的 Markdown layout。
-                // 由 MessageListPlugin.enableLiveResizeSkeleton 控制总开关,
-                // 关闭后此分支永远走 else,resize 期间始终渲染真实富文本。
-                MessageResizePlaceholder(message: message)
-                    .plainMessageListRow()
-            } else {
-                MessageRowView(
-                    kernel: kernel,
-                    message: message,
-                    verbosity: viewModel.verbosity
-                )
-                .plainMessageListRow()
-            }
+            MessageRowView(
+                kernel: kernel,
+                message: message,
+                verbosity: viewModel.verbosity
+            )
+            .plainMessageListRow()
         }
     }
 
