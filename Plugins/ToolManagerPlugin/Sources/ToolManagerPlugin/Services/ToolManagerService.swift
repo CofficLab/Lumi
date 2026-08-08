@@ -107,6 +107,16 @@ public final class ToolManagerService: ToolManaging {
         return description.isEmpty ? nil : description
     }
 
+    public func riskLevel(for toolCall: LumiToolCall) -> LumiCommandRiskLevel? {
+        guard let kernel,
+              let tool = registeredTools[toolCall.name],
+              let arguments = try? Self.decodeArguments(toolCall.arguments)
+        else {
+            return nil
+        }
+        return tool.riskLevel(arguments: arguments, kernel: kernel)
+    }
+
     public func execute(
         _ toolCall: LumiToolCall,
         conversationID: UUID,
