@@ -414,6 +414,12 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
         appliedInitialPosition = initialPosition
         let origin = splitView.isVertical ? splitView.bounds.minX : splitView.bounds.minY
         splitView.setPosition(origin + initialPosition, ofDividerAt: dividerIndex)
+        // `setPosition` moves the native divider after the initial tracking area was
+        // created. Refresh on the next run-loop turn so hover/cursor hit testing follows
+        // the restored divider immediately, before the user performs the first drag.
+        DispatchQueue.main.async { [weak self] in
+            self?.refreshTrackingArea()
+        }
         if Self.verbose {
             Self.logger.info(
                 "restored divider index=\(dividerIndex) position=\(initialPosition)"
