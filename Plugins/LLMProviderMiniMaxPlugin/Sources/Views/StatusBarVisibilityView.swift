@@ -12,7 +12,9 @@ struct StatusBarVisibilityView: View {
 
     var body: some View {
         Group {
-            if selectedProviderID == MiniMaxTokenPlanProvider.info.id || selectedProviderID == MiniMaxAnthropicProvider.info.id {
+            if selectedProviderID == MiniMaxTokenPlanProvider.info.id
+                || selectedProviderID == MiniMaxAnthropicProvider.info.id
+                || selectedProviderID == MiniMaxResponsesProvider.info.id {
                 StatusBarView(network: kernel.network)
             } else {
                 EmptyView()
