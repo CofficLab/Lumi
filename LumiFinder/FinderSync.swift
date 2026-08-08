@@ -333,7 +333,18 @@ class FinderSync: FIFinderSync, SuperLog {
                                     FinderSync.logger.error("\(self.t)文件创建失败: \(error.localizedDescription)")
                 }
             }
+            showCreateFileError(fileURL: fileURL, error: error)
         }
+    }
+
+    /// 新建文件失败时提示用户，避免静默失败
+    private func showCreateFileError(fileURL: URL, error: Error) {
+        let alert = NSAlert()
+        alert.messageText = "无法新建文件"
+        alert.informativeText = "无法在「\(fileURL.deletingLastPathComponent().path)」中创建「\(fileURL.lastPathComponent)」。\n\n原因：\(error.localizedDescription)\n\n请检查 Lumi 是否已被授予该文件夹的访问权限（系统设置 → 隐私与安全性 → 文件与文件夹）。"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "好")
+        alert.runModal()
     }
 
     private func sanitize(config: RClickConfig) -> RClickConfig {
