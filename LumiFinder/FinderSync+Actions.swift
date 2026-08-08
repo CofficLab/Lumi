@@ -85,11 +85,23 @@ extension FinderSync {
         }
     }
 
-    @IBAction func createNewFileFromTemplate(_ sender: AnyObject?) {
+    /// Finder invokes menu actions through an XPC callback queue, not necessarily
+    /// the main actor. Keep the exported selector nonisolated and hop before
+    /// touching AppKit or the FinderSync controller.
+    @IBAction nonisolated func createNewFileFromTemplate(_ sender: AnyObject?) {
+        performSelector(
+            onMainThread: #selector(performCreateNewFileFromTemplate(_:)),
+            with: sender,
+            waitUntilDone: false
+        )
+    }
+
+    @objc @MainActor
+    private func performCreateNewFileFromTemplate(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
                             FinderSync.logger.info("\(self.t)触发「从模板新建文件」操作")
-            }
+                        }
         }
         guard let item = sender as? NSMenuItem else {
             if Self.verbose {
