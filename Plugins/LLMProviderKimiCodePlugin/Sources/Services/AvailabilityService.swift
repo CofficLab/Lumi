@@ -1,53 +1,40 @@
 import Foundation
 import LumiKernel
-import LumiKernel
-import LumiKernel
-import LLMKit
-enum AvailabilityService {
-    private static let openAICache = AvailabilityDiskCache(pluginName: "LLMProviderKimiCodePlugin-OpenAI")
-    private static let anthropicCache = AvailabilityDiskCache(pluginName: "LLMProviderKimiCodePlugin-Anthropic")
 
-    static func checkAvailabilityForOpenAI(
+enum AvailabilityService {
+    private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderKimiCodePlugin")
+
+    static func checkAvailability(
         provider: KimiCodeOpenAIProvider,
         model: String
     ) async -> LumiModelAvailabilityResult {
-        if let cached = openAICache.read(model: model),
-           Date().timeIntervalSince(cached.timestamp) < openAICache.cacheInterval {
-            return cached.result
-        }
-
-        let result = await LumiOpenAICompatibleAvailability.chatPing(
-            model: model,
-            adapter: provider.internalAdapter,
-            apiService: provider.internalApiService,
-            buildRequest: { url, apiKey in
-                provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
-            },
-            resolveAPIKey: { try provider.lumiResolveAPIKey() }
-        )
-        openAICache.write(model: model, result: result, timestamp: Date())
-        return result
+        await checkAvailability(model: model) { try await provider.ping(model: $0) }
     }
 
-    static func checkAvailabilityForAnthropic(
+    static func checkAvailability(
         provider: KimiCodeAnthropicProvider,
         model: String
     ) async -> LumiModelAvailabilityResult {
-        if let cached = anthropicCache.read(model: model),
-           Date().timeIntervalSince(cached.timestamp) < anthropicCache.cacheInterval {
+        await checkAvailability(model: model) { try await provider.ping(model: $0) }
+    }
+
+    private static func checkAvailability(
+        model: String,
+        ping: @Sendable (String) async throws -> Void
+    ) async -> LumiModelAvailabilityResult {
+        if let cached = cache.read(model: model),
+           Date().timeIntervalSince(cached.timestamp) < cache.cacheInterval {
             return cached.result
         }
 
-        let result = await LumiAnthropicCompatibleAvailability.chatPing(
-            model: model,
-            adapter: provider.internalAdapter,
-            apiService: provider.internalApiService,
-            buildRequest: { url, apiKey in
-                provider.internalAdapter.buildRequest(url: url, apiKey: apiKey)
-            },
-            resolveAPIKey: { try provider.lumiResolveAPIKey() }
-        )
-        anthropicCache.write(model: model, result: result, timestamp: Date())
+        let result: LumiModelAvailabilityResult
+        do {
+            try await ping(model)
+            result = .available
+        } catch {
+            result = .unavailable(.message(error.localizedDescription))
+        }
+        cache.write(model: model, result: result, timestamp: Date())
         return result
     }
 }
