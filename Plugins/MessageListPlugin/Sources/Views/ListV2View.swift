@@ -174,9 +174,11 @@ struct ListV2View: View, SuperLog {
         }
 
         ForEach(viewModel.historyRows) { message in
-            if isLiveResizing {
+            if MessageListPlugin.enableLiveResizeSkeleton, isLiveResizing {
                 // Live-resize 降级:渲染轻量占位行,移除富文本子树。
                 // 这样 resize 每帧不再遍历昂贵的 Markdown layout。
+                // 由 MessageListPlugin.enableLiveResizeSkeleton 控制总开关,
+                // 关闭后此分支永远走 else,resize 期间始终渲染真实富文本。
                 MessageResizePlaceholder(message: message)
                     .id(message.id)
                     .plainMessageListRow()
