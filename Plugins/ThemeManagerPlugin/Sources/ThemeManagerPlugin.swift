@@ -9,6 +9,7 @@ public final class ThemeManagerPlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("Theme Manager", bundle: .module)
     }
+
     public let order = 22
     public let policy: LumiPluginPolicy = .alwaysOn
 

@@ -11,19 +11,22 @@ final class MockLumiPlugin: LumiPlugin {
     let order: Int
     let policy: LumiPluginPolicy
     private let editorRuntimePlugins: [any EditorPlugin]
+    private let commandGroups: [CommandMenuGroup]
 
     init(
         id: String,
         name: String? = nil,
         order: Int,
         policy: LumiPluginPolicy = .alwaysOn,
-        editorRuntimePlugins: [any EditorPlugin] = []
+        editorRuntimePlugins: [any EditorPlugin] = [],
+        commandGroups: [CommandMenuGroup] = []
     ) {
         self.id = id
         self.name = name ?? id
         self.order = order
         self.policy = policy
         self.editorRuntimePlugins = editorRuntimePlugins
+        self.commandGroups = commandGroups
     }
 
     func onBoot(kernel: LumiKernel) async throws {}
@@ -33,6 +36,7 @@ final class MockLumiPlugin: LumiPlugin {
     func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    func commandMenuGroups(kernel: LumiKernel) -> [CommandMenuGroup] { commandGroups }
     func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }

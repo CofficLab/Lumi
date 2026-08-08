@@ -28,10 +28,6 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     var isLoadingConversations: Bool { get }
 
     /// Fetch one page of conversations ordered by most recently updated.
-    ///
-    /// The cursor is the last item from the previous page. Implementations
-    /// should use keyset pagination so callers do not need to load the full
-    /// conversation history into memory.
     func fetchConversationPage(
         limit: Int,
         beforeUpdatedAt: Date?,
@@ -68,13 +64,6 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     var dataDirectory: URL { get }
 
     /// 创建新对话
-    ///
-    /// - Parameters:
-    ///   - title: 对话标题（可选）
-    ///   - projectPath: 关联项目路径（可选，传 nil 则自动使用当前项目）
-    ///   - providerID: 供应商 ID（可选，传 nil 则自动使用当前选中的供应商）
-    ///   - modelName: 模型名称（可选，传 nil 则自动使用当前选中的模型）
-    /// - Returns: 新对话 ID
     func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID
 
     /// Creates a conversation with an optional parent conversation.
@@ -96,69 +85,56 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     func deleteConversation(id: UUID)
 
     /// 更新指定对话的标题
-    ///
-    /// - Parameters:
-    ///   - title: 新标题
-    ///   - conversationID: 目标对话 ID
-    /// - Returns: 更新成功返回 `true`，对话不存在返回 `false`
     func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool
 
     // MARK: - Activity
 
-    /// 标记对话为活跃(收到新消息)，刷新其最后消息时间使其在对话列表排序中置顶。
-    ///
-    /// 由消息写入路径在会话收到非 status 消息时调用。实现应更新内存缓存与
-    /// 持久化时间戳，并广播 `conversationsDidChange` 以便对话列表重新排序。
-    ///
-    /// - Parameters:
-    ///   - id: 对话 ID
-    ///   - messageDate: 消息的创建时间，用作对话的最后消息时间
+    /// 标记对话为活跃(收到新消息)
     func markConversationActive(id: UUID, messageDate: Date)
 
     /// 检查对话是否正在发送中
     func isSending(for conversationID: UUID?) -> Bool
 
-    /// 返回模拟对话 ID 列表（用于测试数据关联）
-    func mockConversationIDs() -> [UUID]
+    // MARK: - Provider/Model
 
-    // MARK: - Provider/Model Selection
-
-    /// 获取指定对话的 Provider ID
+    /// 获取指定对话绑定的供应商 ID
     func providerID(for conversationID: UUID?) -> String?
 
-    /// 获取指定对话的 Model 名称
+    /// 获取指定对话绑定的模型名称
     func modelName(for conversationID: UUID?) -> String?
 
-    /// 设置指定对话的 Provider 和 Model
+    /// 为指定对话设置供应商和模型
     func selectProvider(id: String, model: String?, for conversationID: UUID?)
 
     // MARK: - Verbosity
 
-    /// 全局详细程度（单一数据源）
-    ///
-    /// 由 `StateMonitorPlugin` 负责与当前对话的双向同步：
-    /// - 全局变化 → 同步到当前对话
-    /// - 切换对话 → 用新对话的详细程度更新全局
+    /// 全局详细程度（用于未绑定详细程度的对话的默认值）
     var globalVerbosity: LumiResponseVerbosity { get }
 
     /// 设置全局详细程度
-    ///
-    /// 由 `ConversationVerbosityPlugin` 调用，不直接操作某个对话。
     func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity)
+
+    /// 更新指定对话的详细程度
+    func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?)
 
     /// 获取指定对话的详细程度
     func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity
-
-    /// 设置指定对话的详细程度
-    func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?)
 
     // MARK: - Reasoning Effort
 
     /// 获取指定对话的推理强度
     func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort
 
+    /// 获取指定对话的推理强度（可选版本，用于需要区分 nil 状态的场景，如 toggle 模型）。
+    /// - nil 表示思考已关闭
+    /// - 非 nil 表示思考已开启，并指定具体档位
+    func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort?
+
     /// 设置指定对话的推理强度
     func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?)
+
+    /// 清除/关闭指定对话的推理强度（用于 toggle 模型）。
+    func clearReasoningEffort(for conversationID: UUID?)
 
     // MARK: - Automation Level
 
@@ -176,6 +152,8 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     /// 设置指定对话的回复语言
     func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?)
 }
+
+// MARK: - Default Implementations
 
 public extension ConversationManaging {
     var isLoadingConversations: Bool { false }
@@ -244,4 +222,9 @@ public extension ConversationManaging {
 
     /// 默认空实现，测试 mock 无需自行实现即可编译通过
     func markConversationActive(id: UUID, messageDate: Date) {}
+
+    /// 默认实现：返回非可选版本的值（nil 时返回 defaultEffort）
+    func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? {
+        reasoningEffort(for: conversationID)
+    }
 }

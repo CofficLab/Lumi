@@ -70,6 +70,7 @@ private final class CommandServiceObserver: ObservableObject {
     @Published private(set) var toolbarGroups: [CommandMenuGroup] = []
 
     private var pollingTask: Task<Void, Never>?
+    private var lastGroupsSignature: String?
 
     init() {
         startPolling()
@@ -91,10 +92,7 @@ private final class CommandServiceObserver: ObservableObject {
         pollingTask = Task { @MainActor in
             while !Task.isCancelled {
                 updateGroups()
-                if !appMenuGroups.isEmpty {
-                    break
-                }
-                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                try? await Task.sleep(nanoseconds: 250_000_000)
             }
         }
     }
@@ -104,8 +102,13 @@ private final class CommandServiceObserver: ObservableObject {
               let command = kernel.command else {
             return
         }
-        appMenuGroups = command.allCommandGroups.filter { $0.placement == .appMenu }
-        toolbarGroups = command.allCommandGroups.filter { $0.placement == .toolbar }
+        let groups = command.allCommandGroups
+        let signature = commandGroupsSignature(groups)
+        guard lastGroupsSignature != signature else { return }
+
+        lastGroupsSignature = signature
+        appMenuGroups = groups.filter { $0.placement == .appMenu }
+        toolbarGroups = groups.filter { $0.placement == .toolbar }
     }
 }
 
@@ -146,7 +149,7 @@ private final class CommandMenuInstaller {
                 }
 
                 let groups = command.allCommandGroups
-                let signature = self.signature(for: groups)
+                let signature = commandGroupsSignature(groups)
                 if self.lastGroupsSignature != signature {
                     self.rebuild(in: mainMenu, groups: groups)
                     self.lastGroupsSignature = signature
@@ -154,16 +157,6 @@ private final class CommandMenuInstaller {
                 try? await Task.sleep(nanoseconds: 250_000_000)
             }
         }
-    }
-
-    private func signature(for groups: [CommandMenuGroup]) -> String {
-        groups.map { group in
-            let items = group.items.map { item in
-                let stateStr = String(describing: item.state)
-                return "\(item.id)=\(item.title)=\(String(describing: item.shortcut))=\(String(describing: item.modifiers))=\(stateStr)"
-            }.joined(separator: ";")
-            return "\(group.id)=\(group.name)=\(group.placement.rawValue)=[\(items)]"
-        }.joined(separator: "|")
     }
 
     private func rebuild(in mainMenu: NSMenu, groups: [CommandMenuGroup]) {
@@ -204,6 +197,16 @@ private final class CommandMenuInstaller {
             }
         }
     }
+}
+
+private func commandGroupsSignature(_ groups: [CommandMenuGroup]) -> String {
+    groups.map { group in
+        let items = group.items.map { item in
+            let state = String(describing: item.state)
+            return "\(item.id)=\(item.title)=\(String(describing: item.shortcut))=\(String(describing: item.modifiers))=\(state)"
+        }.joined(separator: ";")
+        return "\(group.id)=\(group.name)=\(group.placement.rawValue)=[\(items)]"
+    }.joined(separator: "|")
 }
 
 @MainActor

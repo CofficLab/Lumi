@@ -54,14 +54,21 @@ public final class MiniMaxOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     public func sendStreaming(_ request: LumiLLMRequest, onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void) async throws -> LumiChatMessage {
-        guard let conversationID = request.messages.first?.conversationID else { throw MiniMaxProviderError.invalidRequest("Conversation is empty") }
+        guard let conversationID = request.messages.first?.conversationID else {
+            throw MiniMaxProviderError.invalidRequest("Conversation is empty")
+        }
         let body = try JSONSerialization.data(withJSONObject: MiniMaxRequestBuilder.openAI(request), options: [.sortedKeys])
         let state = MiniMaxMessageState(conversationID: conversationID, providerID: Self.info.id, model: request.model, started: Date())
         try await service.send(apiKey: try lumiResolveAPIKey(), body: body) { event in
-            if let error = event.error { state.setError(error); return false }
+            if let error = event.error {
+                state.setError(error); return false
+            }
             let segments = state.append(event)
             await emitMiniMaxTextSegments(segments, onChunk: onChunk)
-            if event.done { await emitMiniMaxTextSegments(state.finish(), onChunk: onChunk); await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束")); return false }
+            if event.done {
+                await emitMiniMaxTextSegments(state.finish(), onChunk: onChunk)
+                await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束")); return false
+            }
             return true
         }
         // MiniMax may close the SSE stream after the `tool_calls` frame without
@@ -69,8 +76,12 @@ public final class MiniMaxOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         // call in both cases so the agent loop can execute it.
         await emitMiniMaxTextSegments(state.finish(), onChunk: onChunk)
         let message = state.message()
-        if let error = message.rawErrorDetail { throw MiniMaxProviderError.api(statusCode: nil, message: error) }
-        if message.content.isEmpty && (message.toolCalls?.isEmpty ?? true) { throw MiniMaxProviderError.invalidResponse("MiniMax returned an empty response") }
+        if let error = message.rawErrorDetail {
+            throw MiniMaxProviderError.api(statusCode: nil, message: error)
+        }
+        if message.content.isEmpty && (message.toolCalls?.isEmpty ?? true) {
+            throw MiniMaxProviderError.invalidResponse("MiniMax returned an empty response")
+        }
         return message
     }
 
@@ -83,8 +94,12 @@ public final class MiniMaxOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
     }
 
     public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
-        if case LumiLLMProviderSupportError.missingAPIKey = error { return .nonRetryable }
-        if let status = LumiLLMHTTPErrorParsing.statusCode(from: error), [400, 401, 403].contains(status) { return .nonRetryable }
+        if case LumiLLMProviderSupportError.missingAPIKey = error {
+            return .nonRetryable
+        }
+        if let status = LumiLLMHTTPErrorParsing.statusCode(from: error), [400, 401, 403].contains(status) {
+            return .nonRetryable
+        }
         return (error as? MiniMaxProviderError)?.llmErrorDisposition ?? (context.attempt < context.maxAttempts ? .retryable() : .nonRetryable)
     }
 

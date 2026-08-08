@@ -468,7 +468,8 @@ public actor ConversationStore: SuperLog {
     func updateConversationPreferences(
         id: UUID,
         verbosity: LumiResponseVerbosity? = nil,
-        reasoningEffort: LumiReasoningEffort? = nil
+        reasoningEffort: LumiReasoningEffort? = nil,
+        setReasoningEffortToNil: Bool = false
     ) -> Bool {
         let context = ModelContext(container)
         let idString = id.uuidString
@@ -486,6 +487,9 @@ public actor ConversationStore: SuperLog {
         }
         if let reasoningEffort {
             model.reasoningEffortRaw = reasoningEffort.rawValue
+        }
+        if setReasoningEffortToNil {
+            model.reasoningEffortRaw = nil
         }
         model.updatedAt = Date().timeIntervalSince1970
         return save(context, operation: "更新对话偏好")
