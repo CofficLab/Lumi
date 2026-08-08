@@ -6,7 +6,12 @@ import SuperLogKit
 extension FinderSync {
     // MARK: - Actions
 
-    @IBAction func openInVSCode(_ sender: AnyObject?) {
+    @IBAction nonisolated func openInVSCode(_ sender: AnyObject?) {
+        performSelector(onMainThread: #selector(performOpenInVSCode(_:)), with: sender, waitUntilDone: false)
+    }
+
+    @objc @MainActor
+    private func performOpenInVSCode(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
                 FinderSync.logger.info("\(self.t)触发「在 VS Code 中打开」操作")
@@ -51,7 +56,12 @@ extension FinderSync {
         openURLs(urlsToOpen, withAppBundleIdentifier: "com.microsoft.VSCode")
     }
 
-    @IBAction func openInTerminal(_ sender: AnyObject?) {
+    @IBAction nonisolated func openInTerminal(_ sender: AnyObject?) {
+        performSelector(onMainThread: #selector(performOpenInTerminal(_:)), with: sender, waitUntilDone: false)
+    }
+
+    @objc @MainActor
+    private func performOpenInTerminal(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
                 FinderSync.logger.info("\(self.t)触发「在终端中打开」操作")
@@ -128,10 +138,20 @@ extension FinderSync {
                 FinderSync.logger.info("\(self.t)创建文件 - 名称: \(template.name), 扩展名: \(template.extensionName)")
             }
         }
-        createNewFile(extension: template.extensionName, content: template.content, namePrefix: template.name)
+        createNewFile(
+            extension: template.extensionName,
+            content: template.content,
+            namePrefix: template.name,
+            targetURL: cachedNewFileTargetURL
+        )
     }
 
-    @IBAction func copyPath(_ sender: AnyObject?) {
+    @IBAction nonisolated func copyPath(_ sender: AnyObject?) {
+        performSelector(onMainThread: #selector(performCopyPath(_:)), with: sender, waitUntilDone: false)
+    }
+
+    @objc @MainActor
+    private func performCopyPath(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
                 FinderSync.logger.info("\(self.t)触发「复制路径」操作")
@@ -163,7 +183,12 @@ extension FinderSync {
         pasteboard.setString(stringToCopy, forType: .string)
     }
 
-    @IBAction func deleteFile(_ sender: AnyObject?) {
+    @IBAction nonisolated func deleteFile(_ sender: AnyObject?) {
+        performSelector(onMainThread: #selector(performDeleteFile(_:)), with: sender, waitUntilDone: false)
+    }
+
+    @objc @MainActor
+    private func performDeleteFile(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
                 FinderSync.logger.info("\(self.t)触发「删除文件」操作")
@@ -210,7 +235,12 @@ extension FinderSync {
         }
     }
 
-    @IBAction func hideFile(_ sender: AnyObject?) {
+    @IBAction nonisolated func hideFile(_ sender: AnyObject?) {
+        performSelector(onMainThread: #selector(performHideFile(_:)), with: sender, waitUntilDone: false)
+    }
+
+    @objc @MainActor
+    private func performHideFile(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
                 FinderSync.logger.info("\(self.t)触发「隐藏文件」操作")
@@ -246,7 +276,12 @@ extension FinderSync {
         }
     }
 
-    @IBAction func showHiddenFiles(_ sender: AnyObject?) {
+    @IBAction nonisolated func showHiddenFiles(_ sender: AnyObject?) {
+        performSelector(onMainThread: #selector(performShowHiddenFiles(_:)), with: sender, waitUntilDone: false)
+    }
+
+    @objc @MainActor
+    private func performShowHiddenFiles(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
                 FinderSync.logger.info("\(self.t)触发「显示隐藏文件」操作")
@@ -300,7 +335,12 @@ extension FinderSync {
         }
     }
 
-    @IBAction func listHiddenFiles(_ sender: AnyObject?) {
+    @IBAction nonisolated func listHiddenFiles(_ sender: AnyObject?) {
+        performSelector(onMainThread: #selector(performListHiddenFiles(_:)), with: sender, waitUntilDone: false)
+    }
+
+    @objc @MainActor
+    private func performListHiddenFiles(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
                 FinderSync.logger.info("\(self.t)触发「列出隐藏文件」操作")

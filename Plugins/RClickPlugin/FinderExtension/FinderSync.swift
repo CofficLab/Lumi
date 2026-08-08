@@ -16,6 +16,9 @@ class FinderSync: FIFinderSync, SuperLog {
     /// 缓存模板列表，用于通过 tag 索引（representedObject 在 Extension 中不可靠）
     var cachedTemplates: [NewFileTemplate] = []
 
+    /// Finder 菜单 action 回调时当前目录可能已经无法再次从控制器取得，提前缓存菜单对应目录。
+    var cachedNewFileTargetURL: URL?
+
     private enum ConfigLoadReason: String {
         case configNotFound = "config_not_found"
         case decodeFailed = "decode_failed"
@@ -59,6 +62,7 @@ class FinderSync: FIFinderSync, SuperLog {
     }
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu {
+        cachedNewFileTargetURL = getCurrentDirectoryURL()
         if Self.verbose {
             if FinderSync.verbose {
                             FinderSync.logger.info("\(self.t)菜单调用，类型: \(menuKind.rawValue)")
@@ -292,8 +296,8 @@ class FinderSync: FIFinderSync, SuperLog {
         }
     }
 
-    func createNewFile(extension ext: String, content: String, namePrefix: String) {
-        guard let target = getCurrentDirectoryURL() else {
+    func createNewFile(extension ext: String, content: String, namePrefix: String, targetURL: URL? = nil) {
+        guard let target = targetURL ?? cachedNewFileTargetURL ?? getCurrentDirectoryURL() else {
             if Self.verbose {
                 if FinderSync.verbose {
                                     FinderSync.logger.warning("\(self.t)创建文件失败 - 没有目标目录")
