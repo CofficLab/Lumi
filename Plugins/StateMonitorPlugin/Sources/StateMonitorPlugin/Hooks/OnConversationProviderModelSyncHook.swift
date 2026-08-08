@@ -46,6 +46,7 @@ final class OnConversationProviderModelSyncHook: SuperLog {
 
     private weak var kernel: LumiKernel?
     private var cancellable: AnyCancellable?
+    private var startupRestoreTask: Task<Void, Never>?
     private var lastObservedConversationID: UUID?
 
     // MARK: - Lifecycle
@@ -77,6 +78,36 @@ final class OnConversationProviderModelSyncHook: SuperLog {
                 self?.handleSelectionChange()
             }
 
+        // Startup may have no selected conversation. Restore the global
+        // provider/model from the most recently active conversation after the
+        // conversation cache has finished loading.
+        startupRestoreTask = Task { @MainActor [weak self, weak kernel] in
+            guard let self, let kernel,
+                  let conversations = kernel.conversations,
+                  let llmProvider = kernel.llmProvider
+            else { return }
+
+            while conversations.isLoadingConversations {
+                if Task.isCancelled { return }
+                try? await Task.sleep(nanoseconds: 50_000_000)
+            }
+
+            guard !Task.isCancelled,
+                  let lastConversation = conversations.sortedConversations.first,
+                  let providerID = lastConversation.providerID,
+                  !providerID.isEmpty
+            else { return }
+
+            llmProvider.selectProvider(id: providerID)
+            if let modelName = lastConversation.modelName, !modelName.isEmpty {
+                llmProvider.selectModel(providerID: providerID, model: modelName)
+            }
+
+            if Self.verbose {
+                Self.logger.info("\(Self.t)✅ Restored global provider/model from last conversation \(lastConversation.id.uuidString.prefix(8)): \(providerID)/\(lastConversation.modelName ?? "<nil>")")
+            }
+        }
+
         if Self.verbose {
             Self.logger.info("\(Self.t)attached to conversations service, initial selectedID=\(self.lastObservedConversationID?.uuidString.prefix(8) ?? "<nil>")")
         }
@@ -90,6 +121,8 @@ final class OnConversationProviderModelSyncHook: SuperLog {
     func detach() {
         cancellable?.cancel()
         cancellable = nil
+        startupRestoreTask?.cancel()
+        startupRestoreTask = nil
         lastObservedConversationID = nil
         kernel = nil
     }
