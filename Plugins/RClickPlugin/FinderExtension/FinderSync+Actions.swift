@@ -17,21 +17,16 @@ extension FinderSync {
                 FinderSync.logger.info("\(self.t)触发「在 VS Code 中打开」操作")
             }
         }
-        guard let items = getSelectedURLs() else {
-            if Self.verbose {
-                if FinderSync.verbose {
-                    FinderSync.logger.warning("\(self.t)未获取到选中项")
-                }
-            }
-            return
-        }
+        let items = cachedSelectedURLs.isEmpty ? (getSelectedURLs() ?? []) : cachedSelectedURLs
         if Self.verbose {
             if FinderSync.verbose {
                 FinderSync.logger.info("\(self.t)选中项数量: \(items.count)")
             }
         }
 
-        let urlsToOpen = items.isEmpty ? [getCurrentDirectoryURL()].compactMap { $0 } : items
+        let urlsToOpen = items.isEmpty
+            ? [cachedNewFileTargetURL ?? getCurrentDirectoryURL()].compactMap { $0 }
+            : items
 
         guard !urlsToOpen.isEmpty else {
             if Self.verbose {
@@ -67,7 +62,7 @@ extension FinderSync {
                 FinderSync.logger.info("\(self.t)触发「在终端中打开」操作")
             }
         }
-        let items = getSelectedURLs() ?? []
+        let items = cachedSelectedURLs.isEmpty ? (getSelectedURLs() ?? []) : cachedSelectedURLs
         let folders = items.filter { isDirectory($0) }
 
         if Self.verbose {
@@ -78,7 +73,7 @@ extension FinderSync {
 
         if !folders.isEmpty {
             openURLs(folders, withAppBundleIdentifier: "com.apple.Terminal")
-        } else if let target = getCurrentDirectoryURL() {
+        } else if let target = cachedNewFileTargetURL ?? getCurrentDirectoryURL() {
             if Self.verbose {
                 if FinderSync.verbose {
                     FinderSync.logger.info("\(self.t)打开当前目录: \(target.path)")
@@ -157,8 +152,10 @@ extension FinderSync {
                 FinderSync.logger.info("\(self.t)触发「复制路径」操作")
             }
         }
-        let items = getSelectedURLs() ?? []
-        let urlsToCopy = items.isEmpty ? [getCurrentDirectoryURL()].compactMap { $0 } : items
+        let items = cachedSelectedURLs.isEmpty ? (getSelectedURLs() ?? []) : cachedSelectedURLs
+        let urlsToCopy = items.isEmpty
+            ? [cachedNewFileTargetURL ?? getCurrentDirectoryURL()].compactMap { $0 }
+            : items
 
         guard !urlsToCopy.isEmpty else {
             if Self.verbose {

@@ -368,6 +368,20 @@ class FinderSync: FIFinderSync, SuperLog {
             return normalized
         }
 
+        let defaultItems = [
+            RClickMenuItem(id: "default-open-vscode", type: .openInVSCode, isEnabled: true),
+            RClickMenuItem(id: "default-open-terminal", type: .openInTerminal, isEnabled: true),
+            RClickMenuItem(id: "default-copy-path", type: .copyPath, isEnabled: true),
+            RClickMenuItem(id: "default-new-file", type: .newFile, isEnabled: true),
+            RClickMenuItem(id: "default-delete", type: .deleteFile, isEnabled: false),
+            RClickMenuItem(id: "default-hide", type: .hideFile, isEnabled: false),
+            RClickMenuItem(id: "default-unhide", type: .unhideFile, isEnabled: false),
+            RClickMenuItem(id: "default-show-hidden", type: .showHiddenFiles, isEnabled: false),
+            RClickMenuItem(id: "default-hide-hidden", type: .hideHiddenFiles, isEnabled: false)
+        ]
+        let existingTypes = Set(items.map(\.type))
+        let completedItems = items + defaultItems.filter { !existingTypes.contains($0.type) }
+
         let templates: [NewFileTemplate]? = config.fileTemplates?.compactMap { template in
             guard template.isEnabled else { return template }
 
@@ -381,7 +395,7 @@ class FinderSync: FIFinderSync, SuperLog {
             return normalized
         }
 
-        return RClickConfig(items: items, fileTemplates: templates)
+        return RClickConfig(items: completedItems, fileTemplates: templates)
     }
 
     private func defaultTemplates() -> [NewFileTemplate] {
@@ -397,7 +411,12 @@ class FinderSync: FIFinderSync, SuperLog {
                 RClickMenuItem(id: "1", type: .openInVSCode, isEnabled: true),
                 RClickMenuItem(id: "2", type: .openInTerminal, isEnabled: true),
                 RClickMenuItem(id: "3", type: .copyPath, isEnabled: true),
-                RClickMenuItem(id: "4", type: .newFile, isEnabled: true)
+                RClickMenuItem(id: "4", type: .newFile, isEnabled: true),
+                RClickMenuItem(id: "5", type: .deleteFile, isEnabled: false),
+                RClickMenuItem(id: "6", type: .hideFile, isEnabled: false),
+                RClickMenuItem(id: "7", type: .unhideFile, isEnabled: false),
+                RClickMenuItem(id: "8", type: .showHiddenFiles, isEnabled: false),
+                RClickMenuItem(id: "9", type: .hideHiddenFiles, isEnabled: false)
             ],
             fileTemplates: defaultTemplates()
         )
