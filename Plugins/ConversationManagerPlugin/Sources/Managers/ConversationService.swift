@@ -255,6 +255,24 @@ public final class ConversationService: ConversationManaging {
         try? saveConversations()
     }
 
+    public func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? {
+        guard let conversationID else {
+            return nil
+        }
+        return conversations.first { $0.id == conversationID }?.reasoningEffort
+    }
+
+    public func clearReasoningEffort(for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].reasoningEffort = nil
+        try? saveConversations()
+    }
+
     // MARK: - Automation Level
 
     public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {

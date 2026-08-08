@@ -532,6 +532,33 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
+    public func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? {
+        guard let conversationID else {
+            return nil
+        }
+        return conversations.first { $0.id == conversationID }?.reasoningEffort
+    }
+
+    public func clearReasoningEffort(for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].reasoningEffort = nil
+        conversations = conversations
+        notifyConversationsChanged()
+
+        Task {
+            await store?.updateConversationPreferences(id: conversationID, setReasoningEffortToNil: true)
+        }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)clearReasoningEffort: conversation=\(conversationID.uuidString.prefix(8))")
+        }
+    }
+
     // MARK: - Automation Level
 
     public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {
