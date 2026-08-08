@@ -81,12 +81,20 @@ struct ConversationReasoningActionBarButton: View {
 
     /// 多档模型：当前选中的档位（用于下拉按钮显示）。
     private var persistedEffort: LumiReasoningEffort {
-        conversations?.reasoningEffort(for: selectedConversationID) ?? .defaultEffort
+        guard let conversations else { return .defaultEffort }
+        if let selectedConversationID {
+            return conversations.reasoningEffort(for: selectedConversationID)
+        }
+        return conversations.globalReasoningEffort ?? .defaultEffort
     }
 
     /// Toggle 模型专用：获取当前思考启用状态。
     private var persistedIsThinkingEnabled: Bool {
-        conversations?.reasoningEffortOptional(for: selectedConversationID) != nil
+        guard let conversations else { return false }
+        if let selectedConversationID {
+            return conversations.reasoningEffortOptional(for: selectedConversationID) != nil
+        }
+        return conversations.globalReasoningEffort != nil
     }
 
     var body: some View {
@@ -154,7 +162,11 @@ struct ConversationReasoningActionBarButton: View {
     /// 选择推理档位（非 nil 值，用于多档模型）
     private func selectEffort(_ effort: LumiReasoningEffort) {
         localEffort = effort
-        conversations?.setReasoningEffort(effort, for: selectedConversationID)
+        guard let conversations else { return }
+        if let conversationID = conversations.selectedConversationID {
+            conversations.setReasoningEffort(effort, for: conversationID)
+        }
+        conversations.setGlobalReasoningEffort(effort)
     }
 
     private func selectOption(_ option: ConversationReasoningOption) {
@@ -172,7 +184,11 @@ struct ConversationReasoningActionBarButton: View {
     /// 清除/关闭推理（用于 toggle 模型关闭时）
     private func clearEffort() {
         localIsThinkingEnabled = false
-        conversations?.clearReasoningEffort(for: selectedConversationID)
+        guard let conversations else { return }
+        if let conversationID = conversations.selectedConversationID {
+            conversations.clearReasoningEffort(for: conversationID)
+        }
+        conversations.setGlobalReasoningEffort(nil)
     }
 
     private func syncFromConversation() {
