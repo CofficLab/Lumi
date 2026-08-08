@@ -4,26 +4,25 @@ import os
 import SuperLogKit
 
 extension FinderSync {
-    
     // MARK: - Actions
 
     @IBAction func openInVSCode(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)触发「在 VS Code 中打开」操作")
+                FinderSync.logger.info("\(self.t)触发「在 VS Code 中打开」操作")
             }
         }
         guard let items = getSelectedURLs() else {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)未获取到选中项")
+                    FinderSync.logger.warning("\(self.t)未获取到选中项")
                 }
             }
             return
         }
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)选中项数量: \(items.count)")
+                FinderSync.logger.info("\(self.t)选中项数量: \(items.count)")
             }
         }
 
@@ -32,7 +31,7 @@ extension FinderSync {
         guard !urlsToOpen.isEmpty else {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)没有可打开的目标路径")
+                    FinderSync.logger.warning("\(self.t)没有可打开的目标路径")
                 }
             }
             return
@@ -40,12 +39,12 @@ extension FinderSync {
 
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)待打开 URL 数量: \(urlsToOpen.count)")
+                FinderSync.logger.info("\(self.t)待打开 URL 数量: \(urlsToOpen.count)")
             }
         }
         if Self.verbose, let first = urlsToOpen.first {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)首个 URL 路径: \(first.path)")
+                FinderSync.logger.info("\(self.t)首个 URL 路径: \(first.path)")
             }
         }
 
@@ -55,7 +54,7 @@ extension FinderSync {
     @IBAction func openInTerminal(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)触发「在终端中打开」操作")
+                FinderSync.logger.info("\(self.t)触发「在终端中打开」操作")
             }
         }
         let items = getSelectedURLs() ?? []
@@ -63,7 +62,7 @@ extension FinderSync {
 
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)选中项: \(items.count)，文件夹: \(folders.count)")
+                FinderSync.logger.info("\(self.t)选中项: \(items.count)，文件夹: \(folders.count)")
             }
         }
 
@@ -72,14 +71,14 @@ extension FinderSync {
         } else if let target = getCurrentDirectoryURL() {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.info("\(self.t)打开当前目录: \(target.path)")
+                    FinderSync.logger.info("\(self.t)打开当前目录: \(target.path)")
                 }
             }
             openURLs([target], withAppBundleIdentifier: "com.apple.Terminal")
         } else {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)未找到目标目录")
+                    FinderSync.logger.warning("\(self.t)未找到目标目录")
                 }
             }
         }
@@ -100,13 +99,13 @@ extension FinderSync {
     private func performCreateNewFileFromTemplate(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)触发「从模板新建文件」操作")
-                        }
+                FinderSync.logger.info("\(self.t)触发「从模板新建文件」操作")
+            }
         }
         guard let item = sender as? NSMenuItem else {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)sender 不是 NSMenuItem 类型")
+                    FinderSync.logger.warning("\(self.t)sender 不是 NSMenuItem 类型")
                 }
             }
             return
@@ -116,7 +115,7 @@ extension FinderSync {
         guard index >= 0, index < cachedTemplates.count else {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)模板索引无效: \(index)，缓存数量: \(self.cachedTemplates.count)")
+                    FinderSync.logger.warning("\(self.t)模板索引无效: \(index)，缓存数量: \(self.cachedTemplates.count)")
                 }
             }
             return
@@ -126,7 +125,7 @@ extension FinderSync {
 
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)创建文件 - 名称: \(template.name), 扩展名: \(template.extensionName)")
+                FinderSync.logger.info("\(self.t)创建文件 - 名称: \(template.name), 扩展名: \(template.extensionName)")
             }
         }
         createNewFile(extension: template.extensionName, content: template.content, namePrefix: template.name)
@@ -135,7 +134,7 @@ extension FinderSync {
     @IBAction func copyPath(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)触发「复制路径」操作")
+                FinderSync.logger.info("\(self.t)触发「复制路径」操作")
             }
         }
         let items = getSelectedURLs() ?? []
@@ -144,7 +143,7 @@ extension FinderSync {
         guard !urlsToCopy.isEmpty else {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)没有可复制的 URL")
+                    FinderSync.logger.warning("\(self.t)没有可复制的 URL")
                 }
             }
             return
@@ -155,7 +154,7 @@ extension FinderSync {
 
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)复制到剪贴板: \(stringToCopy)")
+                FinderSync.logger.info("\(self.t)复制到剪贴板: \(stringToCopy)")
             }
         }
 
@@ -167,13 +166,13 @@ extension FinderSync {
     @IBAction func deleteFile(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)触发「删除文件」操作")
+                FinderSync.logger.info("\(self.t)触发「删除文件」操作")
             }
         }
         guard let items = getSelectedURLs(), !items.isEmpty else {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)没有选中要删除的项")
+                    FinderSync.logger.warning("\(self.t)没有选中要删除的项")
                 }
             }
             return
@@ -198,13 +197,13 @@ extension FinderSync {
                 try FileManager.default.trashItem(at: url, resultingItemURL: nil)
                 if Self.verbose {
                     if FinderSync.verbose {
-                                            FinderSync.logger.info("\(self.t)已移至废纸篓: \(url.path)")
+                        FinderSync.logger.info("\(self.t)已移至废纸篓: \(url.path)")
                     }
                 }
             } catch {
                 if Self.verbose {
                     if FinderSync.verbose {
-                                            FinderSync.logger.error("\(self.t)移至废纸篓失败: \(url.path)，错误: \(error.localizedDescription)")
+                        FinderSync.logger.error("\(self.t)移至废纸篓失败: \(url.path)，错误: \(error.localizedDescription)")
                     }
                 }
             }
@@ -214,13 +213,13 @@ extension FinderSync {
     @IBAction func hideFile(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)触发「隐藏文件」操作")
+                FinderSync.logger.info("\(self.t)触发「隐藏文件」操作")
             }
         }
         guard let items = getSelectedURLs(), !items.isEmpty else {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)没有选中要隐藏的项")
+                    FinderSync.logger.warning("\(self.t)没有选中要隐藏的项")
                 }
             }
             return
@@ -234,13 +233,13 @@ extension FinderSync {
                 try mutableURL.setResourceValues(resourceValues)
                 if Self.verbose {
                     if FinderSync.verbose {
-                                            FinderSync.logger.info("\(self.t)已隐藏: \(url.path)")
+                        FinderSync.logger.info("\(self.t)已隐藏: \(url.path)")
                     }
                 }
             } catch {
                 if Self.verbose {
                     if FinderSync.verbose {
-                                            FinderSync.logger.error("\(self.t)隐藏失败: \(url.path)，错误: \(error.localizedDescription)")
+                        FinderSync.logger.error("\(self.t)隐藏失败: \(url.path)，错误: \(error.localizedDescription)")
                     }
                 }
             }
@@ -250,13 +249,13 @@ extension FinderSync {
     @IBAction func showHiddenFiles(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)触发「显示隐藏文件」操作")
+                FinderSync.logger.info("\(self.t)触发「显示隐藏文件」操作")
             }
         }
         guard let currentDir = getCurrentDirectoryURL() else {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)未获取到当前目录")
+                    FinderSync.logger.warning("\(self.t)未获取到当前目录")
                 }
             }
             return
@@ -281,7 +280,7 @@ extension FinderSync {
                 } catch {
                     if Self.verbose {
                         if FinderSync.verbose {
-                                                    FinderSync.logger.error("\(self.t)取消隐藏失败: \(url.path)，错误: \(error.localizedDescription)")
+                            FinderSync.logger.error("\(self.t)取消隐藏失败: \(url.path)，错误: \(error.localizedDescription)")
                         }
                     }
                 }
@@ -289,13 +288,13 @@ extension FinderSync {
 
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.info("\(self.t)成功取消隐藏 \(revealedCount) 个以 . 开头的项目")
+                    FinderSync.logger.info("\(self.t)成功取消隐藏 \(revealedCount) 个以 . 开头的项目")
                 }
             }
         } catch {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.error("\(self.t)读取目录失败: \(currentDir.path)，错误: \(error.localizedDescription)")
+                    FinderSync.logger.error("\(self.t)读取目录失败: \(currentDir.path)，错误: \(error.localizedDescription)")
                 }
             }
         }
@@ -304,13 +303,13 @@ extension FinderSync {
     @IBAction func listHiddenFiles(_ sender: AnyObject?) {
         if Self.verbose {
             if FinderSync.verbose {
-                            FinderSync.logger.info("\(self.t)触发「列出隐藏文件」操作")
+                FinderSync.logger.info("\(self.t)触发「列出隐藏文件」操作")
             }
         }
         guard let currentDir = getCurrentDirectoryURL() else {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.warning("\(self.t)未获取到当前目录")
+                    FinderSync.logger.warning("\(self.t)未获取到当前目录")
                 }
             }
             return
@@ -329,7 +328,7 @@ extension FinderSync {
 
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.info("\(self.t)在当前目录中找到 \(hiddenItems.count) 个隐藏文件")
+                    FinderSync.logger.info("\(self.t)在当前目录中找到 \(hiddenItems.count) 个隐藏文件")
                 }
             }
 
@@ -355,7 +354,7 @@ extension FinderSync {
         } catch {
             if Self.verbose {
                 if FinderSync.verbose {
-                                    FinderSync.logger.error("\(self.t)读取目录失败: \(currentDir.path)，错误: \(error.localizedDescription)")
+                    FinderSync.logger.error("\(self.t)读取目录失败: \(currentDir.path)，错误: \(error.localizedDescription)")
                 }
             }
 
