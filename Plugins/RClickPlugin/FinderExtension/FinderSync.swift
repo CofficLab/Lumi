@@ -16,6 +16,10 @@ class FinderSync: FIFinderSync, SuperLog {
     /// 缓存模板列表，用于通过 tag 索引（representedObject 在 Extension 中不可靠）
     var cachedTemplates: [NewFileTemplate] = []
 
+    /// Finder 菜单 action 回调时当前目录可能已经无法再次从控制器取得，提前缓存菜单对应目录。
+    var cachedNewFileTargetURL: URL?
+    var cachedSelectedURLs: [URL] = []
+
     private enum ConfigLoadReason: String {
         case configNotFound = "config_not_found"
         case decodeFailed = "decode_failed"
@@ -59,6 +63,8 @@ class FinderSync: FIFinderSync, SuperLog {
     }
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu {
+        cachedNewFileTargetURL = getCurrentDirectoryURL()
+        cachedSelectedURLs = getSelectedURLs() ?? []
         if Self.verbose {
             if FinderSync.verbose {
                             FinderSync.logger.info("\(self.t)菜单调用，类型: \(menuKind.rawValue)")
@@ -165,16 +171,22 @@ class FinderSync: FIFinderSync, SuperLog {
                     hideItem.image = menuIcon("eye.slash")
                 }
 
+            case .unhideFile:
+                let unhideItem = menu.addItem(withTitle: item.customTitle ?? "取消隐藏文件", action: #selector(unhideFile(_:)), keyEquivalent: "")
+                if showIcons {
+                    unhideItem.image = menuIcon("eye")
+                }
+
             case .showHiddenFiles:
                 let showHiddenFilesItem = menu.addItem(withTitle: item.customTitle ?? "显示隐藏文件", action: #selector(showHiddenFiles(_:)), keyEquivalent: "")
                 if showIcons {
                     showHiddenFilesItem.image = menuIcon("eye")
                 }
 
-            case .listHiddenFiles:
-                let listHiddenFilesItem = menu.addItem(withTitle: item.customTitle ?? "列出隐藏文件", action: #selector(listHiddenFiles(_:)), keyEquivalent: "")
+            case .hideHiddenFiles:
+                let hideHiddenFilesItem = menu.addItem(withTitle: item.customTitle ?? "不显示隐藏文件", action: #selector(hideHiddenFiles(_:)), keyEquivalent: "")
                 if showIcons {
-                    listHiddenFilesItem.image = menuIcon("list.bullet")
+                    hideHiddenFilesItem.image = menuIcon("eye.slash")
                 }
             }
         }
@@ -292,8 +304,8 @@ class FinderSync: FIFinderSync, SuperLog {
         }
     }
 
-    func createNewFile(extension ext: String, content: String, namePrefix: String) {
-        guard let target = getCurrentDirectoryURL() else {
+    func createNewFile(extension ext: String, content: String, namePrefix: String, targetURL: URL? = nil) {
+        guard let target = targetURL ?? cachedNewFileTargetURL ?? getCurrentDirectoryURL() else {
             if Self.verbose {
                 if FinderSync.verbose {
                                     FinderSync.logger.warning("\(self.t)创建文件失败 - 没有目标目录")
@@ -356,6 +368,20 @@ class FinderSync: FIFinderSync, SuperLog {
             return normalized
         }
 
+        let defaultItems = [
+            RClickMenuItem(id: "default-open-vscode", type: .openInVSCode, isEnabled: true),
+            RClickMenuItem(id: "default-open-terminal", type: .openInTerminal, isEnabled: true),
+            RClickMenuItem(id: "default-copy-path", type: .copyPath, isEnabled: true),
+            RClickMenuItem(id: "default-new-file", type: .newFile, isEnabled: true),
+            RClickMenuItem(id: "default-delete", type: .deleteFile, isEnabled: false),
+            RClickMenuItem(id: "default-hide", type: .hideFile, isEnabled: false),
+            RClickMenuItem(id: "default-unhide", type: .unhideFile, isEnabled: false),
+            RClickMenuItem(id: "default-show-hidden", type: .showHiddenFiles, isEnabled: false),
+            RClickMenuItem(id: "default-hide-hidden", type: .hideHiddenFiles, isEnabled: false)
+        ]
+        let existingTypes = Set(items.map(\.type))
+        let completedItems = items + defaultItems.filter { !existingTypes.contains($0.type) }
+
         let templates: [NewFileTemplate]? = config.fileTemplates?.compactMap { template in
             guard template.isEnabled else { return template }
 
@@ -369,7 +395,7 @@ class FinderSync: FIFinderSync, SuperLog {
             return normalized
         }
 
-        return RClickConfig(items: items, fileTemplates: templates)
+        return RClickConfig(items: completedItems, fileTemplates: templates)
     }
 
     private func defaultTemplates() -> [NewFileTemplate] {
@@ -385,7 +411,12 @@ class FinderSync: FIFinderSync, SuperLog {
                 RClickMenuItem(id: "1", type: .openInVSCode, isEnabled: true),
                 RClickMenuItem(id: "2", type: .openInTerminal, isEnabled: true),
                 RClickMenuItem(id: "3", type: .copyPath, isEnabled: true),
-                RClickMenuItem(id: "4", type: .newFile, isEnabled: true)
+                RClickMenuItem(id: "4", type: .newFile, isEnabled: true),
+                RClickMenuItem(id: "5", type: .deleteFile, isEnabled: false),
+                RClickMenuItem(id: "6", type: .hideFile, isEnabled: false),
+                RClickMenuItem(id: "7", type: .unhideFile, isEnabled: false),
+                RClickMenuItem(id: "8", type: .showHiddenFiles, isEnabled: false),
+                RClickMenuItem(id: "9", type: .hideHiddenFiles, isEnabled: false)
             ],
             fileTemplates: defaultTemplates()
         )

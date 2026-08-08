@@ -3,12 +3,16 @@ import SwiftUI
 
 struct LanguagePopover: View {
     let selectedLanguage: LumiConversationLanguage
+    /// 当前操作对象是否为某个对话（true）还是全局设置（false）
+    let isConversationScope: Bool
     let onSelect: (LumiConversationLanguage) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(LumiPluginLocalization.string("Response Language", bundle: .module))
-                .font(.system(size: 13, weight: .semibold))
+            Text(isConversationScope
+                 ? LumiPluginLocalization.string("Conversation Language", bundle: .module)
+                 : LumiPluginLocalization.string("Global Language", bundle: .module))
+                .font(.system(size: 12, weight: .semibold))
 
             ForEach(LumiConversationLanguage.allCases) { language in
                 Button {
@@ -20,6 +24,6 @@ struct LanguagePopover: View {
             }
         }
         .padding(10)
-        .frame(width: 220)
+        .frame(width: 280)
     }
 }

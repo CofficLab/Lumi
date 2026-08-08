@@ -2,6 +2,12 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
+/// Controls whether native split-divider changes are forwarded to the kernel.
+/// Keep disabled while comparing the UI-only behavior with kernel synchronization.
+enum LayoutDividerSyncConfiguration {
+    static let syncChangesToKernel = true
+}
+
 /// 应用主布局
 struct AppLayoutView: View {
     @LumiTheme private var theme
@@ -83,14 +89,20 @@ struct AppLayoutView: View {
 
     @ViewBuilder
     private func splitLayout(_ layoutManager: any WorkspaceProviding) -> some View {
+        let containerID = layoutManager.activeViewContainerID ?? ""
+        let railWidth = layoutManager.railDivider(for: containerID, fallback: 240)
         if showRail(for: layoutManager) {
             HSplitView {
                 RailView(kernel: kernel)
-                    .frame(minWidth: 180, idealWidth: 240, maxWidth: 400)
+                    .frame(minWidth: 180, idealWidth: railWidth, maxWidth: 400)
                     // 必须挂在 HSplitView 左侧 pane，组件会直接识别原生可拖拽 divider。
-                    .appSplitDivider(.trailing)
+                    .appSplitDivider(.trailing, initialPosition: railWidth) { position in
+                        guard LayoutDividerSyncConfiguration.syncChangesToKernel else { return }
+                        layoutManager.setRailDivider(position, for: containerID)
+                    }
                 mainSplitContent(layoutManager)
             }
+            .id("host.rail.\(containerID)")
         } else {
             mainSplitContent(layoutManager)
         }
@@ -98,14 +110,28 @@ struct AppLayoutView: View {
 
     @ViewBuilder
     private func mainSplitContent(_ layoutManager: any WorkspaceProviding) -> some View {
+        let containerID = layoutManager.activeViewContainerID ?? ""
+        let panelWidth = layoutManager.chatSectionDivider(
+            for: containerID,
+            layout: .narrow,
+            fallback: 320
+        )
         if showChat(for: layoutManager) {
             HSplitView {
                 PanelView(kernel: kernel, layoutManager: layoutManager)
-                    .frame(minWidth: 280, maxWidth: .infinity)
-                    .appSplitDivider(.trailing)
+                    .frame(minWidth: 280, idealWidth: panelWidth, maxWidth: .infinity)
+                    .appSplitDivider(.trailing, initialPosition: panelWidth) { position in
+                        guard LayoutDividerSyncConfiguration.syncChangesToKernel else { return }
+                        layoutManager.setChatSectionDivider(
+                            position,
+                            for: containerID,
+                            layout: .narrow
+                        )
+                    }
                 ChatView(kernel: kernel)
                     .frame(minWidth: 280, idealWidth: 320, maxWidth: .infinity)
             }
+            .id("host.chat.\(containerID)")
         } else {
             PanelView(kernel: kernel, layoutManager: layoutManager)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

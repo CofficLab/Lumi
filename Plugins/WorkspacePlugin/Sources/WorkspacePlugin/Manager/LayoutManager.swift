@@ -21,7 +21,7 @@ import SwiftUI
 public final class LayoutManager: WorkspaceProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout.service")
     nonisolated public static let emoji = "📐"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // MARK: - Persistence
 
@@ -233,9 +233,12 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
 
     public static let defaultBottomTabID = "editor-bottom-problems"
 
-    @Published private var railDividers: [String: CGFloat] = [:]
-    @Published private var chatSectionDividers: [String: CGFloat] = [:]
-    @Published private var bottomPanelDividers: [String: CGFloat] = [:]
+    // Divider positions are written during native NSSplitView drags. They must not be
+    // @Published: publishing every drag tick rebuilds the SwiftUI split tree and fights
+    // NSSplitView's native resize operation.
+    private var railDividers: [String: CGFloat] = [:]
+    private var chatSectionDividers: [String: CGFloat] = [:]
+    private var bottomPanelDividers: [String: CGFloat] = [:]
     @Published private var activeBottomTabIDs: [String: String] = [:]
     @Published private(set) var legacyBottomTabID: String?
 
@@ -397,11 +400,14 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         }
         logThreeColumnWidths(for: viewContainerID)
         NotificationCenter.postRailDividerDidChange(containerID: viewContainerID, position: clamped)
+        scheduleDividerSave()
     }
 
     public func restoreRailDivider(_ position: CGFloat, for viewContainerID: String) {
         railDividers[viewContainerID] = position
     }
+
+    public var railDividersDictionary: [String: CGFloat] { railDividers }
 
     public func chatSectionDivider(
         for viewContainerID: String,
@@ -436,6 +442,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             layout: layout.persistenceKeySuffix,
             position: position
         )
+        scheduleDividerSave()
     }
 
     public func restoreChatSectionDivider(
@@ -445,6 +452,8 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     ) {
         chatSectionDividers[chatSectionDividerKey(viewContainerID: viewContainerID, layout: layout)] = position
     }
+
+    public var chatSectionDividersDictionary: [String: CGFloat] { chatSectionDividers }
 
     public func bottomPanelDivider(for viewContainerID: String, fallback: CGFloat? = nil) -> CGFloat {
         bottomPanelDividers[viewContainerID] ?? fallback ?? defaultBottomPanelDivider
@@ -461,17 +470,31 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             Self.logger.info("\(Self.t)bottomPanelDivider[\(viewContainerID)] → \(position)")
         }
         NotificationCenter.postBottomPanelDividerDidChange(containerID: viewContainerID, position: position)
+        scheduleDividerSave()
     }
 
     public func restoreBottomPanelDivider(_ position: CGFloat, for viewContainerID: String) {
         bottomPanelDividers[viewContainerID] = position
     }
 
+    public var bottomPanelDividersDictionary: [String: CGFloat] { bottomPanelDividers }
+
     private func chatSectionDividerKey(
         viewContainerID: String,
         layout: LumiChatSectionLayout
     ) -> String {
         "\(viewContainerID).\(layout.persistenceKeySuffix)"
+    }
+
+    private var pendingDividerSave: DispatchWorkItem?
+
+    private func scheduleDividerSave() {
+        pendingDividerSave?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.saveState()
+        }
+        pendingDividerSave = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
     }
 
     public func setPanelColumnWidth(_ width: CGFloat, for viewContainerID: String) {
@@ -524,7 +547,10 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             panelBottomVisible: isPanelBottomVisible,
             activeRailTabIDs: activeRailTabIDsDictionary,
             activeBottomTabIDs: activeBottomTabIDsDictionary,
-            visibilityOverrides: visibilityOverridesDictionary
+            visibilityOverrides: visibilityOverridesDictionary,
+            railDividers: railDividersDictionary,
+            chatSectionDividers: chatSectionDividersDictionary,
+            bottomPanelDividers: bottomPanelDividersDictionary
         )
         store.saveLayoutInfo(info)
         if Self.verbose {

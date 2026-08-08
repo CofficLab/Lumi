@@ -67,7 +67,7 @@ struct BookletDropZoneView: View {
                     .lineLimit(1)
 
                 if let info = viewModel.inputInfo {
-                    Text("\(info.pageCount) pages")
+                    Text(BookletLocalization.string("%lld pages", Int64(info.pageCount)))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

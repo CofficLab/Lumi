@@ -26,6 +26,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     @Published public private(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
     @Published public private(set) var globalReasoningEffort: LumiReasoningEffort? = .defaultEffort
     @Published public private(set) var globalAutomationLevel: LumiAutomationLevel = .build
+    @Published public private(set) var globalLanguage: LumiConversationLanguage = .chinese
 
     /// Notification posted when conversations list changes
     static let conversationsDidChangeNotification = Notification.Name.lumiConversationsDidChange
@@ -99,6 +100,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                 if self.selectedConversationID != nil {
                     self.globalReasoningEffort = self.reasoningEffortOptional(for: self.selectedConversationID)
                     self.globalAutomationLevel = self.automationLevel(for: self.selectedConversationID)
+                    self.globalLanguage = self.language(for: self.selectedConversationID)
                 }
                 self.updateCurrentTitle()
                 self.persistSelectedConversationID()
@@ -616,9 +618,17 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
     public func language(for conversationID: UUID?) -> LumiConversationLanguage {
         guard let conversationID else {
-            return .chinese
+            return globalLanguage
         }
-        return conversations.first { $0.id == conversationID }?.language ?? .chinese
+        return conversations.first { $0.id == conversationID }?.language ?? globalLanguage
+    }
+
+    public func setGlobalLanguage(_ language: LumiConversationLanguage) {
+        globalLanguage = language
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setGlobalLanguage: language=\(language.rawValue)")
+        }
     }
 
     public func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {

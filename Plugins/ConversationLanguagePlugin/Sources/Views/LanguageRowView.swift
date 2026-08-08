@@ -6,17 +6,18 @@ struct LanguageRow: View {
     let isSelected: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             Image(systemName: language.toolbarIconName)
-                .font(.system(size: 13))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(isSelected ? .accentColor : .secondary)
                 .frame(width: 18)
-                .foregroundColor(isSelected ? .blue : .secondary)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(language.displayName)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 12, weight: .semibold))
+
                 Text(language.descriptionText)
-                    .font(.system(size: 11))
+                    .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
 
@@ -25,14 +26,14 @@ struct LanguageRow: View {
             if isSelected {
                 Image(systemName: "checkmark")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.blue)
+                    .foregroundColor(.accentColor)
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 7)
         .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(isSelected ? Color.blue.opacity(0.12) : Color.clear)
+            isSelected ? Color.accentColor.opacity(0.12) : Color.clear,
+            in: RoundedRectangle(cornerRadius: 6, style: .continuous)
         )
         .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }

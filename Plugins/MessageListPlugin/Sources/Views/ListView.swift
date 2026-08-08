@@ -16,7 +16,7 @@ import SwiftUI
 struct ListView: View, SuperLog {
     nonisolated static let logger = MessageListPlugin.logger
     nonisolated static let emoji = "📋"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let kernel: LumiKernel
 
@@ -34,23 +34,23 @@ struct ListView: View, SuperLog {
         _verbosity = State(
             initialValue: kernel.conversationManager?.verbosity(for: selectedID) ?? .defaultVerbosity
         )
-        if Self.verbose {
-            Self.logger.info("\(Self.i)conversationID: \(selectedID?.uuidString ?? "nil")")
-        }
     }
 
     var body: some View {
-        LiveResizeFrozenView {
-            Group {
-                if selectedConversationID == nil {
-                    NoConversationSelectedView()
-                } else {
+        Group {
+            if selectedConversationID == nil {
+                // The empty state is not a message list. Keep it in the
+                // normal AppKit/SwiftUI resize path instead of snapshotting
+                // and freezing it during a split resize.
+                NoConversationSelectedView()
+            } else {
+                LiveResizeFrozenView {
                     routedMessageList
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(theme.surface)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(theme.surface)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // 选中切换:更新空态/列表路由,并同步新会话的 verbosity。
         .onLumiSelectedConversationDidChange { newID in

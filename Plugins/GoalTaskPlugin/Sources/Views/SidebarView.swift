@@ -78,7 +78,7 @@ public struct SidebarView: View {
             viewModel.removeObserver()
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Goal & Tasks")
+        .accessibilityLabel(LumiPluginLocalization.string("Goal & Tasks", bundle: .module))
     }
 
     // MARK: - Header
@@ -96,7 +96,7 @@ public struct SidebarView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             } else {
-                Label("Goal", systemImage: "target")
+                Label(LumiPluginLocalization.string("Goal", bundle: .module), systemImage: "target")
                     .font(.headline)
             }
 
@@ -117,7 +117,7 @@ public struct SidebarView: View {
                         .font(.caption)
                 }
                 .buttonStyle(.borderless)
-                .help("Goal description")
+                .help(LumiPluginLocalization.string("Goal description", bundle: .module))
                 .popover(isPresented: $showDescriptionPopover, arrowEdge: .bottom) {
                     GoalDescriptionPopoverContent(text: description)
                 }
@@ -130,7 +130,7 @@ public struct SidebarView: View {
                     .font(.caption)
             }
             .buttonStyle(.borderless)
-            .help("Refresh")
+            .help(LumiPluginLocalization.string("Refresh", bundle: .module))
 
             Button {
                 withAnimation(.easeInOut(duration: 0.16)) {
@@ -141,7 +141,7 @@ public struct SidebarView: View {
                     .font(.caption)
             }
             .buttonStyle(.borderless)
-            .help(isCollapsed ? "Expand" : "Collapse")
+            .help(LumiPluginLocalization.string(isCollapsed ? "Expand" : "Collapse", bundle: .module))
         }
         .padding(.horizontal, 12)
         .frame(height: Self.headerHeight)
@@ -154,7 +154,7 @@ public struct SidebarView: View {
         if let goal = viewModel.activeGoal,
            goal.status == .blocked,
            let reason = goal.blockedReason {
-            Text("⚠️ \(reason)")
+            Text(String(format: LumiPluginLocalization.string("⚠️ %@", bundle: .module), reason))
                 .font(.caption2)
                 .foregroundStyle(.orange)
                 .lineLimit(2)
@@ -222,7 +222,7 @@ private struct TaskRowView: View {
                 .truncationMode(.tail)
 
             if let group = displayItem.parallelGroup {
-                Text("[\(group)]")
+                Text(String(format: LumiPluginLocalization.string("[%@]", bundle: .module), group))
                     .font(.system(size: 9))
                     .foregroundStyle(.secondary)
             }

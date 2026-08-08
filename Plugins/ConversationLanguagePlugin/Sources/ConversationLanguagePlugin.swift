@@ -1,3 +1,4 @@
+import Foundation
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -17,16 +18,12 @@ public final class ConversationLanguagePlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-    // MARK: - Chat Section Toolbar Bar
-
-    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] {
-        [
-            ChatSectionToolbarBarItem(id: id) {
-                ConversationLanguageToolbarView(kernel: kernel)
-            },
-        ]
+    public func willSendToLLM(
+        kernel: LumiKernel,
+        messages: [LumiChatMessage]
+    ) async -> [LumiChatMessage] {
+        await LanguageWillSendToLLMHook().execute(kernel: kernel, messages: messages)
     }
-
 
     // MARK: - LumiPlugin stubs
 
@@ -57,4 +54,14 @@ public final class ConversationLanguagePlugin: LumiPlugin {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
+
+    // MARK: - Chat Section Toolbar Bar
+
+    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] {
+        [
+            ChatSectionToolbarBarItem(id: id) {
+                LanguageToolbarView(kernel: kernel)
+            },
+        ]
+    }
 }

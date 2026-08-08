@@ -20,7 +20,7 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = LF000000000000000002 /* LumiFinder */;
+			remoteGlobalIDString = LF000000000000000002;
 			remoteInfo = LumiFinder;
 		};
 /* End PBXContainerItemProxy section */
@@ -56,7 +56,7 @@
 		LF000000000000000010 /* Exceptions for "LumiFinder" folder in "LumiFinder" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"Info.plist",
+				Info.plist,
 			);
 			target = LF000000000000000002 /* LumiFinder */;
 		};
@@ -76,7 +76,7 @@
 			exceptions = (
 				LF000000000000000010 /* Exceptions for "LumiFinder" folder in "LumiFinder" target */,
 			);
-			path = LumiFinder;
+			path = Plugins/RClickPlugin/FinderExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -505,7 +505,7 @@
 		LF000000000000000006 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = LumiFinder/LumiFinder.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Plugins/RClickPlugin/FinderExtension/LumiFinder.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 522;
@@ -513,7 +513,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = LumiFinder/Info.plist;
+				INFOPLIST_FILE = Plugins/RClickPlugin/FinderExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -531,7 +531,7 @@
 		LF000000000000000007 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = LumiFinder/LumiFinder.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Plugins/RClickPlugin/FinderExtension/LumiFinder.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 522;
@@ -539,7 +539,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = LumiFinder/Info.plist;
+				INFOPLIST_FILE = Plugins/RClickPlugin/FinderExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

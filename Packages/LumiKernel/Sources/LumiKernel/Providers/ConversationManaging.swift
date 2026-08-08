@@ -158,6 +158,12 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
 
     // MARK: - Language
 
+    /// 全局回复语言（用于新对话的默认值）
+    var globalLanguage: LumiConversationLanguage { get }
+
+    /// 设置全局回复语言
+    func setGlobalLanguage(_ language: LumiConversationLanguage)
+
     /// 获取指定对话的回复语言
     func language(for conversationID: UUID?) -> LumiConversationLanguage
 
@@ -251,4 +257,10 @@ public extension ConversationManaging {
 
     /// 默认空实现，测试 mock 无需自行实现即可编译通过。
     func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) {}
+
+    /// 测试或轻量实现未维护全局语言状态时使用简体中文。
+    var globalLanguage: LumiConversationLanguage { .chinese }
+
+    /// 默认空实现，测试 mock 无需自行实现即可编译通过。
+    func setGlobalLanguage(_ language: LumiConversationLanguage) {}
 }
