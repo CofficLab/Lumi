@@ -23,8 +23,8 @@ struct ConversationSpeedToolbarView: View {
 
     var body: some View {
         Group {
-            // Only show if we've seen a valid TPS at least once AND still have a cached value
-            if hasShownTPSAtLeastOnce, let tps = cachedTPS {
+            // Only show if a conversation is selected, we've seen a valid TPS at least once, AND still have a cached value
+            if selectedConversationID != nil, hasShownTPSAtLeastOnce, let tps = cachedTPS {
                 Button {
                     popoverShown.toggle()
                 } label: {
@@ -66,8 +66,14 @@ struct ConversationSpeedToolbarView: View {
         .onAppear {
             self.updateTPS()
         }
-        .onChange(of: selectedConversationID) { _, _ in
+        .onChange(of: selectedConversationID) { oldValue, newValue in
             // 切换会话时重算速度（消息变更由 onLumiMessagesDidChange 覆盖）。
+            // 取消选中时立即隐藏按钮。
+            if newValue == nil {
+                cachedTPS = nil
+                hasShownTPSAtLeastOnce = false
+                popoverShown = false
+            }
             self.updateTPS()
         }
         .task {
