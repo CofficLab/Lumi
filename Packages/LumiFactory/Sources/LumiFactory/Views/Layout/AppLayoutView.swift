@@ -2,6 +2,12 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
+/// Controls whether native split-divider changes are forwarded to the kernel.
+/// Keep disabled while comparing the UI-only behavior with kernel synchronization.
+enum LayoutDividerSyncConfiguration {
+    static let syncChangesToKernel = true
+}
+
 /// 应用主布局
 struct AppLayoutView: View {
     @LumiTheme private var theme
@@ -90,7 +96,8 @@ struct AppLayoutView: View {
                 RailView(kernel: kernel)
                     .frame(minWidth: 180, idealWidth: railWidth, maxWidth: 400)
                     // 必须挂在 HSplitView 左侧 pane，组件会直接识别原生可拖拽 divider。
-                    .appSplitDivider(.trailing) { position in
+                    .appSplitDivider(.trailing, initialPosition: railWidth) { position in
+                        guard LayoutDividerSyncConfiguration.syncChangesToKernel else { return }
                         layoutManager.setRailDivider(position, for: containerID)
                     }
                 mainSplitContent(layoutManager)
@@ -112,9 +119,9 @@ struct AppLayoutView: View {
         if showChat(for: layoutManager) {
             HSplitView {
                 PanelView(kernel: kernel, layoutManager: layoutManager)
-                    .frame(width: panelWidth)
                     .frame(minWidth: 280, idealWidth: panelWidth, maxWidth: .infinity)
-                    .appSplitDivider(.trailing) { position in
+                    .appSplitDivider(.trailing, initialPosition: panelWidth) { position in
+                        guard LayoutDividerSyncConfiguration.syncChangesToKernel else { return }
                         layoutManager.setChatSectionDivider(
                             position,
                             for: containerID,
