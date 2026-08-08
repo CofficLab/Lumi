@@ -199,9 +199,9 @@ struct BookletExplanationView: View {
         }
     }
 
-    /// 原始 PDF 预览：横向滚动展示拼版前的所有输入页面。
+    /// 原始 PDF 预览：垂直滚动逐行展示拼版前的所有输入页面。
     ///
-    /// 视觉与之前的「顶部输入条」一致，但搬到右侧详情区域，
+    /// 视觉与之前的「顶部输入条」一致（一行一页），但改为上下滚动，
     /// 配合左侧「原始 PDF」tab 形成完整阶段。
     private var originalContent: some View {
         VStack(spacing: 8) {
@@ -213,29 +213,24 @@ struct BookletExplanationView: View {
             .font(.system(size: 10))
             .foregroundColor(.secondary)
 
-            // 按可用高度自适应：尽量填满竖向空间。
-            GeometryReader { geo in
-                let pageHeight = max(180, geo.size.height - 8)
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(SampleStory.pages) { page in
-                            StoryPageView(pageNumber: page.id, height: pageHeight)
-                        }
+            ScrollView {
+                LazyVStack(spacing: 10) {
+                    ForEach(SampleStory.pages) { page in
+                        StoryPageView(pageNumber: page.id, height: 200)
+                            .frame(maxWidth: .infinity, alignment: .center)
                     }
-                    .padding(.horizontal, 2)
-                    .frame(maxWidth: .infinity)
                 }
+                .padding(.vertical, 4)
             }
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
     }
 
-    /// 转换后预览：以 2×2 网格展示拼版产出的全部 A4 输出 PDF 缩略图。
+    /// 转换后预览：垂直滚动逐行展示拼版产出的全部 A4 输出 PDF 缩略图。
     ///
     /// 每张缩略图与原始 8 页 PDF 尺寸一致（高 > 宽的 A4 竖版），内部
-    /// 上下堆叠拼版后的两张源页；下方带张数标签方便对照。
+    /// 旋转 90° 装下横向拼版内容；下方带张数标签方便对照。
     private var afterConversionContent: some View {
         let sheets = BookletLayoutEngine.buildSheets(
             inputPageCount: SampleStory.pageCount,
@@ -255,17 +250,13 @@ struct BookletExplanationView: View {
             if sheets.isEmpty {
                 Color.clear
             } else {
-                let columns = [
-                    GridItem(.flexible(), spacing: 10),
-                    GridItem(.flexible(), spacing: 10)
-                ]
                 ScrollView {
-                    LazyVGrid(columns: columns, spacing: 10) {
+                    LazyVStack(spacing: 12) {
                         ForEach(sheets, id: \.index) { sheet in
                             convertedSheetCell(sheet: sheet)
                         }
                     }
-                    .padding(.horizontal, 4)
+                    .padding(.vertical, 4)
                 }
             }
         }
@@ -276,13 +267,14 @@ struct BookletExplanationView: View {
     /// 单个转换后 PDF 缩略图：纵向 A4 纸张预览 + 张数标签。
     ///
     /// 内容与「装订前」完全一致（即同一份 `OutputSheetView`），
-    /// 整体顺时针旋转 90°，让卡片呈「高 > 宽」的竖版形态，
-    /// 与顶部输入条的视觉风格保持一致。
+    /// 整体顺时针旋转 90°，让卡片呈「高 > 宽」的竖版形态。
+    /// 卡片宽度上限 280pt，居中显示，避免在垂直堆叠时单卡过高。
     private func convertedSheetCell(sheet: OutputSheet) -> some View {
         VStack(spacing: 4) {
             // 纵向 A4 比例的外框，内部旋转 90° 装下横向的拼版内容
             Color.clear
                 .aspectRatio(1.0 / 1.414, contentMode: .fit)
+                .frame(maxWidth: 280)
                 .frame(maxWidth: .infinity)
                 .overlay(
                     OutputSheetView(sheet: sheet, settings: settings)
