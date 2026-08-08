@@ -40,17 +40,20 @@ struct ListView: View, SuperLog {
     }
 
     var body: some View {
-        LiveResizeFrozenView {
-            Group {
-                if selectedConversationID == nil {
-                    NoConversationSelectedView()
-                } else {
+        Group {
+            if selectedConversationID == nil {
+                // The empty state is not a message list. Keep it in the
+                // normal AppKit/SwiftUI resize path instead of snapshotting
+                // and freezing it during a split resize.
+                NoConversationSelectedView()
+            } else {
+                LiveResizeFrozenView {
                     routedMessageList
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(theme.surface)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(theme.surface)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // 选中切换:更新空态/列表路由,并同步新会话的 verbosity。
         .onLumiSelectedConversationDidChange { newID in
