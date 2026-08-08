@@ -16,6 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LocalizationKit"),
+        .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
         .target(
@@ -23,6 +24,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",
             resources: [
