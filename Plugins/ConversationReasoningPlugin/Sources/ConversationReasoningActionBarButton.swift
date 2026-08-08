@@ -14,6 +14,9 @@ struct ConversationReasoningActionBarButton: View {
     // provider/model 选择变化时 bump 此 token 触发 computed 重算。
     @State private var providerRefreshID = UUID()
 
+    // Toggle 模型专用状态：是否启用思考
+    @State private var localIsThinkingEnabled = false
+
     private var conversations: (any ConversationManaging)? {
         kernel.conversations
     }
@@ -53,20 +56,54 @@ struct ConversationReasoningActionBarButton: View {
         thinkingAndReasoning.hasMultipleLevels
     }
 
+    /// 当前模型是否为 toggle 模式（仅有开关，无档位）。
+    private var isToggleModel: Bool {
+        thinkingAndReasoning == .toggle
+    }
+
     /// 当前模型实际可用的推理档位（用于过滤下拉项）。
     private var availableEfforts: [LumiReasoningEffort] {
         LumiReasoningEffort.available(for: thinkingAndReasoning)
     }
 
+    /// 多档模型：当前选中的档位（用于下拉按钮显示）。
     private var persistedEffort: LumiReasoningEffort {
         conversations?.reasoningEffort(for: selectedConversationID) ?? .defaultEffort
     }
 
+    /// Toggle 模型专用：获取当前思考启用状态。
+    private var persistedIsThinkingEnabled: Bool {
+        conversations?.reasoningEffortOptional(for: selectedConversationID) != nil
+    }
+
     var body: some View {
         Group {
-            // 仅当模型支持多档推理（3 档 / 4 档）时显示档位下拉按钮。
-            // toggle（仅开关）模型暂不在此处暴露，由后续专门的开关 UI 处理。
-            if hasMultipleLevels {
+            if isToggleModel {
+                // Toggle 模型：显示简单的开关按钮
+                Toggle(isOn: $localIsThinkingEnabled) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "brain")
+                            .font(.system(size: 11, weight: .medium))
+                        Text("思考")
+                            .font(.appCaptionEmphasized)
+                    }
+                    .foregroundColor(theme.textSecondary)
+                }
+                .toggleStyle(.button)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .onChange(of: localIsThinkingEnabled) { _, enabled in
+                    if enabled {
+                        // 开启：使用 high 作为默认档位
+                        selectEffort(.high)
+                    } else {
+                        // 关闭：清除推理设置
+                        clearEffort()
+                    }
+                }
+                .help(localIsThinkingEnabled ? "思考已开启，点击关闭" : "思考已关闭，点击开启")
+            } else if hasMultipleLevels {
+                // 多档模型：显示档位下拉按钮
                 Button {
                     isPopoverPresented.toggle()
                 } label: {
@@ -95,7 +132,7 @@ struct ConversationReasoningActionBarButton: View {
                         selectedEffort: localEffort,
                         availableEfforts: availableEfforts
                     ) { effort in
-                        select(effort)
+                        selectEffort(effort)
                         isPopoverPresented = false
                     }
                 }
@@ -126,22 +163,35 @@ struct ConversationReasoningActionBarButton: View {
         .onLumiSelectedModelsDidChange { providerRefreshID = UUID() }
     }
 
-    private func select(_ effort: LumiReasoningEffort) {
+    /// 选择推理档位（非 nil 值，用于多档模型）
+    private func selectEffort(_ effort: LumiReasoningEffort) {
         localEffort = effort
         conversations?.setReasoningEffort(effort, for: selectedConversationID)
     }
 
+    /// 清除/关闭推理（用于 toggle 模型关闭时）
+    private func clearEffort() {
+        localIsThinkingEnabled = false
+        conversations?.clearReasoningEffort(for: selectedConversationID)
+    }
+
     private func syncFromConversation() {
-        let persisted = persistedEffort
-        // 如果对话持久化的档位不在当前模型支持列表里，回退到当前模型的第一个可用档位，
-        // 避免出现"按钮显示 XHIGH 但下拉里没有该项"的撕裂。
-        // 没有可用档位（toggle / unsupported）时保持当前 localEffort 不变。
-        if availableEfforts.isEmpty {
-            return
-        } else if availableEfforts.contains(persisted) {
-            localEffort = persisted
+        if isToggleModel {
+            // Toggle 模型：同步开关状态
+            localIsThinkingEnabled = persistedIsThinkingEnabled
         } else {
-            localEffort = availableEfforts.first ?? .defaultEffort
+            // 多档模型：同步档位选择
+            let persisted = persistedEffort
+            // 如果对话持久化的档位不在当前模型支持列表里，回退到当前模型的第一个可用档位，
+            // 避免出现"按钮显示 XHIGH 但下拉里没有该项"的撕裂。
+            // 没有可用档位（unsupported）时保持当前 localEffort 不变。
+            if availableEfforts.isEmpty {
+                return
+            } else if availableEfforts.contains(persisted) {
+                localEffort = persisted
+            } else {
+                localEffort = availableEfforts.first ?? .defaultEffort
+            }
         }
     }
 }
