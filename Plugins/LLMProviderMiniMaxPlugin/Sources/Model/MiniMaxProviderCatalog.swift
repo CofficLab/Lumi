@@ -2,9 +2,10 @@ import Foundation
 import LumiKernel
 
 enum MiniMaxProviderCatalog {
-    static let models: [LumiModelInfo] = [            .init(
+    static let models: [LumiModelInfo] = [
+            .init(
                 id: "MiniMax-M3",
-                contextWindowSize: 204_800,
+                contextWindowSize: 1_000_000,
                 capabilities: .init(supportsVision: true, supportsTools: true)
             ),
             .init(
@@ -23,8 +24,23 @@ enum MiniMaxProviderCatalog {
                 capabilities: .init(supportsVision: false, supportsTools: true)
             ),
             .init(
+                id: "MiniMax-M2.5-highspeed",
+                contextWindowSize: 204_800,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "MiniMax-M2.1",
+                contextWindowSize: 204_800,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "MiniMax-M2.1-highspeed",
+                contextWindowSize: 204_800,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
                 id: "MiniMax-M2",
-                contextWindowSize: 131_072,
+                contextWindowSize: 204_800,
                 capabilities: .init(supportsVision: false, supportsTools: true)
             ),
             .init(
