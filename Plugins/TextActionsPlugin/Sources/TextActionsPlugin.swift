@@ -1,53 +1,58 @@
-import Foundation
+import AppKit
 import LumiKernel
 import LumiUI
+import os
 import SuperLogKit
 import SwiftUI
-import os
 
-/// Input Manager Plugin
 @MainActor
-public final class InputPlugin: LumiPlugin {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input-manager")
-    nonisolated public static let verbose = false
+public final class TextActionsPlugin: LumiPlugin, SuperLog {
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.text-actions")
+    public nonisolated static let verbose = false
 
-    public let id = "com.coffic.lumi.plugin.input-manager"
+    public let id = "com.coffic.lumi.plugin.text-actions"
     public var name: String {
-        LumiPluginLocalization.string("Input Manager", bundle: .module)
+        LumiPluginLocalization.string("Text Actions", bundle: .module)
     }
-    public let order = 70
-	public let policy: LumiPluginPolicy = .optIn
-    public let state: LumiPluginStage = .beta
+    public let order = 275
+    public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {
-        if let storage = kernel.storage {
-            InputPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
+        if TextActionsSettings.isEnabled {
+            TextSelectionManager.shared.startMonitoring()
         }
+    }
+
+    public func onEnable(kernel: LumiKernel) async throws {
+        if TextActionsSettings.isEnabled {
+            TextSelectionManager.shared.startMonitoring()
+        }
+    }
+
+    public func onDisable(kernel: LumiKernel) async throws {
+        TextSelectionManager.shared.stopMonitoring()
     }
 
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         [
             ViewContainerItem(
                 id: id,
-                title: "Input Manager",
-                systemImage: "keyboard",
+                title: name,
+                systemImage: "text.cursor",
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,
                 panelHeaderVisibility: .unsupported,
-                panelBodyVisibility: .alwaysVisible,
-                panelBottomVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
             ) {
-                InputSettingsView()
-            },
+                TextActionsSettingsView()
+            }
         ]
     }
-
-
-    // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
@@ -76,12 +81,4 @@ public final class InputPlugin: LumiPlugin {
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
-}
-
-enum InputPluginRuntimeBridge {
-    nonisolated(unsafe) static var dataRootDirectory: URL?
-    static let fallbackRootDirectory: URL = {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: NSTemporaryDirectory())
-        return appSupport.appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.coffic.lumi", isDirectory: true)
-    }()
 }

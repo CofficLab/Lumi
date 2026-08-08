@@ -123,6 +123,7 @@ import ShowImagePlugin
 import SkillPlugin
 import StoragePlugin
 import TerminalPlugin
+import TextActionsPlugin
 import ThemeAuroraPlugin
 import ThemeAutumnPlugin
 import ThemeDraculaPlugin
@@ -238,6 +239,7 @@ public enum PluginService {
             // Editor 预览面板 — 在 PanelBottom 显示文件预览。
             EditorPreviewBottomPanelPlugin(),
             TerminalPlugin(),
+            TextActionsPlugin(),
             DeviceInfoPlugin(),
             ProjectFileTreePlugin(),
             ClipboardManagerPlugin(),
