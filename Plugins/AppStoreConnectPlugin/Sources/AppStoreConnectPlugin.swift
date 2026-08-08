@@ -16,6 +16,7 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-store-connect", category: "AppStoreConnectPlugin")
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

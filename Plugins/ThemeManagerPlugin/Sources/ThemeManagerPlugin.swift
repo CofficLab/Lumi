@@ -12,6 +12,7 @@ public final class ThemeManagerPlugin: LumiPlugin {
 
     public let order = 22
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     private var themeService: ThemeManager?
 

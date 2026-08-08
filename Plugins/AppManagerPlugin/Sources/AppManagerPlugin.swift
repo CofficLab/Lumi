@@ -20,6 +20,7 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
     }
     public let order = 242
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     /// 插件级唯一的 AppManagerViewModel 实例。
     /// 通过 `viewContainers` 和 `panelRailTabItems` 同时注入，

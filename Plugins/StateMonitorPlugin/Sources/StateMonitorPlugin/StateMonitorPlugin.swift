@@ -55,6 +55,7 @@ public final class StateMonitorPlugin: LumiPlugin {
     public let name = "State Monitor"
     public let order = 75
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Hooks
 

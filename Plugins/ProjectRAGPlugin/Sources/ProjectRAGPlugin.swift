@@ -16,6 +16,7 @@ public final class ProjectRAGPlugin: LumiPlugin, SuperLog {
     }
     public let order = 200
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

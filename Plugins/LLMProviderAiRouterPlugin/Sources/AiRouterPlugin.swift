@@ -9,6 +9,7 @@ public final class AiRouterPlugin: LumiPlugin {
     public var name: String = "AiRouter"
     public let order = 91
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}

@@ -11,6 +11,7 @@ public final class EditorSearchPanelPlugin: LumiPlugin {
     }
     public let order = 2
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

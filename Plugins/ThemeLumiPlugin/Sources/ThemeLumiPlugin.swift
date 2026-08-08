@@ -11,6 +11,7 @@ public final class ThemeLumiPlugin: LumiPlugin {
     }
     public let order = 100
 	public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

@@ -17,6 +17,7 @@ public final class InputPlugin: LumiPlugin {
     }
     public let order = 70
 	public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
     public let state: LumiPluginStage = .beta
 
     public init() {}

@@ -21,6 +21,7 @@ public final class CADDesignerPlugin: LumiPlugin, SuperLog {
     public var pluginDescription: String { CADDesignerLocalization.string("Design aluminum profile frames with 3D preview, BOM, and cut optimization.") }
     public let order = 80
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

@@ -10,6 +10,7 @@ public final class ConversationNewPlugin: LumiPlugin {
     }
     public let order = 60
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

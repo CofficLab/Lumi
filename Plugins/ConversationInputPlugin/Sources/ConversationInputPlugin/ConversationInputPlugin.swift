@@ -21,6 +21,7 @@ public final class ConversationInputPlugin: LumiPlugin, SuperLog {
     }
     public let order = 83
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - 内部状态
 

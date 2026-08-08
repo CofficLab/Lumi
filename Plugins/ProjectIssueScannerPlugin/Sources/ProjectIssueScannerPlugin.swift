@@ -10,6 +10,7 @@ public final class ProjectIssueScannerPlugin: LumiPlugin {
     }
     public let order = 97
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

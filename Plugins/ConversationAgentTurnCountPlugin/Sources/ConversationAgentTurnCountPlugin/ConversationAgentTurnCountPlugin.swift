@@ -10,6 +10,7 @@ public final class ConversationAgentTurnCountPlugin: LumiPlugin {
     public let name = "Conversation Agent Turn Count"
     public let order = 87
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

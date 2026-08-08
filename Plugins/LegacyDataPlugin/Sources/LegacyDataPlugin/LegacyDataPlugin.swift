@@ -27,6 +27,7 @@ public final class LegacyDataPlugin: LumiPlugin, SuperLog {
     /// onBoot 全量先于 onReady 执行,故消费插件 onReady 时本服务一定已注册。
     public let order = 11
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Lifecycle
 

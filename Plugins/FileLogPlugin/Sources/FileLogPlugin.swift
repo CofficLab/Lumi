@@ -10,6 +10,7 @@ public final class FileLogPlugin: LumiPlugin {
     }
     public let order = 1
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .system }
 
     /// Shared configuration for file log output directory.

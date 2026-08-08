@@ -18,6 +18,7 @@ public final class DockerManagerPlugin: LumiPlugin {
     }
     public let order = 50
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory = .development
 
     public init() {}

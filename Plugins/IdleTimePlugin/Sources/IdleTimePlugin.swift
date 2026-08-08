@@ -10,6 +10,7 @@ public final class IdleTimePlugin: LumiPlugin {
     }
     public let order = 96
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     private var service: IdleTimeService?
 
     public init() {}

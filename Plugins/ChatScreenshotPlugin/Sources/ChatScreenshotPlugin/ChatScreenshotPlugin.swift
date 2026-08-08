@@ -25,6 +25,7 @@ public final class ChatScreenshotPlugin: LumiPlugin, SuperLog {
     }
     public let order = 81
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     private weak var kernel: LumiKernel?
     private var notificationObserver: NSObjectProtocol?

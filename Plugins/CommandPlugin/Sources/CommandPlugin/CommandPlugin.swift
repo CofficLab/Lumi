@@ -22,6 +22,7 @@ public final class CommandPlugin: LumiPlugin, SuperLog {
     }
     public let order = 15
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件，优先注册
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - State
 

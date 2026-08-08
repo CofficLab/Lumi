@@ -26,6 +26,7 @@ public final class AppUpdatePlugin: LumiPlugin {
     }
     public let order = 50
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public var pluginDescription: String {
         "Integrates Sparkle to check for and install app updates automatically."
     }

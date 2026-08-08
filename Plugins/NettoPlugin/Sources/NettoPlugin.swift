@@ -22,6 +22,7 @@ public final class NettoPlugin: LumiPlugin, SuperLog {
     }
     public let order = 99
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Initialization
 

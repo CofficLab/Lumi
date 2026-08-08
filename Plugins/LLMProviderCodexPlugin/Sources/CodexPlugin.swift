@@ -10,6 +10,7 @@ public final class CodexPlugin: LumiPlugin {
     }
     public let order = 105
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

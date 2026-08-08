@@ -16,6 +16,7 @@ public final class AgentOpenInVSCodePlugin: LumiPlugin {
     public let order = 63
     public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

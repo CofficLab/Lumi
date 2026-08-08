@@ -17,6 +17,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
 
     public let order = 750
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
     public let category: LumiPluginCategory = .development
 
     public init() {}

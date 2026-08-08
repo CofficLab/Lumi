@@ -20,6 +20,7 @@ public final class ConversationManagerPlugin: LumiPlugin, SuperLog {
     }
     public let order = 7
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

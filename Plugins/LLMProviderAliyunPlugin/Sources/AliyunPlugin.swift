@@ -12,6 +12,7 @@ public final class AliyunPlugin: LumiPlugin {
     }
     public let order = 105
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}

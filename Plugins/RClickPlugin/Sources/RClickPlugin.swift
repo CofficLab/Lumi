@@ -17,6 +17,7 @@ public final class RClickPlugin: LumiPlugin {
     }
     public let order = 50
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

@@ -26,6 +26,7 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     }
     public let order = 0
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

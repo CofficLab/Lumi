@@ -29,6 +29,7 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     public var name: String { BookletLocalization.string("Booklet Maker") }
     public let order = 880
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     /// 插件级唯一的 BookletMakerViewModel 实例。
     /// 通过 `viewContainers` 和 `panelRailTabItems` 同时注入，

@@ -11,6 +11,7 @@ public final class ThemeSummerPlugin: LumiPlugin {
     }
     public let order = 125
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

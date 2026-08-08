@@ -19,6 +19,7 @@ public final class DisplayControlPlugin: LumiPlugin, SuperLog {
     }
     public let order = 210
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 
