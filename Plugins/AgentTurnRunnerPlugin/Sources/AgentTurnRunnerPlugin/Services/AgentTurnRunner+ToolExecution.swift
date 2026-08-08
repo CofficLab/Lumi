@@ -43,7 +43,7 @@ extension AgentTurnRunner {
         conversationID: UUID
     ) async -> Bool {
         guard let kernel,
-              let toolManager = kernel.toolManager,
+              kernel.toolManager != nil,
               let toolCalls = assistantMessage.toolCalls
         else {
             Self.logger.error("\(Self.t)ToolManager 不可用，无法继续工具批次")
@@ -71,7 +71,7 @@ extension AgentTurnRunner {
                 )
             )
 
-            var result = await toolManager.execute(
+            var result = await executeToolCall(
                 toolCall,
                 conversationID: conversationID,
                 turnID: turnIDs[conversationID]

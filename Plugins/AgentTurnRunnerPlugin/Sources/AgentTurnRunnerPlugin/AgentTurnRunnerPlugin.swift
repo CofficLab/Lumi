@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import LumiKernel
 import LocalizationKit
@@ -29,6 +30,8 @@ public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {
         try await AgentTurnRunnerOnBootHook().execute(kernel)
+        ToolApprovalBridge.shared.start(kernel: kernel)
+        ToolCallRowRendererRegistry.shared.register(ToolApprovalRowRenderer())
     }
 
     public func onReady(kernel: LumiKernel) async throws {
