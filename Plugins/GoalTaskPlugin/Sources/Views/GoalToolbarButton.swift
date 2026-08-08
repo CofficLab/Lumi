@@ -110,7 +110,7 @@ private struct GoalPopoverContent: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack {
-                Label("Goals", systemImage: "target")
+                Label(LumiPluginLocalization.string("Goals", bundle: .module), systemImage: "target")
                     .font(.headline)
 
                 Spacer()
@@ -141,7 +141,7 @@ private struct GoalPopoverContent: View {
                     Image(systemName: "target")
                         .font(.system(size: 32))
                         .foregroundStyle(.tertiary)
-                    Text("No goals yet")
+                    Text(LumiPluginLocalization.string("No goals yet", bundle: .module))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -238,7 +238,7 @@ private struct GoalRowView: View {
             .frame(height: 4)
 
             if let blockedReason = goal.blockedReason, goal.status == .blocked {
-                Text("⚠️ \(blockedReason)")
+                Text(String(format: LumiPluginLocalization.string("⚠️ %@", bundle: .module), blockedReason))
                     .font(.caption2)
                     .foregroundStyle(.orange)
                     .lineLimit(2)

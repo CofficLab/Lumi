@@ -24,7 +24,7 @@ public final class Plugin: LumiPlugin, SuperLog {
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .beta
-    public let pluginDescription = "Goal and task management for multi-step objectives."
+    public let pluginDescription = LumiPluginLocalization.string("Goal and task management for multi-step objectives.", bundle: .module)
 
     /// 共享的 GoalStateManager 实例
     private nonisolated(unsafe) static var _sharedManager: GoalStateManager?

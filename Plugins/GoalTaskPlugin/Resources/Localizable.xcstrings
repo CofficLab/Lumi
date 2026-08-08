@@ -411,6 +411,40 @@
           }
         }
       }
+    },
+    "Goal and task management for multi-step objectives." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goal and task management for multi-step objectives."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "面向多步骤目标的目标与任务管理。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "面向多步驟目標的目標與任務管理。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "面向多步驟目標的目標與任務管理。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "面向多步驟目標的目標與任務管理。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
