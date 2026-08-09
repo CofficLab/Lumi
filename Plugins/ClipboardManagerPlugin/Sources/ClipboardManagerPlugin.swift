@@ -32,7 +32,7 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: "Clipboard",
+                title: LumiPluginLocalization.string("Clipboard", bundle: .module),
                 systemImage: "doc.on.clipboard",
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,
