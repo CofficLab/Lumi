@@ -25,7 +25,38 @@ public enum LumiLLMProviderAPIKeyDiagnostic: Sendable, Equatable {
     case inaccessible(String)
 }
 
+public enum LumiLLMProviderAPIKeySaveError: LocalizedError, Sendable, Equatable {
+    case empty
+    case verificationFailed(provider: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .empty:
+            return "API Key cannot be empty"
+        case .verificationFailed(let provider):
+            return "\(provider) API Key could not be verified after saving"
+        }
+    }
+}
+
 public extension LumiLLMProvider {
+    /// Saves and verifies the exact value through the provider's request-time
+    /// resolver. This catches write failures hidden by legacy void setters.
+    func saveAPIKey(_ apiKey: String) throws {
+        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw LumiLLMProviderAPIKeySaveError.empty
+        }
+
+        setApiKey(trimmed)
+        let persisted = try lumiResolveAPIKey()
+        guard persisted == trimmed else {
+            throw LumiLLMProviderAPIKeySaveError.verificationFailed(
+                provider: type(of: self).info.displayName
+            )
+        }
+    }
+
     /// Re-reads the key using the same path used by an actual request.
     /// This is intentionally not based on `getApiKey()`, which may collapse
     /// Keychain read failures into an empty string.
