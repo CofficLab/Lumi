@@ -145,9 +145,34 @@ struct PDFSplitWorkspaceView: View {
                 .frame(width: 34)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(segment.fileName(baseName: viewModel.currentDocument.baseFileName))
+                HStack(spacing: 6) {
+                    Image(systemName: "pencil")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField(
+                        BookletLocalization.string("Output file name"),
+                        text: Binding(
+                            get: { viewModel.splitFileNameStem(for: segment) },
+                            set: { viewModel.renameSplitOutputStem(segment, to: $0) }
+                        )
+                    )
+                    .textFieldStyle(.roundedBorder)
                     .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
+                    .accessibilityLabel(BookletLocalization.string(
+                        "Rename output PDF %lld",
+                        Int64(segment.index)
+                    ))
+                    Text(".pdf")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+
+                if let message = viewModel.splitFileNameValidationMessage(for: segment) {
+                    Text(message)
+                        .font(.caption2)
+                        .foregroundStyle(.red)
+                }
+
                 Text(BookletLocalization.string(
                     "Split pages %lld–%lld",
                     Int64(segment.startPage),

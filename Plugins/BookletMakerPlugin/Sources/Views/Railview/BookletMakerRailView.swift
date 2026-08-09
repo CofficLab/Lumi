@@ -157,6 +157,10 @@ struct BookletMakerRailView: View {
                     Label(message, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
                         .foregroundStyle(.red)
+                } else if let message = viewModel.splitFileNameValidationMessage {
+                    Label(message, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
                 }
             }
 

@@ -1380,6 +1380,40 @@
         }
       }
     },
+    "File name cannot be empty." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File name cannot be empty."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件名不能为空。"
+          }
+        }
+      }
+    },
+    "File name cannot contain / or :." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File name cannot contain / or :."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件名不能包含 / 或 :。"
+          }
+        }
+      }
+    },
     "Output file already exists: %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1393,6 +1427,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输出文件已存在：%@"
+          }
+        }
+      }
+    },
+    "Output file name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Output file name"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输出文件名"
+          }
+        }
+      }
+    },
+    "Output file names must be unique." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Output file names must be unique."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输出文件名不能重复。"
           }
         }
       }
@@ -1734,6 +1802,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 %@ 紙上並排列印兩頁。"
+          }
+        }
+      }
+    },
+    "Rename output PDF %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename output PDF %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名第 %lld 个输出 PDF"
           }
         }
       }

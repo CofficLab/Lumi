@@ -61,6 +61,9 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         }
     }
 
+    /// User-defined output names, keyed by the exact page range they describe.
+    @Published private var splitFileNameOverrides: [String: String] = [:]
+
     /// Render progress in 0.0 ... 1.0. 0 when idle.
     @Published private(set) var progress: Double = 0
 
@@ -134,15 +137,27 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         )
     }
 
+    var splitOutputs: [PDFSplitOutput] {
+        splitSegments.compactMap { segment in
+            guard let fileName = canonicalSplitFileName(for: segment) else { return nil }
+            return PDFSplitOutput(segment: segment, fileName: fileName)
+        }
+    }
+
     var splitValidationMessage: String? {
         guard case .failure(let error) = splitCutPointsResult else { return nil }
         return error.errorDescription
+    }
+
+    var splitFileNameValidationMessage: String? {
+        splitSegments.compactMap(splitFileNameValidationMessage(for:)).first
     }
 
     var canExportSplit: Bool {
         !isRendering
             && !splitCutPoints.isEmpty
             && splitValidationMessage == nil
+            && splitFileNameValidationMessage == nil
             && FileManager.default.fileExists(atPath: currentDocument.url.path)
     }
 
@@ -163,6 +178,7 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         thumbnails = []
         lastOutputURL = nil
         lastSplitOutputURLs = []
+        splitFileNameOverrides = [:]
 
         let requestID = UUID()
         loadRequestID = requestID
@@ -204,6 +220,7 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         thumbnails = []
         lastOutputURL = nil
         lastSplitOutputURLs = []
+        splitFileNameOverrides = [:]
         splitCutPointsText = ""
         errorMessage = nil
     }
@@ -257,9 +274,8 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     /// Export all currently planned page ranges into `outputDirectory`.
     func exportSplit(to outputDirectory: URL) async {
         guard canExportSplit else { return }
-        let segments = splitSegments
+        let outputs = splitOutputs
         let sourceURL = currentDocument.url
-        let baseName = currentDocument.baseFileName
 
         cancel()
         isRendering = true
@@ -272,8 +288,7 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
             try await splitter.split(
                 sourceURL: sourceURL,
                 outputDirectory: outputDirectory,
-                baseName: baseName,
-                segments: segments
+                outputs: outputs
             )
         }
         splitTask = task
@@ -307,6 +322,68 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         splitCutPointsText = points.sorted().map(String.init).joined(separator: ", ")
         lastSplitOutputURLs = []
         errorMessage = nil
+    }
+
+    /// Name shown in the result editor. The `.pdf` extension is optional while editing.
+    func splitFileName(for segment: PDFSplitSegment) -> String {
+        splitFileNameOverrides[segment.rangeKey]
+            ?? segment.fileName(baseName: currentDocument.baseFileName)
+    }
+
+    func splitFileNameStem(for segment: PDFSplitSegment) -> String {
+        let fileName = splitFileName(for: segment)
+        guard fileName.lowercased().hasSuffix(".pdf") else { return fileName }
+        return String(fileName.dropLast(4))
+    }
+
+    func renameSplitOutputStem(_ segment: PDFSplitSegment, to stem: String) {
+        renameSplitOutput(segment, to: stem.isEmpty ? "" : stem + ".pdf")
+    }
+
+    /// Update one planned output name without changing its page range.
+    func renameSplitOutput(_ segment: PDFSplitSegment, to fileName: String) {
+        let defaultName = segment.fileName(baseName: currentDocument.baseFileName)
+        if fileName == defaultName {
+            splitFileNameOverrides.removeValue(forKey: segment.rangeKey)
+        } else {
+            splitFileNameOverrides[segment.rangeKey] = fileName
+        }
+        lastSplitOutputURLs = []
+        errorMessage = nil
+    }
+
+    func splitFileNameValidationMessage(for segment: PDFSplitSegment) -> String? {
+        let rawName = splitFileName(for: segment)
+        guard let canonicalName = canonicalFileName(rawName) else {
+            return BookletLocalization.string("File name cannot be empty.")
+        }
+        if canonicalName.contains("/") || canonicalName.contains(":") {
+            return BookletLocalization.string("File name cannot contain / or :.")
+        }
+
+        let duplicateCount = splitSegments.reduce(into: 0) { count, candidate in
+            guard let candidateName = canonicalSplitFileName(for: candidate) else { return }
+            if candidateName.caseInsensitiveCompare(canonicalName) == .orderedSame {
+                count += 1
+            }
+        }
+        if duplicateCount > 1 {
+            return BookletLocalization.string("Output file names must be unique.")
+        }
+        return nil
+    }
+
+    private func canonicalSplitFileName(for segment: PDFSplitSegment) -> String? {
+        canonicalFileName(splitFileName(for: segment))
+    }
+
+    private func canonicalFileName(_ rawName: String) -> String? {
+        let trimmed = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if trimmed.lowercased().hasSuffix(".pdf") {
+            return String(trimmed.dropLast(4)) + ".pdf"
+        }
+        return trimmed + ".pdf"
     }
 
     /// Cancel the current render, if any.

@@ -25,22 +25,19 @@ final class PDFSplitter: @unchecked Sendable {
 
     func split(sourceURL: URL,
                outputDirectory: URL,
-               baseName: String,
-               segments: [PDFSplitSegment]) async throws -> [URL] {
+               outputs: [PDFSplitOutput]) async throws -> [URL] {
         try await Task.detached(priority: .userInitiated) {
             try Self.runSplit(
                 sourceURL: sourceURL,
                 outputDirectory: outputDirectory,
-                baseName: baseName,
-                segments: segments
+                outputs: outputs
             )
         }.value
     }
 
     private static func runSplit(sourceURL: URL,
                                  outputDirectory: URL,
-                                 baseName: String,
-                                 segments: [PDFSplitSegment]) throws -> [URL] {
+                                 outputs: [PDFSplitOutput]) throws -> [URL] {
         guard let source = PDFDocument(url: sourceURL),
               !source.isLocked,
               source.pageCount > 0 else {
@@ -52,8 +49,8 @@ final class PDFSplitter: @unchecked Sendable {
             withIntermediateDirectories: true
         )
 
-        let outputURLs = segments.map {
-            outputDirectory.appendingPathComponent($0.fileName(baseName: baseName))
+        let outputURLs = outputs.map {
+            outputDirectory.appendingPathComponent($0.fileName)
         }
         if let existing = outputURLs.first(where: {
             FileManager.default.fileExists(atPath: $0.path)
@@ -63,10 +60,10 @@ final class PDFSplitter: @unchecked Sendable {
 
         var completed: [URL] = []
         do {
-            for (segment, outputURL) in zip(segments, outputURLs) {
+            for (plannedOutput, outputURL) in zip(outputs, outputURLs) {
                 let output = PDFDocument()
 
-                for pageNumber in segment.startPage ... segment.endPage {
+                for pageNumber in plannedOutput.segment.startPage ... plannedOutput.segment.endPage {
                     guard let page = source.page(at: pageNumber - 1)?.copy() as? PDFPage else {
                         throw SplitError.sourceUnreadable(sourceURL)
                     }

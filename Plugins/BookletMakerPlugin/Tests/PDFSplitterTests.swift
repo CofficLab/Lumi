@@ -15,16 +15,23 @@ final class PDFSplitterTests: XCTestCase {
         }
 
         let segments = PDFSplitPlan.segments(pageCount: 8, cutPoints: [2, 5])
+        let outputs = segments.map { segment in
+            PDFSplitOutput(
+                segment: segment,
+                fileName: segment.index == 2
+                    ? "middle-chapter.pdf"
+                    : segment.fileName(baseName: "story")
+            )
+        }
         let urls = try await PDFSplitter().split(
             sourceURL: sourceURL,
             outputDirectory: outputDirectory,
-            baseName: "story",
-            segments: segments
+            outputs: outputs
         )
 
         XCTAssertEqual(urls.map(\.lastPathComponent), [
             "story-part-1.pdf",
-            "story-part-2.pdf",
+            "middle-chapter.pdf",
             "story-part-3.pdf",
         ])
         XCTAssertEqual(try urls.map { try XCTUnwrap(PDFDocument(url: $0)).pageCount }, [2, 3, 3])
@@ -46,8 +53,9 @@ final class PDFSplitterTests: XCTestCase {
             _ = try await PDFSplitter().split(
                 sourceURL: sourceURL,
                 outputDirectory: outputDirectory,
-                baseName: "story",
-                segments: PDFSplitPlan.segments(pageCount: 4, cutPoints: [2])
+                outputs: PDFSplitPlan.segments(pageCount: 4, cutPoints: [2]).map {
+                    PDFSplitOutput(segment: $0, fileName: $0.fileName(baseName: "story"))
+                }
             )
             XCTFail("Expected existing output to be rejected")
         } catch {

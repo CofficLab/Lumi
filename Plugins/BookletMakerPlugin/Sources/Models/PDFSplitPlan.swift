@@ -6,11 +6,19 @@ struct PDFSplitSegment: Identifiable, Equatable, Sendable {
     let endPage: Int
 
     var id: Int { index }
+    var rangeKey: String { "\(startPage)-\(endPage)" }
     var pageCount: Int { endPage - startPage + 1 }
 
     func fileName(baseName: String) -> String {
         "\(baseName)-part-\(index).pdf"
     }
+}
+
+struct PDFSplitOutput: Identifiable, Equatable, Sendable {
+    let segment: PDFSplitSegment
+    let fileName: String
+
+    var id: Int { segment.id }
 }
 
 enum PDFSplitPlan {
