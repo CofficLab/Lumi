@@ -3,34 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.8.2</title>
-            <pubDate>Sat, 08 Aug 2026 13:40:25 +0000</pubDate>
-            <sparkle:version>524</sparkle:version>
-            <sparkle:shortVersionString>5.8.2</sparkle:shortVersionString>
+            <title>5.8.3</title>
+            <pubDate>Sun, 09 Aug 2026 16:09:03 +0000</pubDate>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>5.8.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.8.2</h2>
-<h3>Changes since v5.8.1</h3>
+            <description><![CDATA[<h2>Release v5.8.3</h2>
+<h3>Changes since v5.8.2</h3>
 <ul>
-<li>feat(ConversationLanguagePlugin): refactor to match ConversationVerbosityPlugin structure</li>
-<li>feat(RClickPlugin): add default menu items and cached URL support</li>
-<li>feat(WorkspacePlugin): persist per-container split layout</li>
-<li>fix: update Finder visibility actions and panel layout</li>
-<li>fix(AppSplitDivider): refresh tracking area after restoring divider position</li>
-<li>fix(BookletMakerPlugin): add missing localization keys for mode/sheet labels</li>
-<li>fix(BookletMakerPlugin): localize page count label in drop zone</li>
-<li>fix(GoalTaskPlugin): improve localization to match project standard</li>
-<li>fix(GoalTaskPlugin): localize toolbar strings and plugin description</li>
-<li>fix(layout): restore live split resizing behavior</li>
-<li>fix(LumiFinder): fix concurrency issue in FinderSync action</li>
-<li>fix(message-list): avoid freezing empty conversation state</li>
-<li>fix(RClickPlugin): embed Finder Sync extension and guard actions</li>
-<li>fix(split): defer kernel sync during drag, restore initial divider positions</li>
-<li>perf(MessageListPlugin): use CALayer for live-resize frozen frame</li>
-<li>refactor(BookletMakerPlugin): restructure BookletExplanationView layout</li>
+<li>bugfix:  fix a bug</li>
+<li>feat(ActivityHeatmap): localize chart strings</li>
+<li>feat(app-store-promo): add HTML promotional artwork designer</li>
+<li>feat(AppIconDesigner): add app icon assets and configure AppIcon for AppIconDesigner target</li>
+<li>feat(AppIconDesignerPlugin): add PreviewIconTool for visual inspection</li>
+<li>feat(AppStoreConnectPlugin): configure ViewContainer panel visibility</li>
+<li>feat(AppStoreConnectPlugin): register ViewContainer for the main view</li>
+<li>feat(BookletMaker): add app icon assets and configure AppIcon for BookletMaker target</li>
+<li>feat(BookletMaker): add demo PDF support, drop zone UI, and duplex sheet explanations</li>
+<li>feat(BookletMaker): add original and converted stage tabs to explanation view</li>
+<li>feat(BookletMaker): add standalone BookletMaker app target</li>
+<li>feat(BookletMaker): explain duplex sheets in the UI</li>
+<li>feat(BookletMaker): move drop area to sidebar and fix localization</li>
+<li>feat(BookletMaker): rename to PDF Tools and add page-range splitting</li>
+<li>feat(BookletMaker): split output into physical sheets and print sides</li>
+<li>feat(BookletMaker): support renaming individual split PDF outputs</li>
+<li>feat(CADDesigner): add app icon assets and configure AppIcon for CADDesigner target</li>
+<li>feat(CI): configure Xcode Cloud for AppIconDesigner</li>
+<li>feat(computer-use): add always-on UI automation plugin</li>
+<li>feat(ComputerUsePlugin): localize UI and error strings via LocalizationKit</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.8.2</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.8.3</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.8.2/Lumi_5.8.2_arm64.dmg" length="44117581" type="application/octet-stream" sparkle:edSignature="bc1thUOjtKCWfnrAeJP1u3YDzDE0N0dSA8w2WOh5wLlQ2CyfYcpj8oO8G5C5QvaNgJbQ75cVOzH7T7NnGINaCw=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.8.3/Lumi_5.8.3_arm64.dmg" length="44303736" type="application/octet-stream" sparkle:edSignature="spWFSkcnr7anajDFyBcv07uUtMxogcnzPELL2qzKojvXiaUT5zmfJ3TVFcDBajx2boz+KeoXBhKmBvn9dVASBw=="/>
         </item>
     </channel>
 </rss>
