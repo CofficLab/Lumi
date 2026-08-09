@@ -644,6 +644,7 @@
 		BM000000000000000000000D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = BookletMakerApp/App.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -658,6 +659,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "BookletMakerApp/BookletMaker-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = BookletMaker;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -673,6 +675,7 @@
 		BM000000000000000000000E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = BookletMakerApp/App.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -687,6 +690,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "BookletMakerApp/BookletMaker-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = BookletMaker;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
