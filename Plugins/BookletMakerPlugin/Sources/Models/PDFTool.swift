@@ -7,6 +7,12 @@ enum PDFTool: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// UI display order for the rail's tool picker.
+    ///
+    /// "Split PDF" is listed before "Booklet Maker" so the split
+    /// entry sits above the booklet entry in the rail.
+    static let displayOrder: [PDFTool] = [.split, .booklet]
+
     var title: String {
         switch self {
         case .booklet:

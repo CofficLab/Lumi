@@ -41,7 +41,7 @@ struct BookletMakerRailView: View {
         VStack(alignment: .leading, spacing: 8) {
             railTitle(BookletLocalization.string("PDF Tools"))
 
-            ForEach(PDFTool.allCases) { tool in
+            ForEach(PDFTool.displayOrder) { tool in
                 Button {
                     viewModel.selectedTool = tool
                     viewModel.errorMessage = nil
