@@ -41,7 +41,7 @@ public final class MenuBarHelperPlugin: LumiPlugin {
         [
             ViewContainerItem(
                 id: id,
-                title: "Menu Bar Manager",
+                title: LumiPluginLocalization.string("Menu Bar Manager", bundle: .module),
                 systemImage: "menubar.rectangle",
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,
