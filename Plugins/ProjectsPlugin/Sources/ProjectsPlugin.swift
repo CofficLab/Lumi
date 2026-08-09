@@ -52,7 +52,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         return [
             LumiTitleToolbarItem(
                 id: "\(id).toolbar",
-                title: "Projects",
+                title: LumiPluginLocalization.string("Projects", bundle: .module),
                 placement: .center,
                 order: 0
             ) {
