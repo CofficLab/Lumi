@@ -37,7 +37,10 @@ let package = Package(
         ),
         .testTarget(
             name: "LLMKitTests",
-            dependencies: ["LLMKit"],
+            dependencies: [
+                "LLMKit",
+                .product(name: "KeychainKit", package: "KeychainKit"),
+            ],
             path: "Tests"
         ),
     ]
