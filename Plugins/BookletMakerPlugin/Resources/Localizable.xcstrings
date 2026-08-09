@@ -4,6 +4,9 @@
     "" : {
 
     },
+    ".pdf" : {
+
+    },
     "%@ · %lld pages" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1085,6 +1088,40 @@
         }
       }
     },
+    "File name cannot be empty." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File name cannot be empty."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件名不能为空。"
+          }
+        }
+      }
+    },
+    "File name cannot contain / or :." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File name cannot contain / or :."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件名不能包含 / 或 :。"
+          }
+        }
+      }
+    },
     "File not found: %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1376,40 +1413,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "原始 PDF · 共 8 頁"
-          }
-        }
-      }
-    },
-    "File name cannot be empty." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "File name cannot be empty."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件名不能为空。"
-          }
-        }
-      }
-    },
-    "File name cannot contain / or :." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "File name cannot contain / or :."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文件名不能包含 / 或 :。"
           }
         }
       }
@@ -1806,23 +1809,6 @@
         }
       }
     },
-    "Rename output PDF %lld" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rename output PDF %lld"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重命名第 %lld 个输出 PDF"
-          }
-        }
-      }
-    },
     "Ready" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1848,6 +1834,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "就緒"
+          }
+        }
+      }
+    },
+    "Rename output PDF %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename output PDF %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名第 %lld 个输出 PDF"
           }
         }
       }
