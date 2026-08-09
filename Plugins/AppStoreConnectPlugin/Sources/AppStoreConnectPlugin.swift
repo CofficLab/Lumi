@@ -1,7 +1,7 @@
 import Foundation
-import os.log
 import LumiKernel
 import LumiUI
+import os.log
 import SuperLogKit
 import SwiftUI
 
@@ -11,6 +11,7 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public var name: String {
         AppStoreConnectLocalization.string("AppStoreConnect", bundle: .module)
     }
+
     public let order = 65
     public nonisolated static let emoji = "🚀"
     public nonisolated static let verbose: Bool = false
@@ -66,12 +67,18 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
             ViewContainerItem(
                 id: id,
                 title: name,
-                systemImage: "app.badge.checkmark"
+                systemImage: "app.badge.checkmark",
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBodyVisibility: .alwaysVisible,
+                panelBottomVisibility: .unsupported,
             ) {
                 MainView()
             },
         ]
     }
+
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
