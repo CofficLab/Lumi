@@ -164,6 +164,35 @@ struct AnthropicRequestBuilderTests {
         #expect(content.first?["content"] as? String == "搜索结果: ...")
     }
 
+    @Test("工具图片嵌套在对应的 tool_result content 中")
+    func toolImageNestedInsideToolResult() throws {
+        let conversation = UUID()
+        let attachment = LumiImageAttachment(
+            mimeType: "image/png",
+            base64Data: Data([0x89, 0x50, 0x4E, 0x47]).base64EncodedString(),
+            fileName: "preview.png"
+        )
+        let request = makeRequest(messages: [
+            LumiChatMessage(
+                conversationID: conversation,
+                role: .tool,
+                content: "已读取图片",
+                metadata: LumiImageAttachmentMetadata.encode([attachment]),
+                toolCallID: "call_image"
+            )
+        ])
+
+        let body = AnthropicRequestBuilder.body(for: request)
+        let messages = try #require(body["messages"] as? [[String: Any]])
+        let outerContent = try #require(messages[0]["content"] as? [[String: Any]])
+        let resultContent = try #require(outerContent[0]["content"] as? [[String: Any]])
+
+        #expect(outerContent.count == 1)
+        #expect(resultContent.map { $0["type"] as? String } == ["text", "image"])
+        let source = try #require(resultContent[1]["source"] as? [String: Any])
+        #expect(source["data"] as? String == attachment.base64Data)
+    }
+
     @Test("tools 字段映射为 Anthropic 格式（无 type 包装）")
     func toolsFieldShape() {
         let conversation = UUID()

@@ -269,6 +269,32 @@ struct PluginLLMProviderMiniMaxTests {
         _ = try JSONSerialization.data(withJSONObject: body)
     }
 
+    @Test func anthropicToolImagesAreNestedInsideToolResult() throws {
+        let attachment = LumiImageAttachment(
+            mimeType: "image/png",
+            base64Data: Data([0x89, 0x50, 0x4E, 0x47]).base64EncodedString(),
+            fileName: "preview.png"
+        )
+        let message = LumiChatMessage(
+            conversationID: UUID(),
+            role: .tool,
+            content: "已读取图片",
+            metadata: LumiImageAttachmentMetadata.encode([attachment]),
+            toolCallID: "call_image"
+        )
+        let body = MiniMaxRequestBuilder.anthropic(LumiLLMRequest(
+            messages: [message],
+            model: MiniMaxAnthropicProvider.info.defaultModel
+        ))
+
+        let messages = try #require(body["messages"] as? [[String: Any]])
+        let outerContent = try #require(messages[0]["content"] as? [[String: Any]])
+        let resultContent = try #require(outerContent[0]["content"] as? [[String: Any]])
+
+        #expect(outerContent.count == 1)
+        #expect(resultContent.map { $0["type"] as? String } == ["text", "image"])
+    }
+
     @Test func openAIEmbeddedThinkTagsAreSeparatedFromContent() {
         let state = MiniMaxMessageState(
             conversationID: UUID(),

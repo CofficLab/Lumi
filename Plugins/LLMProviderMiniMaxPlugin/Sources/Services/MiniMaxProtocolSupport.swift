@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 import LumiKernel
 
 enum MiniMaxProviderError: LocalizedError, LumiLLMErrorDispositionProviding {
@@ -414,18 +415,48 @@ enum MiniMaxRequestBuilder {
         var output: [[String: Any]] = []
         for message in messages where message.role != .system && message.role != .error && message.role != .status {
             switch message.role {
-            case .user: output.append(["role": "user", "content": [["type": "text", "text": message.content]]])
+            case .user:
+                output.append([
+                    "role": "user",
+                    "content": anthropicContentBlocks(for: message),
+                ])
             case .assistant:
                 var blocks: [[String: Any]] = message.content.isEmpty ? [] : [["type": "text", "text": message.content]]
                 blocks += (message.toolCalls ?? []).map { ["type": "tool_use", "id": $0.id, "name": $0.name, "input": parseJSON($0.arguments)] }
                 if !blocks.isEmpty { output.append(["role": "assistant", "content": blocks]) }
             case .tool:
                 guard let id = message.toolCallID else { continue }
-                if let last = output.last, last["role"] as? String == "user", var blocks = last["content"] as? [[String: Any]], blocks.contains(where: { $0["type"] as? String == "tool_result" }) { blocks.append(["type": "tool_result", "tool_use_id": id, "content": message.content]); output[output.count - 1] = ["role": "user", "content": blocks] } else { output.append(["role": "user", "content": [["type": "tool_result", "tool_use_id": id, "content": message.content]]]) }
+                let resultBlock: [String: Any] = [
+                    "type": "tool_result",
+                    "tool_use_id": id,
+                    "content": anthropicToolResultContent(for: message),
+                ]
+                if let last = output.last,
+                   last["role"] as? String == "user",
+                   var blocks = last["content"] as? [[String: Any]],
+                   blocks.contains(where: { $0["type"] as? String == "tool_result" }) {
+                    blocks.append(resultBlock)
+                    output[output.count - 1] = ["role": "user", "content": blocks]
+                } else {
+                    output.append(["role": "user", "content": [resultBlock]])
+                }
             default: break
             }
         }
         return output
+    }
+
+    private static func anthropicContentBlocks(for message: LumiChatMessage) -> [[String: Any]] {
+        VisionMessageContentBuilder.anthropicBlocks(
+            text: message.content,
+            images: LumiVisionMessageSupport.messageImages(from: message.metadata)
+        )
+    }
+
+    private static func anthropicToolResultContent(for message: LumiChatMessage) -> Any {
+        let images = LumiVisionMessageSupport.messageImages(from: message.metadata)
+        guard !images.isEmpty else { return message.content }
+        return VisionMessageContentBuilder.anthropicBlocks(text: message.content, images: images)
     }
 
     private static func parseJSON(_ text: String) -> [String: Any] { guard let data = text.data(using: .utf8), let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [:] }; return object }
