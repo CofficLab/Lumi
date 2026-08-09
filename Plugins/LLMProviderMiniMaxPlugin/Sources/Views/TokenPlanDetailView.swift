@@ -53,7 +53,7 @@ struct TokenPlanDetailView: View {
     
     var body: some View {
         StatusBarPopoverScaffold(
-            title: "MiniMax Token Plan",
+            title: LumiPluginLocalization.string("MiniMax Token Plan", bundle: .module),
             systemImage: "chart.bar.fill"
         ) {
             AppIconButton(systemImage: "arrow.clockwise") {
@@ -76,7 +76,7 @@ struct TokenPlanDetailView: View {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(theme.error)
-                    Text("认证失败，请检查 API Key")
+                    Text(LumiPluginLocalization.string("认证失败，请检查 API Key", bundle: .module))
                         .foregroundColor(theme.error)
                 }
                 

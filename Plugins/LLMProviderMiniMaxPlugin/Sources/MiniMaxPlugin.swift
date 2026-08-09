@@ -72,7 +72,7 @@ public final class MiniMaxPlugin: LumiPlugin {
         [
             StatusBarItem(
                 id: "\(id).token-plan",
-                title: "MiniMax Token Plan",
+                title: LumiPluginLocalization.string("MiniMax Token Plan", bundle: .module),
                 systemImage: "chart.bar.fill",
                 placement: .trailing,
                 statusBarView: {
