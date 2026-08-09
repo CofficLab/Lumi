@@ -1,0 +1,49 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld" : {
+
+    },
+    "Sub-Agent Turns" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sub-Agent Turns"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "子 Agent 轮次"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "子 Agent 輪次"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "子 Agent 輪次"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "子 Agent 輪次"
+          }
+        }
+      }
+    },
+    "当主 Agent 将任务委派给子 Agent 执行时，每个子 Agent 的独立运行轮次都会计入此数字。数字归零表示所有子任务已完成。" : {
+
+    },
+    "当前有 **%lld** 个子 Agent Turn 正在并行运行。" : {
+
+    }
+  },
+  "version" : "1.0"
+}
