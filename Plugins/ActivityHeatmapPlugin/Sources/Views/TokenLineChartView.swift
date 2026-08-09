@@ -59,8 +59,8 @@ public struct TokenLineChartView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 HStack(spacing: 12) {
-                                    Label("1K = 1,000", systemImage: "number")
-                                    Label("1M = 1,000,000", systemImage: "number.square")
+                                    Label(LumiPluginLocalization.string("1K = 1,000", bundle: .module), systemImage: "number")
+                                    Label(LumiPluginLocalization.string("1M = 1,000,000", bundle: .module), systemImage: "number.square")
                                 }
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
