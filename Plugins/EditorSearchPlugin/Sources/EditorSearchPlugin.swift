@@ -31,7 +31,7 @@ public final class EditorSearchPanelPlugin: LumiPlugin {
             PanelBottomTabItem(
                 id: "editor-bottom-search",
                 order: order,
-                title: "Search",
+                title: LumiPluginLocalization.string("Search", bundle: .module),
                 systemImage: "magnifyingglass"
             ) {
                 BottomEditorWorkspaceSearchPanelView(service: service, showsToolbar: true)
@@ -48,7 +48,7 @@ public final class EditorSearchPanelPlugin: LumiPlugin {
             PanelRailTabItem(
                 id: "search",
                 order: order,
-                title: "Search",
+                title: LumiPluginLocalization.string("Search", bundle: .module),
                 systemImage: "magnifyingglass"
             ) {
                 BottomEditorWorkspaceSearchPanelView(service: service, showsToolbar: true)
