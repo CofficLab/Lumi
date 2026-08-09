@@ -357,25 +357,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter GitHub Token"
+            "value": "输入 GitHub Token"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter GitHub Token"
+            "value": "输入 GitHub Token"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter GitHub Token"
+            "value": "输入 GitHub Token"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter GitHub Token"
+            "value": "输入 GitHub Token"
           }
         }
       }
