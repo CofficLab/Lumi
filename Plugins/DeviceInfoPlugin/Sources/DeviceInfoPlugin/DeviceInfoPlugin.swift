@@ -41,7 +41,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: "Device Info",
+                title: LumiPluginLocalization.string("Device Info", bundle: .module),
                 systemImage: "macbook.and.iphone",
                 supportsProject: false,
                 railVisibility: .unsupported,
