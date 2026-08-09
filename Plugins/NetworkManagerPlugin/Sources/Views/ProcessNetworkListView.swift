@@ -15,7 +15,7 @@ public struct ProcessNetworkListView: View {
 
                 Spacer()
 
-                Toggle("Active Only", isOn: $viewModel.onlyActiveProcesses)
+                Toggle(LumiPluginLocalization.string("Active Only", bundle: .module), isOn: $viewModel.onlyActiveProcesses)
                     .toggleStyle(.switch)
                     .controlSize(.small)
 
