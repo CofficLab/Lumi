@@ -13,7 +13,7 @@ public struct HostsManagerView: View, SuperLog {
     public var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Picker("Group", selection: $viewModel.selectedGroup) {
+                Picker(LumiPluginLocalization.string("Group", bundle: .module), selection: $viewModel.selectedGroup) {
                     Text(LumiPluginLocalization.string("All", bundle: .module)).tag(String?.none)
                     ForEach(viewModel.groups, id: \.self) { group in
                         Text(group).tag(String?.some(group))
@@ -266,7 +266,7 @@ public struct HostAddView: View {
                         AppErrorBanner(message: LocalizedStringKey(LumiPluginLocalization.string("Invalid domain format", bundle: .module)))
                     }
                     GlassTextField(title: "Comment", text: $comment, placeholder: "Optional")
-                    GlassTextField(title: "Group", text: $group, placeholder: "Optional")
+                    GlassTextField(title: LumiPluginLocalization.string("Group", bundle: .module), text: $group, placeholder: "Optional")
                 }
             }
 
