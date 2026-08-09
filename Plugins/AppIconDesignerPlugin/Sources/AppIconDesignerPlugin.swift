@@ -13,7 +13,7 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
         category: "plugin.app-icon-designer"
     )
 
-    public let id = "AppIconDesigner"
+    public let id = "com.coffic.lumi.plugin.app-icon-designer"
     public var name: String {
         AppIconDesignerLocalization.string("AppIconDesigner")
     }
