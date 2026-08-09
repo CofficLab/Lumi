@@ -11,6 +11,8 @@ struct ProviderAPIKeyMissingView: View {
     @State private var apiKey: String = ""
     @State private var isAPIKeyVisible = false
     @State private var keyDiagnostic: LumiLLMProviderAPIKeyDiagnostic?
+    @State private var saveError: String?
+    @State private var didSaveAPIKey = false
     /// 内联 "Details" 展开状态:取代之前的外部 `@Binding var showRawMessage`,
     /// 因为该状态仅本视图内部消费,无须再由上层 Renderer 持有。
     @State private var isDetailsExpanded = false
@@ -61,10 +63,7 @@ struct ProviderAPIKeyMissingView: View {
                     LocalizedStringKey(LumiPluginLocalization.string("Enter API Key", bundle: .module)),
                     text: Binding(
                         get: { apiKey },
-                        set: { newValue in
-                            apiKey = newValue
-                            provider?.setApiKey(newValue)
-                        }
+                        set: { apiKey = $0 }
                     ),
                     fieldType: isAPIKeyVisible ? .plain : .secure
                 )
@@ -79,6 +78,33 @@ struct ProviderAPIKeyMissingView: View {
                     isAPIKeyVisible.toggle()
                 }
                 .help(isAPIKeyVisible ? LumiPluginLocalization.string("Hide API Key", bundle: .module) : LumiPluginLocalization.string("Show API Key", bundle: .module))
+            }
+
+            if provider != nil {
+                HStack(spacing: 8) {
+                    AppButton(
+                        LumiPluginLocalization.string("Save API Key", bundle: .module),
+                        systemImage: "checkmark",
+                        style: .primary,
+                        size: .small
+                    ) {
+                        saveAPIKey()
+                    }
+                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                    if didSaveAPIKey {
+                        Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
+                            .font(.appCaption)
+                            .foregroundStyle(theme.success)
+                    }
+                }
+            }
+
+            if let saveError {
+                Text(saveError)
+                    .font(.appCaption)
+                    .foregroundStyle(theme.error)
+                    .textSelection(.enabled)
             }
 
             if provider == nil {
@@ -119,16 +145,16 @@ struct ProviderAPIKeyMissingView: View {
     private func diagnosticView(_ diagnostic: LumiLLMProviderAPIKeyDiagnostic) -> some View {
         switch diagnostic {
         case .configured:
-            Text("当前 Keychain 中仍可读取到 API Key。上面的错误是请求当时产生的历史错误，建议直接重试。")
+            Text(LumiPluginLocalization.string("当前 Keychain 中仍可读取到 API Key。上面的错误是请求当时产生的历史错误，建议直接重试。", bundle: .module))
                 .font(.appCaption)
                 .foregroundStyle(theme.warning)
         case .missing:
-            Text("当前 Keychain 中没有找到 API Key。若你确认已经配置，请检查钥匙串访问权限或重新保存一次。")
+            Text(LumiPluginLocalization.string("当前 Keychain 中没有找到 API Key。若你确认已经配置，请检查钥匙串访问权限或重新保存一次。", bundle: .module))
                 .font(.appCaption)
                 .foregroundStyle(theme.warning)
         case .inaccessible(let details):
             VStack(alignment: .leading, spacing: 4) {
-                Text("当前无法读取 macOS Keychain，Key 本身没有被判定为缺失。")
+                Text(LumiPluginLocalization.string("当前无法读取 macOS Keychain，Key 本身没有被判定为缺失。", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(theme.warning)
                 Text(details)
@@ -150,5 +176,20 @@ struct ProviderAPIKeyMissingView: View {
         // access error into the misleading "missing" state.
         keyDiagnostic = provider.apiKeyDiagnostic()
         apiKey = provider.getApiKey()
+    }
+
+    private func saveAPIKey() {
+        guard let provider else { return }
+        do {
+            try provider.saveAPIKey(apiKey)
+            apiKey = provider.getApiKey()
+            keyDiagnostic = .configured
+            saveError = nil
+            didSaveAPIKey = true
+        } catch {
+            keyDiagnostic = provider.apiKeyDiagnostic()
+            saveError = error.localizedDescription
+            didSaveAPIKey = false
+        }
     }
 }
