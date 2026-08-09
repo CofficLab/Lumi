@@ -1204,25 +1204,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Embedded preview in the editor bottom area."
+            "value": "编辑器底部的嵌入式预览。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Embedded preview in the editor bottom area."
+            "value": "编辑器底部的嵌入式预览。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Embedded preview in the editor bottom area."
+            "value": "编辑器底部的嵌入式预览。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Embedded preview in the editor bottom area."
+            "value": "编辑器底部的嵌入式预览。"
           }
         }
       }
