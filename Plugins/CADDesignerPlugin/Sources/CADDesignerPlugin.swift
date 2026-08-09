@@ -61,7 +61,22 @@ public final class CADDesignerPlugin: LumiPlugin, SuperLog {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
+            ViewContainerItem(
+                id: id,
+                title: name,
+                systemImage: "cube.transparent.fill",
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBodyVisibility: .alwaysVisible,
+                panelBottomVisibility: .unsupported
+            ) {
+                CADDesignerView()
+            },
+        ]
+    }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
