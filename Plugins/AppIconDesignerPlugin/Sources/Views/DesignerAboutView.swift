@@ -6,7 +6,7 @@ import SwiftUI
 
 /// Plugin about view for App Icon Designer.
 /// Introduces the plugin's icon design and export capabilities.
-struct AppIconDesignerAboutView: View {
+struct DesignerAboutView: View {
     @LumiTheme private var theme
 
     var body: some View {
@@ -247,6 +247,6 @@ private struct RequirementsCard: View {
 }
 
 #Preview {
-    AppIconDesignerAboutView()
+    DesignerAboutView()
         .frame(width: 400, height: 700)
 }
