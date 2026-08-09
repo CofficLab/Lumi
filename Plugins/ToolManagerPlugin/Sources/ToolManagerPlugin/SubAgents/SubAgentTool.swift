@@ -149,6 +149,7 @@ public struct SubAgentTool: LumiAgentTool, @unchecked Sendable {
             (["review", "audit", "quality", "regression"], ["builtin-code-review"]),
             (["fix", "bug", "debug", "error", "crash"], ["builtin-bugfixer"]),
             (["test", "coverage", "unit", "integration"], ["builtin-test-writer"]),
+            (["image", "photo", "picture", "screenshot", "icon", "png", "jpg", "jpeg", "visual", "look at", "see", "describe"], ["builtin-image-reader"]),
         ]
         for group in keywords where group.terms.contains(where: query.contains) {
             if group.ids.contains(definition.id) { score += 10 }
