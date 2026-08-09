@@ -33,7 +33,7 @@ struct DefaultMessageView: View {
                     .font(.appBody)
                     .foregroundColor(theme.textTertiary)
 
-                Text("(empty message)")
+                Text(LumiPluginLocalization.string("(empty message)", bundle: .module))
                     .font(.appBody)
                     .italic()
                     .foregroundColor(theme.textSecondary)
