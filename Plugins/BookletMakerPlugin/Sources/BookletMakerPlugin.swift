@@ -26,7 +26,7 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     // MARK: - Identity
 
     public let id = "com.coffic.lumi.plugin.booklet-maker"
-    public var name: String { BookletLocalization.string("Booklet Maker") }
+    public var name: String { BookletLocalization.string("PDF Tools") }
     public let order = 880
     public let policy: LumiPluginPolicy = .optIn
     public let stage: LumiPluginStage = .beta
@@ -38,9 +38,7 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     private let sharedViewModel = BookletMakerViewModel()
 
     public var pluginDescription: String {
-        BookletLocalization.string(
-            "Convert a PDF into a 2-up imposition ready for A4 duplex printing, folding and stapling."
-        )
+        BookletLocalization.string("Create booklets and split PDF documents by page range.")
     }
 
     public init() {}
@@ -66,8 +64,8 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: BookletLocalization.string("Booklet Maker"),
-                systemImage: "book.closed",
+                title: BookletLocalization.string("PDF Tools"),
+                systemImage: "doc.on.doc",
                 railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
                 panelHeaderVisibility: .unsupported,
@@ -102,6 +100,29 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
         return "\(base)-booklet.pdf"
     }
 
+    private func presentSplitDirectoryPanel() {
+        let panel = NSOpenPanel()
+        panel.title = BookletLocalization.string("Choose Split PDF Output Folder")
+        panel.message = BookletLocalization.string(
+            "Each page range will be saved as a separate PDF file."
+        )
+        panel.prompt = BookletLocalization.string("Choose Folder")
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+
+        if panel.runModal() == .OK, let directoryURL = panel.url {
+            let didStartSecurityScope = directoryURL.startAccessingSecurityScopedResource()
+            Task {
+                await sharedViewModel.exportSplit(to: directoryURL)
+                if didStartSecurityScope {
+                    directoryURL.stopAccessingSecurityScopedResource()
+                }
+            }
+        }
+    }
+
     // MARK: - LumiPlugin Stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
@@ -115,13 +136,15 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
         [
             PanelRailTabItem(
                 id: "booklet-maker.sidebar",
-                title: BookletLocalization.string("Settings"),
-                systemImage: "slider.horizontal.3",
+                title: BookletLocalization.string("PDF Tools"),
+                systemImage: "square.grid.2x2",
                 visibility: .viewContainer(id: id)
             ) {
-                BookletMakerRailView(viewModel: self.sharedViewModel, onExport: {
-                    self.presentSavePanel()
-                })
+                BookletMakerRailView(
+                    viewModel: self.sharedViewModel,
+                    onExportBooklet: { self.presentSavePanel() },
+                    onExportSplit: { self.presentSplitDirectoryPanel() }
+                )
             },
         ]
     }

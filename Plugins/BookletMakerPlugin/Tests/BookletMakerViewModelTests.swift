@@ -65,6 +65,42 @@ final class BookletMakerViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.lastOutputURL, outputURL)
     }
 
+    func testSplitToolPlansAndExportsCurrentDocument() async throws {
+        let sourceURL = try makeSourcePDF(pageCount: 8)
+        let outputDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("view-model-split-\(UUID().uuidString)", isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: sourceURL)
+            try? FileManager.default.removeItem(at: outputDirectory)
+        }
+        let viewModel = BookletMakerViewModel()
+        await viewModel.loadPDF(sourceURL)
+        viewModel.selectedTool = .split
+        viewModel.splitCutPointsText = "2, 5"
+
+        XCTAssertTrue(viewModel.canExport)
+        XCTAssertEqual(viewModel.splitSegments.map(\.pageCount), [2, 3, 3])
+
+        await viewModel.exportSplit(to: outputDirectory)
+
+        XCTAssertEqual(viewModel.lastSplitOutputURLs.count, 3)
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
+    func testSplitCutPointToggleKeepsTextAndPlanInSync() {
+        let viewModel = BookletMakerViewModel()
+        viewModel.selectedTool = .split
+
+        viewModel.toggleSplit(after: 2)
+        viewModel.toggleSplit(after: 5)
+        XCTAssertEqual(viewModel.splitCutPointsText, "2, 5")
+        XCTAssertEqual(viewModel.splitSegments.map(\.pageCount), [2, 3, 3])
+
+        viewModel.toggleSplit(after: 2)
+        XCTAssertEqual(viewModel.splitCutPointsText, "5")
+        XCTAssertEqual(viewModel.splitSegments.map(\.pageCount), [5, 3])
+    }
+
     private func makeSourcePDF(pageCount: Int) throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("current-document-\(UUID().uuidString).pdf")

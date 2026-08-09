@@ -8,7 +8,7 @@ import SwiftUI
 
 // MARK: - Booklet Maker View Model
 
-/// Drives the Booklet Maker workspace view.
+/// Drives the PDF tools workspace view.
 ///
 /// The view model is the single source of truth for the current
 /// input PDF, the user's settings, render progress and the produced
@@ -32,10 +32,12 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
 
     private let inspector  = PDFInspector()
     private let renderer   = BookletRenderer()
+    private let splitter   = PDFSplitter()
     private let thumbnailer = BookletThumbnailer()
     private let demoDocument: CurrentPDFDocument
 
     private var renderTask: Task<Void, Never>?
+    private var splitTask: Task<[URL], Error>?
     private var loadRequestID = UUID()
     private var securityScopedURL: URL?
 
@@ -44,8 +46,20 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     /// The authoritative document used by preview, layout and export.
     @Published private(set) var currentDocument: CurrentPDFDocument
 
+    /// Tool currently displayed in the rail and workspace.
+    @Published var selectedTool: PDFTool = .booklet
+
     /// Current imposition settings.
     @Published var settings: BookletSettings = .init()
+
+    /// Comma- or whitespace-separated pages after which a split occurs.
+    @Published var splitCutPointsText: String = "" {
+        didSet {
+            if splitCutPointsText != oldValue {
+                lastSplitOutputURLs = []
+            }
+        }
+    }
 
     /// Render progress in 0.0 ... 1.0. 0 when idle.
     @Published private(set) var progress: Double = 0
@@ -55,6 +69,9 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
 
     /// URL of the most recent successful export.
     @Published private(set) var lastOutputURL: URL?
+
+    /// Files produced by the most recent successful split.
+    @Published private(set) var lastSplitOutputURLs: [URL] = []
 
     /// Generated preview thumbnails.
     @Published private(set) var thumbnails: [BookletThumbnailer.Thumbnail] = []
@@ -93,9 +110,47 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     }
 
     var hasUserInput: Bool { !currentDocument.isDemo }
-    var canExport: Bool {
+    var canExportBooklet: Bool {
         !isRendering
             && FileManager.default.fileExists(atPath: currentDocument.url.path)
+    }
+
+    var splitCutPointsResult: Result<[Int], PDFSplitPlan.ValidationError> {
+        PDFSplitPlan.parseCutPoints(
+            splitCutPointsText,
+            pageCount: currentDocument.pageCount
+        )
+    }
+
+    var splitCutPoints: [Int] {
+        guard case .success(let points) = splitCutPointsResult else { return [] }
+        return points
+    }
+
+    var splitSegments: [PDFSplitSegment] {
+        PDFSplitPlan.segments(
+            pageCount: currentDocument.pageCount,
+            cutPoints: splitCutPoints
+        )
+    }
+
+    var splitValidationMessage: String? {
+        guard case .failure(let error) = splitCutPointsResult else { return nil }
+        return error.errorDescription
+    }
+
+    var canExportSplit: Bool {
+        !isRendering
+            && !splitCutPoints.isEmpty
+            && splitValidationMessage == nil
+            && FileManager.default.fileExists(atPath: currentDocument.url.path)
+    }
+
+    var canExport: Bool {
+        switch selectedTool {
+        case .booklet: canExportBooklet
+        case .split: canExportSplit
+        }
     }
 
     // MARK: - Input handling
@@ -107,6 +162,7 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         progress = 0
         thumbnails = []
         lastOutputURL = nil
+        lastSplitOutputURLs = []
 
         let requestID = UUID()
         loadRequestID = requestID
@@ -126,6 +182,7 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
                 url: url,
                 info: info
             )
+            splitCutPointsText = ""
             Self.logger.info("\(Self.t)Loaded \(url.lastPathComponent) — \(info.pageCount) pages")
         } catch {
             if didStartSecurityScope { url.stopAccessingSecurityScopedResource() }
@@ -146,6 +203,8 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         progress = 0
         thumbnails = []
         lastOutputURL = nil
+        lastSplitOutputURLs = []
+        splitCutPointsText = ""
         errorMessage = nil
     }
 
@@ -160,6 +219,7 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         progress = 0
         thumbnails = []
         lastOutputURL = nil
+        lastSplitOutputURLs = []
         errorMessage = nil
 
         let settings = self.settings
@@ -194,10 +254,67 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         }
     }
 
+    /// Export all currently planned page ranges into `outputDirectory`.
+    func exportSplit(to outputDirectory: URL) async {
+        guard canExportSplit else { return }
+        let segments = splitSegments
+        let sourceURL = currentDocument.url
+        let baseName = currentDocument.baseFileName
+
+        cancel()
+        isRendering = true
+        progress = 0
+        lastOutputURL = nil
+        lastSplitOutputURLs = []
+        errorMessage = nil
+
+        let task = Task {
+            try await splitter.split(
+                sourceURL: sourceURL,
+                outputDirectory: outputDirectory,
+                baseName: baseName,
+                segments: segments
+            )
+        }
+        splitTask = task
+
+        do {
+            let urls = try await task.value
+            guard !Task.isCancelled else { return }
+            lastSplitOutputURLs = urls
+            progress = 1
+            Self.logger.info("\(Self.t)Split export complete: \(urls.count) files")
+        } catch is CancellationError {
+            // Cancellation is an expected result when switching documents/tools.
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
+            Self.logger.error("\(Self.t)Split export failed: \(self.errorMessage ?? "unknown error")")
+        }
+        splitTask = nil
+        isRendering = false
+    }
+
+    /// Add or remove a split immediately after `pageNumber`.
+    func toggleSplit(after pageNumber: Int) {
+        guard pageNumber >= 1, pageNumber < currentDocument.pageCount else { return }
+        var points = Set(splitCutPoints)
+        if points.contains(pageNumber) {
+            points.remove(pageNumber)
+        } else {
+            points.insert(pageNumber)
+        }
+        splitCutPointsText = points.sorted().map(String.init).joined(separator: ", ")
+        lastSplitOutputURLs = []
+        errorMessage = nil
+    }
+
     /// Cancel the current render, if any.
     func cancel() {
         renderTask?.cancel()
         renderTask = nil
+        splitTask?.cancel()
+        splitTask = nil
         isRendering = false
     }
 

@@ -5,13 +5,20 @@ struct BookletMakerMainView: View {
     @ObservedObject var viewModel: BookletMakerViewModel
 
     var body: some View {
-        BookletExplanationView(
-            document: viewModel.currentDocument,
-            settings: viewModel.settings
-        )
+        Group {
+            switch viewModel.selectedTool {
+            case .booklet:
+                BookletExplanationView(
+                    document: viewModel.currentDocument,
+                    settings: viewModel.settings
+                )
+                .padding()
+            case .split:
+                PDFSplitWorkspaceView(viewModel: viewModel)
+            }
+        }
             .frame(maxWidth: .infinity)
             .frame(maxHeight: .infinity)
-            .padding()
     }
 }
 
