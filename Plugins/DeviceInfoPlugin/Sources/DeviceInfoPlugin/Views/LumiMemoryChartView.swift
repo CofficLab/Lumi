@@ -7,15 +7,17 @@ public struct LumiMemoryChartView: View {
 
     public let dataPoints: [LumiMemoryDataPoint]
 
-    private let lineColor = Color(hex: "7c5cff")
-    private let areaGradient = LinearGradient(
-        colors: [
-            Color(hex: "7c5cff").opacity(0.4),
-            Color(hex: "7c5cff").opacity(0.05)
-        ],
-        startPoint: .top,
-        endPoint: .bottom
-    )
+    private var lineColor: Color { theme.primary }
+    private var areaGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                theme.primary.opacity(0.4),
+                theme.primary.opacity(0.05)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
 
     public init(dataPoints: [LumiMemoryDataPoint]) {
         self.dataPoints = dataPoints

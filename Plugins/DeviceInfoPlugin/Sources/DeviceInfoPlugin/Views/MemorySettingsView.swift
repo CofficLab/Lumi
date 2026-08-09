@@ -15,7 +15,7 @@ public struct MemorySettingsView: View {
         PluginSettingsScaffold(
             title: LumiPluginLocalization.string("Memory Monitor", bundle: .module),
             subtitle: LumiPluginLocalization.string("Track Lumi's memory usage over time", bundle: .module),
-            showHeader: false
+            showHeader: true
         ) {
             // System Memory Section
             systemMemorySection
@@ -56,25 +56,14 @@ public struct MemorySettingsView: View {
 
     @ViewBuilder
     private var lumiMemorySection: some View {
-        // Section header
-        HStack {
-            Image(systemName: "app.fill")
-                .foregroundColor(theme.primary)
-            Text(LumiPluginLocalization.string("Lumi Memory Usage", bundle: .module))
-                .font(.appBody)
-                .bold()
-            Spacer()
+        AppSettingsSection(
+            title: LumiPluginLocalization.string("Lumi Memory Usage", bundle: .module),
+            spacing: 12
+        ) {
+            lumiMemoryCard
+            lumiMemoryChartCard
+            lumiMemoryStatisticsCard
         }
-        .padding(.bottom, 4)
-
-        // Current Lumi memory
-        lumiMemoryCard
-
-        // Lumi memory chart
-        lumiMemoryChartCard
-
-        // Lumi memory statistics
-        lumiMemoryStatisticsCard
     }
 
     // MARK: - Live Memory Card
@@ -92,26 +81,9 @@ public struct MemorySettingsView: View {
                         .foregroundColor(usageColor(for: viewModel.currentUsagePercentage))
                 }
 
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(theme.textTertiary.opacity(0.15))
-
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [
-                                        usageColor(for: viewModel.currentUsagePercentage).opacity(0.8),
-                                        usageColor(for: viewModel.currentUsagePercentage)
-                                    ]),
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: geometry.size.width * CGFloat(viewModel.currentUsagePercentage / 100.0))
-                    }
-                }
-                .frame(height: 12)
+                ProgressView(value: viewModel.currentUsagePercentage, total: 100)
+                    .progressViewStyle(.linear)
+                    .tint(usageColor(for: viewModel.currentUsagePercentage))
 
                 HStack {
                     Text(viewModel.usedMemory)
@@ -155,24 +127,13 @@ public struct MemorySettingsView: View {
 
     private var memoryChartCard: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text(LumiPluginLocalization.string("Memory Usage History", bundle: .module))
-                        .font(.appBody)
-                        .bold()
-                    Spacer()
-                    if viewModel.isRecording {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(theme.success)
-                                .frame(width: 6, height: 6)
-                            Text(LumiPluginLocalization.string("Recording", bundle: .module))
-                                .font(.appCaption)
-                                .foregroundColor(theme.textSecondary)
-                        }
-                    }
-                }
-
+            AppSettingsSection(
+                title: LumiPluginLocalization.string("Memory Usage History", bundle: .module),
+                subtitle: viewModel.isRecording
+                    ? LumiPluginLocalization.string("Recording", bundle: .module)
+                    : nil,
+                spacing: 12
+            ) {
                 MemoryHistoryGraphView(
                     dataPoints: viewModel.getSystemMemoryData(for: systemMemoryTimeRange),
                     timeRange: systemMemoryTimeRange
@@ -230,7 +191,7 @@ public struct MemorySettingsView: View {
                 HStack {
                     HStack(spacing: 6) {
                         Image(systemName: "app.fill")
-                            .foregroundColor(Color(hex: "7c5cff"))
+                            .foregroundColor(theme.primary)
                         Text(LumiPluginLocalization.string("Lumi Memory", bundle: .module))
                             .font(.appBody)
                             .bold()
@@ -238,7 +199,7 @@ public struct MemorySettingsView: View {
                     Spacer()
                     Text(viewModel.lumiMemoryFormatted)
                         .font(.system(size: 18, weight: .semibold, design: .monospaced))
-                        .foregroundColor(Color(hex: "7c5cff"))
+                        .foregroundColor(theme.primary)
                 }
 
                 // Lumi memory chart
@@ -269,11 +230,10 @@ public struct MemorySettingsView: View {
 
     private var lumiMemoryChartCard: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(LumiPluginLocalization.string("Lumi Memory History", bundle: .module))
-                    .font(.appBody)
-                    .bold()
-
+            AppSettingsSection(
+                title: LumiPluginLocalization.string("Lumi Memory History", bundle: .module),
+                spacing: 12
+            ) {
                 LumiMemoryChartView(
                     dataPoints: viewModel.getLumiMemoryData(for: lumiMemoryTimeRange)
                 )
@@ -359,8 +319,7 @@ private struct StatisticItem: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
-        .background(theme.textTertiary.opacity(0.05))
-        .cornerRadius(8)
+        .appSurface(style: .subtle, cornerRadius: 8)
     }
 }
 

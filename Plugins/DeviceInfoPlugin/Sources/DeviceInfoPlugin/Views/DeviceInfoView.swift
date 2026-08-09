@@ -15,23 +15,18 @@ public struct DeviceInfoView: View {
             VStack(spacing: 24) {
                 VStack(spacing: 16) {
                     AppCard {
-                        HStack(spacing: 16) {
-                            ZStack {
-                                Circle()
-                                    .fill(theme.primary.opacity(0.1))
-                                    .frame(width: 60, height: 60)
+                        HStack(spacing: 12) {
+                            Image(systemName: "macbook.and.iphone")
+                                .font(.title)
+                                .foregroundStyle(theme.primary)
 
-                                Image(systemName: "macbook.and.iphone")
-                                    .font(.largeTitle)
-                                    .foregroundStyle(theme.primary)
-                            }
-
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text(data.deviceName)
-                                    .font(.title.weight(.semibold))
+                                    .font(.appBody)
+                                    .fontWeight(.semibold)
                                     .foregroundColor(theme.textPrimary)
                                 Text(data.osVersion)
-                                    .font(.body)
+                                    .font(.appCaption)
                                     .foregroundColor(theme.textSecondary)
                             }
 
@@ -43,56 +38,36 @@ public struct DeviceInfoView: View {
                         DeviceInfoCard(title: LumiPluginLocalization.string("CPU", bundle: .module), icon: "cpu", color: theme.info) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(data.processorName.isEmpty ? String(format: LumiPluginLocalization.string("%d cores", bundle: .module), data.coreCount) : data.processorName)
-                                    .font(.caption)
+                                    .font(.appCaption)
                                     .lineLimit(1)
                                     .foregroundColor(theme.textSecondary)
 
-                                HStack(alignment: .bottom) {
-                                    Text("\(Int(data.cpuUsage))%")
-                                        .font(.largeTitle.weight(.bold))
-                                        .foregroundColor(theme.textPrimary)
-                                    Spacer()
-                                    Capsule()
-                                        .fill(theme.info.opacity(0.2))
-                                        .frame(width: 40, height: 6)
-                                        .overlay(alignment: .leading) {
-                                            Capsule()
-                                                .fill(theme.info)
-                                                .frame(width: 40 * min(max(data.cpuUsage / 100, 0), 1), height: 6)
-                                        }
-                                }
+                                Text("\(Int(data.cpuUsage))%")
+                                    .font(.appSectionTitle)
+                                    .foregroundColor(theme.textPrimary)
 
-                                // CPU usage breakdown bar
-                                GeometryReader { geo in
-                                    HStack(spacing: 0) {
-                                        RoundedRectangle(cornerRadius: 2)
-                                            .fill(theme.success)
-                                            .frame(width: geo.size.width * min(max(cpuService.userUsage / 100, 0), 1))
-                                        RoundedRectangle(cornerRadius: 2)
-                                            .fill(theme.warning)
-                                            .frame(width: geo.size.width * min(max(cpuService.systemUsage / 100, 0), 1))
-                                    }
-                                }
-                                .background(RoundedRectangle(cornerRadius: 2).fill(theme.textTertiary.opacity(0.15)))
-                                .frame(height: 4)
+                                ProgressView(value: data.cpuUsage, total: 100)
+                                    .tint(theme.info)
 
-                                HStack(spacing: 8) {
-                                    HStack(spacing: 3) {
-                                        Circle()
-                                            .fill(theme.success)
-                                            .frame(width: 5, height: 5)
+                                // User / system breakdown (compact)
+                                HStack(spacing: 12) {
+                                    HStack(spacing: 4) {
+                                        Text(LumiPluginLocalization.string("User", bundle: .module))
+                                            .font(.appCaption)
+                                            .foregroundColor(theme.textSecondary)
                                         Text(String(format: "%.0f%%", cpuService.userUsage))
-                                            .font(.system(size: 9))
-                                            .foregroundColor(theme.textSecondary)
+                                            .font(.appCaption)
+                                            .foregroundColor(theme.success)
                                     }
-                                    HStack(spacing: 3) {
-                                        Circle()
-                                            .fill(theme.warning)
-                                            .frame(width: 5, height: 5)
+                                    HStack(spacing: 4) {
+                                        Text(LumiPluginLocalization.string("System", bundle: .module))
+                                            .font(.appCaption)
+                                            .foregroundColor(theme.textSecondary)
                                         Text(String(format: "%.0f%%", cpuService.systemUsage))
-                                            .font(.system(size: 9))
-                                            .foregroundColor(theme.textSecondary)
+                                            .font(.appCaption)
+                                            .foregroundColor(theme.warning)
                                     }
+                                    Spacer()
                                 }
                             }
                         }
@@ -100,10 +75,10 @@ public struct DeviceInfoView: View {
                         DeviceInfoCard(title: LumiPluginLocalization.string("Memory", bundle: .module), icon: "memorychip", color: theme.success) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("\(memoryUsedText) / \(memoryTotalText)")
-                                    .font(.caption)
+                                    .font(.appCaption)
                                     .foregroundColor(theme.textSecondary)
 
-                                ProgressView(value: data.memoryUsage)
+                                ProgressView(value: data.memoryUsage, total: 1.0)
                                     .tint(theme.info)
                             }
                         }
@@ -111,14 +86,18 @@ public struct DeviceInfoView: View {
                         DeviceInfoCard(title: LumiPluginLocalization.string("Disk", bundle: .module), icon: "internaldrive", color: theme.warning) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("\(diskUsedText) \(LumiPluginLocalization.string("used", bundle: .module))")
-                                    .font(.caption)
+                                    .font(.appCaption)
                                     .foregroundColor(theme.textSecondary)
 
-                                Gauge(value: Double(data.diskUsed), in: 0 ... max(Double(data.diskTotal), 1)) {
-                                    Text(diskTotalText)
-                                }
-                                .gaugeStyle(.accessoryLinearCapacity)
+                                ProgressView(
+                                    value: Double(data.diskUsed),
+                                    total: max(Double(data.diskTotal), 1)
+                                )
                                 .tint(theme.info)
+
+                                Text(diskTotalText)
+                                    .font(.appCaption)
+                                    .foregroundColor(theme.textTertiary)
                             }
                         }
 
@@ -127,7 +106,7 @@ public struct DeviceInfoView: View {
                                 if batteryService.hasBattery {
                                     HStack {
                                         Text("\(Int(batteryService.level * 100))%")
-                                            .font(.title.weight(.semibold))
+                                            .font(.appSectionTitle)
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()
                                         if batteryService.isCharging {
@@ -139,25 +118,24 @@ public struct DeviceInfoView: View {
                                     ProgressView(value: batteryService.level)
                                         .tint(batteryLevelColor)
 
-                                    // Enhanced details
                                     HStack(spacing: 12) {
                                         if batteryService.healthPercentage > 0 {
                                             Label {
                                                 Text("\(Int(batteryService.healthPercentage))%")
-                                                    .font(.caption2)
+                                                    .font(.appCaption)
                                             } icon: {
                                                 Image(systemName: "heart.fill")
-                                                    .font(.caption2)
+                                                    .font(.appCaption)
                                             }
                                             .foregroundColor(batteryHealthColor)
                                         }
                                         if batteryService.cycleCount > 0 {
                                             Label {
                                                 Text(String(format: LumiPluginLocalization.string("%d cycles", bundle: .module), batteryService.cycleCount))
-                                                    .font(.caption2)
+                                                    .font(.appCaption)
                                             } icon: {
                                                 Image(systemName: "arrow.triangle.2.circlepath")
-                                                    .font(.caption2)
+                                                    .font(.appCaption)
                                             }
                                             .foregroundColor(theme.textSecondary)
                                         }
@@ -168,13 +146,13 @@ public struct DeviceInfoView: View {
                                         Image(systemName: "powerplug.fill")
                                             .foregroundColor(theme.success)
                                         Text(LumiPluginLocalization.string("AC Power", bundle: .module))
-                                            .font(.body.weight(.medium))
+                                            .font(.appBody)
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()
                                     }
                                     if batteryService.adapterWatts > 0 {
                                         Text(String(format: LumiPluginLocalization.string("Adapter: %@", bundle: .module), batteryService.adapterWattsString))
-                                            .font(.caption)
+                                            .font(.appCaption)
                                             .foregroundColor(theme.textSecondary)
                                     }
                                 }
@@ -184,24 +162,16 @@ public struct DeviceInfoView: View {
                         DeviceInfoCard(title: LumiPluginLocalization.string("GPU", bundle: .module), icon: "cpu", color: theme.info) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(gpuService.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpuService.modelName)
-                                    .font(.caption)
+                                    .font(.appCaption)
                                     .lineLimit(1)
                                     .foregroundColor(theme.textSecondary)
 
-                                HStack(alignment: .bottom) {
-                                    Text(String(format: "%.0f%%", gpuService.utilization))
-                                        .font(.largeTitle.weight(.bold))
-                                        .foregroundColor(theme.textPrimary)
-                                    Spacer()
-                                    Capsule()
-                                        .fill(theme.info.opacity(0.2))
-                                        .frame(width: 40, height: 6)
-                                        .overlay(alignment: .leading) {
-                                            Capsule()
-                                                .fill(theme.info)
-                                                .frame(width: 40 * min(max(gpuService.utilization / 100, 0), 1), height: 6)
-                                        }
-                                }
+                                Text(String(format: "%.0f%%", gpuService.utilization))
+                                    .font(.appSectionTitle)
+                                    .foregroundColor(theme.textPrimary)
+
+                                ProgressView(value: gpuService.utilization, total: 100)
+                                    .tint(theme.info)
                             }
                         }
                     }
@@ -211,37 +181,29 @@ public struct DeviceInfoView: View {
                         VStack(spacing: 12) {
                             ForEach(storageService.externalVolumes) { volume in
                                 AppCard {
-                                    HStack(spacing: 12) {
-                                        Image(systemName: "externaldrive")
-                                            .font(.title3)
-                                            .foregroundStyle(theme.warning)
+                                    AppSettingsRow {
+                                        HStack(spacing: 12) {
+                                            Image(systemName: "externaldrive")
+                                                .font(.appCallout)
+                                                .foregroundStyle(theme.warning)
+                                                .frame(width: 24)
 
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            Text(volume.name)
-                                                .font(.caption.weight(.semibold))
-                                                .foregroundColor(theme.textPrimary)
-
-                                            Text("\(volume.usedString) / \(volume.totalString)")
-                                                .font(.caption2)
-                                                .foregroundColor(theme.textSecondary)
-
-                                            GeometryReader { geo in
-                                                ZStack(alignment: .leading) {
-                                                    RoundedRectangle(cornerRadius: 3)
-                                                        .fill(theme.primary.opacity(0.1))
-                                                    RoundedRectangle(cornerRadius: 3)
-                                                        .fill(volumeUsageColor(volume.usagePercent))
-                                                        .frame(width: geo.size.width * min(max(volume.usageFraction, 0), 1))
-                                                }
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(volume.name)
+                                                    .font(.appBody)
+                                                    .foregroundColor(theme.textPrimary)
+                                                Text("\(volume.usedString) / \(volume.totalString)")
+                                                    .font(.appCaption)
+                                                    .foregroundColor(theme.textSecondary)
                                             }
-                                            .frame(height: 6)
+
+                                            Spacer()
+
+                                            Text("\(volume.usagePercent)%")
+                                                .font(.appBody)
+                                                .fontWeight(.semibold)
+                                                .foregroundColor(theme.textPrimary)
                                         }
-
-                                        Spacer()
-
-                                        Text("\(volume.usagePercent)%")
-                                            .font(.title3.weight(.bold))
-                                            .foregroundColor(theme.textPrimary)
                                     }
                                 }
                             }
@@ -253,18 +215,21 @@ public struct DeviceInfoView: View {
                         Image(systemName: "clock")
                             .foregroundColor(theme.textSecondary)
                         Text("\(LumiPluginLocalization.string("Uptime", bundle: .module)): \(formatUptime(data.uptime))")
-                            .font(.caption)
+                            .font(.appCaption)
                             .foregroundColor(theme.textSecondary)
                         Spacer()
                     }
                     .padding(.horizontal)
                 }
 
-                GlassDivider()
+                Divider()
+                    .padding(.horizontal)
+                    .foregroundStyle(theme.textTertiary.opacity(0.15))
 
                 VStack(alignment: .leading, spacing: 16) {
                     Label(LumiPluginLocalization.string("Real-time Monitor", bundle: .module), systemImage: "chart.xyaxis.line")
-                        .font(.body.weight(.semibold))
+                        .font(.appBody)
+                        .fontWeight(.semibold)
                         .foregroundColor(theme.textPrimary)
                         .padding(.horizontal)
 
@@ -273,6 +238,9 @@ public struct DeviceInfoView: View {
             }
             .padding()
         }
+        // 让容器页里的 AppCard 走 subtle 风格，移除默认的 glass shadow / glow，
+        // 与 RailView 中其他扁平卡片保持一致。
+        .environment(\.appSettingsCardStyleOverride, .subtle)
         .onAppear {
             storageService.startMonitoring()
         }
@@ -328,15 +296,9 @@ public struct DeviceInfoView: View {
         formatter.unitsStyle = .abbreviated
         return formatter.string(from: interval) ?? ""
     }
-
-    // MARK: - Storage Helpers
-
-    private func volumeUsageColor(_ percent: Int) -> Color {
-        if percent < 70 { return theme.success }
-        if percent < 90 { return theme.warning }
-        return theme.error
-    }
 }
+
+// MARK: - Device Info Card
 
 private struct DeviceInfoCard<Content: View>: View {
     @LumiTheme private var theme
@@ -355,16 +317,15 @@ private struct DeviceInfoCard<Content: View>: View {
 
     public var body: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Label {
-                        Text(title)
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(theme.textSecondary)
-                    } icon: {
-                        Image(systemName: icon)
-                            .foregroundStyle(color)
-                    }
+            AppSettingsSection(spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: icon)
+                        .font(.appCaption)
+                        .foregroundStyle(color)
+                    Text(title)
+                        .font(.appCaption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(theme.textSecondary)
                     Spacer()
                 }
 
