@@ -89,10 +89,10 @@ public struct SettingsView: View, SuperLog {
             Spacer()
             Picker("", selection: $speedLimitBytes) {
                 Text(LumiPluginLocalization.string("不限速", bundle: .module)).tag(0)
-                Text("512 KB/s").tag(512 * 1024)
-                Text("1 MB/s").tag(1024 * 1024)
-                Text("2 MB/s").tag(2 * 1024 * 1024)
-                Text("5 MB/s").tag(5 * 1024 * 1024)
+                Text(LumiPluginLocalization.string("512 KB/s", bundle: .module)).tag(512 * 1024)
+                Text(LumiPluginLocalization.string("1 MB/s", bundle: .module)).tag(1024 * 1024)
+                Text(LumiPluginLocalization.string("2 MB/s", bundle: .module)).tag(2 * 1024 * 1024)
+                Text(LumiPluginLocalization.string("5 MB/s", bundle: .module)).tag(5 * 1024 * 1024)
             }
             .labelsHidden()
             .pickerStyle(.menu)
