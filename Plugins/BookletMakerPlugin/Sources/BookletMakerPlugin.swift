@@ -98,8 +98,7 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     }
 
     private func suggestedFileName() -> String {
-        let base = sharedViewModel.inputURL?.deletingPathExtension().lastPathComponent
-            ?? "booklet"
+        let base = sharedViewModel.currentDocument.baseFileName
         return "\(base)-booklet.pdf"
     }
 

@@ -5,6 +5,7 @@ import SwiftUI
 /// 「装订前」示意图：左侧为张数 tab（第一张 … 第四张），
 /// 右侧显示选中那张纸的实际拼版内容（横向纸张上并排的左右两页）。
 struct SheetPreviewView: View {
+    let document: CurrentPDFDocument
     let settings: BookletSettings
 
     /// 当前选中的物理纸张（0-based）
@@ -12,7 +13,7 @@ struct SheetPreviewView: View {
 
     /// 根据当前设置计算出的输出纸张序列
     private var sheets: [PhysicalSheet] {
-        BookletLayoutEngine.buildPhysicalSheets(inputPageCount: SampleStory.pageCount,
+        BookletLayoutEngine.buildPhysicalSheets(inputPageCount: document.pageCount,
                                                 settings: settings)
     }
 
@@ -103,7 +104,11 @@ struct SheetPreviewView: View {
                  : BookletLocalization.string("Back"))
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(.secondary)
-            OutputSheetView(sheet: outputSide, settings: settings)
+            OutputSheetView(
+                sheet: outputSide,
+                document: document,
+                settings: settings
+            )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             Text(pairCaption(outputSide))
                 .font(.system(size: 10))
@@ -117,6 +122,7 @@ struct SheetPreviewView: View {
 /// 单个打印面（横向）：按设置的边距/装订线摆放左右两个故事页。
 struct OutputSheetView: View {
     let sheet: OutputSheet
+    let document: CurrentPDFDocument
     let settings: BookletSettings
 
     var body: some View {
@@ -171,11 +177,15 @@ struct OutputSheetView: View {
     /// 单个故事页；页码 0 表示空白页
     @ViewBuilder
     private func sheetPage(_ pageNumber: Int, height: CGFloat, maxWidth: CGFloat) -> some View {
-        let pageAspect = 1.0 / 1.414
+        let pageAspect = document.pageAspectRatio
         let h = min(height, maxWidth / pageAspect)
 
         if pageNumber > 0 {
-            StoryPageView(pageNumber: pageNumber, height: h, textScale: 1.2)
+            PDFDocumentPageView(
+                documentURL: document.url,
+                pageNumber: pageNumber
+            )
+                .frame(width: h * pageAspect, height: h)
         } else {
             RoundedRectangle(cornerRadius: 3)
                 .fill(Color(nsColor: .textBackgroundColor))
@@ -211,13 +221,19 @@ struct OutputSheetView: View {
 // MARK: - Preview
 
 #Preview("Sheet Preview - Booklet Fold") {
-    SheetPreviewView(settings: BookletSettings())
+    SheetPreviewView(
+        document: try! DemoPDFProvider.makeDocument(),
+        settings: BookletSettings()
+    )
         .frame(width: 480, height: 260)
         .padding()
 }
 
 #Preview("Sheet Preview - Simple Pair") {
-    SheetPreviewView(settings: BookletSettings(layout: .simplePair))
+    SheetPreviewView(
+        document: try! DemoPDFProvider.makeDocument(),
+        settings: BookletSettings(layout: .simplePair)
+    )
         .frame(width: 480, height: 260)
         .padding()
 }

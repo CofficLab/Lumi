@@ -5,7 +5,10 @@ struct BookletMakerMainView: View {
     @ObservedObject var viewModel: BookletMakerViewModel
 
     var body: some View {
-        BookletExplanationView(settings: viewModel.settings)
+        BookletExplanationView(
+            document: viewModel.currentDocument,
+            settings: viewModel.settings
+        )
             .frame(maxWidth: .infinity)
             .frame(maxHeight: .infinity)
             .padding()

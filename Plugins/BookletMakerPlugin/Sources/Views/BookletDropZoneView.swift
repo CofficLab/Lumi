@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - Booklet Drop Zone View
 
@@ -15,8 +16,13 @@ struct BookletDropZoneView: View {
                 .frame(height: 120)
 
             // 文件信息
-            if let inputURL = viewModel.inputURL {
-                fileInfo(for: inputURL)
+            fileInfo
+
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding()
@@ -28,7 +34,7 @@ struct BookletDropZoneView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(isTargeted ? Color.accentColor : Color.secondary.opacity(0.2), lineWidth: isTargeted ? 2 : 1)
         )
-        .onDrop(of: [.pdf], isTargeted: $isTargeted) { providers in
+        .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
             handleDrop(providers: providers)
         }
     }
@@ -55,33 +61,39 @@ struct BookletDropZoneView: View {
         }
     }
 
-    private func fileInfo(for url: URL) -> some View {
+    private var fileInfo: some View {
         HStack {
-            Image(systemName: "doc.fill")
+            Image(systemName: viewModel.currentDocument.isDemo ? "doc.text.fill" : "doc.fill")
                 .foregroundColor(.blue)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(url.lastPathComponent)
+                Text(viewModel.currentDocument.isDemo
+                     ? BookletLocalization.string("Built-in demo PDF")
+                     : viewModel.currentDocument.url.lastPathComponent)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .lineLimit(1)
 
-                if let info = viewModel.inputInfo {
-                    Text(BookletLocalization.string("%lld pages", Int64(info.pageCount)))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+                Text(BookletLocalization.string(
+                    "%lld pages",
+                    Int64(viewModel.currentDocument.pageCount)
+                ))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
 
             Spacer()
 
-            Button(action: {
-                viewModel.clear()
-            }) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(.secondary)
+            if viewModel.hasUserInput {
+                Button(action: {
+                    viewModel.clear()
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(BookletLocalization.string("Return to built-in demo PDF"))
             }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
@@ -105,10 +117,28 @@ struct BookletDropZoneView: View {
     }
 
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
-        guard let provider = providers.first else { return false }
+        guard let provider = providers.first(where: {
+            $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
+        }) else {
+            return false
+        }
 
-        _ = provider.loadObject(ofClass: URL.self) { url, error in
-            guard let url = url, url.pathExtension.lowercased() == "pdf" else { return }
+        provider.loadItem(
+            forTypeIdentifier: UTType.fileURL.identifier,
+            options: nil
+        ) { item, _ in
+            let url: URL?
+            if let data = item as? Data {
+                url = URL(dataRepresentation: data, relativeTo: nil)
+            } else if let itemURL = item as? URL {
+                url = itemURL
+            } else if let itemURL = item as? NSURL {
+                url = itemURL as URL
+            } else {
+                url = nil
+            }
+
+            guard let url, url.pathExtension.lowercased() == "pdf" else { return }
             Task { @MainActor in
                 await viewModel.loadPDF(url)
             }

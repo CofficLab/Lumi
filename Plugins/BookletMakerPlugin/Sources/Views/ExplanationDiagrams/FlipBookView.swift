@@ -5,6 +5,7 @@ import SwiftUI
 /// 「装订后」示意图：一本可交互的虚拟小册子。
 /// 点击左右两侧或水平拖动即可翻页，带 3D 翻页动画。
 struct FlipBookView: View {
+    let document: CurrentPDFDocument
 
     /// 一个 spread 的左右槽位（nil 表示该侧无页面）
     private typealias Spread = (left: Int?, right: Int?)
@@ -12,13 +13,13 @@ struct FlipBookView: View {
     /// 书本的展开方式：封面在右半侧、封底在左半侧，中间为左右对页。
     /// 8 页 → (-,1) (2,3) (4,5) (6,7) (8,-)
     private var spreads: [Spread] {
+        guard document.pageCount > 0 else { return [] }
         var result: [Spread] = [(nil, 1)]
         var page = 2
-        while page <= SampleStory.pageCount - 1 {
-            result.append((page, page + 1))
+        while page <= document.pageCount {
+            result.append((page, page < document.pageCount ? page + 1 : nil))
             page += 2
         }
-        result.append((SampleStory.pageCount, nil))
         return result
     }
 
@@ -33,13 +34,17 @@ struct FlipBookView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let pageHeight = min(geo.size.height - 30, geo.size.width * 1.414 / 2)
-            let pageWidth = pageHeight / 1.414
+            let pageHeight = min(
+                geo.size.height - 30,
+                geo.size.width / max(document.pageAspectRatio * 2, 0.01)
+            )
+            let pageWidth = pageHeight * document.pageAspectRatio
 
             VStack(spacing: 8) {
                 ZStack {
                     // 底层：翻页目标 spread
-                    spreadView(spreads[targetSpreadIndex],
+                    if !spreads.isEmpty {
+                        spreadView(spreads[targetSpreadIndex],
                                pageWidth: pageWidth,
                                pageHeight: pageHeight,
                                dimmed: isFlipping)
@@ -68,12 +73,17 @@ struct FlipBookView: View {
                             .onTapGesture { flipForward() }
                     }
                     .frame(width: pageWidth * 2, height: pageHeight)
+                    }
                 }
                 .frame(width: pageWidth * 2, height: pageHeight)
                 .contentShape(Rectangle())
                 .gesture(flipDrag(pageWidth: pageWidth))
             }
             .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .onChange(of: document.id) { _, _ in
+            spreadIndex = 0
+            flipProgress = 0
         }
     }
 
@@ -105,7 +115,8 @@ struct FlipBookView: View {
     @ViewBuilder
     private func pageSlot(_ page: Int?, pageWidth: CGFloat, pageHeight: CGFloat) -> some View {
         if let page {
-            StoryPageView(pageNumber: page, height: pageHeight, textScale: 1.2)
+            PDFDocumentPageView(documentURL: document.url, pageNumber: page)
+                .frame(width: pageWidth, height: pageHeight)
         } else {
             Color.clear.frame(width: pageWidth, height: pageHeight)
         }
@@ -116,11 +127,13 @@ struct FlipBookView: View {
                           pageWidth: CGFloat, pageHeight: CGFloat) -> some View {
         HStack(spacing: 0) {
             if atLeft {
-                StoryPageView(pageNumber: page, height: pageHeight, textScale: 1.2)
+                PDFDocumentPageView(documentURL: document.url, pageNumber: page)
+                    .frame(width: pageWidth, height: pageHeight)
                 Color.clear.frame(width: pageWidth, height: pageHeight)
             } else {
                 Color.clear.frame(width: pageWidth, height: pageHeight)
-                StoryPageView(pageNumber: page, height: pageHeight, textScale: 1.2)
+                PDFDocumentPageView(documentURL: document.url, pageNumber: page)
+                    .frame(width: pageWidth, height: pageHeight)
             }
         }
     }
@@ -144,10 +157,12 @@ struct FlipBookView: View {
 
         ZStack {
             if showBack, let backPage {
-                StoryPageView(pageNumber: backPage, height: pageHeight, textScale: 1.2)
+                PDFDocumentPageView(documentURL: document.url, pageNumber: backPage)
+                    .frame(width: pageWidth, height: pageHeight)
                     .scaleEffect(x: -1, y: 1)  // 镜像，让背面内容方向正确
             } else if let frontPage {
-                StoryPageView(pageNumber: frontPage, height: pageHeight, textScale: 1.2)
+                PDFDocumentPageView(documentURL: document.url, pageNumber: frontPage)
+                    .frame(width: pageWidth, height: pageHeight)
             }
         }
         .frame(width: pageWidth, height: pageHeight)
@@ -226,7 +241,7 @@ struct FlipBookView: View {
 // MARK: - Preview
 
 #Preview("Flip Book") {
-    FlipBookView()
+    FlipBookView(document: try! DemoPDFProvider.makeDocument())
         .frame(width: 480, height: 300)
         .padding()
 }

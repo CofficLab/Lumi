@@ -10,6 +10,7 @@ import AppKit
 /// - 右侧：根据选中 tab 显示对应预览：原始 PDF 展示输入页面、转换后
 ///   展示 4 张 A4 输出 PDF 全貌、装订前展示单张拼版细节、装订后展示翻页小册子
 struct BookletExplanationView: View {
+    let document: CurrentPDFDocument
     let settings: BookletSettings
 
     /// 当前选中的 tab：原始 PDF / 转换后 / 装订前 / 装订后
@@ -49,6 +50,9 @@ struct BookletExplanationView: View {
         .onChange(of: settings) { _, _ in
             selectedSheet = 0
         }
+        .onChange(of: document.id) { _, _ in
+            selectedSheet = 0
+        }
     }
 
     // MARK: - Left Control Panel
@@ -81,22 +85,22 @@ struct BookletExplanationView: View {
                 BookletLocalization.string(
                     "%@ · %lld pages",
                     settings.outputPaper.displayName,
-                    Int64(SampleStory.pageCount)
+                    Int64(document.pageCount)
                 )
             )
         case .afterConversion:
             let outputSides = BookletLayoutEngine.buildOutputSides(
-                inputPageCount: SampleStory.pageCount,
+                inputPageCount: document.pageCount,
                 settings: settings
             )
             let physicalSheets = BookletLayoutEngine.buildPhysicalSheets(
-                inputPageCount: SampleStory.pageCount,
+                inputPageCount: document.pageCount,
                 settings: settings
             )
             stageSummary(
                 BookletLocalization.string(
                     "%lld pages → %lld %@ sheets · %lld print sides",
-                    Int64(SampleStory.pageCount),
+                    Int64(document.pageCount),
                     Int64(physicalSheets.count),
                     settings.outputPaper.displayName,
                     Int64(outputSides.count)
@@ -178,7 +182,7 @@ struct BookletExplanationView: View {
     /// 张数 tab 列表（装订前模式时高亮显示）
     private var sheetTabList: some View {
         let sheets = BookletLayoutEngine.buildPhysicalSheets(
-            inputPageCount: SampleStory.pageCount,
+            inputPageCount: document.pageCount,
             settings: settings
         )
 
@@ -260,12 +264,16 @@ struct BookletExplanationView: View {
     private var originalContent: some View {
         GeometryReader { geo in
             let pageWidth = min(geo.size.width, 480)
-            let pageHeight = pageWidth * 1.414
+            let pageHeight = pageWidth / document.pageAspectRatio
 
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(SampleStory.pages) { page in
-                        StoryPageView(pageNumber: page.id, height: pageHeight)
+                    ForEach(0..<document.pageCount, id: \.self) { index in
+                        PDFDocumentPageView(
+                            documentURL: document.url,
+                            pageNumber: index + 1
+                        )
+                            .frame(width: pageWidth, height: pageHeight)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
@@ -282,7 +290,7 @@ struct BookletExplanationView: View {
     /// 旋转 90° 装下横向拼版内容；下方带张数标签方便对照。
     private var afterConversionContent: some View {
         let outputSides = BookletLayoutEngine.buildOutputSides(
-            inputPageCount: SampleStory.pageCount,
+            inputPageCount: document.pageCount,
             settings: settings
         )
         return GeometryReader { geo in
@@ -322,7 +330,11 @@ struct BookletExplanationView: View {
             Color.clear
                 .frame(width: pageWidth, height: pageHeight)
                 .overlay(
-                    OutputSheetView(sheet: outputSide, settings: settings)
+                    OutputSheetView(
+                        sheet: outputSide,
+                        document: document,
+                        settings: settings
+                    )
                         .frame(width: pageHeight, height: pageWidth)
                         .rotationEffect(.degrees(90))
                 )
@@ -340,7 +352,7 @@ struct BookletExplanationView: View {
 
     private var beforeBindingContent: some View {
         let sheets = BookletLayoutEngine.buildPhysicalSheets(
-            inputPageCount: SampleStory.pageCount,
+            inputPageCount: document.pageCount,
             settings: settings
         )
 
@@ -356,7 +368,7 @@ struct BookletExplanationView: View {
     }
 
     private var afterBindingContent: some View {
-        FlipBookView()
+        FlipBookView(document: document)
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
     }
@@ -390,7 +402,11 @@ struct BookletExplanationView: View {
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(.secondary)
 
-            OutputSheetView(sheet: outputSide, settings: settings)
+            OutputSheetView(
+                sheet: outputSide,
+                document: document,
+                settings: settings
+            )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             Text(pairCaption(outputSide))
@@ -412,18 +428,24 @@ struct BookletExplanationView: View {
 // MARK: - Preview
 
 #Preview("Default Settings") {
-    BookletExplanationView(settings: BookletSettings())
+    BookletExplanationView(
+        document: try! DemoPDFProvider.makeDocument(),
+        settings: BookletSettings()
+    )
         .frame(width: 600, height: 480)
         .padding()
 }
 
 #Preview("Simple Pair") {
-    BookletExplanationView(settings: BookletSettings(
-        outputPaper: .a5,
-        layout: .simplePair,
-        marginMM: 15,
-        gutterMM: 10
-    ))
+    BookletExplanationView(
+        document: try! DemoPDFProvider.makeDocument(),
+        settings: BookletSettings(
+            outputPaper: .a5,
+            layout: .simplePair,
+            marginMM: 15,
+            gutterMM: 10
+        )
+    )
     .frame(width: 600, height: 480)
     .padding()
 }

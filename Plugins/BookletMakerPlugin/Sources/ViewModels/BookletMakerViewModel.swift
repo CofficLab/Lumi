@@ -33,16 +33,16 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     private let inspector  = PDFInspector()
     private let renderer   = BookletRenderer()
     private let thumbnailer = BookletThumbnailer()
+    private let demoDocument: CurrentPDFDocument
 
     private var renderTask: Task<Void, Never>?
+    private var loadRequestID = UUID()
+    private var securityScopedURL: URL?
 
     // MARK: - Published state
 
-    /// Currently selected input PDF, if any.
-    @Published private(set) var inputURL: URL?
-
-    /// Page count and first-page size of the input.
-    @Published private(set) var inputInfo: PDFInspector.PDFInfo?
+    /// The authoritative document used by preview, layout and export.
+    @Published private(set) var currentDocument: CurrentPDFDocument
 
     /// Current imposition settings.
     @Published var settings: BookletSettings = .init()
@@ -64,30 +64,39 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
 
     // MARK: - Init
 
-    init() {}
+    init() {
+        do {
+            let demo = try DemoPDFProvider.makeDocument()
+            demoDocument = demo
+            _currentDocument = Published(initialValue: demo)
+        } catch {
+            preconditionFailure("Unable to create Booklet Maker demo PDF: \(error)")
+        }
+    }
 
     // MARK: - Derived
 
     /// Physical pieces of paper required by the current layout.
     var expectedSheetCount: Int {
-        guard let info = inputInfo else { return 0 }
         return BookletLayoutEngine.buildPhysicalSheets(
-            inputPageCount: info.pageCount,
+            inputPageCount: currentDocument.pageCount,
             settings: settings
         ).count
     }
 
     /// PDF pages / print sides produced by the current layout.
     var expectedOutputPageCount: Int {
-        guard let info = inputInfo else { return 0 }
         return BookletLayoutEngine.buildOutputSides(
-            inputPageCount: info.pageCount,
+            inputPageCount: currentDocument.pageCount,
             settings: settings
         ).count
     }
 
-    var hasInput: Bool { inputURL != nil }
-    var canExport: Bool { inputURL != nil && !isRendering }
+    var hasUserInput: Bool { !currentDocument.isDemo }
+    var canExport: Bool {
+        !isRendering
+            && FileManager.default.fileExists(atPath: currentDocument.url.path)
+    }
 
     // MARK: - Input handling
 
@@ -98,28 +107,42 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         progress = 0
         thumbnails = []
         lastOutputURL = nil
-        inputURL = url
-        inputInfo = nil
+
+        let requestID = UUID()
+        loadRequestID = requestID
+        let didStartSecurityScope = url.startAccessingSecurityScopedResource()
 
         do {
             let info = try await inspector.inspect(url)
-            inputInfo = info
+            guard loadRequestID == requestID else {
+                if didStartSecurityScope { url.stopAccessingSecurityScopedResource() }
+                return
+            }
+
+            releaseSecurityScope()
+            securityScopedURL = didStartSecurityScope ? url : nil
+            currentDocument = CurrentPDFDocument(
+                source: .user,
+                url: url,
+                info: info
+            )
             Self.logger.info("\(Self.t)Loaded \(url.lastPathComponent) — \(info.pageCount) pages")
         } catch {
+            if didStartSecurityScope { url.stopAccessingSecurityScopedResource() }
+            guard loadRequestID == requestID else { return }
             let message = (error as? LocalizedError)?.errorDescription
                 ?? error.localizedDescription
             errorMessage = message
-            inputURL = nil
-            inputInfo = nil
             Self.logger.error("\(Self.t)Inspection failed: \(message)")
         }
     }
 
-    /// Clear the current input.
+    /// Clear the user selection and return to the built-in demo document.
     func clear() {
+        loadRequestID = UUID()
         cancel()
-        inputURL = nil
-        inputInfo = nil
+        releaseSecurityScope()
+        currentDocument = demoDocument
         progress = 0
         thumbnails = []
         lastOutputURL = nil
@@ -130,7 +153,7 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
 
     /// Render the impositioned PDF to `outputURL`.
     func export(to outputURL: URL) async {
-        guard let inputURL, let inputInfo else { return }
+        let inputURL = currentDocument.url
 
         cancel()
         isRendering = true
@@ -143,8 +166,6 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         let stream = renderer.render(sourceURL: inputURL,
                                      outputURL: outputURL,
                                      settings: settings)
-        let totalPages = inputInfo.pageCount
-
         renderTask = Task { [weak self] in
             for await p in stream {
                 guard let self else { return }
@@ -164,7 +185,6 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
                     self.errorMessage = BookletLocalization.string("Export failed — see log for details.")
                 }
             }
-            _ = totalPages // silence unused if needed in future
         }
 
         // Wait for the task to finish before kicking off thumbnails.
@@ -200,5 +220,14 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     /// Reveal a file in Finder. Silently no-ops if Finder can't be reached.
     func revealInFinder(_ url: URL) {
         NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
+    private func releaseSecurityScope() {
+        securityScopedURL?.stopAccessingSecurityScopedResource()
+        securityScopedURL = nil
+    }
+
+    deinit {
+        securityScopedURL?.stopAccessingSecurityScopedResource()
     }
 }
