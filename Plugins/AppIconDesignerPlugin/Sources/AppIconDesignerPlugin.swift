@@ -53,6 +53,7 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
             UpdateIconShapeTool(),
             UpdateIconLayerTool(),
             LintIconDocumentTool(),
+            PreviewIconTool(),
             ExportIconSVGTool(),
             ExportAppIconTool(),
             RegisterAppIconArtifactTool(),
