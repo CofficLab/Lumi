@@ -18,6 +18,7 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     }
     public let order = 10
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
+    public let stage: LumiPluginStage = .beta
 
     private var manager: LLMProviderManager?
 

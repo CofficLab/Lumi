@@ -13,13 +13,21 @@ struct AppLayoutView: View {
     @LumiTheme private var theme
     @ObservedObject var kernel: LumiKernel
     private let layoutManager: (any WorkspaceProviding)?
+    private let showsStatusBar: Bool
+    private let showsActivityBar: Bool
 
     @State private var isRailVisible: Bool = true
     @State private var isChatVisible: Bool = true
 
-    init(kernel: LumiKernel) {
+    init(
+        kernel: LumiKernel,
+        showsStatusBar: Bool = true,
+        showsActivityBar: Bool = true
+    ) {
         self.kernel = kernel
         self.layoutManager = kernel.workspace
+        self.showsStatusBar = showsStatusBar
+        self.showsActivityBar = showsActivityBar
     }
 
     var body: some View {
@@ -39,9 +47,11 @@ struct AppLayoutView: View {
             AppDivider()
 
             HStack(spacing: 0) {
-                ActivityBar(kernel: kernel)
-                    .frame(maxHeight: .infinity)
-                AppDivider(.vertical)
+                if showsActivityBar {
+                    ActivityBar(kernel: kernel)
+                        .frame(maxHeight: .infinity)
+                    AppDivider(.vertical)
+                }
 
                 Group {
                     if layoutManager.activeViewContainerID != nil {
@@ -54,8 +64,10 @@ struct AppLayoutView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            AppDivider()
-            StatusBar(kernel: kernel)
+            if showsStatusBar {
+                AppDivider()
+                StatusBar(kernel: kernel)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.background)

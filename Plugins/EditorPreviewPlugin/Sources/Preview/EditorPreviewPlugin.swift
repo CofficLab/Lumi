@@ -16,6 +16,7 @@ public final class EditorPreviewPlugin: LumiPlugin {
     }
     public let order = 84
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

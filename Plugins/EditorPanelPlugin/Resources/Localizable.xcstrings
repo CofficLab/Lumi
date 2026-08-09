@@ -1,41 +1,72 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Code Editor" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Code Editor"
+  "sourceLanguage": "en",
+  "strings": {
+    "Code Editor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code Editor"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "代码编辑器"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代码编辑器"
           }
         }
       }
     },
-    "Display the content of the current project file." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Display the content of the current project file."
+    "Display the content of the current project file.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display the content of the current project file."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示当前项目文件的内容。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示当前项目文件的内容。"
           }
         }
       }
     },
-    "Editor service unavailable" : {
-
+    "Editor service unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editor service unavailable"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器服务不可用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器服务不可用"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器服务不可用"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑器服务不可用"
+          }
+        }
+      }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

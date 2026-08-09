@@ -21,6 +21,7 @@ public final class BrewManagerPlugin: LumiPlugin, SuperLog {
     public var pluginDescription: String { LumiPluginLocalization.string("Manage Homebrew packages and casks", bundle: .module) }
     public let order = 260
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Initialization
 

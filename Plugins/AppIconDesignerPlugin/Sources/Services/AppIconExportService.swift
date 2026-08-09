@@ -156,6 +156,22 @@ public struct AppIconExportService {
         )
     }
 
+    /// Renders one square PNG for visual inspection by an Agent.
+    @MainActor
+    public func renderPreviewPNG(document: IconDocument, pixelSize: Int = 1024) throws -> Data {
+        let document = IconDocumentSanitizer.sanitized(document)
+        let size = min(max(pixelSize, 1), 4096)
+        let content = IconRenderedDocumentView(document: document)
+            .frame(width: CGFloat(size), height: CGFloat(size))
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = 1
+
+        guard let cgImage = renderer.cgImage else {
+            throw AppIconExportError.renderFailed(size)
+        }
+        return try pngData(cgImage: cgImage)
+    }
+
     private static func safeSetName(_ name: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
         let safe = name

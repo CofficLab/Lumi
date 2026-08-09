@@ -31,7 +31,7 @@ public protocol LumiPlugin: AnyObject {
 
     /// 插件开发阶段
     ///
-    /// 用于在管理界面以徽标提示成熟度。默认 `.stable`。
+    /// 用于在管理界面以徽标提示成熟度。**必须显式声明**。
     var stage: LumiPluginStage { get }
 
     /// 插件描述
@@ -230,9 +230,6 @@ public extension LumiPlugin {
 
     /// 默认分类:通用。
     var category: LumiPluginCategory { .general }
-
-    /// 默认阶段:稳定。
-    var stage: LumiPluginStage { .stable }
 
     /// 默认描述:空字符串。
     var pluginDescription: String { "" }

@@ -17,7 +17,7 @@ public struct NetworkHistoryDetailView: View {
 
                 Spacer()
 
-                Picker("Time Range", selection: $selectedRange) {
+                Picker(LumiPluginLocalization.string("Time Range", bundle: .module), selection: $selectedRange) {
                     ForEach(TimeRange.allCases) { range in
                         Text(range.localizedName).tag(range)
                     }

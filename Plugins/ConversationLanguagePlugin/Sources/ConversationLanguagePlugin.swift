@@ -11,6 +11,7 @@ public final class ConversationLanguagePlugin: LumiPlugin {
     }
     public let order = 83
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

@@ -46,25 +46,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete Memory"
+            "value": "删除记忆"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete Memory"
+            "value": "删除记忆"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete Memory"
+            "value": "删除记忆"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete Memory"
+            "value": "删除记忆"
           }
         }
       }
@@ -81,25 +81,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete a memory from the persistent memory system."
+            "value": "从持久记忆系统中删除一条记忆。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete a memory from the persistent memory system."
+            "value": "从持久记忆系统中删除一条记忆。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete a memory from the persistent memory system."
+            "value": "从持久记忆系统中删除一条记忆。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete a memory from the persistent memory system."
+            "value": "从持久记忆系统中删除一条记忆。"
           }
         }
       }
@@ -149,25 +149,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "List Memories"
+            "value": "列出记忆"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "List Memories"
+            "value": "列出记忆"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "List Memories"
+            "value": "列出记忆"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "List Memories"
+            "value": "列出记忆"
           }
         }
       }
@@ -184,25 +184,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "List all saved memories."
+            "value": "列出所有已保存的记忆。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "List all saved memories."
+            "value": "列出所有已保存的记忆。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "List all saved memories."
+            "value": "列出所有已保存的记忆。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "List all saved memories."
+            "value": "列出所有已保存的记忆。"
           }
         }
       }
@@ -321,25 +321,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recall Memory"
+            "value": "调取记忆"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recall Memory"
+            "value": "调取记忆"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recall Memory"
+            "value": "调取记忆"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recall Memory"
+            "value": "调取记忆"
           }
         }
       }
@@ -355,25 +355,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save Memory"
+            "value": "保存记忆"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save Memory"
+            "value": "保存记忆"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save Memory"
+            "value": "保存记忆"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save Memory"
+            "value": "保存记忆"
           }
         }
       }
@@ -390,25 +390,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save a memory to the persistent memory system."
+            "value": "将一条记忆保存到持久记忆系统。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save a memory to the persistent memory system."
+            "value": "将一条记忆保存到持久记忆系统。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save a memory to the persistent memory system."
+            "value": "将一条记忆保存到持久记忆系统。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save a memory to the persistent memory system."
+            "value": "将一条记忆保存到持久记忆系统。"
           }
         }
       }
@@ -425,25 +425,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search for memories related to a query."
+            "value": "搜索与查询相关的记忆。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search for memories related to a query."
+            "value": "搜索与查询相关的记忆。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search for memories related to a query."
+            "value": "搜索与查询相关的记忆。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search for memories related to a query."
+            "value": "搜索与查询相关的记忆。"
           }
         }
       }

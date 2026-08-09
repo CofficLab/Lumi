@@ -37,7 +37,7 @@ struct XcodeCloudPage: View {
                 .appStoreConnectAddToChatMenu(
                     entityType: "uiActionButton",
                     entityID: "xcodeCloud.loadProducts",
-                    title: "Load Products",
+                    title: AppStoreConnectLocalization.string("Load Products"),
                     sourceView: "XcodeCloudPage.toolbar",
                     fields: [
                         "actionID": "loadCiProducts",
@@ -52,7 +52,7 @@ struct XcodeCloudPage: View {
                 .appStoreConnectAddToChatMenu(
                     entityType: "uiActionButton",
                     entityID: "xcodeCloud.refreshBuildRuns",
-                    title: "Build Runs",
+                    title: AppStoreConnectLocalization.string("Build Runs"),
                     sourceView: "XcodeCloudPage.toolbar",
                     fields: [
                         "actionID": "loadCiBuildRuns",
@@ -199,7 +199,7 @@ struct XcodeCloudPage: View {
                                 .appStoreConnectAddToChatMenu(
                                     entityType: "uiActionButton",
                                     entityID: "xcodeCloud.startBuild",
-                                    title: "Start Build",
+                                    title: AppStoreConnectLocalization.string("Start Build"),
                                     sourceView: "XcodeCloudPage.startBuild",
                                     fields: [
                                         "actionID": "startCiBuildRun",
@@ -244,7 +244,7 @@ struct XcodeCloudPage: View {
                             .appStoreConnectAddToChatMenu(
                                 entityType: "uiActionButton",
                                 entityID: "xcodeCloud.recentBuildRuns.refresh",
-                                title: "Refresh",
+                                title: AppStoreConnectLocalization.string("Refresh"),
                                 sourceView: "XcodeCloudPage.recentBuildRuns",
                                 fields: [
                                     "actionID": "loadCiBuildRuns",

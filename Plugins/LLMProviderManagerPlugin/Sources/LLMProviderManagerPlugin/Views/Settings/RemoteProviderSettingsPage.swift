@@ -15,6 +15,8 @@ struct RemoteProviderSettingsPage: View {
 
     @State private var selectedProviderID: String = ""
     @State private var apiKey: String = ""
+    @State private var savedAPIKey: String = ""
+    @State private var apiKeySaveError: String?
     @State private var isLoadingSettings: Bool = false
     @State private var stats: ModelUsageStatsSnapshot?
     @State private var providerUsage: [String: ProviderDailyTokenUsageSeries] = [:]
@@ -67,9 +69,6 @@ struct RemoteProviderSettingsPage: View {
             loadAPIKey()
             loadProviderUsage()
         }
-        .onChange(of: apiKey) { _, _ in
-            saveAPIKey()
-        }
         .onAppear {
             loadAPIKey()
             loadProviderUsage()
@@ -108,14 +107,47 @@ struct RemoteProviderSettingsPage: View {
             )
             .id(provider.id)
 
-            if !apiKey.isEmpty {
-                HStack(spacing: 6) {
+            HStack(spacing: 8) {
+                AppButton(
+                    LumiPluginLocalization.string("Save API Key", bundle: .module, locale: locale),
+                    systemImage: "checkmark",
+                    style: .primary,
+                    size: .small
+                ) {
+                    saveAPIKey()
+                }
+                .disabled(
+                    apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        || apiKey == savedAPIKey
+                )
+
+                if !savedAPIKey.isEmpty {
+                    AppButton(
+                        LumiPluginLocalization.string("Remove API Key", bundle: .module, locale: locale),
+                        systemImage: "trash",
+                        style: .destructive,
+                        size: .small
+                    ) {
+                        removeAPIKey()
+                    }
+                }
+
+                if !savedAPIKey.isEmpty, apiKey == savedAPIKey {
+                    HStack(spacing: 6) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(theme.success)
                     Text(String(localized: "Saved"))
                         .font(.appCaption)
                         .foregroundColor(theme.success)
+                    }
                 }
+            }
+
+            if let apiKeySaveError {
+                Text(apiKeySaveError)
+                    .font(.appCaption)
+                    .foregroundStyle(theme.error)
+                    .textSelection(.enabled)
             }
         }
     }
@@ -230,10 +262,13 @@ struct RemoteProviderSettingsPage: View {
     private func loadAPIKey() {
         guard let instance = selectedProviderInstance else {
             apiKey = ""
+            savedAPIKey = ""
             return
         }
         isLoadingSettings = true
         apiKey = instance.getApiKey()
+        savedAPIKey = apiKey
+        apiKeySaveError = nil
         DispatchQueue.main.async {
             isLoadingSettings = false
         }
@@ -245,6 +280,32 @@ struct RemoteProviderSettingsPage: View {
         else {
             return
         }
-        instance.setApiKey(apiKey)
+        do {
+            try instance.saveAPIKey(apiKey)
+            apiKey = instance.getApiKey()
+            savedAPIKey = apiKey
+            apiKeySaveError = nil
+        } catch {
+            apiKeySaveError = error.localizedDescription
+        }
+    }
+
+    private func removeAPIKey() {
+        guard let instance = selectedProviderInstance else { return }
+        instance.removeApiKey()
+        switch instance.apiKeyDiagnostic() {
+        case .missing:
+            apiKey = ""
+            savedAPIKey = ""
+            apiKeySaveError = nil
+        case .configured:
+            apiKeySaveError = LumiPluginLocalization.string(
+                "The API Key could not be removed from macOS Keychain.",
+                bundle: .module,
+                locale: locale
+            )
+        case .inaccessible(let details):
+            apiKeySaveError = details
+        }
     }
 }

@@ -26,6 +26,7 @@ public final class AppUpdatePlugin: LumiPlugin {
     }
     public let order = 50
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public var pluginDescription: String {
         "Integrates Sparkle to check for and install app updates automatically."
     }
@@ -44,10 +45,11 @@ public final class AppUpdatePlugin: LumiPlugin {
     }
 
     public func commandMenuGroups(kernel: LumiKernel) -> [CommandMenuGroup] {
+        guard LumiRuntimeEnvironment.current.allowsAppUpdates else { return [] }
         // Contribute "Check for Updates..." to the app menu.
         // `.appMenu` placement ensures it appears in the Lumi menu after "About",
         // matching the conventional macOS location for this action.
-        [
+        return [
             CommandMenuGroup(
                 id: "\(id).commands",
                 name: name,
@@ -91,7 +93,7 @@ public final class AppUpdatePlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 6) {
-                Text("App Update")
+                Text(LumiPluginLocalization.string("App Update", bundle: .module))
                     .font(.headline)
                 Text(pluginDescription)
                     .font(.callout)

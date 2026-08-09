@@ -16,6 +16,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     }
     public let order = 5
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 
@@ -51,7 +52,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         return [
             LumiTitleToolbarItem(
                 id: "\(id).toolbar",
-                title: "Projects",
+                title: LumiPluginLocalization.string("Projects", bundle: .module),
                 placement: .center,
                 order: 0
             ) {

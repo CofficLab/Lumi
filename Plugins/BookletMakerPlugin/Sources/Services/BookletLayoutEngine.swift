@@ -11,23 +11,36 @@ enum BookletLayoutEngine {
 
     // MARK: - Padding
 
-    /// Return the source page count padded to an even number.
+    /// Return the number of source-page slots required by a layout.
     ///
-    /// If `pad` is `true` and the input is already even, the value is
-    /// returned unchanged. When the input is odd, one blank slot is
-    /// appended.
-    static func padInputCount(_ rawCount: Int, pad: Bool) -> Int {
-        guard pad else { return rawCount }
-        return rawCount + (rawCount.isMultiple(of: 2) ? 0 : 1)
+    /// A duplex booklet always occupies four page slots per physical sheet,
+    /// so booklet-fold input is padded to a multiple of four. Simple-pair
+    /// layout retains its optional even-page padding behaviour.
+    static func paddedInputCount(_ rawCount: Int,
+                                 layout: LayoutMode,
+                                 pad: Bool) -> Int {
+        guard rawCount > 0 else { return 0 }
+        switch layout {
+        case .bookletFold:
+            return ((rawCount + 3) / 4) * 4
+        case .simplePair:
+            guard pad else { return rawCount }
+            return rawCount + (rawCount.isMultiple(of: 2) ? 0 : 1)
+        }
     }
 
-    // MARK: - Sheet count
+    // MARK: - Counts
 
-    /// Number of output sheets produced for a (possibly padded) source
-    /// page count.
-    static func sheetCount(forPaddedInputCount n: Int) -> Int {
+    /// Number of PDF pages / print sides produced for a padded input count.
+    static func outputSideCount(forPaddedInputCount n: Int) -> Int {
         guard n > 0 else { return 0 }
         return (n + 1) / 2
+    }
+
+    /// Number of physical sheets required for duplex booklet printing.
+    static func physicalSheetCount(forPaddedInputCount n: Int) -> Int {
+        guard n > 0 else { return 0 }
+        return (n + 3) / 4
     }
 
     // MARK: - Mapping (booklet fold)
@@ -35,16 +48,20 @@ enum BookletLayoutEngine {
     /// Return the (left, right) source page numbers (1-based, 0 = blank)
     /// for the given `outputIndex` (0-based) under booklet-fold layout.
     ///
-    /// Examples (input already padded to even):
-    /// - N = 4  → [1,4] [2,3]
-    /// - N = 6  → [1,6] [2,5] [3,4]
-    /// - N = 8  → [1,8] [2,7] [3,6] [4,5]
+    /// Output sides are ordered front, back, front, back so ordinary duplex
+    /// printing keeps the two sides of each physical sheet adjacent.
+    /// Examples (input padded to a multiple of four):
+    /// - N = 4  → [4,1] [2,3]
+    /// - N = 8  → [8,1] [2,7] [6,3] [4,5]
     static func bookletFoldMapping(outputIndex: Int,
                                    paddedInputCount n: Int) -> (left: Int, right: Int) {
-        let k = outputIndex + 1
-        let left  = min(k, n - k + 1)
-        let right = max(k, n - k + 1)
-        return (left, right)
+        let physicalSheetIndex = outputIndex / 2
+        if outputIndex.isMultiple(of: 2) {
+            return (n - 2 * physicalSheetIndex,
+                    1 + 2 * physicalSheetIndex)
+        }
+        return (2 + 2 * physicalSheetIndex,
+                n - 1 - 2 * physicalSheetIndex)
     }
 
     // MARK: - Mapping (simple pair)
@@ -62,12 +79,13 @@ enum BookletLayoutEngine {
 
     // MARK: - High-level
 
-    /// Build the full sequence of output sheets for a given source page
-    /// count and settings.
-    static func buildSheets(inputPageCount: Int,
-                            settings: BookletSettings) -> [OutputSheet] {
-        let padded = padInputCount(inputPageCount, pad: settings.padBlankPage)
-        let total  = sheetCount(forPaddedInputCount: padded)
+    /// Build the full sequence of output PDF pages / print sides.
+    static func buildOutputSides(inputPageCount: Int,
+                                 settings: BookletSettings) -> [OutputSheet] {
+        let padded = paddedInputCount(inputPageCount,
+                                      layout: settings.layout,
+                                      pad: settings.padBlankPage)
+        let total = outputSideCount(forPaddedInputCount: padded)
         guard total > 0 else { return [] }
 
         return (0..<total).map { idx in
@@ -80,10 +98,43 @@ enum BookletLayoutEngine {
                 pair = simplePairMapping(outputIndex: idx,
                                          paddedInputCount: padded)
             }
+            let physicalSheetIndex: Int
+            let side: OutputSheet.Side
+            switch settings.layout {
+            case .bookletFold:
+                physicalSheetIndex = idx / 2
+                side = idx.isMultiple(of: 2) ? .front : .back
+            case .simplePair:
+                physicalSheetIndex = idx
+                side = .front
+            }
             return OutputSheet(index: idx,
-                               leftPage:  pair.0,
-                               rightPage: pair.1)
+                               physicalSheetIndex: physicalSheetIndex,
+                               side: side,
+                               leftPage: pair.0 <= inputPageCount ? pair.0 : 0,
+                               rightPage: pair.1 <= inputPageCount ? pair.1 : 0)
         }
+    }
+
+    /// Group output sides by the physical pieces of paper they belong to.
+    static func buildPhysicalSheets(inputPageCount: Int,
+                                    settings: BookletSettings) -> [PhysicalSheet] {
+        let sides = buildOutputSides(inputPageCount: inputPageCount,
+                                     settings: settings)
+        let grouped = Dictionary(grouping: sides, by: \.physicalSheetIndex)
+        return grouped.keys
+            .sorted()
+            .compactMap { index in
+                guard let groupedSides = grouped[index],
+                      let front = groupedSides.first(where: { $0.side == .front }) else {
+                    return nil
+                }
+                return PhysicalSheet(
+                    index: index,
+                    front: front,
+                    back: groupedSides.first(where: { $0.side == .back })
+                )
+            }
     }
 
     // MARK: - Cell rects (helpers for the renderer)

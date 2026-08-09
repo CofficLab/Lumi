@@ -23,6 +23,7 @@ public final class PortManagerPlugin: LumiPlugin, SuperLog {
     }
     public let order = 43
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Initialization
 
@@ -38,7 +39,7 @@ public final class PortManagerPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: "Port Manager",
+                title: LumiPluginLocalization.string("Port Manager", bundle: .module),
                 systemImage: "arrow.up.arrow.down.circle"
             ) {
                 PortManagerView()

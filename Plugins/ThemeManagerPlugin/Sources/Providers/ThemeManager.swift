@@ -98,6 +98,17 @@ public final class ThemeManager: UIThemeProviding {
         }
     }
 
+    /// Inject the theme-selection store so the file is persisted through the
+    /// `StoragePlugin` convention instead of the legacy
+    /// `<Application Support>/LumiUI/theme-selection.plist` path. Must be
+    /// called before any `selectTheme(id:)` that should be remembered.
+    func setThemeSelectionStore(_ store: ThemeSelectionStore) {
+        self.themeSelectionStore = store
+        // Re-read any ID that may have already been written at the injected
+        // location, so the registry reflects the user's prior choice.
+        restoreSavedThemeIfPossible()
+    }
+
     /// Inject the kernel event manager used to broadcast theme-change events.
     public func setEventManager(_ eventManager: EventManager) {
         self.eventManager = eventManager

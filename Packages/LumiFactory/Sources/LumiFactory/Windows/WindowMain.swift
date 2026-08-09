@@ -18,8 +18,11 @@ public struct WindowMain: View, SuperLog {
     @State private var isInitializing = true
     @State private var windowSaveDelegate: EditorWindowSaveDelegate?
     @State private var mainWindow: NSWindow?
+    private let configuration: LumiHostConfiguration
 
-    public init() {}
+    public init(configuration: LumiHostConfiguration = .lumi) {
+        self.configuration = configuration
+    }
 
     public var body: some View {
         Group {
@@ -29,7 +32,11 @@ public struct WindowMain: View, SuperLog {
                 CrashedView(error: error)
             } else if let kernel = kernel {
                 applyRootOverlays(
-                    AppLayoutView(kernel: kernel),
+                    AppLayoutView(
+                        kernel: kernel,
+                        showsStatusBar: configuration.showsStatusBar,
+                        showsActivityBar: configuration.showsActivityBar
+                    ),
                     kernel: kernel
                 )
                 .frame(maxWidth: .infinity)
@@ -61,7 +68,14 @@ public struct WindowMain: View, SuperLog {
 
         do {
             // 使用 LumiFactory 创建主内核（包含自检）
-            let newKernel = try await LumiFactory.createMainKernel()
+            let newKernel = try await LumiFactory.createMainKernel(configuration: configuration)
+
+            if let initialContainerID = configuration.initialContainerID {
+                guard newKernel.workspace?.viewContainer(id: initialContainerID) != nil else {
+                    throw LumiHostConfigurationError.unknownInitialContainerID(initialContainerID)
+                }
+                newKernel.workspace?.activateContainer(id: initialContainerID)
+            }
             self.kernel = newKernel
             if let mainWindow {
                 attachWindowSaveDelegate(to: mainWindow)

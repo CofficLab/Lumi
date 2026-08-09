@@ -10,6 +10,7 @@ public final class QuickFileSearchPlugin: LumiPlugin {
     }
     public let order = 50
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

@@ -10,6 +10,7 @@ public final class ProjectFilesPlugin: LumiPlugin {
     }
     public let order = 70
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

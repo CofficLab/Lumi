@@ -18,6 +18,7 @@ public final class PluginManagerPlugin: LumiPlugin {
     }
     public let order = 90
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     private var enabledStateStore: PluginEnabledStateStore?
 

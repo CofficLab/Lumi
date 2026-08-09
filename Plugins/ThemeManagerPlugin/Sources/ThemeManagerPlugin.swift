@@ -12,13 +12,21 @@ public final class ThemeManagerPlugin: LumiPlugin {
 
     public let order = 22
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     private var themeService: ThemeManager?
 
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
+        // Resolve the plugin data directory through StorageService so the file
+        // lands at <dataRoot>/ThemeManager/theme-selection.plist instead of the
+        // legacy <Application Support>/LumiUI/theme-selection.plist. See
+        // ThemeSelectionStore for the StoragePlugin convention.
+        let pluginDataDirectory = kernel.storage?.pluginDataDirectory(for: ThemeSelectionStore.pluginName)
+        let themeSelectionStore = ThemeSelectionStore(pluginDataDirectory: pluginDataDirectory)
         let themeServiceInstance = ThemeManager()
+        themeServiceInstance.setThemeSelectionStore(themeSelectionStore)
         try kernel.registerThemeService(themeServiceInstance)
         self.themeService = themeServiceInstance
 
@@ -67,7 +75,7 @@ public final class ThemeManagerPlugin: LumiPlugin {
             return [
                 StatusBarItem(
                     id: "\(id).error",
-                    title: "Theme",
+                    title: LumiPluginLocalization.string("Theme", bundle: .module),
                     systemImage: "exclamationmark.triangle.fill",
                     placement: .trailing,
                     statusBarView: { ThemeStatusBarErrorView(pluginName: self.name) }
@@ -78,7 +86,7 @@ public final class ThemeManagerPlugin: LumiPlugin {
         return [
             StatusBarItem(
                 id: "\(id).switcher",
-                title: "Theme",
+                title: LumiPluginLocalization.string("Theme", bundle: .module),
                 systemImage: "paintbrush",
                 placement: .trailing,
                 statusBarView: {

@@ -9,6 +9,30 @@
             "state": "new",
             "value": "%1$@: %2$@"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %@"
+          }
         }
       }
     },
@@ -24,25 +48,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Adds a status bar theme switcher."
+            "value": "添加状态栏主题切换器。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Adds a status bar theme switcher."
+            "value": "添加状态栏主题切换器。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Adds a status bar theme switcher."
+            "value": "添加状态栏主题切换器。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Adds a status bar theme switcher."
+            "value": "添加状态栏主题切换器。"
           }
         }
       }
@@ -230,25 +254,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "No themes available"
+            "value": "没有可用主题"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "No themes available"
+            "value": "没有可用主题"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "No themes available"
+            "value": "没有可用主题"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "No themes available"
+            "value": "没有可用主题"
           }
         }
       }
@@ -400,25 +424,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Theme Status Bar"
+            "value": "主题状态栏"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Theme Status Bar"
+            "value": "主题状态栏"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Theme Status Bar"
+            "value": "主题状态栏"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Theme Status Bar"
+            "value": "主题状态栏"
           }
         }
       }

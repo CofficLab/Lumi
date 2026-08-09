@@ -31,7 +31,9 @@ public enum LumiFactory: SuperLog {
     /// 创建 LumiKernel 实例，注册所有插件，并调用 bootstrap。
     /// - Returns: 初始化完成的内核实例
     /// - Throws: 初始化过程中的错误
-    public static func createKernel() async throws -> LumiKernel {
+    public static func createKernel(
+        configuration: LumiHostConfiguration = .lumi
+    ) async throws -> LumiKernel {
         if verbose {
             logger.info("\(t)创建新内核实例")
         }
@@ -40,13 +42,22 @@ public enum LumiFactory: SuperLog {
         let kernel = LumiKernel()
 
         // 2. 获取插件列表
-        let plugins = PluginService.plugins
+        let plugins = try plugins(for: configuration)
         if verbose {
             logger.info("\(t)初始化 \(plugins.count) 个插件")
         }
 
         // 3. 初始化插件（存储插件实例）
         try await kernel.pluginManager.initializePlugins(plugins, kernel: kernel)
+
+        // 宿主可显式启用白名单中的 opt-in 插件。这里不补齐任何依赖；
+        // 白名单不足时仍由内核启动自检或插件生命周期明确报错。
+        if !configuration.enabledPluginIDs.isEmpty {
+            let overrides = Dictionary(
+                uniqueKeysWithValues: configuration.enabledPluginIDs.map { ($0, true) }
+            )
+            kernel.pluginManager.applyPersistedPluginStates(overrides)
+        }
 
         // 4. 订阅插件变更通知，当插件启用/禁用时重新注册 UI 贡献
         subscribeToPluginChanges(kernel: kernel)
@@ -83,14 +94,35 @@ public enum LumiFactory: SuperLog {
     /// 通常在应用启动时调用一次。
     /// - Returns: 主内核实例
     /// - Throws: 初始化过程中的错误
-    public static func createMainKernel() async throws -> LumiKernel {
+    public static func createMainKernel(
+        configuration: LumiHostConfiguration = .lumi
+    ) async throws -> LumiKernel {
         if let existing = mainKernel {
             if verbose {
                 logger.info("\(t)返回已存在的主内核")
             }
             return existing
         }
-        return try await createKernel()
+        return try await createKernel(configuration: configuration)
+    }
+
+    private static func plugins(for configuration: LumiHostConfiguration) throws -> [LumiPlugin] {
+        guard let allowlist = configuration.pluginAllowlist else {
+            return PluginService.plugins
+        }
+
+        let registeredIDs = Set(PluginService.plugins.map(\.id))
+        let unknownIDs = allowlist.subtracting(registeredIDs)
+        guard unknownIDs.isEmpty else {
+            throw LumiHostConfigurationError.unknownPluginIDs(unknownIDs)
+        }
+
+        let enabledOutsideAllowlist = configuration.enabledPluginIDs.subtracting(allowlist)
+        guard enabledOutsideAllowlist.isEmpty else {
+            throw LumiHostConfigurationError.enabledPluginsOutsideAllowlist(enabledOutsideAllowlist)
+        }
+
+        return PluginService.plugins.filter { allowlist.contains($0.id) }
     }
 
     /// 销毁指定内核
@@ -114,8 +146,10 @@ public enum LumiFactory: SuperLog {
     // MARK: - Window Factory
 
     /// 创建主窗口视图
-    public static func makeMainWindow() -> some View {
-        WindowMain()
+    public static func makeMainWindow(
+        configuration: LumiHostConfiguration = .lumi
+    ) -> some View {
+        WindowMain(configuration: configuration)
     }
 
     /// 创建设置窗口视图

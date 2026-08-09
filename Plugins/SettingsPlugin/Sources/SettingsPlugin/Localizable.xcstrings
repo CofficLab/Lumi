@@ -564,25 +564,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Replay the first-run onboarding flow."
+            "value": "重放首次启动引导流程。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Replay the first-run onboarding flow."
+            "value": "重放首次启动引导流程。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Replay the first-run onboarding flow."
+            "value": "重放首次启动引导流程。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Replay the first-run onboarding flow."
+            "value": "重放首次启动引导流程。"
           }
         }
       }

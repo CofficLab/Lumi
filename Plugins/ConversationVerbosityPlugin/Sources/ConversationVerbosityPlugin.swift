@@ -11,6 +11,7 @@ public final class ConversationVerbosityPlugin: LumiPlugin {
     }
     public let order = 85
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

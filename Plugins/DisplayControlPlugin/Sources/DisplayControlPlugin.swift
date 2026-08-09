@@ -19,6 +19,7 @@ public final class DisplayControlPlugin: LumiPlugin, SuperLog {
     }
     public let order = 210
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 
@@ -30,7 +31,7 @@ public final class DisplayControlPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: "Display Control",
+                title: LumiPluginLocalization.string("Display Control", bundle: .module),
                 systemImage: "display",
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,

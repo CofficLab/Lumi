@@ -108,7 +108,7 @@ public struct SkillSettingsView: View {
             AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
                 Task { await reload() }
             }
-            AppButton("Open Skills Directory", systemImage: "folder", size: .small) {
+            AppButton(LumiPluginLocalization.string("Open Skills Directory", bundle: .module), systemImage: "folder", size: .small) {
                 openSkillsDirectory()
             }
         }
@@ -123,7 +123,7 @@ public struct SkillSettingsView: View {
             if projects.isEmpty {
                 AppEmptyState(
                     icon: "folder",
-                    title: "No projects yet"
+                    title: LumiPluginLocalization.string("No projects yet", bundle: .module)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -198,10 +198,10 @@ public struct SkillSettingsView: View {
                 AppEmptyState(icon: "exclamationmark.triangle", title: error)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if selectedProject == nil {
-                AppEmptyState(icon: "folder", title: "Select a project")
+                AppEmptyState(icon: "folder", title: LumiPluginLocalization.string("Select a project", bundle: .module))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if skills.isEmpty {
-                AppEmptyState(icon: "sparkles", title: "No skills yet")
+                AppEmptyState(icon: "sparkles", title: LumiPluginLocalization.string("No skills yet", bundle: .module))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {

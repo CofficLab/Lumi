@@ -12,6 +12,7 @@ public final class MessageRendererPlugin: LumiPlugin {
     }
     public let order = 10
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

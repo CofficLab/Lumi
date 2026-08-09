@@ -134,6 +134,12 @@ public struct AppCard<Content: View>: View {
             .background(subtleBackground)
             .overlay(subtleBorder)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .animation(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference), value: isHovering)
+            .onHover { hovering in
+                AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
+                    isHovering = hovering
+                }
+            }
     }
 
     // MARK: - Glass Style Views
@@ -179,12 +185,16 @@ public struct AppCard<Content: View>: View {
 
     private var subtleBackground: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(theme.textSecondary.opacity(0.06))
+            .fill(isHovering ? theme.appListRowHoverBackground : theme.textSecondary.opacity(0.06))
     }
 
+    @ViewBuilder
     private var subtleBorder: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .stroke(theme.textTertiary.opacity(0.06), lineWidth: 1)
+            .stroke(
+                isHovering ? theme.appHoverBorder : theme.textTertiary.opacity(0.06),
+                lineWidth: 1
+            )
     }
 
     // MARK: - Shared Helpers

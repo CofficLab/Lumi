@@ -56,7 +56,7 @@ struct BrewManagerView: View {
         VStack(spacing: 0) {
             // Tab Picker
             AppCard(cornerRadius: 16, padding: EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)) {
-                Picker("View", selection: $selectedTab) {
+                Picker(LumiPluginLocalization.string("View", bundle: .module), selection: $selectedTab) {
                     ForEach(BrewTab.allCases) { tab in
                         Label(tab.localizedName, systemImage: tab.icon).tag(tab)
                     }

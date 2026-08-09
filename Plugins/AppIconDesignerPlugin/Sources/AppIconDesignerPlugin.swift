@@ -1,8 +1,8 @@
-import SwiftUI
 import LumiKernel
 import LumiUI
 import os
 import SuperLogKit
+import SwiftUI
 
 @MainActor
 public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
@@ -13,10 +13,11 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
         category: "plugin.app-icon-designer"
     )
 
-    public let id = "AppIconDesigner"
+    public let id = "com.coffic.lumi.plugin.app-icon-designer"
     public var name: String {
-        AppIconDesignerLocalization.string("AppIconDesigner")
+        AppIconDesignerLocalization.string("AppIconDesigner Name")
     }
+
     public let order = 79
     public let policy: LumiPluginPolicy = .optIn
     public let category: LumiPluginCategory = .agent
@@ -27,12 +28,36 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {}
+    public func onBoot(kernel: LumiKernel) async throws {
+        IconDocumentStore.shared.configure(
+            persistenceDirectory: kernel.storage?.pluginDataDirectory(for: "AppIconDesigner")
+        )
+    }
 
     public func onReady(kernel: LumiKernel) async throws {
         if Self.verbose {
             Self.logger.info("🎨 AppIconDesigner 插件初始化完成")
         }
+    }
+
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            CreateIconDocumentTool(),
+            ApplyIconPresetTool(),
+            LoadIconDocumentTool(),
+            SaveIconDocumentTool(),
+            SetIconBackgroundTool(),
+            AddIconShapeTool(),
+            UpdateIconShapeTool(),
+            UpdateIconLayerTool(),
+            LintIconDocumentTool(),
+            PreviewIconTool(),
+            ExportIconSVGTool(),
+            ExportAppIconTool(),
+            RegisterAppIconArtifactTool(),
+        ]
     }
 
     // MARK: - LumiPlugin stubs
@@ -44,9 +69,37 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        [
+            PanelRailTabItem(
+                id: "app-icon-designer.documents",
+                title: AppIconDesignerLocalization.string("Icon Documents"),
+                systemImage: "doc.text",
+                visibility: .viewContainer(id: id)
+            ) {
+                AppIconDesignerRailView()
+            },
+        ]
+    }
+
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
+            ViewContainerItem(
+                id: id,
+                title: name,
+                systemImage: "app.dashed",
+                railVisibility: .alwaysVisible,
+                chatVisibility: .alwaysVisible,
+                panelHeaderVisibility: .unsupported,
+                panelBodyVisibility: .alwaysVisible,
+                panelBottomVisibility: .unsupported
+            ) {
+                DesignerView()
+            },
+        ]
+    }
+
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
@@ -56,7 +109,7 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
-        AnyView(AppIconDesignerAboutView())
+        AnyView(DesignerAboutView())
     }
 
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }

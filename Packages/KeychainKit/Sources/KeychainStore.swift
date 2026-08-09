@@ -51,6 +51,9 @@ public final class KeychainStore: @unchecked Sendable {
             case .missing:
                 return nil
             case .unexpected(let status):
+                if status == errSecSuccess {
+                    throw KeychainStoreError.missingDataForSuccessfulRead
+                }
                 throw KeychainStoreError.readFailed(status)
             case .transientFailure(let status):
                 // Don't sleep on last attempt
@@ -66,21 +69,37 @@ public final class KeychainStore: @unchecked Sendable {
 
     /// Write a string value to Keychain.
     public func set(_ value: String, forKey key: String) {
+        try? setReportingErrors(value, forKey: key)
+    }
+
+    /// Writes a string without deleting an existing item first and preserves
+    /// Security framework failures for callers that need verification.
+    public func setReportingErrors(_ value: String, forKey key: String) throws {
         guard !key.isEmpty else { return }
 
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            remove(forKey: key)
+            try removeReportingErrors(forKey: key)
             return
         }
 
-        _ = backend.write(Data(trimmed.utf8), service: service, account: key)
+        let result = backend.write(Data(trimmed.utf8), service: service, account: key)
+        guard result.status == errSecSuccess else {
+            throw KeychainStoreError.writeFailed(result.status)
+        }
     }
 
     /// Remove a value from Keychain.
     public func remove(forKey key: String) {
+        try? removeReportingErrors(forKey: key)
+    }
+
+    public func removeReportingErrors(forKey key: String) throws {
         guard !key.isEmpty else { return }
-        _ = backend.delete(service: service, account: key)
+        let result = backend.delete(service: service, account: key)
+        guard result.status == errSecSuccess || result.status == errSecItemNotFound else {
+            throw KeychainStoreError.deleteFailed(result.status)
+        }
     }
 
     /// Reads from Keychain, migrating a legacy UserDefaults value when present.

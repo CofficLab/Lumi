@@ -17,6 +17,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
 
     public let order = 750
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
     public let category: LumiPluginCategory = .development
 
     public init() {}
@@ -44,7 +45,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: "database-manager",
-                title: "Database",
+                title: LumiPluginLocalization.string("Database", bundle: .module),
                 systemImage: "cylinder.split.1x2",
                 railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
@@ -86,7 +87,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
         [
             PanelRailTabItem(
                 id: "database-manager.sidebar",
-                title: "Database",
+                title: LumiPluginLocalization.string("Database", bundle: .module),
                 systemImage: "cylinder.split.1x2",
                 visibility: .viewContainer(id: "database-manager")
             ) {

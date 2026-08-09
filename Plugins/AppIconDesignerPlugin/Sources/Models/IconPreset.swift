@@ -41,8 +41,8 @@ public enum IconPresetLibrary {
 
     public static let gradientSymbol = IconPreset(
         id: "gradient-symbol",
-        title: "Gradient Symbol",
-        subtitle: "Centered SF Symbol over a vivid gradient.",
+        title: LumiPluginLocalization.string("Gradient Symbol", bundle: .module),
+        subtitle: LumiPluginLocalization.string("Centered SF Symbol over a vivid gradient.", bundle: .module),
         symbolName: "sparkles"
     ) { title in
         IconDocument(
@@ -72,8 +72,8 @@ public enum IconPresetLibrary {
 
     public static let glassTile = IconPreset(
         id: "glass-tile",
-        title: "Glass Tile",
-        subtitle: "Layered translucent tile for utilities.",
+        title: LumiPluginLocalization.string("Glass Tile", bundle: .module),
+        subtitle: LumiPluginLocalization.string("Layered translucent tile for utilities.", bundle: .module),
         symbolName: "square.3.layers.3d"
     ) { title in
         IconDocument(
@@ -111,8 +111,8 @@ public enum IconPresetLibrary {
 
     public static let neonRing = IconPreset(
         id: "neon-ring",
-        title: "Neon Ring",
-        subtitle: "High contrast ring and luminous glyph.",
+        title: LumiPluginLocalization.string("Neon Ring", bundle: .module),
+        subtitle: LumiPluginLocalization.string("High contrast ring and luminous glyph.", bundle: .module),
         symbolName: "bolt.fill"
     ) { title in
         IconDocument(
@@ -143,8 +143,8 @@ public enum IconPresetLibrary {
 
     public static let developerTool = IconPreset(
         id: "developer-tool",
-        title: "Developer Tool",
-        subtitle: "Bracket motif for coding and system tools.",
+        title: LumiPluginLocalization.string("Developer Tool", bundle: .module),
+        subtitle: LumiPluginLocalization.string("Bracket motif for coding and system tools.", bundle: .module),
         symbolName: "chevron.left.forwardslash.chevron.right"
     ) { title in
         IconDocument(
@@ -170,8 +170,8 @@ public enum IconPresetLibrary {
 
     public static let minimalMono = IconPreset(
         id: "minimal-mono",
-        title: "Minimal Mono",
-        subtitle: "Quiet monochrome mark for pro apps.",
+        title: LumiPluginLocalization.string("Minimal Mono", bundle: .module),
+        subtitle: LumiPluginLocalization.string("Quiet monochrome mark for pro apps.", bundle: .module),
         symbolName: "circle.hexagongrid.fill"
     ) { title in
         IconDocument(

@@ -22,6 +22,7 @@ public final class NettoPlugin: LumiPlugin, SuperLog {
     }
     public let order = 99
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Initialization
 
@@ -37,7 +38,7 @@ public final class NettoPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: "Netto Firewall",
+                title: LumiPluginLocalization.string("Netto Firewall", bundle: .module),
                 systemImage: "shield.lefthalf.filled"
             ) {
                 NettoDashboardView()

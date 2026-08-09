@@ -1,5 +1,6 @@
 import Foundation
 import KeychainKit
+import LumiKernel
 
 /// API Key 存储。
 ///
@@ -10,35 +11,118 @@ import KeychainKit
 public final class APIKeyStore: @unchecked Sendable {
     public static let shared = APIKeyStore()
 
-    /// 历史 keychain service，跨版本保持稳定，勿随意修改。
+    /// 历史正式版 service；Debug 会在运行时追加独立后缀。
     static let service = "com.coffic.lumi.apikey"
 
     private let store: KeychainStore
+    private let defaults: UserDefaults
+    private let sleeper: (UInt64) -> Void
 
-    public init(store: KeychainStore? = nil) {
-        self.store = store ?? KeychainStore(service: Self.service)
+    /// Delays used only when a key that was previously confirmed as configured
+    /// is unexpectedly reported as missing.
+    static let missingConfirmationDelaysNanoseconds: [UInt64] = [
+        50_000_000,
+        100_000_000,
+        200_000_000,
+    ]
+
+    public init(
+        store: KeychainStore? = nil,
+        defaults: UserDefaults = .standard,
+        sleeper: @escaping (UInt64) -> Void = { nanoseconds in
+            Thread.sleep(forTimeInterval: TimeInterval(nanoseconds) / 1_000_000_000)
+        }
+    ) {
+        self.store = store ?? KeychainStore(
+            service: LumiRuntimeEnvironment.current.keychainService(for: Self.service)
+        )
+        self.defaults = defaults
+        self.sleeper = sleeper
     }
 
     public func string(forKey key: String) -> String? {
-        store.string(forKey: key)
+        let value = store.string(forKey: key)
+        if let value, !value.isEmpty {
+            markExpectedConfigured(true, forKey: key)
+        }
+        return value
     }
 
     public func set(_ value: String, forKey key: String) {
-        store.set(value, forKey: key)
+        try? setReportingErrors(value, forKey: key)
+    }
+
+    public func setReportingErrors(_ value: String, forKey key: String) throws {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        try store.setReportingErrors(trimmed, forKey: key)
+        markExpectedConfigured(!trimmed.isEmpty, forKey: key)
     }
 
     public func remove(forKey key: String) {
-        store.remove(forKey: key)
+        try? removeReportingErrors(forKey: key)
+    }
+
+    public func removeReportingErrors(forKey key: String) throws {
+        try store.removeReportingErrors(forKey: key)
+        markExpectedConfigured(false, forKey: key)
     }
 
     /// 读取 key；若 Keychain 中缺失则尝试从同名 UserDefaults 键迁移。
     public func loadMigratingLegacyUserDefaults(forKey key: String) -> String? {
-        store.loadMigratingLegacyUserDefaults(forKey: key)
+        let value = store.loadMigratingLegacyUserDefaults(forKey: key)
+        if let value, !value.isEmpty {
+            markExpectedConfigured(true, forKey: key)
+        }
+        return value
     }
 
     /// Reads the key while preserving Keychain access failures. A `nil` result
     /// means only that no key exists.
     public func loadMigratingLegacyUserDefaultsReportingErrors(forKey key: String) throws -> String? {
-        try store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: key)
+        let expectedConfigured = isExpectedConfigured(forKey: key)
+
+        for attempt in 0...Self.missingConfirmationDelaysNanoseconds.count {
+            if let value = try store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: key),
+               !value.isEmpty {
+                markExpectedConfigured(true, forKey: key)
+                return value
+            }
+
+            guard expectedConfigured else {
+                return nil
+            }
+
+            if attempt < Self.missingConfirmationDelaysNanoseconds.count {
+                sleeper(Self.missingConfirmationDelaysNanoseconds[attempt])
+            }
+        }
+
+        throw APIKeyStoreError.expectedItemMissing(
+            account: key,
+            attempts: Self.missingConfirmationDelaysNanoseconds.count + 1
+        )
+    }
+
+    private func isExpectedConfigured(forKey key: String) -> Bool {
+        defaults.bool(forKey: expectationDefaultsKey(for: key))
+    }
+
+    private func markExpectedConfigured(_ expected: Bool, forKey key: String) {
+        defaults.set(expected, forKey: expectationDefaultsKey(for: key))
+    }
+
+    private func expectationDefaultsKey(for key: String) -> String {
+        "com.coffic.lumi.apikey.expected-configured.\(key)"
+    }
+}
+
+public enum APIKeyStoreError: LocalizedError, Sendable, Equatable {
+    case expectedItemMissing(account: String, attempts: Int)
+
+    public var errorDescription: String? {
+        switch self {
+        case .expectedItemMissing(let account, let attempts):
+            return "Keychain item '\(account)' was previously configured but was reported missing after \(attempts) read attempts"
+        }
     }
 }

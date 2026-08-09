@@ -1,46 +1,108 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Conversation Input" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conversation Input"
+  "sourceLanguage": "en",
+  "strings": {
+    "Conversation Input": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversation Input"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "会话输入"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会话输入"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "会话输入"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会话输入"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "会话输入"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会话输入"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "会话输入"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会话输入"
           }
         }
       }
     },
-    "Send" : {
-
+    "Send": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送"
+          }
+        }
+      }
     },
-    "Stop" : {
-
+    "Stop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止"
+          }
+        }
+      }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

@@ -21,6 +21,7 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
 
     public let order = 300
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     private weak var kernel: LumiKernel?
     private(set) public var isMenuBarPresented: Bool = false

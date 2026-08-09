@@ -185,25 +185,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenAI models through the Codex CLI."
+            "value": "通过 Codex CLI 使用 OpenAI 模型。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenAI models through the Codex CLI."
+            "value": "通过 Codex CLI 使用 OpenAI 模型。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenAI models through the Codex CLI."
+            "value": "通过 Codex CLI 使用 OpenAI 模型。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenAI models through the Codex CLI."
+            "value": "通过 Codex CLI 使用 OpenAI 模型。"
           }
         }
       }
@@ -219,25 +219,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenAI models via Codex CLI"
+            "value": "通过 Codex CLI 使用 OpenAI 模型"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenAI models via Codex CLI"
+            "value": "通过 Codex CLI 使用 OpenAI 模型"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenAI models via Codex CLI"
+            "value": "通过 Codex CLI 使用 OpenAI 模型"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "OpenAI models via Codex CLI"
+            "value": "通过 Codex CLI 使用 OpenAI 模型"
           }
         }
       }

@@ -58,15 +58,56 @@ final class KeychainStoreTests: XCTestCase {
             XCTAssertEqual(error as? KeychainStoreError, .invalidStringData)
         }
     }
+
+    func testReportingReadRejectsSuccessWithoutData() {
+        let backend = StubKeychainBackend(
+            readResult: KeychainResult(status: errSecSuccess, data: nil)
+        )
+        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+
+        XCTAssertThrowsError(try store.stringReportingErrors(forKey: "account")) { error in
+            XCTAssertEqual(error as? KeychainStoreError, .missingDataForSuccessfulRead)
+        }
+    }
+
+    func testReportingWritePreservesFailure() {
+        let backend = StubKeychainBackend(
+            readResult: KeychainResult(status: errSecItemNotFound, data: nil),
+            writeResult: KeychainResult(status: errSecAuthFailed, data: nil)
+        )
+        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+
+        XCTAssertThrowsError(try store.setReportingErrors("secret", forKey: "account")) { error in
+            XCTAssertEqual(error as? KeychainStoreError, .writeFailed(errSecAuthFailed))
+        }
+    }
+
+    func testReportingRemoveTreatsAlreadyMissingAsSuccess() throws {
+        let backend = StubKeychainBackend(
+            readResult: KeychainResult(status: errSecItemNotFound, data: nil),
+            deleteResult: KeychainResult(status: errSecItemNotFound, data: nil)
+        )
+        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+
+        XCTAssertNoThrow(try store.removeReportingErrors(forKey: "account"))
+    }
 }
 
 private final class StubKeychainBackend: KeychainBackend, @unchecked Sendable {
     private let lock = NSLock()
     private let readResult: KeychainResult
+    private let writeResult: KeychainResult?
+    private let deleteResult: KeychainResult?
     private var storedReadCount = 0
 
-    init(readResult: KeychainResult) {
+    init(
+        readResult: KeychainResult,
+        writeResult: KeychainResult? = nil,
+        deleteResult: KeychainResult? = nil
+    ) {
         self.readResult = readResult
+        self.writeResult = writeResult
+        self.deleteResult = deleteResult
     }
 
     var readCount: Int {
@@ -81,10 +122,10 @@ private final class StubKeychainBackend: KeychainBackend, @unchecked Sendable {
     }
 
     func write(_ data: Data, service: String, account: String) -> KeychainResult {
-        KeychainResult(status: errSecSuccess, data: data)
+        writeResult ?? KeychainResult(status: errSecSuccess, data: data)
     }
 
     func delete(service: String, account: String) -> KeychainResult {
-        KeychainResult(status: errSecSuccess, data: nil)
+        deleteResult ?? KeychainResult(status: errSecSuccess, data: nil)
     }
 }

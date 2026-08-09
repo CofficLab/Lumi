@@ -21,6 +21,7 @@ public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
     public let name = LumiLocalization.string("Agent Turn Runner", bundle: .module, table: "Localizable")
     public let order = 64 // After MessageSendManagerPlugin (63)
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {
         if Self.verbose {

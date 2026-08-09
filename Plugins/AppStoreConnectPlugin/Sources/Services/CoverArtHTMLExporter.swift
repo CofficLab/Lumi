@@ -1,7 +1,6 @@
 import AppKit
+import AppStorePromoKit
 import Foundation
-import HTMLPreviewKit
-import WebKit
 
 @MainActor
 enum CoverArtHTMLExporter {
@@ -34,73 +33,29 @@ enum CoverArtHTMLExporter {
         expectedSize: ScreenshotDisplaySpec.Size,
         tolerance: Int = 1
     ) async throws -> Data {
-        let webView = WKWebView(frame: CGRect(origin: .zero, size: expectedSize.cgSize))
-        let delegate = LoadDelegate()
-        webView.navigationDelegate = delegate
-
-        if let fileURL {
-            webView.loadFileURL(fileURL, allowingReadAccessTo: fileURL.deletingLastPathComponent())
-        } else {
-            webView.loadHTMLString(html, baseURL: nil)
-        }
-
-        let loaded = await delegate.waitForFinish(timeout: 8)
-        guard loaded else { throw ExportError.loadTimedOut }
-
-        try await Task.sleep(for: .milliseconds(150))
-
-        let image = try await HTMLScreenshotter.capture(webView)
-        guard let rep = image.representations.first else {
-            throw ExportError.pngEncodingFailed
-        }
-
-        let widthDelta = abs(rep.pixelsWide - expectedSize.width)
-        let heightDelta = abs(rep.pixelsHigh - expectedSize.height)
-        guard widthDelta <= tolerance, heightDelta <= tolerance else {
+        _ = tolerance
+        let preset = AppStorePromoDisplayPreset(
+            displayType: "APP_STORE_CONNECT_COVER_ART",
+            family: .mac,
+            width: expectedSize.width,
+            height: expectedSize.height
+        )
+        do {
+            return try await AppStorePromoHTMLExporter.exportPNG(
+                html: html,
+                fileURL: fileURL,
+                preset: preset
+            )
+        } catch AppStorePromoExportError.loadTimedOut {
+            throw ExportError.loadTimedOut
+        } catch AppStorePromoExportError.unexpectedImageSize(_, _, let actualWidth, let actualHeight) {
             throw ExportError.unexpectedImageSize(
                 expected: expectedSize,
-                actualWidth: rep.pixelsWide,
-                actualHeight: rep.pixelsHigh
+                actualWidth: actualWidth,
+                actualHeight: actualHeight
             )
-        }
-
-        guard let tiff = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiff),
-              let pngData = bitmap.representation(using: .png, properties: [:]) else {
+        } catch {
             throw ExportError.pngEncodingFailed
-        }
-        return pngData
-    }
-
-    private final class LoadDelegate: NSObject, WKNavigationDelegate {
-        private var continuation: CheckedContinuation<Bool, Never>?
-
-        func waitForFinish(timeout: TimeInterval) async -> Bool {
-            await withCheckedContinuation { continuation in
-                self.continuation = continuation
-                Task {
-                    try? await Task.sleep(for: .seconds(timeout))
-                    self.finish(success: false)
-                }
-            }
-        }
-
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            finish(success: true)
-        }
-
-        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-            finish(success: false)
-        }
-
-        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            finish(success: false)
-        }
-
-        private func finish(success: Bool) {
-            guard let continuation else { return }
-            self.continuation = nil
-            continuation.resume(returning: success)
         }
     }
 }

@@ -22,13 +22,13 @@ struct StoryPageView: View {
 
         ZStack {
             // 纸张背景
-            RoundedRectangle(cornerRadius: 3)
-                .fill(Color(nsColor: .textBackgroundColor))
+            FixedWhitePaperSurface()
+                .clipShape(RoundedRectangle(cornerRadius: 3))
                 .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
 
             // 纸张边框
             RoundedRectangle(cornerRadius: 3)
-                .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                .stroke(Color.black.opacity(0.22), lineWidth: 1)
 
             // 故事内容
             if let page = SampleStory.page(pageNumber) {
@@ -38,11 +38,12 @@ struct StoryPageView: View {
 
                     Text(page.title)
                         .font(.system(size: max(5, height * 0.055 * textScale), weight: .semibold))
+                        .foregroundColor(.black)
                         .multilineTextAlignment(.center)
 
                     Text(page.body)
                         .font(.system(size: max(4, height * 0.042 * textScale)))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.black.opacity(0.65))
                         .multilineTextAlignment(.center)
                         .lineSpacing(1)
                 }
@@ -56,7 +57,7 @@ struct StoryPageView: View {
                 HStack {
                     Text("\(pageNumber)")
                         .font(.system(size: max(5, height * 0.05), weight: .medium))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.black.opacity(0.65))
                     Spacer()
                 }
                 .padding(3)

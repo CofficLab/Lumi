@@ -18,6 +18,7 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
     }
     public let order = 270
     public let policy: LumiPluginPolicy = .optIn // 功能插件
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 
@@ -31,7 +32,7 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: "Clipboard",
+                title: LumiPluginLocalization.string("Clipboard", bundle: .module),
                 systemImage: "doc.on.clipboard",
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,

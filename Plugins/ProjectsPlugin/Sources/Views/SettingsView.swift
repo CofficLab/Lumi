@@ -93,7 +93,7 @@ public struct SettingsView: View {
             if projects.isEmpty {
                 AppEmptyState(
                     icon: "folder",
-                    title: "No projects yet"
+                    title: LumiPluginLocalization.string("No projects yet", bundle: .module)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -134,7 +134,7 @@ public struct SettingsView: View {
                             .font(.system(size: 13, weight: .medium))
                             .lineLimit(1)
                         if isCurrent {
-                            Text("Current")
+                            Text(LumiPluginLocalization.string("Current", bundle: .module))
                                 .font(.system(size: 9, weight: .semibold))
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 5)
@@ -161,7 +161,7 @@ public struct SettingsView: View {
         if let project = selectedProject {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    AppSettingsSection(title: "Overview") {
+                    AppSettingsSection(title: LumiPluginLocalization.string("Overview", bundle: .module)) {
                         VStack(alignment: .leading, spacing: 10) {
                             Text(project.name)
                                 .font(.title3.weight(.semibold))
@@ -175,18 +175,18 @@ public struct SettingsView: View {
                         }
                     }
 
-                    AppSettingsSection(title: "Basic Info") {
+                    AppSettingsSection(title: LumiPluginLocalization.string("Basic Info", bundle: .module)) {
                         VStack(spacing: 0) {
-                            detailRow(title: "Name", icon: "text.cursor", value: project.name)
+                            detailRow(title: LumiPluginLocalization.string("Name", bundle: .module), icon: "text.cursor", value: project.name)
                             Divider().padding(.vertical, 8)
-                            detailRow(title: "Path", icon: "folder", value: project.path, monospace: true)
+                            detailRow(title: LumiPluginLocalization.string("Path", bundle: .module), icon: "folder", value: project.path, monospace: true)
                             Divider().padding(.vertical, 8)
-                            detailRow(title: "Language", icon: "character.book.closed", value: project.language?.capitalized ?? "Unknown")
+                            detailRow(title: LumiPluginLocalization.string("Language", bundle: .module), icon: "character.book.closed", value: project.language?.capitalized ?? "Unknown")
                             Divider().padding(.vertical, 8)
-                            detailRow(title: "Last Used", icon: "calendar", value: formattedDate(project.lastUsed))
+                            detailRow(title: LumiPluginLocalization.string("Last Used", bundle: .module), icon: "calendar", value: formattedDate(project.lastUsed))
                             Divider().padding(.vertical, 8)
                             detailRow(
-                                title: "Status",
+                                title: LumiPluginLocalization.string("Status", bundle: .module),
                                 icon: "star",
                                 value: viewModel.currentProject?.path == project.path ? "Current Project" : "Not Selected"
                             )
@@ -218,17 +218,17 @@ public struct SettingsView: View {
         let urls = opened?.openFileURLs ?? []
         let current = opened?.currentFileURL
 
-        AppSettingsSection(title: "Opened Files") {
+        AppSettingsSection(title: LumiPluginLocalization.string("Opened Files", bundle: .module)) {
             if isLoadingOpenedFiles {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("Loading opened files…")
+                    Text(LumiPluginLocalization.string("Loading opened files…", bundle: .module))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
             } else if urls.isEmpty {
-                Text("No opened files recorded")
+                Text(LumiPluginLocalization.string("No opened files recorded", bundle: .module))
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
             } else {

@@ -1,4 +1,5 @@
 import Foundation
+import LumiKernel
 import SuperLogKit
 
 /// RClick 配置管理器
@@ -10,8 +11,8 @@ public class RClickConfigManager: ObservableObject, SuperLog {
     public nonisolated static let emoji = "🖱️"
     public nonisolated static let verbose: Bool = false
 
-    /// 与 `LumiFinder/FinderSync` 保持一致
-    public nonisolated static let appGroupId = "group.com.coffic.lumi"
+    /// 与 `LumiFinder/FinderSync` 保持一致，并按 Debug/Release 使用独立容器。
+    public nonisolated static let appGroupId = LumiRuntimeEnvironment.current.appGroupIdentifier
     public nonisolated static let sharedConfigFilename = "RClickConfig.json"
     public nonisolated static let corruptSharedConfigFilename = "RClickConfig.corrupt.json"
 

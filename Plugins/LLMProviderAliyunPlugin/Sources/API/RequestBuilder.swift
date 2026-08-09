@@ -63,16 +63,16 @@ enum AliyunAnthropicRequestBuilder {
         for message in messages {
             if message.role == .tool {
                 if let toolCallID = message.toolCallID {
-                    pendingToolResults.append([
-                        "type": "tool_result",
-                        "tool_use_id": toolCallID,
-                        "content": message.content,
-                    ])
+                    pendingToolResults.append(toolResultBlock(
+                        toolCallID: toolCallID,
+                        text: message.content,
+                        images: imageContentBlocks(for: message.metadata)
+                    ))
                 }
                 continue
             }
             if !pendingToolResults.isEmpty {
-                result.append(["role": "user", "content": pendingToolResults])
+                result.append(toolResultMessage(results: pendingToolResults))
                 pendingToolResults = []
             }
             if let mapped = Self.message(message) {
@@ -80,9 +80,44 @@ enum AliyunAnthropicRequestBuilder {
             }
         }
         if !pendingToolResults.isEmpty {
-            result.append(["role": "user", "content": pendingToolResults])
+            result.append(toolResultMessage(results: pendingToolResults))
         }
         return result
+    }
+
+    private static func toolResultBlock(
+        toolCallID: String,
+        text: String,
+        images: [[String: Any]]
+    ) -> [String: Any] {
+        guard !images.isEmpty else {
+            return [
+                "type": "tool_result",
+                "tool_use_id": toolCallID,
+                "content": text,
+            ]
+        }
+
+        var content = textContentBlocks(for: text) + images
+        content.append([
+            "type": "text",
+            "text": "请结合用户当前请求分析这张工具返回的图片。不要根据文件路径、文件名或目录信息猜测图片内容。",
+        ])
+        return [
+            "type": "tool_result",
+            "tool_use_id": toolCallID,
+            "content": content,
+        ]
+    }
+
+    private static func toolResultMessage(results: [[String: Any]]) -> [String: Any] {
+        // tool_result 必须是 user content 中最前面的 blocks。图片嵌入各自的
+        // tool_result.content，避免兼容层把兄弟 image block 当作无关附件忽略。
+        let content = results
+        return [
+            "role": "user",
+            "content": content,
+        ]
     }
 
     private static func message(_ message: LumiChatMessage) -> [String: Any]? {
@@ -90,7 +125,10 @@ enum AliyunAnthropicRequestBuilder {
         case .system, .error, .status:
             return nil
         case .user:
-            return ["role": "user", "content": textContentBlocks(for: message.content)]
+            return [
+                "role": "user",
+                "content": imageContentBlocks(for: message.metadata) + textContentBlocks(for: message.content),
+            ]
         case .assistant:
             var blocks: [[String: Any]] = []
             if let reasoning = message.reasoningContent, !reasoning.isEmpty {
@@ -122,6 +160,27 @@ enum AliyunAnthropicRequestBuilder {
     private static func textContentBlocks(for text: String) -> [[String: Any]] {
         guard !text.isEmpty else { return [] }
         return [["type": "text", "text": text]]
+    }
+
+    private static func imageContentBlocks(for metadata: [String: String]) -> [[String: Any]] {
+        imageContentBlocks(for: LumiImageAttachmentMetadata.decode(from: metadata))
+    }
+
+    private static func imageContentBlocks(for attachments: [LumiImageAttachment]) -> [[String: Any]] {
+        attachments.compactMap { attachment in
+            guard !attachment.base64Data.isEmpty,
+                  attachment.mimeType.hasPrefix("image/")
+            else { return nil }
+
+            return [
+                "type": "image",
+                "source": [
+                    "type": "base64",
+                    "media_type": attachment.mimeType,
+                    "data": attachment.base64Data,
+                ],
+            ]
+        }
     }
 
     private static func tool(_ tool: any LumiAgentTool) -> [String: Any] {

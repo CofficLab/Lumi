@@ -21,6 +21,7 @@ public final class NetworkManagerPlugin: LumiPlugin {
     }
     public let order = 30
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

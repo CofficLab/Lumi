@@ -69,8 +69,8 @@ func headerSection(
     PageHeader(
         icon: "sparkles",
         gradient: [.blue, .purple],
-        title: "Welcome to Lumi",
-        subtitle: "Your AI-powered personal desktop assistant"
+        title: LumiPluginLocalization.string("Welcome to Lumi", bundle: .module),
+        subtitle: LumiPluginLocalization.string("Your AI-powered personal desktop assistant", bundle: .module)
     )
     .padding()
     .frame(width: 560)

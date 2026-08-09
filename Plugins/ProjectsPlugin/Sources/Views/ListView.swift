@@ -53,8 +53,8 @@ struct ListView: View {
             Divider()
             list
         }
-        .alert("Error", isPresented: $showErrorAlert) {
-            Button("OK", role: .cancel) {}
+        .alert(LumiPluginLocalization.string("Error", bundle: .module), isPresented: $showErrorAlert) {
+            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
         } message: {
             Text(errorAlertMessage ?? "Unknown error")
         }

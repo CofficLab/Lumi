@@ -22,6 +22,7 @@ public final class RegistryManagerPlugin: LumiPlugin, SuperLog {
     }
     public let order = 80
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Initialization
 
@@ -37,7 +38,7 @@ public final class RegistryManagerPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: "Registry Manager",
+                title: LumiPluginLocalization.string("Registry Manager", bundle: .module),
                 systemImage: "arrow.triangle.2.circlepath"
             ) {
                 RegistryManagerView()

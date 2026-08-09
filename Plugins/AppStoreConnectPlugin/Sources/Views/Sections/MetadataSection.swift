@@ -12,7 +12,7 @@ struct MetadataSection: View {
                 .appStoreConnectAddToChatMenu(
                     entityType: "metadataSection",
                     entityID: viewModel.selectedLocalizationID ?? "none",
-                    title: "Metadata",
+                    title: AppStoreConnectLocalization.string("Metadata"),
                     sourceView: "VersionDetail.MetadataSection",
                     fields: [
                         "hasLocalizations": viewModel.localizations.isEmpty ? "false" : "true",
@@ -30,7 +30,7 @@ struct MetadataSection: View {
                 .appStoreConnectAddToChatMenu(
                     entityType: "metadataEmptyState",
                     entityID: "no-localizations",
-                    title: "No Localizations",
+                    title: AppStoreConnectLocalization.string("No Localizations"),
                     sourceView: "VersionDetail.MetadataSection",
                     fields: [
                         "selectedVersionID": viewModel.selectedVersion?.id ?? "-",

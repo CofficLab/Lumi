@@ -20,6 +20,7 @@ public final class MenuBarHelperPlugin: LumiPlugin {
     }
     public let order = 310
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     private weak var kernel: LumiKernel?
 
@@ -40,7 +41,7 @@ public final class MenuBarHelperPlugin: LumiPlugin {
         [
             ViewContainerItem(
                 id: id,
-                title: "Menu Bar Manager",
+                title: LumiPluginLocalization.string("Menu Bar Manager", bundle: .module),
                 systemImage: "menubar.rectangle",
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,

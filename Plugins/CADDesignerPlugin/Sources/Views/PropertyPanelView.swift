@@ -82,7 +82,7 @@ struct PropertyPanelView: View {
 
             // 位置
             VStack(alignment: .leading, spacing: 8) {
-                Text("Position")
+                Text(L.string("Position"))
                     .font(.caption.weight(.semibold))
                 positionStepper(label: L.string("Position X"), value: $posX, apply: applyPosition)
                 positionStepper(label: L.string("Position Y"), value: $posY, apply: applyPosition)
@@ -93,7 +93,7 @@ struct PropertyPanelView: View {
 
             // 旋转
             VStack(alignment: .leading, spacing: 8) {
-                Text("Rotation")
+                Text(L.string("Rotation"))
                     .font(.caption.weight(.semibold))
                 HStack {
                     Slider(value: $rotY, in: 0...360, step: 5) { editing in

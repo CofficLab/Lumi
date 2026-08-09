@@ -16,6 +16,7 @@ public final class AgentOpenInGitHubDesktopPlugin: LumiPlugin {
     public let order = 97
     public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

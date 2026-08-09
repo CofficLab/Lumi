@@ -7,10 +7,12 @@ import AgentTurnRunnerPlugin
 import AppIconDesignerPlugin
 import AppManagerPlugin
 import AppStoreConnectPlugin
+import AppStorePromoDesignerPlugin
 import AskUserPlugin
 import BookletMakerPlugin
 import BrewManagerPlugin
 import BrowserPlugin
+import ComputerUsePlugin
 import CADDesignerPlugin
 import StoryWriterPlugin
 import StateMonitorPlugin
@@ -123,6 +125,7 @@ import ShowImagePlugin
 import SkillPlugin
 import StoragePlugin
 import TerminalPlugin
+import TextActionsPlugin
 import ThemeAuroraPlugin
 import ThemeAutumnPlugin
 import ThemeDraculaPlugin
@@ -238,6 +241,7 @@ public enum PluginService {
             // Editor 预览面板 — 在 PanelBottom 显示文件预览。
             EditorPreviewBottomPanelPlugin(),
             TerminalPlugin(),
+            TextActionsPlugin(),
             DeviceInfoPlugin(),
             ProjectFileTreePlugin(),
             ClipboardManagerPlugin(),
@@ -267,11 +271,13 @@ public enum PluginService {
             CaffeinatePlugin(),
             AgentTempStoragePlugin(),
             AppIconDesignerPlugin(),
+            AppStorePromoDesignerPlugin(),
             WebFetchPlugin(),
             WebSearchPlugin(),
             MemoryPlugin(),
             DownloadPlugin(),
             BrowserPlugin(),
+            ComputerUsePlugin(),
             ShowImagePlugin(),
             GitHubPlugin(),
             GoalTaskPlugin(),

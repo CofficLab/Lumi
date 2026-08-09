@@ -11,6 +11,7 @@ public final class StepFunPlugin: LumiPlugin {
 
     public let order = 93
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}

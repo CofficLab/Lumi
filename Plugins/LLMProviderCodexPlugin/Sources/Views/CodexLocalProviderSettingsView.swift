@@ -27,7 +27,7 @@ public struct CodexLocalProviderSettingsView: View {
     }
 
     private var cliStatusCard: some View {
-        AppSettingsSection(title: "Codex CLI", subtitle: "通过本地 Codex 命令行调用 OpenAI 模型", spacing: 12) {
+        AppSettingsSection(title: LumiPluginLocalization.string("Codex CLI", bundle: .module), subtitle: "通过本地 Codex 命令行调用 OpenAI 模型", spacing: 12) {
             HStack {
                 Text("可执行文件")
                     .font(.appBody)

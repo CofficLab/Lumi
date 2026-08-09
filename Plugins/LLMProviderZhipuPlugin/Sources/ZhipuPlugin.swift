@@ -11,6 +11,7 @@ public final class ZhipuPlugin: LumiPlugin {
     }
     public let order = 110
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}

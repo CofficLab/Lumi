@@ -11,6 +11,7 @@ public final class MiniMaxPlugin: LumiPlugin {
     }
     public let order = 104
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .llmProvider }
 
     private var videoRecordStore: MiniMaxVideoRecordStore?
@@ -71,7 +72,7 @@ public final class MiniMaxPlugin: LumiPlugin {
         [
             StatusBarItem(
                 id: "\(id).token-plan",
-                title: "MiniMax Token Plan",
+                title: LumiPluginLocalization.string("MiniMax Token Plan", bundle: .module),
                 systemImage: "chart.bar.fill",
                 placement: .trailing,
                 statusBarView: {

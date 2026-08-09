@@ -192,7 +192,7 @@ public struct PortRowView: View {
             }
         }
         .padding(.vertical, 4)
-        .navigationTitle("Port Manager")
+        .navigationTitle(LumiPluginLocalization.string("Port Manager", bundle: .module))
     }
 }
 

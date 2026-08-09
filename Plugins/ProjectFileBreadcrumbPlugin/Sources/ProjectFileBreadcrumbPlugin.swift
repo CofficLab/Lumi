@@ -10,6 +10,7 @@ public final class ProjectFileBreadcrumbPlugin: LumiPlugin {
     }
     public let order = 80
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

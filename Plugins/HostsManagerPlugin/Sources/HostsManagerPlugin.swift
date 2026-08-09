@@ -22,6 +22,7 @@ public final class HostsManagerPlugin: LumiPlugin, SuperLog {
     }
     public let order = 21
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Initialization
 

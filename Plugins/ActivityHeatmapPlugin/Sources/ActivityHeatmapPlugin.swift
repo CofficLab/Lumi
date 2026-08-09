@@ -12,6 +12,7 @@ public final class ActivityHeatmapPlugin: LumiPlugin {
     }
     public let order = 9
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public let category: LumiPluginCategory = .general
     public let pluginDescription = "Display daily message activity and token consumption charts."
 

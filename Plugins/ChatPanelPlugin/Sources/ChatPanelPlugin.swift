@@ -14,6 +14,7 @@ public final class ChatPanelPlugin: LumiPlugin {
     }
     public let order = 278
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

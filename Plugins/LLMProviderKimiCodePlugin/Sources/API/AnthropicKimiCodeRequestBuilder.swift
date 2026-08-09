@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 import LumiKernel
 
 enum AnthropicKimiCodeRequestBuilder {
@@ -61,7 +62,7 @@ enum AnthropicKimiCodeRequestBuilder {
                     pendingToolResults.append([
                         "type": "tool_result",
                         "tool_use_id": toolCallID,
-                        "content": message.content,
+                        "content": toolResultContent(for: message),
                     ])
                 }
                 continue
@@ -87,7 +88,7 @@ enum AnthropicKimiCodeRequestBuilder {
         case .user:
             return [
                 "role": "user",
-                "content": textContentBlocks(for: message.content),
+                "content": anthropicContentBlocks(for: message),
             ]
         case .assistant:
             var blocks: [[String: Any]] = []
@@ -121,6 +122,19 @@ enum AnthropicKimiCodeRequestBuilder {
     private static func textContentBlocks(for text: String) -> [[String: Any]] {
         guard !text.isEmpty else { return [] }
         return [["type": "text", "text": text]]
+    }
+
+    private static func anthropicContentBlocks(for message: LumiChatMessage) -> [[String: Any]] {
+        VisionMessageContentBuilder.anthropicBlocks(
+            text: message.content,
+            images: LumiVisionMessageSupport.messageImages(from: message.metadata)
+        )
+    }
+
+    private static func toolResultContent(for message: LumiChatMessage) -> Any {
+        let images = LumiVisionMessageSupport.messageImages(from: message.metadata)
+        guard !images.isEmpty else { return message.content }
+        return VisionMessageContentBuilder.anthropicBlocks(text: message.content, images: images)
     }
 
     private static func tool(_ tool: any LumiAgentTool) -> [String: Any] {

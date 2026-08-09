@@ -75,7 +75,7 @@ final class BookletThumbnailer: SuperLog, @unchecked Sendable {
 
         for i in 0..<total {
             guard let page = document.page(at: i) else { continue }
-            let pageRect = page.bounds(for: .mediaBox)
+            let pageRect = page.bounds(for: .cropBox)
             guard pageRect.width > 0, pageRect.height > 0 else { continue }
 
             let scale = maxPixelWidth / pageRect.width
@@ -89,7 +89,8 @@ final class BookletThumbnailer: SuperLog, @unchecked Sendable {
                 ctx.fill(CGRect(origin: .zero, size: pixelSize))
                 ctx.saveGState()
                 ctx.scaleBy(x: scale, y: scale)
-                page.draw(with: .mediaBox, to: ctx)
+                ctx.translateBy(x: -pageRect.minX, y: -pageRect.minY)
+                page.draw(with: .cropBox, to: ctx)
                 ctx.restoreGState()
             }
             image.unlockFocus()

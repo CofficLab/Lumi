@@ -5,6 +5,7 @@ import SwiftUI
 /// 「装订后」示意图：一本可交互的虚拟小册子。
 /// 点击左右两侧或水平拖动即可翻页，带 3D 翻页动画。
 struct FlipBookView: View {
+    let document: CurrentPDFDocument
 
     /// 一个 spread 的左右槽位（nil 表示该侧无页面）
     private typealias Spread = (left: Int?, right: Int?)
@@ -12,13 +13,13 @@ struct FlipBookView: View {
     /// 书本的展开方式：封面在右半侧、封底在左半侧，中间为左右对页。
     /// 8 页 → (-,1) (2,3) (4,5) (6,7) (8,-)
     private var spreads: [Spread] {
+        guard document.pageCount > 0 else { return [] }
         var result: [Spread] = [(nil, 1)]
         var page = 2
-        while page <= SampleStory.pageCount - 1 {
-            result.append((page, page + 1))
+        while page <= document.pageCount {
+            result.append((page, page < document.pageCount ? page + 1 : nil))
             page += 2
         }
-        result.append((SampleStory.pageCount, nil))
         return result
     }
 
@@ -33,52 +34,48 @@ struct FlipBookView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let pageHeight = min(geo.size.height - 30, geo.size.width * 1.414 / 2)
-            let pageWidth = pageHeight / 1.414
+            let pageHeight = min(
+                geo.size.height - 30,
+                geo.size.width / max(document.pageAspectRatio * 2, 0.01)
+            )
+            let pageWidth = pageHeight * document.pageAspectRatio
 
             VStack(spacing: 8) {
                 ZStack {
-                    // 底层：翻页目标 spread
-                    spreadView(spreads[targetSpreadIndex],
-                               pageWidth: pageWidth,
-                               pageHeight: pageHeight,
-                               dimmed: isFlipping)
+                    // 静止纸页：拖动时只替换被翻页下方的那一侧。
+                    // 翻动纸张的背面由 flippingPage 渲染，不能提前作为
+                    // 目标 spread 的另一半露出来。
+                    if !spreads.isEmpty {
+                        spreadView(
+                            isFlipping ? stationarySpreadDuringFlip : spreads[spreadIndex],
+                            pageWidth: pageWidth,
+                            pageHeight: pageHeight
+                        )
 
-                    // 中层：当前 spread 中不参与翻页的一半
-                    if !isFlipping {
-                        spreadView(spreads[spreadIndex],
-                                   pageWidth: pageWidth,
-                                   pageHeight: pageHeight)
-                    } else if flippingForward, let left = spreads[spreadIndex].left {
-                        halfPage(left, atLeft: true, pageWidth: pageWidth, pageHeight: pageHeight)
-                    } else if !flippingForward, let right = spreads[spreadIndex].right {
-                        halfPage(right, atLeft: false, pageWidth: pageWidth, pageHeight: pageHeight)
-                    }
+                        // 顶层：正在翻转的那一页
+                        if isFlipping {
+                            flippingPage(pageWidth: pageWidth, pageHeight: pageHeight)
+                        }
 
-                    // 顶层：正在翻转的那一页
-                    if isFlipping {
-                        flippingPage(pageWidth: pageWidth, pageHeight: pageHeight)
+                        // 左右点击热区
+                        HStack(spacing: 0) {
+                            Color.clear.contentShape(Rectangle())
+                                .onTapGesture { flipBackward() }
+                            Color.clear.contentShape(Rectangle())
+                                .onTapGesture { flipForward() }
+                        }
+                        .frame(width: pageWidth * 2, height: pageHeight)
                     }
-
-                    // 左右点击热区
-                    HStack(spacing: 0) {
-                        Color.clear.contentShape(Rectangle())
-                            .onTapGesture { flipBackward() }
-                        Color.clear.contentShape(Rectangle())
-                            .onTapGesture { flipForward() }
-                    }
-                    .frame(width: pageWidth * 2, height: pageHeight)
                 }
                 .frame(width: pageWidth * 2, height: pageHeight)
                 .contentShape(Rectangle())
                 .gesture(flipDrag(pageWidth: pageWidth))
-
-                // 页码指示
-                Text(pageIndicator)
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
             }
             .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .onChange(of: document.id) { _, _ in
+            spreadIndex = 0
+            flipProgress = 0
         }
     }
 
@@ -94,39 +91,36 @@ struct FlipBookView: View {
             : max(spreadIndex - 1, 0)
     }
 
+    /// 翻页过程中留在书面上的两页。
+    ///
+    /// 向前翻时，当前右页是翻动纸张的正面、目标左页是它的背面，
+    /// 所以静止层只能显示“当前左页 + 目标右页”。向后翻则相反。
+    private var stationarySpreadDuringFlip: Spread {
+        let current = spreads[spreadIndex]
+        let target = spreads[targetSpreadIndex]
+        return flippingForward
+            ? (current.left, target.right)
+            : (target.left, current.right)
+    }
+
     /// 渲染一个完整 spread（空槽位用透明占位）
     private func spreadView(_ spread: Spread,
                             pageWidth: CGFloat,
-                            pageHeight: CGFloat,
-                            dimmed: Bool = false) -> some View {
+                            pageHeight: CGFloat) -> some View {
         HStack(spacing: 0) {
             pageSlot(spread.left, pageWidth: pageWidth, pageHeight: pageHeight)
             pageSlot(spread.right, pageWidth: pageWidth, pageHeight: pageHeight)
         }
-        .opacity(dimmed ? 0.9 : 1)
         .shadow(color: .black.opacity(0.12), radius: 4, x: 0, y: 2)
     }
 
     @ViewBuilder
     private func pageSlot(_ page: Int?, pageWidth: CGFloat, pageHeight: CGFloat) -> some View {
         if let page {
-            StoryPageView(pageNumber: page, height: pageHeight, textScale: 1.2)
+            PDFDocumentPageView(documentURL: document.url, pageNumber: page)
+                .frame(width: pageWidth, height: pageHeight)
         } else {
             Color.clear.frame(width: pageWidth, height: pageHeight)
-        }
-    }
-
-    /// 单独渲染半页（翻页时保留在原地的那一半）
-    private func halfPage(_ page: Int, atLeft: Bool,
-                          pageWidth: CGFloat, pageHeight: CGFloat) -> some View {
-        HStack(spacing: 0) {
-            if atLeft {
-                StoryPageView(pageNumber: page, height: pageHeight, textScale: 1.2)
-                Color.clear.frame(width: pageWidth, height: pageHeight)
-            } else {
-                Color.clear.frame(width: pageWidth, height: pageHeight)
-                StoryPageView(pageNumber: page, height: pageHeight, textScale: 1.2)
-            }
         }
     }
 
@@ -149,10 +143,12 @@ struct FlipBookView: View {
 
         ZStack {
             if showBack, let backPage {
-                StoryPageView(pageNumber: backPage, height: pageHeight, textScale: 1.2)
+                PDFDocumentPageView(documentURL: document.url, pageNumber: backPage)
+                    .frame(width: pageWidth, height: pageHeight)
                     .scaleEffect(x: -1, y: 1)  // 镜像，让背面内容方向正确
             } else if let frontPage {
-                StoryPageView(pageNumber: frontPage, height: pageHeight, textScale: 1.2)
+                PDFDocumentPageView(documentURL: document.url, pageNumber: frontPage)
+                    .frame(width: pageWidth, height: pageHeight)
             }
         }
         .frame(width: pageWidth, height: pageHeight)
@@ -226,23 +222,12 @@ struct FlipBookView: View {
                 }
             }
     }
-
-    private var pageIndicator: String {
-        let spread = spreads[spreadIndex]
-        let pagesText = [spread.left, spread.right]
-            .compactMap { $0 }
-            .map(String.init)
-            .joined(separator: "–")
-        return BookletLocalization.string("Pages %@ of %lld",
-                                          pagesText,
-                                          Int64(SampleStory.pageCount))
-    }
 }
 
 // MARK: - Preview
 
 #Preview("Flip Book") {
-    FlipBookView()
+    FlipBookView(document: try! DemoPDFProvider.makeDocument())
         .frame(width: 480, height: 300)
         .padding()
 }

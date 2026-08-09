@@ -20,6 +20,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
     }
     public let order = 30
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     /// 设置页「执行日志」Tab 需要的 store 引用,由 onBoot 阶段持有,
     /// 在 settingsTabItems 里透传给对应的 SwiftUI 视图。
@@ -55,6 +56,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
         [
             ListDirectoryTool(),
             GlobTool(),
+            ReadImageTool(),
             ReadFileTool(),
             WriteFileTool(),
             EditFileTool(),

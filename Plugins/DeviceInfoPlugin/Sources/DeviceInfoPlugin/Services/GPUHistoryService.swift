@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import LumiKernel
 import os
 import SuperLogKit
 
@@ -29,8 +30,11 @@ public final class GPUHistoryService: ObservableObject, SuperLog {
 
     public var storageFileURL: URL? {
         if let storageFileURLOverride { return storageFileURLOverride }
+        let bundleIdentifier = Bundle.main.bundleIdentifier
+            ?? LumiRuntimeEnvironment.productionBundleIdentifier
         return fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("com.coffic.lumi/GPUHistory")
+            .appendingPathComponent(bundleIdentifier, isDirectory: true)
+            .appendingPathComponent("GPUHistory", isDirectory: true)
             .appendingPathComponent(storageFileName)
     }
 

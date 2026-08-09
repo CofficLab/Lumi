@@ -8,30 +8,37 @@ final class BookletLayoutEngineTests: XCTestCase {
 
     // MARK: - Padding
 
-    func testPaddingEvenStaysUnchanged() {
-        XCTAssertEqual(BookletLayoutEngine.padInputCount(4, pad: true), 4)
-        XCTAssertEqual(BookletLayoutEngine.padInputCount(4, pad: false), 4)
+    func testBookletPaddingRoundsUpToMultipleOfFour() {
+        XCTAssertEqual(BookletLayoutEngine.paddedInputCount(1, layout: .bookletFold, pad: true), 4)
+        XCTAssertEqual(BookletLayoutEngine.paddedInputCount(4, layout: .bookletFold, pad: true), 4)
+        XCTAssertEqual(BookletLayoutEngine.paddedInputCount(5, layout: .bookletFold, pad: true), 8)
+        XCTAssertEqual(BookletLayoutEngine.paddedInputCount(6, layout: .bookletFold, pad: true), 8)
+        XCTAssertEqual(BookletLayoutEngine.paddedInputCount(8, layout: .bookletFold, pad: true), 8)
     }
 
-    func testPaddingOddGetsOneExtra() {
-        XCTAssertEqual(BookletLayoutEngine.padInputCount(5, pad: true), 6)
+    func testBookletPaddingCannotBeDisabled() {
+        XCTAssertEqual(BookletLayoutEngine.paddedInputCount(5, layout: .bookletFold, pad: false), 8)
     }
 
-    func testPaddingOddWhenPadDisabled() {
-        XCTAssertEqual(BookletLayoutEngine.padInputCount(5, pad: false), 5)
+    func testSimplePairRetainsOptionalEvenPadding() {
+        XCTAssertEqual(BookletLayoutEngine.paddedInputCount(5, layout: .simplePair, pad: true), 6)
+        XCTAssertEqual(BookletLayoutEngine.paddedInputCount(5, layout: .simplePair, pad: false), 5)
     }
 
-    // MARK: - Sheet count
+    // MARK: - Counts
 
-    func testSheetCountForEvenPaddedInputs() {
-        XCTAssertEqual(BookletLayoutEngine.sheetCount(forPaddedInputCount: 2), 1)
-        XCTAssertEqual(BookletLayoutEngine.sheetCount(forPaddedInputCount: 4), 2)
-        XCTAssertEqual(BookletLayoutEngine.sheetCount(forPaddedInputCount: 6), 3)
-        XCTAssertEqual(BookletLayoutEngine.sheetCount(forPaddedInputCount: 100), 50)
+    func testOutputSideAndPhysicalSheetCounts() {
+        XCTAssertEqual(BookletLayoutEngine.outputSideCount(forPaddedInputCount: 4), 2)
+        XCTAssertEqual(BookletLayoutEngine.physicalSheetCount(forPaddedInputCount: 4), 1)
+        XCTAssertEqual(BookletLayoutEngine.outputSideCount(forPaddedInputCount: 8), 4)
+        XCTAssertEqual(BookletLayoutEngine.physicalSheetCount(forPaddedInputCount: 8), 2)
+        XCTAssertEqual(BookletLayoutEngine.outputSideCount(forPaddedInputCount: 100), 50)
+        XCTAssertEqual(BookletLayoutEngine.physicalSheetCount(forPaddedInputCount: 100), 25)
     }
 
-    func testSheetCountForZeroIsZero() {
-        XCTAssertEqual(BookletLayoutEngine.sheetCount(forPaddedInputCount: 0), 0)
+    func testCountsForZeroAreZero() {
+        XCTAssertEqual(BookletLayoutEngine.outputSideCount(forPaddedInputCount: 0), 0)
+        XCTAssertEqual(BookletLayoutEngine.physicalSheetCount(forPaddedInputCount: 0), 0)
     }
 
     // MARK: - Booklet fold mapping (the key business logic)
@@ -48,31 +55,21 @@ final class BookletLayoutEngineTests: XCTestCase {
     }
 
     func testBookletFold_N4() {
-        // 4 pages → [1,4] [2,3]
+        // One physical sheet: front [4,1], back [2,3].
         assertFold(BookletLayoutEngine.bookletFoldMapping(outputIndex: 0, paddedInputCount: 4),
-                   left: 1, right: 4)
+                   left: 4, right: 1)
         assertFold(BookletLayoutEngine.bookletFoldMapping(outputIndex: 1, paddedInputCount: 4),
                    left: 2, right: 3)
     }
 
-    func testBookletFold_N6() {
-        // 6 pages → [1,6] [2,5] [3,4]
-        assertFold(BookletLayoutEngine.bookletFoldMapping(outputIndex: 0, paddedInputCount: 6),
-                   left: 1, right: 6)
-        assertFold(BookletLayoutEngine.bookletFoldMapping(outputIndex: 1, paddedInputCount: 6),
-                   left: 2, right: 5)
-        assertFold(BookletLayoutEngine.bookletFoldMapping(outputIndex: 2, paddedInputCount: 6),
-                   left: 3, right: 4)
-    }
-
     func testBookletFold_N8() {
-        // 8 pages → [1,8] [2,7] [3,6] [4,5]
+        // Two physical sheets, each represented by adjacent front/back sides.
         assertFold(BookletLayoutEngine.bookletFoldMapping(outputIndex: 0, paddedInputCount: 8),
-                   left: 1, right: 8)
+                   left: 8, right: 1)
         assertFold(BookletLayoutEngine.bookletFoldMapping(outputIndex: 1, paddedInputCount: 8),
                    left: 2, right: 7)
         assertFold(BookletLayoutEngine.bookletFoldMapping(outputIndex: 2, paddedInputCount: 8),
-                   left: 3, right: 6)
+                   left: 6, right: 3)
         assertFold(BookletLayoutEngine.bookletFoldMapping(outputIndex: 3, paddedInputCount: 8),
                    left: 4, right: 5)
     }
@@ -81,53 +78,74 @@ final class BookletLayoutEngineTests: XCTestCase {
     /// 50 output sheets and the last page of the book should appear on
     /// the right side of the first output sheet.
     func testBookletFold_100PageBook() {
-        let sheets = BookletLayoutEngine.buildSheets(
+        let outputSides = BookletLayoutEngine.buildOutputSides(
             inputPageCount: 100,
             settings: BookletSettings()
         )
-        XCTAssertEqual(sheets.count, 50)
-        XCTAssertEqual(sheets.first?.leftPage, 1)
-        XCTAssertEqual(sheets.first?.rightPage, 100)
-        XCTAssertEqual(sheets.last?.leftPage, 50)
-        XCTAssertEqual(sheets.last?.rightPage, 51)
+        let physicalSheets = BookletLayoutEngine.buildPhysicalSheets(
+            inputPageCount: 100,
+            settings: BookletSettings()
+        )
+        XCTAssertEqual(outputSides.count, 50)
+        XCTAssertEqual(physicalSheets.count, 25)
+        XCTAssertEqual(outputSides.first?.leftPage, 100)
+        XCTAssertEqual(outputSides.first?.rightPage, 1)
+        XCTAssertEqual(outputSides.last?.leftPage, 50)
+        XCTAssertEqual(outputSides.last?.rightPage, 51)
     }
 
-    func testBookletFold_PadsOddInput() {
-        let sheets = BookletLayoutEngine.buildSheets(
+    func testBookletFoldPadsFivePagesToTwoPhysicalSheets() {
+        let sides = BookletLayoutEngine.buildOutputSides(
             inputPageCount: 5,
             settings: BookletSettings()
         )
-        // 5 → pad to 6 → 3 sheets, all positions used because booklet
-        // fold always fills both sides of the spread.
-        XCTAssertEqual(sheets.count, 3)
-        XCTAssertEqual(sheets[0], OutputSheet(index: 0, leftPage: 1, rightPage: 6))
-        XCTAssertEqual(sheets[1], OutputSheet(index: 1, leftPage: 2, rightPage: 5))
-        XCTAssertEqual(sheets[2], OutputSheet(index: 2, leftPage: 3, rightPage: 4))
+        XCTAssertEqual(sides.count, 4)
+        assertOutputSide(sides[0], index: 0, physicalSheet: 0, side: .front, left: 0, right: 1)
+        assertOutputSide(sides[1], index: 1, physicalSheet: 0, side: .back, left: 2, right: 0)
+        assertOutputSide(sides[2], index: 2, physicalSheet: 1, side: .front, left: 0, right: 3)
+        assertOutputSide(sides[3], index: 3, physicalSheet: 1, side: .back, left: 4, right: 5)
     }
 
     // MARK: - Simple pair mapping
 
     func testSimplePair_N5_Padded() {
         // 5 → pad to 6 → [1,2] [3,4] [5,6(blank rendered)]
-        let sheets = BookletLayoutEngine.buildSheets(
+        let sheets = BookletLayoutEngine.buildOutputSides(
             inputPageCount: 5,
             settings: BookletSettings(layout: .simplePair)
         )
         XCTAssertEqual(sheets.count, 3)
-        XCTAssertEqual(sheets[0], OutputSheet(index: 0, leftPage: 1, rightPage: 2))
-        XCTAssertEqual(sheets[1], OutputSheet(index: 1, leftPage: 3, rightPage: 4))
-        XCTAssertEqual(sheets[2], OutputSheet(index: 2, leftPage: 5, rightPage: 6))
+        assertOutputSide(sheets[0], index: 0, physicalSheet: 0, side: .front, left: 1, right: 2)
+        assertOutputSide(sheets[1], index: 1, physicalSheet: 1, side: .front, left: 3, right: 4)
+        assertOutputSide(sheets[2], index: 2, physicalSheet: 2, side: .front, left: 5, right: 0)
     }
 
     func testSimplePair_N4_NoPadding() {
         // 4 → [1,2] [3,4]
-        let sheets = BookletLayoutEngine.buildSheets(
+        let sheets = BookletLayoutEngine.buildOutputSides(
             inputPageCount: 4,
             settings: BookletSettings(layout: .simplePair, padBlankPage: false)
         )
         XCTAssertEqual(sheets.count, 2)
-        XCTAssertEqual(sheets[0], OutputSheet(index: 0, leftPage: 1, rightPage: 2))
-        XCTAssertEqual(sheets[1], OutputSheet(index: 1, leftPage: 3, rightPage: 4))
+        assertOutputSide(sheets[0], index: 0, physicalSheet: 0, side: .front, left: 1, right: 2)
+        assertOutputSide(sheets[1], index: 1, physicalSheet: 1, side: .front, left: 3, right: 4)
+    }
+
+    private func assertOutputSide(
+        _ outputSide: OutputSheet,
+        index: Int,
+        physicalSheet: Int,
+        side: OutputSheet.Side,
+        left: Int,
+        right: Int,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertEqual(outputSide.index, index, file: file, line: line)
+        XCTAssertEqual(outputSide.physicalSheetIndex, physicalSheet, file: file, line: line)
+        XCTAssertEqual(outputSide.side, side, file: file, line: line)
+        XCTAssertEqual(outputSide.leftPage, left, file: file, line: line)
+        XCTAssertEqual(outputSide.rightPage, right, file: file, line: line)
     }
 
     // MARK: - fitRect

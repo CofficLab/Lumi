@@ -17,6 +17,7 @@ public final class WorkspacePlugin: LumiPlugin, SuperLog {
     }
     public let order = 40
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

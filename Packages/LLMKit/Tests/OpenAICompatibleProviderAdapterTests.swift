@@ -149,6 +149,37 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(message["content"] as? String, "result")
     }
 
+    func testBuildRequestBodyMovesToolResultImagesAfterContiguousToolBatch() throws {
+        let adapter = makeAdapter()
+        let image = MessageImage(data: Data([0x01, 0x02]), mimeType: "image/jpeg")
+        let body = try adapter.buildRequestBody(
+            messages: [
+                ChatMessage(
+                    role: .assistant,
+                    content: "",
+                    toolCalls: [
+                        ToolCall(id: "call_1", name: "computer_act", arguments: "{}"),
+                        ToolCall(id: "call_2", name: "read_state", arguments: "{}"),
+                    ]
+                ),
+                ChatMessage(role: .tool, content: "acted", toolCallID: "call_1", images: [image]),
+                ChatMessage(role: .tool, content: "read", toolCallID: "call_2"),
+            ],
+            model: "gpt-4o",
+            tools: nil,
+            systemPrompt: ""
+        )
+
+        let messages = try XCTUnwrap(body["messages"] as? [[String: Any]])
+        XCTAssertEqual(messages.count, 4)
+        XCTAssertEqual(messages[1]["role"] as? String, "tool")
+        XCTAssertEqual(messages[2]["role"] as? String, "tool")
+        XCTAssertEqual(messages[3]["role"] as? String, "user")
+
+        let content = try XCTUnwrap(messages[3]["content"] as? [[String: Any]])
+        XCTAssertEqual(content.last?["type"] as? String, "image_url")
+    }
+
     func testTransformAssistantMessageWithToolCalls() throws {
         let adapter = OpenAICompatibleProviderAdapter(
             configuration: .init(

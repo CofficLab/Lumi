@@ -16,6 +16,7 @@ public final class ConversationTitlePlugin: LumiPlugin, SuperLog {
     }
     public let order = 77
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     private var autoTitleService: AutoConversationTitleService?
 
     public init() {}

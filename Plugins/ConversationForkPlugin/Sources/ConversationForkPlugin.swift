@@ -16,6 +16,7 @@ public final class ConversationForkPlugin: LumiPlugin, SuperLog {
     }
     public let order = 61
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

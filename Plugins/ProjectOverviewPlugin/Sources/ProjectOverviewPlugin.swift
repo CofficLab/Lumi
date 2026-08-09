@@ -15,6 +15,7 @@ public final class ProjectOverviewPlugin: LumiPlugin, SuperLog {
     }
     public let order = 14
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

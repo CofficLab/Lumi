@@ -1242,25 +1242,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pull"
+            "value": "拉取"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pull"
+            "value": "拉取"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pull"
+            "value": "拉取"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pull"
+            "value": "拉取"
           }
         }
       }
@@ -1310,25 +1310,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pulling..."
+            "value": "拉取中..."
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pulling..."
+            "value": "拉取中..."
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pulling..."
+            "value": "拉取中..."
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pulling..."
+            "value": "拉取中..."
           }
         }
       }
