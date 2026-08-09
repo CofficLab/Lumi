@@ -38,7 +38,7 @@ public final class RegistryManagerPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: "Registry Manager",
+                title: LumiPluginLocalization.string("Registry Manager", bundle: .module),
                 systemImage: "arrow.triangle.2.circlepath"
             ) {
                 RegistryManagerView()
