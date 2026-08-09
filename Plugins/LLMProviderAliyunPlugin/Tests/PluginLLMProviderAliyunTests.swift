@@ -100,6 +100,80 @@ struct PluginLLMProviderAliyunTests {
         #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
     }
 
+    @Test func toolResultImagesAreNestedInsideTheirToolResultBlock() throws {
+        let conversationID = UUID()
+        let attachment = LumiImageAttachment(
+            mimeType: "image/png",
+            base64Data: Data([0x89, 0x50, 0x4E, 0x47]).base64EncodedString(),
+            fileName: "preview.png"
+        )
+        let request = LumiLLMRequest(
+            messages: [
+                LumiChatMessage(conversationID: conversationID, role: .user, content: "查看图片"),
+                LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .tool,
+                    content: "已读取图片",
+                    metadata: LumiImageAttachmentMetadata.encode([attachment]),
+                    toolCallID: "call_read_image"
+                ),
+            ],
+            model: "qwen3.6-plus"
+        )
+
+        let body = AliyunAnthropicRequestBuilder.body(for: request)
+        let messages = try #require(body["messages"] as? [[String: Any]])
+        let toolMessage = try #require(messages.last)
+        let content = try #require(toolMessage["content"] as? [[String: Any]])
+
+        #expect(toolMessage["role"] as? String == "user")
+        #expect(content.count == 1)
+        #expect(content[0]["type"] as? String == "tool_result")
+        #expect(content[0]["tool_use_id"] as? String == "call_read_image")
+        let toolContent = try #require(content[0]["content"] as? [[String: Any]])
+        #expect(toolContent.count == 3)
+        #expect(toolContent[0]["type"] as? String == "text")
+        #expect(toolContent[0]["text"] as? String == "已读取图片")
+        #expect(toolContent[1]["type"] as? String == "image")
+
+        let source = try #require(toolContent[1]["source"] as? [String: Any])
+        #expect(source["type"] as? String == "base64")
+        #expect(source["media_type"] as? String == "image/png")
+        #expect(source["data"] as? String == attachment.base64Data)
+        #expect(toolContent[2]["type"] as? String == "text")
+        #expect((toolContent[2]["text"] as? String)?.contains("不要根据文件路径") == true)
+    }
+
+    @Test func userMessageImagesUseAnthropicImageBlocks() throws {
+        let conversationID = UUID()
+        let attachment = LumiImageAttachment(
+            mimeType: "image/jpeg",
+            base64Data: Data([0xFF, 0xD8, 0xFF]).base64EncodedString(),
+            fileName: "input.jpg"
+        )
+        let request = LumiLLMRequest(
+            messages: [
+                LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: "这是什么？",
+                    metadata: LumiImageAttachmentMetadata.encode([attachment])
+                ),
+            ],
+            model: "qwen3.6-plus",
+            imageAttachments: [attachment]
+        )
+
+        let body = AliyunAnthropicRequestBuilder.body(for: request)
+        let messages = try #require(body["messages"] as? [[String: Any]])
+        let userMessage = try #require(messages.first)
+        let content = try #require(userMessage["content"] as? [[String: Any]])
+
+        #expect(content.count == 2)
+        #expect(content[0]["type"] as? String == "image")
+        #expect(content[1]["type"] as? String == "text")
+    }
+
     @Test func httpErrorRendererMatchesOtherStatusCodes() {
         let conversationID = UUID()
         let rateLimited = LumiChatMessage(
