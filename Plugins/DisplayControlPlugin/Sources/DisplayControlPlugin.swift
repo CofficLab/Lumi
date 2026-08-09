@@ -31,7 +31,7 @@ public final class DisplayControlPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: "Display Control",
+                title: LumiPluginLocalization.string("Display Control", bundle: .module),
                 systemImage: "display",
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,
