@@ -89,10 +89,13 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
                 throw RenderError.sourceUnreadable(sourceURL)
             }
 
-            // 2. Plan the sheets.
-            let sheets = BookletLayoutEngine.buildSheets(inputPageCount: rawCount,
-                                                         settings: settings)
-            guard !sheets.isEmpty else {
+            // 2. Plan the output PDF pages. In booklet mode consecutive
+            // pages are the front and back of one physical sheet.
+            let outputSides = BookletLayoutEngine.buildOutputSides(
+                inputPageCount: rawCount,
+                settings: settings
+            )
+            guard !outputSides.isEmpty else {
                 throw RenderError.sourceUnreadable(sourceURL)
             }
 
@@ -109,9 +112,9 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
                 throw RenderError.outputContextFailed(outputURL)
             }
 
-            // 4. Render every sheet.
-            let total = sheets.count
-            for (i, sheet) in sheets.enumerated() {
+            // 4. Render every print side as one output PDF page.
+            let total = outputSides.count
+            for (i, outputSide) in outputSides.enumerated() {
                 if Task.isCancelled { break }
 
                 ctx.beginPDFPage(nil)
@@ -122,12 +125,12 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
                 let rightRect = BookletLayoutEngine.rightRect(for: settings)
 
                 drawPage(from: sourceDoc,
-                         pageNumber: sheet.leftPage,
+                         pageNumber: outputSide.leftPage,
                          into: leftRect,
                          context: ctx)
 
                 drawPage(from: sourceDoc,
-                         pageNumber: sheet.rightPage,
+                         pageNumber: outputSide.rightPage,
                          into: rightRect,
                          context: ctx)
 
@@ -159,7 +162,11 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
             continuation.yield(1.0)
 
             if Self.verbose {
-                Self.logger.info("\(Self.t)Imposed \(rawCount) source pages → \(total) sheets → \(outputURL.lastPathComponent)")
+                let physicalSheets = BookletLayoutEngine.buildPhysicalSheets(
+                    inputPageCount: rawCount,
+                    settings: settings
+                ).count
+                Self.logger.info("\(Self.t)Imposed \(rawCount) source pages → \(physicalSheets) physical sheets / \(total) print sides → \(outputURL.lastPathComponent)")
             }
         } catch {
             let message = (error as? LocalizedError)?.errorDescription

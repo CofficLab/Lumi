@@ -68,12 +68,22 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
 
     // MARK: - Derived
 
-    /// Sheets the user can expect in the output PDF.
+    /// Physical pieces of paper required by the current layout.
     var expectedSheetCount: Int {
         guard let info = inputInfo else { return 0 }
-        let padded = BookletLayoutEngine.padInputCount(info.pageCount,
-                                                       pad: settings.padBlankPage)
-        return BookletLayoutEngine.sheetCount(forPaddedInputCount: padded)
+        return BookletLayoutEngine.buildPhysicalSheets(
+            inputPageCount: info.pageCount,
+            settings: settings
+        ).count
+    }
+
+    /// PDF pages / print sides produced by the current layout.
+    var expectedOutputPageCount: Int {
+        guard let info = inputInfo else { return 0 }
+        return BookletLayoutEngine.buildOutputSides(
+            inputPageCount: info.pageCount,
+            settings: settings
+        ).count
     }
 
     var hasInput: Bool { inputURL != nil }
