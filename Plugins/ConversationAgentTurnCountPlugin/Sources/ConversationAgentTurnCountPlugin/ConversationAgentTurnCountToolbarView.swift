@@ -87,7 +87,7 @@ private struct AgentTurnCountPopoverContent: View {
                 Image(systemName: "person.2.wave.2")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(theme.textSecondary)
-                Text(LumiPluginLocalization.string("Sub-Agent Turns", bundle: .module))
+            Text(LumiPluginLocalization.string("Sub-Agent Turns", bundle: .module))
                     .font(.subheadline)
                     .fontWeight(.semibold)
             }
