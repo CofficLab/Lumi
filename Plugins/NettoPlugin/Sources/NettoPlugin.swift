@@ -38,7 +38,7 @@ public final class NettoPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: "Netto Firewall",
+                title: LumiPluginLocalization.string("Netto Firewall", bundle: .module),
                 systemImage: "shield.lefthalf.filled"
             ) {
                 NettoDashboardView()
