@@ -26,7 +26,7 @@ public final class ConversationNewPlugin: LumiPlugin {
         [
             LumiTitleToolbarItem(
                 id: "\(id).new-chat",
-                title: "New Chat",
+                title: LumiPluginLocalization.string("New Chat", bundle: .module),
                 placement: .trailing,
                 order: 30
             ) {
