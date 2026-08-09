@@ -1,7 +1,40 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "%lld rules": {},
+    "%lld rules": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld rules"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 条规则"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 条规则"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 条规则"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 条规则"
+          }
+        }
+      }
+    },
     "Absolute path to the project directory containing .agent/rules folder.": {
       "localizations": {
         "en": {
