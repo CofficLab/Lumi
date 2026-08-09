@@ -11,6 +11,7 @@ import AskUserPlugin
 import BookletMakerPlugin
 import BrewManagerPlugin
 import BrowserPlugin
+import ComputerUsePlugin
 import CADDesignerPlugin
 import StoryWriterPlugin
 import StateMonitorPlugin
@@ -274,6 +275,7 @@ public enum PluginService {
             MemoryPlugin(),
             DownloadPlugin(),
             BrowserPlugin(),
+            ComputerUsePlugin(),
             ShowImagePlugin(),
             GitHubPlugin(),
             GoalTaskPlugin(),
