@@ -35,8 +35,9 @@ final class BookletRendererIntegrationTests: XCTestCase {
             XCTFail("Output PDF cannot be opened")
             return
         }
-        // 6 source pages (even) → 3 output sheets.
-        XCTAssertEqual(outDoc.pageCount, 3)
+        // 6 source pages → pad to 8 slots → 2 physical sheets /
+        // 4 output PDF pages (front/back for each sheet).
+        XCTAssertEqual(outDoc.pageCount, 4)
 
         // Each output sheet is a landscape A4 page.
         let outputBounds = try XCTUnwrap(outDoc.page(at: 0)?.bounds(for: .mediaBox))
@@ -63,8 +64,9 @@ final class BookletRendererIntegrationTests: XCTestCase {
             XCTFail("Output PDF cannot be opened")
             return
         }
-        // 5 source pages → pad to 6 → 3 sheets.
-        XCTAssertEqual(outDoc.pageCount, 3)
+        // 5 source pages → pad to 8 slots → 2 physical sheets /
+        // 4 output PDF pages.
+        XCTAssertEqual(outDoc.pageCount, 4)
     }
 
     // MARK: - Helpers
