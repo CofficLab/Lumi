@@ -31,7 +31,7 @@ public final class DockerManagerPlugin: LumiPlugin {
         [
             ViewContainerItem(
                 id: id,
-                title: "Docker",
+                title: LumiPluginLocalization.string("Docker", bundle: .module),
                 systemImage: "shippingbox",
                 panelHeaderVisibility: .unsupported
             ) {
