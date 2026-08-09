@@ -42,37 +42,29 @@ struct FlipBookView: View {
 
             VStack(spacing: 8) {
                 ZStack {
-                    // 底层：翻页目标 spread
+                    // 静止纸页：拖动时只替换被翻页下方的那一侧。
+                    // 翻动纸张的背面由 flippingPage 渲染，不能提前作为
+                    // 目标 spread 的另一半露出来。
                     if !spreads.isEmpty {
-                        spreadView(spreads[targetSpreadIndex],
-                               pageWidth: pageWidth,
-                               pageHeight: pageHeight,
-                               dimmed: isFlipping)
+                        spreadView(
+                            isFlipping ? stationarySpreadDuringFlip : spreads[spreadIndex],
+                            pageWidth: pageWidth,
+                            pageHeight: pageHeight
+                        )
 
-                    // 中层：当前 spread 中不参与翻页的一半
-                    if !isFlipping {
-                        spreadView(spreads[spreadIndex],
-                                   pageWidth: pageWidth,
-                                   pageHeight: pageHeight)
-                    } else if flippingForward, let left = spreads[spreadIndex].left {
-                        halfPage(left, atLeft: true, pageWidth: pageWidth, pageHeight: pageHeight)
-                    } else if !flippingForward, let right = spreads[spreadIndex].right {
-                        halfPage(right, atLeft: false, pageWidth: pageWidth, pageHeight: pageHeight)
-                    }
+                        // 顶层：正在翻转的那一页
+                        if isFlipping {
+                            flippingPage(pageWidth: pageWidth, pageHeight: pageHeight)
+                        }
 
-                    // 顶层：正在翻转的那一页
-                    if isFlipping {
-                        flippingPage(pageWidth: pageWidth, pageHeight: pageHeight)
-                    }
-
-                    // 左右点击热区
-                    HStack(spacing: 0) {
-                        Color.clear.contentShape(Rectangle())
-                            .onTapGesture { flipBackward() }
-                        Color.clear.contentShape(Rectangle())
-                            .onTapGesture { flipForward() }
-                    }
-                    .frame(width: pageWidth * 2, height: pageHeight)
+                        // 左右点击热区
+                        HStack(spacing: 0) {
+                            Color.clear.contentShape(Rectangle())
+                                .onTapGesture { flipBackward() }
+                            Color.clear.contentShape(Rectangle())
+                                .onTapGesture { flipForward() }
+                        }
+                        .frame(width: pageWidth * 2, height: pageHeight)
                     }
                 }
                 .frame(width: pageWidth * 2, height: pageHeight)
@@ -99,16 +91,26 @@ struct FlipBookView: View {
             : max(spreadIndex - 1, 0)
     }
 
+    /// 翻页过程中留在书面上的两页。
+    ///
+    /// 向前翻时，当前右页是翻动纸张的正面、目标左页是它的背面，
+    /// 所以静止层只能显示“当前左页 + 目标右页”。向后翻则相反。
+    private var stationarySpreadDuringFlip: Spread {
+        let current = spreads[spreadIndex]
+        let target = spreads[targetSpreadIndex]
+        return flippingForward
+            ? (current.left, target.right)
+            : (target.left, current.right)
+    }
+
     /// 渲染一个完整 spread（空槽位用透明占位）
     private func spreadView(_ spread: Spread,
                             pageWidth: CGFloat,
-                            pageHeight: CGFloat,
-                            dimmed: Bool = false) -> some View {
+                            pageHeight: CGFloat) -> some View {
         HStack(spacing: 0) {
             pageSlot(spread.left, pageWidth: pageWidth, pageHeight: pageHeight)
             pageSlot(spread.right, pageWidth: pageWidth, pageHeight: pageHeight)
         }
-        .opacity(dimmed ? 0.9 : 1)
         .shadow(color: .black.opacity(0.12), radius: 4, x: 0, y: 2)
     }
 
@@ -119,22 +121,6 @@ struct FlipBookView: View {
                 .frame(width: pageWidth, height: pageHeight)
         } else {
             Color.clear.frame(width: pageWidth, height: pageHeight)
-        }
-    }
-
-    /// 单独渲染半页（翻页时保留在原地的那一半）
-    private func halfPage(_ page: Int, atLeft: Bool,
-                          pageWidth: CGFloat, pageHeight: CGFloat) -> some View {
-        HStack(spacing: 0) {
-            if atLeft {
-                PDFDocumentPageView(documentURL: document.url, pageNumber: page)
-                    .frame(width: pageWidth, height: pageHeight)
-                Color.clear.frame(width: pageWidth, height: pageHeight)
-            } else {
-                Color.clear.frame(width: pageWidth, height: pageHeight)
-                PDFDocumentPageView(documentURL: document.url, pageNumber: page)
-                    .frame(width: pageWidth, height: pageHeight)
-            }
         }
     }
 

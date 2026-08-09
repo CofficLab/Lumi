@@ -9,13 +9,29 @@ struct PDFDocumentPageView: View {
 
     var body: some View {
         PDFPageCanvas(documentURL: documentURL, pageNumber: pageNumber)
-            .background(Color(nsColor: .textBackgroundColor))
+            .background(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 3))
             .overlay(
                 RoundedRectangle(cornerRadius: 3)
-                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    .stroke(Color.black.opacity(0.22), lineWidth: 1)
             )
             .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+    }
+}
+
+/// A non-dynamic paper surface. App themes may replace SwiftUI semantic
+/// backgrounds, but a PDF sheet must remain physical white in every theme.
+struct FixedWhitePaperSurface: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        view.wantsLayer = true
+        view.layer?.backgroundColor = NSColor.white.cgColor
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        nsView.wantsLayer = true
+        nsView.layer?.backgroundColor = NSColor.white.cgColor
     }
 }
 
@@ -42,6 +58,8 @@ private final class PDFPageNSView: NSView {
         self.pageNumber = pageNumber
         self.document = CGPDFDocument(documentURL as CFURL)
         super.init(frame: .zero)
+        wantsLayer = true
+        layer?.backgroundColor = NSColor.white.cgColor
     }
 
     @available(*, unavailable)
@@ -49,7 +67,10 @@ private final class PDFPageNSView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override var isOpaque: Bool { true }
+
     func update(documentURL: URL, pageNumber: Int) {
+        layer?.backgroundColor = NSColor.white.cgColor
         if self.documentURL != documentURL {
             self.documentURL = documentURL
             document = CGPDFDocument(documentURL as CFURL)
@@ -62,14 +83,24 @@ private final class PDFPageNSView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+
+        // PDF pages represent physical paper. Keep transparent page regions
+        // white regardless of the app's current light or dark appearance,
+        // matching Preview.app's page canvas.
+        context.setFillColor(NSColor.white.cgColor)
+        context.fill(bounds)
+
         guard bounds.width > 0,
               bounds.height > 0,
-              let page = document?.page(at: pageNumber),
-              let context = NSGraphicsContext.current?.cgContext else {
+              let page = document?.page(at: pageNumber) else {
             return
         }
 
-        let pageBox = page.getBoxRect(.mediaBox)
+        // Match PDFKit and Preview.app: the crop box is the page's intended
+        // visible area. Some PDFs keep a full spread in the media box and use
+        // the crop box to expose only the left or right page.
+        let pageBox = page.getBoxRect(.cropBox)
         guard pageBox.width > 0, pageBox.height > 0 else { return }
         let target = BookletLayoutEngine.fitRect(
             aspectRatio: pageBox.width / pageBox.height,
@@ -77,12 +108,15 @@ private final class PDFPageNSView: NSView {
         )
 
         context.saveGState()
-        context.translateBy(x: target.minX, y: target.minY)
-        context.scaleBy(
-            x: target.width / pageBox.width,
-            y: target.height / pageBox.height
+        context.clip(to: target)
+        context.concatenate(
+            page.getDrawingTransform(
+                .cropBox,
+                rect: target,
+                rotate: 0,
+                preserveAspectRatio: true
+            )
         )
-        context.translateBy(x: -pageBox.minX, y: -pageBox.minY)
         context.drawPDFPage(page)
         context.restoreGState()
     }

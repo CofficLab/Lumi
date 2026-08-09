@@ -20,6 +20,18 @@ final class PDFInspectorTests: XCTestCase {
         XCTAssertGreaterThan(info.firstPageSize.height, 0)
     }
 
+    func testInspectorUsesVisibleCropBoxInsteadOfLandscapeMediaBox() async throws {
+        let url = try makeCroppedSpreadPDF()
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let info = try await PDFInspector().inspect(url)
+
+        XCTAssertEqual(info.pageCount, 1)
+        XCTAssertEqual(info.firstPageSize.width, 386, accuracy: 1)
+        XCTAssertEqual(info.firstPageSize.height, 594, accuracy: 1)
+        XCTAssertLessThan(info.firstPageSize.width / info.firstPageSize.height, 1)
+    }
+
     func testInspectorRejectsMissingFile() async {
         let url = URL(fileURLWithPath: "/tmp/does-not-exist-\(UUID()).pdf")
         let inspector = PDFInspector()
@@ -43,6 +55,32 @@ final class PDFInspectorTests: XCTestCase {
         }
         guard doc.write(to: url) else {
             throw NSError(domain: "PDFInspectorTest", code: 1)
+        }
+        return url
+    }
+
+    private func makeCroppedSpreadPDF() throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("inspector-crop-test-\(UUID().uuidString).pdf")
+        let data = NSMutableData()
+        var mediaBox = CGRect(x: 0, y: 0, width: 842, height: 595)
+        let cropBox = CGRect(x: 421, y: 1, width: 386, height: 594)
+        guard let consumer = CGDataConsumer(data: data),
+              let context = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else {
+            throw NSError(domain: "PDFInspectorTest", code: 2)
+        }
+        context.beginPDFPage(nil)
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fill(mediaBox)
+        context.endPDFPage()
+        context.closePDF()
+        guard let document = PDFDocument(data: data as Data),
+              let page = document.page(at: 0) else {
+            throw NSError(domain: "PDFInspectorTest", code: 3)
+        }
+        page.setBounds(cropBox, for: .cropBox)
+        guard document.write(to: url) else {
+            throw NSError(domain: "PDFInspectorTest", code: 4)
         }
         return url
     }

@@ -190,7 +190,7 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
         guard pageNumber > 0, let page = doc.page(at: pageNumber) else {
             return // blank cell
         }
-        let pageBox = page.getBoxRect(.mediaBox)
+        let pageBox = page.getBoxRect(.cropBox)
         guard pageBox.width > 0, pageBox.height > 0 else { return }
 
         let aspect = pageBox.width / pageBox.height
@@ -199,16 +199,17 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
         ctx.saveGState()
         defer { ctx.restoreGState() }
 
-        // CGPDFPage draws in its own user space, defined by its media
-        // box. We need to map the media box to the cell rect, so we
-        // install a transform that scales and translates.
-        let scaleX = target.width  / pageBox.width
-        let scaleY = target.height / pageBox.height
-        ctx.translateBy(x: target.minX, y: target.minY)
-        ctx.scaleBy(x: scaleX, y: scaleY)
-        // Media box may not start at (0, 0); shift accordingly.
-        ctx.translateBy(x: -pageBox.minX, y: -pageBox.minY)
-
+        // Match Preview.app and the on-screen preview by drawing the visible
+        // CropBox rather than a potentially larger two-page MediaBox.
+        ctx.clip(to: target)
+        ctx.concatenate(
+            page.getDrawingTransform(
+                .cropBox,
+                rect: target,
+                rotate: 0,
+                preserveAspectRatio: true
+            )
+        )
         ctx.drawPDFPage(page)
     }
 

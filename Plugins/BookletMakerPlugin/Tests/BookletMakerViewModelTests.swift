@@ -80,11 +80,35 @@ final class BookletMakerViewModelTests: XCTestCase {
 
         XCTAssertTrue(viewModel.canExport)
         XCTAssertEqual(viewModel.splitSegments.map(\.pageCount), [2, 3, 3])
+        viewModel.renameSplitOutput(viewModel.splitSegments[1], to: "middle-chapter")
+        let baseName = sourceURL.deletingPathExtension().lastPathComponent
+        XCTAssertEqual(viewModel.splitOutputs.map(\.fileName), [
+            "\(baseName)-part-1.pdf",
+            "middle-chapter.pdf",
+            "\(baseName)-part-3.pdf",
+        ])
 
         await viewModel.exportSplit(to: outputDirectory)
 
         XCTAssertEqual(viewModel.lastSplitOutputURLs.count, 3)
+        XCTAssertEqual(viewModel.lastSplitOutputURLs[1].lastPathComponent, "middle-chapter.pdf")
         XCTAssertNil(viewModel.errorMessage)
+    }
+
+    func testSplitOutputNamesMustBeNonEmptyAndUnique() {
+        let viewModel = BookletMakerViewModel()
+        viewModel.selectedTool = .split
+        viewModel.splitCutPointsText = "2, 5"
+        let segments = viewModel.splitSegments
+
+        viewModel.renameSplitOutput(segments[0], to: "")
+        XCTAssertNotNil(viewModel.splitFileNameValidationMessage(for: segments[0]))
+        XCTAssertFalse(viewModel.canExportSplit)
+
+        viewModel.renameSplitOutput(segments[0], to: "same")
+        viewModel.renameSplitOutput(segments[1], to: "SAME.pdf")
+        XCTAssertNotNil(viewModel.splitFileNameValidationMessage(for: segments[0]))
+        XCTAssertFalse(viewModel.canExportSplit)
     }
 
     func testSplitCutPointToggleKeepsTextAndPlanInSync() {

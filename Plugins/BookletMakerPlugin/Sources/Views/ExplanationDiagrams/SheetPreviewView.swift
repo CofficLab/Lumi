@@ -142,13 +142,13 @@ struct OutputSheetView: View {
 
             ZStack {
                 // 纸张背景
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color(nsColor: .textBackgroundColor))
+                FixedWhitePaperSurface()
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
                     .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     .frame(width: paperWidth, height: paperHeight)
 
                 RoundedRectangle(cornerRadius: 4)
-                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    .stroke(Color.black.opacity(0.22), lineWidth: 1)
                     .frame(width: paperWidth, height: paperHeight)
 
                 // 边距区域（淡色提示）
@@ -187,11 +187,11 @@ struct OutputSheetView: View {
             )
                 .frame(width: h * pageAspect, height: h)
         } else {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(Color(nsColor: .textBackgroundColor))
+            FixedWhitePaperSurface()
+                .clipShape(RoundedRectangle(cornerRadius: 3))
                 .overlay(
                     RoundedRectangle(cornerRadius: 3)
-                        .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                        .stroke(Color.black.opacity(0.16), lineWidth: 1)
                 )
                 .frame(width: h * pageAspect, height: h)
         }
@@ -212,7 +212,7 @@ struct OutputSheetView: View {
                 )
         case .simplePair:
             Rectangle()
-                .fill(Color.secondary.opacity(0.3))
+                .fill(Color.black.opacity(0.22))
                 .frame(width: 1, height: paperHeight - 2 * margin)
         }
     }
