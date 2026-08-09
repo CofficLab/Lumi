@@ -10,10 +10,10 @@ struct ComputerUseSettingsView: View {
 
     var body: some View {
         Form {
-            Section("System Permissions") {
+            Section(LumiPluginLocalization.string("System Permissions", bundle: .module)) {
                 permissionRow(
-                    title: "Screen Recording",
-                    detail: "Allows Lumi to capture the selected application window.",
+                    title: LumiPluginLocalization.string("Screen Recording", bundle: .module),
+                    detail: LumiPluginLocalization.string("Allows Lumi to capture the selected application window.", bundle: .module),
                     granted: screenRecordingAllowed,
                     request: {
                         ComputerUsePermissionService.requestScreenRecordingPermission()
@@ -21,8 +21,8 @@ struct ComputerUseSettingsView: View {
                     }
                 )
                 permissionRow(
-                    title: "Accessibility",
-                    detail: "Allows Lumi to click, type, scroll, and navigate.",
+                    title: LumiPluginLocalization.string("Accessibility", bundle: .module),
+                    detail: LumiPluginLocalization.string("Allows Lumi to click, type, scroll, and navigate.", bundle: .module),
                     granted: accessibilityAllowed,
                     request: {
                         ComputerUsePermissionService.requestAccessibilityPermission()
@@ -31,9 +31,9 @@ struct ComputerUseSettingsView: View {
                 )
             }
 
-            Section("Allowed Applications") {
+            Section(LumiPluginLocalization.string("Allowed Applications", bundle: .module)) {
                 if applications.isEmpty {
-                    Text("Open an application to add it to the Computer Use allow list.")
+                    Text(LumiPluginLocalization.string("Open an application to add it to the Computer Use allow list.", bundle: .module))
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(applications) { application in
@@ -50,7 +50,7 @@ struct ComputerUseSettingsView: View {
             }
 
             Section {
-                Text("Computer Use captures only the selected window. Password fields are blocked, stale screenshot coordinates are rejected, and state-changing batches require approval in Build mode.")
+                Text(LumiPluginLocalization.string("Computer Use captures only the selected window. Password fields are blocked, stale screenshot coordinates are rejected, and state-changing batches require approval in Build mode.", bundle: .module))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -78,10 +78,10 @@ struct ComputerUseSettingsView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Label(granted ? "Granted" : "Required", systemImage: granted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+            Label(granted ? LumiPluginLocalization.string("Granted", bundle: .module) : LumiPluginLocalization.string("Required", bundle: .module), systemImage: granted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                 .foregroundStyle(granted ? .green : .orange)
             if !granted {
-                Button("Grant Access", action: request)
+                Button(LumiPluginLocalization.string("Grant Access", bundle: .module), action: request)
             }
         }
     }

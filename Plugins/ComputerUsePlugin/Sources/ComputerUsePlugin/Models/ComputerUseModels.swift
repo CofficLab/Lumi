@@ -96,27 +96,29 @@ enum ComputerUseError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .screenRecordingPermissionRequired:
-            "Screen Recording permission is required. Open Lumi Settings > Computer Use."
+            LumiPluginLocalization.string("Screen Recording permission is required. Open Lumi Settings > Computer Use.", bundle: .module)
         case .accessibilityPermissionRequired:
-            "Accessibility permission is required. Open Lumi Settings > Computer Use."
+            LumiPluginLocalization.string("Accessibility permission is required. Open Lumi Settings > Computer Use.", bundle: .module)
         case .noMatchingWindow:
-            "No matching on-screen application window was found."
+            LumiPluginLocalization.string("No matching on-screen application window was found.", bundle: .module)
         case .applicationNotAllowed(let name):
-            "Control of \(name) is not allowed. Add it under Lumi Settings > Computer Use."
+            LumiPluginLocalization.string("Control of {app} is not allowed. Add it under Lumi Settings > Computer Use.", bundle: .module)
+                .replacingOccurrences(of: "{app}", with: name)
         case .observationNotFound:
-            "The observation does not exist. Call computer_observe again."
+            LumiPluginLocalization.string("The observation does not exist. Call computer_observe again.", bundle: .module)
         case .staleObservation:
-            "The target window changed since the screenshot was captured. Call computer_observe again."
+            LumiPluginLocalization.string("The target window changed since the screenshot was captured. Call computer_observe again.", bundle: .module)
         case .invalidArguments(let message):
-            "Invalid Computer Use arguments: \(message)"
+            LumiPluginLocalization.string("Invalid Computer Use arguments: {message}", bundle: .module)
+                .replacingOccurrences(of: "{message}", with: message)
         case .captureFailed:
-            "The target window could not be captured."
+            LumiPluginLocalization.string("The target window could not be captured.", bundle: .module)
         case .eventCreationFailed:
-            "A macOS input event could not be created."
+            LumiPluginLocalization.string("A macOS input event could not be created.", bundle: .module)
         case .secureInputBlocked:
-            "Typing into a secure text field is blocked."
+            LumiPluginLocalization.string("Typing into a secure text field is blocked.", bundle: .module)
         case .visionModelRequired:
-            "Computer Use requires a model that supports both vision and tools. Select a compatible model and try again."
+            LumiPluginLocalization.string("Computer Use requires a model that supports both vision and tools. Select a compatible model and try again.", bundle: .module)
         }
     }
 }
