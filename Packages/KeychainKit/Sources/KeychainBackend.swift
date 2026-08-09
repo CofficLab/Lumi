@@ -57,15 +57,23 @@ public struct SystemKeychainBackend: KeychainBackend {
 
     public func write(_ data: Data, service: String, account: String) -> KeychainResult {
         Self.queue.sync {
-            // First try to delete existing item
-            let deleteQuery: [String: Any] = [
+            let lookupQuery: [String: Any] = [
                 kSecClass as String: kSecClassGenericPassword,
                 kSecAttrService as String: service,
                 kSecAttrAccount as String: account
             ]
-            SecItemDelete(deleteQuery as CFDictionary)
 
-            // Add new item
+            let updateStatus = SecItemUpdate(
+                lookupQuery as CFDictionary,
+                [kSecValueData as String: data] as CFDictionary
+            )
+            if updateStatus == errSecSuccess {
+                return KeychainResult(status: updateStatus, data: data)
+            }
+            guard updateStatus == errSecItemNotFound else {
+                return KeychainResult(status: updateStatus, data: nil)
+            }
+
             let query: [String: Any] = [
                 kSecClass as String: kSecClassGenericPassword,
                 kSecAttrService as String: service,

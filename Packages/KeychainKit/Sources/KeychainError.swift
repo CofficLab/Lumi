@@ -22,6 +22,9 @@ public enum KeychainStatus: Sendable {
 /// presenting an unavailable or locked Keychain as an unconfigured secret.
 public enum KeychainStoreError: LocalizedError, Sendable, Equatable {
     case readFailed(OSStatus)
+    case writeFailed(OSStatus)
+    case deleteFailed(OSStatus)
+    case missingDataForSuccessfulRead
     case invalidStringData
 
     public var errorDescription: String? {
@@ -30,6 +33,16 @@ public enum KeychainStoreError: LocalizedError, Sendable, Equatable {
             let systemMessage = SecCopyErrorMessageString(status, nil) as String?
                 ?? "Unknown Keychain error"
             return "Keychain read failed (OSStatus \(status): \(systemMessage))"
+        case .writeFailed(let status):
+            let systemMessage = SecCopyErrorMessageString(status, nil) as String?
+                ?? "Unknown Keychain error"
+            return "Keychain write failed (OSStatus \(status): \(systemMessage))"
+        case .deleteFailed(let status):
+            let systemMessage = SecCopyErrorMessageString(status, nil) as String?
+                ?? "Unknown Keychain error"
+            return "Keychain delete failed (OSStatus \(status): \(systemMessage))"
+        case .missingDataForSuccessfulRead:
+            return "Keychain reported a successful read without returning item data"
         case .invalidStringData:
             return "Keychain item contains invalid UTF-8 data"
         }
@@ -43,7 +56,7 @@ public func classifyKeychainResult(status: OSStatus, data: Data?) -> KeychainSta
         if let data = data {
             return .found(data)
         }
-        return .missing
+        return .unexpected(errSecSuccess)
 
     case errSecItemNotFound:
         return .missing
