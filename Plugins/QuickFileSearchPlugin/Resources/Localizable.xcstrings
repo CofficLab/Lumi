@@ -46,25 +46,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Close search"
+            "value": "关闭搜索"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Close search"
+            "value": "关闭搜索"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Close search"
+            "value": "关闭搜索"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Close search"
+            "value": "关闭搜索"
           }
         }
       }
@@ -320,25 +320,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Navigate results"
+            "value": "浏览结果"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Navigate results"
+            "value": "浏览结果"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Navigate results"
+            "value": "浏览结果"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Navigate results"
+            "value": "浏览结果"
           }
         }
       }
@@ -423,25 +423,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open file search"
+            "value": "打开文件搜索"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open file search"
+            "value": "打开文件搜索"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open file search"
+            "value": "打开文件搜索"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open file search"
+            "value": "打开文件搜索"
           }
         }
       }
@@ -594,25 +594,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select file"
+            "value": "选择文件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select file"
+            "value": "选择文件"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select file"
+            "value": "选择文件"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select file"
+            "value": "选择文件"
           }
         }
       }
