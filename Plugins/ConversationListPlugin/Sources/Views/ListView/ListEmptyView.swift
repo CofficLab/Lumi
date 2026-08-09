@@ -11,7 +11,7 @@ struct ListEmptyView: View {
                 .font(.appTitle)
                 .foregroundColor(theme.textTertiary)
 
-            Text("No conversations")
+            Text(LumiPluginLocalization.string("No conversations", bundle: .module))
                 .font(.appMicro)
                 .foregroundColor(theme.textTertiary)
         }

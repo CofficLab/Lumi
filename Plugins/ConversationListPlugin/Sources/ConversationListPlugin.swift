@@ -41,7 +41,7 @@ public final class ConversationListPlugin: LumiPlugin {
         return [
             PanelRailTabItem(
                 id: "chats",
-                title: "Chats",
+                title: LumiPluginLocalization.string("Chats", bundle: .module),
                 systemImage: "message.fill",
                 requiresChatSupport: true
             ) {
@@ -69,7 +69,7 @@ public final class ConversationListPlugin: LumiPlugin {
         return [
             LumiTitleToolbarItem(
                 id: "\(id).conversation-list",
-                title: "Chats",
+                title: LumiPluginLocalization.string("Chats", bundle: .module),
                 placement: .trailing,
                 order: 200
             ) {
