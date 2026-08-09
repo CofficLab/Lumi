@@ -10,10 +10,10 @@ struct SendActionBarButton: View {
     var body: some View {
         if inputState.isSending(kernel: kernel) {
             StopButton(action: { inputState.stop(kernel: kernel) })
-                .help("Stop")
+                .help(LumiPluginLocalization.string("Stop", bundle: .module))
         } else {
             SendButton(canSend: inputState.canSend(kernel: kernel), action: { inputState.send(kernel: kernel) })
-                .help("Send")
+                .help(LumiPluginLocalization.string("Send", bundle: .module))
         }
     }
 }
