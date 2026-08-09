@@ -965,14 +965,15 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "LumiApp/Lumi-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
+				INFOPLIST_KEY_CFBundleDisplayName = "Lumi(Debug)";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 5.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.debug;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -999,7 +1000,8 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "LumiApp/Lumi-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
+				INFOPLIST_KEY_CFBundleDisplayName = "Lumi(Debug)";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
