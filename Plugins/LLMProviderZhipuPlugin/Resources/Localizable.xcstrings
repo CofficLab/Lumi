@@ -150,25 +150,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
+            "value": "为 Lumi Chat 提供智谱 GLM 模型及智谱专属聊天错误渲染。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
+            "value": "为 Lumi Chat 提供智谱 GLM 模型及智谱专属聊天错误渲染。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
+            "value": "为 Lumi Chat 提供智谱 GLM 模型及智谱专属聊天错误渲染。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contributes Zhipu GLM models and Zhipu-specific chat error renderers."
+            "value": "为 Lumi Chat 提供智谱 GLM 模型及智谱专属聊天错误渲染。"
           }
         }
       }
@@ -1009,25 +1009,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Toggle raw message"
+            "value": "切换原始消息"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Toggle raw message"
+            "value": "切换原始消息"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Toggle raw message"
+            "value": "切换原始消息"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Toggle raw message"
+            "value": "切换原始消息"
           }
         }
       }
