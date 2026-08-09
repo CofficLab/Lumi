@@ -21,7 +21,7 @@ final class AppKitAskUserRenderer: AppKitMessageRenderer {
     private let controlsStack = NSStackView()
     private let statusLabel = NSTextField(labelWithString: "")
     private let freeTextField = NSTextField()
-    private let submitButton = NSButton(title: "Submit", target: nil, action: nil)
+    private let submitButton = NSButton(title: LumiPluginLocalization.string("Submit", bundle: .module), target: nil, action: nil)
 
     init(environment: AppKitMessageRendererRegistry.Environment) {
         self.environment = environment
