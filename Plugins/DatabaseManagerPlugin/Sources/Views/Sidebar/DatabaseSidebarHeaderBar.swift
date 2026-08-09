@@ -135,12 +135,12 @@ public enum DatabaseSidebarMode: String, Hashable {
 
 #if DEBUG
 #Preview("Tables") {
-    DatabaseSidebarHeaderBar(title: "Tables", systemImage: "tablecells", onLoad: {}, onToggleMode: {}, toggleMode: .browser)
+    DatabaseSidebarHeaderBar(title: LumiPluginLocalization.string("Tables", bundle: .module), systemImage: "tablecells", onLoad: {}, onToggleMode: {}, toggleMode: .browser)
         .frame(width: 260)
 }
 
 #Preview("Connections") {
-    DatabaseSidebarHeaderBar(title: "Connections", systemImage: "cylinder.split.1x2", onAdd: {}, onToggleMode: {}, toggleMode: .connections)
+    DatabaseSidebarHeaderBar(title: LumiPluginLocalization.string("Connections", bundle: .module), systemImage: "cylinder.split.1x2", onAdd: {}, onToggleMode: {}, toggleMode: .connections)
         .frame(width: 260)
 }
 #endif

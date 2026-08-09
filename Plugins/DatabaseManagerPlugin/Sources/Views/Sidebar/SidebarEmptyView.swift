@@ -59,7 +59,7 @@ struct SidebarEmptyView: View {
 #Preview("No tables") {
     SidebarEmptyView(
         systemImage: "tablecells",
-        title: "No tables",
+        title: LumiPluginLocalization.string("No tables", bundle: .module),
         description: "Click Reload to refresh the table list."
     )
     .frame(width: 260, height: 200)
@@ -68,7 +68,7 @@ struct SidebarEmptyView: View {
 #Preview("No keys") {
     SidebarEmptyView(
         systemImage: "key",
-        title: "No keys"
+        title: LumiPluginLocalization.string("No keys", bundle: .module)
     )
     .frame(width: 260, height: 200)
 }

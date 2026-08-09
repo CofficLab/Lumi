@@ -45,7 +45,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: "database-manager",
-                title: "Database",
+                title: LumiPluginLocalization.string("Database", bundle: .module),
                 systemImage: "cylinder.split.1x2",
                 railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
@@ -87,7 +87,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
         [
             PanelRailTabItem(
                 id: "database-manager.sidebar",
-                title: "Database",
+                title: LumiPluginLocalization.string("Database", bundle: .module),
                 systemImage: "cylinder.split.1x2",
                 visibility: .viewContainer(id: "database-manager")
             ) {
