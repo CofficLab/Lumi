@@ -92,7 +92,7 @@ public final class AppUpdatePlugin: LumiPlugin {
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
         AnyView(
             VStack(alignment: .leading, spacing: 6) {
-                Text("App Update")
+                Text(LumiPluginLocalization.string("App Update", bundle: .module))
                     .font(.headline)
                 Text(pluginDescription)
                     .font(.callout)
