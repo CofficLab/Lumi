@@ -338,11 +338,11 @@ public struct AppIconDesignerView: View {
                 .font(.subheadline.weight(.semibold))
 
             HStack(spacing: 8) {
-                shapeButton("rectangle", icon: "rectangle")
-                shapeButton("circle", icon: "circle")
-                shapeButton("capsule", icon: "capsule")
-                shapeButton("triangle", icon: "triangle")
-                shapeButton("line", icon: "line.diagonal")
+                shapeButton(L.string("rectangle"), icon: "rectangle")
+                shapeButton(L.string("circle"), icon: "circle")
+                shapeButton(L.string("capsule"), icon: "capsule")
+                shapeButton(L.string("triangle"), icon: "triangle")
+                shapeButton(L.string("line"), icon: "line.diagonal")
             }
 
             HStack(spacing: 8) {
