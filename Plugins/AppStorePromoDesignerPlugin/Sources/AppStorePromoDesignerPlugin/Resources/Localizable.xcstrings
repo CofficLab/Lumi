@@ -1,0 +1,51 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "App Store Promo Designer" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "App Store 宣传图设计器" } }
+      }
+    },
+    "Agent-generated HTML promotional artwork with exact App Store export sizes." : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "通过 Agent 生成 HTML 宣传图，并按 App Store 精确尺寸导出。" } }
+      }
+    },
+    "Promo Projects" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "宣传图项目" } }
+      }
+    },
+    "No project open" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "未打开项目" } }
+      }
+    },
+    "Ask the Agent to create promotional HTML in the current project." : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请让 Agent 在当前项目中创建宣传图 HTML。" } }
+      }
+    },
+    "Preview" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "预览" } }
+      }
+    },
+    "HTML Source" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "HTML 源码" } }
+      }
+    },
+    "Export PNG" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "导出 PNG" } }
+      }
+    },
+    "Refresh" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "刷新" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

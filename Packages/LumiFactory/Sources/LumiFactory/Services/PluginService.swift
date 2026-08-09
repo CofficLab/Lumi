@@ -7,6 +7,7 @@ import AgentTurnRunnerPlugin
 import AppIconDesignerPlugin
 import AppManagerPlugin
 import AppStoreConnectPlugin
+import AppStorePromoDesignerPlugin
 import AskUserPlugin
 import BookletMakerPlugin
 import BrewManagerPlugin
@@ -270,6 +271,7 @@ public enum PluginService {
             CaffeinatePlugin(),
             AgentTempStoragePlugin(),
             AppIconDesignerPlugin(),
+            AppStorePromoDesignerPlugin(),
             WebFetchPlugin(),
             WebSearchPlugin(),
             MemoryPlugin(),
