@@ -44,7 +44,7 @@ struct TopBar: View {
                     .appStoreConnectAddToChatMenu(
                         entityType: "uiActionButton",
                         entityID: "distribution.saveMetadata",
-                        title: "Save Metadata",
+                        title: AppStoreConnectLocalization.string("Save Metadata"),
                         sourceView: "AppChrome",
                         fields: [
                             "actionID": "saveMetadata",

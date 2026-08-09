@@ -3427,25 +3427,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Issuer ID"
+            "value": "签发者 ID"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Issuer ID"
+            "value": "签发者 ID"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Issuer ID"
+            "value": "签发者 ID"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Issuer ID"
+            "value": "签发者 ID"
           }
         }
       }
@@ -3495,25 +3495,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Key ID"
+            "value": "密钥 ID"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Key ID"
+            "value": "密钥 ID"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Key ID"
+            "value": "密钥 ID"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Key ID"
+            "value": "密钥 ID"
           }
         }
       }
