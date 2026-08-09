@@ -33,7 +33,7 @@ public final class RClickPlugin: LumiPlugin {
         [
             ViewContainerItem(
                 id: id,
-                title: "Right Click",
+                title: LumiPluginLocalization.string("Right Click", bundle: .module),
                 systemImage: "cursorarrow.click.2",
                 railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
@@ -49,7 +49,7 @@ public final class RClickPlugin: LumiPlugin {
         [
             PanelRailTabItem(
                 id: "\(id).preview",
-                title: "Preview",
+                title: LumiPluginLocalization.string("Preview", bundle: .module),
                 systemImage: "eye",
                 visibility: .viewContainer(id: id)
             ) {
