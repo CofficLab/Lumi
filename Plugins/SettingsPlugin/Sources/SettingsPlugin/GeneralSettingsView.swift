@@ -97,28 +97,30 @@ struct GeneralSettingsView: View {
                     }
                 }
 
-                AppSettingSection(
-                    title: LumiPluginLocalization.string("Updates", bundle: .module),
-                    titleAlignment: .leading
-                ) {
-                    AppSettingRow(
-                        title: LumiPluginLocalization.string("Check for Updates", bundle: .module),
-                        description: LumiPluginLocalization.string(
-                            "Check whether a newer version of Lumi is available.",
-                            bundle: .module
-                        ),
-                        icon: "arrow.down.circle"
+                if LumiRuntimeEnvironment.current.allowsAppUpdates {
+                    AppSettingSection(
+                        title: LumiPluginLocalization.string("Updates", bundle: .module),
+                        titleAlignment: .leading
                     ) {
-                        AppButton(
-                            LumiPluginLocalization.string("Check...", bundle: .module),
-                            systemImage: "arrow.triangle.2.circlepath",
-                            style: .secondary,
-                            size: .small
+                        AppSettingRow(
+                            title: LumiPluginLocalization.string("Check for Updates", bundle: .module),
+                            description: LumiPluginLocalization.string(
+                                "Check whether a newer version of Lumi is available.",
+                                bundle: .module
+                            ),
+                            icon: "arrow.down.circle"
                         ) {
-                            NotificationCenter.default.post(
-                                name: Notification.Name("checkForUpdates"),
-                                object: nil
-                            )
+                            AppButton(
+                                LumiPluginLocalization.string("Check...", bundle: .module),
+                                systemImage: "arrow.triangle.2.circlepath",
+                                style: .secondary,
+                                size: .small
+                            ) {
+                                NotificationCenter.default.post(
+                                    name: Notification.Name("checkForUpdates"),
+                                    object: nil
+                                )
+                            }
                         }
                     }
                 }

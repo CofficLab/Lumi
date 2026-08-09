@@ -43,13 +43,23 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.coffic.lumi</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>lumi</string>
+				<string>$(LUMI_URL_SCHEME)</string>
 			</array>
 		</dict>
 	</array>
+	<key>LumiAllowsAppUpdates</key>
+	<string>$(LUMI_ALLOWS_APP_UPDATES)</string>
+	<key>LumiAppGroupIdentifier</key>
+	<string>$(LUMI_APP_GROUP_IDENTIFIER)</string>
+	<key>LumiEnvironment</key>
+	<string>$(LUMI_ENVIRONMENT)</string>
+	<key>LumiKeychainServiceSuffix</key>
+	<string>$(LUMI_KEYCHAIN_SERVICE_SUFFIX)</string>
+	<key>LumiURLScheme</key>
+	<string>$(LUMI_URL_SCHEME)</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>SUAutomaticallyUpdate</key>

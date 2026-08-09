@@ -1,5 +1,6 @@
 import Foundation
 import KeychainKit
+import LumiKernel
 
 /// API Key 存储。
 ///
@@ -10,7 +11,7 @@ import KeychainKit
 public final class APIKeyStore: @unchecked Sendable {
     public static let shared = APIKeyStore()
 
-    /// 历史 keychain service，跨版本保持稳定，勿随意修改。
+    /// 历史正式版 service；Debug 会在运行时追加独立后缀。
     static let service = "com.coffic.lumi.apikey"
 
     private let store: KeychainStore
@@ -32,7 +33,9 @@ public final class APIKeyStore: @unchecked Sendable {
             Thread.sleep(forTimeInterval: TimeInterval(nanoseconds) / 1_000_000_000)
         }
     ) {
-        self.store = store ?? KeychainStore(service: Self.service)
+        self.store = store ?? KeychainStore(
+            service: LumiRuntimeEnvironment.current.keychainService(for: Self.service)
+        )
         self.defaults = defaults
         self.sleeper = sleeper
     }

@@ -45,10 +45,11 @@ public final class AppUpdatePlugin: LumiPlugin {
     }
 
     public func commandMenuGroups(kernel: LumiKernel) -> [CommandMenuGroup] {
+        guard LumiRuntimeEnvironment.current.allowsAppUpdates else { return [] }
         // Contribute "Check for Updates..." to the app menu.
         // `.appMenu` placement ensures it appears in the Lumi menu after "About",
         // matching the conventional macOS location for this action.
-        [
+        return [
             CommandMenuGroup(
                 id: "\(id).commands",
                 name: name,

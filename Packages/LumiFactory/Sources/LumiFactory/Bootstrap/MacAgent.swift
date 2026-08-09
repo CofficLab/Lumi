@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import LumiKernel
 import SuperLogKit
 import os
 
@@ -62,7 +63,7 @@ public final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, 
     }
 
     private func handleFinderCommand(_ url: URL) -> Bool {
-        guard url.scheme == "lumi",
+        guard url.scheme == LumiRuntimeEnvironment.current.urlScheme,
               url.host == "finder",
               url.path == "/show-hidden",
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),

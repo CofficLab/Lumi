@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import LumiKernel
 import SuperLogKit
 import os
 
@@ -30,8 +31,11 @@ public final class CPUHistoryService: ObservableObject, SuperLog {
     /// Storage file URL. Configurable for testing.
     public var storageFileURL: URL? {
         if let storageFileURLOverride { return storageFileURLOverride }
+        let bundleIdentifier = Bundle.main.bundleIdentifier
+            ?? LumiRuntimeEnvironment.productionBundleIdentifier
         return fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("com.coffic.lumi/CPUHistory")
+            .appendingPathComponent(bundleIdentifier, isDirectory: true)
+            .appendingPathComponent("CPUHistory", isDirectory: true)
             .appendingPathComponent(storageFileName)
     }
 

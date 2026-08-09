@@ -10,7 +10,7 @@ class FinderSync: FIFinderSync, SuperLog {
     static let logger = Logger(subsystem: "com.coffic.lumi", category: "finder")
 
     let myFolderURL = URL(fileURLWithPath: "/Users")
-    let appGroupId = "group.com.coffic.lumi"
+    let appGroupId = FinderRuntimeEnvironment.appGroupIdentifier
     let configFilename = "RClickConfig.json"
 
     /// 缓存模板列表，用于通过 tag 索引（representedObject 在 Extension 中不可靠）

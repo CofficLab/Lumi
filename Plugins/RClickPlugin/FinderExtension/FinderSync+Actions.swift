@@ -341,7 +341,14 @@ extension FinderSync {
 
     @MainActor
     private func setFinderShowsHiddenFiles(_ showHiddenFiles: Bool) {
-        guard let url = URL(string: "lumi://finder/show-hidden?value=\(showHiddenFiles ? "true" : "false")") else {
+        var components = URLComponents()
+        components.scheme = FinderRuntimeEnvironment.urlScheme
+        components.host = "finder"
+        components.path = "/show-hidden"
+        components.queryItems = [
+            URLQueryItem(name: "value", value: showHiddenFiles ? "true" : "false")
+        ]
+        guard let url = components.url else {
             FinderSync.logger.error("\(self.t)无法生成 Finder 隐藏文件显示请求")
             return
         }
