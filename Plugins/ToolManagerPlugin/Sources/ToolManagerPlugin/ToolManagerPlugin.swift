@@ -56,6 +56,7 @@ public final class ToolManagerPlugin: LumiPlugin, SuperLog {
         [
             ListDirectoryTool(),
             GlobTool(),
+            ReadImageTool(),
             ReadFileTool(),
             WriteFileTool(),
             EditFileTool(),
