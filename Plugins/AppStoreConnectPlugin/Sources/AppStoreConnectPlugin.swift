@@ -61,7 +61,17 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
+            ViewContainerItem(
+                id: id,
+                title: name,
+                systemImage: "app.badge.checkmark"
+            ) {
+                MainView()
+            },
+        ]
+    }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
