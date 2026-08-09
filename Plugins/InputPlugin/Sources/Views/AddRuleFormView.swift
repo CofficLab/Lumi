@@ -45,7 +45,7 @@ public struct AddRuleFormView: View {
             // 表单控件
             HStack {
                 // 应用选择器
-                Picker("Application", selection: $selectedApp) {
+                Picker(LumiPluginLocalization.string("Application", bundle: .module), selection: $selectedApp) {
                     Text(verbatim: LumiPluginLocalization.string("Select Application", bundle: .module)).tag(nil as NSRunningApplication?)
                     ForEach(runningApps, id: \.bundleIdentifier) { app in
                         Text(app.localizedName ?? "Unknown").tag(app as NSRunningApplication?)
@@ -54,7 +54,7 @@ public struct AddRuleFormView: View {
                 .frame(width: 200)
 
                 // 输入源选择器
-                Picker("Input Source", selection: $selectedSourceID) {
+                Picker(LumiPluginLocalization.string("Input Source", bundle: .module), selection: $selectedSourceID) {
                     Text(verbatim: LumiPluginLocalization.string("Select Input Source", bundle: .module)).tag("")
                     ForEach(availableSources) { source in
                         Text(source.name).tag(source.id)

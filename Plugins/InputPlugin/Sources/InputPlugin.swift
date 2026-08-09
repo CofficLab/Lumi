@@ -34,7 +34,7 @@ public final class InputPlugin: LumiPlugin {
         [
             ViewContainerItem(
                 id: id,
-                title: "Input Manager",
+                title: LumiPluginLocalization.string("Input Manager", bundle: .module),
                 systemImage: "keyboard",
                 railVisibility: .unsupported,
                 chatVisibility: .unsupported,

@@ -12,25 +12,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add New Rule"
+            "value": "新建规则"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add New Rule"
+            "value": "新建規則"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add New Rule"
+            "value": "新建規則"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add New Rule"
+            "value": "新建規則"
           }
         }
       }
@@ -80,25 +80,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Application"
+            "value": "应用"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Application"
+            "value": "應用"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Application"
+            "value": "應用"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Application"
+            "value": "應用"
           }
         }
       }
@@ -114,25 +114,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Automatically switch input sources per application."
+            "value": "按应用自动切换输入源。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Automatically switch input sources per application."
+            "value": "按應用自動切換輸入源。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Automatically switch input sources per application."
+            "value": "按應用自動切換輸入源。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Automatically switch input sources per application."
+            "value": "按應用自動切換輸入源。"
           }
         }
       }
@@ -252,25 +252,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable Auto Input Source Switching"
+            "value": "启用自动输入源切换"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable Auto Input Source Switching"
+            "value": "啟用自動輸入源切換"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable Auto Input Source Switching"
+            "value": "啟用自動輸入源切換"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable Auto Input Source Switching"
+            "value": "啟用自動輸入源切換"
           }
         }
       }
@@ -320,25 +320,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Input Source"
+            "value": "输入源"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Input Source"
+            "value": "輸入源"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Input Source"
+            "value": "輸入源"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Input Source"
+            "value": "輸入源"
           }
         }
       }
@@ -355,25 +355,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage input-related behaviors"
+            "value": "管理输入相关行为"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage input-related behaviors"
+            "value": "管理輸入相關行為"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage input-related behaviors"
+            "value": "管理輸入相關行為"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage input-related behaviors"
+            "value": "管理輸入相關行為"
           }
         }
       }
@@ -458,25 +458,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rules"
+            "value": "规则"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rules"
+            "value": "規則"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rules"
+            "value": "規則"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rules"
+            "value": "規則"
           }
         }
       }
@@ -492,25 +492,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select Application"
+            "value": "选择应用"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select Application"
+            "value": "選擇應用"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select Application"
+            "value": "選擇應用"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select Application"
+            "value": "選擇應用"
           }
         }
       }
@@ -526,25 +526,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select Input Source"
+            "value": "选择输入源"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select Input Source"
+            "value": "選擇輸入源"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select Input Source"
+            "value": "選擇輸入源"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select Input Source"
+            "value": "選擇輸入源"
           }
         }
       }
