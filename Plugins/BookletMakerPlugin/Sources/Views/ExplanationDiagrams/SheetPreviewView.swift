@@ -7,13 +7,13 @@ import SwiftUI
 struct SheetPreviewView: View {
     let settings: BookletSettings
 
-    /// 当前选中的输出纸张（0-based）
+    /// 当前选中的物理纸张（0-based）
     @State private var selectedSheet: Int = 0
 
     /// 根据当前设置计算出的输出纸张序列
-    private var sheets: [OutputSheet] {
-        BookletLayoutEngine.buildSheets(inputPageCount: SampleStory.pageCount,
-                                        settings: settings)
+    private var sheets: [PhysicalSheet] {
+        BookletLayoutEngine.buildPhysicalSheets(inputPageCount: SampleStory.pageCount,
+                                                settings: settings)
     }
 
     var body: some View {
@@ -78,14 +78,12 @@ struct SheetPreviewView: View {
     @ViewBuilder
     private func sheetContent(in size: CGSize) -> some View {
         if sheets.indices.contains(selectedSheet) {
-            let sheet = sheets[selectedSheet]
+            let physicalSheet = sheets[selectedSheet]
             VStack(spacing: 6) {
-                OutputSheetView(sheet: sheet, settings: settings)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                Text(pairCaption(sheet))
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                outputSideView(physicalSheet.front)
+                if let back = physicalSheet.back {
+                    outputSideView(back)
+                }
             }
         } else {
             Color.clear
@@ -97,11 +95,26 @@ struct SheetPreviewView: View {
                                    Int64(sheet.leftPage),
                                    Int64(sheet.rightPage))
     }
+
+    private func outputSideView(_ outputSide: OutputSheet) -> some View {
+        VStack(spacing: 3) {
+            Text(outputSide.side == .front
+                 ? BookletLocalization.string("Front")
+                 : BookletLocalization.string("Back"))
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.secondary)
+            OutputSheetView(sheet: outputSide, settings: settings)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Text(pairCaption(outputSide))
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+        }
+    }
 }
 
 // MARK: - Output Sheet View
 
-/// 单张输出纸（横向）：按设置的边距/装订线摆放左右两个故事页。
+/// 单个打印面（横向）：按设置的边距/装订线摆放左右两个故事页。
 struct OutputSheetView: View {
     let sheet: OutputSheet
     let settings: BookletSettings

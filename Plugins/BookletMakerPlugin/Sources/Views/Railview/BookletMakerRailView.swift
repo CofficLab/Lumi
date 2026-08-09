@@ -70,8 +70,9 @@ struct BookletMakerRailView: View {
 
             // Toggles
             Toggle(BookletLocalization.string("Pad with blank page"),
-                   isOn: $viewModel.settings.padBlankPage)
+                   isOn: paddingBinding)
                 .font(.subheadline)
+                .disabled(viewModel.settings.layout == .bookletFold)
             Toggle(BookletLocalization.string("Add cut marks"),
                    isOn: $viewModel.settings.addCutMarks)
                 .font(.subheadline)
@@ -101,6 +102,19 @@ struct BookletMakerRailView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    /// Booklet folding always needs four page slots per physical sheet.
+    /// The existing preference remains available to Simple Pair mode.
+    private var paddingBinding: Binding<Bool> {
+        Binding(
+            get: {
+                viewModel.settings.layout == .bookletFold
+                    ? true
+                    : viewModel.settings.padBlankPage
+            },
+            set: { viewModel.settings.padBlankPage = $0 }
+        )
     }
 }
 

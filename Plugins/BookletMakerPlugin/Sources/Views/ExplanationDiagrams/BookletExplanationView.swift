@@ -6,7 +6,7 @@ import AppKit
 /// 原理示意图区域，展示 PDF 转换前后的效果。
 ///
 /// 采用左右布局：
-/// - 左侧：阶段 tab（原始 PDF / 转换后 / 装订前 / 装订后）+ 装订前阶段的张数 tab
+/// - 左侧：阶段 tab（原始 PDF / 转换后 / 装订前 / 装订后）+ 当前阶段摘要/纸张列表
 /// - 右侧：根据选中 tab 显示对应预览：原始 PDF 展示输入页面、转换后
 ///   展示 4 张 A4 输出 PDF 全貌、装订前展示单张拼版细节、装订后展示翻页小册子
 struct BookletExplanationView: View {
@@ -15,7 +15,7 @@ struct BookletExplanationView: View {
     /// 当前选中的 tab：原始 PDF / 转换后 / 装订前 / 装订后
     @State private var selectedBindingTab: BindingTab = .original
 
-    /// 当前选中的纸张（装订前模式，0-based）
+    /// 当前选中的物理纸张（装订前模式，0-based）
     @State private var selectedSheet: Int = 0
 
     private enum BindingTab {
@@ -30,7 +30,7 @@ struct BookletExplanationView: View {
     var body: some View {
         GeometryReader { geo in
             HStack(spacing: 0) {
-                // 左侧：阶段 tab + 装订前阶段的张数 tab
+                // 左侧：阶段 tab + 当前阶段的摘要/纸张列表
                 leftControlPanel
                     .frame(width: max(96, min(140, geo.size.width * 0.22)))
 
@@ -66,10 +66,64 @@ struct BookletExplanationView: View {
                 .fill(Color.secondary.opacity(0.15))
                 .frame(height: 1)
 
-            // 下方：装订前阶段的张数 tab
-            sheetTabList
-                .frame(maxHeight: .infinity)
+            // 下方：原始/转换摘要，或装订前的纸张 tab
+            leftDetailPanel
+                .frame(maxHeight: .infinity, alignment: .topLeading)
         }
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    @ViewBuilder
+    private var leftDetailPanel: some View {
+        switch selectedBindingTab {
+        case .original:
+            stageSummary(
+                BookletLocalization.string(
+                    "%@ · %lld pages",
+                    settings.outputPaper.displayName,
+                    Int64(SampleStory.pageCount)
+                )
+            )
+        case .afterConversion:
+            let outputSides = BookletLayoutEngine.buildOutputSides(
+                inputPageCount: SampleStory.pageCount,
+                settings: settings
+            )
+            let physicalSheets = BookletLayoutEngine.buildPhysicalSheets(
+                inputPageCount: SampleStory.pageCount,
+                settings: settings
+            )
+            stageSummary(
+                BookletLocalization.string(
+                    "%lld pages → %lld %@ sheets · %lld print sides",
+                    Int64(SampleStory.pageCount),
+                    Int64(physicalSheets.count),
+                    settings.outputPaper.displayName,
+                    Int64(outputSides.count)
+                )
+            )
+        case .beforeBinding:
+            sheetTabList
+        case .afterBinding:
+            stageSummary(
+                BookletLocalization.string(
+                    "After binding, it becomes a booklet with content on both sides. Each page is about half the size of an A4 sheet."
+                )
+            )
+        }
+    }
+
+    private func stageSummary(_ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(text)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     /// 阶段 Picker（上下布局）：原始 PDF → 转换后 → 装订前 → 装订后。
@@ -123,7 +177,7 @@ struct BookletExplanationView: View {
 
     /// 张数 tab 列表（装订前模式时高亮显示）
     private var sheetTabList: some View {
-        let sheets = BookletLayoutEngine.buildSheets(
+        let sheets = BookletLayoutEngine.buildPhysicalSheets(
             inputPageCount: SampleStory.pageCount,
             settings: settings
         )
@@ -138,7 +192,7 @@ struct BookletExplanationView: View {
             ScrollView {
                 VStack(spacing: 4) {
                     ForEach(Array(sheets.enumerated()), id: \.element.index) { index, sheet in
-                        sheetTabButton(index: index, sheet: sheet)
+                        sheetTabButton(index: index, physicalSheet: sheet)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -149,7 +203,7 @@ struct BookletExplanationView: View {
         .disabled(selectedBindingTab != .beforeBinding)
     }
 
-    private func sheetTabButton(index: Int, sheet: OutputSheet) -> some View {
+    private func sheetTabButton(index: Int, physicalSheet: PhysicalSheet) -> some View {
         let isSelected = selectedSheet == index
 
         return Button {
@@ -161,7 +215,7 @@ struct BookletExplanationView: View {
                 Text(BookletLocalization.string("Sheet %lld", Int64(index + 1)))
                     .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
 
-                Text("\(sheet.leftPage),\(sheet.rightPage)")
+                Text(physicalSheetPageCaption(physicalSheet))
                     .font(.system(size: 9))
                     .foregroundColor(.secondary)
             }
@@ -201,22 +255,17 @@ struct BookletExplanationView: View {
 
     /// 原始 PDF 预览：垂直滚动逐行展示拼版前的所有输入页面。
     ///
-    /// 视觉与之前的「顶部输入条」一致（一行一页），但改为上下滚动，
-    /// 配合左侧「原始 PDF」tab 形成完整阶段。
+    /// 每页按行宽填充（最大 480pt 封顶），保持 A4 竖版比例；
+    /// 超过封顶宽度时居中显示，避免极端宽视图下单页过高。
     private var originalContent: some View {
-        VStack(spacing: 8) {
-            Text(BookletLocalization.string(
-                "%@ · %lld pages",
-                settings.outputPaper.displayName,
-                Int64(SampleStory.pageCount)
-            ))
-            .font(.system(size: 10))
-            .foregroundColor(.secondary)
+        GeometryReader { geo in
+            let pageWidth = min(geo.size.width, 480)
+            let pageHeight = pageWidth * 1.414
 
             ScrollView {
-                LazyVStack(spacing: 10) {
+                LazyVStack(spacing: 12) {
                     ForEach(SampleStory.pages) { page in
-                        StoryPageView(pageNumber: page.id, height: 200)
+                        StoryPageView(pageNumber: page.id, height: pageHeight)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
@@ -232,28 +281,26 @@ struct BookletExplanationView: View {
     /// 每张缩略图与原始 8 页 PDF 尺寸一致（高 > 宽的 A4 竖版），内部
     /// 旋转 90° 装下横向拼版内容；下方带张数标签方便对照。
     private var afterConversionContent: some View {
-        let sheets = BookletLayoutEngine.buildSheets(
+        let outputSides = BookletLayoutEngine.buildOutputSides(
             inputPageCount: SampleStory.pageCount,
             settings: settings
         )
+        return GeometryReader { geo in
+            let pageWidth = min(geo.size.width, 480)
+            let pageHeight = pageWidth * 1.414
 
-        return VStack(spacing: 8) {
-            Text(BookletLocalization.string(
-                "%lld pages → %lld %@ sheets",
-                Int64(SampleStory.pageCount),
-                Int64(sheets.count),
-                settings.outputPaper.displayName
-            ))
-            .font(.system(size: 10))
-            .foregroundColor(.secondary)
-
-            if sheets.isEmpty {
+            if outputSides.isEmpty {
                 Color.clear
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(sheets, id: \.index) { sheet in
-                            convertedSheetCell(sheet: sheet)
+                        ForEach(outputSides, id: \.index) { outputSide in
+                            convertedSheetCell(
+                                outputSide: outputSide,
+                                pageWidth: pageWidth,
+                                pageHeight: pageHeight
+                            )
+                            .frame(maxWidth: .infinity, alignment: .center)
                         }
                     }
                     .padding(.vertical, 4)
@@ -266,45 +313,40 @@ struct BookletExplanationView: View {
 
     /// 单个转换后 PDF 缩略图：纵向 A4 纸张预览 + 张数标签。
     ///
-    /// 内容与「装订前」完全一致（即同一份 `OutputSheetView`），
-    /// 整体顺时针旋转 90°，让卡片呈「高 > 宽」的竖版形态。
-    /// 卡片宽度上限 280pt，居中显示，避免在垂直堆叠时单卡过高。
-    private func convertedSheetCell(sheet: OutputSheet) -> some View {
+    /// 外层尺寸与「原始 PDF」完全一致。旋转前先显式交换内容的宽高，
+    /// 因为 `rotationEffect` 只改变绘制，不会交换 SwiftUI 的布局尺寸。
+    private func convertedSheetCell(outputSide: OutputSheet,
+                                    pageWidth: CGFloat,
+                                    pageHeight: CGFloat) -> some View {
         VStack(spacing: 4) {
-            // 纵向 A4 比例的外框，内部旋转 90° 装下横向的拼版内容
             Color.clear
-                .aspectRatio(1.0 / 1.414, contentMode: .fit)
-                .frame(maxWidth: 280)
-                .frame(maxWidth: .infinity)
+                .frame(width: pageWidth, height: pageHeight)
                 .overlay(
-                    OutputSheetView(sheet: sheet, settings: settings)
+                    OutputSheetView(sheet: outputSide, settings: settings)
+                        .frame(width: pageHeight, height: pageWidth)
                         .rotationEffect(.degrees(90))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 4))
 
-            Text(BookletLocalization.string("Sheet %lld", Int64(sheet.index + 1)))
+            Text(BookletLocalization.string(
+                "Sheet %lld · %@",
+                Int64(outputSide.physicalSheetIndex + 1),
+                sideDisplayName(outputSide.side)
+            ))
                 .font(.system(size: 9, weight: .medium))
                 .foregroundColor(.secondary)
         }
     }
 
     private var beforeBindingContent: some View {
-        let sheets = BookletLayoutEngine.buildSheets(
+        let sheets = BookletLayoutEngine.buildPhysicalSheets(
             inputPageCount: SampleStory.pageCount,
             settings: settings
         )
 
         return VStack(spacing: 6) {
             if sheets.indices.contains(selectedSheet) {
-                let sheet = sheets[selectedSheet]
-
-                OutputSheetView(sheet: sheet, settings: settings)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                Text(pairCaption(sheet))
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                physicalSheetView(sheets[selectedSheet])
             } else {
                 Color.clear
             }
@@ -323,6 +365,47 @@ struct BookletExplanationView: View {
         BookletLocalization.string("Pages %lld + %lld",
                                    Int64(sheet.leftPage),
                                    Int64(sheet.rightPage))
+    }
+
+    private func physicalSheetPageCaption(_ sheet: PhysicalSheet) -> String {
+        sheet.outputSides
+            .flatMap { [$0.leftPage, $0.rightPage] }
+            .map { $0 == 0 ? "–" : String($0) }
+            .joined(separator: ",")
+    }
+
+    @ViewBuilder
+    private func physicalSheetView(_ sheet: PhysicalSheet) -> some View {
+        VStack(spacing: 10) {
+            outputSideView(sheet.front)
+            if let back = sheet.back {
+                outputSideView(back)
+            }
+        }
+    }
+
+    private func outputSideView(_ outputSide: OutputSheet) -> some View {
+        VStack(spacing: 3) {
+            Text(sideDisplayName(outputSide.side))
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.secondary)
+
+            OutputSheetView(sheet: outputSide, settings: settings)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            Text(pairCaption(outputSide))
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private func sideDisplayName(_ side: OutputSheet.Side) -> String {
+        switch side {
+        case .front:
+            return BookletLocalization.string("Front")
+        case .back:
+            return BookletLocalization.string("Back")
+        }
     }
 }
 
