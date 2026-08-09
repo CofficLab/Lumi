@@ -52,7 +52,7 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
         [
             ViewContainerItem(
                 id: id,
-                title: "App Manager",
+                title: PluginAppManagerLocalization.string("App Manager"),
                 systemImage: "apps.ipad",
                 railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
