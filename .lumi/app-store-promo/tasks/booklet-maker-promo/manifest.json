@@ -18,7 +18,7 @@
       "id" : "pdf-split",
       "order" : 1,
       "title" : "PDF 拆分",
-      "updatedAt" : "2026-08-10T11:52:46Z"
+      "updatedAt" : "2026-08-10T15:23:26Z"
     },
     {
       "createdAt" : "2026-08-10T11:33:37Z",
@@ -26,7 +26,7 @@
       "id" : "smart-imposition",
       "order" : 2,
       "title" : "智能拼版",
-      "updatedAt" : "2026-08-10T11:53:37Z"
+      "updatedAt" : "2026-08-10T15:26:27Z"
     },
     {
       "createdAt" : "2026-08-10T11:34:27Z",
@@ -34,7 +34,7 @@
       "id" : "live-preview",
       "order" : 3,
       "title" : "实时预览",
-      "updatedAt" : "2026-08-10T11:54:27Z"
+      "updatedAt" : "2026-08-10T15:29:14Z"
     },
     {
       "createdAt" : "2026-08-10T11:35:11Z",
@@ -48,5 +48,5 @@
   "localeIdentifier" : "zh-Hans",
   "schemaVersion" : 1,
   "title" : "BookletMaker 宣传图",
-  "updatedAt" : "2026-08-10T15:17:15Z"
+  "updatedAt" : "2026-08-10T15:29:14Z"
 }

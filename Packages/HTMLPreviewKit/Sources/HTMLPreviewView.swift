@@ -13,6 +13,9 @@ public struct HTMLPreviewView: View {
     let fileURL: URL?
     /// When set, the WebView renders at this logical size and scales down to fit the container.
     let contentSize: CGSize?
+    /// 用户控制的额外缩放因子，叠加在「适应容器」的 fitScale 之上（1.0 = 适应）。
+    /// 放大超过容器后内容可滚动查看（见 `previewContent`）。
+    var zoomFactor: CGFloat
     var onWebViewResolved: ((WKWebView) -> Void)?
 
     /// 右键命中一个区块（`data-block` 或兜底语义块）后回调，携带区块标识与 `outerHTML`。
@@ -22,12 +25,14 @@ public struct HTMLPreviewView: View {
         htmlText: String,
         fileURL: URL? = nil,
         contentSize: CGSize? = nil,
+        zoomFactor: CGFloat = 1.0,
         onWebViewResolved: ((WKWebView) -> Void)? = nil,
         onBlockSelected: ((PromoBlockSelection) -> Void)? = nil
     ) {
         self.htmlText = htmlText
         self.fileURL = fileURL
         self.contentSize = contentSize
+        self.zoomFactor = zoomFactor
         self.onWebViewResolved = onWebViewResolved
         self.onBlockSelected = onBlockSelected
     }
@@ -53,8 +58,12 @@ public struct HTMLPreviewView: View {
         GeometryReader { geometry in
             let webViewSize = contentSize ?? geometry.size
             let fitScale = Self.fitScale(contentSize: contentSize, in: geometry.size)
+            let effectiveScale = fitScale * zoomFactor
+            // 缩放后内容实际占用的点尺寸；放大时以此为 frame，ScrollView 才能算出可滚动区域。
+            let scaledWidth = webViewSize.width * effectiveScale
+            let scaledHeight = webViewSize.height * effectiveScale
 
-            _WKWebViewWrapper(
+            let webView = _WKWebViewWrapper(
                 html: htmlText,
                 fileURL: fileURL,
                 containerSize: webViewSize,
@@ -62,8 +71,21 @@ public struct HTMLPreviewView: View {
                 onBlockSelected: onBlockSelected
             )
             .frame(width: webViewSize.width, height: webViewSize.height)
-            .scaleEffect(fitScale)
-            .frame(width: geometry.size.width, height: geometry.size.height)
+            // 锚点置顶左：放大时从左上角对齐而非居中，便于查看与滚动。
+            .scaleEffect(effectiveScale, anchor: .topLeading)
+
+            if effectiveScale > 1.0 {
+                // 放大超过容器：用缩放后的实际尺寸作 frame，包进 ScrollView 让溢出部分可拖动查看。
+                ScrollView([.horizontal, .vertical]) {
+                    webView
+                        .frame(width: scaledWidth, height: scaledHeight)
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+            } else {
+                // 适应 / 缩小：填满容器，无需滚动。
+                webView
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+            }
         }
     }
 

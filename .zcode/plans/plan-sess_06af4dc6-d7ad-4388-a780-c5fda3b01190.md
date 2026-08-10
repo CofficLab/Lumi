@@ -1,81 +1,58 @@
-# 新增「设计师审核」工具（sub-agent 视角评审单张促销图）
+# 预览区域增加滑动缩放
 
-## 结论先行
-**完全可行，无需新增任何内核基础设施。** 内核的 `LLMProviderManaging.generateText(request, providerID:, model:)` 就是为此设计的"一次性 LLM 调用"API（不写消息库、不触发 turn、不发通知）。工具内部：渲染 PNG → 带 `imageAttachments` 直接调 provider → 拿回设计师视角的审核意见作为 tool content 返回。照搬 `AutoConversationTitleService` 的模式 + `PreviewPromoImageTool` 的渲染逻辑。
+## 目标
+在促销预览（`PromoDesignerView` 的 preview 模式）底部加一个滑块缩放条，用户可在 25%–300% 之间缩放预览图。放大超过容器后可拖动查看溢出部分（不裁切）。
 
-## 走向（按你已确认的选择）
-- **路径**：直接调用 provider（`generateText`），不开独立 sub-agent 对话。
-- **范围**：单张图片，工具参数带 `imageId`，审核当前选中那张。
+## 设计要点
 
-## 改动文件（共 3 处）
+### 缩放控件归属
+- 滑块加在**插件侧** `PromoDesignerView`（用户明确说的是促销预览），不污染 `HTMLPreviewView` 的通用语义。
+- 但 `HTMLPreviewView` 内部自己算 `fitScale` 并 `.scaleEffect`，插件无法从外部叠加缩放 → 需给 `HTMLPreviewView` 加一个**可选 zoomFactor 参数**（默认 1.0，向后兼容，另外两处使用 EditorPreviewPlugin / AppStoreConnectPlugin 不受影响）。
 
-### 1. `Plugins/AppStorePromoDesignerPlugin/.../Tools/PromoTools.swift` — 新增 `ReviewPromoImageTool`
-在文件末尾（`LintPromoTaskTool` 之后）新增一个 `public struct ReviewPromoImageTool: LumiAgentTool`，结构与 `PreviewPromoImageTool` 对齐：
-
-```swift
-public struct ReviewPromoImageTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(
-        id: "app_store_promo_review_image",
-        displayName: "Review promo image",
-        description: "Render a promotional image and ask a senior designer persona to critique it, returning concrete revision suggestions. Read-only; does not modify HTML."
-    )
-    public init() {}
-    public var inputSchema: LumiJSONValue {
-        var properties = PromoToolSupport.baseProperties(includeImage: true)
-        properties["displayType"] = ["type": "string", "description": "Exact App Store display type. Defaults to the first preset for the task family."]
-        properties["focus"] = ["type": "string", "description": "Optional area to focus the critique (e.g. 'typography', 'hierarchy', 'color'). Omit for a full review."]
-        return ["type": "object", "properties": .object(properties), "required": ["taskId", "imageId"]]
-    }
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String { ... }
+### 放大可拖动（核心难点）
+当前 `previewContent`（`HTMLPreviewView.swift:52-68`）结构：
+```
+GeometryReader {
+  WebView.frame(webViewSize).scaleEffect(fitScale).frame(geometry.size)  // ← 这个夹回容器尺寸导致裁切
 }
 ```
+放大后内容实际尺寸 = `webViewSize * fitScale * zoomFactor`。要可滚动，放大时必须：
+- 最终 frame 用**缩放后的实际尺寸**（而非 `geometry.size`），ScrollView 才能算出 contentSize。
+- 当 `fitScale * zoomFactor <= 1`（缩小/适应）时不需要滚动，保持填满容器；`> 1`（放大）时包 `ScrollView` 让超出部分可拖动。
 
-`execute` 内部步骤（每步都有现成先例）：
-1. **解析 + 读图 + lint**（复用 `PromoToolSupport.resolveScope`/`storagePath`/`required`/`store.readImage`/`store.lintImage`，照搬 `PreviewPromoImageTool:364-376`）。
-2. **渲染 PNG**（`AppStorePromoHTMLExporter.exportPNG(html:fileURL:preset:)`，照搬 `:377`）。
-3. **构造附件**：`LumiImageAttachment(mimeType:"image/png", base64Data: data.base64EncodedString(), fileName: ...)`（照搬 `:378`）。
-4. **构造 `LumiLLMRequest`**：
-   - `messages`: `[设计师人设 system, 带 task/image/display 上下文的 user]`
-   - `imageAttachments: [附件]`
-   - `model: ""`（让 manager 解析实际模型）、`tools: []`
-5. **调 provider**：`let review = try await providerManager.generateText(request, providerID: selectedProviderID, model: selectedModel)`（照搬 `AutoConversationTitleService:160-164` 的 provider/model 解析回退）。
-6. **返回**：把 `review`（审核意见正文）作为 tool content 返回。**不调 `kernel.attachImage`**（避免把输入图重复喂给父 turn）。
+## 改动文件（2 处）
 
-**设计师人设 prompt**（system message，固定文案，类似 `titlePrompt`）：从资深 App Store 创意设计师视角，针对促销主图（hero/promo）评审——层级/排版/留白、色彩与对比、文案可读性、视觉焦点、品牌一致性、与目标设备尺寸的适配。要求输出结构化：① 总体印象 ② 问题清单（按严重度）③ 具体可执行的修改建议（能直接对应到 HTML 改动）。若 `focus` 参数非空，则聚焦该维度。
+### 1. `Packages/HTMLPreviewKit/Sources/HTMLPreviewView.swift`
+- 新增 public init 参数：`zoomFactor: CGFloat = 1.0`（存为属性）。
+- `previewContent` 改造：
+  - 计算 `effectiveScale = fitScale * zoomFactor`。
+  - 计算 `scaledSize = webViewSize * effectiveScale`（缩放后实际占用的点尺寸）。
+  - 当 `effectiveScale <= 1`（或 zoomFactor==1）：维持现状（`scaleEffect` + `.frame(geometry.size)` 填满）。
+  - 当 `effectiveScale > 1`（放大超出容器）：把 WebView 用 `scaleEffect(effectiveScale)` 后 `.frame(scaledSize)`，再包进 `ScrollView`（`[.horizontal, .vertical]`，`ShowsIndicators` 可关），让超出容器部分可拖动查看。ScrollView 自身 `.frame(geometry.size)` 填满容器。
+- `body` 里 `contentSize != nil` 的 ZStack 分支（网格背景 + 预览）保持不变；ScrollView 只包 `previewContent` 内部，背景仍在 ZStack 层。
+- 注意：scaleEffect 是视觉变换，hit-testing 会随缩放正确映射（WebView 内部的右键区块选中交互在放大后仍正常工作）。
 
-**错误兜底**：
-- `kernel.llmProvider` 为 nil → 返回提示串 `"Review unavailable: no LLM provider registered."`（不抛错，保持工具可用性）。
-- provider 不支持视觉（调用失败）→ catch 后返回错误说明串，不中断父 turn。
+### 2. `Plugins/AppStorePromoDesignerPlugin/.../Views/PromoDesignerView.swift`
+- `@State private var zoomFactor: CGFloat = 1.0`
+- preview 分支结构改为 `VStack(spacing: 0) { 预览区; zoomBar }`：
+  - 预览区 = 现有 `HTMLPreviewView(..., zoomFactor: zoomFactor)`，用 `.frame(maxWidth/maxHeight: .infinity)` 占据剩余空间。
+  - zoomBar = 一个 `HStack`：重置按钮（`1×` / 放大镜图标，点击回到 1.0）+ `Slider(value: $zoomFactor, in: 0.25...3.0)` + 百分比 `Text("\(Int(zoomFactor * 100))%").monospacedDigit()`。加 Divider 分隔，`.padding`，背景 controlBackground。
+- 切换图片/任务时是否重置缩放：保持当前值（用户连续看多张图时缩放级别通常一致，不强制重置；可选后续加）。
+- 仅 preview 模式显示 zoomBar；source 模式不显示。
+- 用 `PromoLocalization.string` 包两个新文案："Zoom"（滑块标签/help）。
 
-### 2. `Plugins/AppStorePromoDesignerPlugin/.../PromoDesignerPlugin.swift` — 注册新工具
-- `agentTools(kernel:)`（`:26-40`）的数组末尾加 `ReviewPromoImageTool()`。
-- `willSendToLLM`（`:42-52`）的系统提示里补一句：生成/修改图片后，可用 `app_store_promo_review_image` 从设计师视角获取审核意见再迭代。
+## 关键校验
+- ✅ zoomFactor 默认 1.0 → 另外两处使用（EditorPreviewPlugin、AppStoreConnectPlugin）零改动、零行为变化。
+- ✅ SwiftUI `ScrollView` + `scaleEffect` + 正确的 frame 尺寸是标准可滚动缩放模式。
+- ✅ scaleEffect 不影响 WebView 内部 hit-testing（右键区块选中交互放大后仍可用）。
+- ✅ 缩小（zoomFactor<1）时填满容器不滚动，符合"适应"预期。
 
-### 3. 测试 `Plugins/AppStorePromoDesignerPlugin/Tests/.../AppStorePromoDesignerPluginTests.swift`
-- 在现有 `contributesOptInWorkspaceAndCompleteToolSet()` 里把工具数断言从 11 改为 12（若该断言按数组长度），并断言新工具 id 存在。
-- 由于真实 provider 调用无法在单测里跑，审核逻辑本身只做"工具注册/schema"层面的测试，不测 LLM 调用（符合现有测试边界）。
+## 不做的事
+- 不改 EditorPreviewPlugin / AppStoreConnectPlugin（它们没要缩放；默认参数 1.0 保持原样）。
+- 不持久化缩放值（刷新/切换重置为 1.0 或保持，本期默认保持 @State 生命周期）。
+- 不加捏合手势（macOS 触控板 pinch），只做滑块（WKWebView 本身的 `allowsMagnification` 仍独立工作，不冲突）。
 
-## 关键技术校验（已读源码确认）
-- ✅ `LumiAgentTool.execute` 直接收 `kernel: LumiKernel`，可访问 `kernel.llmProvider`（`LumiAgentTool.swift:164`）。
-- ✅ `generateText` 是 `@MainActor async`，工具在 main actor 跑，无冲突（`LLMProviderManaging.swift:122-128`）。
-- ✅ `LumiLLMRequest` 支持 `imageAttachments`（`LLMRequest.swift:83`），vision provider 会转 content block（`VisionMessageContentBuilder.swift`）。
-- ✅ `AutoConversationTitleService` 是直接调 provider 的现成先例（`:137-166`），含 provider/model 解析回退。
-- ✅ `PreviewPromoImageTool` 是渲染+附件构造的现成模板（`:363-380`）。
-- ✅ 默认 `riskLevel = .low`、`displayDescription`、`executeResult` 由协议 extension 提供（`LumiAgentTool.swift:170-177`），审核是只读工具，沿用默认即可。
-- ✅ 代码库无任何规则禁止工具内部调 LLM；`SubAgentTool` 证明嵌套被主动支持。
-
-## 不做的事 / 取舍
-- **不开独立 sub-agent 对话**：你选了直接调用，更轻、不占对话、不污染历史。
-- **不自动改 HTML**：审核工具只返回意见，是否改由主 agent/用户决定（保持工具单一职责，`riskLevel=.low`）。
-- **不把输入图 attachImage**：避免重复喂给父 turn；审核意见正文已含足够上下文。
-- **不批量审**：你选了单张；批量可后续加（工具签名已为可选 `imageId` 预留扩展空间，但本期 `imageId` 必填）。
-
-## 风险点
-1. **所选模型不支持视觉**：`generateText` 会抛错。已用 try/catch 兜底为返回错误说明串，不中断父 turn；可在返回串里提示用户切换 vision 模型。
-2. **prompt 质量**：审核效果高度依赖设计师人设 prompt。首版用结构化输出约束（总体/问题/建议），后续可按实际效果调。
-3. **耗时/成本**：每次审核是一次额外的 vision 调用。单张、按需触发，可接受。
-
-## 验证方式
-- 编译通过 + 现有测试过 + 新增工具注册断言过。
-- 手动：让 agent 创建一张图 → 调 `app_store_promo_review_image` → 返回结构化审核意见 → agent 据此用 `_patch_html` 迭代。
-- 选中一个不支持视觉的模型调用 → 返回友好错误串而非崩溃。
+## 验证
+- 编译 HTMLPreviewKit + AppStorePromoDesignerPlugin 通过。
+- 现有测试通过（无 UI 自动化，靠手动）。
+- 手动：预览一张图 → 拖滑块放大到 200% → 能看到放大且可拖动查看边缘 → 右键区块选中仍正常 → 拖回 100%。

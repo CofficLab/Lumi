@@ -12,6 +12,8 @@ public struct PromoDesignerView: View {
     @ObservedObject private var workspace = WorkspaceStore.shared
     @State private var mode: Mode = .preview
     @State private var isExporting = false
+    /// 预览缩放因子（1.0 = 适应容器），叠加在 HTMLPreviewView 的 fitScale 之上。
+    @State private var zoomFactor: CGFloat = 1.0
 
     // MARK: - 初始化
 
@@ -48,15 +50,20 @@ public struct PromoDesignerView: View {
         if let resolved = workspace.selectedImage,
            let preset = AppStorePromoDisplaySpec.preset(for: workspace.selectedDisplayType) {
             if mode == .preview {
-                HTMLPreviewView(
-                    htmlText: resolved.html,
-                    fileURL: resolved.htmlURL,
-                    contentSize: preset.cgSize,
-                    onBlockSelected: { selection in
-                        sendBlockToChat(selection, resolved: resolved)
-                    }
-                )
-                .id("\(resolved.image.updatedAt.timeIntervalSince1970)-\(preset.displayType)")
+                VStack(spacing: 0) {
+                    HTMLPreviewView(
+                        htmlText: resolved.html,
+                        fileURL: resolved.htmlURL,
+                        contentSize: preset.cgSize,
+                        zoomFactor: zoomFactor,
+                        onBlockSelected: { selection in
+                            sendBlockToChat(selection, resolved: resolved)
+                        }
+                    )
+                    .id("\(resolved.image.updatedAt.timeIntervalSince1970)-\(preset.displayType)")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    zoomBar
+                }
             } else {
                 ScrollView([.horizontal, .vertical]) {
                     Text(resolved.html)
@@ -72,6 +79,33 @@ public struct PromoDesignerView: View {
                 message: PromoLocalization.string("Ask the Agent to create a promotional artwork task.")
             )
         }
+    }
+
+    /// 预览底部的缩放控制条：重置按钮 + 滑块 + 百分比。
+    private var zoomBar: some View {
+        HStack(spacing: 10) {
+            Button {
+                zoomFactor = 1.0
+            } label: {
+                Image(systemName: "1.magnifyingglass")
+            }
+            .buttonStyle(.borderless)
+            .help(PromoLocalization.string("Reset Zoom"))
+            .disabled(abs(zoomFactor - 1.0) < 0.001)
+
+            Slider(value: $zoomFactor, in: 0.25...3.0)
+                .frame(maxWidth: .infinity)
+                .help(PromoLocalization.string("Zoom"))
+
+            Text("\(Int((zoomFactor * 100).rounded()))%")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(minWidth: 42, alignment: .trailing)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.thinMaterial)
+        .overlay(Divider(), alignment: .top)
     }
 
     @ViewBuilder
