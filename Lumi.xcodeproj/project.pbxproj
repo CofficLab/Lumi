@@ -955,7 +955,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 600;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = NO;
@@ -972,12 +972,13 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.8.3;
+
 				LUMI_ALLOWS_APP_UPDATES = NO;
 				LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi.debug;
 				LUMI_ENVIRONMENT = debug;
-				LUMI_KEYCHAIN_SERVICE_SUFFIX = ".debug";
+				LUMI_KEYCHAIN_SERVICE_SUFFIX = .debug;
 				LUMI_URL_SCHEME = "lumi-debug";
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.debug;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -995,7 +996,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 600;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = NO;
@@ -1012,12 +1013,13 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.8.3;
+
 				LUMI_ALLOWS_APP_UPDATES = YES;
 				LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi;
 				LUMI_ENVIRONMENT = release;
 				LUMI_KEYCHAIN_SERVICE_SUFFIX = "";
 				LUMI_URL_SCHEME = lumi;
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1043,11 +1045,12 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 5.8.3;
+
 				LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi.debug;
 				LUMI_FINDER_DISPLAY_NAME = "Lumi Finder (Debug)";
 				LUMI_URL_SCHEME = "lumi-debug";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 5.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.debug.finder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1072,11 +1075,12 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 5.8.3;
+
 				LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi;
 				LUMI_FINDER_DISPLAY_NAME = "Lumi Finder";
 				LUMI_URL_SCHEME = lumi;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 5.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.finder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

@@ -88,10 +88,7 @@ public struct AppStorePromoRailView: View {
 }
 
 public struct AppStorePromoDesignerView: View {
-    private enum Mode: String, CaseIterable { case preview, source }
-
     @ObservedObject private var workspace = AppStorePromoWorkspaceStore.shared
-    @State private var mode: Mode = .preview
     @State private var isExporting = false
 
     public init() {}
@@ -102,23 +99,12 @@ public struct AppStorePromoDesignerView: View {
             Divider()
             if let resolved = workspace.selectedPage,
                let preset = AppStorePromoDisplaySpec.preset(for: workspace.selectedDisplayType) {
-                if mode == .preview {
-                    HTMLPreviewView(
-                        htmlText: resolved.html,
-                        fileURL: resolved.htmlURL,
-                        contentSize: preset.cgSize
-                    )
-                    .id("\(resolved.page.updatedAt.timeIntervalSince1970)-\(preset.displayType)")
-                } else {
-                    ScrollView([.horizontal, .vertical]) {
-                        Text(resolved.html)
-                            .font(.system(.caption, design: .monospaced))
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
-                            .padding(18)
-                    }
-                    .background(Color(nsColor: .textBackgroundColor))
-                }
+                HTMLPreviewView(
+                    htmlText: resolved.html,
+                    fileURL: resolved.htmlURL,
+                    contentSize: preset.cgSize
+                )
+                .id("\(resolved.page.updatedAt.timeIntervalSince1970)-\(preset.displayType)")
             } else {
                 emptyState
             }
@@ -144,12 +130,6 @@ public struct AppStorePromoDesignerView: View {
                 }
                 .labelsHidden().frame(maxWidth: 260)
             }
-
-            Picker("Mode", selection: $mode) {
-                Text(PromoLocalization.string("Preview")).tag(Mode.preview)
-                Text(PromoLocalization.string("HTML Source")).tag(Mode.source)
-            }
-            .pickerStyle(.segmented).frame(width: 190)
 
             Button { workspace.reload() } label: { Label(PromoLocalization.string("Refresh"), systemImage: "arrow.clockwise") }
             Button { Task { await exportSelected() } } label: { Label(PromoLocalization.string("Export PNG"), systemImage: "square.and.arrow.down") }
