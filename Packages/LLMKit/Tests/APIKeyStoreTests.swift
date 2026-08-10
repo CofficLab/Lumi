@@ -108,13 +108,30 @@ final class APIKeyStoreTests: XCTestCase {
         )
     }
 
-    func testNonThrowingDisplayReadDoesNotRunMissingConfirmationLoop() throws {
+    /// 非 throwing 读取（`has`/`get` 等展示探测路径）在 Keychain 抖动时
+    /// 跑缺失确认循环并回退到内存缓存，而不是把抖动呈现为"未配置"。
+    func testNonThrowingDisplayReadFallsBackToCacheOnFlakyMissing() throws {
         let backend = SequenceKeychainBackend([
             KeychainResult(status: errSecItemNotFound, data: nil),
         ])
         let fixture = makeStore(backend: backend)
         defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
         try fixture.store.setReportingErrors("secret", forKey: "account")
+
+        XCTAssertEqual(
+            fixture.store.loadMigratingLegacyUserDefaults(forKey: "account"),
+            "secret"
+        )
+        XCTAssertEqual(backend.readCount, 4)
+    }
+
+    /// 非 throwing 读取对从未配置过的 key 仍然立即返回 nil（不跑确认循环）。
+    func testNonThrowingDisplayReadReturnsNilForNeverConfiguredKey() throws {
+        let backend = SequenceKeychainBackend([
+            KeychainResult(status: errSecItemNotFound, data: nil),
+        ])
+        let fixture = makeStore(backend: backend)
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
 
         XCTAssertNil(fixture.store.loadMigratingLegacyUserDefaults(forKey: "account"))
         XCTAssertEqual(backend.readCount, 1)

@@ -62,7 +62,12 @@ public final class APIKeyStore: @unchecked Sendable {
     }
 
     public func string(forKey key: String) -> String? {
-        try? stringReportingErrors(forKey: key)
+        do {
+            return try stringReportingErrors(forKey: key)
+        } catch {
+            // Keychain 抖动（expected-configured 但持续 missing）时回退内存缓存。
+            return (error as? APIKeyStoreError)?.cachedValue
+        }
     }
 
     /// 读取 key 的同时保留 Keychain 错误；额外返回缓存状态，调用方可决定
@@ -98,13 +103,15 @@ public final class APIKeyStore: @unchecked Sendable {
     }
 
     /// 读取 key；若 Keychain 中缺失则尝试从同名 UserDefaults 键迁移。
+    ///
+    /// Keychain 抖动导致 throwing 版本抛出带 `servedFromCache` 的错误时，
+    /// 这里回退到缓存值，保证展示/探测路径（`has`/`get`）不受抖动影响。
     public func loadMigratingLegacyUserDefaults(forKey key: String) -> String? {
-        let value = store.loadMigratingLegacyUserDefaults(forKey: key)
-        if let value, !value.isEmpty {
-            markExpectedConfigured(true, forKey: key)
-            cache.store(value, forKey: key)
+        do {
+            return try loadMigratingLegacyUserDefaultsReportingErrors(forKey: key)
+        } catch {
+            return (error as? APIKeyStoreError)?.cachedValue
         }
-        return value
     }
 
     /// Reads the key while preserving Keychain access failures. A `nil` result
