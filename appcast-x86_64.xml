@@ -3,37 +3,22 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.8.3</title>
-            <pubDate>Sun, 09 Aug 2026 16:09:07 +0000</pubDate>
-            <sparkle:version>2</sparkle:version>
-            <sparkle:shortVersionString>5.8.3</sparkle:shortVersionString>
+            <title>5.8.4</title>
+            <pubDate>Mon, 10 Aug 2026 02:01:26 +0000</pubDate>
+            <sparkle:version>601</sparkle:version>
+            <sparkle:shortVersionString>5.8.4</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.8.3</h2>
-<h3>Changes since v5.8.2</h3>
+            <description><![CDATA[<h2>Release v5.8.4</h2>
+<h3>Changes since v5.8.3</h3>
 <ul>
-<li>bugfix:  fix a bug</li>
-<li>feat(ActivityHeatmap): localize chart strings</li>
-<li>feat(app-store-promo): add HTML promotional artwork designer</li>
-<li>feat(AppIconDesigner): add app icon assets and configure AppIcon for AppIconDesigner target</li>
-<li>feat(AppIconDesignerPlugin): add PreviewIconTool for visual inspection</li>
-<li>feat(AppStoreConnectPlugin): configure ViewContainer panel visibility</li>
-<li>feat(AppStoreConnectPlugin): register ViewContainer for the main view</li>
-<li>feat(BookletMaker): add app icon assets and configure AppIcon for BookletMaker target</li>
-<li>feat(BookletMaker): add demo PDF support, drop zone UI, and duplex sheet explanations</li>
-<li>feat(BookletMaker): add original and converted stage tabs to explanation view</li>
-<li>feat(BookletMaker): add standalone BookletMaker app target</li>
-<li>feat(BookletMaker): explain duplex sheets in the UI</li>
-<li>feat(BookletMaker): move drop area to sidebar and fix localization</li>
-<li>feat(BookletMaker): rename to PDF Tools and add page-range splitting</li>
-<li>feat(BookletMaker): split output into physical sheets and print sides</li>
-<li>feat(BookletMaker): support renaming individual split PDF outputs</li>
-<li>feat(CADDesigner): add app icon assets and configure AppIcon for CADDesigner target</li>
-<li>feat(CI): configure Xcode Cloud for AppIconDesigner</li>
-<li>feat(computer-use): add always-on UI automation plugin</li>
-<li>feat(ComputerUsePlugin): localize UI and error strings via LocalizationKit</li>
+<li>fix(ci): assert non-main-app build lines unchanged by md5, not by value</li>
+<li>fix(ci): brace-quote NEW_BUILD_VERSION / OTHER_COUNT in Chinese echo strings</li>
+<li>fix(ci): scope CURRENT_PROJECT_VERSION bump to Lumi main app only</li>
+<li>fix(ci): use awk instead of grep -c in build number assertions</li>
+<li>refactor(AppStorePromoDesigner): remove preview/source mode toggle</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.8.3</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.8.3/Lumi_5.8.3_x86_64.dmg" length="48173488" type="application/octet-stream" sparkle:edSignature="C7O6fVwAiFUiLJ8EkH3G9PFf9+lIXj+S1DusYhPayk2+PHkNRsPN0sxNzN9Jabz2hh8VX1Z2pkVw0/zfA6DwBw=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.8.4</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.8.4/Lumi_5.8.4_x86_64.dmg" length="48173973" type="application/octet-stream" sparkle:edSignature="wU4/iJ2tJA+x5u9FdwvYW+G7+7D6vmCwAOQkLjXZ91+7JYQuG2sdfNUlRmqbiJL2KZtzH/tVRm0UdSWc3LlNBQ=="/>
         </item>
     </channel>
 </rss>

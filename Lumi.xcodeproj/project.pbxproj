@@ -605,7 +605,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.8.3;
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.appicondesigner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -635,7 +635,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.8.3;
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.appicondesigner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -666,7 +666,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.8.3;
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -697,7 +697,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.8.3;
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -727,7 +727,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.8.3;
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.caddesigner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -757,7 +757,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.8.3;
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.caddesigner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -786,7 +786,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.8.3;
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.databasemanager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -815,7 +815,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.8.3;
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.databasemanager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -955,7 +955,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 600;
+				CURRENT_PROJECT_VERSION = 601;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = NO;
@@ -996,7 +996,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 600;
+				CURRENT_PROJECT_VERSION = 601;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
 				ENABLE_APP_SANDBOX = NO;
@@ -1050,7 +1050,7 @@
 				LUMI_FINDER_DISPLAY_NAME = "Lumi Finder (Debug)";
 				LUMI_URL_SCHEME = "lumi-debug";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 5.0.0;
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.debug.finder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1080,7 +1080,7 @@
 				LUMI_FINDER_DISPLAY_NAME = "Lumi Finder";
 				LUMI_URL_SCHEME = lumi;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 5.0.0;
+				MARKETING_VERSION = 5.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.finder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
