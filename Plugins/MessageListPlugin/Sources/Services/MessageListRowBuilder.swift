@@ -43,17 +43,24 @@ struct MessageListRowBuilder {
     }
 
     /// 构建稳定的历史展示行。纯数据库驱动,不再随流式 token 重建 ——
-    /// 仅在落库消息变化(新增/编辑/删除)时由 viewmodel 触发一次。
+    /// 仅在落库消息变化(新增/编辑/删除)或流式行可见性翻转(nil↔非 nil)时触发。
+    ///
+    /// - Parameter hidesStatus: 流式行可见时应丢弃历史里的 `.status` 行
+    ///   ("正在思考…"等),否则会与流式行同时显示。流式行不可见时保留 status 行
+    ///   作为进度反馈。可见性只取决于"有没有流式行",不取决于内容,故只需在
+    ///   nil↔非 nil 切换时重算(由 viewmodel 控制),token 增长不触发。
     func buildHistory(
         persisted: [LumiChatMessage],
         conversationID: UUID?,
-        verbosity: LumiResponseVerbosity
+        verbosity: LumiResponseVerbosity,
+        hidesStatus: Bool = false
     ) -> [LumiChatMessage] {
         guard let conversationID else { return persisted }
 
         let dropToolRows = verbosity == .brief
         let filtered = persisted.filter { message in
             if dropToolRows, message.role == .tool { return false }
+            if hidesStatus, message.role == .status { return false }
             return true
         }
 
