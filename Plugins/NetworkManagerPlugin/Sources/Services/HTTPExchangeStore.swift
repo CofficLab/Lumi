@@ -6,7 +6,9 @@ import os
 @MainActor
 public final class HTTPExchangeStore {
     public static let databaseFileName = "http-exchanges.sqlite"
-    public static let didChangeNotification = Notification.Name("com.coffic.lumi.networkManagerHTTPExchangeDidChange")
+    /// `nonisolated`:后台写入路径(`beginRecord`/`finishRecord`)需要 post 此通知,
+    /// 而它是纯常量,可安全地从任意线程引用。
+    public nonisolated static let didChangeNotification = Notification.Name("com.coffic.lumi.networkManagerHTTPExchangeDidChange")
 
     /// Backing container. `ModelContainer` is `Sendable` and safe to touch off
     /// the main actor, so this is exposed `nonisolated` to let the background
@@ -290,6 +292,103 @@ public final class HTTPExchangeStore {
         return ModelContext(container)
     }
 
+    // MARK: - Background Write Path (nonisolated)
+
+    /// 后台写入版的 `begin`:用独立 `ModelContext` insert + save,返回 record id
+    /// (而非 `@Model` 对象),供 `finishRecord` 在另一个 context 里按 id 取回。
+    ///
+    /// 这样 `begin`/`finish` 可在非主线程执行(由 nonisolated 的 `NetworkProvider`
+    /// 调用),SwiftData 写入不再阻塞主线程。原 `begin`/`finish`(主线程同步版)
+    /// 保留供 `@MainActor` 调用方使用。
+    @discardableResult
+    public nonisolated func beginRecord(
+        request: URLRequest,
+        startedAt: Date = Date()
+    ) -> UUID? {
+        guard let context = makeBackgroundContext() else { return nil }
+        let record = HTTPExchangeRecord(
+            startedAt: startedAt,
+            requestMethod: request.httpMethod ?? "GET",
+            requestURL: request.url?.absoluteString ?? "",
+            requestHeadersJSON: Self.jsonData(request.allHTTPHeaderFields ?? [:]),
+            requestBody: request.httpBody,
+            requestDetailsJSON: Self.jsonData([
+                "cachePolicy": request.cachePolicy.rawValue,
+                "timeoutInterval": request.timeoutInterval,
+                "httpShouldHandleCookies": request.httpShouldHandleCookies,
+                "httpShouldUsePipelining": request.httpShouldUsePipelining,
+                "allowsCellularAccess": request.allowsCellularAccess,
+                "networkServiceType": request.networkServiceType.rawValue,
+                "mainDocumentURL": request.mainDocumentURL?.absoluteString ?? NSNull(),
+            ])
+        )
+        let id = record.id
+        context.insert(record)
+        do {
+            try context.save()
+        } catch {
+            NetworkManagerPlugin.logger.error("HTTP exchange 后台 begin 保存失败: \(error.localizedDescription)")
+            return nil
+        }
+        Self.postDidChange()
+        return id
+    }
+
+    /// 后台写入版的 `finish`:按 id 在独立 `ModelContext` 里取回 record 并更新。
+    /// 参数均为值类型,跨线程安全。
+    public nonisolated func finishRecord(
+        _ id: UUID?,
+        response: URLResponse? = nil,
+        body: Data? = nil,
+        error: Error? = nil,
+        finishedAt: Date = Date()
+    ) {
+        guard let id, let context = makeBackgroundContext() else { return }
+        let idPredicate = id
+        let descriptor = FetchDescriptor<HTTPExchangeRecord>(
+            predicate: #Predicate<HTTPExchangeRecord> { $0.id == idPredicate }
+        )
+        guard let record = (try? context.fetch(descriptor))?.first else { return }
+        record.finishedAt = finishedAt
+        record.duration = finishedAt.timeIntervalSince(record.startedAt)
+        record.responseBody = body
+
+        if let response {
+            record.responseURL = response.url?.absoluteString
+            record.responseMIMEType = response.mimeType
+            record.responseExpectedContentLength = response.expectedContentLength
+            record.responseTextEncodingName = response.textEncodingName
+        }
+        if let httpResponse = response as? HTTPURLResponse {
+            record.responseStatusCode = httpResponse.statusCode
+            record.responseHeadersJSON = Self.jsonData(httpResponse.allHeaderFields.reduce(into: [String: String]()) { result, item in
+                result[String(describing: item.key)] = String(describing: item.value)
+            })
+        }
+        if let error {
+            let nsError = error as NSError
+            record.errorDomain = nsError.domain
+            record.errorCode = nsError.code
+            record.errorDescription = nsError.localizedDescription
+            record.errorDetailsJSON = Self.jsonData(nsError.userInfo.reduce(into: [String: String]()) { result, item in
+                result[String(describing: item.key)] = String(describing: item.value)
+            })
+        }
+        do {
+            try context.save()
+        } catch {
+            NetworkManagerPlugin.logger.error("HTTP exchange 后台 finish 保存失败: \(error.localizedDescription)")
+            return
+        }
+        Self.postDidChange()
+    }
+
+    /// `didChangeNotification` 发送抽成 nonisolated 静态方法,供后台写入路径复用。
+    /// `NotificationCenter` 线程安全,可从任意线程 post。
+    private nonisolated static func postDidChange() {
+        NotificationCenter.default.post(name: didChangeNotification, object: nil)
+    }
+
     /// One page of newest exchanges as snapshots.
     ///
     /// Uses the same keyset cursor as `fetchPage(limit:beforeStartedAt:)` so
@@ -434,7 +533,8 @@ public final class HTTPExchangeStore {
         }
     }
 
-    private static func jsonData(_ value: Any) -> Data {
+    /// `nonisolated`:纯函数(JSONSerialization),后台写入路径需调用。
+    private nonisolated static func jsonData(_ value: Any) -> Data {
         guard JSONSerialization.isValidJSONObject(value),
               let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys])
         else { return Data("{}".utf8) }
