@@ -2,8 +2,8 @@ import AppStorePromoKit
 import Foundation
 
 @MainActor
-final class AppStorePromoWorkspaceStore: ObservableObject {
-    static let shared = AppStorePromoWorkspaceStore()
+final class WorkspaceStore: ObservableObject {
+    static let shared = WorkspaceStore()
 
     @Published private(set) var tasks: [AppStorePromoTask] = []
     @Published private(set) var selectedImage: AppStorePromoResolvedImage?

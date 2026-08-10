@@ -2,7 +2,7 @@ import Foundation
 import LumiKernel
 
 @MainActor
-enum AppStorePromoRuntime {
+enum Runtime {
     static private(set) var storageDirectory: URL?
 
     static func configure(kernel: LumiKernel) {
@@ -11,6 +11,6 @@ enum AppStorePromoRuntime {
 
     static func configure(persistenceDirectory: URL?) {
         storageDirectory = persistenceDirectory?.standardizedFileURL
-        AppStorePromoWorkspaceStore.shared.configure(persistenceDirectory: storageDirectory)
+        WorkspaceStore.shared.configure(persistenceDirectory: storageDirectory)
     }
 }

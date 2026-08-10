@@ -7,7 +7,7 @@ private enum PromoToolSupport {
 
     static func storagePath() async throws -> String {
         try await MainActor.run {
-            guard let path = AppStorePromoRuntime.storageDirectory?.path, !path.isEmpty else {
+            guard let path = Runtime.storageDirectory?.path, !path.isEmpty else {
                 throw AppStorePromoStoreError.invalidStoragePath
             }
             return path
@@ -22,7 +22,7 @@ private enum PromoToolSupport {
     }
 
     static func notify(taskID: String? = nil, imageID: String? = nil) async {
-        await MainActor.run { AppStorePromoWorkspaceStore.shared.reload(selectTask: taskID, image: imageID) }
+        await MainActor.run { WorkspaceStore.shared.reload(selectTask: taskID, image: imageID) }
     }
 
     static func taskSummary(_ task: AppStorePromoTask) -> String {
@@ -53,7 +53,7 @@ private enum PromoToolSupport {
     }
 }
 
-public struct ListAppStorePromoTasksTool: LumiAgentTool {
+public struct ListPromoTasksTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(id: "app_store_promo_list_tasks", displayName: "List promo tasks", description: "List plugin-managed App Store promotional artwork tasks and their images.")
     public init() {}
     public var inputSchema: LumiJSONValue { ["type": "object", "properties": [:]] }
@@ -63,7 +63,7 @@ public struct ListAppStorePromoTasksTool: LumiAgentTool {
     }
 }
 
-public struct CreateAppStorePromoTaskTool: LumiAgentTool {
+public struct CreatePromoTaskTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(id: "app_store_promo_create_task", displayName: "Create promo task", description: "Create one plugin-managed promotional artwork task before generating its HTML images.")
     public init() {}
     public var inputSchema: LumiJSONValue {
@@ -91,7 +91,7 @@ public struct CreateAppStorePromoTaskTool: LumiAgentTool {
     }
 }
 
-public struct ReadAppStorePromoTaskTool: LumiAgentTool {
+public struct ReadPromoTaskTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(id: "app_store_promo_read_task", displayName: "Read promo task", description: "Read task metadata, image order, and available exact App Store display sizes.")
     public init() {}
     public var inputSchema: LumiJSONValue { ["type": "object", "properties": .object(PromoToolSupport.baseProperties()), "required": ["taskId"]] }
@@ -101,7 +101,7 @@ public struct ReadAppStorePromoTaskTool: LumiAgentTool {
     }
 }
 
-public struct CreateAppStorePromoImageTool: LumiAgentTool {
+public struct CreatePromoImageTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(id: "app_store_promo_create_image", displayName: "Create promo HTML image", description: "Create one image under a promotional task from a valid responsive HTML document.")
     public init() {}
     public var inputSchema: LumiJSONValue {
@@ -124,7 +124,7 @@ public struct CreateAppStorePromoImageTool: LumiAgentTool {
     }
 }
 
-public struct ReadAppStorePromoHTMLTool: LumiAgentTool {
+public struct ReadPromoHTMLTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(id: "app_store_promo_read_html", displayName: "Read promo HTML", description: "Read the full index.html for a promotional image before editing it.")
     public init() {}
     public var inputSchema: LumiJSONValue { ["type": "object", "properties": .object(PromoToolSupport.baseProperties(includeImage: true)), "required": ["taskId", "imageId"]] }
@@ -134,7 +134,7 @@ public struct ReadAppStorePromoHTMLTool: LumiAgentTool {
     }
 }
 
-public struct ReplaceAppStorePromoHTMLTool: LumiAgentTool {
+public struct ReplacePromoHTMLTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(id: "app_store_promo_replace_html", displayName: "Replace promo HTML", description: "Validate and atomically replace a promotional image with a complete deterministic HTML document.")
     public init() {}
     public var inputSchema: LumiJSONValue {
@@ -152,7 +152,7 @@ public struct ReplaceAppStorePromoHTMLTool: LumiAgentTool {
     }
 }
 
-public struct PatchAppStorePromoHTMLTool: LumiAgentTool {
+public struct PatchPromoHTMLTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(id: "app_store_promo_patch_html", displayName: "Patch promo HTML", description: "Apply an atomic batch of exact, unique text replacements to promotional HTML, then validate the complete result.")
     public init() {}
     public var inputSchema: LumiJSONValue {
@@ -178,7 +178,7 @@ public struct PatchAppStorePromoHTMLTool: LumiAgentTool {
     }
 }
 
-public struct ImportAppStorePromoAssetTool: LumiAgentTool {
+public struct ImportPromoAssetTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(id: "app_store_promo_import_asset", displayName: "Import promo asset", description: "Copy a local image into the plugin-managed assets directory for one promotional image.")
     public init() {}
     public var inputSchema: LumiJSONValue {
@@ -200,7 +200,7 @@ public struct ImportAppStorePromoAssetTool: LumiAgentTool {
     }
 }
 
-public struct PreviewAppStorePromoImageTool: LumiAgentTool {
+public struct PreviewPromoImageTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(id: "app_store_promo_preview_image", displayName: "Preview promo image", description: "Render one promotional HTML image at an exact App Store size and attach the PNG for visual inspection.")
     public init() {}
     public var inputSchema: LumiJSONValue {
@@ -221,7 +221,7 @@ public struct PreviewAppStorePromoImageTool: LumiAgentTool {
     }
 }
 
-public struct LintAppStorePromoTaskTool: LumiAgentTool {
+public struct LintPromoTaskTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(id: "app_store_promo_lint_task", displayName: "Lint promo task", description: "Validate every HTML image and all local asset references in a promotional task.")
     public init() {}
     public var inputSchema: LumiJSONValue { ["type": "object", "properties": .object(PromoToolSupport.baseProperties()), "required": ["taskId"]] }
@@ -242,7 +242,7 @@ public struct LintAppStorePromoTaskTool: LumiAgentTool {
     }
 }
 
-public struct ExportAppStorePromoTaskTool: LumiAgentTool {
+public struct ExportPromoTaskTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(id: "app_store_promo_export_task", displayName: "Export promo task", description: "Render every HTML image in a task to an explicitly selected external directory.")
     public init() {}
     public var inputSchema: LumiJSONValue {

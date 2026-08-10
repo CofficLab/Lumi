@@ -5,9 +5,9 @@ import Testing
 
 @MainActor
 @Suite("App Store promo designer plugin")
-struct AppStorePromoDesignerPluginTests {
+struct PromoDesignerPluginTests {
     @Test func contributesOptInWorkspaceAndCompleteToolSet() {
-        let plugin = AppStorePromoDesignerPlugin()
+        let plugin = PromoDesignerPlugin()
         let kernel = LumiKernel()
         #expect(plugin.id == "com.coffic.lumi.plugin.app-store-promo-designer")
         #expect(plugin.policy == .optIn)
@@ -30,7 +30,7 @@ struct AppStorePromoDesignerPluginTests {
     }
 
     @Test func overwriteExportIsHighRisk() {
-        let tool = ExportAppStorePromoTaskTool()
+        let tool = ExportPromoTaskTool()
         let kernel = LumiKernel()
         #expect(tool.riskLevel(arguments: ["overwrite": .bool(false)], kernel: kernel) == .medium)
         #expect(tool.riskLevel(arguments: ["overwrite": .bool(true)], kernel: kernel) == .high)
@@ -41,9 +41,9 @@ struct AppStorePromoDesignerPluginTests {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let kernel = LumiKernel()
-        AppStorePromoRuntime.configure(persistenceDirectory: root)
+        Runtime.configure(persistenceDirectory: root)
 
-        let createTask = try await CreateAppStorePromoTaskTool().execute(
+        let createTask = try await CreatePromoTaskTool().execute(
             arguments: [
                 "slug": .string("launch-set"),
                 "title": .string("Launch Set"),
@@ -55,7 +55,7 @@ struct AppStorePromoDesignerPluginTests {
         )
         #expect(createTask.contains("Created App Store promotional artwork task"))
 
-        let createImage = try await CreateAppStorePromoImageTool().execute(
+        let createImage = try await CreatePromoImageTool().execute(
             arguments: [
                 "taskId": .string("launch-set"),
                 "imageId": .string("agent-workflows"),
@@ -65,7 +65,7 @@ struct AppStorePromoDesignerPluginTests {
         )
         #expect(createImage.contains("Created promotional HTML image"))
 
-        _ = try await CreateAppStorePromoImageTool().execute(
+        _ = try await CreatePromoImageTool().execute(
             arguments: [
                 "taskId": .string("launch-set"),
                 "imageId": .string("private-data"),
@@ -74,7 +74,7 @@ struct AppStorePromoDesignerPluginTests {
             kernel: kernel
         )
 
-        let patched = try await PatchAppStorePromoHTMLTool().execute(
+        let patched = try await PatchPromoHTMLTool().execute(
             arguments: [
                 "taskId": .string("launch-set"),
                 "imageId": .string("agent-workflows"),
@@ -89,7 +89,7 @@ struct AppStorePromoDesignerPluginTests {
         )
         #expect(patched.contains("Applied 1 HTML patches"))
 
-        let read = try await ReadAppStorePromoHTMLTool().execute(
+        let read = try await ReadPromoHTMLTool().execute(
             arguments: [
                 "taskId": .string("launch-set"),
                 "imageId": .string("agent-workflows"),
@@ -98,7 +98,7 @@ struct AppStorePromoDesignerPluginTests {
         )
         #expect(read.contains("<h1>Build visually</h1>"))
 
-        let lint = try await LintAppStorePromoTaskTool().execute(
+        let lint = try await LintPromoTaskTool().execute(
             arguments: ["taskId": .string("launch-set")],
             kernel: kernel
         )

@@ -4,8 +4,8 @@ import HTMLPreviewKit
 import LumiUI
 import SwiftUI
 
-public struct AppStorePromoRailView: View {
-    @ObservedObject private var workspace = AppStorePromoWorkspaceStore.shared
+public struct PromoRailView: View {
+    @ObservedObject private var workspace = WorkspaceStore.shared
     @State private var expandedTaskIDs: Set<String> = []
 
     public init() {}
@@ -139,10 +139,10 @@ public struct AppStorePromoRailView: View {
     }
 }
 
-public struct AppStorePromoDesignerView: View {
+public struct PromoDesignerView: View {
     private enum Mode: String, CaseIterable { case preview, source }
 
-    @ObservedObject private var workspace = AppStorePromoWorkspaceStore.shared
+    @ObservedObject private var workspace = WorkspaceStore.shared
     @State private var mode: Mode = .preview
     @State private var isExporting = false
 
@@ -254,7 +254,7 @@ public struct AppStorePromoDesignerView: View {
     }
 }
 
-public struct AppStorePromoAboutView: View {
+public struct PromoAboutView: View {
     public init() {}
     public var body: some View {
         VStack(spacing: 12) {

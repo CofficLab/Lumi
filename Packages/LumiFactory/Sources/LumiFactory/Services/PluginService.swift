@@ -271,7 +271,7 @@ public enum PluginService {
             CaffeinatePlugin(),
             AgentTempStoragePlugin(),
             AppIconDesignerPlugin(),
-            AppStorePromoDesignerPlugin(),
+            PromoDesignerPlugin(),
             WebFetchPlugin(),
             WebSearchPlugin(),
             MemoryPlugin(),

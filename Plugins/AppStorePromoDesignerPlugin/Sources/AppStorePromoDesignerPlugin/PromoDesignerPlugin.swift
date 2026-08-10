@@ -3,7 +3,7 @@ import LumiUI
 import SwiftUI
 
 @MainActor
-public final class AppStorePromoDesignerPlugin: LumiPlugin {
+public final class PromoDesignerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.app-store-promo-designer"
     public var name: String { PromoLocalization.string("App Store Promo Designer") }
     public let order = 80
@@ -17,25 +17,25 @@ public final class AppStorePromoDesignerPlugin: LumiPlugin {
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
-        AppStorePromoRuntime.configure(kernel: kernel)
-        AppStorePromoWorkspaceStore.shared.reload()
+        Runtime.configure(kernel: kernel)
+        WorkspaceStore.shared.reload()
     }
 
     public func onReady(kernel: LumiKernel) async throws {}
 
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
-            ListAppStorePromoTasksTool(),
-            CreateAppStorePromoTaskTool(),
-            ReadAppStorePromoTaskTool(),
-            CreateAppStorePromoImageTool(),
-            ReadAppStorePromoHTMLTool(),
-            ReplaceAppStorePromoHTMLTool(),
-            PatchAppStorePromoHTMLTool(),
-            ImportAppStorePromoAssetTool(),
-            PreviewAppStorePromoImageTool(),
-            LintAppStorePromoTaskTool(),
-            ExportAppStorePromoTaskTool(),
+            ListPromoTasksTool(),
+            CreatePromoTaskTool(),
+            ReadPromoTaskTool(),
+            CreatePromoImageTool(),
+            ReadPromoHTMLTool(),
+            ReplacePromoHTMLTool(),
+            PatchPromoHTMLTool(),
+            ImportPromoAssetTool(),
+            PreviewPromoImageTool(),
+            LintPromoTaskTool(),
+            ExportPromoTaskTool(),
         ]
     }
 
@@ -59,7 +59,7 @@ public final class AppStorePromoDesignerPlugin: LumiPlugin {
                 systemImage: "photo.stack",
                 visibility: .viewContainer(id: id)
             ) {
-                AppStorePromoRailView()
+                PromoRailView()
             },
         ]
     }
@@ -76,13 +76,13 @@ public final class AppStorePromoDesignerPlugin: LumiPlugin {
                 panelBodyVisibility: .alwaysVisible,
                 panelBottomVisibility: .unsupported
             ) {
-                AppStorePromoDesignerView()
+                PromoDesignerView()
             },
         ]
     }
 
     public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
-        AnyView(AppStorePromoAboutView())
+        AnyView(PromoAboutView())
     }
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
@@ -108,7 +108,7 @@ public final class AppStorePromoDesignerPlugin: LumiPlugin {
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: LumiKernel, containerID: String) {
-        if containerID == id { AppStorePromoWorkspaceStore.shared.reload() }
+        if containerID == id { WorkspaceStore.shared.reload() }
     }
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
