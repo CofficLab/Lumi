@@ -10,6 +10,8 @@ import SuperLogKit
 private struct HistoryBuildSignatureV3: Equatable {
     let conversationID: UUID?
     let verbosity: LumiResponseVerbosity
+    /// 流式行可见性翻转时 status 行显隐不同,需纳入签名以触发重算。
+    let hidesStatus: Bool
     /// Per persisted message — captures additions/removals/reordering AND
     /// content edits while staying far cheaper than comparing full content
     /// strings.
@@ -29,10 +31,13 @@ private struct MessageFingerprintV3: Equatable {
 /// 把数据层服务(`MessageManaging`/`MessageSending`)合并成可直接展示的行序列,
 /// 让 `MessageListView` 只负责纯展示与滚动。
 ///
-/// **纯数据库驱动**:本 viewmodel 的唯一数据来源是落库消息(`MessageManaging`)。
-/// 不再持有流式临时行 —— LLM 流式期间 UI 只显示 status 行("正在思考…"等),
-/// 整段回复落库后由 `.lumiMessagesDidChange` → `refreshTail()` 路径一次性刷新。
-/// 这样从根上消除「流式 token 高频重建富文本」导致的 AttributeGraph 活锁。
+/// **历史行纯数据库驱动 + 流式行独立**:`historyRows` 只来源于落库消息,
+/// 经 `HistoryBuildSignatureV3`(含 contentLength)短路避免高频重建。流式临时行
+/// (`streamingRow`)是**独立** published 属性,用稳定 id `LumiStreamingRowID` ——
+/// token 增长只让 SwiftUI diff 这一行,不触发 `historyRows` 全量 rebuild,
+/// 从根上避免流式 token 高频重建富文本导致的 AttributeGraph 活锁。流式行可见时,
+/// 历史里的 `.status` 行被隐藏。V3(detailed)额外显示思考内容(`reasoningContent`),
+/// thinking 阶段流式行的 reasoningContent 增长由 `MarkdownBlockRenderer` 增量解析。
 ///
 /// 与 V2 的差异:V3(detailed)会**显示思考内容**(`reasoningContent`),
 /// V2(standard)不显示。本类当前是 V2 的复制(行为暂与 V2 一致),
@@ -53,10 +58,18 @@ final class ListV3ViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "🗂️"
     nonisolated static let verbose = false
 
+    /// 流式逐字显示的运行时开关。默认开启;与 V2 共用同一 UserDefaults 键。
+    nonisolated static var streamingDisplayEnabled: Bool {
+        UserDefaults.standard.object(forKey: "lumiStreamingDisplayEnabled") as? Bool ?? true
+    }
+
     // MARK: - Published State (供 View 展示)
 
     /// 稳定历史展示行:真实落库消息 + 状态行,纯数据库驱动。
     @Published private(set) var historyRows: [LumiChatMessage] = []
+
+    /// 流式临时行(独立于历史行)。语义同 V2;详见 `ListV2ViewModel.streamingRow`。
+    @Published private(set) var streamingRow: LumiChatMessage?
 
     /// 内存中的真实落库消息(分页窗口),按时间升序;`hasPersistedMessages` 由它派生。
     /// 任何变更都会触发历史行重算。
@@ -93,6 +106,12 @@ final class ListV3ViewModel: ObservableObject, SuperLog {
     private var didBindToolActivityNotifications = false
     /// 发送服务是否已绑定;尚未就绪时由 `activate` 重试绑定。
     private var didBindServices = false
+    /// 流式服务是否已订阅;尚未就绪时由 `activate` 重试。
+    private var didBindStreaming = false
+    /// 单飞帧门禁:把逐 token 广播合并成每帧(~16ms)最多一次刷新。
+    private var streamingRefreshTask: Task<Void, Never>?
+    /// 流式行上次的可见性(nil↔非 nil),用于在切换时重算历史行。
+    private var streamingRowWasVisible = false
     /// Signature of the inputs used to build the last `historyRows`. When the
     /// next `rebuildHistoryRows` call sees the same signature, the (expensive,
     /// O(rows × content) memberwise) array comparison is skipped entirely.
@@ -150,6 +169,9 @@ final class ListV3ViewModel: ObservableObject, SuperLog {
         }
         bindServicesIfNeeded()
         activeConversationID = conversationID
+        // 切换会话:清掉上一会话的流式行残留。
+        streamingRow = nil
+        streamingRowWasVisible = false
         isLoading = true
         await loadFirstPage(conversationID: conversationID)
         if Self.verbose {
@@ -301,15 +323,15 @@ final class ListV3ViewModel: ObservableObject, SuperLog {
         }
     }
 
-    /// 订阅工具活动 / 发送服务的窄播(绕开 kernel 全局广播),变化时重算展示行。
+    /// 订阅工具活动 / 发送服务 / 流式服务的窄播(绕开 kernel 全局广播)。
     ///
-    /// 列表已改为**纯数据库驱动**:不再订阅流式服务,落库消息由
-    /// `.lumiMessagesDidChange` → `refreshTail()` 路径刷新;发送服务在此
-    /// 同样路由到 `refreshTail`(见下),不再重建流式行。
+    /// 历史行仍是纯数据库驱动。流式逐字显示通过独立订阅
+    /// `messageStreaming.objectWillChange` + 帧门禁实现,只更新独立的
+    /// `streamingRow`,不触碰 `historyRows`。详见 V2 同名方法。
     ///
     /// `receive(on:)` 让 sink 在属性写入完成后异步执行
     /// (objectWillChange 在 willSet 触发,同步读取会拿到旧值)。
-    /// 幂等:tool-activity 与 sender 各绑定一次;sender 尚未就绪时由下次
+    /// 幂等:tool-activity / sender / streaming 各绑定一次;尚未就绪时由下次
     /// `activate` 重试。
     private func bindServicesIfNeeded() {
         if !didBindToolActivityNotifications {
@@ -353,21 +375,73 @@ final class ListV3ViewModel: ObservableObject, SuperLog {
                 .store(in: &cancellables)
         }
         didBindServices = kernel.messageSender != nil
+
+        // 流式逐字显示:订阅 messageStreaming,帧门禁合并。详见 V2。
+        guard !didBindStreaming else { return }
+        guard let streaming = kernel.messageStreaming else { return }
+        streaming.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.scheduleStreamingRefresh()
+            }
+            .store(in: &cancellables)
+        didBindStreaming = true
     }
 
-    /// Rebuilds only stable history rows from persisted messages. Pure
-    /// database-driven —— no streaming input. Triggered whenever
-    /// `persistedMessages` changes (DB tail refresh / pagination / page load).
-    ///
-    /// Short-circuits on a cheap input signature: when the persisted window and
-    /// verbosity are unchanged since the last build, the full projection +
-    /// O(rows × content) array comparison is skipped.
+    /// 帧门禁:把逐 token 的流式广播合并成每帧(~16ms)最多一次刷新。
+    private func scheduleStreamingRefresh() {
+        guard streamingRefreshTask == nil else { return }
+        streamingRefreshTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 16_000_000)
+            guard !Task.isCancelled, let self else { return }
+            self.streamingRefreshTask = nil
+            self.applyStreamingState()
+        }
+    }
+
+    /// 从流式服务读取当前状态,更新 `streamingRow`。可见性规则同 V2。
+    private func applyStreamingState() {
+        guard Self.streamingDisplayEnabled, verbosity != .brief else {
+            updateStreamingRow(nil)
+            return
+        }
+        guard let streaming = kernel.messageStreaming,
+              let conversationID = selectedConversationID else {
+            updateStreamingRow(nil)
+            return
+        }
+        let stage = streaming.streamingStage(for: conversationID)
+        let row = streaming.streamingRow(for: conversationID)
+        if (stage == .thinking || stage == .generating), let row,
+           row.conversationID == conversationID {
+            updateStreamingRow(row)
+        } else {
+            updateStreamingRow(nil)
+        }
+    }
+
+    /// 更新流式行,并在可见性切换(nil↔非 nil)时重算历史行(隐藏/恢复 status 行)。
+    private func updateStreamingRow(_ row: LumiChatMessage?) {
+        let nowVisible = row != nil
+        streamingRow = row
+        if nowVisible != streamingRowWasVisible {
+            streamingRowWasVisible = nowVisible
+            rebuildHistoryRows()
+        }
+    }
+
+    /// Rebuilds only stable history rows from persisted messages. History rows
+    /// are database-driven; the only streaming influence is `hidesStatus`.
+    /// Triggered whenever `persistedMessages` changes or the streaming row's
+    /// visibility flips nil↔non-nil.
     private func rebuildHistoryRows() {
         let verbosity = self.verbosity
         let conversationID = selectedConversationID
+        let hidesStatus = streamingRow != nil
         let signature = HistoryBuildSignatureV3(
             conversationID: conversationID,
             verbosity: verbosity,
+            hidesStatus: hidesStatus,
             fingerprints: persistedMessages.map {
                 MessageFingerprintV3(
                     id: $0.id,
@@ -383,7 +457,8 @@ final class ListV3ViewModel: ObservableObject, SuperLog {
         let rows = rowBuilder.buildHistory(
             persisted: persistedMessages,
             conversationID: conversationID,
-            verbosity: verbosity
+            verbosity: verbosity,
+            hidesStatus: hidesStatus
         )
         if historyRows != rows {
             historyRows = rows

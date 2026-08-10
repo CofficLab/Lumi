@@ -82,13 +82,14 @@ struct ListV3View: View, SuperLog {
         ScrollViewReader { proxy in
             // List(NSTableView)自带 cell 复用:只有可见行被 materialize。
             //
-            // Safe because the list is pure database-driven: the `ForEach`
-            // contains only stable, persisted ids. There is no live streaming
-            // row swapping a transient id for its persisted counterpart inside
-            // the same collection (streaming content only lands here once it
-            // is persisted at turn end).
+            // 历史行(`ForEach`)只含稳定的落库 id。流式行(`streamingRow`)作为
+            // 独立的、用进程级常量 `LumiStreamingRowID` 标识的尾行单独渲染 ——
+            // 它与落库行的随机 UUID 永不冲突,落库时流式行消失 + 真实行出现被
+            // SwiftUI 作为两次独立 diff 处理,无 id 交换、无闪烁。token 增长只
+            // 让这一行的内容变化,不触发 `historyRows` 全量 rebuild(避免活锁)。
             List {
                 historyRows(proxy: proxy)
+                streamingRowView
 
                 // 底部锚点行:纯占位 + 稳定 id(供 scrollTo 用),不报偏好。
                 // 是否在底部由 `ScrollViewBottomTracker` 观察 NSScrollView 判定。
@@ -120,6 +121,12 @@ struct ListV3View: View, SuperLog {
                 if atBottomBox.value {
                     scrollTick &+= 1
                 }
+            }
+            // 流式行出现(nil→非 nil)时跟随滚到底;内容增长期间沿用 atBottomBox
+            // 判定(用户上滑则不跟随)。流式行用独立 id,此处按其 id 变化触发。
+            .onChange(of: viewModel.streamingRow?.id) { _, _ in
+                guard viewModel.streamingRow != nil, atBottomBox.value else { return }
+                scrollTick &+= 1
             }
             // 兜底:锚点出现(内容从无到有)时也补一次,覆盖首屏/慢加载。
             .onAppear {
@@ -195,6 +202,23 @@ struct ListV3View: View, SuperLog {
                 message: message,
                 verbosity: viewModel.verbosity
             )
+            .id(message.id)
+            .plainMessageListRow()
+        }
+    }
+
+    /// 流式尾行:LLM 回复期间逐字增长的临时行。V3(detailed)额外显示思考内容
+    /// (`reasoningContent`),thinking 阶段流式行的 reasoningContent 增长,
+    /// `MarkdownBlockRenderer` 自动命中 streamingSlot 增量解析。id 语义同 V2。
+    @ViewBuilder
+    private var streamingRowView: some View {
+        if let streaming = viewModel.streamingRow {
+            MessageRowView(
+                kernel: kernel,
+                message: streaming,
+                verbosity: viewModel.verbosity
+            )
+            .id(LumiStreamingRowID)
             .plainMessageListRow()
         }
     }
