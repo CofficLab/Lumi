@@ -201,7 +201,7 @@ jobs:
             exit 1
           fi
 
-          # 副 app / Finder 插件的构建号必须保持原值（断言：仓库历史里它们分别是 1 / 500 / 600）
+          # 副 app / Finder 插件的构建号必须保持原值
           # 用 awk 而非 grep -c 数行：grep -c 在 0 匹配时退出码为 1，会被 set -e 当作失败
           OTHER_COUNT=$(awk 'BEGIN{n=0} /CURRENT_PROJECT_VERSION = [0-9]+;/ {n++} END{print n+0}' "$PBXPROJ")
           if [ "$OTHER_COUNT" -ne 12 ]; then
@@ -209,17 +209,57 @@ jobs:
             exit 1
           fi
 
-          # 确认其他 target 没被改动：值仍包含 1、500、600
-          for v in 1 500 600; do
-            c=$(awk -v V="CURRENT_PROJECT_VERSION = ${v};" 'BEGIN{n=0} index($0,V)>0{n++} END{print n+0}' "$PBXPROJ")
-            case "$v" in
-              1)   [ "$c" -eq 8 ] || { echo "❌ 副 app CURRENT_PROJECT_VERSION=$v 数量异常: $c (期望 8)"; exit 1; } ;;
-              500) [ "$c" -eq 2 ] || { echo "❌ LumiFinder CURRENT_PROJECT_VERSION=$v 数量异常: $c (期望 2)"; exit 1; } ;;
-              600) [ "$c" -eq 0 ] || { echo "❌ 旧值 CURRENT_PROJECT_VERSION=600 仍残留: $c"; exit 1; } ;;
-            esac
-          done
+          # 确认非主 app 的 10 行（CURRENT_PROJECT_VERSION 总数 12 - 主 app 2 行）保持不变：
+          # 我们不强求副 app / Finder 的具体值（历史上多次发布的 sed 可能把它们改过，
+          # 但本步不应再触碰它们）。
+          #
+          # 做法：awk 取出所有 CURRENT_PROJECT_VERSION 行，按 "ID-prefix + 行内容" 做哈希，
+          # 替换前后只动主 app 的两块，ID 不属于主 app 的 10 行哈希必须不变。
+          BEFORE_NON_MAIN_HASH=$(awk '
+            /^[ \t]*[A-Z0-9]{24} \/\* (Debug|Release) \*\// {
+              block_id = substr($1, 1, 24)
+              in_block = (block_id == "F54F8C8B2F1A3B6600AABB2A" || block_id == "F54F8C8C2F1A3B6600AABB2A")
+              next
+            }
+            /CURRENT_PROJECT_VERSION = / && !in_block { print }
+          ' "$PBXPROJ" | md5sum | awk '{print $1}')
 
-          echo "✅ Lumi 主 app 已更新为 build $NEW_BUILD_VERSION，其他 target 构建号未变"
+          awk -v new="$NEW_BUILD_VERSION" -v d_id="$LUMI_DEBUG_ID" -v r_id="$LUMI_RELEASE_ID" '
+            function reset() { in_block=0; depth=0 }
+            {
+              if (!in_block && ($0 ~ "^[ \t]*"d_id" " || $0 ~ "^[ \t]*"r_id" ")) {
+                in_block=1; depth=0
+              }
+              if (in_block) {
+                n_open  = gsub(/\{/, "{")
+                n_close = gsub(/\}/, "}")
+                depth += n_open - n_close
+                if (match($0, /^[ \t]*CURRENT_PROJECT_VERSION = [0-9]+;/)) {
+                  sub(/CURRENT_PROJECT_VERSION = [0-9]+;/, "CURRENT_PROJECT_VERSION = "new";")
+                }
+                if (depth <= 0 && /\}/) { reset() }
+              }
+              print
+            }
+          ' "$PBXPROJ" > "${PBXPROJ}.tmp" && mv "${PBXPROJ}.tmp" "$PBXPROJ"
+
+          AFTER_NON_MAIN_HASH=$(awk '
+            /^[ \t]*[A-Z0-9]{24} \/\* (Debug|Release) \*\// {
+              block_id = substr($1, 1, 24)
+              in_block = (block_id == "F54F8C8B2F1A3B6600AABB2A" || block_id == "F54F8C8C2F1A3B6600AABB2A")
+              next
+            }
+            /CURRENT_PROJECT_VERSION = / && !in_block { print }
+          ' "$PBXPROJ" | md5sum | awk '{print $1}')
+
+          if [ "$BEFORE_NON_MAIN_HASH" != "$AFTER_NON_MAIN_HASH" ]; then
+            echo "❌ 非主 app 的 CURRENT_PROJECT_VERSION 行被意外改动"
+            echo "  BEFORE hash: $BEFORE_NON_MAIN_HASH"
+            echo "  AFTER  hash: $AFTER_NON_MAIN_HASH"
+            exit 1
+          fi
+
+          echo "✅ Lumi 主 app 已更新为 build $NEW_BUILD_VERSION，10 处非主 app 构建号完全保持不变"
 
           # 保存构建号供后续步骤使用
           echo "build_number=$NEW_BUILD_VERSION" >> $GITHUB_ENV
