@@ -182,13 +182,6 @@ public struct AppStorePromoDesignerView: View {
 
     private var toolbar: some View {
         HStack(spacing: 10) {
-            Image(systemName: "photo.artframe").foregroundStyle(.purple)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(PromoLocalization.string("App Store Promo Designer")).font(.headline)
-                if let image = workspace.selectedImage {
-                    Text("\(image.task.title) / \(image.image.title)").font(.caption).foregroundStyle(.secondary)
-                }
-            }
             Spacer()
 
             if let task = workspace.selectedImage?.task {
@@ -208,7 +201,7 @@ public struct AppStorePromoDesignerView: View {
 
             Button { workspace.reload() } label: { Label(PromoLocalization.string("Refresh"), systemImage: "arrow.clockwise") }
             Button { Task { await exportSelectedTask() } } label: {
-                Label(PromoLocalization.string("Export Task"), systemImage: "square.and.arrow.down")
+                Label(PromoLocalization.string("Export"), systemImage: "square.and.arrow.down")
             }
             .disabled(workspace.selectedImage == nil || isExporting)
             if isExporting { ProgressView().controlSize(.small) }

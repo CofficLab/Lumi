@@ -3,8 +3,6 @@
 # ci_post_clone.sh — Xcode Cloud: 克隆完成后执行
 # ============================================================
 # 此脚本在 Xcode Cloud 完成 Git 克隆后运行。
-# 用途: 安装 Swift 依赖(如有)、设置 SPM package 缓存、
-#       验证必要的文件和目录结构是否存在。
 # ============================================================
 
 set -euo pipefail
@@ -19,7 +17,4 @@ echo "    工作目录: ${WORKSPACE_ROOT}"
 echo "    Xcode 版本: $(xcodebuild -version 2>/dev/null | head -1)"
 echo "    Swift 版本: $(swift --version 2>/dev/null | head -1)"
 
-# --------------------------------------------------
-# 2. 确保 Plugins 模块已正确配置(Xcode Cloud 会自动 resolve)
-# --------------------------------------------------
 echo "==> [ci_post_clone] 完成,进入构建阶段."
