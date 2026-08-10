@@ -70,6 +70,7 @@ public final class PromoDesignerPlugin: LumiPlugin {
                 id: id,
                 title: name,
                 systemImage: "photo.artframe",
+                supportsProject: true,
                 railVisibility: .alwaysVisible,
                 chatVisibility: .alwaysVisible,
                 panelHeaderVisibility: .unsupported,

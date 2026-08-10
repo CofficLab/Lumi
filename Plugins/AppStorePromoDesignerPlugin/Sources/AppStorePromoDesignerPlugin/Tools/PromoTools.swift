@@ -5,11 +5,37 @@ import LumiKernel
 private enum PromoToolSupport {
     static let store = AppStorePromoDocumentStore()
 
-    static func storagePath() async throws -> String {
-        try await MainActor.run {
-            guard let path = Runtime.storageDirectory?.path, !path.isEmpty else {
-                throw AppStorePromoStoreError.invalidStoragePath
+    /// 当前已打开项目的路径（来自工具执行上下文，回退到 Runtime 缓存）。
+    static func currentProjectPath(kernel: LumiKernel) async -> String? {
+        if let fromContext = kernel.currentProjectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !fromContext.isEmpty {
+            return fromContext
+        }
+        return await MainActor.run { Runtime.currentProjectPath }
+    }
+
+    /// 解析工具入参中的 scope：未指定时按是否有打开项目自动选择 project / app。
+    static func resolveScope(_ arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> Scope {
+        if let raw = arguments.string("scope")?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+           !raw.isEmpty {
+            guard let scope = Scope(rawValue: raw) else {
+                throw ToolArgumentError.invalid("scope")
             }
+            return scope
+        }
+        let hasProject = await (currentProjectPath(kernel: kernel) != nil)
+        return await MainActor.run { Runtime.defaultScope(hasOpenProject: hasProject) }
+    }
+
+    /// 当前 scope 的存储路径。无路径时抛 invalidStoragePath。
+    static func storagePath(for scope: Scope) async throws -> String {
+        try await MainActor.run {
+            let path: String
+            switch scope {
+            case .project: path = WorkspaceStore.shared.projectStoragePath
+            case .app: path = WorkspaceStore.shared.appStoragePath
+            }
+            guard !path.isEmpty else { throw AppStorePromoStoreError.invalidStoragePath }
             return path
         }
     }
@@ -21,23 +47,31 @@ private enum PromoToolSupport {
         return value
     }
 
-    static func notify(taskID: String? = nil, imageID: String? = nil) async {
-        await MainActor.run { WorkspaceStore.shared.reload(selectTask: taskID, image: imageID) }
+    static func notify(scope: Scope, taskID: String? = nil, imageID: String? = nil) async {
+        await MainActor.run { WorkspaceStore.shared.reload(scope: scope, selectTask: taskID, image: imageID) }
     }
 
-    static func taskSummary(_ task: AppStorePromoTask) -> String {
+    static func taskSummary(_ task: AppStorePromoTask, scope: Scope) -> String {
         let displays = AppStorePromoDisplaySpec.presets(for: task.deviceFamily)
             .map { "\($0.displayType)=\($0.width)x\($0.height)" }.joined(separator: ", ")
         let images = task.images.sorted(by: { $0.order < $1.order })
             .map { "\($0.order + 1):\($0.id)" }.joined(separator: ", ")
-        return "taskId=\(task.id) title=\(task.title) appName=\(task.appName) family=\(task.deviceFamily.rawValue) locale=\(task.localeIdentifier) displayTypes=[\(displays)] images=[\(images)]"
+        return "scope=\(scope.rawValue) taskId=\(task.id) title=\(task.title) appName=\(task.appName) family=\(task.deviceFamily.rawValue) locale=\(task.localeIdentifier) displayTypes=[\(displays)] images=[\(images)]"
     }
 
-    static func baseProperties(includeImage: Bool = false) -> [String: LumiJSONValue] {
-        var result: [String: LumiJSONValue] = [
-            "taskId": ["type": "string", "description": "Promotional artwork task slug."],
-        ]
-        if includeImage { result["imageId"] = ["type": "string", "description": "Promotional image slug within the task."] }
+    static func baseProperties(includeImage: Bool = false, includeScope: Bool = true) -> [String: LumiJSONValue] {
+        var result: [String: LumiJSONValue] = [:]
+        if includeScope {
+            result["scope"] = [
+                "type": "string",
+                "enum": .array(Scope.allCases.map { .string($0.rawValue) }),
+                "description": "Storage scope: 'project' (current project .lumi folder) or 'app' (application data directory). Defaults to 'project' when a project is open, else 'app'.",
+            ]
+        }
+        result["taskId"] = ["type": "string", "description": "Promotional artwork task slug."]
+        if includeImage {
+            result["imageId"] = ["type": "string", "description": "Promotional image slug within the task."]
+        }
         return result
     }
 
@@ -54,58 +88,121 @@ private enum PromoToolSupport {
 }
 
 public struct ListPromoTasksTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(id: "app_store_promo_list_tasks", displayName: "List promo tasks", description: "List plugin-managed App Store promotional artwork tasks and their images.")
+    public static let info = LumiAgentToolInfo(
+        id: "app_store_promo_list_tasks",
+        displayName: "List promo tasks",
+        description: "List plugin-managed App Store promotional artwork tasks and their images, across project and app scopes."
+    )
     public init() {}
-    public var inputSchema: LumiJSONValue { ["type": "object", "properties": [:]] }
+    public var inputSchema: LumiJSONValue {
+        [
+            "type": "object",
+            "properties": [
+                "scope": [
+                    "type": "string",
+                    "enum": .array(["all"] + Scope.allCases.map { .string($0.rawValue) }),
+                    "description": "Filter by scope: 'project', 'app', or 'all' (default).",
+                ],
+            ],
+        ]
+    }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
-        let tasks = try PromoToolSupport.store.listTasks(storagePath: await PromoToolSupport.storagePath())
-        return tasks.isEmpty ? "No App Store promotional artwork tasks found." : tasks.map(PromoToolSupport.taskSummary).joined(separator: "\n")
+        let scopeFilter = (arguments.string("scope") ?? "all").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let snapshot = await MainActor.run { () -> [(Scope, [AppStorePromoTask])] in
+            let store = WorkspaceStore.shared
+            var result: [(Scope, [AppStorePromoTask])] = []
+            if scopeFilter == "all" || scopeFilter == Scope.project.rawValue {
+                result.append((.project, store.projectTasks))
+            }
+            if scopeFilter == "all" || scopeFilter == Scope.app.rawValue {
+                result.append((.app, store.appTasks))
+            }
+            return result
+        }
+        let lines = snapshot.flatMap { scope, tasks in
+            tasks.isEmpty ? ["[scope=\(scope.rawValue)] (no tasks)"] : tasks.map { PromoToolSupport.taskSummary($0, scope: scope) }
+        }
+        if lines.isEmpty {
+            return "No App Store promotional artwork tasks found."
+        }
+        return lines.joined(separator: "\n")
     }
 }
 
 public struct CreatePromoTaskTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(id: "app_store_promo_create_task", displayName: "Create promo task", description: "Create one plugin-managed promotional artwork task before generating its HTML images.")
+    public static let info = LumiAgentToolInfo(
+        id: "app_store_promo_create_task",
+        displayName: "Create promo task",
+        description: "Create one plugin-managed promotional artwork task before generating its HTML images."
+    )
     public init() {}
     public var inputSchema: LumiJSONValue {
-        ["type": "object", "properties": [
-            "slug": ["type": "string", "description": "Lowercase kebab-case task slug."],
-            "title": ["type": "string"], "appName": ["type": "string"],
-            "deviceFamily": ["type": "string", "enum": ["iphone", "ipad", "mac"]],
-            "localeIdentifier": ["type": "string", "description": "Locale such as en-US or zh-Hans."],
-        ], "required": ["slug", "title", "appName", "deviceFamily"]]
+        var properties: [String: LumiJSONValue] = PromoToolSupport.baseProperties()
+        properties["slug"] = ["type": "string", "description": "Lowercase kebab-case task slug."]
+        properties["title"] = ["type": "string"]
+        properties["appName"] = ["type": "string"]
+        properties["deviceFamily"] = ["type": "string", "enum": ["iphone", "ipad", "mac"]]
+        properties["localeIdentifier"] = ["type": "string", "description": "Locale such as en-US or zh-Hans."]
+        return ["type": "object", "properties": .object(properties), "required": ["slug", "title", "appName", "deviceFamily"]]
     }
     public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .medium }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let slug = try PromoToolSupport.required("slug", arguments)
         let familyRaw = try PromoToolSupport.required("deviceFamily", arguments)
-        guard let family = AppStorePromoDeviceFamily(rawValue: familyRaw.lowercased()) else { throw PromoToolSupport.ToolArgumentError.invalid("deviceFamily") }
+        guard let family = AppStorePromoDeviceFamily(rawValue: familyRaw.lowercased()) else {
+            throw PromoToolSupport.ToolArgumentError.invalid("deviceFamily")
+        }
         let task = try PromoToolSupport.store.createTask(
-            storagePath: await PromoToolSupport.storagePath(), slug: slug,
+            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            slug: slug,
             title: try PromoToolSupport.required("title", arguments),
             appName: try PromoToolSupport.required("appName", arguments),
             deviceFamily: family,
             localeIdentifier: arguments.string("localeIdentifier") ?? "en-US"
         )
-        await PromoToolSupport.notify(taskID: task.id)
-        return "Created App Store promotional artwork task.\n\(PromoToolSupport.taskSummary(task))\nNext: create one or more HTML images with app_store_promo_create_image."
+        await PromoToolSupport.notify(scope: scope, taskID: task.id)
+        return "Created App Store promotional artwork task (scope=\(scope.rawValue)).\n\(PromoToolSupport.taskSummary(task, scope: scope))\nNext: create one or more HTML images with app_store_promo_create_image."
     }
 }
 
 public struct ReadPromoTaskTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(id: "app_store_promo_read_task", displayName: "Read promo task", description: "Read task metadata, image order, and available exact App Store display sizes.")
+    public static let info = LumiAgentToolInfo(
+        id: "app_store_promo_read_task",
+        displayName: "Read promo task",
+        description: "Read task metadata, image order, and available exact App Store display sizes. Searches both project and app scopes by default."
+    )
     public init() {}
-    public var inputSchema: LumiJSONValue { ["type": "object", "properties": .object(PromoToolSupport.baseProperties()), "required": ["taskId"]] }
+    public var inputSchema: LumiJSONValue {
+        ["type": "object", "properties": .object(PromoToolSupport.baseProperties()), "required": ["taskId"]]
+    }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
-        let task = try PromoToolSupport.store.readTask(storagePath: await PromoToolSupport.storagePath(), taskSlug: PromoToolSupport.required("taskId", arguments))
-        return PromoToolSupport.taskSummary(task)
+        let taskID = try PromoToolSupport.required("taskId", arguments)
+        let resolvedScope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
+        let scopesToTry: [Scope] = resolvedScope == .project ? [.project, .app] : [.app]
+        var lastError: Error?
+        for scope in scopesToTry {
+            let path = try await PromoToolSupport.storagePath(for: scope)
+            do {
+                let task = try PromoToolSupport.store.readTask(storagePath: path, taskSlug: taskID)
+                return PromoToolSupport.taskSummary(task, scope: scope)
+            } catch {
+                lastError = error
+            }
+        }
+        throw lastError ?? PromoToolSupport.ToolArgumentError.invalid("taskId")
     }
 }
 
 public struct CreatePromoImageTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(id: "app_store_promo_create_image", displayName: "Create promo HTML image", description: "Create one image under a promotional task from a valid responsive HTML document.")
+    public static let info = LumiAgentToolInfo(
+        id: "app_store_promo_create_image",
+        displayName: "Create promo HTML image",
+        description: "Create one image under a promotional task from a valid responsive HTML document."
+    )
     public init() {}
     public var inputSchema: LumiJSONValue {
-        var properties = PromoToolSupport.baseProperties()
+        var properties = PromoToolSupport.baseProperties(includeImage: true)
         properties["imageId"] = ["type": "string", "description": "Lowercase kebab-case image slug."]
         properties["title"] = ["type": "string"]
         properties["html"] = ["type": "string", "description": "Optional complete HTML document. Never pass a fragment."]
@@ -113,29 +210,47 @@ public struct CreatePromoImageTool: LumiAgentTool {
     }
     public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .medium }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let imageID = try PromoToolSupport.required("imageId", arguments)
         _ = try PromoToolSupport.store.createImage(
-            storagePath: await PromoToolSupport.storagePath(), taskSlug: taskID, imageSlug: imageID,
-            title: try PromoToolSupport.required("title", arguments), html: arguments.string("html")
+            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            taskSlug: taskID, imageSlug: imageID,
+            title: try PromoToolSupport.required("title", arguments),
+            html: arguments.string("html")
         )
-        await PromoToolSupport.notify(taskID: taskID, imageID: imageID)
-        return "Created promotional HTML image. imageId=\(imageID)\nEdit it with app_store_promo_replace_html or app_store_promo_patch_html, then call app_store_promo_preview_image."
+        await PromoToolSupport.notify(scope: scope, taskID: taskID, imageID: imageID)
+        return "Created promotional HTML image (scope=\(scope.rawValue)). imageId=\(imageID)\nEdit it with app_store_promo_replace_html or app_store_promo_patch_html, then call app_store_promo_preview_image."
     }
 }
 
 public struct ReadPromoHTMLTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(id: "app_store_promo_read_html", displayName: "Read promo HTML", description: "Read the full index.html for a promotional image before editing it.")
+    public static let info = LumiAgentToolInfo(
+        id: "app_store_promo_read_html",
+        displayName: "Read promo HTML",
+        description: "Read the full index.html for a promotional image before editing it."
+    )
     public init() {}
-    public var inputSchema: LumiJSONValue { ["type": "object", "properties": .object(PromoToolSupport.baseProperties(includeImage: true)), "required": ["taskId", "imageId"]] }
+    public var inputSchema: LumiJSONValue {
+        ["type": "object", "properties": .object(PromoToolSupport.baseProperties(includeImage: true)), "required": ["taskId", "imageId"]]
+    }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
-        let image = try PromoToolSupport.store.readImage(storagePath: await PromoToolSupport.storagePath(), taskSlug: PromoToolSupport.required("taskId", arguments), imageSlug: PromoToolSupport.required("imageId", arguments))
+        let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
+        let image = try PromoToolSupport.store.readImage(
+            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            taskSlug: try PromoToolSupport.required("taskId", arguments),
+            imageSlug: try PromoToolSupport.required("imageId", arguments)
+        )
         return "--- index.html ---\n\(image.html)"
     }
 }
 
 public struct ReplacePromoHTMLTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(id: "app_store_promo_replace_html", displayName: "Replace promo HTML", description: "Validate and atomically replace a promotional image with a complete deterministic HTML document.")
+    public static let info = LumiAgentToolInfo(
+        id: "app_store_promo_replace_html",
+        displayName: "Replace promo HTML",
+        description: "Validate and atomically replace a promotional image with a complete deterministic HTML document."
+    )
     public init() {}
     public var inputSchema: LumiJSONValue {
         var properties = PromoToolSupport.baseProperties(includeImage: true)
@@ -144,16 +259,26 @@ public struct ReplacePromoHTMLTool: LumiAgentTool {
     }
     public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .medium }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+        let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let imageID = try PromoToolSupport.required("imageId", arguments)
-        let image = try PromoToolSupport.store.replaceHTML(try PromoToolSupport.required("html", arguments), storagePath: await PromoToolSupport.storagePath(), taskSlug: taskID, imageSlug: imageID)
-        await PromoToolSupport.notify(taskID: taskID, imageID: imageID)
-        return "Promotional HTML updated and validated. bytes=\(image.html.utf8.count)\nCall app_store_promo_preview_image to inspect the rendered result."
+        let image = try PromoToolSupport.store.replaceHTML(
+            try PromoToolSupport.required("html", arguments),
+            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            taskSlug: taskID,
+            imageSlug: imageID
+        )
+        await PromoToolSupport.notify(scope: scope, taskID: taskID, imageID: imageID)
+        return "Promotional HTML updated and validated (scope=\(scope.rawValue)). bytes=\(image.html.utf8.count)\nCall app_store_promo_preview_image to inspect the rendered result."
     }
 }
 
 public struct PatchPromoHTMLTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(id: "app_store_promo_patch_html", displayName: "Patch promo HTML", description: "Apply an atomic batch of exact, unique text replacements to promotional HTML, then validate the complete result.")
+    public static let info = LumiAgentToolInfo(
+        id: "app_store_promo_patch_html",
+        displayName: "Patch promo HTML",
+        description: "Apply an atomic batch of exact, unique text replacements to promotional HTML, then validate the complete result."
+    )
     public init() {}
     public var inputSchema: LumiJSONValue {
         var properties = PromoToolSupport.baseProperties(includeImage: true)
@@ -162,7 +287,9 @@ public struct PatchPromoHTMLTool: LumiAgentTool {
     }
     public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .medium }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
-        guard case .array(let rawOperations) = arguments["operations"], !rawOperations.isEmpty, rawOperations.count <= 20 else { throw PromoToolSupport.ToolArgumentError.invalid("operations") }
+        guard case .array(let rawOperations) = arguments["operations"], !rawOperations.isEmpty, rawOperations.count <= 20 else {
+            throw PromoToolSupport.ToolArgumentError.invalid("operations")
+        }
         let operations = try rawOperations.map { value -> AppStorePromoPatchOperation in
             guard case .object(let object) = value,
                   let oldText = object["oldText"]?.stringValue,
@@ -170,16 +297,26 @@ public struct PatchPromoHTMLTool: LumiAgentTool {
                   !oldText.isEmpty else { throw PromoToolSupport.ToolArgumentError.invalid("operations") }
             return .init(oldText: oldText, newText: newText)
         }
+        let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let imageID = try PromoToolSupport.required("imageId", arguments)
-        _ = try PromoToolSupport.store.patchHTML(operations: operations, storagePath: await PromoToolSupport.storagePath(), taskSlug: taskID, imageSlug: imageID)
-        await PromoToolSupport.notify(taskID: taskID, imageID: imageID)
-        return "Applied \(operations.count) HTML patches atomically.\nCall app_store_promo_preview_image to inspect the rendered result."
+        _ = try PromoToolSupport.store.patchHTML(
+            operations: operations,
+            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            taskSlug: taskID,
+            imageSlug: imageID
+        )
+        await PromoToolSupport.notify(scope: scope, taskID: taskID, imageID: imageID)
+        return "Applied \(operations.count) HTML patches atomically (scope=\(scope.rawValue)).\nCall app_store_promo_preview_image to inspect the rendered result."
     }
 }
 
 public struct ImportPromoAssetTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(id: "app_store_promo_import_asset", displayName: "Import promo asset", description: "Copy a local image into the plugin-managed assets directory for one promotional image.")
+    public static let info = LumiAgentToolInfo(
+        id: "app_store_promo_import_asset",
+        displayName: "Import promo asset",
+        description: "Copy a local image into the plugin-managed assets directory for one promotional image."
+    )
     public init() {}
     public var inputSchema: LumiJSONValue {
         var properties = PromoToolSupport.baseProperties(includeImage: true)
@@ -190,18 +327,33 @@ public struct ImportPromoAssetTool: LumiAgentTool {
     public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .medium }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let sourcePath = try PromoToolSupport.required("sourcePath", arguments)
-        guard AppStorePromoDocumentStore.isPathAllowed(sourcePath, allowedDirectories: kernel.allowedDirectories) else { throw AppStorePromoStoreError.pathNotAllowed(sourcePath) }
+        guard AppStorePromoDocumentStore.isPathAllowed(sourcePath, allowedDirectories: kernel.allowedDirectories) else {
+            throw AppStorePromoStoreError.pathNotAllowed(sourcePath)
+        }
+        let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let imageID = try PromoToolSupport.required("imageId", arguments)
-        let directory = try PromoToolSupport.store.assetsDirectoryURL(storagePath: await PromoToolSupport.storagePath(), taskSlug: taskID, imageSlug: imageID)
-        let asset = try AppStorePromoAssetImporter().importImage(sourceURL: URL(fileURLWithPath: sourcePath), destinationDirectory: directory, preferredFileName: arguments.string("fileName"))
-        await PromoToolSupport.notify(taskID: taskID, imageID: imageID)
-        return "Imported promotional asset. relativePath=\(asset.relativePath) size=\(asset.pixelWidth)x\(asset.pixelHeight)"
+        let directory = try PromoToolSupport.store.assetsDirectoryURL(
+            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            taskSlug: taskID,
+            imageSlug: imageID
+        )
+        let asset = try AppStorePromoAssetImporter().importImage(
+            sourceURL: URL(fileURLWithPath: sourcePath),
+            destinationDirectory: directory,
+            preferredFileName: arguments.string("fileName")
+        )
+        await PromoToolSupport.notify(scope: scope, taskID: taskID, imageID: imageID)
+        return "Imported promotional asset (scope=\(scope.rawValue)). relativePath=\(asset.relativePath) size=\(asset.pixelWidth)x\(asset.pixelHeight)"
     }
 }
 
 public struct PreviewPromoImageTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(id: "app_store_promo_preview_image", displayName: "Preview promo image", description: "Render one promotional HTML image at an exact App Store size and attach the PNG for visual inspection.")
+    public static let info = LumiAgentToolInfo(
+        id: "app_store_promo_preview_image",
+        displayName: "Preview promo image",
+        description: "Render one promotional HTML image at an exact App Store size and attach the PNG for visual inspection."
+    )
     public init() {}
     public var inputSchema: LumiJSONValue {
         var properties = PromoToolSupport.baseProperties(includeImage: true)
@@ -209,24 +361,38 @@ public struct PreviewPromoImageTool: LumiAgentTool {
         return ["type": "object", "properties": .object(properties), "required": ["taskId", "imageId"]]
     }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
-        let storagePath = try await PromoToolSupport.storagePath()
-        let image = try PromoToolSupport.store.readImage(storagePath: storagePath, taskSlug: PromoToolSupport.required("taskId", arguments), imageSlug: PromoToolSupport.required("imageId", arguments))
+        let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
+        let storagePath = try await PromoToolSupport.storagePath(for: scope)
+        let image = try PromoToolSupport.store.readImage(
+            storagePath: storagePath,
+            taskSlug: try PromoToolSupport.required("taskId", arguments),
+            imageSlug: try PromoToolSupport.required("imageId", arguments)
+        )
         let type = arguments.string("displayType") ?? AppStorePromoDisplaySpec.presets(for: image.task.deviceFamily).first?.displayType
-        guard let type, let preset = AppStorePromoDisplaySpec.preset(for: type), preset.family == image.task.deviceFamily else { throw PromoToolSupport.ToolArgumentError.invalid("displayType") }
+        guard let type, let preset = AppStorePromoDisplaySpec.preset(for: type), preset.family == image.task.deviceFamily else {
+            throw PromoToolSupport.ToolArgumentError.invalid("displayType")
+        }
         let report = try PromoToolSupport.store.lintImage(storagePath: storagePath, taskSlug: image.task.id, imageSlug: image.image.id)
         guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
         let data = try await AppStorePromoHTMLExporter.exportPNG(html: image.html, fileURL: image.htmlURL, preset: preset)
         kernel.attachImage(.init(mimeType: "image/png", base64Data: data.base64EncodedString(), fileName: "\(image.image.id)-\(type).png"))
-        return "Rendered promotional image at \(preset.width)x\(preset.height) for \(type). The PNG is attached for visual inspection."
+        return "Rendered promotional image at \(preset.width)x\(preset.height) for \(type) (scope=\(scope.rawValue)). The PNG is attached for visual inspection."
     }
 }
 
 public struct LintPromoTaskTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(id: "app_store_promo_lint_task", displayName: "Lint promo task", description: "Validate every HTML image and all local asset references in a promotional task.")
+    public static let info = LumiAgentToolInfo(
+        id: "app_store_promo_lint_task",
+        displayName: "Lint promo task",
+        description: "Validate every HTML image and all local asset references in a promotional task."
+    )
     public init() {}
-    public var inputSchema: LumiJSONValue { ["type": "object", "properties": .object(PromoToolSupport.baseProperties()), "required": ["taskId"]] }
+    public var inputSchema: LumiJSONValue {
+        ["type": "object", "properties": .object(PromoToolSupport.baseProperties()), "required": ["taskId"]]
+    }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
-        let storagePath = try await PromoToolSupport.storagePath()
+        let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
+        let storagePath = try await PromoToolSupport.storagePath(for: scope)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let task = try PromoToolSupport.store.readTask(storagePath: storagePath, taskSlug: taskID)
         guard !task.images.isEmpty else { return "Lint failed: task has no images." }
@@ -238,12 +404,16 @@ public struct LintPromoTaskTool: LumiAgentTool {
             let details = report.issues.map { "\($0.severity.rawValue):\($0.code) \($0.message)" }.joined(separator: " | ")
             lines.append("image=\(image.id) \(report.isValid ? "valid" : "invalid") \(details)")
         }
-        return (["Promo task lint: \(errors == 0 ? "PASS" : "FAIL") errors=\(errors)"] + lines).joined(separator: "\n")
+        return (["Promo task lint (scope=\(scope.rawValue)): \(errors == 0 ? "PASS" : "FAIL") errors=\(errors)"] + lines).joined(separator: "\n")
     }
 }
 
 public struct ExportPromoTaskTool: LumiAgentTool {
-    public static let info = LumiAgentToolInfo(id: "app_store_promo_export_task", displayName: "Export promo task", description: "Render every HTML image in a task to an explicitly selected external directory.")
+    public static let info = LumiAgentToolInfo(
+        id: "app_store_promo_export_task",
+        displayName: "Export promo task",
+        description: "Render every HTML image in a task to an explicitly selected external directory."
+    )
     public init() {}
     public var inputSchema: LumiJSONValue {
         var properties = PromoToolSupport.baseProperties()
@@ -252,20 +422,27 @@ public struct ExportPromoTaskTool: LumiAgentTool {
         properties["overwrite"] = ["type": "boolean", "description": "Allow replacing existing PNG files. Defaults to false."]
         return ["type": "object", "properties": .object(properties), "required": ["taskId", "outputDirectory"]]
     }
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { arguments.bool("overwrite") == true ? .high : .medium }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+        arguments.bool("overwrite") == true ? .high : .medium
+    }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
-        let storagePath = try await PromoToolSupport.storagePath()
+        let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
+        let storagePath = try await PromoToolSupport.storagePath(for: scope)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let task = try PromoToolSupport.store.readTask(storagePath: storagePath, taskSlug: taskID)
         guard !task.images.isEmpty else { throw PromoToolSupport.ToolArgumentError.invalid("task has no images") }
         let requestedTypes = arguments.stringArray("displayTypes") ?? AppStorePromoDisplaySpec.presets(for: task.deviceFamily).map(\.displayType)
         let presets = try requestedTypes.map { type -> AppStorePromoDisplayPreset in
-            guard let preset = AppStorePromoDisplaySpec.preset(for: type), preset.family == task.deviceFamily else { throw PromoToolSupport.ToolArgumentError.invalid("displayTypes") }
+            guard let preset = AppStorePromoDisplaySpec.preset(for: type), preset.family == task.deviceFamily else {
+                throw PromoToolSupport.ToolArgumentError.invalid("displayTypes")
+            }
             return preset
         }
         let outputDirectory = URL(fileURLWithPath: (try PromoToolSupport.required("outputDirectory", arguments) as NSString).expandingTildeInPath, isDirectory: true)
         let resolvedOutput = AppStorePromoDocumentStore.resolvePath(outputDirectory.path)
-        guard AppStorePromoDocumentStore.isPathAllowed(resolvedOutput, allowedDirectories: kernel.allowedDirectories) else { throw AppStorePromoStoreError.pathNotAllowed(resolvedOutput) }
+        guard AppStorePromoDocumentStore.isPathAllowed(resolvedOutput, allowedDirectories: kernel.allowedDirectories) else {
+            throw AppStorePromoStoreError.pathNotAllowed(resolvedOutput)
+        }
         let overwrite = arguments.bool("overwrite") ?? false
         let fileManager = FileManager.default
         let outputParent = outputDirectory.deletingLastPathComponent()
@@ -329,6 +506,6 @@ public struct ExportPromoTaskTool: LumiAgentTool {
             throw error
         }
 
-        return (["Exported \(stagedExports.count) App Store promotional PNG files."] + stagedExports.map(\.summary)).joined(separator: "\n")
+        return (["Exported \(stagedExports.count) App Store promotional PNG files (scope=\(scope.rawValue))."] + stagedExports.map(\.summary)).joined(separator: "\n")
     }
 }

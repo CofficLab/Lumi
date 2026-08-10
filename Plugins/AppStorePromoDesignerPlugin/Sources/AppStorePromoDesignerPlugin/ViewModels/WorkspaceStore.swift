@@ -5,8 +5,14 @@ import Foundation
 final class WorkspaceStore: ObservableObject {
     static let shared = WorkspaceStore()
 
-    @Published private(set) var tasks: [AppStorePromoTask] = []
+    /// 项目内（当前打开项目 `.lumi/app-store-promo`）任务列表。
+    @Published private(set) var projectTasks: [AppStorePromoTask] = []
+
+    /// APP 内（应用数据目录）任务列表。
+    @Published private(set) var appTasks: [AppStorePromoTask] = []
+
     @Published private(set) var selectedImage: AppStorePromoResolvedImage?
+    @Published var selectedScope: Scope = .project
     @Published var selectedTaskID: String?
     @Published var selectedImageID: String?
     @Published var selectedDisplayType = "APP_IPHONE_67"
@@ -14,78 +20,170 @@ final class WorkspaceStore: ObservableObject {
     @Published var lastExportURL: URL?
 
     let documentStore = AppStorePromoDocumentStore()
-    private(set) var persistenceDirectory: URL?
+
+    /// APP 内存储根目录。
+    private(set) var appStorageDirectory: URL?
+    /// 项目内存储根目录（基于当前项目路径；nil 表示无打开项目）。
+    private(set) var projectStorageDirectory: URL?
+    /// 当前打开项目的路径。
+    private(set) var currentProjectPath: String?
 
     private init() {}
 
-    var storagePath: String { persistenceDirectory?.path ?? "" }
+    // MARK: - Paths
 
-    func configure(persistenceDirectory: URL?) {
-        guard self.persistenceDirectory?.standardizedFileURL != persistenceDirectory?.standardizedFileURL else { return }
-        self.persistenceDirectory = persistenceDirectory
-        if let persistenceDirectory {
-            try? FileManager.default.createDirectory(at: persistenceDirectory, withIntermediateDirectories: true)
+    /// APP 内存储路径字符串。
+    var appStoragePath: String { appStorageDirectory?.path ?? "" }
+
+    /// 项目内存储路径字符串（无打开项目时为空）。
+    var projectStoragePath: String { projectStorageDirectory?.path ?? "" }
+
+    /// 指定 scope 的存储路径（用于工具路由）。
+    func storagePath(for scope: Scope) -> String {
+        switch scope {
+        case .project: projectStoragePath
+        case .app: appStoragePath
         }
-        selectedTaskID = nil
-        selectedImageID = nil
+    }
+
+    /// 指定 scope 的任务列表（用于 UI）。
+    func tasks(for scope: Scope) -> [AppStorePromoTask] {
+        switch scope {
+        case .project: projectTasks
+        case .app: appTasks
+        }
+    }
+
+    // MARK: - Configuration
+
+    func setAppStorage(appStorageDirectory: URL?) {
+        let resolved = appStorageDirectory?.standardizedFileURL
+        guard self.appStorageDirectory != resolved else { return }
+        self.appStorageDirectory = resolved
+        if let resolved {
+            try? FileManager.default.createDirectory(at: resolved, withIntermediateDirectories: true)
+        }
         reload()
     }
 
-    func reload(selectTask taskID: String? = nil, image imageID: String? = nil) {
-        guard !storagePath.isEmpty else {
-            tasks = []
-            selectedImage = nil
-            return
+    func setProjectStorage(projectPath: String?, projectStorageDirectory: URL?) {
+        let resolvedPath = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedPath = (resolvedPath?.isEmpty == false) ? resolvedPath : nil
+        guard self.currentProjectPath != normalizedPath else { return }
+        self.currentProjectPath = normalizedPath
+        self.projectStorageDirectory = projectStorageDirectory?.standardizedFileURL
+        if let projectStorageDirectory {
+            try? FileManager.default.createDirectory(at: projectStorageDirectory, withIntermediateDirectories: true)
         }
-        do {
-            tasks = try documentStore.listTasks(storagePath: storagePath)
-            let previousTaskID = selectedTaskID
-            selectedTaskID = taskID ?? selectedTaskID ?? tasks.first?.id
-            guard let selectedTaskID,
-                  let task = tasks.first(where: { $0.id == selectedTaskID }) else {
-                selectedImage = nil
+        reload()
+    }
+
+    // MARK: - Reload
+
+    /// 重新加载所有 scope 的任务列表以及当前选中图像。
+    func reload() {
+        reloadProject()
+        reloadApp()
+        refreshSelectedImage()
+    }
+
+    /// 当某个 scope 的数据发生变化时调用，按需刷新任务与选中。
+    func reload(scope: Scope, selectTask taskID: String? = nil, image imageID: String? = nil) {
+        switch scope {
+        case .project:
+            reloadProject()
+            if let taskID {
+                selectScope(.project, taskID: taskID, imageID: imageID)
                 return
             }
-            let firstImageID = task.images.sorted(by: { $0.order < $1.order }).first?.id
-            if let imageID {
-                selectedImageID = imageID
-            } else if taskID != nil, taskID != previousTaskID {
-                selectedImageID = firstImageID
-            } else if !task.images.contains(where: { $0.id == selectedImageID }) {
-                selectedImageID = firstImageID
+        case .app:
+            reloadApp()
+            if let taskID {
+                selectScope(.app, taskID: taskID, imageID: imageID)
+                return
             }
-            if let selectedImageID {
-                selectedImage = try documentStore.readImage(
-                    storagePath: storagePath,
-                    taskSlug: selectedTaskID,
-                    imageSlug: selectedImageID
-                )
-            } else {
-                selectedImage = nil
-            }
-            let allowed = AppStorePromoDisplaySpec.presets(for: task.deviceFamily)
-            if !allowed.contains(where: { $0.displayType == selectedDisplayType }) {
-                selectedDisplayType = allowed.first?.displayType ?? "APP_DESKTOP"
-            }
+        }
+        refreshSelectedImage()
+    }
+
+    private func reloadProject() {
+        do {
+            projectTasks = try documentStore.listTasks(storagePath: projectStoragePath)
             lastError = nil
         } catch {
-            selectedImage = nil
+            projectTasks = []
             lastError = error.localizedDescription
         }
     }
 
-    func select(taskID: String, imageID: String?) {
-        selectedTaskID = taskID
-        selectedImageID = imageID
-        reload(selectTask: taskID, image: imageID)
+    private func reloadApp() {
+        do {
+            appTasks = try documentStore.listTasks(storagePath: appStoragePath)
+            lastError = nil
+        } catch {
+            appTasks = []
+            lastError = error.localizedDescription
+        }
     }
 
-    func deleteTask(id: String) {
+    private func refreshSelectedImage() {
+        guard let selectedTaskID,
+              let scope = tasks(for: selectedScope).first(where: { $0.id == selectedTaskID }) else {
+            selectedImage = nil
+            return
+        }
         do {
-            try documentStore.deleteTask(storagePath: storagePath, taskSlug: id)
-            if selectedTaskID == id {
+            let image = try documentStore.readImage(
+                storagePath: storagePath(for: selectedScope),
+                taskSlug: selectedTaskID,
+                imageSlug: selectedImageID ?? scope.images.sorted(by: { $0.order < $1.order }).first?.id ?? ""
+            )
+            selectedImage = image
+            selectedImageID = image.image.id
+            self.selectedTaskID = image.task.id
+            let allowed = AppStorePromoDisplaySpec.presets(for: image.task.deviceFamily)
+            if !allowed.contains(where: { $0.displayType == selectedDisplayType }) {
+                selectedDisplayType = allowed.first?.displayType ?? "APP_DESKTOP"
+            }
+        } catch {
+            selectedImage = nil
+        }
+    }
+
+    // MARK: - Selection
+
+    func selectScope(_ scope: Scope, taskID: String, imageID: String?) {
+        selectedScope = scope
+        selectedTaskID = taskID
+        selectedImageID = imageID
+        reload()
+    }
+
+    func select(taskID: String, imageID: String?) {
+        // 查找该 taskID 所在的 scope。
+        if projectTasks.contains(where: { $0.id == taskID }) {
+            selectScope(.project, taskID: taskID, imageID: imageID)
+            return
+        }
+        if appTasks.contains(where: { $0.id == taskID }) {
+            selectScope(.app, taskID: taskID, imageID: imageID)
+            return
+        }
+        // 兜底：保持当前 scope，仅记录 ID。
+        selectedTaskID = taskID
+        selectedImageID = imageID
+        refreshSelectedImage()
+    }
+
+    // MARK: - Mutations
+
+    func deleteTask(scope: Scope, id: String) {
+        do {
+            try documentStore.deleteTask(storagePath: storagePath(for: scope), taskSlug: id)
+            if selectedScope == scope, selectedTaskID == id {
                 selectedTaskID = nil
                 selectedImageID = nil
+                selectedImage = nil
             }
             reload()
         } catch {
@@ -93,13 +191,13 @@ final class WorkspaceStore: ObservableObject {
         }
     }
 
-    func deleteImage(taskID: String, imageID: String) {
+    func deleteImage(scope: Scope, taskID: String, imageID: String) {
         do {
-            try documentStore.deleteImage(storagePath: storagePath, taskSlug: taskID, imageSlug: imageID)
-            if selectedTaskID == taskID, selectedImageID == imageID {
+            try documentStore.deleteImage(storagePath: storagePath(for: scope), taskSlug: taskID, imageSlug: imageID)
+            if selectedScope == scope, selectedTaskID == taskID, selectedImageID == imageID {
                 selectedImageID = nil
             }
-            reload(selectTask: taskID)
+            reload(scope: scope, selectTask: taskID)
         } catch {
             setError(error)
         }
