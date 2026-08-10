@@ -46,11 +46,11 @@ public enum AppStorePromoTemplateFactory {
           </style>
         </head>
         <body data-device-family="\(family.rawValue)">
-          <section class="copy">
+          <section class="copy" data-block="headline" data-block-label="标题文案">
             <div class="eyebrow">\(name)</div>
             <h1>\(headline)</h1>
           </section>
-          <section class="device" aria-label="App screenshot frame">
+          <section class="device" data-block="screenshot" data-block-label="截图框" aria-label="App screenshot frame">
             <div class="screen">Add a screenshot to assets/</div>
           </section>
         </body>

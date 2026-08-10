@@ -30,9 +30,13 @@ enum Runtime {
     /// 当前打开项目的路径（供工具访问与 UI 展示）。
     static private(set) var currentProjectPath: String?
 
+    /// 内核实例（在 `onBoot` 时注入），供视图层访问 `conversationInput` 等服务。
+    static private(set) var kernel: LumiKernel?
+
     private static var projectCancellable: AnyCancellable?
 
     static func configure(kernel: LumiKernel) {
+        Runtime.kernel = kernel
         configure(appStorageDirectory: kernel.storage?.pluginDataDirectory(for: "AppStorePromoDesigner"))
         installProjectObserver(kernel: kernel)
     }
@@ -102,6 +106,7 @@ enum Runtime {
         appStorageDirectory = nil
         projectStorageDirectory = nil
         currentProjectPath = nil
+        kernel = nil
         WorkspaceStore.shared.setAppStorage(appStorageDirectory: nil)
         WorkspaceStore.shared.setProjectStorage(projectPath: nil, projectStorageDirectory: nil)
     }

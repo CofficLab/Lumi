@@ -606,13 +606,9 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             )
 
             // 记录本次发出的请求到磁盘(SwiftData),用于设置界面回看。
-            let providerID = type(of: targetProvider).info.id
-            await AgentTurnRunnerRecordStoreBridge.shared.store?.record(
-                request: request,
-                conversationID: conversationID,
-                turnID: turnID,
-                providerID: providerID
-            )
+            // 注意:此前此处在 sendStreaming 之前同步 await save,磁盘 I/O 直接拉长 TTFT。
+            // 该记录仅为设置页回看,丢失不影响对话正确性;改为请求发出后 fire-and-forget,
+            // 让磁盘写不阻塞 LLM 调用。下面在 sendStreaming 之后用后台 Task 补记。
 
             // Call LLM
             // 流式输出:runner 调 kernel.messageStreaming (store) 写临时行,UI 读 store 渲染。
@@ -660,6 +656,19 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 errorMessage.turnID = turnID
                 kernel.messageManager?.insertMessage(errorMessage, to: conversationID)
                 postMessageSavedNotification(message: errorMessage, conversationID: conversationID)
+
+                // 失败路径同样补记本次请求(fire-and-forget,见上方成功路径说明)。
+                let providerID = type(of: targetProvider).info.id
+                let recordStore = AgentTurnRunnerRecordStoreBridge.shared.store
+                Task.detached(priority: .utility) {
+                    await recordStore?.record(
+                        request: request,
+                        conversationID: conversationID,
+                        turnID: turnID,
+                        providerID: providerID
+                    )
+                }
+
                 failedConversations.insert(conversationID)
                 return
             }
@@ -686,6 +695,22 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             kernel.messageManager?.insertMessage(assistantMessage, to: conversationID)
             postMessageSavedNotification(message: assistantMessage, conversationID: conversationID)
             await streamingStore?.endStreaming(conversationID: conversationID)
+
+            // 请求记录补记(fire-and-forget)。此前在 sendStreaming 前同步 await save,
+            // 磁盘 I/O 阻塞了首个 token。记录仅为设置页回看,丢失不影响正确性;
+            // 现改到请求发出且 LLM 调用结束后,用后台 Task 写入,不再阻塞对话流程。
+            // 在 MainActor 上先取出 store 引用(bridge.shared 本身是 @MainActor),
+            // 再交由 detached Task 在后台 actor 上落盘,避免捕获 @MainActor 隔离的 bridge。
+            let providerID = type(of: targetProvider).info.id
+            let recordStore = AgentTurnRunnerRecordStoreBridge.shared.store
+            Task.detached(priority: .utility) {
+                await recordStore?.record(
+                    request: request,
+                    conversationID: conversationID,
+                    turnID: turnID,
+                    providerID: providerID
+                )
+            }
 
             // No tool calls → turn complete
             guard let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty else {

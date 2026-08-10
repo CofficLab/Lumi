@@ -1,0 +1,52 @@
+{
+  "appName" : "BookletMaker",
+  "createdAt" : "2026-08-10T11:30:35Z",
+  "deviceFamily" : "mac",
+  "id" : "booklet-maker-promo",
+  "images" : [
+    {
+      "createdAt" : "2026-08-10T11:30:42Z",
+      "htmlFileName" : "index.html",
+      "id" : "booklet-maker-core",
+      "order" : 0,
+      "title" : "小册子制作",
+      "updatedAt" : "2026-08-10T11:51:45Z"
+    },
+    {
+      "createdAt" : "2026-08-10T11:32:40Z",
+      "htmlFileName" : "index.html",
+      "id" : "pdf-split",
+      "order" : 1,
+      "title" : "PDF 拆分",
+      "updatedAt" : "2026-08-10T11:52:46Z"
+    },
+    {
+      "createdAt" : "2026-08-10T11:33:37Z",
+      "htmlFileName" : "index.html",
+      "id" : "smart-imposition",
+      "order" : 2,
+      "title" : "智能拼版",
+      "updatedAt" : "2026-08-10T11:53:37Z"
+    },
+    {
+      "createdAt" : "2026-08-10T11:34:27Z",
+      "htmlFileName" : "index.html",
+      "id" : "live-preview",
+      "order" : 3,
+      "title" : "实时预览",
+      "updatedAt" : "2026-08-10T11:54:27Z"
+    },
+    {
+      "createdAt" : "2026-08-10T11:35:11Z",
+      "htmlFileName" : "index.html",
+      "id" : "simple-easy",
+      "order" : 4,
+      "title" : "简洁易用",
+      "updatedAt" : "2026-08-10T11:55:44Z"
+    }
+  ],
+  "localeIdentifier" : "zh-Hans",
+  "schemaVersion" : 1,
+  "title" : "BookletMaker 宣传图",
+  "updatedAt" : "2026-08-10T11:55:44Z"
+}
