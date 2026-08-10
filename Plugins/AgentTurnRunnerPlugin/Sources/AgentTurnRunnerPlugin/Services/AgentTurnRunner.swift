@@ -501,13 +501,20 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 return
             }
 
+            // 每轮迭代取一次消息快照,供后续所有只读辅助方法复用,避免它们各自重新
+            // fetch + 合并 pending + 全量排序(messages(for:) 在工具回合内会被反复调用,
+            // 长对话放大明显)。下方的 status / assistant / tool 落库发生在本快照使用
+            // 完毕之后或下一轮迭代(届时重新取),语义安全。
+            let messages = kernel.messageManager?.messages(for: conversationID) ?? []
+
             // Resume any incomplete tool-call batch before asking the LLM for a
             // new response. A single assistant message may contain multiple
             // calls, and a suspended call leaves later calls without results.
-            if let pendingAssistantMessage = incompleteToolCallMessage(in: conversationID) {
+            if let pendingAssistantMessage = incompleteToolCallMessage(messages: messages) {
                 let suspended = await executePendingToolCalls(
                     in: pendingAssistantMessage,
-                    conversationID: conversationID
+                    conversationID: conversationID,
+                    messages: messages
                 )
                 if suspended {
                     return
@@ -520,7 +527,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             }
 
             // Build request with current message history
-            let history = kernel.messageManager?.messages(for: conversationID) ?? []
+            let history = messages
             let automationLevel = kernel.conversations?.automationLevel(for: conversationID) ?? .build
             let tools = (automationLevel.allowsTools ? kernel.toolManager?.allAgentTools() ?? [] : []).filter {
                 !turnCreationExcludedToolNames[conversationID, default: []].contains($0.name)
