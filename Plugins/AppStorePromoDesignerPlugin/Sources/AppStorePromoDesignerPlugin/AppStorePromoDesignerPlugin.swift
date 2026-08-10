@@ -25,17 +25,17 @@ public final class AppStorePromoDesignerPlugin: LumiPlugin {
 
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
-            ListAppStorePromoProjectsTool(),
-            CreateAppStorePromoProjectTool(),
-            ReadAppStorePromoProjectTool(),
-            CreateAppStorePromoPageTool(),
+            ListAppStorePromoTasksTool(),
+            CreateAppStorePromoTaskTool(),
+            ReadAppStorePromoTaskTool(),
+            CreateAppStorePromoImageTool(),
             ReadAppStorePromoHTMLTool(),
             ReplaceAppStorePromoHTMLTool(),
             PatchAppStorePromoHTMLTool(),
             ImportAppStorePromoAssetTool(),
-            PreviewAppStorePromoPageTool(),
-            LintAppStorePromoProjectTool(),
-            ExportAppStorePromoProjectTool(),
+            PreviewAppStorePromoImageTool(),
+            LintAppStorePromoTaskTool(),
+            ExportAppStorePromoTaskTool(),
         ]
     }
 
@@ -45,7 +45,7 @@ public final class AppStorePromoDesignerPlugin: LumiPlugin {
             conversationID: conversationID,
             role: .system,
             content: """
-            App Store Promo Designer is active. Promotional artwork is authored as complete, deterministic HTML documents. Use app_store_promo_create_project and app_store_promo_create_page before editing. Import every local image with app_store_promo_import_asset, reference only returned relative paths, and never use remote resources, scripts, iframes, animations, or external fonts. Use responsive CSS so one page works at every display type in its device family. After each meaningful edit, call app_store_promo_preview_page and inspect its attached PNG before exporting. Preserve the full document contract when replacing HTML.
+            App Store Promo Designer manages its own task library. For every user request such as "create promotional images for my app", first call app_store_promo_create_task exactly once, then create all requested artwork as multiple images under that task with app_store_promo_create_image. Each image is a complete deterministic HTML document. Import local assets with app_store_promo_import_asset, reference only returned relative paths, and never use remote resources, scripts, iframes, animations, or external fonts. Use responsive CSS so one image works at every display type in its device family. After each meaningful edit, call app_store_promo_preview_image and inspect its attached PNG. Source HTML and assets stay in plugin-managed storage; export only when the user selects an output directory.
             """
         )
         return [guidance] + messages
@@ -54,8 +54,8 @@ public final class AppStorePromoDesignerPlugin: LumiPlugin {
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "app-store-promo.projects",
-                title: PromoLocalization.string("Promo Projects"),
+                id: "app-store-promo.tasks",
+                title: PromoLocalization.string("Promo Tasks"),
                 systemImage: "photo.stack",
                 visibility: .viewContainer(id: id)
             ) {

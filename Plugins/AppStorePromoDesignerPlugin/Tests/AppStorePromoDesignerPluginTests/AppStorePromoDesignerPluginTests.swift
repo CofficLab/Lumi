@@ -15,37 +15,36 @@ struct AppStorePromoDesignerPluginTests {
         #expect(plugin.panelRailTabItems(kernel: kernel).count == 1)
         let names = Set(plugin.agentTools(kernel: kernel).map(\.name))
         #expect(names == [
-            "app_store_promo_list_projects",
-            "app_store_promo_create_project",
-            "app_store_promo_read_project",
-            "app_store_promo_create_page",
+            "app_store_promo_list_tasks",
+            "app_store_promo_create_task",
+            "app_store_promo_read_task",
+            "app_store_promo_create_image",
             "app_store_promo_read_html",
             "app_store_promo_replace_html",
             "app_store_promo_patch_html",
             "app_store_promo_import_asset",
-            "app_store_promo_preview_page",
-            "app_store_promo_lint_project",
-            "app_store_promo_export_project",
+            "app_store_promo_preview_image",
+            "app_store_promo_lint_task",
+            "app_store_promo_export_task",
         ])
     }
 
     @Test func overwriteExportIsHighRisk() {
-        let tool = ExportAppStorePromoProjectTool()
+        let tool = ExportAppStorePromoTaskTool()
         let kernel = LumiKernel()
         #expect(tool.riskLevel(arguments: ["overwrite": .bool(false)], kernel: kernel) == .medium)
         #expect(tool.riskLevel(arguments: ["overwrite": .bool(true)], kernel: kernel) == .high)
     }
 
-    @Test func agentToolsCreateReadPatchAndLintHTMLProject() async throws {
+    @Test func agentToolsCreateTaskWithMultipleImagesAndPersistInPluginStorage() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let kernel = LumiKernel()
-        let projectPath = LumiJSONValue.string(root.path)
+        AppStorePromoRuntime.configure(persistenceDirectory: root)
 
-        let createProject = try await CreateAppStorePromoProjectTool().execute(
+        let createTask = try await CreateAppStorePromoTaskTool().execute(
             arguments: [
-                "projectPath": projectPath,
                 "slug": .string("launch-set"),
                 "title": .string("Launch Set"),
                 "appName": .string("Lumi"),
@@ -54,24 +53,31 @@ struct AppStorePromoDesignerPluginTests {
             ],
             kernel: kernel
         )
-        #expect(createProject.contains("Created App Store promotional project"))
+        #expect(createTask.contains("Created App Store promotional artwork task"))
 
-        let createPage = try await CreateAppStorePromoPageTool().execute(
+        let createImage = try await CreateAppStorePromoImageTool().execute(
             arguments: [
-                "projectPath": projectPath,
-                "projectId": .string("launch-set"),
-                "pageId": .string("agent-workflows"),
+                "taskId": .string("launch-set"),
+                "imageId": .string("agent-workflows"),
                 "title": .string("Agent Workflows"),
             ],
             kernel: kernel
         )
-        #expect(createPage.contains("htmlPath="))
+        #expect(createImage.contains("Created promotional HTML image"))
+
+        _ = try await CreateAppStorePromoImageTool().execute(
+            arguments: [
+                "taskId": .string("launch-set"),
+                "imageId": .string("private-data"),
+                "title": .string("Private Data"),
+            ],
+            kernel: kernel
+        )
 
         let patched = try await PatchAppStorePromoHTMLTool().execute(
             arguments: [
-                "projectPath": projectPath,
-                "projectId": .string("launch-set"),
-                "pageId": .string("agent-workflows"),
+                "taskId": .string("launch-set"),
+                "imageId": .string("agent-workflows"),
                 "operations": .array([
                     .object([
                         "oldText": .string("<h1>Agent Workflows</h1>"),
@@ -85,18 +91,19 @@ struct AppStorePromoDesignerPluginTests {
 
         let read = try await ReadAppStorePromoHTMLTool().execute(
             arguments: [
-                "projectPath": projectPath,
-                "projectId": .string("launch-set"),
-                "pageId": .string("agent-workflows"),
+                "taskId": .string("launch-set"),
+                "imageId": .string("agent-workflows"),
             ],
             kernel: kernel
         )
         #expect(read.contains("<h1>Build visually</h1>"))
 
-        let lint = try await LintAppStorePromoProjectTool().execute(
-            arguments: ["projectPath": projectPath, "projectId": .string("launch-set")],
+        let lint = try await LintAppStorePromoTaskTool().execute(
+            arguments: ["taskId": .string("launch-set")],
             kernel: kernel
         )
         #expect(lint.contains("PASS"))
+        #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("tasks/launch-set/images/agent-workflows/index.html").path))
+        #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("tasks/launch-set/images/private-data/index.html").path))
     }
 }

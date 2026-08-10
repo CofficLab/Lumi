@@ -1,16 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@"
-          }
-        }
-      }
-    },
     "%@ · %lld×%lld" : {
       "localizations" : {
         "en" : {
@@ -21,8 +11,28 @@
         }
       }
     },
+    "%@ / %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ / %2$@"
+          }
+        }
+      }
+    },
     "%lld" : {
 
+    },
+    "%lld %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@ · %3$@"
+          }
+        }
+      }
     },
     "Agent-generated HTML promotional artwork with exact App Store export sizes." : {
       "localizations" : {
@@ -44,12 +54,32 @@
         }
       }
     },
-    "Ask the Agent to create promotional HTML in the current project." : {
+    "Ask the Agent to create a promotional artwork task." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请让 Agent 在当前项目中创建宣传图 HTML。"
+            "value" : "请让 Agent 创建一个宣传图任务。"
+          }
+        }
+      }
+    },
+    "Delete Image" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除图片"
+          }
+        }
+      }
+    },
+    "Delete Task" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除任务"
           }
         }
       }
@@ -57,12 +87,32 @@
     "Display" : {
 
     },
-    "Export PNG" : {
+    "Export" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "导出 PNG"
+            "value" : "导出"
+          }
+        }
+      }
+    },
+    "Export Failed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出失败"
+          }
+        }
+      }
+    },
+    "Export Task" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出任务"
           }
         }
       }
@@ -78,12 +128,38 @@
         }
       }
     },
-    "No project open" : {
+    "images" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未打开项目"
+            "value" : "张图片"
+          }
+        }
+      }
+    },
+    "Mode" : {
+
+    },
+    "No images yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有图片"
+          }
+        }
+      }
+    },
+    "OK" : {
+
+    },
+    "Plugin storage is unavailable." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插件存储不可用。"
           }
         }
       }
@@ -99,12 +175,12 @@
         }
       }
     },
-    "Promo Projects" : {
+    "Promo Tasks" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "宣传图项目"
+            "value" : "宣传图任务"
           }
         }
       }

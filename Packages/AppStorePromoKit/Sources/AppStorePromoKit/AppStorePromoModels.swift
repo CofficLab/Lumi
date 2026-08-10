@@ -53,7 +53,7 @@ public enum AppStorePromoDisplaySpec {
     }
 }
 
-public struct AppStorePromoPage: Codable, Equatable, Identifiable, Sendable {
+public struct AppStorePromoImage: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var title: String
     public var order: Int
@@ -78,7 +78,7 @@ public struct AppStorePromoPage: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
-public struct AppStorePromoProject: Codable, Equatable, Identifiable, Sendable {
+public struct AppStorePromoTask: Codable, Equatable, Identifiable, Sendable {
     public static let currentSchemaVersion = 1
 
     public var schemaVersion: Int
@@ -87,18 +87,18 @@ public struct AppStorePromoProject: Codable, Equatable, Identifiable, Sendable {
     public var appName: String
     public var deviceFamily: AppStorePromoDeviceFamily
     public var localeIdentifier: String
-    public var pages: [AppStorePromoPage]
+    public var images: [AppStorePromoImage]
     public var createdAt: Date
     public var updatedAt: Date
 
     public init(
-        schemaVersion: Int = AppStorePromoProject.currentSchemaVersion,
+        schemaVersion: Int = AppStorePromoTask.currentSchemaVersion,
         id: String,
         title: String,
         appName: String,
         deviceFamily: AppStorePromoDeviceFamily,
         localeIdentifier: String = "en-US",
-        pages: [AppStorePromoPage] = [],
+        images: [AppStorePromoImage] = [],
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -108,24 +108,24 @@ public struct AppStorePromoProject: Codable, Equatable, Identifiable, Sendable {
         self.appName = appName
         self.deviceFamily = deviceFamily
         self.localeIdentifier = localeIdentifier
-        self.pages = pages
+        self.images = images
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
 }
 
-public struct AppStorePromoResolvedPage: Equatable, Sendable {
-    public let project: AppStorePromoProject
-    public let page: AppStorePromoPage
+public struct AppStorePromoResolvedImage: Equatable, Sendable {
+    public let task: AppStorePromoTask
+    public let image: AppStorePromoImage
     public let directoryURL: URL
     public let html: String
 
-    public var htmlURL: URL { directoryURL.appendingPathComponent(page.htmlFileName) }
+    public var htmlURL: URL { directoryURL.appendingPathComponent(image.htmlFileName) }
     public var assetsDirectoryURL: URL { directoryURL.appendingPathComponent("assets", isDirectory: true) }
 
-    public init(project: AppStorePromoProject, page: AppStorePromoPage, directoryURL: URL, html: String) {
-        self.project = project
-        self.page = page
+    public init(task: AppStorePromoTask, image: AppStorePromoImage, directoryURL: URL, html: String) {
+        self.task = task
+        self.image = image
         self.directoryURL = directoryURL
         self.html = html
     }

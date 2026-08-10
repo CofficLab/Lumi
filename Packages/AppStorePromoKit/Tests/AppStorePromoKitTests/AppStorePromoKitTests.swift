@@ -22,56 +22,75 @@ struct AppStorePromoKitTests {
         #expect(report.errors.map(\.code).contains("remote_resource"))
     }
 
-    @Test func storeCreatesPersistsAndAtomicallyPatchesPage() throws {
+    @Test func storeCreatesPersistsAndAtomicallyPatchesTaskImage() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        let store = AppStorePromoDocumentStore(relativeRoot: ".lumi/test-promo")
-        _ = try store.createProject(
-            projectPath: root.path,
+        let store = AppStorePromoDocumentStore()
+        _ = try store.createTask(
+            storagePath: root.path,
             slug: "launch-art",
             title: "Launch",
             appName: "Lumi",
             deviceFamily: .iphone,
             localeIdentifier: "en-US"
         )
-        let page = try store.createPage(
-            projectPath: root.path,
-            projectSlug: "launch-art",
-            pageSlug: "fast-chat",
+        let image = try store.createImage(
+            storagePath: root.path,
+            taskSlug: "launch-art",
+            imageSlug: "fast-chat",
             title: "Fast Chat"
         )
-        #expect(page.html.contains("Fast Chat"))
+        #expect(image.html.contains("Fast Chat"))
 
         let patched = try store.patchHTML(
             operations: [.init(oldText: "<h1>Fast Chat</h1>", newText: "<h1>Ship Faster</h1>")],
-            projectPath: root.path,
-            projectSlug: "launch-art",
-            pageSlug: "fast-chat"
+            storagePath: root.path,
+            taskSlug: "launch-art",
+            imageSlug: "fast-chat"
         )
         #expect(patched.html.contains("Ship Faster"))
-        #expect(try store.readProject(projectPath: root.path, projectSlug: "launch-art").pages.count == 1)
+        #expect(try store.readTask(storagePath: root.path, taskSlug: "launch-art").images.count == 1)
+        #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("tasks/launch-art/images/fast-chat/index.html").path))
     }
 
     @Test func patchBatchRollsBackWhenAnyMatchIsMissing() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        let store = AppStorePromoDocumentStore(relativeRoot: ".lumi/test-promo")
-        _ = try store.createProject(projectPath: root.path, slug: "promo", title: "Promo", appName: "Lumi", deviceFamily: .mac, localeIdentifier: "en-US")
-        let page = try store.createPage(projectPath: root.path, projectSlug: "promo", pageSlug: "one", title: "Original")
+        let store = AppStorePromoDocumentStore()
+        _ = try store.createTask(storagePath: root.path, slug: "promo", title: "Promo", appName: "Lumi", deviceFamily: .mac, localeIdentifier: "en-US")
+        let image = try store.createImage(storagePath: root.path, taskSlug: "promo", imageSlug: "one", title: "Original")
         #expect(throws: AppStorePromoStoreError.self) {
             try store.patchHTML(
                 operations: [
                     .init(oldText: "Original", newText: "Changed"),
                     .init(oldText: "Never present", newText: "No"),
                 ],
-                projectPath: root.path,
-                projectSlug: "promo",
-                pageSlug: "one"
+                storagePath: root.path,
+                taskSlug: "promo",
+                imageSlug: "one"
             )
         }
-        #expect(try store.readPage(projectPath: root.path, projectSlug: "promo", pageSlug: "one").html == page.html)
+        #expect(try store.readImage(storagePath: root.path, taskSlug: "promo", imageSlug: "one").html == image.html)
+    }
+
+    @Test func storeDeletesManagedImagesAndTasks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppStorePromoDocumentStore()
+        _ = try store.createTask(storagePath: root.path, slug: "campaign", title: "Campaign", appName: "Lumi", deviceFamily: .mac, localeIdentifier: "en-US")
+        _ = try store.createImage(storagePath: root.path, taskSlug: "campaign", imageSlug: "one", title: "One")
+        _ = try store.createImage(storagePath: root.path, taskSlug: "campaign", imageSlug: "two", title: "Two")
+
+        try store.deleteImage(storagePath: root.path, taskSlug: "campaign", imageSlug: "one")
+        let task = try store.readTask(storagePath: root.path, taskSlug: "campaign")
+        #expect(task.images.map(\.id) == ["two"])
+        #expect(task.images.first?.order == 0)
+
+        try store.deleteTask(storagePath: root.path, taskSlug: "campaign")
+        #expect(try store.listTasks(storagePath: root.path).isEmpty)
     }
 
     @Test func pathAccessUsesDirectoryBoundaries() {

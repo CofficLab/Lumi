@@ -3,19 +3,14 @@ import LumiKernel
 
 @MainActor
 enum AppStorePromoRuntime {
-    static var currentProjectPathProvider: (@MainActor @Sendable () -> String)?
-    static var allowedDirectoriesProvider: (@MainActor @Sendable () -> [String])?
-
-    static var currentProjectPath: String {
-        currentProjectPathProvider?() ?? ""
-    }
-
-    static var allowedDirectories: [String] {
-        allowedDirectoriesProvider?() ?? []
-    }
+    static private(set) var storageDirectory: URL?
 
     static func configure(kernel: LumiKernel) {
-        currentProjectPathProvider = { [weak kernel] in kernel?.currentProjectPath ?? "" }
-        allowedDirectoriesProvider = { [weak kernel] in kernel?.allowedDirectories ?? [] }
+        configure(persistenceDirectory: kernel.storage?.pluginDataDirectory(for: "AppStorePromoDesigner"))
+    }
+
+    static func configure(persistenceDirectory: URL?) {
+        storageDirectory = persistenceDirectory?.standardizedFileURL
+        AppStorePromoWorkspaceStore.shared.configure(persistenceDirectory: storageDirectory)
     }
 }

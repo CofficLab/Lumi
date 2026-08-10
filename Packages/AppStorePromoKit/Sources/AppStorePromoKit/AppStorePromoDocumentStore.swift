@@ -1,11 +1,11 @@
 import Foundation
 
 public enum AppStorePromoStoreError: LocalizedError, Equatable {
-    case invalidProjectPath
+    case invalidStoragePath
     case invalidSlug(String)
     case alreadyExists(String)
     case notFound(String)
-    case pageNotFound(String)
+    case imageNotFound(String)
     case invalidHTML([AppStorePromoLintIssue])
     case patchTextMissing(String)
     case patchTextNotUnique(String)
@@ -13,11 +13,11 @@ public enum AppStorePromoStoreError: LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .invalidProjectPath: "Project path is missing or invalid."
+        case .invalidStoragePath: "Plugin storage path is missing or invalid."
         case .invalidSlug(let slug): "Invalid slug: \(slug)"
         case .alreadyExists(let path): "Item already exists at \(path)"
-        case .notFound(let path): "Project not found at \(path)"
-        case .pageNotFound(let page): "Page not found: \(page)"
+        case .notFound(let path): "Promotional task not found at \(path)"
+        case .imageNotFound(let image): "Promotional image not found: \(image)"
         case .invalidHTML(let issues): "HTML validation failed: \(issues.map(\.message).joined(separator: " "))"
         case .patchTextMissing(let value): "Patch text was not found: \(value.prefix(80))"
         case .patchTextNotUnique(let value): "Patch text must occur exactly once: \(value.prefix(80))"
@@ -38,9 +38,9 @@ public struct AppStorePromoPatchOperation: Codable, Equatable, Sendable {
 
 public struct AppStorePromoDocumentStore: @unchecked Sendable {
     public static let manifestFileName = "manifest.json"
-    public static let pagesDirectoryName = "pages"
+    public static let imagesDirectoryName = "images"
     public static let assetsDirectoryName = "assets"
-    public static let defaultRelativeRoot = ".lumi/app-store-promo"
+    public static let defaultRelativeRoot = "tasks"
 
     public let relativeRoot: String
     private let fileManager: FileManager
@@ -65,20 +65,20 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
         self.decoder = decoder
     }
 
-    public func rootURL(projectPath: String) throws -> URL {
-        let resolved = Self.resolveProjectPath(projectPath)
-        guard !resolved.isEmpty else { throw AppStorePromoStoreError.invalidProjectPath }
+    public func rootURL(storagePath: String) throws -> URL {
+        let resolved = Self.resolvePath(storagePath)
+        guard !resolved.isEmpty else { throw AppStorePromoStoreError.invalidStoragePath }
         return URL(fileURLWithPath: resolved, isDirectory: true)
             .appendingPathComponent(relativeRoot, isDirectory: true)
     }
 
-    public func projectDirectoryURL(projectPath: String, projectSlug: String) throws -> URL {
-        let slug = try Self.validatedSlug(projectSlug)
-        return try rootURL(projectPath: projectPath).appendingPathComponent(slug, isDirectory: true)
+    public func taskDirectoryURL(storagePath: String, taskSlug: String) throws -> URL {
+        let slug = try Self.validatedSlug(taskSlug)
+        return try rootURL(storagePath: storagePath).appendingPathComponent(slug, isDirectory: true)
     }
 
-    public func listProjects(projectPath: String) throws -> [AppStorePromoProject] {
-        let root = try rootURL(projectPath: projectPath)
+    public func listTasks(storagePath: String) throws -> [AppStorePromoTask] {
+        let root = try rootURL(storagePath: storagePath)
         guard fileManager.fileExists(atPath: root.path) else { return [] }
         return try fileManager.contentsOfDirectory(
             at: root,
@@ -90,107 +90,107 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
     }
 
     @discardableResult
-    public func createProject(
-        projectPath: String,
+    public func createTask(
+        storagePath: String,
         slug: String,
         title: String,
         appName: String,
         deviceFamily: AppStorePromoDeviceFamily,
         localeIdentifier: String
-    ) throws -> AppStorePromoProject {
+    ) throws -> AppStorePromoTask {
         let normalized = try Self.validatedSlug(slug)
-        let directory = try projectDirectoryURL(projectPath: projectPath, projectSlug: normalized)
+        let directory = try taskDirectoryURL(storagePath: storagePath, taskSlug: normalized)
         guard !fileManager.fileExists(atPath: directory.path) else {
             throw AppStorePromoStoreError.alreadyExists(directory.path)
         }
         try fileManager.createDirectory(
-            at: directory.appendingPathComponent(Self.pagesDirectoryName, isDirectory: true),
+            at: directory.appendingPathComponent(Self.imagesDirectoryName, isDirectory: true),
             withIntermediateDirectories: true
         )
-        let project = AppStorePromoProject(
+        let task = AppStorePromoTask(
             id: normalized,
             title: title.isEmpty ? normalized : title,
             appName: appName,
             deviceFamily: deviceFamily,
             localeIdentifier: localeIdentifier.isEmpty ? "en-US" : localeIdentifier
         )
-        try writeManifest(project, to: directory)
-        return project
+        try writeManifest(task, to: directory)
+        return task
     }
 
-    public func readProject(projectPath: String, projectSlug: String) throws -> AppStorePromoProject {
-        let directory = try projectDirectoryURL(projectPath: projectPath, projectSlug: projectSlug)
+    public func readTask(storagePath: String, taskSlug: String) throws -> AppStorePromoTask {
+        let directory = try taskDirectoryURL(storagePath: storagePath, taskSlug: taskSlug)
         let url = directory.appendingPathComponent(Self.manifestFileName)
         guard fileManager.fileExists(atPath: url.path) else { throw AppStorePromoStoreError.notFound(directory.path) }
         return try readManifest(at: url)
     }
 
     @discardableResult
-    public func createPage(
-        projectPath: String,
-        projectSlug: String,
-        pageSlug: String,
+    public func createImage(
+        storagePath: String,
+        taskSlug: String,
+        imageSlug: String,
         title: String,
         html: String? = nil
-    ) throws -> AppStorePromoResolvedPage {
-        let normalizedPageSlug = try Self.validatedSlug(pageSlug)
-        let projectDirectory = try projectDirectoryURL(projectPath: projectPath, projectSlug: projectSlug)
-        var project = try readProject(projectPath: projectPath, projectSlug: projectSlug)
-        let pageDirectory = projectDirectory
-            .appendingPathComponent(Self.pagesDirectoryName, isDirectory: true)
-            .appendingPathComponent(normalizedPageSlug, isDirectory: true)
-        guard !fileManager.fileExists(atPath: pageDirectory.path),
-              !project.pages.contains(where: { $0.id == normalizedPageSlug }) else {
-            throw AppStorePromoStoreError.alreadyExists(pageDirectory.path)
+    ) throws -> AppStorePromoResolvedImage {
+        let normalizedImageSlug = try Self.validatedSlug(imageSlug)
+        let taskDirectory = try taskDirectoryURL(storagePath: storagePath, taskSlug: taskSlug)
+        var task = try readTask(storagePath: storagePath, taskSlug: taskSlug)
+        let imageDirectory = taskDirectory
+            .appendingPathComponent(Self.imagesDirectoryName, isDirectory: true)
+            .appendingPathComponent(normalizedImageSlug, isDirectory: true)
+        guard !fileManager.fileExists(atPath: imageDirectory.path),
+              !task.images.contains(where: { $0.id == normalizedImageSlug }) else {
+            throw AppStorePromoStoreError.alreadyExists(imageDirectory.path)
         }
         try fileManager.createDirectory(
-            at: pageDirectory.appendingPathComponent(Self.assetsDirectoryName, isDirectory: true),
+            at: imageDirectory.appendingPathComponent(Self.assetsDirectoryName, isDirectory: true),
             withIntermediateDirectories: true
         )
         let now = Date()
-        let page = AppStorePromoPage(
-            id: normalizedPageSlug,
-            title: title.isEmpty ? normalizedPageSlug : title,
-            order: project.pages.count,
+        let image = AppStorePromoImage(
+            id: normalizedImageSlug,
+            title: title.isEmpty ? normalizedImageSlug : title,
+            order: task.images.count,
             createdAt: now,
             updatedAt: now
         )
         let resolvedHTML = html ?? AppStorePromoTemplateFactory.html(
-            title: page.title,
-            appName: project.appName,
-            family: project.deviceFamily
+            title: image.title,
+            appName: task.appName,
+            family: task.deviceFamily
         )
-        let report = linter.lint(html: resolvedHTML, documentDirectory: pageDirectory)
+        let report = linter.lint(html: resolvedHTML, documentDirectory: imageDirectory)
         guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
         try resolvedHTML.write(
-            to: pageDirectory.appendingPathComponent(page.htmlFileName),
+            to: imageDirectory.appendingPathComponent(image.htmlFileName),
             atomically: true,
             encoding: .utf8
         )
-        project.pages.append(page)
-        project.updatedAt = now
-        try writeManifest(project, to: projectDirectory)
-        return AppStorePromoResolvedPage(project: project, page: page, directoryURL: pageDirectory, html: resolvedHTML)
+        task.images.append(image)
+        task.updatedAt = now
+        try writeManifest(task, to: taskDirectory)
+        return AppStorePromoResolvedImage(task: task, image: image, directoryURL: imageDirectory, html: resolvedHTML)
     }
 
-    public func readPage(
-        projectPath: String,
-        projectSlug: String,
-        pageSlug: String
-    ) throws -> AppStorePromoResolvedPage {
-        let projectDirectory = try projectDirectoryURL(projectPath: projectPath, projectSlug: projectSlug)
-        let project = try readProject(projectPath: projectPath, projectSlug: projectSlug)
-        guard let page = project.pages.first(where: { $0.id == pageSlug }) else {
-            throw AppStorePromoStoreError.pageNotFound(pageSlug)
+    public func readImage(
+        storagePath: String,
+        taskSlug: String,
+        imageSlug: String
+    ) throws -> AppStorePromoResolvedImage {
+        let taskDirectory = try taskDirectoryURL(storagePath: storagePath, taskSlug: taskSlug)
+        let task = try readTask(storagePath: storagePath, taskSlug: taskSlug)
+        guard let image = task.images.first(where: { $0.id == imageSlug }) else {
+            throw AppStorePromoStoreError.imageNotFound(imageSlug)
         }
-        let directory = projectDirectory
-            .appendingPathComponent(Self.pagesDirectoryName, isDirectory: true)
-            .appendingPathComponent(page.id, isDirectory: true)
-        let htmlURL = directory.appendingPathComponent(page.htmlFileName)
-        guard fileManager.fileExists(atPath: htmlURL.path) else { throw AppStorePromoStoreError.pageNotFound(pageSlug) }
-        return AppStorePromoResolvedPage(
-            project: project,
-            page: page,
+        let directory = taskDirectory
+            .appendingPathComponent(Self.imagesDirectoryName, isDirectory: true)
+            .appendingPathComponent(image.id, isDirectory: true)
+        let htmlURL = directory.appendingPathComponent(image.htmlFileName)
+        guard fileManager.fileExists(atPath: htmlURL.path) else { throw AppStorePromoStoreError.imageNotFound(imageSlug) }
+        return AppStorePromoResolvedImage(
+            task: task,
+            image: image,
             directoryURL: directory,
             html: try String(contentsOf: htmlURL, encoding: .utf8)
         )
@@ -199,26 +199,26 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
     @discardableResult
     public func replaceHTML(
         _ html: String,
-        projectPath: String,
-        projectSlug: String,
-        pageSlug: String
-    ) throws -> AppStorePromoResolvedPage {
-        var resolved = try readPage(projectPath: projectPath, projectSlug: projectSlug, pageSlug: pageSlug)
+        storagePath: String,
+        taskSlug: String,
+        imageSlug: String
+    ) throws -> AppStorePromoResolvedImage {
+        var resolved = try readImage(storagePath: storagePath, taskSlug: taskSlug, imageSlug: imageSlug)
         let report = linter.lint(html: html, documentDirectory: resolved.directoryURL)
         guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
         try html.write(to: resolved.htmlURL, atomically: true, encoding: .utf8)
 
-        var project = resolved.project
-        guard let index = project.pages.firstIndex(where: { $0.id == pageSlug }) else {
-            throw AppStorePromoStoreError.pageNotFound(pageSlug)
+        var task = resolved.task
+        guard let index = task.images.firstIndex(where: { $0.id == imageSlug }) else {
+            throw AppStorePromoStoreError.imageNotFound(imageSlug)
         }
         let now = Date()
-        project.pages[index].updatedAt = now
-        project.updatedAt = now
-        try writeManifest(project, to: try projectDirectoryURL(projectPath: projectPath, projectSlug: projectSlug))
-        resolved = AppStorePromoResolvedPage(
-            project: project,
-            page: project.pages[index],
+        task.images[index].updatedAt = now
+        task.updatedAt = now
+        try writeManifest(task, to: try taskDirectoryURL(storagePath: storagePath, taskSlug: taskSlug))
+        resolved = AppStorePromoResolvedImage(
+            task: task,
+            image: task.images[index],
             directoryURL: resolved.directoryURL,
             html: html
         )
@@ -228,11 +228,11 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
     @discardableResult
     public func patchHTML(
         operations: [AppStorePromoPatchOperation],
-        projectPath: String,
-        projectSlug: String,
-        pageSlug: String
-    ) throws -> AppStorePromoResolvedPage {
-        let current = try readPage(projectPath: projectPath, projectSlug: projectSlug, pageSlug: pageSlug)
+        storagePath: String,
+        taskSlug: String,
+        imageSlug: String
+    ) throws -> AppStorePromoResolvedImage {
+        let current = try readImage(storagePath: storagePath, taskSlug: taskSlug, imageSlug: imageSlug)
         var candidate = current.html
         for operation in operations {
             let count = candidate.components(separatedBy: operation.oldText).count - 1
@@ -242,35 +242,63 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
         }
         return try replaceHTML(
             candidate,
-            projectPath: projectPath,
-            projectSlug: projectSlug,
-            pageSlug: pageSlug
+            storagePath: storagePath,
+            taskSlug: taskSlug,
+            imageSlug: imageSlug
         )
     }
 
-    public func lintPage(projectPath: String, projectSlug: String, pageSlug: String) throws -> AppStorePromoLintReport {
-        let page = try readPage(projectPath: projectPath, projectSlug: projectSlug, pageSlug: pageSlug)
-        return linter.lint(html: page.html, documentDirectory: page.directoryURL)
+    public func lintImage(storagePath: String, taskSlug: String, imageSlug: String) throws -> AppStorePromoLintReport {
+        let image = try readImage(storagePath: storagePath, taskSlug: taskSlug, imageSlug: imageSlug)
+        return linter.lint(html: image.html, documentDirectory: image.directoryURL)
     }
 
-    public func assetsDirectoryURL(projectPath: String, projectSlug: String, pageSlug: String) throws -> URL {
-        let page = try readPage(projectPath: projectPath, projectSlug: projectSlug, pageSlug: pageSlug)
-        let url = page.assetsDirectoryURL
+    public func assetsDirectoryURL(storagePath: String, taskSlug: String, imageSlug: String) throws -> URL {
+        let image = try readImage(storagePath: storagePath, taskSlug: taskSlug, imageSlug: imageSlug)
+        let url = image.assetsDirectoryURL
         try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
 
-    public static func resolveProjectPath(_ projectPath: String) -> String {
-        let expanded = (projectPath as NSString).expandingTildeInPath
+    public func deleteTask(storagePath: String, taskSlug: String) throws {
+        let directory = try taskDirectoryURL(storagePath: storagePath, taskSlug: taskSlug)
+        guard fileManager.fileExists(atPath: directory.path) else {
+            throw AppStorePromoStoreError.notFound(directory.path)
+        }
+        try fileManager.removeItem(at: directory)
+    }
+
+    public func deleteImage(storagePath: String, taskSlug: String, imageSlug: String) throws {
+        let taskDirectory = try taskDirectoryURL(storagePath: storagePath, taskSlug: taskSlug)
+        var task = try readTask(storagePath: storagePath, taskSlug: taskSlug)
+        guard let index = task.images.firstIndex(where: { $0.id == imageSlug }) else {
+            throw AppStorePromoStoreError.imageNotFound(imageSlug)
+        }
+        let imageDirectory = taskDirectory
+            .appendingPathComponent(Self.imagesDirectoryName, isDirectory: true)
+            .appendingPathComponent(task.images[index].id, isDirectory: true)
+        if fileManager.fileExists(atPath: imageDirectory.path) {
+            try fileManager.removeItem(at: imageDirectory)
+        }
+        task.images.remove(at: index)
+        for imageIndex in task.images.indices {
+            task.images[imageIndex].order = imageIndex
+        }
+        task.updatedAt = Date()
+        try writeManifest(task, to: taskDirectory)
+    }
+
+    public static func resolvePath(_ path: String) -> String {
+        let expanded = (path as NSString).expandingTildeInPath
         let resolved = URL(fileURLWithPath: expanded).resolvingSymlinksInPath().standardizedFileURL.path
         return resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved
     }
 
     public static func isPathAllowed(_ path: String, allowedDirectories: [String]) -> Bool {
         guard !allowedDirectories.isEmpty else { return true }
-        let resolved = resolveProjectPath(path)
+        let resolved = resolvePath(path)
         return allowedDirectories.contains { allowed in
-            let normalized = resolveProjectPath(allowed)
+            let normalized = resolvePath(allowed)
             return resolved == normalized || resolved.hasPrefix(normalized + "/")
         }
     }
@@ -284,13 +312,13 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
         return slug
     }
 
-    private func readManifest(at url: URL) throws -> AppStorePromoProject {
-        try decoder.decode(AppStorePromoProject.self, from: Data(contentsOf: url))
+    private func readManifest(at url: URL) throws -> AppStorePromoTask {
+        try decoder.decode(AppStorePromoTask.self, from: Data(contentsOf: url))
     }
 
-    private func writeManifest(_ project: AppStorePromoProject, to directory: URL) throws {
+    private func writeManifest(_ task: AppStorePromoTask, to directory: URL) throws {
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-        try encoder.encode(project).write(
+        try encoder.encode(task).write(
             to: directory.appendingPathComponent(Self.manifestFileName),
             options: .atomic
         )

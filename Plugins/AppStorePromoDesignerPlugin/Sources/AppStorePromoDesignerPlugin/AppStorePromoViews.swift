@@ -6,14 +6,16 @@ import SwiftUI
 
 public struct AppStorePromoRailView: View {
     @ObservedObject private var workspace = AppStorePromoWorkspaceStore.shared
+    @State private var expandedTaskIDs: Set<String> = []
 
     public init() {}
 
     public var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(PromoLocalization.string("Promo Projects")).font(.headline)
+                Text(PromoLocalization.string("Promo Tasks")).font(.headline)
                 Spacer()
+                Text("\(workspace.tasks.count)").font(.caption).foregroundStyle(.secondary)
                 Button { workspace.reload() } label: { Image(systemName: "arrow.clockwise") }
                     .buttonStyle(.plain)
                     .help(PromoLocalization.string("Refresh"))
@@ -21,15 +23,15 @@ public struct AppStorePromoRailView: View {
             .padding(12)
             Divider()
 
-            if workspace.currentProjectPath.isEmpty {
-                railEmpty(PromoLocalization.string("No project open"))
-            } else if workspace.projects.isEmpty {
-                railEmpty(PromoLocalization.string("Ask the Agent to create promotional HTML in the current project."))
+            if workspace.persistenceDirectory == nil {
+                railEmpty(PromoLocalization.string("Plugin storage is unavailable."))
+            } else if workspace.tasks.isEmpty {
+                railEmpty(PromoLocalization.string("Ask the Agent to create a promotional artwork task."))
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 8) {
-                        ForEach(workspace.projects) { project in
-                            projectSection(project)
+                    LazyVStack(alignment: .leading, spacing: 6) {
+                        ForEach(workspace.tasks) { task in
+                            taskTree(task)
                         }
                     }
                     .padding(10)
@@ -37,50 +39,100 @@ public struct AppStorePromoRailView: View {
             }
         }
         .background(Color(nsColor: .controlBackgroundColor))
-        .onAppear { workspace.reload() }
+        .onAppear {
+            workspace.reload()
+            if let selectedTaskID = workspace.selectedTaskID {
+                expandedTaskIDs.insert(selectedTaskID)
+            }
+        }
+        .onChange(of: workspace.selectedTaskID) { _, taskID in
+            if let taskID { expandedTaskIDs.insert(taskID) }
+        }
     }
 
-    private func projectSection(_ project: AppStorePromoProject) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Button { workspace.select(projectID: project.id, pageID: project.pages.sorted(by: { $0.order < $1.order }).first?.id) } label: {
-                HStack {
-                    Image(systemName: "photo.stack")
+    private func taskTree(_ task: AppStorePromoTask) -> some View {
+        DisclosureGroup(isExpanded: expansionBinding(for: task.id)) {
+            if task.images.isEmpty {
+                Text(PromoLocalization.string("No images yet"))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 30)
+                    .padding(.vertical, 5)
+            } else {
+                ForEach(task.images.sorted(by: { $0.order < $1.order })) { image in
+                    imageRow(image, task: task)
+                }
+            }
+        } label: {
+            Button {
+                workspace.select(taskID: task.id, imageID: task.images.sorted(by: { $0.order < $1.order }).first?.id)
+                expandedTaskIDs.insert(task.id)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "rectangle.stack")
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(project.title).font(.subheadline.weight(.semibold)).lineLimit(1)
-                        Text("\(project.deviceFamily.rawValue) · \(project.localeIdentifier)")
+                        Text(task.title).font(.subheadline.weight(.semibold)).lineLimit(1)
+                        Text("\(task.images.count) \(PromoLocalization.string("images")) · \(task.deviceFamily.rawValue)")
                             .font(.caption2).foregroundStyle(.secondary)
                     }
-                    Spacer()
+                    Spacer(minLength: 0)
                 }
-                .padding(7)
+                .padding(.vertical, 6)
+                .padding(.trailing, 6)
+                .contentShape(Rectangle())
                 .background(
                     RoundedRectangle(cornerRadius: 7)
-                        .fill(workspace.selectedProjectID == project.id ? Color.accentColor.opacity(0.14) : .clear)
+                        .fill(workspace.selectedTaskID == task.id ? Color.accentColor.opacity(0.12) : .clear)
                 )
             }
             .buttonStyle(.plain)
-
-            ForEach(project.pages.sorted(by: { $0.order < $1.order })) { page in
-                Button { workspace.select(projectID: project.id, pageID: page.id) } label: {
-                    HStack(spacing: 7) {
-                        Text("\(page.order + 1)").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-                        Text(page.title).font(.caption).lineLimit(1)
-                        Spacer()
-                    }
-                    .padding(.leading, 24).padding(.vertical, 5).padding(.trailing, 7)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(workspace.selectedPageID == page.id ? Color.accentColor.opacity(0.12) : .clear)
-                    )
+            .contextMenu {
+                Button(role: .destructive) { workspace.deleteTask(id: task.id) } label: {
+                    Label(PromoLocalization.string("Delete Task"), systemImage: "trash")
                 }
-                .buttonStyle(.plain)
             }
         }
     }
 
+    private func imageRow(_ image: AppStorePromoImage, task: AppStorePromoTask) -> some View {
+        Button { workspace.select(taskID: task.id, imageID: image.id) } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "photo")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("\(image.order + 1)").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                Text(image.title).font(.caption).lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.leading, 18)
+            .padding(.vertical, 6)
+            .padding(.trailing, 7)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(workspace.selectedTaskID == task.id && workspace.selectedImageID == image.id ? Color.accentColor.opacity(0.18) : .clear)
+            )
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) { workspace.deleteImage(taskID: task.id, imageID: image.id) } label: {
+                Label(PromoLocalization.string("Delete Image"), systemImage: "trash")
+            }
+        }
+    }
+
+    private func expansionBinding(for taskID: String) -> Binding<Bool> {
+        Binding(
+            get: { expandedTaskIDs.contains(taskID) },
+            set: { isExpanded in
+                if isExpanded { expandedTaskIDs.insert(taskID) }
+                else { expandedTaskIDs.remove(taskID) }
+            }
+        )
+    }
+
     private func railEmpty(_ text: String) -> some View {
         VStack(spacing: 9) {
-            Image(systemName: "photo.badge.plus").font(.title2).foregroundStyle(.secondary)
+            Image(systemName: "rectangle.stack.badge.plus").font(.title2).foregroundStyle(.secondary)
             Text(text).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity).padding(18)
@@ -88,7 +140,10 @@ public struct AppStorePromoRailView: View {
 }
 
 public struct AppStorePromoDesignerView: View {
+    private enum Mode: String, CaseIterable { case preview, source }
+
     @ObservedObject private var workspace = AppStorePromoWorkspaceStore.shared
+    @State private var mode: Mode = .preview
     @State private var isExporting = false
 
     public init() {}
@@ -97,20 +152,32 @@ public struct AppStorePromoDesignerView: View {
         VStack(spacing: 0) {
             toolbar
             Divider()
-            if let resolved = workspace.selectedPage,
+            if let resolved = workspace.selectedImage,
                let preset = AppStorePromoDisplaySpec.preset(for: workspace.selectedDisplayType) {
-                HTMLPreviewView(
-                    htmlText: resolved.html,
-                    fileURL: resolved.htmlURL,
-                    contentSize: preset.cgSize
-                )
-                .id("\(resolved.page.updatedAt.timeIntervalSince1970)-\(preset.displayType)")
+                if mode == .preview {
+                    HTMLPreviewView(htmlText: resolved.html, fileURL: resolved.htmlURL, contentSize: preset.cgSize)
+                        .id("\(resolved.image.updatedAt.timeIntervalSince1970)-\(preset.displayType)")
+                } else {
+                    ScrollView([.horizontal, .vertical]) {
+                        Text(resolved.html)
+                            .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                            .padding(18)
+                    }
+                    .background(Color(nsColor: .textBackgroundColor))
+                }
             } else {
                 emptyState
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { workspace.reload() }
+        .alert(PromoLocalization.string("Export Failed"), isPresented: errorBinding) {
+            Button("OK", role: .cancel) { workspace.lastError = nil }
+        } message: {
+            Text(workspace.lastError ?? "")
+        }
     }
 
     private var toolbar: some View {
@@ -118,22 +185,32 @@ public struct AppStorePromoDesignerView: View {
             Image(systemName: "photo.artframe").foregroundStyle(.purple)
             VStack(alignment: .leading, spacing: 1) {
                 Text(PromoLocalization.string("App Store Promo Designer")).font(.headline)
-                if let page = workspace.selectedPage { Text(page.page.title).font(.caption).foregroundStyle(.secondary) }
+                if let image = workspace.selectedImage {
+                    Text("\(image.task.title) / \(image.image.title)").font(.caption).foregroundStyle(.secondary)
+                }
             }
             Spacer()
 
-            if let project = workspace.selectedPage?.project {
+            if let task = workspace.selectedImage?.task {
                 Picker("Display", selection: $workspace.selectedDisplayType) {
-                    ForEach(AppStorePromoDisplaySpec.presets(for: project.deviceFamily)) { preset in
+                    ForEach(AppStorePromoDisplaySpec.presets(for: task.deviceFamily)) { preset in
                         Text("\(preset.displayType) · \(preset.width)×\(preset.height)").tag(preset.displayType)
                     }
                 }
                 .labelsHidden().frame(maxWidth: 260)
             }
 
+            Picker("Mode", selection: $mode) {
+                Text(PromoLocalization.string("Preview")).tag(Mode.preview)
+                Text(PromoLocalization.string("HTML Source")).tag(Mode.source)
+            }
+            .pickerStyle(.segmented).frame(width: 190)
+
             Button { workspace.reload() } label: { Label(PromoLocalization.string("Refresh"), systemImage: "arrow.clockwise") }
-            Button { Task { await exportSelected() } } label: { Label(PromoLocalization.string("Export PNG"), systemImage: "square.and.arrow.down") }
-                .disabled(workspace.selectedPage == nil || isExporting)
+            Button { Task { await exportSelectedTask() } } label: {
+                Label(PromoLocalization.string("Export Task"), systemImage: "square.and.arrow.down")
+            }
+            .disabled(workspace.selectedImage == nil || isExporting)
             if isExporting { ProgressView().controlSize(.small) }
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
@@ -141,34 +218,43 @@ public struct AppStorePromoDesignerView: View {
 
     private var emptyState: some View {
         VStack(spacing: 10) {
-            Image(systemName: "photo.stack").font(.system(size: 40)).foregroundStyle(.secondary)
-            Text(PromoLocalization.string("Ask the Agent to create promotional HTML in the current project."))
+            Image(systemName: "rectangle.stack.badge.plus").font(.system(size: 40)).foregroundStyle(.secondary)
+            Text(PromoLocalization.string("Ask the Agent to create a promotional artwork task."))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    private var errorBinding: Binding<Bool> {
+        Binding(get: { workspace.lastError != nil }, set: { if !$0 { workspace.lastError = nil } })
+    }
+
     @MainActor
-    private func exportSelected() async {
-        guard let page = workspace.selectedPage,
+    private func exportSelectedTask() async {
+        guard let selected = workspace.selectedImage,
               let preset = AppStorePromoDisplaySpec.preset(for: workspace.selectedDisplayType) else { return }
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
+        panel.prompt = PromoLocalization.string("Export")
         guard panel.runModal() == .OK, let directory = panel.url else { return }
+
         isExporting = true
         defer { isExporting = false }
         do {
-            let data = try await AppStorePromoHTMLExporter.exportPNG(
-                html: page.html,
-                fileURL: page.htmlURL,
-                preset: preset
-            )
-            let url = directory.appendingPathComponent("\(page.page.order + 1)-\(page.page.id)-\(preset.displayType).png")
-            try data.write(to: url, options: .atomic)
-            workspace.lastExportURL = url
+            let task = try workspace.documentStore.readTask(storagePath: workspace.storagePath, taskSlug: selected.task.id)
+            for imageMeta in task.images.sorted(by: { $0.order < $1.order }) {
+                let image = try workspace.documentStore.readImage(storagePath: workspace.storagePath, taskSlug: task.id, imageSlug: imageMeta.id)
+                let report = try workspace.documentStore.lintImage(storagePath: workspace.storagePath, taskSlug: task.id, imageSlug: imageMeta.id)
+                guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
+                let data = try await AppStorePromoHTMLExporter.exportPNG(html: image.html, fileURL: image.htmlURL, preset: preset)
+                let filename = String(format: "%02d-%@-%@.png", imageMeta.order + 1, imageMeta.id, preset.displayType)
+                try data.write(to: directory.appendingPathComponent(filename), options: .atomic)
+            }
+            workspace.lastExportURL = directory
+            workspace.lastError = nil
         } catch {
             workspace.setError(error)
         }
