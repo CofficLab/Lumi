@@ -107,22 +107,28 @@ public enum LumiFactory: SuperLog {
     }
 
     private static func plugins(for configuration: LumiHostConfiguration) throws -> [LumiPlugin] {
-        guard let allowlist = configuration.pluginAllowlist else {
-            return PluginService.plugins
+        let builtIn: [LumiPlugin]
+        if let allowlist = configuration.pluginAllowlist {
+            let registeredIDs = Set(PluginService.plugins.map(\.id))
+            let unknownIDs = allowlist.subtracting(registeredIDs)
+            guard unknownIDs.isEmpty else {
+                throw LumiHostConfigurationError.unknownPluginIDs(unknownIDs)
+            }
+
+            let enabledOutsideAllowlist = configuration.enabledPluginIDs.subtracting(allowlist)
+            guard enabledOutsideAllowlist.isEmpty else {
+                throw LumiHostConfigurationError.enabledPluginsOutsideAllowlist(enabledOutsideAllowlist)
+            }
+
+            builtIn = PluginService.plugins.filter { allowlist.contains($0.id) }
+        } else {
+            builtIn = PluginService.plugins
         }
 
-        let registeredIDs = Set(PluginService.plugins.map(\.id))
-        let unknownIDs = allowlist.subtracting(registeredIDs)
-        guard unknownIDs.isEmpty else {
-            throw LumiHostConfigurationError.unknownPluginIDs(unknownIDs)
-        }
-
-        let enabledOutsideAllowlist = configuration.enabledPluginIDs.subtracting(allowlist)
-        guard enabledOutsideAllowlist.isEmpty else {
-            throw LumiHostConfigurationError.enabledPluginsOutsideAllowlist(enabledOutsideAllowlist)
-        }
-
-        return PluginService.plugins.filter { allowlist.contains($0.id) }
+        // 宿主通过 additionalPlugins 显式注入的插件绕过内置白名单，
+        // 原样追加。这让分发渠道敏感的插件（如 AppUpdatePlugin）只被
+        // 真正需要它的宿主链接进来。
+        return builtIn + configuration.additionalPlugins
     }
 
     /// 销毁指定内核

@@ -16,8 +16,6 @@ let package = Package(
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
-        .package(path: "../AppUpdatePlugin"),
-        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.5.0"),
     ],
     targets: [
         .target(
@@ -27,8 +25,6 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "AppUpdatePlugin", package: "AppUpdatePlugin"),
-                .product(name: "Sparkle", package: "Sparkle"),
             ],
             path: "Sources/SettingsPlugin",
             resources: [

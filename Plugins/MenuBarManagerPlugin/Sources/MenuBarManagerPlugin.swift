@@ -1,5 +1,4 @@
 import AppKit
-import AppUpdatePlugin
 import Combine
 import Foundation
 import LumiKernel
@@ -396,7 +395,11 @@ public final class MenuBarManagerPlugin: LumiPlugin, MenuBarPresenting {
     }
 
     private func checkForUpdates() {
-        UpdateService.shared.checkForUpdates()
+        // Loose-coupled: AppUpdatePlugin observes this notification. Using the
+        // raw string keeps this plugin free of a hard dependency on
+        // AppUpdatePlugin (and therefore Sparkle), so standalone hosts that
+        // never load AppUpdatePlugin stay Sparkle-free.
+        NotificationCenter.default.post(name: Notification.Name("checkForUpdates"), object: nil)
     }
 
     private func quitApp() {

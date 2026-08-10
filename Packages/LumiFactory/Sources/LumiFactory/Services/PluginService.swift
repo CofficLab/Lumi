@@ -1,7 +1,6 @@
 import ActivityHeatmapPlugin
 import AgentRulesPlugin
 import AgentTempStoragePlugin
-import AppUpdatePlugin
 import AgentTurnNotificationPlugin
 import AgentTurnRunnerPlugin
 import AppIconDesignerPlugin
@@ -295,7 +294,6 @@ public enum PluginService {
             DatabaseManagerPlugin(),
             ConversationForkPlugin(),
             AgentTurnNotificationPlugin(),
-            AppUpdatePlugin(),
             // User interaction
             AskUserPlugin(),
             // Themes
