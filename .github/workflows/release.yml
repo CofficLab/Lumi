@@ -205,7 +205,7 @@ jobs:
           # 用 awk 而非 grep -c 数行：grep -c 在 0 匹配时退出码为 1，会被 set -e 当作失败
           OTHER_COUNT=$(awk 'BEGIN{n=0} /CURRENT_PROJECT_VERSION = [0-9]+;/ {n++} END{print n+0}' "$PBXPROJ")
           if [ "$OTHER_COUNT" -ne 12 ]; then
-            echo "❌ $PBXPROJ 中 CURRENT_PROJECT_VERSION 总数异常: 期望 12，实际 $OTHER_COUNT（不应破坏其他 target）"
+            echo "❌ $PBXPROJ 中 CURRENT_PROJECT_VERSION 总数异常: 期望 12，实际 ${OTHER_COUNT}（不应破坏其他 target）"
             exit 1
           fi
 
@@ -259,7 +259,7 @@ jobs:
             exit 1
           fi
 
-          echo "✅ Lumi 主 app 已更新为 build $NEW_BUILD_VERSION，10 处非主 app 构建号完全保持不变"
+          echo "✅ Lumi 主 app 已更新为 build ${NEW_BUILD_VERSION}，10 处非主 app 构建号完全保持不变"
 
           # 保存构建号供后续步骤使用
           echo "build_number=$NEW_BUILD_VERSION" >> $GITHUB_ENV
