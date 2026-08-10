@@ -51,14 +51,41 @@ public enum LumiVisionMessageSupport: SuperLog {
         )
     }
 
+    /// 进程级缓存:把已解码的图片(by base64-JSON 文本)缓存起来。
+    /// `preparedMessages` 每轮请求会对全部历史消息重跑解码,多模态长对话里
+    /// `Data(base64Encoded:)` 的 CPU 开销会被重复放大。同一份 imageAttachments
+    /// JSON 解码结果恒定,故以 JSON 字符串本身作为 key 缓存。
+    /// NSCache 线程安全且在内存压力下自动驱逐,适合此场景。
+    // NSCache 本身线程安全(内部加锁),CachedMessageImages 的 images 是 let,
+    // 故全局共享访问是安全的;用 nonisolated(unsafe) 向编译器声明这一点。
+    private nonisolated(unsafe) static let imageDecodeCache: NSCache<NSString, CachedMessageImages> = {
+        let cache = NSCache<NSString, CachedMessageImages>()
+        // 解码后的图片字节数可能不小(每张几百 KB~几 MB),给一个温和上限,
+        // 让 NSCache 在内存压力下优先驱逐最久未用的条目,避免长会话堆积。
+        cache.totalCostLimit = 64 * 1024 * 1024 // 64 MB
+        return cache
+    }()
+
+    /// NSCache 只能持有 class 类型,用包装类承载 `[MessageImage]`(值类型)。
+    private final class CachedMessageImages: NSObject {
+        let images: [MessageImage]
+        init(_ images: [MessageImage]) { self.images = images }
+    }
+
     public static func messageImages(from metadata: [String: String]) -> [MessageImage] {
-        guard let json = metadata["imageAttachments"],
-              let data = json.data(using: .utf8),
+        guard let json = metadata["imageAttachments"] else {
+            return []
+        }
+        let cacheKey = NSString(string: json)
+        if let cached = imageDecodeCache.object(forKey: cacheKey) {
+            return cached.images
+        }
+        guard let data = json.data(using: .utf8),
               let attachments = try? JSONDecoder().decode([LumiImageAttachment].self, from: data)
         else {
             return []
         }
-        return attachments.compactMap { attachment in
+        let images = attachments.compactMap { attachment -> MessageImage? in
             guard let imageData = Data(base64Encoded: attachment.base64Data) else {
                 return nil
             }
@@ -67,6 +94,12 @@ public enum LumiVisionMessageSupport: SuperLog {
             }
             return MessageImage(data: imageData, mimeType: attachment.mimeType)
         }
+        imageDecodeCache.setObject(
+            CachedMessageImages(images),
+            forKey: cacheKey,
+            cost: images.reduce(0) { $0 + $1.data.count }
+        )
+        return images
     }
 
     private static func attachRequestImages(
