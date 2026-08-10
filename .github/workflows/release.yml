@@ -110,36 +110,115 @@ jobs:
 
           echo "📝 Updating CURRENT_PROJECT_VERSION..."
 
-          # 直接从 project.pbxproj 读取当前构建号（避免依赖 xcodebuild 解析 SPM 包依赖）
-          CURRENT_BUILD=$(grep -m1 "CURRENT_PROJECT_VERSION = " Lumi.xcodeproj/project.pbxproj | sed 's/.*CURRENT_PROJECT_VERSION = \([0-9]*\);/\1/')
+          PBXPROJ="Lumi.xcodeproj/project.pbxproj"
+          # 通过大括号嵌套深度锁定主 app Lumi 的 XCBuildConfiguration 块
+          # （block 开始 = 标识行 + " = {"，结束 = 对应的 "};"），避免误读 / 误写
+          # 其他 target（AppIconDesigner / BookletMaker / CADDesigner /
+          # DatabaseManager / LumiFinder）。
+          LUMI_DEBUG_ID="F54F8C8B2F1A3B6600AABB2A"
+          LUMI_RELEASE_ID="F54F8C8C2F1A3B6600AABB2A"
+
+          # 1) 只读取主 app Lumi 当前构建号（Debug / Release 中任一个即可，理论上应一致）
+          # 兼容 BWK awk（macOS runner 自带）：用 match() + substr() 取数字，避免三参数 match() 兼容问题
+          CURRENT_BUILD=$(awk -v d_id="$LUMI_DEBUG_ID" -v r_id="$LUMI_RELEASE_ID" '
+            function reset() { in_block=0; depth=0 }
+            {
+              if (!in_block && ($0 ~ "^[ \t]*"d_id" " || $0 ~ "^[ \t]*"r_id" ")) {
+                in_block=1; depth=0
+              }
+              if (in_block) {
+                n_open  = gsub(/\{/, "{")
+                n_close = gsub(/\}/, "}")
+                depth += n_open - n_close
+                if (match($0, /CURRENT_PROJECT_VERSION = [0-9]+;/)) {
+                  s = substr($0, RSTART, RLENGTH)
+                  sub(/.*CURRENT_PROJECT_VERSION = /, "", s)
+                  sub(/;$/, "", s)
+                  print s
+                  in_block=0; depth=0
+                  exit
+                }
+                if (depth <= 0 && /\}/) { reset() }
+              }
+            }
+          ' "$PBXPROJ")
+
           if [ -z "$CURRENT_BUILD" ]; then
-            echo "❌ 无法从 project.pbxproj 获取当前 CURRENT_PROJECT_VERSION"
+            echo "❌ 无法从 $PBXPROJ 读取 Lumi 主 app 的 CURRENT_PROJECT_VERSION"
             exit 1
           fi
+
           NEW_BUILD_VERSION=$((CURRENT_BUILD + 1))
-          echo "  Build number: $CURRENT_BUILD → $NEW_BUILD_VERSION"
+          echo "  Build number: $CURRENT_BUILD → $NEW_BUILD_VERSION (Lumi 主 app)"
 
-          # 使用 sed 更新所有 target 的 CURRENT_PROJECT_VERSION
-          BEFORE_COUNT=$(grep -c "CURRENT_PROJECT_VERSION = " Lumi.xcodeproj/project.pbxproj || echo "0")
-          if [ "$BEFORE_COUNT" -eq 0 ]; then
-            echo "❌ CURRENT_PROJECT_VERSION not found in project.pbxproj"
+          # 2) 只替换主 app Lumi 的 Debug / Release 两个 block，其他 target 不动
+          if ! grep -E -q "${LUMI_DEBUG_ID}|${LUMI_RELEASE_ID}" "$PBXPROJ"; then
+            echo "❌ 在 $PBXPROJ 中未找到 Lumi 主 app 的 XCBuildConfiguration"
             exit 1
           fi
 
-          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION/" Lumi.xcodeproj/project.pbxproj
+          awk -v new="$NEW_BUILD_VERSION" -v d_id="$LUMI_DEBUG_ID" -v r_id="$LUMI_RELEASE_ID" '
+            function reset() { in_block=0; depth=0 }
+            {
+              if (!in_block && ($0 ~ "^[ \t]*"d_id" " || $0 ~ "^[ \t]*"r_id" ")) {
+                in_block=1; depth=0
+              }
+              if (in_block) {
+                n_open  = gsub(/\{/, "{")
+                n_close = gsub(/\}/, "}")
+                depth += n_open - n_close
 
-          # 验证 sed 替换是否成功
-          AFTER_COUNT=$(grep -c "CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION" Lumi.xcodeproj/project.pbxproj || echo "0")
-          if [ "$AFTER_COUNT" -eq 0 ]; then
-            echo "❌ sed 替换 CURRENT_PROJECT_VERSION 失败"
+                if (match($0, /^[ \t]*CURRENT_PROJECT_VERSION = [0-9]+;/)) {
+                  sub(/CURRENT_PROJECT_VERSION = [0-9]+;/, "CURRENT_PROJECT_VERSION = "new";")
+                }
+
+                if (depth <= 0 && /\}/) { reset() }
+              }
+              print
+            }
+          ' "$PBXPROJ" > "${PBXPROJ}.tmp" && mv "${PBXPROJ}.tmp" "$PBXPROJ"
+
+          # 3) 校验：主 app 两个 block 已经被替换为新值，且其他 target 未受影响
+          AFTER_NEW_COUNT=$(awk -v val="$NEW_BUILD_VERSION" -v d_id="$LUMI_DEBUG_ID" -v r_id="$LUMI_RELEASE_ID" '
+            function reset() { in_block=0; depth=0 }
+            {
+              if (!in_block && ($0 ~ "^[ \t]*"d_id" " || $0 ~ "^[ \t]*"r_id" ")) {
+                in_block=1; depth=0
+              }
+              if (in_block) {
+                n_open  = gsub(/\{/, "{")
+                n_close = gsub(/\}/, "}")
+                depth += n_open - n_close
+                if ($0 ~ ("CURRENT_PROJECT_VERSION = "val";")) count++
+                if (depth <= 0 && /\}/) { reset() }
+              }
+            }
+            END { print count+0 }
+          ' "$PBXPROJ")
+
+          if [ "$AFTER_NEW_COUNT" -ne 2 ]; then
+            echo "❌ Lumi 主 app 的 CURRENT_PROJECT_VERSION 替换数量异常: 期望 2，实际 $AFTER_NEW_COUNT"
             exit 1
           fi
-          if [ "$AFTER_COUNT" -ne "$BEFORE_COUNT" ]; then
-            echo "❌ CURRENT_PROJECT_VERSION 替换数量不匹配: 替换前 $BEFORE_COUNT 处，替换后匹配 $AFTER_COUNT 处"
+
+          # 副 app / Finder 插件的构建号必须保持原值（断言：仓库历史里它们分别是 1 / 500 / 600）
+          OTHER_COUNT=$(grep -E -c 'CURRENT_PROJECT_VERSION = [0-9]+;' "$PBXPROJ" || echo "0")
+          if [ "$OTHER_COUNT" -ne 12 ]; then
+            echo "❌ $PBXPROJ 中 CURRENT_PROJECT_VERSION 总数异常: 期望 12，实际 $OTHER_COUNT（不应破坏其他 target）"
             exit 1
           fi
 
-          echo "✅ 替换了 $AFTER_COUNT 处 CURRENT_PROJECT_VERSION"
+          # 确认其他 target 没被改动：值仍包含 1、500、600
+          for v in 1 500 600; do
+            c=$(grep -c "CURRENT_PROJECT_VERSION = ${v};" "$PBXPROJ" || echo "0")
+            case "$v" in
+              1)   [ "$c" -eq 8 ] || { echo "❌ 副 app CURRENT_PROJECT_VERSION=$v 数量异常: $c (期望 8)"; exit 1; } ;;
+              500) [ "$c" -eq 2 ] || { echo "❌ LumiFinder CURRENT_PROJECT_VERSION=$v 数量异常: $c (期望 2)"; exit 1; } ;;
+              600) [ "$c" -eq 0 ] || { echo "❌ 旧值 CURRENT_PROJECT_VERSION=600 仍残留: $c"; exit 1; } ;;
+            esac
+          done
+
+          echo "✅ Lumi 主 app 已更新为 build $NEW_BUILD_VERSION，其他 target 构建号未变"
 
           # 保存构建号供后续步骤使用
           echo "build_number=$NEW_BUILD_VERSION" >> $GITHUB_ENV
