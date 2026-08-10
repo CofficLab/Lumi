@@ -13,22 +13,24 @@
       color: #ffffff;
       display: flex;
       flex-direction: column;
-      padding: 3% 4% 4%;
+      padding: 5% 5% 8%;
     }
-    .header { text-align: center; margin-bottom: 1.5%; }
+    .header { text-align: center; margin-bottom: 3%; }
     .brand {
-      font-size: clamp(12px, 1.4vmin, 20px);
-      font-weight: 600;
-      letter-spacing: 0.15em;
+      font-size: clamp(14px, 1.8vmin, 24px);
+      font-weight: 700;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      opacity: 0.4;
-      margin-bottom: 0.4%;
+      opacity: 0.9;
+      margin-bottom: 0.5%;
+      color: #4A90E2;
     }
     h1 {
-      font-size: clamp(42px, 7.2vmin, 90px);
+      font-size: clamp(48px, 8vmin, 100px);
       font-weight: 800;
-      line-height: 1.08;
+      line-height: 1.05;
       letter-spacing: -0.02em;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .subtitle {
       font-size: clamp(14px, 2vmin, 28px);
@@ -49,20 +51,21 @@
       align-items: flex-end;
     }
     .pdf-page {
-      width: clamp(90px, 10.5vmin, 145px);
-      height: clamp(120px, 14vmin, 195px);
+      width: clamp(80px, 9.5vmin, 130px);
+      height: clamp(110px, 13vmin, 180px);
       background: #ffffff;
       border-radius: 5px;
       display: flex;
       flex-direction: column;
       padding: 9% 8%;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
       position: relative;
+      opacity: 0.75;
     }
-    .pdf-page:nth-child(1) { transform: translateY(4px); }
-    .pdf-page:nth-child(2) { transform: translateY(-8px); }
-    .pdf-page:nth-child(3) { transform: translateY(-4px); }
-    .pdf-page:nth-child(4) { transform: translateY(6px); }
+    .pdf-page:nth-child(1) { transform: translateY(8px) rotate(-1.5deg); }
+    .pdf-page:nth-child(2) { transform: translateY(-6px) rotate(1deg); }
+    .pdf-page:nth-child(3) { transform: translateY(4px) rotate(-0.5deg); }
+    .pdf-page:nth-child(4) { transform: translateY(-2px) rotate(1.5deg); }
     .pdf-line {
       height: 2.5px;
       background: #6a7a92;
@@ -88,30 +91,31 @@
       flex-shrink: 0;
     }
     .arrow {
-      font-size: clamp(36px, 4.5vmin, 62px);
-      opacity: 0.9;
+      font-size: clamp(40px, 5vmin, 68px);
+      opacity: 1;
       font-weight: 400;
-      color: #5c9aff;
-      text-shadow: 0 0 12px rgba(92, 154, 255, 0.4);
+      color: #4A90E2;
+      text-shadow: 0 0 16px rgba(74, 144, 226, 0.6), 0 0 30px rgba(74, 144, 226, 0.3);
     }
     .arrow-label {
-      font-size: clamp(11px, 1.2vmin, 16px);
+      font-size: clamp(12px, 1.4vmin, 18px);
       opacity: 1;
-      color: #5c9aff;
+      color: #ffffff;
       font-weight: 700;
       white-space: nowrap;
-      background: rgba(92, 154, 255, 0.15);
-      padding: 4px 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(92, 154, 255, 0.25);
+      background: #4A90E2;
+      padding: 5px 16px;
+      border-radius: 16px;
+      border: none;
+      box-shadow: 0 2px 8px rgba(74, 144, 226, 0.4);
     }
     .booklet {
-      width: clamp(200px, 24vmin, 330px);
-      height: clamp(145px, 17vmin, 235px);
-      background: linear-gradient(145deg, #ffffff 0%, #f5f6fa 100%);
-      border-radius: 7px 12px 12px 7px;
+      width: clamp(240px, 28vmin, 380px);
+      height: clamp(165px, 20vmin, 275px);
+      background: linear-gradient(145deg, #ffffff 0%, #f0f2f8 100%);
+      border-radius: 8px 14px 14px 8px;
       display: flex;
-      box-shadow: 0 12px 36px rgba(0,0,0,0.35), 0 0 20px rgba(92, 154, 255, 0.08), inset -2px 0 5px rgba(0,0,0,0.04);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 24px rgba(74, 144, 226, 0.15), inset -2px 0 6px rgba(0,0,0,0.05);
       position: relative;
       overflow: hidden;
     }
@@ -121,8 +125,8 @@
       left: 50%;
       top: 5%;
       bottom: 5%;
-      width: 2px;
-      background: linear-gradient(to bottom, transparent, #b8c0d4, transparent);
+      width: 3px;
+      background: linear-gradient(to bottom, transparent, #4A90E2, transparent);
       transform: translateX(-50%);
     }
     .booklet::after {
@@ -153,11 +157,18 @@
     .booklet-page .line:nth-child(even) { width: 60%; }
     .tag {
       text-align: center;
-      margin-top: 2%;
-      font-size: clamp(13px, 1.8vmin, 22px);
-      font-weight: 600;
-      opacity: 0.7;
-      letter-spacing: 0.08em;
+      margin-top: 3%;
+      font-size: clamp(14px, 2vmin, 24px);
+      font-weight: 700;
+      opacity: 1;
+      letter-spacing: 0.05em;
+      color: #4A90E2;
+      background: rgba(74, 144, 226, 0.12);
+      padding: 8px 24px;
+      border-radius: 20px;
+      display: inline-block;
+      align-self: center;
+      border: 1px solid rgba(74, 144, 226, 0.25);
     }
   </style>
 </head>
@@ -199,6 +210,6 @@
       </div>
     </div>
   </section>
-  <div class="tag">拖入 PDF · 自动拼版 · 双面打印</div>
+  <div style="text-align: center;"><div class="tag">拖入 PDF · 自动拼版 · 双面打印</div></div>
 </body>
 </html>

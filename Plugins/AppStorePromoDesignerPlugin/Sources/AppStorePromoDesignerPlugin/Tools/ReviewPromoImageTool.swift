@@ -51,9 +51,17 @@ public struct ReviewPromoImageTool: LumiAgentTool {
         )
         let focus = arguments.string("focus")?.trimmingCharacters(in: .whitespacesAndNewlines)
         let request = LumiLLMRequest(
-            messages: Self.designerReviewMessages(task: image.task, image: image.image, displayType: type, focus: focus),
+            messages: Self.designerReviewMessages(
+                task: image.task,
+                image: image.image,
+                displayType: type,
+                focus: focus,
+                attachment: attachment
+            ),
             model: "",
             tools: [],
+            // 同时保留 request 级附件：通用 OpenAI/Anthropic 适配器经 MessageBridge
+            // 会把它附加到最后一条 user 消息（见 attachRequestImages）。
             imageAttachments: [attachment]
         )
 
@@ -94,11 +102,17 @@ public struct ReviewPromoImageTool: LumiAgentTool {
     // MARK: - 设计师人设 prompt
 
     /// 构造审核请求的消息序列：system（资深设计师人设 + 结构化输出约束）+ user（任务/图片/尺寸上下文）。
+    ///
+    /// 图片同时编码进 user 消息的 `metadata["imageAttachments"]`。原因：部分 provider
+    ///（如阿里云 AliyunAnthropicRequestBuilder）在构造请求体时**只读消息 metadata**，
+    /// 不读 `request.imageAttachments`；而通用 OpenAI/Anthropic 适配器两者都支持。
+    /// 同时写两处可兼容所有 provider，确保 LLM 一定能看到渲染图。
     private static func designerReviewMessages(
         task: AppStorePromoTask,
         image: AppStorePromoImage,
         displayType: String,
-        focus: String?
+        focus: String?,
+        attachment: LumiImageAttachment
     ) -> [LumiChatMessage] {
         // system 用占位 conversationID；直接调用路径不落库，不参与真实对话。
         let conversationID = UUID()
@@ -107,6 +121,7 @@ public struct ReviewPromoImageTool: LumiAgentTool {
             role: .system,
             content: designerSystemPrompt(focus: focus)
         )
+        let userMetadata = LumiImageAttachmentMetadata.encode([attachment])
         let user = LumiChatMessage(
             conversationID: conversationID,
             role: .user,
@@ -121,7 +136,8 @@ public struct ReviewPromoImageTool: LumiAgentTool {
             Rendered display type: \(displayType)
 
             The image is attached. Review it strictly from a senior creative designer's perspective.
-            """
+            """,
+            metadata: userMetadata
         )
         return [system, user]
     }

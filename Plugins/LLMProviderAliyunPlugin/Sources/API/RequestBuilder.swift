@@ -15,7 +15,8 @@ enum AliyunAnthropicRequestBuilder {
             "stream": true,
         ]
 
-        let (systemMessages, conversation) = partition(request.messages)
+        let mergedMessages = mergeRequestLevelImages(request.messages, imageAttachments: request.imageAttachments)
+        let (systemMessages, conversation) = partition(mergedMessages)
         if !systemMessages.isEmpty {
             body["system"] = mergeSystem(systemMessages)
         }
@@ -35,6 +36,37 @@ enum AliyunAnthropicRequestBuilder {
         ]
 
         return body
+    }
+
+    /// 把 `request.imageAttachments`（请求级附件）合并到最后一条 user 消息的 metadata，
+    /// 使其与本构建器「只读消息 metadata」的图片链路（`imageContentBlocks(for:)`）兼容。
+    ///
+    /// 背景：本构建器（以及 `message(_:)` / `toolResultBlock(...)`）构造请求体时只从
+    /// `message.metadata["imageAttachments"]` 取图，从不读 `request.imageAttachments`。
+    /// 正常 agent turn 路径由 `AgentTurnRunner`/`MessageSender` 把图写进 metadata，故正常；
+    /// 但「直接调用」路径（`sendDirect`/`generateText`，如标题生成、插件内置审核）只设
+    /// `request.imageAttachments`，消息 metadata 为空，导致这些路径在阿里云 provider 下静默丢图。
+    ///
+    /// 合并策略：以最后一条 user 消息为目标，按 `id` 去重（metadata 已有的不重复加入），
+    /// 再整体编码回 metadata。与通用 `MessageBridge.attachRequestImages` 的「附加到最后一条
+    /// user 消息」语义一致。
+    private static func mergeRequestLevelImages(
+        _ messages: [LumiChatMessage],
+        imageAttachments: [LumiImageAttachment]
+    ) -> [LumiChatMessage] {
+        guard !imageAttachments.isEmpty else { return messages }
+        guard let lastIndex = messages.lastIndex(where: { $0.role == .user }) else {
+            return messages
+        }
+        var merged = messages
+        let target = merged[lastIndex]
+        let existing = LumiImageAttachmentMetadata.decode(from: target.metadata)
+        let existingIDs = Set(existing.map(\.id))
+        let additions = imageAttachments.filter { !existingIDs.contains($0.id) }
+        guard !additions.isEmpty else { return messages }
+        let combined = existing + additions
+        merged[lastIndex].metadata = LumiImageAttachmentMetadata.encode(combined, into: target.metadata)
+        return merged
     }
 
     private static func partition(_ messages: [LumiChatMessage]) -> (system: [LumiChatMessage], rest: [LumiChatMessage]) {

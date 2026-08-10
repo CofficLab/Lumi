@@ -13,28 +13,30 @@
       color: #ffffff;
       display: flex;
       flex-direction: column;
-      padding: 3% 4% 3%;
+      padding: 6% 5% 4%;
     }
-    .header { text-align: center; margin-bottom: 1.5%; }
+    .header { text-align: center; margin-bottom: 2.5%; }
     .brand {
-      font-size: clamp(12px, 1.4vmin, 20px);
-      font-weight: 600;
-      letter-spacing: 0.15em;
+      font-size: clamp(14px, 1.8vmin, 24px);
+      font-weight: 700;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      opacity: 0.55;
-      margin-bottom: 0.4%;
+      opacity: 0.9;
+      margin-bottom: 0.5%;
+      color: #4A90E2;
     }
     h1 {
-      font-size: clamp(36px, 6.2vmin, 90px);
-      font-weight: 700;
-      line-height: 1.08;
+      font-size: clamp(48px, 8vmin, 100px);
+      font-weight: 800;
+      line-height: 1.05;
       letter-spacing: -0.02em;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .subtitle {
-      font-size: clamp(14px, 2vmin, 28px);
+      font-size: clamp(16px, 2.2vmin, 30px);
       font-weight: 400;
-      opacity: 0.65;
-      margin-top: 0.8%;
+      opacity: 0.85;
+      margin-top: 0.6%;
     }
     .visual {
       flex: 1;
@@ -45,109 +47,94 @@
       gap: 2%;
     }
     .drop-zone {
-      width: clamp(300px, 38vmin, 500px);
-      height: clamp(150px, 19vmin, 250px);
-      border: 2.5px dashed rgba(255,255,255,0.2);
-      border-radius: 16px;
+      width: clamp(420px, 52vmin, 700px);
+      height: clamp(200px, 26vmin, 350px);
+      border: 3px dashed rgba(74, 144, 226, 0.5);
+      border-radius: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1.2%;
-      background: rgba(255,255,255,0.025);
+      gap: 1.5%;
+      background: linear-gradient(145deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.03) 100%);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 30px rgba(74, 144, 226, 0.1), inset 0 1px 0 rgba(255,255,255,0.05);
     }
     .drop-icon {
-      opacity: 0.5;
+      opacity: 0.9;
     }
     .drop-icon svg {
-      width: clamp(36px, 4.5vmin, 58px);
-      height: clamp(36px, 4.5vmin, 58px);
+      width: clamp(48px, 6vmin, 78px);
+      height: clamp(48px, 6vmin, 78px);
       fill: none;
-      stroke: #ffffff;
+      stroke: #4A90E2;
       stroke-width: 1.5;
       stroke-linecap: round;
       stroke-linejoin: round;
+      filter: drop-shadow(0 2px 8px rgba(74, 144, 226, 0.4));
     }
     .drop-text {
-      font-size: clamp(14px, 1.8vmin, 24px);
-      font-weight: 500;
-      opacity: 0.55;
+      font-size: clamp(18px, 2.4vmin, 32px);
+      font-weight: 600;
+      opacity: 0.95;
+      color: #ffffff;
     }
     .drop-hint {
-      font-size: clamp(10px, 1.2vmin, 15px);
-      opacity: 0.3;
+      font-size: clamp(12px, 1.5vmin, 18px);
+      opacity: 0.6;
     }
     .features {
       display: flex;
-      gap: clamp(10px, 1.4vmin, 20px);
+      gap: clamp(16px, 2.2vmin, 32px);
       justify-content: center;
+      margin-top: 1%;
     }
     .feature {
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1.2%;
+      gap: 1.5%;
     }
     .feature-icon {
-      width: clamp(40px, 5vmin, 64px);
-      height: clamp(40px, 5vmin, 64px);
-      border-radius: 14px;
-      background: rgba(255,255,255,0.07);
+      width: clamp(52px, 6.5vmin, 84px);
+      height: clamp(52px, 6.5vmin, 84px);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(74, 144, 226, 0.15) 0%, rgba(74, 144, 226, 0.08) 100%);
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     .feature-icon svg {
       width: 50%;
       height: 50%;
       fill: none;
-      stroke: #ffffff;
+      stroke: #4A90E2;
       stroke-width: 1.5;
       stroke-linecap: round;
       stroke-linejoin: round;
-      opacity: 0.65;
+      opacity: 0.9;
     }
     .feature-label {
-      font-size: clamp(11px, 1.3vmin, 17px);
-      font-weight: 500;
-      opacity: 0.6;
-    }
-    .paper-sizes {
-      display: flex;
-      gap: clamp(12px, 1.8vmin, 24px);
-      justify-content: center;
-    }
-    .paper-size {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.8%;
-    }
-    .paper-box {
-      background: rgba(255,255,255,0.07);
-      border-radius: 5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: clamp(12px, 1.4vmin, 18px);
+      font-size: clamp(12px, 1.5vmin, 18px);
       font-weight: 600;
-      opacity: 0.65;
+      opacity: 0.85;
     }
-    .paper-a4 { width: clamp(32px, 3.8vmin, 50px); height: clamp(44px, 5.4vmin, 72px); }
-    .paper-a5 { width: clamp(24px, 3vmin, 38px); height: clamp(32px, 4vmin, 52px); }
-    .paper-letter { width: clamp(30px, 3.6vmin, 46px); height: clamp(38px, 4.8vmin, 60px); }
-    .paper-label {
-      font-size: clamp(10px, 1.1vmin, 14px);
-      opacity: 0.45;
-    }
+
     .tag {
       text-align: center;
-      margin-top: 1.5%;
-      font-size: clamp(13px, 1.8vmin, 22px);
-      font-weight: 500;
-      opacity: 0.5;
-      letter-spacing: 0.06em;
+      margin-top: 2.5%;
+      font-size: clamp(15px, 2vmin, 26px);
+      font-weight: 700;
+      opacity: 1;
+      letter-spacing: 0.05em;
+      color: #4A90E2;
+      background: rgba(74, 144, 226, 0.12);
+      padding: 10px 28px;
+      border-radius: 22px;
+      display: inline-block;
+      align-self: center;
+      border: 1px solid rgba(74, 144, 226, 0.25);
     }
   </style>
 </head>
@@ -191,21 +178,7 @@
         <div class="feature-label">自定义设置</div>
       </div>
     </div>
-    <div class="paper-sizes">
-      <div class="paper-size">
-        <div class="paper-box paper-a4">A4</div>
-        <div class="paper-label">标准</div>
-      </div>
-      <div class="paper-size">
-        <div class="paper-box paper-a5">A5</div>
-        <div class="paper-label">便携</div>
-      </div>
-      <div class="paper-size">
-        <div class="paper-box paper-letter">L</div>
-        <div class="paper-label">Letter</div>
-      </div>
-    </div>
   </section>
-  <div class="tag">支持 A4 · A5 · Letter 纸张</div>
+  <div style="text-align: center;"><div class="tag">支持 A4 · A5 · Letter 纸张</div></div>
 </body>
 </html>

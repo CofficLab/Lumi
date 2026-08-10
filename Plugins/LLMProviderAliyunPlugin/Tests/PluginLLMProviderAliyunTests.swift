@@ -174,6 +174,67 @@ struct PluginLLMProviderAliyunTests {
         #expect(content[1]["type"] as? String == "text")
     }
 
+    @Test func requestLevelImageAttachmentsAreAttachedToLastUserMessage() throws {
+        // 回归：sendDirect / generateText 路径只设 request.imageAttachments、消息 metadata 为空，
+        // 阿里云构建器历史上只读 metadata，会静默丢图。修复后应把 request 级图合并进
+        // 最后一条 user 消息并生成 image block。
+        let conversationID = UUID()
+        let attachment = LumiImageAttachment(
+            mimeType: "image/png",
+            base64Data: Data([0x89, 0x50, 0x4E, 0x47]).base64EncodedString(),
+            fileName: "promo.png"
+        )
+        let request = LumiLLMRequest(
+            messages: [
+                LumiChatMessage(conversationID: conversationID, role: .system, content: "你是设计师"),
+                LumiChatMessage(conversationID: conversationID, role: .user, content: "审核这张图"),
+            ],
+            model: "qwen3.6-plus",
+            imageAttachments: [attachment]
+        )
+
+        let body = AliyunAnthropicRequestBuilder.body(for: request)
+        let messages = try #require(body["messages"] as? [[String: Any]])
+        let userMessage = try #require(messages.last)
+        #expect(userMessage["role"] as? String == "user")
+        let content = try #require(userMessage["content"] as? [[String: Any]])
+        #expect(content.count == 2)
+        #expect(content[0]["type"] as? String == "image")
+        let source = try #require(content[0]["source"] as? [String: Any])
+        #expect(source["data"] as? String == attachment.base64Data)
+        #expect(content[1]["type"] as? String == "text")
+    }
+
+    @Test func requestLevelImagesDedupeWithMetadataImages() throws {
+        // 同一张图同时出现在 request.imageAttachments 和 user 消息 metadata 时，
+        // 不应重复生成 image block。
+        let conversationID = UUID()
+        let attachment = LumiImageAttachment(
+            mimeType: "image/png",
+            base64Data: Data([0x89]).base64EncodedString(),
+            fileName: "dup.png"
+        )
+        let request = LumiLLMRequest(
+            messages: [
+                LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: "看图",
+                    metadata: LumiImageAttachmentMetadata.encode([attachment])
+                ),
+            ],
+            model: "qwen3.6-plus",
+            imageAttachments: [attachment]
+        )
+
+        let body = AliyunAnthropicRequestBuilder.body(for: request)
+        let messages = try #require(body["messages"] as? [[String: Any]])
+        let userMessage = try #require(messages.first)
+        let content = try #require(userMessage["content"] as? [[String: Any]])
+        let imageCount = content.filter { $0["type"] as? String == "image" }.count
+        #expect(imageCount == 1)
+    }
+
     @Test func httpErrorRendererMatchesOtherStatusCodes() {
         let conversationID = UUID()
         let rateLimited = LumiChatMessage(
