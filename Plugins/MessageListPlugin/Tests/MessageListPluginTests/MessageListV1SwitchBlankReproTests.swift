@@ -5,7 +5,7 @@ import Testing
 
 /// V1 版本的「切换对话竞态」回归测试。
 ///
-/// 与 V2 的 `MessageListSwitchBlankReproTests` 对应，验证 `MessageListV1ViewModel`
+/// 与 V2 的 `MessageListSwitchBlankReproTests` 对应，验证 `ListV1ViewModel`
 /// 在并发切换对话时，`records` 和 `presentation` 必须属于用户最终选中的对话。
 ///
 /// 根因：`activate` 使用 `activeConversationID`（可变共享状态）做过期守卫，
@@ -31,7 +31,7 @@ struct MessageListV1SwitchBlankReproTests {
 
     /// 断言 viewmodel 的展示消息必须属于指定对话（无外来残留）。
     private func expectConsistent(
-        _ viewModel: MessageListV1ViewModel,
+        _ viewModel: ListV1ViewModel,
         selectedID: UUID?,
         sourceComment: String
     ) {
@@ -105,7 +105,7 @@ struct MessageListV1SwitchBlankReproTests {
         messages.seed(shortData.messages, conversationID: shortID)
 
         let kernel = try makeKernel(messages: messages, conversations: conversations, turnManager: turnManager)
-        let viewModel = MessageListV1ViewModel(kernel: kernel, pageSize: 40)
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 40)
 
         // 1. 先进入长对话并等其加载完
         conversations.selectedConversationID = longID
@@ -138,7 +138,7 @@ struct MessageListV1SwitchBlankReproTests {
         messages.seed(shortData.messages, conversationID: shortID)
 
         let kernel = try makeKernel(messages: messages, conversations: conversations, turnManager: turnManager)
-        let viewModel = MessageListV1ViewModel(kernel: kernel, pageSize: 40)
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 40)
 
         // 顺序切换三次，确保最终状态正确
         // 注意：由于 @MainActor 方法会序列化执行，真正的并发竞态需要异步延迟来触发
@@ -177,7 +177,7 @@ struct MessageListV1SwitchBlankReproTests {
         messages.seed(shortData.messages, conversationID: shortID)
 
         let kernel = try makeKernel(messages: messages, conversations: conversations, turnManager: turnManager)
-        let viewModel = MessageListV1ViewModel(kernel: kernel, pageSize: 40)
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 40)
 
         conversations.selectedConversationID = longID
         await viewModel.activate(conversationID: longID)

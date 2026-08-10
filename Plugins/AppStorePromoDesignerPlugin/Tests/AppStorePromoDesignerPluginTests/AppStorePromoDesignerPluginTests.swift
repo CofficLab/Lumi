@@ -26,6 +26,7 @@ struct PromoDesignerPluginTests {
             "app_store_promo_preview_image",
             "app_store_promo_lint_task",
             "app_store_promo_export_task",
+            "app_store_promo_review_image",
         ])
     }
 

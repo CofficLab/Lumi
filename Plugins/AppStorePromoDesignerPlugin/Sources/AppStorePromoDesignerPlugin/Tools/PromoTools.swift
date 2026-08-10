@@ -533,10 +533,6 @@ public struct ReviewPromoImageTool: LumiAgentTool {
         return ["type": "object", "properties": .object(properties), "required": ["taskId", "imageId"]]
     }
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
-        guard let providerManager = await MainActor.run(body: { kernel.llmProvider }) else {
-            return "Review unavailable: no LLM provider registered."
-        }
-
         // 1. 解析 scope + 读图 + lint（与 PreviewPromoImageTool 一致）。
         let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let storagePath = try await PromoToolSupport.storagePath(for: scope)
@@ -555,7 +551,7 @@ public struct ReviewPromoImageTool: LumiAgentTool {
         // 2. 渲染 PNG（复用 PreviewPromoImageTool 的渲染管线）。
         let data = try await AppStorePromoHTMLExporter.exportPNG(html: image.html, fileURL: image.htmlURL, preset: preset)
 
-        // 3. 构造带图的直接 LLM 请求。
+        // 3. 构造带图的直接 LLM 请求（均为值类型/Sendable，可跨 actor 传递）。
         let attachment = LumiImageAttachment(
             mimeType: "image/png",
             base64Data: data.base64EncodedString(),
@@ -571,15 +567,36 @@ public struct ReviewPromoImageTool: LumiAgentTool {
 
         // 4. 直接调 provider（不写消息库、不触发 turn）。provider/model 解析回退与
         //    AutoConversationTitleService 一致：优先全局选中，回退对话配置。
-        let providerID = await MainActor.run { kernel.llmProvider?.selectedProviderID }
-        let model = await MainActor.run { kernel.llmProvider?.selectedModel }
+        //    `any LLMProviderManaging` 非 Sendable，整个调用封闭在 MainActor 隔离的
+        //    `runDesignReview` 内，引用不跨隔离边界泄漏。
         do {
-            let review = try await providerManager.generateText(request, providerID: providerID, model: model)
+            let review = try await Self.runDesignReview(request: request, kernel: kernel)
             let trimmed = review.trimmingCharacters(in: .whitespacesAndNewlines)
             return trimmed.isEmpty ? "Design review returned an empty response. Try a different model or focus area." : trimmed
+        } catch ReviewAborted.noProvider {
+            return "Review unavailable: no LLM provider registered."
         } catch {
             return "Design review failed: \(error.localizedDescription). If the selected model does not support vision, switch to a vision-capable model and retry."
         }
+    }
+
+    /// 内部中止错误，用于把「无 provider」从 MainActor 隔离方法里抛出。
+    private enum ReviewAborted: Error {
+        case noProvider
+    }
+
+    /// 在 MainActor 上解析 provider 并发起一次性 LLM 调用，返回审核正文。
+    ///
+    /// 单独成方法是为了让 `any LLMProviderManaging` 引用始终留在 MainActor 侧，
+    /// 不经 `MainActor.run` 闭包返回值跨隔离边界（该类型非 Sendable）。
+    @MainActor
+    private static func runDesignReview(request: LumiLLMRequest, kernel: LumiKernel) async throws -> String {
+        guard let providerManager = kernel.llmProvider else {
+            throw ReviewAborted.noProvider
+        }
+        let providerID = kernel.llmProvider?.selectedProviderID
+        let model = kernel.llmProvider?.selectedModel
+        return try await providerManager.generateText(request, providerID: providerID, model: model)
     }
 
     // MARK: - 设计师人设 prompt
