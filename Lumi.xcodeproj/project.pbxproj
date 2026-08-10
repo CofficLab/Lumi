@@ -349,6 +349,7 @@
 				0B3231D230111C1600423DC1 /* LumiFactory */,
 				F5CBA19030119F6C00425FF6 /* LumiFactory */,
 				F5CBA1A13020000000425FF6 /* AppUpdatePlugin */,
+				F5CBA1A53020000000425FF6 /* ProjectRAGPlugin */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -425,6 +426,7 @@
 				LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
 				LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/LocalizationKit" */,
 				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/AppUpdatePlugin" */,
+				F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/ProjectRAGPlugin" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1191,6 +1193,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/AppUpdatePlugin;
 		};
+		F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/ProjectRAGPlugin" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Plugins/ProjectRAGPlugin;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1221,6 +1227,10 @@
 		F5CBA1A13020000000425FF6 /* AppUpdatePlugin */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppUpdatePlugin;
+		};
+		F5CBA1A53020000000425FF6 /* ProjectRAGPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ProjectRAGPlugin;
 		};
 		LF000000000000000016 /* SuperLogKit */ = {
 			isa = XCSwiftPackageProductDependency;

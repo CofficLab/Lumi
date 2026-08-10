@@ -112,7 +112,6 @@ import ProjectFileBreadcrumbPlugin
 import ProjectFilesPlugin
 import ProjectFileTreePlugin
 import ProjectOverviewPlugin
-import ProjectRAGPlugin
 import ProjectsPlugin
 import QuickFileSearchPlugin
 import QuickLauncherPlugin
@@ -204,7 +203,6 @@ public enum PluginService {
             StateMonitorPlugin(),
             ConversationListPlugin(),
             ConversationNewPlugin(),
-            ProjectRAGPlugin(),
             GitPlugin(),
             AgentRulesPlugin(),
             CommandPlugin(),
