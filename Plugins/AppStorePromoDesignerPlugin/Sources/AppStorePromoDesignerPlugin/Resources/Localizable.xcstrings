@@ -68,6 +68,7 @@
       }
     },
     "HTML Source" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -76,9 +77,6 @@
           }
         }
       }
-    },
-    "Mode" : {
-
     },
     "No project open" : {
       "localizations" : {
@@ -91,6 +89,7 @@
       }
     },
     "Preview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
