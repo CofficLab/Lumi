@@ -29,14 +29,14 @@ extension RouteCandidate {
         providerDisplayName: String = "OpenAI",
         model: String = "gpt-4o",
         availability: CandidateAvailability = .available,
-        contextWindowSizes: [String: Int] = [:]
+        contextWindowSize: Int? = nil
     ) -> RouteCandidate {
         RouteCandidate(
             providerId: providerId,
             providerDisplayName: providerDisplayName,
             model: model,
             availability: availability,
-            contextWindowSizes: contextWindowSizes
+            contextWindowSize: contextWindowSize
         )
     }
 }
@@ -209,7 +209,7 @@ struct DefaultModelScoringTests {
             providerDisplayName: "Anthropic",
             model: "claude-sonnet-4-20250514",
             availability: .available,
-            contextWindowSizes: ["claude-sonnet-4-20250514": 200_000]
+            contextWindowSize: 200_000
         )
         let score = scoring.score(candidate: candidate, signal: signal)
         // 100 (available) + 200_000 / 100_000 = 100 + 2.0 = 102.0
@@ -228,7 +228,7 @@ struct DefaultModelScoringTests {
             providerDisplayName: "Anthropic",
             model: "claude-sonnet-4-20250514",
             availability: .available,
-            contextWindowSizes: ["claude-sonnet-4-20250514": 200_000]
+            contextWindowSize: 200_000
         )
         let score = scoring.score(candidate: candidate, signal: signal)
         #expect(score == 100.0)
@@ -262,13 +262,13 @@ struct DefaultModelScoringTests {
             providerId: "p1",
             model: "model-a",
             availability: .available,
-            contextWindowSizes: ["model-a": 100_000]
+            contextWindowSize: 100_000
         )
         let large = RouteCandidate.make(
             providerId: "p2",
             model: "model-b",
             availability: .available,
-            contextWindowSizes: ["model-b": 500_000]
+            contextWindowSize: 500_000
         )
         let scoreSmall = scoring.score(candidate: small, signal: signal)
         let scoreLarge = scoring.score(candidate: large, signal: signal)

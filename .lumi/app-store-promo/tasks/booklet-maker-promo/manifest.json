@@ -10,7 +10,7 @@
       "id" : "booklet-maker-core",
       "order" : 0,
       "title" : "小册子制作",
-      "updatedAt" : "2026-08-10T14:37:12Z"
+      "updatedAt" : "2026-08-10T14:38:10Z"
     },
     {
       "createdAt" : "2026-08-10T11:32:40Z",
@@ -48,5 +48,5 @@
   "localeIdentifier" : "zh-Hans",
   "schemaVersion" : 1,
   "title" : "BookletMaker 宣传图",
-  "updatedAt" : "2026-08-10T14:37:12Z"
+  "updatedAt" : "2026-08-10T14:38:10Z"
 }

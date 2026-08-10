@@ -26,10 +26,24 @@ final class APIKeyStoreTests: XCTestCase {
         XCTAssertThrowsError(
             try fixture.store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: "account")
         ) { error in
-            XCTAssertEqual(
-                error as? APIKeyStoreError,
-                .expectedItemMissing(account: "account", attempts: 4)
-            )
+            guard let storeError = error as? APIKeyStoreError else {
+                XCTFail("Expected APIKeyStoreError, got \(error)")
+                return
+            }
+            switch storeError {
+            case .expectedItemMissing(
+                let account,
+                let attempts,
+                let lastStatus,
+                let statusTrace,
+                let servedFromCache
+            ):
+                XCTAssertEqual(account, "account")
+                XCTAssertEqual(attempts, 4)
+                XCTAssertEqual(lastStatus, Int(errSecItemNotFound))
+                XCTAssertEqual(statusTrace, Array(repeating: Int(errSecItemNotFound), count: 4))
+                XCTAssertNil(servedFromCache)
+            }
         }
         XCTAssertEqual(backend.readCount, 4)
     }
@@ -81,6 +95,113 @@ final class APIKeyStoreTests: XCTestCase {
 
         XCTAssertNil(fixture.store.loadMigratingLegacyUserDefaults(forKey: "account"))
         XCTAssertEqual(backend.readCount, 1)
+    }
+
+    func testExpectedKeyFallsBackToMemoryCacheWhenKeychainStaysMissing() throws {
+        let backend = SequenceKeychainBackend(
+            Array(repeating: KeychainResult(status: errSecItemNotFound, data: nil), count: 4)
+        )
+        let fixture = makeStore(backend: backend)
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
+        try fixture.store.setReportingErrors("secret", forKey: "account")
+
+        XCTAssertThrowsError(
+            try fixture.store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: "account")
+        ) { error in
+            guard let storeError = error as? APIKeyStoreError else {
+                XCTFail("Expected APIKeyStoreError, got \(error)")
+                return
+            }
+            XCTAssertEqual(storeError.cachedValue, "secret")
+            if case let .expectedItemMissing(_, _, lastStatus, _, servedFromCache) = storeError {
+                XCTAssertEqual(lastStatus, Int(errSecItemNotFound))
+                XCTAssertEqual(servedFromCache, "secret")
+            }
+        }
+        XCTAssertEqual(backend.readCount, 4)
+    }
+
+    func testRemoveClearsMemoryCache() throws {
+        let backend = SequenceKeychainBackend([
+            KeychainResult(status: errSecSuccess, data: Data("secret".utf8)),
+            KeychainResult(status: errSecItemNotFound, data: nil),
+        ])
+        let fixture = makeStore(backend: backend)
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
+        try fixture.store.setReportingErrors("secret", forKey: "account")
+        try fixture.store.removeReportingErrors(forKey: "account")
+
+        XCTAssertThrowsError(
+            try fixture.store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: "account")
+        ) { error in
+            XCTAssertNil((error as? APIKeyStoreError)?.cachedValue)
+        }
+    }
+
+    func testOverwritingValueRefreshesMemoryCache() throws {
+        let backend = SequenceKeychainBackend([
+            KeychainResult(status: errSecSuccess, data: Data("old".utf8)),
+            KeychainResult(status: errSecSuccess, data: Data("new".utf8)),
+            KeychainResult(status: errSecItemNotFound, data: nil),
+            KeychainResult(status: errSecItemNotFound, data: nil),
+            KeychainResult(status: errSecItemNotFound, data: nil),
+            KeychainResult(status: errSecItemNotFound, data: nil),
+        ])
+        let fixture = makeStore(backend: backend)
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
+        try fixture.store.setReportingErrors("old", forKey: "account")
+        XCTAssertEqual(
+            try fixture.store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: "account"),
+            "old"
+        )
+        try fixture.store.setReportingErrors("new", forKey: "account")
+        XCTAssertThrowsError(
+            try fixture.store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: "account")
+        ) { error in
+            XCTAssertEqual((error as? APIKeyStoreError)?.cachedValue, "new")
+        }
+    }
+
+    func testSettingEmptyValueClearsMemoryCache() throws {
+        let backend = SequenceKeychainBackend([
+            KeychainResult(status: errSecSuccess, data: Data("secret".utf8)),
+            KeychainResult(status: errSecItemNotFound, data: nil),
+            KeychainResult(status: errSecItemNotFound, data: nil),
+            KeychainResult(status: errSecItemNotFound, data: nil),
+            KeychainResult(status: errSecItemNotFound, data: nil),
+        ])
+        let fixture = makeStore(backend: backend)
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
+        try fixture.store.setReportingErrors("secret", forKey: "account")
+        try fixture.store.setReportingErrors("   ", forKey: "account")
+
+        XCTAssertThrowsError(
+            try fixture.store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: "account")
+        ) { error in
+            XCTAssertNil((error as? APIKeyStoreError)?.cachedValue)
+        }
+    }
+
+    func testUnexpectedOSStatusIsReportedInDiagnostics() throws {
+        let backend = SequenceKeychainBackend(
+            Array(repeating: KeychainResult(status: errSecNotAvailable, data: nil), count: 4)
+        )
+        let fixture = makeStore(backend: backend)
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suiteName) }
+        try fixture.store.setReportingErrors("secret", forKey: "account")
+
+        XCTAssertThrowsError(
+            try fixture.store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: "account")
+        ) { error in
+            guard let storeError = error as? APIKeyStoreError else {
+                XCTFail("Expected APIKeyStoreError, got \(error)")
+                return
+            }
+            if case let .expectedItemMissing(_, _, lastStatus, statusTrace, _) = storeError {
+                XCTAssertEqual(lastStatus, Int(errSecNotAvailable))
+                XCTAssertEqual(statusTrace, Array(repeating: Int(errSecNotAvailable), count: 4))
+            }
+        }
     }
 
     private func makeStore(backend: SequenceKeychainBackend) -> (

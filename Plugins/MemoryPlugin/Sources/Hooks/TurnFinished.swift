@@ -38,5 +38,11 @@ public struct MemoryTurnFinishedHook {
                 }
             }
         }
+
+        // 记忆已变更:清除检索缓存,确保下一个 turn 的检索读到最新数据。
+        // (即便没有 candidate 写入,也清除一次以防 TTL 窗口内读到过期结果。)
+        if !candidates.isEmpty {
+            await MemoryRetrievalService.shared.invalidateCache()
+        }
     }
 }

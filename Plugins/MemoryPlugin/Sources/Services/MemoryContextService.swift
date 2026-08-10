@@ -14,6 +14,12 @@ public enum MemoryContextService {
               let query = messages.last(where: { $0.role == .user })?.content
         else { return messages }
 
+        // 仅当末尾是 user 时才注入(工具中间轮次末尾是 assistant/tool,跳过)。
+        // 把这个 guard 提前到检索之前,避免工具迭代中跑完整检索(文件 IO)再丢弃。
+        // 检索结果仍按 (query, projectPath) 缓存(见 MemoryRetrievalService),
+        // 首轮检索命中、后续工具轮直接命中缓存或在此处提前返回。
+        guard messages.last?.role == .user else { return messages }
+
         let memories = await MemoryRetrievalService.shared.findRelevant(
             query: query,
             projectPath: projectPath,
@@ -47,7 +53,7 @@ public enum MemoryContextService {
         //   (API 实测:第二轮命中率从 ~35% 提升到 ~85%);
         // - 仅当末尾是 user 时注入(连续 user 消息已实测被 DeepSeek anthropic 端点接受);
         //   工具中间轮次(末尾 assistant(tool_use) / tool)跳过,避免破坏 tool_use/tool_result 配对。
-        guard messages.last?.role == .user else { return messages }
+        // (末尾 user 的 guard 已提前到检索之前,见上方。)
         let conversationID = messages.last?.conversationID ?? UUID()
         let memoryMessage = LumiChatMessage(
             conversationID: conversationID,
