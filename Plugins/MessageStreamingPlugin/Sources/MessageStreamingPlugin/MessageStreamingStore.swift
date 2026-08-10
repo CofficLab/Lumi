@@ -9,6 +9,8 @@ import LumiKernel
 ///
 /// 并发约定：本类是 `@MainActor`。runner 的 `onChunk` 在 provider 后台线程执行，
 /// 通过 `await` 调用本类的写方法，运行时自动跳回主线程执行，保证对 `states` 的写安全。
+/// 写方法末尾手动 `objectWillChange.send()` 通知订阅方;订阅方(SwiftUI 消息列表
+/// ViewModel)用帧门禁把逐 token 广播合并成每帧最多一次 UI 刷新。
 @MainActor
 public final class MessageStreamingStore: MessageStreaming {
     private struct StreamingState {
@@ -18,14 +20,11 @@ public final class MessageStreamingStore: MessageStreaming {
 
     /// 每个会话独立保存临时行和阶段，避免并发回合互相覆盖。
     ///
-    /// 刻意**不**用 `@Published`:`appendContent`/`appendThinking` 每收到一个 token
-    /// 就会写一次,若标 `@Published` 会逐 token 触发 `objectWillChange` 广播。
-    /// 而当前生效的 SwiftUI 消息列表(`MessageListPlugin`)是纯数据库驱动、
-    /// **不**订阅本 store,唯一的订阅方(`MessageListAppKitPlugin`)处于 `.disabled`。
-    /// 因此每 token 广播都是无人消费的纯开销(主线程 hop + Combine 通知)。
-    /// 协议 `MessageStreaming` 要求 `ObservableObject`,去掉 `@Published` 不破坏协议,
-    /// 只是停止自动广播;需要监听变化的调用方应在自己的节拍上主动读取。
-    /// (未来若开启流式逐字显示,应采用「后台聚合 + 节拍推送」而非恢复 `@Published`。)
+    /// 刻意**不**用 `@Published`:那会让每个 token 都在 `willSet` 自动广播。
+    /// 改为在写方法末尾手动 `objectWillChange.send()`——语义等价,但让我们能
+    /// 精确控制广播时机,并便于将来在写方法里做聚合优化而不影响广播契约。
+    /// 订阅方(SwiftUI 消息列表 ViewModel)用自己的帧门禁把逐 token 广播合并成
+    /// 每帧(~16ms)最多一次 UI 刷新,因此逐 token 广播的成本是可接受的。
     private var states: [UUID: StreamingState] = [:]
 
     public init(kernel: LumiKernel) {
@@ -51,6 +50,7 @@ public final class MessageStreamingStore: MessageStreaming {
             ),
             stage: .sending
         )
+        objectWillChange.send()
     }
 
     public func appendContent(_ piece: String, conversationID: UUID) async {
@@ -58,6 +58,7 @@ public final class MessageStreamingStore: MessageStreaming {
         state.row.content += piece
         state.stage = .generating
         states[conversationID] = state
+        objectWillChange.send()
     }
 
     public func appendThinking(_ piece: String, conversationID: UUID) async {
@@ -65,9 +66,11 @@ public final class MessageStreamingStore: MessageStreaming {
         state.row.reasoningContent = (state.row.reasoningContent ?? "") + piece
         state.stage = .thinking
         states[conversationID] = state
+        objectWillChange.send()
     }
 
     public func endStreaming(conversationID: UUID) async {
         states.removeValue(forKey: conversationID)
+        objectWillChange.send()
     }
 }
