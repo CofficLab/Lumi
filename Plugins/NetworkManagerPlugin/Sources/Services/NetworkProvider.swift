@@ -3,7 +3,10 @@ import LumiKernel
 import Compression
 
 /// 基于 URLSession 的 NetworkProviding 实现
-@MainActor
+///
+/// 刻意 **不** 标 `@MainActor`:`session`(`URLSession`)和
+/// `exchangeStore`(后台写入路径)都线程安全,无可变状态。这样 `stream` 的
+/// SSE 字节循环和 `request`/`stream` 的交换记录写入都在后台执行,不占用主线程。
 public final class NetworkProvider: NetworkProviding {
     public let session: URLSession
     public let exchangeStore: HTTPExchangeStore?
@@ -26,19 +29,19 @@ public final class NetworkProvider: NetworkProviding {
         }
 
         let startedAt = Date()
-        let record = exchangeStore?.begin(request: urlRequest, startedAt: startedAt)
+        let recordID = exchangeStore?.beginRecord(request: urlRequest, startedAt: startedAt)
         let (data, response): (Data, URLResponse)
 
         do {
             (data, response) = try await session.data(for: urlRequest)
         } catch let error as URLError {
-            exchangeStore?.finish(record, error: error)
+            exchangeStore?.finishRecord(recordID, error: error)
             throw HTTPNetworkError(
                 url: request.url,
                 underlyingDescription: error.localizedDescription
             )
         } catch {
-            exchangeStore?.finish(record, error: error)
+            exchangeStore?.finishRecord(recordID, error: error)
             throw HTTPNetworkError(
                 url: request.url,
                 underlyingDescription: error.localizedDescription
@@ -47,7 +50,7 @@ public final class NetworkProvider: NetworkProviding {
 
         guard let httpResponse = response as? HTTPURLResponse else {
             let error = HTTPNetworkError(url: request.url, body: data, underlyingDescription: "Invalid response")
-            exchangeStore?.finish(record, response: response, body: data, error: error)
+            exchangeStore?.finishRecord(recordID, response: response, body: data, error: error)
             throw error
         }
 
@@ -59,11 +62,11 @@ public final class NetworkProvider: NetworkProviding {
                 headers: headers,
                 body: data
             )
-            exchangeStore?.finish(record, response: httpResponse, body: data, error: detailedError)
+            exchangeStore?.finishRecord(recordID, response: httpResponse, body: data, error: detailedError)
             throw detailedError
         }
 
-        exchangeStore?.finish(record, response: httpResponse, body: data)
+        exchangeStore?.finishRecord(recordID, response: httpResponse, body: data)
 
         return HTTPResponse(
             statusCode: httpResponse.statusCode,
@@ -87,7 +90,7 @@ public final class NetworkProvider: NetworkProviding {
         }
 
         let startedAt = Date()
-        let record = exchangeStore?.begin(request: urlRequest, startedAt: startedAt)
+        let recordID = exchangeStore?.beginRecord(request: urlRequest, startedAt: startedAt)
         var receivedBody = Data()
         var response: URLResponse?
 
@@ -96,7 +99,7 @@ public final class NetworkProvider: NetworkProviding {
             response = urlResponse
             guard let httpResponse = urlResponse as? HTTPURLResponse else {
                 let error = HTTPNetworkError(url: request.url, underlyingDescription: "Invalid response")
-                exchangeStore?.finish(record, response: urlResponse, body: receivedBody, error: error)
+                exchangeStore?.finishRecord(recordID, response: urlResponse, body: receivedBody, error: error)
                 throw error
             }
 
@@ -167,12 +170,12 @@ public final class NetworkProvider: NetworkProviding {
                     body: receivedBody
                 )
             }
-            exchangeStore?.finish(record, response: httpResponse, body: receivedBody)
+            exchangeStore?.finishRecord(recordID, response: httpResponse, body: receivedBody)
         } catch is CancellationError {
-            exchangeStore?.finish(record, response: response, body: receivedBody, error: CancellationError())
+            exchangeStore?.finishRecord(recordID, response: response, body: receivedBody, error: CancellationError())
             throw CancellationError()
         } catch let error as HTTPNetworkError {
-            exchangeStore?.finish(record, response: response, body: receivedBody, error: error)
+            exchangeStore?.finishRecord(recordID, response: response, body: receivedBody, error: error)
             throw error
         } catch {
             let networkError = HTTPNetworkError(
@@ -180,7 +183,7 @@ public final class NetworkProvider: NetworkProviding {
                 body: receivedBody,
                 underlyingDescription: error.localizedDescription
             )
-            exchangeStore?.finish(record, response: response, body: receivedBody, error: networkError)
+            exchangeStore?.finishRecord(recordID, response: response, body: receivedBody, error: networkError)
             throw networkError
         }
     }

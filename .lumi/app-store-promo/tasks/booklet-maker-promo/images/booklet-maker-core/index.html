@@ -13,7 +13,7 @@
       color: #ffffff;
       display: flex;
       flex-direction: column;
-      padding: 3% 4% 3%;
+      padding: 3% 4% 4%;
     }
     .header { text-align: center; margin-bottom: 1.5%; }
     .brand {
@@ -21,19 +21,19 @@
       font-weight: 600;
       letter-spacing: 0.15em;
       text-transform: uppercase;
-      opacity: 0.55;
+      opacity: 0.4;
       margin-bottom: 0.4%;
     }
     h1 {
-      font-size: clamp(36px, 6.2vmin, 90px);
-      font-weight: 700;
+      font-size: clamp(42px, 7.2vmin, 90px);
+      font-weight: 800;
       line-height: 1.08;
       letter-spacing: -0.02em;
     }
     .subtitle {
       font-size: clamp(14px, 2vmin, 28px);
       font-weight: 400;
-      opacity: 0.65;
+      opacity: 0.5;
       margin-top: 0.8%;
     }
     .visual {
@@ -41,7 +41,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 1.5%;
+      gap: 1%;
     }
     .pdf-stack {
       display: flex;
@@ -59,8 +59,10 @@
       box-shadow: 0 4px 14px rgba(0,0,0,0.22);
       position: relative;
     }
-    .pdf-page:nth-child(2) { transform: translateY(-5px); }
-    .pdf-page:nth-child(3) { transform: translateY(-3px); }
+    .pdf-page:nth-child(1) { transform: translateY(2px); }
+    .pdf-page:nth-child(2) { transform: translateY(-6px); }
+    .pdf-page:nth-child(3) { transform: translateY(-2px); }
+    .pdf-page:nth-child(4) { transform: translateY(4px); }
     .pdf-line {
       height: 2.5px;
       background: #6a7a92;
@@ -82,19 +84,26 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
       flex-shrink: 0;
     }
     .arrow {
       font-size: clamp(36px, 4.5vmin, 62px);
-      opacity: 0.5;
-      font-weight: 300;
-      color: #ffffff;
+      opacity: 0.9;
+      font-weight: 400;
+      color: #5c9aff;
+      text-shadow: 0 0 12px rgba(92, 154, 255, 0.4);
     }
     .arrow-label {
-      font-size: clamp(10px, 1.1vmin, 15px);
-      opacity: 0.4;
+      font-size: clamp(11px, 1.2vmin, 16px);
+      opacity: 1;
+      color: #5c9aff;
+      font-weight: 700;
       white-space: nowrap;
+      background: rgba(92, 154, 255, 0.15);
+      padding: 4px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(92, 154, 255, 0.25);
     }
     .booklet {
       width: clamp(200px, 24vmin, 330px);
@@ -140,15 +149,15 @@
       margin-bottom: 4px;
       flex-shrink: 0;
     }
-    .booklet-page .line:nth-child(odd) { width: 78%; }
-    .booklet-page .line:nth-child(even) { width: 62%; }
+    .booklet-page .line:nth-child(odd) { width: 75%; }
+    .booklet-page .line:nth-child(even) { width: 60%; }
     .tag {
       text-align: center;
-      margin-top: 1.5%;
+      margin-top: 2%;
       font-size: clamp(13px, 1.8vmin, 22px);
-      font-weight: 500;
-      opacity: 0.5;
-      letter-spacing: 0.06em;
+      font-weight: 600;
+      opacity: 0.7;
+      letter-spacing: 0.08em;
     }
   </style>
 </head>
@@ -178,7 +187,7 @@
       </div>
     </div>
     <div class="arrow-group">
-      <div class="arrow">&gt;</div>
+      <div class="arrow">→</div>
       <div class="arrow-label">自动拼版</div>
     </div>
     <div class="booklet">
