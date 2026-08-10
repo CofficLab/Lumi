@@ -202,7 +202,8 @@ jobs:
           fi
 
           # 副 app / Finder 插件的构建号必须保持原值（断言：仓库历史里它们分别是 1 / 500 / 600）
-          OTHER_COUNT=$(grep -E -c 'CURRENT_PROJECT_VERSION = [0-9]+;' "$PBXPROJ" || echo "0")
+          # 用 awk 而非 grep -c 数行：grep -c 在 0 匹配时退出码为 1，会被 set -e 当作失败
+          OTHER_COUNT=$(awk 'BEGIN{n=0} /CURRENT_PROJECT_VERSION = [0-9]+;/ {n++} END{print n+0}' "$PBXPROJ")
           if [ "$OTHER_COUNT" -ne 12 ]; then
             echo "❌ $PBXPROJ 中 CURRENT_PROJECT_VERSION 总数异常: 期望 12，实际 $OTHER_COUNT（不应破坏其他 target）"
             exit 1
@@ -210,7 +211,7 @@ jobs:
 
           # 确认其他 target 没被改动：值仍包含 1、500、600
           for v in 1 500 600; do
-            c=$(grep -c "CURRENT_PROJECT_VERSION = ${v};" "$PBXPROJ" || echo "0")
+            c=$(awk -v V="CURRENT_PROJECT_VERSION = ${v};" 'BEGIN{n=0} index($0,V)>0{n++} END{print n+0}' "$PBXPROJ")
             case "$v" in
               1)   [ "$c" -eq 8 ] || { echo "❌ 副 app CURRENT_PROJECT_VERSION=$v 数量异常: $c (期望 8)"; exit 1; } ;;
               500) [ "$c" -eq 2 ] || { echo "❌ LumiFinder CURRENT_PROJECT_VERSION=$v 数量异常: $c (期望 2)"; exit 1; } ;;
