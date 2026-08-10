@@ -130,7 +130,7 @@ public final class APIKeyStore: @unchecked Sendable {
                     return value
                 }
             } catch let error as KeychainStoreError {
-                statusTrace.append(Self.statusFromKeychainError(error))
+                // observedStatus 回调已记录本次的底层 status，这里不重复追加。
                 guard expectedConfigured, attempt < Self.missingConfirmationDelaysNanoseconds.count else {
                     throw APIKeyStoreError.expectedItemMissing(
                         account: key,
