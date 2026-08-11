@@ -571,6 +571,8 @@ public final class PluginManager: ObservableObject {
         guard current != enabled else { return false }
 
         enabledOverrides[id] = enabled
+        // 立即通知 UI 更新,避免 Toggle 卡在旧状态
+        objectWillChange.send()
 
         do {
             if enabled {
@@ -582,10 +584,11 @@ public final class PluginManager: ObservableObject {
             // Lifecycle failure must not leave the manager claiming a state that
             // the plugin failed to enter.
             enabledOverrides[id] = current
+            objectWillChange.send()
+            notifyEnabledPluginsDidChange()
             return false
         }
 
-        objectWillChange.send()
         notifyEnabledPluginsDidChange()
         return true
     }
@@ -600,10 +603,15 @@ public final class PluginManager: ObservableObject {
         let defaultEnabled = plugin.policy.enabledByDefault
         guard override != defaultEnabled else {
             enabledOverrides.removeValue(forKey: id)
+            objectWillChange.send()
+            notifyEnabledPluginsDidChange()
             return true
         }
 
         enabledOverrides[id] = defaultEnabled
+        // 立即通知 UI 更新,避免 Toggle 卡在旧状态
+        objectWillChange.send()
+
         do {
             if defaultEnabled {
                 try await plugin.onEnable(kernel: runtimeKernel)
@@ -612,11 +620,12 @@ public final class PluginManager: ObservableObject {
             }
         } catch {
             enabledOverrides[id] = override
+            objectWillChange.send()
+            notifyEnabledPluginsDidChange()
             return false
         }
 
         enabledOverrides.removeValue(forKey: id)
-        objectWillChange.send()
         notifyEnabledPluginsDidChange()
         return true
     }
