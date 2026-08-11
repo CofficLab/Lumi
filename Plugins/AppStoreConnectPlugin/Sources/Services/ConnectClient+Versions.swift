@@ -26,6 +26,21 @@ extension ConnectClient {
         }
     }
 
+    func readVersion(id: String) async throws -> AppStoreVersion {
+        let query = [
+            URLQueryItem(
+                name: "fields[appStoreVersions]",
+                value: "platform,versionString,appStoreState,appVersionState,createdDate"
+            )
+        ]
+        Self.logger.info("\(Self.t)readVersion id=\(id)")
+        let response: AppStoreConnectSingleResponse<AppStoreVersion> = try await request(
+            path: "/v1/appStoreVersions/\(id)",
+            queryItems: query
+        )
+        return response.data
+    }
+
     func listLocalizations(versionID: String) async throws -> [AppStoreVersionLocalization] {
         let query = [
             URLQueryItem(name: "limit", value: "100"),
@@ -43,26 +58,65 @@ extension ConnectClient {
         return response.data
     }
 
+    func readLocalization(id: String) async throws -> AppStoreVersionLocalization {
+        let query = [
+            URLQueryItem(
+                name: "fields[appStoreVersionLocalizations]",
+                value: "locale,promotionalText,description,keywords,whatsNew,supportUrl,marketingUrl"
+            )
+        ]
+        Self.logger.info("\(Self.t)readLocalization id=\(id)")
+        let response: AppStoreConnectSingleResponse<AppStoreVersionLocalization> = try await request(
+            path: "/v1/appStoreVersionLocalizations/\(id)",
+            queryItems: query
+        )
+        return response.data
+    }
+
     func updateLocalization(_ localization: AppStoreVersionLocalization) async throws -> AppStoreVersionLocalization {
+        try await updateLocalization(
+            id: localization.id,
+            promotionalText: localization.promotionalText,
+            description: localization.description,
+            keywords: localization.keywords,
+            whatsNew: localization.whatsNew,
+            supportURL: localization.supportURL,
+            marketingURL: localization.marketingURL
+        )
+    }
+
+    /// Partial update: only the provided (non-nil) fields are sent in the PATCH body.
+    /// Empty URL strings are sent as JSON null so Apple clears the value instead of
+    /// rejecting it as an invalid RFC 3986 URI.
+    func updateLocalization(
+        id: String,
+        promotionalText: String? = nil,
+        description: String? = nil,
+        keywords: String? = nil,
+        whatsNew: String? = nil,
+        supportURL: String? = nil,
+        marketingURL: String? = nil
+    ) async throws -> AppStoreVersionLocalization {
+        var attributes: [String: Any] = [:]
+        if let promotionalText { attributes["promotionalText"] = promotionalText }
+        if let description { attributes["description"] = description }
+        if let keywords { attributes["keywords"] = keywords }
+        if let whatsNew { attributes["whatsNew"] = whatsNew }
+        if let supportURL { attributes["supportUrl"] = supportURL.isEmpty ? NSNull() : supportURL }
+        if let marketingURL { attributes["marketingUrl"] = marketingURL.isEmpty ? NSNull() : marketingURL }
+
         let payload: [String: Any] = [
             "data": [
                 "type": "appStoreVersionLocalizations",
-                "id": localization.id,
-                "attributes": [
-                    "promotionalText": localization.promotionalText,
-                    "description": localization.description,
-                    "keywords": localization.keywords,
-                    "whatsNew": localization.whatsNew,
-                    "supportUrl": localization.supportURL,
-                    "marketingUrl": localization.marketingURL
-                ]
+                "id": id,
+                "attributes": attributes
             ]
         ]
 
         let body = try JSONSerialization.data(withJSONObject: payload)
-        Self.logger.info("\(Self.t)updateLocalization id=\(localization.id)")
+        Self.logger.info("\(Self.t)updateLocalization id=\(id)")
         let response: AppStoreConnectSingleResponse<AppStoreVersionLocalization> = try await request(
-            path: "/v1/appStoreVersionLocalizations/\(localization.id)",
+            path: "/v1/appStoreVersionLocalizations/\(id)",
             method: "PATCH",
             body: body
         )
@@ -141,18 +195,26 @@ extension ConnectClient {
         locale: String,
         attributes: AppStoreVersionLocalization.CreateAttributes
     ) throws -> Data {
+        // URL fields are validated as RFC 3986 URIs by Apple, so omit them when empty
+        // instead of sending "" (which is rejected) or null.
+        var attributePayload: [String: Any] = [
+            "locale": locale,
+            "promotionalText": attributes.promotionalText,
+            "description": attributes.description,
+            "keywords": attributes.keywords,
+            "whatsNew": attributes.whatsNew
+        ]
+        if !attributes.supportURL.isEmpty {
+            attributePayload["supportUrl"] = attributes.supportURL
+        }
+        if !attributes.marketingURL.isEmpty {
+            attributePayload["marketingUrl"] = attributes.marketingURL
+        }
+
         let payload: [String: Any] = [
             "data": [
                 "type": "appStoreVersionLocalizations",
-                "attributes": [
-                    "locale": locale,
-                    "promotionalText": attributes.promotionalText,
-                    "description": attributes.description,
-                    "keywords": attributes.keywords,
-                    "whatsNew": attributes.whatsNew,
-                    "supportUrl": attributes.supportURL,
-                    "marketingUrl": attributes.marketingURL
-                ],
+                "attributes": attributePayload,
                 "relationships": [
                     "appStoreVersion": [
                         "data": [

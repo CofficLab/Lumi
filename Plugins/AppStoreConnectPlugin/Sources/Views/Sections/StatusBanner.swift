@@ -22,9 +22,7 @@ struct VersionStatusBanner: View {
 
                 if !viewModel.localizations.isEmpty {
                     HStack(spacing: 8) {
-                        Text(AppStoreConnectLocalization.string("Locale"))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                        AppSectionLabel(AppStoreConnectLocalization.string("Locale"))
 
                         Picker("", selection: Binding(
                             get: { viewModel.selectedLocalizationID ?? "" },

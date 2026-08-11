@@ -42,11 +42,20 @@ struct CreateVersionSheet: View {
                 .foregroundStyle(.orange)
             }
 
-            Picker(AppStoreConnectLocalization.string("Release Type"), selection: $releaseType) {
-                Text(AppStoreConnectLocalization.string("After Approval"))
-                    .tag("AFTER_APPROVAL")
-                Text(AppStoreConnectLocalization.string("Manual Release"))
-                    .tag("MANUAL")
+            VStack(alignment: .leading, spacing: 6) {
+                AppSectionLabel(AppStoreConnectLocalization.string("Release Type"))
+
+                AppSegmentedControl(
+                    [
+                        AppStoreConnectLocalization.string("After Approval"),
+                        AppStoreConnectLocalization.string("Manual Release")
+                    ],
+                    selection: Binding(
+                        get: { releaseType == "MANUAL" ? 1 : 0 },
+                        set: { releaseType = $0 == 1 ? "MANUAL" : "AFTER_APPROVAL" }
+                    )
+                )
+                .frame(maxWidth: .infinity)
             }
 
             Text(AppStoreConnectLocalization.string("The new version will start in Prepare for Submission."))

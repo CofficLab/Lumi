@@ -1,0 +1,22 @@
+//
+// DatabaseManager.xcconfig
+// DatabaseManager target（Debug 与 Release 共用）。
+//
+
+#include "App-Shared.xcconfig"
+
+// 产物
+PRODUCT_BUNDLE_IDENTIFIER = com.coffic.databasemanager
+INFOPLIST_KEY_CFBundleDisplayName = DatabaseManager
+INFOPLIST_FILE = DatabaseManagerApp/DatabaseManager-Info.plist
+
+// 沙盒：关闭
+ENABLE_APP_SANDBOX = NO
+ENABLE_USER_SELECTED_FILES = readwrite
+
+// 权限
+CODE_SIGN_ENTITLEMENTS = DatabaseManagerApp/App.entitlements
+
+// 版本号（各自独立）
+MARKETING_VERSION = 1.0.0
+CURRENT_PROJECT_VERSION = 1

@@ -10,15 +10,19 @@ struct TopBar: View {
         AppToolbarContainer(padding: appStoreToolbarPadding) {
             HStack(spacing: 16) {
                 if viewModel.selectedApp != nil {
-                    Picker("", selection: Binding(
-                        get: { viewModel.page == .xcodeCloud ? VM.Page.xcodeCloud : .distribution },
-                        set: { viewModel.navigate(to: $0) }
-                    )) {
-                        Text(AppStoreConnectLocalization.string("Distribution")).tag(VM.Page.distribution)
-                        Text(AppStoreConnectLocalization.string("Xcode Cloud")).tag(VM.Page.xcodeCloud)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: 320)
+                    AppSegmentedControl(
+                        [
+                            AppStoreConnectLocalization.string("Distribution"),
+                            AppStoreConnectLocalization.string("Xcode Cloud")
+                        ],
+                        selection: Binding(
+                            get: { viewModel.page == .xcodeCloud ? 1 : 0 },
+                            set: { index in
+                                viewModel.navigate(to: index == 1 ? .xcodeCloud : .distribution)
+                            }
+                        ),
+                        maxWidth: 320
+                    )
                 }
 
                 Spacer()

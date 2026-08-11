@@ -7,7 +7,9 @@ import SwiftUI
 final class AppService: @unchecked Sendable, SuperLog {
     nonisolated static let emoji = "📦"
     nonisolated static let verbose: Bool = false
-    private let cacheManager = CacheManager.shared
+    // 懒加载：避免 AppManagerPlugin 实例化时（onReady 之前）就触发 CacheManager
+    // 单例构建，保证首次使用时数据目录已按项目约定解析。
+    private lazy var cacheManager = CacheManager.shared
 
     // 标准应用安装路径
     private let standardPaths = [

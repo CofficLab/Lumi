@@ -38,6 +38,16 @@
         }
       }
     },
+    "%@ (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "en" : {
@@ -1167,6 +1177,7 @@
       }
     },
     "Choose a version from the sidebar to manage distribution." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3091,6 +3102,7 @@
       }
     },
     "General" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3742,6 +3754,7 @@
       }
     },
     "List App Store Connect versions for a given app ID." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6888,6 +6901,7 @@
       }
     },
     "Select an app from the Apps page or toolbar picker." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

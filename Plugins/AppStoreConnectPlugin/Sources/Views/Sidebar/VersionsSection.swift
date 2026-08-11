@@ -8,33 +8,22 @@ struct VersionsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text(platformTitle)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                AppSectionLabel(platformTitle)
                 Spacer()
                 if !viewModel.sidebarVersions.isEmpty {
                     Text("\(viewModel.sidebarVersions.count)")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
-                Button {
+                AppIconButton(systemImage: "plus") {
                     showingCreateSheet = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.caption2)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
                 .disabled(viewModel.isBusy || !viewModel.canCreateVersion)
                 .help(AppStoreConnectLocalization.string("New Version"))
-                Button {
+
+                AppIconButton(systemImage: "arrow.clockwise") {
                     Task { await viewModel.loadVersions() }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.caption2)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
                 .disabled(viewModel.isBusy)
                 .help(AppStoreConnectLocalization.string("Refresh"))
             }
@@ -51,9 +40,7 @@ struct VersionsSection: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(groupedSidebarVersions, id: \.platform) { group in
-                            Text(platformDisplayName(group.platform))
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
+                            AppSectionLabel(platformDisplayName(group.platform))
                                 .padding(.horizontal, 12)
                                 .padding(.top, 10)
                                 .padding(.bottom, 4)

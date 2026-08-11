@@ -173,23 +173,25 @@ struct ScreenshotsSection: View {
         actionTitle: String? = nil,
         action: (() -> Void)? = nil
     ) -> some View {
-        if let actionTitle, let action {
-            InlineEmptyState(
-                icon: icon,
-                title: title,
-                description: description,
-                actionTitle: actionTitle,
-                action: action
-            )
-            .padding(.horizontal)
-        } else {
-            InlineEmptyState(
-                icon: icon,
-                title: title,
-                description: description
-            )
-            .padding(.horizontal)
+        Group {
+            if let actionTitle, let action {
+                AppEmptyState(
+                    icon: icon,
+                    title: title,
+                    description: description,
+                    actionTitle: actionTitle,
+                    action: action
+                )
+            } else {
+                AppEmptyState(
+                    icon: icon,
+                    title: title,
+                    description: description
+                )
+            }
         }
+        .frame(minHeight: 180)
+        .padding(.horizontal)
     }
 }
 

@@ -29,6 +29,11 @@ struct AliyunChatMessage: Sendable {
     var timeToFirstTokenMs: Double?
     var streamingDurationMs: Double?
 
+    /// 「sanitize 后名字 → 原始注册名」映射(解析期临时状态)。由 provider 在发起请求时
+    /// 注入,用于把模型回传的 sanitized 工具名(点号被替换成下划线)还原成注册名。
+    /// 不会被 `toLumiChatMessage` 带出。
+    var toolNameMap: [String: String]?
+
     fileprivate var firstTokenAt: Date?
     fileprivate var streamingStartedAt: Date?
     fileprivate var requestStartedAt: Date?
@@ -55,7 +60,8 @@ struct AliyunChatMessage: Sendable {
         cacheCreationTokens: Int? = nil,
         latencyMs: Double? = nil,
         timeToFirstTokenMs: Double? = nil,
-        streamingDurationMs: Double? = nil
+        streamingDurationMs: Double? = nil,
+        toolNameMap: [String: String]? = nil
     ) {
         self.id = id
         self.conversationID = conversationID
@@ -79,6 +85,7 @@ struct AliyunChatMessage: Sendable {
         self.latencyMs = latencyMs
         self.timeToFirstTokenMs = timeToFirstTokenMs
         self.streamingDurationMs = streamingDurationMs
+        self.toolNameMap = toolNameMap
         self.firstTokenAt = nil
         self.streamingStartedAt = nil
         self.requestStartedAt = nil
@@ -89,7 +96,8 @@ struct AliyunChatMessage: Sendable {
         providerID: String,
         modelName: String,
         requestStartedAt: Date = Date(),
-        now: Date = Date()
+        now: Date = Date(),
+        toolNameMap: [String: String]? = nil
     ) -> Self {
         var message = Self(
             conversationID: conversationID,
@@ -98,7 +106,8 @@ struct AliyunChatMessage: Sendable {
             createdAt: now,
             providerID: providerID,
             modelName: modelName,
-            metadata: [:]
+            metadata: [:],
+            toolNameMap: toolNameMap
         )
         message.requestStartedAt = requestStartedAt
         return message
@@ -157,7 +166,10 @@ struct AliyunChatMessage: Sendable {
 
     private mutating func beginToolCall(id: String, name: String) {
         if toolCalls == nil { toolCalls = [] }
-        toolCalls?.append(LumiToolCall(id: id, name: name, arguments: ""))
+        // 模型回传的是 sanitized 名(点号被替换成下划线),按映射表还原成注册名,
+        // 否则 ToolManagerService 会因名字不一致而报 "Tool not found"。
+        let restoredName = toolNameMap?[name] ?? name
+        toolCalls?.append(LumiToolCall(id: id, name: restoredName, arguments: ""))
     }
 
     private mutating func appendToolArguments(_ json: String) {

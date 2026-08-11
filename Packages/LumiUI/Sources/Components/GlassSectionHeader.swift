@@ -3,7 +3,7 @@ import SwiftUI
 public struct GlassSectionHeader: View {
     @LumiTheme private var theme
 
-    var icon: String
+    var icon: String?
     var title: String
     var subtitle: String? = nil
     var iconColor: Color? = nil
@@ -23,13 +23,30 @@ public struct GlassSectionHeader: View {
         self.spacing = spacing
     }
 
+    /// Creates a section header without an icon, leaving just the title (and
+    /// optional subtitle). Use this for pages that previously rendered a plain
+    /// title + subtitle header.
+    public init(
+        title: String,
+        subtitle: String? = nil,
+        spacing: CGFloat = 8
+    ) {
+        self.icon = nil
+        self.title = title
+        self.subtitle = subtitle
+        self.iconColor = nil
+        self.spacing = spacing
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: spacing) {
             HStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(iconColor ?? theme.primary)
-                    .frame(width: 32)
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 20))
+                        .foregroundColor(iconColor ?? theme.primary)
+                        .frame(width: 32)
+                }
 
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                     Text(title)

@@ -58,12 +58,14 @@ public final class AliyunTokenPlanProvider: LumiLLMProvider, @unchecked Sendable
             throw AliyunProviderError.invalidRequest("Conversation is empty")
         }
         let body = AliyunAnthropicRequestBuilder.body(for: request)
+        let toolNameMap = AliyunAnthropicRequestBuilder.toolNameMap(for: request)
         let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
         let apiKey = try lumiResolveAPIKey()
-        
+
         let requestStartedAt = Date()
         let collector = AliyunChatMessageCollector(message: AliyunChatMessage.assembling(
-            conversationID: conversationID, providerID: Self.info.id, modelName: request.model, requestStartedAt: requestStartedAt
+            conversationID: conversationID, providerID: Self.info.id, modelName: request.model, requestStartedAt: requestStartedAt,
+            toolNameMap: toolNameMap
         ))
         
         try await apiService.send(apiKey: apiKey, body: bodyData) { event in

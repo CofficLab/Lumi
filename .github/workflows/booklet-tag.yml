@@ -1,0 +1,58 @@
+name: Booklet Tag
+
+# 当有 commit 推到 main 时，根据 conventional commits 决定递增级别，
+# 打出新 booklet-v* tag 并推送。
+#   - BREAKING CHANGE / feat! / fix! / refactor!  → major
+#   - feat:                                       → minor
+#   - 其他                                         → patch
+#
+# Xcode Cloud 侧另配一个 workflow 监听 "new tag booklet-v*" 来做构建发布，
+# 这样 git 操作（打 tag）和 Apple 侧构建各司其职。
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  # 同一个 main 分支上的多次 push 串行执行，
+  # 避免并发 run 各自算出同一个 tag 互相冲突。
+  group: booklet-tag-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write  # 推 tag 需要
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Compute next booklet tag
+        id: version
+        run: |
+          chmod +x .github/scripts/next-booklet-tag.sh
+          # 退出码 1 = 本次没有 (booklet) commit，不打 tag（不算失败）
+          # 退出码 0 = 算出 next_tag；其他非 0 = 真错误
+          if NEXT=$(.github/scripts/next-booklet-tag.sh); then
+            echo "next_tag=$NEXT"     >> "$GITHUB_ENV"
+            echo "should_tag=true"    >> "$GITHUB_ENV"
+
+            echo "## 📖 Booklet Tag"            >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Next**: \`$NEXT\`"         >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "should_tag=false"   >> "$GITHUB_ENV"
+            echo "## 📖 Booklet Tag"                          >> "$GITHUB_STEP_SUMMARY"
+            echo "- No \`(booklet)\` commit this push, skip." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Create and push tag
+        if: env.should_tag == 'true'
+        run: |
+          set -euo pipefail
+          # 若因竞态远端已存在该 tag，git tag 会非 0 退出，让本次 run 失败暴露问题
+          git tag "${{ env.next_tag }}"
+          git push origin "${{ env.next_tag }}"

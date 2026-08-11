@@ -2,7 +2,7 @@ import SwiftUI
 
 struct IconView: View {
     let url: URL?
-    var size: CGFloat = 34
+    var size: CGFloat = 24
 
     var body: some View {
         Group {

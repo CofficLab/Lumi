@@ -102,7 +102,19 @@ public final class MiniMaxPlugin: LumiPlugin {
         ]
     }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
-    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
+        AnyView(
+            VStack(alignment: .leading, spacing: 8) {
+                Label(LumiPluginLocalization.string("MiniMax", bundle: .module),
+                      systemImage: "sparkle")
+                    .font(.headline)
+                Text(LumiPluginLocalization.string("LLM provider for chat and agent conversations.", bundle: .module))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+        )
+    }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }

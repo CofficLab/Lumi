@@ -763,6 +763,7 @@ struct PluginAppStoreConnectTests {
         let IDs = tools.map { type(of: $0).info.id }
         #expect(IDs.contains("app-store-connect.list-apps"))
         #expect(IDs.contains("app-store-connect.list-versions"))
+        #expect(IDs.contains("app-store-connect.read-version"))
         #expect(IDs.contains("app-store-connect.list-localizations"))
         #expect(IDs.contains("app-store-connect.list-screenshot-sets"))
         #expect(IDs.contains("app-store-connect.list-screenshots"))

@@ -6,7 +6,7 @@ enum GitRuntimeBridge {
 
     /// 提供一个"用 LLM 临时生成本次 commit message"的查询入口。
     ///
-    /// 由 `LumiFactory` 在 `createKernel()` 末尾完成注入:
+    /// 由 `FactoryCore` 在 `createKernel()` 末尾完成注入:
     /// 若 `LumiCore` 注册了 `LumiEphemeralChatQuerying` 服务,此闭包非空;
     /// 调用方可直接 `GitRuntimeBridge.chatQueryProvider?()` 拿到,
     /// 不必再依赖体积庞大的 `LumiChatServicing` 接口。

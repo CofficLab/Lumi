@@ -1,0 +1,22 @@
+//
+// Base.xcconfig
+// 所有 target 与项目级 build configuration 共享的最基础设置。
+// 被 Project-Debug/Release.xcconfig、App-Shared.xcconfig、LumiFinder-*.xcconfig include。
+//
+
+// 签名
+// 注意：不要在 Automatic 签名下显式指定 CODE_SIGN_IDENTITY 或
+// PROVISIONING_PROFILE_SPECIFIER，否则 Xcode 会判定为"签名配置冲突"
+//（automatically signed, but ... has been manually specified）。
+// Xcode 会根据 DEVELOPMENT_TEAM 自动选择 identity 与 profile。
+CODE_SIGN_STYLE = Automatic
+
+// 团队
+DEVELOPMENT_TEAM = Y6HZ9JJYV6
+
+// Swift
+SWIFT_VERSION = 6.0
+SWIFT_EMIT_LOC_STRINGS = YES
+
+// 产物名跟随 target 名
+PRODUCT_NAME = $(TARGET_NAME)

@@ -1,6 +1,6 @@
 import Foundation
 
-struct AppStoreVersion: Identifiable, Equatable, Decodable {
+struct AppStoreVersion: Identifiable, Equatable, Hashable, Decodable {
     let id: String
     let platform: String
     let versionString: String

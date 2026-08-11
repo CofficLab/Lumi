@@ -55,10 +55,10 @@ ProjectsPlugin
 
 ## 使用
 
-通过 LumiFactory 自动注册：
+通过宿主 Factory 自动注册：
 
 ```swift
-// LumiFactory/PluginService.swift
+// FactoryLumi/Sources/FactoryLumi/LumiPluginCatalog.swift
 list.append(ProjectsPlugin())
 ```
 

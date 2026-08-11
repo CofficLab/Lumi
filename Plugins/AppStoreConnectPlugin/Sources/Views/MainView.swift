@@ -63,8 +63,6 @@ struct MainView: View {
         switch viewModel.page {
         case .account:
             AccountPage(viewModel: viewModel, showingAccountGuide: $showingAccountGuide)
-        case .apps:
-            AppsPage(viewModel: viewModel)
         case .distribution:
             DistributionPage(viewModel: viewModel, importingScreenshots: $importingScreenshots)
         case .xcodeCloud:

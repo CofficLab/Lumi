@@ -6,10 +6,11 @@ struct XcodeCloudPage: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            PageHeader(
+            GlassSectionHeader(
                 title: AppStoreConnectLocalization.string("Xcode Cloud"),
                 subtitle: viewModel.selectedApp.map { AppStoreConnectLocalization.string("Workflows and build runs for %@", $0.name) } ?? AppStoreConnectLocalization.string("Select an app first")
             )
+            .padding(.horizontal)
 
             HStack(spacing: 10) {
                 Picker(AppStoreConnectLocalization.string("Product"), selection: Binding(
@@ -327,9 +328,7 @@ struct CiInfoCell: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+            AppSectionLabel(title)
             Text(value)
                 .font(.callout)
                 .lineLimit(2)

@@ -39,11 +39,12 @@ struct MetadataDisplaySection: View {
                     ]
                 )
             } else {
-                InlineEmptyState(
+                AppEmptyState(
                     icon: "text.badge.xmark",
                     title: AppStoreConnectLocalization.string("No Localizations"),
                     description: AppStoreConnectLocalization.string("Select a version and refresh to load localizations.")
                 )
+                .frame(minHeight: 160)
                 .padding(.horizontal)
             }
         }
@@ -52,9 +53,7 @@ struct MetadataDisplaySection: View {
     @ViewBuilder
     private func readOnlyField(_ title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+            AppSectionLabel(title)
 
             if value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text("—")
@@ -72,9 +71,7 @@ struct MetadataDisplaySection: View {
     @ViewBuilder
     private func readOnlyURLField(_ title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+            AppSectionLabel(title)
 
             if let url = URL(string: value), !value.isEmpty {
                 Link(value, destination: url)
