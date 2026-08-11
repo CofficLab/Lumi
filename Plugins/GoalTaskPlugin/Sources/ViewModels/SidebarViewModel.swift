@@ -7,6 +7,10 @@ import Foundation
 /// `hasActiveWork` / `progressText` 等派生属性集中在此,避免视图层重复计算。
 ///
 /// 标记 `public` 以兼容现有测试(`Tests/GoalStateManagerTests.swift`)。
+///
+/// 并发安全:每次加载都用 `expectedCid` 守卫,在 `await` 边界之后重新比对
+/// `currentConversationId`,丢弃已被新切换覆盖的陈旧响应,避免快速切换
+/// 对话时显示上一个对话的残留 Goal。
 @MainActor
 final public class SidebarViewModel: ObservableObject {
     /// 当前活跃的 Goal(单一目标模式)
@@ -47,7 +51,7 @@ final public class SidebarViewModel: ObservableObject {
         return "\(completed)/\(activeTasks.count)"
     }
 
-    /// 每次访问时动态获取 manager,避免缓存导致初始化时序问题
+    /// 每次访问时动态获取 manager，避免缓存导致初始化时序问题
     @MainActor
     private var manager: GoalStateManager? {
         GoalTaskPlugin.currentManager()
@@ -59,6 +63,7 @@ final public class SidebarViewModel: ObservableObject {
 
     public func refresh(conversationId: String?) async {
         guard let conversationId else {
+            // 没有 cid 时直接清空，避免后续通知误匹配
             activeGoal = nil
             activeTasks = []
             currentConversationId = nil
@@ -66,6 +71,10 @@ final public class SidebarViewModel: ObservableObject {
             return
         }
 
+        // 提前清空 + 同步更新 cid，让 UI 立即摆脱上一个对话的残留数据，
+        // 并让 .goalDidChange 通知回调立刻按新 cid 做匹配。
+        activeGoal = nil
+        activeTasks = []
         currentConversationId = conversationId
         isLoading = true
 
@@ -80,29 +89,41 @@ final public class SidebarViewModel: ObservableObject {
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     if let changedCid, changedCid == self.currentConversationId {
-                        await self.reloadFromDB()
+                        // 通知回调触发时，以触发瞬间的 cid 为期望值，丢弃陈旧响应
+                        await self.reloadFromDB(expectedCid: changedCid)
                     }
                 }
             }
             notificationObserverHolder.set(observer)
         }
 
-        await reloadFromDB()
+        await reloadFromDB(expectedCid: conversationId)
+        // 最后再做一次守卫：如果这次 refresh 已经被新切换覆盖，就不该清掉 isLoading，
+        // 把状态留给最新的 task 接管。
+        guard currentConversationId == conversationId else { return }
         isLoading = false
     }
 
     public func forceRefresh() async {
-        await reloadFromDB()
+        // 手动刷新使用当前 cid 作为期望值
+        await reloadFromDB(expectedCid: currentConversationId)
     }
 
-    private func reloadFromDB() async {
-        guard let cid = currentConversationId,
+    /// 从数据库重新加载当前 cid 的活跃 Goal 与 Tasks。
+    ///
+    /// - Parameter expectedCid: 调用瞬间期望的会话 id。每次 await 之后都会与
+    ///   `currentConversationId` 比对，若已被新切换覆盖则提前 return，丢弃陈旧响应，
+    ///   避免在快速切换对话时显示上一个对话的残留数据。
+    private func reloadFromDB(expectedCid: String?) async {
+        guard let expectedCid,
               let manager
         else { return }
 
-        let fetchedGoals = await manager.fetchGoals(conversationId: cid)
+        // 第 1 个 await：fetchGoals 可能在快速切换期间返回，先核对一次
+        let fetchedGoals = await manager.fetchGoals(conversationId: expectedCid)
+        guard currentConversationId == expectedCid else { return }
 
-        // 查找最新的活跃 Goal(非终态)
+        // 查找最新的活跃 Goal（非终态）
         let activeGoalModel = fetchedGoals.first { goal in
             switch goal.status {
             case .completed, .failed, .skipped:
@@ -114,7 +135,9 @@ final public class SidebarViewModel: ObservableObject {
 
         if let goal = activeGoalModel {
             activeGoal = GoalDisplayItem(from: goal)
+            // 第 2 个 await：fetchTasks 之前再核对一次
             let tasks = await manager.fetchTasks(goalId: goal.id)
+            guard currentConversationId == expectedCid else { return }
             activeTasks = tasks.map { GoalTaskDisplayItem(from: $0) }
         } else {
             activeGoal = nil
