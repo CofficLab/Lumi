@@ -7,31 +7,19 @@ struct SidebarVersionRow: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: version.stateIcon)
-                    .font(.caption2)
-                    .foregroundStyle(version.stateColor)
-                    .frame(width: 14)
-
-                Text(version.versionString)
-                    .font(.callout.weight(isSelected ? .semibold : .regular))
-                    .lineLimit(1)
-
-                Spacer(minLength: 0)
-
-                Text(version.shortStateLabel)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 5)
-            .background(isSelected ? Color.accentColor.opacity(0.16) : Color.clear)
-            .contentShape(Rectangle())
+        AppSidebarRow(
+            title: version.versionString,
+            systemImage: version.stateIcon,
+            leadingColor: version.stateColor,
+            isSelected: isSelected,
+            action: action
+        ) {
+            Text(version.shortStateLabel)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
-        .buttonStyle(.plain)
         .appStoreConnectAddToChatMenu(
             entityType: "version",
             entityID: version.id,

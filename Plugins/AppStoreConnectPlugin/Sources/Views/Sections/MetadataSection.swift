@@ -21,11 +21,12 @@ struct MetadataSection: View {
                 )
 
             if viewModel.localizations.isEmpty {
-                InlineEmptyState(
+                AppEmptyState(
                     icon: "text.badge.xmark",
                     title: AppStoreConnectLocalization.string("No Localizations"),
                     description: AppStoreConnectLocalization.string("Select a version and refresh to load localizations.")
                 )
+                .frame(minHeight: 160)
                 .padding(.horizontal)
                 .appStoreConnectAddToChatMenu(
                     entityType: "metadataEmptyState",
@@ -88,8 +89,7 @@ struct MetadataEditor: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
-                Text(title)
-                    .font(.caption.weight(.semibold))
+                AppSectionLabel(title)
                 Spacer()
                 Text("\(text.wrappedValue.count)/\(limit)")
                     .font(.caption2)

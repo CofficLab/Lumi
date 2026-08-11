@@ -6,10 +6,11 @@ struct AppsPage: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(
+            GlassSectionHeader(
                 title: AppStoreConnectLocalization.string("Apps"),
                 subtitle: AppStoreConnectLocalization.string("Browse and select an App Store Connect app")
             )
+            .padding()
 
             HStack {
                 AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(AppStoreConnectLocalization.string("Search by name, bundle ID, or SKU")))

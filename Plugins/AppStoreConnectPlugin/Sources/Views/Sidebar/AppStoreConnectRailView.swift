@@ -22,7 +22,7 @@ struct AppStoreConnectRailView: View {
 
             Spacer(minLength: 0)
 
-            Divider()
+            AppSettingsDivider()
             sidebarSection(AppStoreConnectLocalization.string("General")) {
                 sidebarButton(.account)
                 sidebarButton(.apps)
@@ -34,9 +34,7 @@ struct AppStoreConnectRailView: View {
 
     private func sidebarSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+            AppSectionLabel(title)
                 .padding(.horizontal, 12)
                 .padding(.top, 10)
 
@@ -45,16 +43,11 @@ struct AppStoreConnectRailView: View {
     }
 
     private func sidebarButton(_ page: VM.Page) -> some View {
-        Button {
-            viewModel.navigate(to: page)
-        } label: {
-            Label(page.title, systemImage: page.systemImage)
-                .font(.callout)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
-        .background(viewModel.page == page ? Color.accentColor.opacity(0.16) : Color.clear)
+        AppSidebarRow(
+            title: page.title,
+            systemImage: page.systemImage,
+            isSelected: viewModel.page == page,
+            action: { viewModel.navigate(to: page) }
+        )
     }
 }
