@@ -58,6 +58,21 @@ extension ConnectClient {
         return response.data
     }
 
+    func readLocalization(id: String) async throws -> AppStoreVersionLocalization {
+        let query = [
+            URLQueryItem(
+                name: "fields[appStoreVersionLocalizations]",
+                value: "locale,promotionalText,description,keywords,whatsNew,supportUrl,marketingUrl"
+            )
+        ]
+        Self.logger.info("\(Self.t)readLocalization id=\(id)")
+        let response: AppStoreConnectSingleResponse<AppStoreVersionLocalization> = try await request(
+            path: "/v1/appStoreVersionLocalizations/\(id)",
+            queryItems: query
+        )
+        return response.data
+    }
+
     func updateLocalization(_ localization: AppStoreVersionLocalization) async throws -> AppStoreVersionLocalization {
         try await updateLocalization(
             id: localization.id,

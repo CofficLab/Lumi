@@ -36,6 +36,7 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
             ReleaseAppStoreConnectVersionTool(),
             ListAppStoreConnectLocalizationsTool(),
             CreateAppStoreConnectLocalizationTool(),
+            ReadAppStoreConnectLocalizationTool(),
             ListAppStoreConnectScreenshotSetsTool(),
             ListAppStoreConnectScreenshotsTool(),
             ListAppStoreConnectCiProductsTool(),

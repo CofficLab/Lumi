@@ -5,7 +5,7 @@ struct UpdateAppStoreConnectLocalizationTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
         id: "app-store-connect.update-localization",
         displayName: "Update localization metadata",
-        description: "Update editable fields of an App Store version localization. Only the fields you provide are changed; omitted fields keep their current values. Pass an empty string for supportURL/marketingURL to clear them."
+        description: "Update editable fields of an App Store version localization. Only the fields you provide are changed; omitted fields keep their current values. supportURL/marketingURL accept empty strings, which are mapped to JSON null and clear the field (Apple rejects '' as an invalid RFC 3986 URI). All other string fields are written verbatim — passing an empty string overwrites the field with ''. Always read-localization first, then call update-localization with the changed fields plus the verbatim values of any other field you want to preserve."
     )
 
     var inputSchema: LumiJSONValue {

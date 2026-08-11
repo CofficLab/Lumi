@@ -30,12 +30,35 @@ struct ListAppStoreConnectLocalizationsTool: LumiAgentTool {
         do {
             let localizations = try await client.listLocalizations(versionID: versionID)
             guard !localizations.isEmpty else { return "No localizations found for version id=\(versionID)." }
-            let lines = localizations.map {
-                "- \($0.locale) id=\($0.id) whatsNew=\($0.whatsNew.isEmpty ? "empty" : "present")"
+            let header = "Localizations for version id=\(versionID) — use id with read-localization / update-localization:"
+            // Show every editable field so the agent never has to do a follow-up
+            // read just to discover whether a field is empty.
+            let lines = localizations.map { localization -> String in
+                """
+                - \(localization.locale)
+                  id=\(localization.id)
+                  description=\(summarize(localization.description))
+                  keywords=\(summarize(localization.keywords))
+                  whatsNew=\(summarize(localization.whatsNew))
+                  promotionalText=\(summarize(localization.promotionalText))
+                  supportURL=\(localization.supportURL.isEmpty ? "(empty)" : localization.supportURL)
+                  marketingURL=\(localization.marketingURL.isEmpty ? "(empty)" : localization.marketingURL)
+                """
             }
-            return (["Localizations for version id=\(versionID):"] + lines).joined(separator: "\n")
+            return ([header] + lines).joined(separator: "\n")
         } catch {
             return "Failed to list localizations: \(error.localizedDescription)"
         }
+    }
+
+    /// Collapses a multi-line string into a one-line preview for list output.
+    /// Long values are truncated to keep the list readable; full content is
+    /// always available via `read-localization`.
+    private func summarize(_ value: String) -> String {
+        if value.isEmpty { return "(empty)" }
+        let collapsed = value.replacingOccurrences(of: "\n", with: "\\n")
+        if collapsed.count <= 80 { return collapsed }
+        let endIndex = collapsed.index(collapsed.startIndex, offsetBy: 80)
+        return collapsed[..<endIndex] + "…(\(collapsed.count) chars)"
     }
 }
