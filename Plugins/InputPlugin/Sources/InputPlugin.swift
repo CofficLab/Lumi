@@ -67,7 +67,19 @@ public final class InputPlugin: LumiPlugin {
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
-    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+        public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
+        AnyView(
+            VStack(alignment: .leading, spacing: 8) {
+                Label(LumiPluginLocalization.string("Input Manager", bundle: .module),
+                      systemImage: "text.cursor.input")
+                    .font(.headline)
+                Text(LumiPluginLocalization.string("Manages the chat input area and text composition.", bundle: .module))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+        )
+    }
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }

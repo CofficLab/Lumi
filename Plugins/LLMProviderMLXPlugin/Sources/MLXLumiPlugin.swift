@@ -63,7 +63,19 @@ public final class MLXLumiPlugin: LumiPlugin {
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
-    public func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
+    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
+        AnyView(
+            VStack(alignment: .leading, spacing: 8) {
+                Label(LumiPluginLocalization.string("MLX", bundle: .module),
+                      systemImage: "cpu")
+                    .font(.headline)
+                Text(LumiPluginLocalization.string("LLM provider for chat and agent conversations.", bundle: .module))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+        )
+    }
 
     public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] {
         MLXModels.seriesRegistrations.map { reg in

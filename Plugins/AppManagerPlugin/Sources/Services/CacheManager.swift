@@ -19,16 +19,24 @@ actor CacheManager: SuperLog {
     nonisolated static let verbose: Bool = false
     static let shared = CacheManager()
 
-    private let container: ModelContainer
+    /// 显式注入的数据目录（测试用）；为 nil 时走插件目录解析器
+    private let explicitDataDirectory: URL?
+
+    /// 延迟创建：首次真正读写缓存时才解析 `pluginDataDirectoryProvider`，
+    /// 确保此时 `onReady` 已注入标准路径
+    /// （`<Application Support>/<bundleID>/db_<mode>_v<major>/AppManagerPlugin/`），
+    /// 避免在插件实例化阶段（onReady 之前）就把数据库建到 fallback 目录。
+    private lazy var container: ModelContainer = Self.makeContainer(
+        pluginDataDirectory: explicitDataDirectory ?? AppManagerPlugin.pluginDataDirectoryProvider())
 
     private(set) var stats = CacheStats()
 
     private init() {
-        self.container = Self.makeContainer(pluginDataDirectory: AppManagerPlugin.pluginDataDirectoryProvider())
+        self.explicitDataDirectory = nil
     }
 
     init(pluginDataDirectory: URL) {
-        self.container = Self.makeContainer(pluginDataDirectory: pluginDataDirectory)
+        self.explicitDataDirectory = pluginDataDirectory
     }
 
     static func makeContainer(pluginDataDirectory: URL) -> ModelContainer {

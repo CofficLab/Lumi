@@ -4,7 +4,7 @@ import SwiftUI
 
 /// 设置窗口
 ///
-/// 不在构造期快照内核,而是运行期从 `LumiFactory.mainKernel` 解析。
+/// 不在构造期快照内核,而是运行期从 `FactoryCore.mainKernel` 解析。
 /// 这样即便设置窗口的 SwiftUI Scene 在主窗口内核初始化完成前被求值,
 /// 也不会被 `mainKernel ?? LumiKernel()` 锁死成一个空内核实例
 /// (空内核没有 settings/theme 等服务,会导致设置界面显示错误界面)。
@@ -17,7 +17,7 @@ public struct WindowSettings: View {
 
     public var body: some View {
         Group {
-            if let kernel = LumiFactory.mainKernel {
+            if let kernel = FactoryCore.mainKernel {
                 SettingsView(kernel: kernel)
             } else {
                 SettingsLoadingView()
@@ -26,7 +26,7 @@ public struct WindowSettings: View {
         .task {
             // 主内核通常先于设置窗口就绪,此循环几乎立即退出;
             // 仅在设置窗口早于主窗口初始化的极端时序下起作用。
-            while LumiFactory.mainKernel == nil {
+            while FactoryCore.mainKernel == nil {
                 if Task.isCancelled { return }
                 try? await Task.sleep(nanoseconds: 100_000_000)
             }

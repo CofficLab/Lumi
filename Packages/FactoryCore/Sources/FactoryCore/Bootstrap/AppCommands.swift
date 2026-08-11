@@ -1,5 +1,4 @@
 import AppKit
-import LumiFactory
 import LumiKernel
 import SwiftUI
 
@@ -98,7 +97,7 @@ private final class CommandServiceObserver: ObservableObject {
     }
 
     private func updateGroups() {
-        guard let kernel = LumiFactory.mainKernel,
+        guard let kernel = FactoryCore.mainKernel,
               let command = kernel.command else {
             return
         }
@@ -134,7 +133,7 @@ private final class CommandMenuInstaller {
         startTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
                 guard let self,
-                      let kernel = LumiFactory.mainKernel,
+                      let kernel = FactoryCore.mainKernel,
                       let command = kernel.command,
                       let mainMenu = NSApplication.shared.mainMenu else {
                     try? await Task.sleep(nanoseconds: 100_000_000)

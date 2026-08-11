@@ -2,19 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "LumiFactory",
+    name: "FactoryLumi",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "LumiFactory", targets: ["LumiFactory"]),
+        .library(name: "FactoryLumi", targets: ["FactoryLumi"]),
     ],
     dependencies: [
+        .package(path: "../FactoryCore"),
         .package(path: "../LumiKernel"),
         .package(path: "../LumiUI"),
         .package(path: "../LumiLocalizationKit"),
-        .package(path: "../LocalizationKit"),
         .package(path: "../SuperLogKit"),
         .package(path: "../EditorService"),
-        // Core plugins - provide required services
         .package(path: "../../Plugins/StoragePlugin"),
         .package(path: "../../Plugins/LegacyDataPlugin"),
         .package(path: "../../Plugins/ProjectsPlugin"),
@@ -76,7 +75,6 @@ let package = Package(
         .package(path: "../../Plugins/ThemeVscodePlugin"),
         .package(path: "../../Plugins/ThemeWinterPlugin"),
         .package(path: "../../Plugins/LLMProviderManagerPlugin"),
-        // LLM Providers
         .package(path: "../../Plugins/LLMProviderAiRouterPlugin"),
         .package(path: "../../Plugins/LLMProviderAliyunPlugin"),
         .package(path: "../../Plugins/LLMProviderAnthropicPlugin"),
@@ -99,9 +97,7 @@ let package = Package(
         .package(path: "../../Plugins/LLMProviderXiaomiPlugin"),
         .package(path: "../../Plugins/LLMProviderXybbzPlugin"),
         .package(path: "../../Plugins/LLMProviderZhipuPlugin"),
-        // Editor and UI plugins
         .package(path: "../../Plugins/GitPlugin"),
-        // Utility plugins
         .package(path: "../../Plugins/DeviceInfoPlugin"),
         .package(path: "../../Plugins/ProjectFileTreePlugin"),
         .package(path: "../../Plugins/ClipboardManagerPlugin"),
@@ -133,7 +129,6 @@ let package = Package(
         .package(path: "../../Plugins/DocxReadPlugin"),
         .package(path: "../../Plugins/NetworkManagerPlugin"),
         .package(path: "../../Plugins/ProjectOverviewPlugin"),
-        // Open-in external apps
         .package(path: "../../Plugins/OpenInFinderPlugin"),
         .package(path: "../../Plugins/OpenInXcodePlugin"),
         .package(path: "../../Plugins/OpenInCursorPlugin"),
@@ -166,19 +161,17 @@ let package = Package(
         .package(path: "../../Plugins/DatabaseManagerPlugin"),
         .package(path: "../../Plugins/ConversationForkPlugin"),
         .package(path: "../../Plugins/AgentTurnNotificationPlugin"),
-        // User interaction
         .package(path: "../../Plugins/AskUserPlugin"),
     ],
     targets: [
         .target(
-            name: "LumiFactory",
+            name: "FactoryLumi",
             dependencies: [
+                .product(name: "FactoryCore", package: "FactoryCore"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
-                // Core plugins - provide required services
                 .product(name: "StoragePlugin", package: "StoragePlugin"),
                 .product(name: "LegacyDataPlugin", package: "LegacyDataPlugin"),
                 .product(name: "ProjectsPlugin", package: "ProjectsPlugin"),
@@ -240,7 +233,6 @@ let package = Package(
                 .product(name: "ThemeWinterPlugin", package: "ThemeWinterPlugin"),
                 .product(name: "ThemeVscodePlugin", package: "ThemeVscodePlugin"),
                 .product(name: "LLMProviderManagerPlugin", package: "LLMProviderManagerPlugin"),
-                // LLM Providers
                 .product(name: "LLMProviderAiRouterPlugin", package: "LLMProviderAiRouterPlugin"),
                 .product(name: "LLMProviderAliyunPlugin", package: "LLMProviderAliyunPlugin"),
                 .product(name: "LLMProviderAnthropicPlugin", package: "LLMProviderAnthropicPlugin"),
@@ -263,10 +255,8 @@ let package = Package(
                 .product(name: "LLMProviderXiaomiPlugin", package: "LLMProviderXiaomiPlugin"),
                 .product(name: "LLMProviderXybbzPlugin", package: "LLMProviderXybbzPlugin"),
                 .product(name: "LLMProviderZhipuPlugin", package: "LLMProviderZhipuPlugin"),
-                // Editor and UI plugins
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "GitPlugin", package: "GitPlugin"),
-                // Utility plugins
                 .product(name: "DeviceInfoPlugin", package: "DeviceInfoPlugin"),
                 .product(name: "ProjectFileTreePlugin", package: "ProjectFileTreePlugin"),
                 .product(name: "ClipboardManagerPlugin", package: "ClipboardManagerPlugin"),
@@ -298,7 +288,6 @@ let package = Package(
                 .product(name: "DocxReadPlugin", package: "DocxReadPlugin"),
                 .product(name: "NetworkManagerPlugin", package: "NetworkManagerPlugin"),
                 .product(name: "ProjectOverviewPlugin", package: "ProjectOverviewPlugin"),
-                // Open-in external apps
                 .product(name: "OpenInFinderPlugin", package: "OpenInFinderPlugin"),
                 .product(name: "OpenInXcodePlugin", package: "OpenInXcodePlugin"),
                 .product(name: "OpenInCursorPlugin", package: "OpenInCursorPlugin"),
@@ -332,10 +321,11 @@ let package = Package(
                 .product(name: "ConversationForkPlugin", package: "ConversationForkPlugin"),
                 .product(name: "AgentTurnNotificationPlugin", package: "AgentTurnNotificationPlugin"),
                 .product(name: "AskUserPlugin", package: "AskUserPlugin"),
-            ],
-            resources: [
-                .process("Resources")
             ]
-        )
+        ),
+        .testTarget(
+            name: "FactoryLumiTests",
+            dependencies: ["FactoryLumi"]
+        ),
     ]
 )

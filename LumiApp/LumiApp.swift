@@ -1,5 +1,6 @@
 import AppUpdatePlugin
-import LumiFactory
+import FactoryCore
+import FactoryLumi
 import ProjectRAGPlugin
 import SwiftUI
 
@@ -11,18 +12,16 @@ struct LumiApp: App {
     /// - `AppUpdatePlugin`（Sparkle 自动更新）：MAS 禁止自带更新机制。
     /// - `ProjectRAGPlugin`（vec0.dylib 向量检索）：嵌入的二进制库需要
     ///   特殊代码签名，且 RAG 仅 Lumi 需要；独立 app 不应打包它。
-    /// 这些插件不再由 `LumiFactory` 静态引用，因此上架 Mac App Store 的
-    /// 独立 app 可以在不链接它们的前提下复用同一套 `LumiFactory` 骨架。
-    private static let hostConfiguration = LumiHostConfiguration(
-        additionalPlugins: [
-            AppUpdatePlugin(),
-            ProjectRAGPlugin(),
-        ]
-    )
+    /// 这些插件不进 FactoryLumi 的完整目录，由 LumiApp 在此显式注入，
+    /// 因此上架 Mac App Store 的独立 app 不会链接它们。
+    private static let additionalPlugins: [any LumiPlugin] = [
+        AppUpdatePlugin(),
+        ProjectRAGPlugin(),
+    ]
 
     var body: some Scene {
         WindowGroup(AppBootstrap.appName, id: AppBootstrap.mainWindowID) {
-            LumiFactory.makeMainWindow(configuration: Self.hostConfiguration)
+            FactoryLumi.makeMainWindow(additionalPlugins: Self.additionalPlugins)
                 .environmentObject(appDelegate)
                 .onReceive(appDelegate.$pendingOpenPath.compactMap { $0 }) { path in
                     OpenProjectHandler.shared.requestOpen(path: path)
@@ -41,11 +40,11 @@ struct LumiApp: App {
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: AppBootstrap.defaultWindowSize.width, height: AppBootstrap.defaultWindowSize.height)
         .commands {
-            LumiFactory.makeCommands()
+            FactoryLumi.makeCommands()
         }
 
         Window("设置", id: AppBootstrap.settingsWindowID) {
-            LumiFactory.makeSettingsWindow()
+            FactoryLumi.makeSettingsWindow()
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))

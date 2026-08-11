@@ -4,7 +4,7 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
-/// "通用"设置页(原 LumiFactory 的 GeneralSettingsPage)。
+/// "通用"设置页(原 LumiFactory 的 GeneralSettingsPage，宿主层现归 FactoryCore)。
 struct GeneralSettingsView: View {
     var body: some View {
         AppSettingsContentScaffold(maxContentWidth: nil) {

@@ -24,10 +24,11 @@ LAST_TAG=$(git tag -l "v*" | sort -V | tail -n 1 2>/dev/null || echo "v0.0.0")
 # Strip 'v' prefix if present
 LAST_TAG="${LAST_TAG#v}"
 
-# Get the current version from Xcode project
-# Read directly from project.pbxproj to avoid depending on xcodebuild,
-# which requires resolving SPM package dependencies and may fail in CI.
-XCODE_VERSION=$(grep -m1 "MARKETING_VERSION = " Lumi.xcodeproj/project.pbxproj | sed 's/.*MARKETING_VERSION = \([0-9.]*\);/\1/' || echo "0.0.0")
+# Get the current version from the Lumi xcconfig
+# (build settings 已从 project.pbxproj 迁移到 Config/*.xcconfig)。
+# 读 Release 配置的 MARKETING_VERSION（与 Debug 一致）。
+LUMI_XCCONFIG="Config/Lumi-Release.xcconfig"
+XCODE_VERSION=$(grep -m1 "^MARKETING_VERSION" "$LUMI_XCCONFIG" | sed 's/.*= *//; s/;.*//' | tr -d ' ' || echo "0.0.0")
 
 # Compare versions and use the higher one
 # sort -V does version-aware sorting (e.g., 1.10 > 1.9)

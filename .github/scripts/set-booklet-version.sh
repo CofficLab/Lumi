@@ -51,88 +51,37 @@ fi
 
 BUILD_NUMBER="${CI_BUILD_NUMBER:-1}"
 
-PBXPROJ="Lumi.xcodeproj/project.pbxproj"
-if [ ! -f "$PBXPROJ" ]; then
-  echo "==> [set-booklet-version] 错误：找不到 $PBXPROJ" >&2
-  exit 1
-fi
-
 echo "==> [set-booklet-version] 写入 BookletMaker 版本"
 echo "    tag:              $TAG"
 echo "    MARKETING_VERSION → $VERSION"
 echo "    CURRENT_PROJECT_VERSION → $BUILD_NUMBER"
 
 # -----------------------------------------------------------------------------
-# 2. 精确改 BookletMaker 的 build config（ID 前缀 BM）
+# 2. 写入 BookletMaker 的 xcconfig
 #
-# project.pbxproj 里每个 build config 形如：
-#     BM000000000000000000000D /* Debug */ = {
-#         isa = XCBuildConfiguration;
-#         buildSettings = {
-#             ...
-#             MARKETING_VERSION = 1.0.0;
-#             CURRENT_PROJECT_VERSION = 1;
-#             ...
-#         };
-#         name = Debug;
-#     };
-#
-# 策略：用状态机遍历。进入 ID 以 "BM" 开头的 config block 时打开开关，
-# 退出 block（行首 "};\n\t\t};"）时关闭。仅在开关打开期间替换两行。
-# 这样 Lumi (LU)、AppIconDesigner (AI) 等其他 target 完全不被触碰。
+# build settings 已从 project.pbxproj 迁移到 Config/BookletMaker.xcconfig。
+# BookletMaker 的 Debug/Release 共用这一个文件（两者配置一致），
+# 所以改这一个文件即可同时覆盖两个 configuration。
 # -----------------------------------------------------------------------------
-STATE="outside"          # outside | in-booklet
-BM_LINES_CHANGED=0
-
-TMP="$(mktemp)"
-trap 'rm -f "$TMP"' EXIT
-
-awk -v mv="$VERSION" -v cpv="$BUILD_NUMBER" '
-  # 进入一个 build config block：行匹配 /^\t\t<24位ID> \/\* (Debug|Release) \*\/ = {/
-  /^\t\t[A-Z0-9]{24} \/\* (Debug|Release) \*\/ = \{/ {
-    if (substr($0, 3, 2) == "BM") {
-      state = "in-booklet"
-    } else {
-      state = "in-other"
-    }
-    print
-    next
-  }
-  # block 结束：单独成行的 };
-  state == "in-booklet" && /^\t\t\};$/ {
-    state = "outside"
-    print
-    next
-  }
-  # block 内：替换版本字段（仅 BookletMaker）
-  state == "in-booklet" && /^\t\t\t\tMARKETING_VERSION = / {
-    printf "\t\t\t\tMARKETING_VERSION = %s;\n", mv
-    next
-  }
-  state == "in-booklet" && /^\t\t\t\tCURRENT_PROJECT_VERSION = / {
-    printf "\t\t\t\tCURRENT_PROJECT_VERSION = %s;\n", cpv
-    next
-  }
-  { print }
-' "$PBXPROJ" > "$TMP"
-
-# -----------------------------------------------------------------------------
-# 3. 落盘 + 校验改动命中数
-# -----------------------------------------------------------------------------
-# BookletMaker 有 Debug + Release 两个 config，每个改 2 行 → 期望 4 处变动
-# 注意：diff 有差异时退出码是 1，配合 set -euo pipefail 会让管道失败、
-# 触发 || CHANGED=0，导致计数永远为 0。用 || true 吞掉 diff 的退出码。
-DIFF_OUT=$(diff "$PBXPROJ" "$TMP" || true)
-CHANGED=$(echo "$DIFF_OUT" | grep -cE '^[<>]')
-# diff 每处改动产生一对 < 和 > 行，4 处 = 8 行 diff
-if [ "$CHANGED" -ne 8 ]; then
-  echo "==> [set-booklet-version] 警告：期望改 4 处（8 行 diff），实际 diff 行数=$CHANGED" >&2
-  echo "    可能是 BookletMaker 的 build config 结构有变，请检查脚本。" >&2
-  echo "$DIFF_OUT" | head -30 >&2
+XCCONFIG="Config/BookletMaker.xcconfig"
+if [ ! -f "$XCCONFIG" ]; then
+  echo "==> [set-booklet-version] 错误：找不到 $XCCONFIG" >&2
   exit 1
 fi
 
-mv "$TMP" "$PBXPROJ"
-trap - EXIT
+sed -i '' "s/^MARKETING_VERSION = .*/MARKETING_VERSION = $VERSION;/" "$XCCONFIG"
+sed -i '' "s/^CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/" "$XCCONFIG"
 
-echo "==> [set-booklet-version] 完成，已改 $((CHANGED / 2)) 处。"
+# -----------------------------------------------------------------------------
+# 3. 校验
+# -----------------------------------------------------------------------------
+if ! grep -q "^MARKETING_VERSION = $VERSION;" "$XCCONFIG"; then
+  echo "==> [set-booklet-version] 错误：MARKETING_VERSION 未写入 $XCCONFIG" >&2
+  exit 1
+fi
+if ! grep -q "^CURRENT_PROJECT_VERSION = $BUILD_NUMBER;" "$XCCONFIG"; then
+  echo "==> [set-booklet-version] 错误：CURRENT_PROJECT_VERSION 未写入 $XCCONFIG" >&2
+  exit 1
+fi
+
+echo "==> [set-booklet-version] 完成，已更新 $XCCONFIG"

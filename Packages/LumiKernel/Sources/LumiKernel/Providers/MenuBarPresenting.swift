@@ -4,7 +4,7 @@ import SwiftUI
 /// 菜单栏展示能力
 ///
 /// 这里只定义“如何把内核收集到的菜单栏内容/弹窗展示出来”，
-/// 真正的 `NSStatusItem` / `NSPopover` 实现应放在宿主层（例如 `LumiFactory`）。
+/// 真正的 `NSStatusItem` / `NSPopover` 实现应放在宿主层（例如 `FactoryCore`）。
 @MainActor
 public protocol MenuBarPresenting: AnyObject {
     /// 当前是否已挂载菜单栏宿主。

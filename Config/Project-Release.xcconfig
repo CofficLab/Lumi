@@ -1,0 +1,19 @@
+//
+// Project-Release.xcconfig
+// 项目级 Release build configuration（绑定在 PBXProject 上，所有 target 继承）。
+//
+
+#include "Base.xcconfig"
+#include "CommonWarnings.xcconfig"
+
+// 符号与裁剪
+COPY_PHASE_STRIP = NO
+DEAD_CODE_STRIPPING = YES
+DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"
+MTL_ENABLE_DEBUG_INFO = NO
+
+// Release 行为
+ENABLE_NS_ASSERTIONS = NO
+
+// Swift 编译模式
+SWIFT_COMPILATION_MODE = wholemodule

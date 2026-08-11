@@ -6,7 +6,7 @@ import os
 
 /// 主窗口视图
 ///
-/// 使用 LumiFactory 初始化应用。
+/// 使用 `FactoryCore` 初始化应用。
 /// 启动成功后显示成功视图，失败时显示错误视图。
 public struct WindowMain: View, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "bootstrap.window-main")
@@ -18,9 +18,9 @@ public struct WindowMain: View, SuperLog {
     @State private var isInitializing = true
     @State private var windowSaveDelegate: EditorWindowSaveDelegate?
     @State private var mainWindow: NSWindow?
-    private let configuration: LumiHostConfiguration
+    private let configuration: FactoryConfiguration
 
-    public init(configuration: LumiHostConfiguration = .lumi) {
+    public init(configuration: FactoryConfiguration) {
         self.configuration = configuration
     }
 
@@ -67,12 +67,12 @@ public struct WindowMain: View, SuperLog {
         }
 
         do {
-            // 使用 LumiFactory 创建主内核（包含自检）
-            let newKernel = try await LumiFactory.createMainKernel(configuration: configuration)
+            // 使用 FactoryCore 创建主内核（包含自检）
+            let newKernel = try await FactoryCore.createMainKernel(configuration: configuration)
 
             if let initialContainerID = configuration.initialContainerID {
                 guard newKernel.workspace?.viewContainer(id: initialContainerID) != nil else {
-                    throw LumiHostConfigurationError.unknownInitialContainerID(initialContainerID)
+                    throw FactoryConfigurationError.unknownInitialContainerID(initialContainerID)
                 }
                 newKernel.workspace?.activateContainer(id: initialContainerID)
             }

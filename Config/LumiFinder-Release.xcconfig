@@ -1,0 +1,33 @@
+//
+// LumiFinder-Release.xcconfig
+// LumiFinder（Finder 扩展）的 Release build configuration。
+//
+
+#include "Base.xcconfig"
+
+// 产物
+PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.finder
+INFOPLIST_FILE = Plugins/RClickPlugin/FinderExtension/Info.plist
+GENERATE_INFOPLIST_FILE = NO
+
+// 沙盒：扩展必须开启
+ENABLE_APP_SANDBOX = YES
+ENABLE_HARDENED_RUNTIME = YES
+
+// Framework 搜索路径
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks
+
+// 权限
+CODE_SIGN_ENTITLEMENTS = Plugins/RClickPlugin/FinderExtension/LumiFinder.entitlements
+
+// 部署目标
+MACOSX_DEPLOYMENT_TARGET = 14.0
+
+// Lumi 环境标识（Release）
+LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi
+LUMI_FINDER_DISPLAY_NAME = "Lumi Finder"
+LUMI_URL_SCHEME = lumi
+
+// 版本号（各自独立）
+MARKETING_VERSION = 5.0.0
+CURRENT_PROJECT_VERSION = 500
