@@ -148,11 +148,17 @@ import VideoConverterPlugin
 import WebFetchPlugin
 import WebSearchPlugin
 
-/// 插件服务
+/// Lumi 完整插件目录
 ///
-/// 维护静态插件列表，包含所有内置插件。
+/// 维护 Lumi 主应用的全量内置插件列表，按依赖安全顺序构造。
+/// 本目录是 FactoryLumi 在编译期确定的插件组合——它依赖每一个具体插件包，
+/// 因此后者的依赖图会随 FactoryLumi 进入应用二进制。
+///
+/// `AppUpdatePlugin` 和 `ProjectRAGPlugin` 不在此目录中：它们由 LumiApp
+/// 显式注入（`additionalPlugins`），避免上架 Mac App Store 的其它宿主
+/// 被迫链接 Sparkle / vec0 等分发渠道敏感的依赖。
 @MainActor
-public enum PluginService {
+public enum LumiPluginCatalog {
     // MARK: - Plugin List
 
     /// 所有插件列表（静态）
