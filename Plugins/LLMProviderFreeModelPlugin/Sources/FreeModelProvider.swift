@@ -44,35 +44,61 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
         displayName: LumiPluginLocalization.string("FreeModel", bundle: .module),
         description: LumiPluginLocalization.string("Free LLM Gateway by freemodel.dev", bundle: .module),
         defaultModel: "gpt-5.4",
-        availableModels: gptModels + claudeModels.sorted(),
-        contextWindowSizes: [
-            "gpt-5.5": 1_000_000,
-            "gpt-5.4": 1_000_000,
-            "gpt-5.4-mini": 400_000,
-            "gpt-5.3-codex": 400_000,
-            "claude-fable-5": 200_000,
-            "claude-opus-4-8": 200_000,
-            "claude-opus-4-7": 200_000,
-            "claude-opus-4-6": 200_000,
-            "claude-sonnet-4-6": 200_000,
-            "claude-haiku-4-5-20251001": 200_000,
+        availableModels: [
+            .init(
+                id: "gpt-5.5",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "gpt-5.4",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "gpt-5.4-mini",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "gpt-5.3-codex",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "claude-fable-5",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "claude-opus-4-8",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "claude-opus-4-7",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "claude-opus-4-6",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "claude-sonnet-4-6",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "claude-haiku-4-5-20251001",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
         ],
-        modelCapabilities: [
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.4": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.3-codex": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "claude-fable-5": .init(supportsVision: true, supportsTools: true),
-            "claude-opus-4-8": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "claude-opus-4-7": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "claude-opus-4-6": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "claude-sonnet-4-6": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "claude-haiku-4-5-20251001": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-        ],
-        websiteURL: URL(string: "https://freemodel.dev/")!
-    ,
-            apiKeyStorageKey: "DevAssistant_ApiKey_FreeModel"
-        )
+        websiteURL: URL(string: "https://freemodel.dev/")!,
+        apiKeyStorageKey: "DevAssistant_ApiKey_FreeModel"
+    )
 
     public static var info: LumiLLMProviderInfo { providerInfo }
 
@@ -86,8 +112,7 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
             nodeLabel: "claude-t0",
             configuration: AnthropicCompatibleProviderConfiguration(
                 baseURL: Endpoints.claudeT0,
-                fallbackBaseURLs: [Endpoints.claudeT1],
-                supportsThinkingBudget: true
+                fallbackBaseURLs: [Endpoints.claudeT1]
             ),
             apiService: apiService
         )
@@ -95,8 +120,7 @@ public final class FreeModelProvider: LumiLLMProvider, SuperLog, @unchecked Send
             nodeLabel: "claude-t1",
             configuration: AnthropicCompatibleProviderConfiguration(
                 baseURL: Endpoints.claudeT1,
-                fallbackBaseURLs: [Endpoints.claudeT0],
-                supportsThinkingBudget: true
+                fallbackBaseURLs: [Endpoints.claudeT0]
             ),
             apiService: apiService
         )

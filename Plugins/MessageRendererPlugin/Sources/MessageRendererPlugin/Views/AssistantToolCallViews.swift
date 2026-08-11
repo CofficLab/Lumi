@@ -194,7 +194,7 @@ struct ToolCallRowView: View {
         AppIconButton(
             systemImage: "slider.horizontal.3",
             tint: isParametersPresented ? theme.textPrimary : theme.textSecondary,
-            size: .regular,
+            size: .compact,
             isActive: isParametersPresented
         ) {
             toggleParameterPopover()
@@ -216,7 +216,7 @@ struct ToolCallRowView: View {
         AppIconButton(
             systemImage: "doc.text.magnifyingglass",
             tint: isResultsPresented ? theme.textPrimary : theme.textSecondary,
-            size: .regular,
+            size: .compact,
             isActive: isResultsPresented
         ) {
             toggleResultPopover()

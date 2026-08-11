@@ -15,34 +15,46 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("Zhipu AI GLM", bundle: .module),
         defaultModel: "glm-4.7",
         availableModels: [
-            "glm-5.2",
-            "glm-5.1",
-            "glm-5-turbo",
-            "glm-5",
-            "glm-4.7",
-            "glm-4.6",
-            "glm-4.5",
-            "glm-4.5-air",
-        ],
-        contextWindowSizes: [
-            "glm-5.2": 1_000_000,
-            "glm-5.1": 1_000_000,
-            "glm-5-turbo": 1_000_000,
-            "glm-5": 1_000_000,
-            "glm-4.7": 128_000,
-            "glm-4.6": 200_000,
-            "glm-4.5": 128_000,
-            "glm-4.5-air": 128_000
-        ],
-        modelCapabilities: [
-            "glm-5.2": .init(supportsVision: true, supportsTools: true),
-            "glm-5.1": .init(supportsVision: true, supportsTools: true),
-            "glm-5-turbo": .init(supportsVision: true, supportsTools: true),
-            "glm-5": .init(supportsVision: true, supportsTools: true),
-            "glm-4.7": .init(supportsVision: false, supportsTools: true),
-            "glm-4.6": .init(supportsVision: true, supportsTools: true),
-            "glm-4.5": .init(supportsVision: true, supportsTools: true),
-            "glm-4.5-air": .init(supportsVision: true, supportsTools: true)
+            .init(
+                id: "glm-5.2",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "glm-5.1",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "glm-5-turbo",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "glm-5",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "glm-4.7",
+                contextWindowSize: 128_000,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "glm-4.6",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "glm-4.5",
+                contextWindowSize: 128_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "glm-4.5-air",
+                contextWindowSize: 128_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
         ],
         websiteURL: URL(string: "https://www.bigmodel.cn/")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_Zhipu"

@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import LumiKernel
 import SuperLogKit
 import os
 
@@ -33,6 +34,9 @@ public final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, 
     public func application(_ application: NSApplication, open urls: [URL]) {
         guard Self.verbose else {
             for url in urls {
+                if handleFinderCommand(url) {
+                    continue
+                }
                 if url.isFileURL {
                     let resolvedPath = url.standardized.path
                     setOpenPath(resolvedPath)
@@ -45,6 +49,9 @@ public final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, 
         }
         Self.logger.info("\(self.t)Received \(urls.count) URL requests")
         for url in urls {
+            if handleFinderCommand(url) {
+                continue
+            }
             if url.isFileURL {
                 let resolvedPath = url.standardized.path
                 setOpenPath(resolvedPath)
@@ -53,6 +60,49 @@ public final class MacAgent: NSObject, NSApplicationDelegate, ObservableObject, 
             }
         }
         activateMainWindow()
+    }
+
+    private func handleFinderCommand(_ url: URL) -> Bool {
+        guard url.scheme == LumiRuntimeEnvironment.current.urlScheme,
+              url.host == "finder",
+              url.path == "/show-hidden",
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let value = components.queryItems?.first(where: { $0.name == "value" })?.value,
+              let showHiddenFiles = Bool(value) else {
+            return false
+        }
+
+        setFinderShowsHiddenFiles(showHiddenFiles)
+        return true
+    }
+
+    private func setFinderShowsHiddenFiles(_ showHiddenFiles: Bool) {
+        let writeDefaults = Process()
+        writeDefaults.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
+        writeDefaults.arguments = [
+            "write",
+            "com.apple.finder",
+            "AppleShowAllFiles",
+            "-bool",
+            showHiddenFiles ? "true" : "false"
+        ]
+
+        do {
+            try writeDefaults.run()
+            writeDefaults.waitUntilExit()
+            guard writeDefaults.terminationStatus == 0 else {
+                Self.logger.error("\(self.t)Failed to update Finder hidden-file preference, exit code: \(writeDefaults.terminationStatus)")
+                return
+            }
+
+            let restartFinder = Process()
+            restartFinder.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            restartFinder.arguments = ["Finder"]
+            try restartFinder.run()
+            Self.logger.info("\(self.t)Updated Finder hidden-file visibility: \(showHiddenFiles)")
+        } catch {
+            Self.logger.error("\(self.t)Failed to update Finder hidden-file visibility: \(error.localizedDescription)")
+        }
     }
 
     public func application(_ application: NSApplication, openFile filename: String) -> Bool {

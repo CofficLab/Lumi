@@ -8,7 +8,9 @@ import LumiKernel
 /// UI 在渲染时把它拼到 messages 末尾即可，无需任何去重逻辑。
 ///
 /// 并发约定：本类是 `@MainActor`。runner 的 `onChunk` 在 provider 后台线程执行，
-/// 通过 `await` 调用本类的写方法，运行时自动跳回主线程执行，保证对 `@Published` 的写安全。
+/// 通过 `await` 调用本类的写方法，运行时自动跳回主线程执行，保证对 `states` 的写安全。
+/// 写方法末尾手动 `objectWillChange.send()` 通知订阅方;订阅方(SwiftUI 消息列表
+/// ViewModel)用帧门禁把逐 token 广播合并成每帧最多一次 UI 刷新。
 @MainActor
 public final class MessageStreamingStore: MessageStreaming {
     private struct StreamingState {
@@ -17,7 +19,13 @@ public final class MessageStreamingStore: MessageStreaming {
     }
 
     /// 每个会话独立保存临时行和阶段，避免并发回合互相覆盖。
-    @Published private var states: [UUID: StreamingState] = [:]
+    ///
+    /// 刻意**不**用 `@Published`:那会让每个 token 都在 `willSet` 自动广播。
+    /// 改为在写方法末尾手动 `objectWillChange.send()`——语义等价,但让我们能
+    /// 精确控制广播时机,并便于将来在写方法里做聚合优化而不影响广播契约。
+    /// 订阅方(SwiftUI 消息列表 ViewModel)用自己的帧门禁把逐 token 广播合并成
+    /// 每帧(~16ms)最多一次 UI 刷新,因此逐 token 广播的成本是可接受的。
+    private var states: [UUID: StreamingState] = [:]
 
     public init(kernel: LumiKernel) {
         // 保留 kernel 引用位:未来若需查询落库状态等可复用,当前不持有(避免循环引用)。
@@ -42,6 +50,7 @@ public final class MessageStreamingStore: MessageStreaming {
             ),
             stage: .sending
         )
+        objectWillChange.send()
     }
 
     public func appendContent(_ piece: String, conversationID: UUID) async {
@@ -49,6 +58,7 @@ public final class MessageStreamingStore: MessageStreaming {
         state.row.content += piece
         state.stage = .generating
         states[conversationID] = state
+        objectWillChange.send()
     }
 
     public func appendThinking(_ piece: String, conversationID: UUID) async {
@@ -56,9 +66,11 @@ public final class MessageStreamingStore: MessageStreaming {
         state.row.reasoningContent = (state.row.reasoningContent ?? "") + piece
         state.stage = .thinking
         states[conversationID] = state
+        objectWillChange.send()
     }
 
     public func endStreaming(conversationID: UUID) async {
         states.removeValue(forKey: conversationID)
+        objectWillChange.send()
     }
 }

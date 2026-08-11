@@ -1,1982 +1,2334 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "" : {
-
-    },
-    ".cadproj (JSON)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ".cadproj (JSON)"
+  "sourceLanguage": "en",
+  "strings": {
+    "": {},
+    ".cadproj (JSON)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ".cadproj (JSON)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ".cadproj（JSON）"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ".cadproj（JSON）"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ".cadproj（JSON）"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ".cadproj（JSON）"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ".cadproj（JSON）"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ".cadproj（JSON）"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ".cadproj（JSON）"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ".cadproj（JSON）"
           }
         }
       }
     },
-    "%@ · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@"
+    "%@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@"
+          }
         }
       }
     },
-    "%@ · %@ g" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@ g"
+    "%@ · %@ g": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@ g"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ 克"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ 克"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ 克"
           }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ 克"
+          }
         }
       }
     },
-    "%@ · %@ kg/m" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$@ kg/m"
+    "%@ · %@ kg/m": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@ kg/m"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ 千克/米"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ 千克/米"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ 千克/米"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ 千克/米"
           }
         }
       }
     },
-    "%@ %lld°" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ %2$lld°"
+    "%@ %lld°": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ %2$lld°"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %lld°"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %lld°"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %lld°"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %lld°"
           }
         }
       }
     },
-    "%lld · %@ kg" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld · %2$@ kg"
+    "%lld · %@ kg": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld · %2$@ kg"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld · %@ 千克"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld · %@ 千克"
           }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld · %@ 千克"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld · %@ 千克"
+          }
         }
       }
     },
-    "%lld × %lldmm 原料 · 总利用率 %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld × %2$lldmm 原料 · 总利用率 %3$@"
+    "%lld × %lldmm 原料 · 总利用率 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld × %2$lldmm 原料 · 总利用率 %3$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld × %lldmm 原料 · 总利用率 %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld × %lldmm 原料 · 总利用率 %@"
           }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld × %lldmm 原料 · 总利用率 %@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld × %lldmm 原料 · 总利用率 %@"
+          }
         }
       }
     },
-    "%lld components" : {
-
+    "%lld components": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld components"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个组件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个组件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个组件"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个组件"
+          }
+        }
+      }
     },
-    "%lld mm" : {
-
+    "%lld mm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld mm"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 毫米"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 毫米"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 毫米"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 毫米"
+          }
+        }
+      }
     },
-    "3D Engine" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3D Engine"
+    "3D Engine": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D Engine"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3D 引擎"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D 引擎"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3D 引擎"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D 引擎"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3D 引擎"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D 引擎"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3D 引擎"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D 引擎"
           }
         }
       }
     },
-    "3D Viewport" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3D Viewport"
+    "3D Viewport": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D Viewport"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3D 视口"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D 视口"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3D 视口"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D 视口"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3D 视口"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D 视口"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3D 视口"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D 视口"
           }
         }
       }
     },
-    "Access European standard 20/30/40 series aluminum profiles (12 specifications) plus connectors: brackets, bolts, sliding nuts, end caps, and hinges." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Access European standard 20/30/40 series aluminum profiles (12 specifications) plus connectors: brackets, bolts, sliding nuts, end caps, and hinges."
+    "Access European standard 20/30/40 series aluminum profiles (12 specifications) plus connectors: brackets, bolts, sliding nuts, end caps, and hinges.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Access European standard 20/30/40 series aluminum profiles (12 specifications) plus connectors: brackets, bolts, sliding nuts, end caps, and hinges."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供欧标 20/30/40 系列铝型材（12 种规格）以及连接件：支架、螺栓、滑块螺母、端盖与铰链。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供欧标 20/30/40 系列铝型材（12 种规格）以及连接件：支架、螺栓、滑块螺母、端盖与铰链。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供欧标 20/30/40 系列铝型材（12 种规格）以及连接件：支架、螺栓、滑块螺母、端盖与铰链。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供欧标 20/30/40 系列铝型材（12 种规格）以及连接件：支架、螺栓、滑块螺母、端盖与铰链。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供欧标 20/30/40 系列铝型材（12 种规格）以及连接件：支架、螺栓、滑块螺母、端盖与铰链。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供欧标 20/30/40 系列铝型材（12 种规格）以及连接件：支架、螺栓、滑块螺母、端盖与铰链。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供欧标 20/30/40 系列铝型材（12 种规格）以及连接件：支架、螺栓、滑块螺母、端盖与铰链。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供欧标 20/30/40 系列铝型材（12 种规格）以及连接件：支架、螺栓、滑块螺母、端盖与铰链。"
           }
         }
       }
     },
-    "Add a profile from the component library to start." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add a profile from the component library to start."
+    "Add a profile from the component library to start.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a profile from the component library to start."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从组件库添加型材开始设计。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从组件库添加型材开始设计。"
           }
         }
       }
     },
-    "AI-Powered Design" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI-Powered Design"
+    "AI-Powered Design": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-Powered Design"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI 智能设计"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 智能设计"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI 智能设计"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 智能设计"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI 智能设计"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 智能设计"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI 智能设计"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 智能设计"
           }
         }
       }
     },
-    "Assembly Relationships" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Assembly Relationships"
+    "Assembly Relationships": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assembly Relationships"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "装配关系"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "装配关系"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "装配关系"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "装配关系"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "装配关系"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "装配关系"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "装配关系"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "装配关系"
           }
         }
       }
     },
-    "Auto-generate rectangular frame" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Auto-generate rectangular frame"
+    "Auto-generate rectangular frame": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-generate rectangular frame"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动生成矩形框架"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动生成矩形框架"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动生成矩形框架"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动生成矩形框架"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动生成矩形框架"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动生成矩形框架"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动生成矩形框架"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动生成矩形框架"
           }
         }
       }
     },
-    "Automatically aggregate identical profiles and connectors into a bill of materials with quantities and specifications." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatically aggregate identical profiles and connectors into a bill of materials with quantities and specifications."
+    "Automatically aggregate identical profiles and connectors into a bill of materials with quantities and specifications.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically aggregate identical profiles and connectors into a bill of materials with quantities and specifications."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动将相同型材与连接件汇总为物料清单，包含数量与规格。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动将相同型材与连接件汇总为物料清单，包含数量与规格。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动将相同型材与连接件汇总为物料清单，包含数量与规格。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动将相同型材与连接件汇总为物料清单，包含数量与规格。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动将相同型材与连接件汇总为物料清单，包含数量与规格。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动将相同型材与连接件汇总为物料清单，包含数量与规格。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动将相同型材与连接件汇总为物料清单，包含数量与规格。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动将相同型材与连接件汇总为物料清单，包含数量与规格。"
           }
         }
       }
     },
-    "Available AI Tools" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Available AI Tools"
+    "Available AI Tools": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available AI Tools"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可用的 AI 工具"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用的 AI 工具"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可用的 AI 工具"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用的 AI 工具"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可用的 AI 工具"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用的 AI 工具"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可用的 AI 工具"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用的 AI 工具"
           }
         }
       }
     },
-    "Bill of Materials" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bill of Materials"
+    "Bill of Materials": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bill of Materials"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "物料清单"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "物料清单"
           }
         }
       }
     },
-    "BOM Generation" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "BOM Generation"
+    "BOM Generation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BOM Generation"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "物料清单生成"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "物料清单生成"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "物料清单生成"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "物料清单生成"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "物料清单生成"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "物料清单生成"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "物料清单生成"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "物料清单生成"
           }
         }
       }
     },
-    "CAD Designer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CAD Designer"
+    "CAD Designer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CAD Designer"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "CAD 设计"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CAD 设计"
           }
         }
       }
     },
-    "Component Library" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Component Library"
+    "Component Library": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Component Library"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "组件库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组件库"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "组件库"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组件库"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "组件库"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组件库"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "组件库"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组件库"
           }
         }
       }
     },
-    "Components" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Components"
+    "Components": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Components"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "组件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组件"
           }
         }
       }
     },
-    "Connectors" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connectors"
+    "Connectors": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectors"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "连接件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接件"
           }
         }
       }
     },
-    "Create new CAD project" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create new CAD project"
+    "Create new CAD project": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create new CAD project"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建新 CAD 项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建新 CAD 项目"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建新 CAD 项目"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建新 CAD 项目"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建新 CAD 项目"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建新 CAD 项目"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建新 CAD 项目"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建新 CAD 项目"
           }
         }
       }
     },
-    "Cut Optimization" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cut Optimization"
+    "Cut Optimization": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cut Optimization"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切割优化"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切割优化"
           }
         }
       }
     },
-    "Cutting Optimization" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cutting Optimization"
+    "Cutting Optimization": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cutting Optimization"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切割优化"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切割优化"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切割优化"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切割优化"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切割优化"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切割优化"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切割优化"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切割优化"
           }
         }
       }
     },
-    "Define connections" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Define connections"
+    "Define connections": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Define connections"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "定义连接关系"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定义连接关系"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "定义连接关系"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定义连接关系"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "定义连接关系"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定义连接关系"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "定义连接关系"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定义连接关系"
           }
         }
       }
     },
-    "Define connections between components with rigid, hinge, or bolt joint types to build accurate assembly structures." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Define connections between components with rigid, hinge, or bolt joint types to build accurate assembly structures."
+    "Define connections between components with rigid, hinge, or bolt joint types to build accurate assembly structures.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Define connections between components with rigid, hinge, or bolt joint types to build accurate assembly structures."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过刚性、铰链或螺栓等连接类型定义组件间关系，构建精确的装配结构。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过刚性、铰链或螺栓等连接类型定义组件间关系，构建精确的装配结构。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过刚性、铰链或螺栓等连接类型定义组件间关系，构建精确的装配结构。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过刚性、铰链或螺栓等连接类型定义组件间关系，构建精确的装配结构。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过刚性、铰链或螺栓等连接类型定义组件间关系，构建精确的装配结构。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过刚性、铰链或螺栓等连接类型定义组件间关系，构建精确的装配结构。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过刚性、铰链或螺栓等连接类型定义组件间关系，构建精确的装配结构。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过刚性、铰链或螺栓等连接类型定义组件间关系，构建精确的装配结构。"
           }
         }
       }
     },
-    "Delete" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete"
+    "Delete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "删除"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除"
           }
         }
       }
     },
-    "Description" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Description"
+    "Description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "描述"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "描述"
           }
         }
       }
     },
-    "Design aluminum profile frames in an interactive 3D viewport with orbit camera, reference grid, and XYZ axis guides." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Design aluminum profile frames in an interactive 3D viewport with orbit camera, reference grid, and XYZ axis guides."
+    "Design aluminum profile frames in an interactive 3D viewport with orbit camera, reference grid, and XYZ axis guides.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Design aluminum profile frames in an interactive 3D viewport with orbit camera, reference grid, and XYZ axis guides."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在交互式 3D 视口中使用轨道相机、参考网格与 XYZ 坐标轴辅助线设计铝型材框架。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在交互式 3D 视口中使用轨道相机、参考网格与 XYZ 坐标轴辅助线设计铝型材框架。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在交互式 3D 视口中使用轨道相机、参考网格与 XYZ 坐标轴辅助线设计铝型材框架。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在交互式 3D 视口中使用轨道相机、参考网格与 XYZ 坐标轴辅助线设计铝型材框架。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在交互式 3D 视口中使用轨道相机、参考网格与 XYZ 坐标轴辅助线设计铝型材框架。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在交互式 3D 视口中使用轨道相机、参考网格与 XYZ 坐标轴辅助线设计铝型材框架。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在交互式 3D 视口中使用轨道相机、参考网格与 XYZ 坐标轴辅助线设计铝型材框架。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在交互式 3D 视口中使用轨道相机、参考网格与 XYZ 坐标轴辅助线设计铝型材框架。"
           }
         }
       }
     },
-    "Design aluminum profile frames with 3D preview, BOM, and cut optimization." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Design aluminum profile frames with 3D preview, BOM, and cut optimization."
+    "Design aluminum profile frames with 3D preview, BOM, and cut optimization.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Design aluminum profile frames with 3D preview, BOM, and cut optimization."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过 3D 预览、物料清单与切割优化设计铝型材框架。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过 3D 预览、物料清单与切割优化设计铝型材框架。"
           }
         }
       }
     },
-    "Empty viewport" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empty viewport"
+    "Empty viewport": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty viewport"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "空视口"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空视口"
           }
         }
       }
     },
-    "EU 20/30/40 series" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "EU 20/30/40 series"
+    "EU 20/30/40 series": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EU 20/30/40 series"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "欧标 20/30/40 系列"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "欧标 20/30/40 系列"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "欧标 20/30/40 系列"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "欧标 20/30/40 系列"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "欧标 20/30/40 系列"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "欧标 20/30/40 系列"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "欧标 20/30/40 系列"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "欧标 20/30/40 系列"
           }
         }
       }
     },
-    "Export" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export"
+    "Export": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出"
           }
         }
       }
     },
-    "Export Options" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export Options"
+    "Export Options": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export Options"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出选项"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出选项"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出选项"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出选项"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出选项"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出选项"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出选项"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出选项"
           }
         }
       }
     },
-    "Export PNG" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export PNG"
+    "Export PNG": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export PNG"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出 PNG"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出 PNG"
           }
         }
       }
     },
-    "Export viewport renders as PNG or PDF. Save and load projects in .cadproj JSON format." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export viewport renders as PNG or PDF. Save and load projects in .cadproj JSON format."
+    "Export viewport renders as PNG or PDF. Save and load projects in .cadproj JSON format.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export viewport renders as PNG or PDF. Save and load projects in .cadproj JSON format."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将视口渲染导出为 PNG 或 PDF，并以 .cadproj JSON 格式保存与加载项目。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将视口渲染导出为 PNG 或 PDF，并以 .cadproj JSON 格式保存与加载项目。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将视口渲染导出为 PNG 或 PDF，并以 .cadproj JSON 格式保存与加载项目。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将视口渲染导出为 PNG 或 PDF，并以 .cadproj JSON 格式保存与加载项目。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将视口渲染导出为 PNG 或 PDF，并以 .cadproj JSON 格式保存与加载项目。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将视口渲染导出为 PNG 或 PDF，并以 .cadproj JSON 格式保存与加载项目。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将视口渲染导出为 PNG 或 PDF，并以 .cadproj JSON 格式保存与加载项目。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将视口渲染导出为 PNG 或 PDF，并以 .cadproj JSON 格式保存与加载项目。"
           }
         }
       }
     },
-    "Generate bill of materials" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Generate bill of materials"
+    "Generate bill of materials": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generate bill of materials"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "生成物料清单"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成物料清单"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "生成物料清单"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成物料清单"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "生成物料清单"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成物料清单"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "生成物料清单"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成物料清单"
           }
         }
       }
     },
-    "Inspector" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inspector"
+    "Inspector": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspector"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "属性"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "属性"
           }
         }
       }
     },
-    "Length" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Length"
+    "Length": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Length"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "长度"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "长度"
           }
         }
       }
     },
-    "Load" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Load"
+    "Load": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载"
           }
         }
       }
     },
-    "Load project from file" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Load project from file"
+    "Load project from file": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load project from file"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从文件加载项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从文件加载项目"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从文件加载项目"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从文件加载项目"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从文件加载项目"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从文件加载项目"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从文件加载项目"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从文件加载项目"
           }
         }
       }
     },
-    "macOS 14.0 or later" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 or later"
+    "macOS 14.0 or later": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14.0 or later"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14.0 或更高版本"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14.0 或更高版本"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14.0 或更高版本"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14.0 或更高版本"
           }
         }
       }
     },
-    "Material" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Material"
+    "Material": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Material"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "材质"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "材质"
           }
         }
       }
     },
-    "Measure" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Measure"
+    "Measure": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measure"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "测量"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "测量"
           }
         }
       }
     },
-    "Natural language commands like 'build a 1m × 0.5m workbench' to automatically create frames with optimal component placement." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Natural language commands like 'build a 1m × 0.5m workbench' to automatically create frames with optimal component placement."
+    "Natural language commands like 'build a 1m × 0.5m workbench' to automatically create frames with optimal component placement.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Natural language commands like 'build a 1m × 0.5m workbench' to automatically create frames with optimal component placement."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过自然语言指令（如“搭建一个 1m × 0.5m 的工作台”）自动生成框架并优化组件布局。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过自然语言指令（如“搭建一个 1m × 0.5m 的工作台”）自动生成框架并优化组件布局。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过自然语言指令（如“搭建一个 1m × 0.5m 的工作台”）自动生成框架并优化组件布局。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过自然语言指令（如“搭建一个 1m × 0.5m 的工作台”）自动生成框架并优化组件布局。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过自然语言指令（如“搭建一个 1m × 0.5m 的工作台”）自动生成框架并优化组件布局。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过自然语言指令（如“搭建一个 1m × 0.5m 的工作台”）自动生成框架并优化组件布局。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过自然语言指令（如“搭建一个 1m × 0.5m 的工作台”）自动生成框架并优化组件布局。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过自然语言指令（如“搭建一个 1m × 0.5m 的工作台”）自动生成框架并优化组件布局。"
           }
         }
       }
     },
-    "New Project" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New Project"
+    "New Project": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Project"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新建项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建项目"
           }
         }
       }
     },
-    "No components" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No components"
+    "No components": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No components"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂无组件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无组件"
           }
         }
       }
     },
-    "Optimize" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Optimize"
+    "Optimize": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimize"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "优化"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "优化"
           }
         }
       }
     },
-    "Optimize cutting plan" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Optimize cutting plan"
+    "Optimize cutting plan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimize cutting plan"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "优化切割方案"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "优化切割方案"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "优化切割方案"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "优化切割方案"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "优化切割方案"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "优化切割方案"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "优化切割方案"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "优化切割方案"
           }
         }
       }
     },
-    "Optimize cutting plans using First Fit Decreasing algorithm to minimize material waste and leftover scraps." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Optimize cutting plans using First Fit Decreasing algorithm to minimize material waste and leftover scraps."
+    "Optimize cutting plans using First Fit Decreasing algorithm to minimize material waste and leftover scraps.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimize cutting plans using First Fit Decreasing algorithm to minimize material waste and leftover scraps."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用首次适应递减（First Fit Decreasing）算法优化切割方案，最大限度减少材料浪费与余料。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用首次适应递减（First Fit Decreasing）算法优化切割方案，最大限度减少材料浪费与余料。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用首次适应递减（First Fit Decreasing）算法优化切割方案，最大限度减少材料浪费与余料。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用首次适应递减（First Fit Decreasing）算法优化切割方案，最大限度减少材料浪费与余料。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用首次适应递减（First Fit Decreasing）算法优化切割方案，最大限度减少材料浪费与余料。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用首次适应递减（First Fit Decreasing）算法优化切割方案，最大限度减少材料浪费与余料。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用首次适应递减（First Fit Decreasing）算法优化切割方案，最大限度减少材料浪费与余料。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用首次适应递减（First Fit Decreasing）算法优化切割方案，最大限度减少材料浪费与余料。"
           }
         }
       }
     },
-    "Part Number" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Part Number"
+    "Part Number": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Part Number"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "零件号"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "零件号"
           }
         }
       }
     },
-    "Place aluminum profile" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Place aluminum profile"
+    "Place aluminum profile": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Place aluminum profile"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "放置铝型材"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放置铝型材"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "放置铝型材"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放置铝型材"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "放置铝型材"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放置铝型材"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "放置铝型材"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放置铝型材"
           }
         }
       }
     },
-    "Place connector" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Place connector"
+    "Place connector": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Place connector"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "放置连接件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放置连接件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "放置连接件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放置连接件"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "放置连接件"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放置连接件"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "放置连接件"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放置连接件"
           }
         }
       }
     },
-    "Position" : {
-
+    "Position": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位置"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位置"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位置"
+          }
+        }
+      }
     },
-    "Position X" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Position X"
+    "Position X": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position X"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "位置 X"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位置 X"
           }
         }
       }
     },
-    "Position Y" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Position Y"
+    "Position Y": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position Y"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "位置 Y"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位置 Y"
           }
         }
       }
     },
-    "Position Z" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Position Z"
+    "Position Z": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position Z"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "位置 Z"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "位置 Z"
           }
         }
       }
     },
-    "Profile Standards" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profile Standards"
+    "Profile Standards": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile Standards"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "型材标准"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "型材标准"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "型材标准"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "型材标准"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "型材标准"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "型材标准"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "型材标准"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "型材标准"
           }
         }
       }
     },
-    "profile: %@" : {
-
+    "profile: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "profile: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置文件：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置文件：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置文件：%@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置文件：%@"
+          }
+        }
+      }
     },
-    "Profiles" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profiles"
+    "Profiles": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profiles"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "型材"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "型材"
           }
         }
       }
     },
-    "Project Format" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Project Format"
+    "Project Format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Project Format"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "项目格式"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目格式"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "项目格式"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目格式"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "项目格式"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目格式"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "项目格式"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "项目格式"
           }
         }
       }
     },
-    "Quantity" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quantity"
+    "Quantity": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quantity"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "数量"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数量"
           }
         }
       }
     },
-    "Redo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redo"
+    "Redo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redo"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重做"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重做"
           }
         }
       }
     },
-    "Requirements" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Requirements"
+    "Requirements": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requirements"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统要求"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统要求"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统要求"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统要求"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统要求"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统要求"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统要求"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统要求"
           }
         }
       }
     },
-    "Reset View" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset View"
+    "Reset View": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset View"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重置视图"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重置视图"
           }
         }
       }
     },
-    "Rotation" : {
-
+    "Rotation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旋转"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旋转"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旋转"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旋转"
+          }
+        }
+      }
     },
-    "Rotation Y" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rotation Y"
+    "Rotation Y": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotation Y"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "旋转 Y"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旋转 Y"
           }
         }
       }
     },
-    "Save" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save"
+    "Save": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存"
           }
         }
       }
     },
-    "Save project to file" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save project to file"
+    "Save project to file": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save project to file"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将项目保存到文件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将项目保存到文件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将项目保存到文件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将项目保存到文件"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将项目保存到文件"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将项目保存到文件"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将项目保存到文件"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将项目保存到文件"
           }
         }
       }
     },
-    "SceneKit (native macOS)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SceneKit (native macOS)"
+    "SceneKit (native macOS)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SceneKit (native macOS)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SceneKit（原生 macOS）"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SceneKit（原生 macOS）"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SceneKit（原生 macOS）"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SceneKit（原生 macOS）"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SceneKit（原生 macOS）"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SceneKit（原生 macOS）"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SceneKit（原生 macOS）"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SceneKit（原生 macOS）"
           }
         }
       }
     },
-    "SceneKit-capable GPU" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SceneKit-capable GPU"
+    "SceneKit-capable GPU": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SceneKit-capable GPU"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持 SceneKit 的 GPU"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持 SceneKit 的 GPU"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持 SceneKit 的 GPU"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持 SceneKit 的 GPU"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持 SceneKit 的 GPU"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持 SceneKit 的 GPU"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持 SceneKit 的 GPU"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持 SceneKit 的 GPU"
           }
         }
       }
     },
-    "Search components" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search components"
+    "Search components": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search components"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索组件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索组件"
           }
         }
       }
     },
-    "Select" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select"
+    "Select": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择"
           }
         }
       }
     },
-    "Select a component to edit it." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select a component to edit it."
+    "Select a component to edit it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a component to edit it."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择组件进行编辑。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择组件进行编辑。"
           }
         }
       }
     },
-    "Stock Length" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stock Length"
+    "Stock Length": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stock Length"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "原料长度"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原料长度"
           }
         }
       }
     },
-    "Swift 6.0 or later" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 or later"
+    "Swift 6.0 or later": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 6.0 or later"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或更高版本"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 6.0 或更高版本"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或更高版本"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 6.0 或更高版本"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或更高版本"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 6.0 或更高版本"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或更高版本"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 6.0 或更高版本"
           }
         }
       }
     },
-    "SwiftUI + NSViewRepresentable" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SwiftUI + NSViewRepresentable"
+    "SwiftUI + NSViewRepresentable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SwiftUI + NSViewRepresentable"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SwiftUI + NSViewRepresentable"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SwiftUI + NSViewRepresentable"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SwiftUI + NSViewRepresentable"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SwiftUI + NSViewRepresentable"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SwiftUI + NSViewRepresentable"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SwiftUI + NSViewRepresentable"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SwiftUI + NSViewRepresentable"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SwiftUI + NSViewRepresentable"
           }
         }
       }
     },
-    "Technical Details" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Technical Details"
+    "Technical Details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Technical Details"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "技术细节"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "技术细节"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "技术细节"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "技术细节"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "技术细节"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "技术细节"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "技术细节"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "技术细节"
           }
         }
       }
     },
-    "UI Framework" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "UI Framework"
+    "UI Framework": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UI Framework"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "UI 框架"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UI 框架"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "UI 框架"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UI 框架"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "UI 框架"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UI 框架"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "UI 框架"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UI 框架"
           }
         }
       }
     },
-    "Undo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Undo"
+    "Undo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "撤销"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撤销"
           }
         }
       }
     },
-    "Untitled Project" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Untitled Project"
+    "Untitled Project": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untitled Project"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未命名项目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未命名项目"
           }
         }
       }
     },
-    "Update component properties" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update component properties"
+    "Update component properties": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update component properties"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新组件属性"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新组件属性"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新组件属性"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新组件属性"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新组件属性"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新组件属性"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新组件属性"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新组件属性"
           }
         }
       }
     },
-    "Weight" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weight"
+    "Weight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weight"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重量"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重量"
           }
         }
       }
     },
-    "原料 #%lld：余 %lldmm · 利用率 %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "原料 #%1$lld：余 %2$lldmm · 利用率 %3$@"
+    "原料 #%lld：余 %lldmm · 利用率 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "原料 #%1$lld：余 %2$lldmm · 利用率 %3$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原料 #%lld：余 %lldmm · 利用率 %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原料 #%lld：余 %lldmm · 利用率 %@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原料 #%lld：余 %lldmm · 利用率 %@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原料 #%lld：余 %lldmm · 利用率 %@"
           }
         }
       }
     },
-    "已选中：%@" : {
-
+    "已选中：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选中：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选中：%@"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选中：%@"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选中：%@"
+          }
+        }
+      }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

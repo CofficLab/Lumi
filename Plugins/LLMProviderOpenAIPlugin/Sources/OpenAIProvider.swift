@@ -12,31 +12,41 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("GPT by OpenAI", bundle: .module),
         defaultModel: "gpt-4o",
         availableModels: [
-            "gpt-5",
-            "gpt-5-mini",
-            "gpt-4o",
-            "gpt-4o-mini",
-            "gpt-4-turbo",
-            "gpt-4",
-            "gpt-3.5-turbo"
-        ],
-        contextWindowSizes: [
-            "gpt-5": 400_000,
-            "gpt-5-mini": 400_000,
-            "gpt-4o": 128_000,
-            "gpt-4o-mini": 128_000,
-            "gpt-4-turbo": 128_000,
-            "gpt-4": 8_192,
-            "gpt-3.5-turbo": 16_385
-        ],
-        modelCapabilities: [
-            "gpt-5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-4o": .init(supportsVision: true, supportsTools: true),
-            "gpt-4o-mini": .init(supportsVision: true, supportsTools: true),
-            "gpt-4-turbo": .init(supportsVision: true, supportsTools: true),
-            "gpt-4": .init(supportsVision: false, supportsTools: true),
-            "gpt-3.5-turbo": .init(supportsVision: false, supportsTools: true)
+            .init(
+                id: "gpt-5",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5-mini",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-4o",
+                contextWindowSize: 128_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-4o-mini",
+                contextWindowSize: 128_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-4-turbo",
+                contextWindowSize: 128_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-4",
+                contextWindowSize: 8_192,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-3.5-turbo",
+                contextWindowSize: 16_385,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
         ],
         websiteURL: URL(string: "https://openai.com/")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_OpenAI"
@@ -54,7 +64,6 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
                 includeUsageInStreamOptions: true,
                 returnsEmptyChunkWhenNoDelta: false,
                 acceptsFunctionScopedToolCallID: false,
-                supportsReasoningEffort: true
             )
         )
     ) {

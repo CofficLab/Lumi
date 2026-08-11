@@ -1,29 +1,6 @@
 import Foundation
 
-public struct LumiLLMRequest: Sendable {
-    public let messages: [LumiChatMessage]
-    public let model: String
-    public let tools: [any LumiAgentTool]
-    public let imageAttachments: [LumiImageAttachment]
-    public let fileAttachments: [LumiFileAttachment]
-    public let generationOptions: LumiLLMGenerationOptions
 
-    public init(
-        messages: [LumiChatMessage],
-        model: String,
-        tools: [any LumiAgentTool] = [],
-        imageAttachments: [LumiImageAttachment] = [],
-        fileAttachments: [LumiFileAttachment] = [],
-        generationOptions: LumiLLMGenerationOptions = LumiLLMGenerationOptions()
-    ) {
-        self.messages = messages
-        self.model = model
-        self.tools = tools
-        self.imageAttachments = imageAttachments
-        self.fileAttachments = fileAttachments
-        self.generationOptions = generationOptions
-    }
-}
 
 public protocol LumiLLMProvider: Sendable {
     static var info: LumiLLMProviderInfo { get }
@@ -48,7 +25,38 @@ public enum LumiLLMProviderAPIKeyDiagnostic: Sendable, Equatable {
     case inaccessible(String)
 }
 
+public enum LumiLLMProviderAPIKeySaveError: LocalizedError, Sendable, Equatable {
+    case empty
+    case verificationFailed(provider: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .empty:
+            return "API Key cannot be empty"
+        case .verificationFailed(let provider):
+            return "\(provider) API Key could not be verified after saving"
+        }
+    }
+}
+
 public extension LumiLLMProvider {
+    /// Saves and verifies the exact value through the provider's request-time
+    /// resolver. This catches write failures hidden by legacy void setters.
+    func saveAPIKey(_ apiKey: String) throws {
+        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw LumiLLMProviderAPIKeySaveError.empty
+        }
+
+        setApiKey(trimmed)
+        let persisted = try lumiResolveAPIKey()
+        guard persisted == trimmed else {
+            throw LumiLLMProviderAPIKeySaveError.verificationFailed(
+                provider: type(of: self).info.displayName
+            )
+        }
+    }
+
     /// Re-reads the key using the same path used by an actual request.
     /// This is intentionally not based on `getApiKey()`, which may collapse
     /// Keychain read failures into an empty string.

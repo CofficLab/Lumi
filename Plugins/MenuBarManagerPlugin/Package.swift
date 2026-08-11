@@ -10,18 +10,16 @@ let package = Package(
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
-        .package(path: "../../Packages/SuperLogKit"),
-        .package(path: "../AppUpdatePlugin")
+        .package(path: "../../Packages/SuperLogKit")
     ],
     targets: [
-.target(
+        .target(
             name: "MenuBarManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "AppUpdatePlugin", package: "AppUpdatePlugin")
+                .product(name: "SuperLogKit", package: "SuperLogKit")
             ],
             path: "Sources",
             resources: [.process("../Resources/Localizable.xcstrings")]

@@ -1,4 +1,3 @@
-import LLMKit
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -12,6 +11,7 @@ public final class StepFunPlugin: LumiPlugin {
 
     public let order = 93
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
@@ -32,7 +32,8 @@ public final class StepFunPlugin: LumiPlugin {
     /// 懒构造 provider + gate(幂等,首次调用时创建)。
     private func ensureProvider(kernel: LumiKernel) -> StepFunProvider {
         if let provider { return provider }
-        let instance = StepFunProvider(apiService: LLMAPIService(kernel: kernel))
+        let network = kernel.network
+        let instance = StepFunProvider(network: network)
         provider = instance
         gate = StepFunSubAgentsGate(provider: instance)
         return instance

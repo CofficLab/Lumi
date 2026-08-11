@@ -1,18 +1,6 @@
 import SwiftUI
 
-// MARK: - PreferOuterScroll
-
-private struct PreferOuterScrollKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-public extension EnvironmentValues {
-    /// When true, markdown and text renderers avoid nested scroll views and let the outer container own scrolling.
-    var preferOuterScroll: Bool {
-        get { self[PreferOuterScrollKey.self] }
-        set { self[PreferOuterScrollKey.self] = newValue }
-    }
-}
+// preferOuterScroll EnvironmentKey 已移至 LumiUI 包，避免跨包重复定义。
 
 // MARK: - Code Highlighting
 

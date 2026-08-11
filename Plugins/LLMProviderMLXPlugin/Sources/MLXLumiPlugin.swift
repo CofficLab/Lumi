@@ -12,6 +12,7 @@ public final class MLXLumiPlugin: LumiPlugin {
 
     public let order = 310
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

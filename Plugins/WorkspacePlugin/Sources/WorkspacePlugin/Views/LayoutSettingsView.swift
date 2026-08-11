@@ -138,7 +138,7 @@ public struct LayoutSettingsView: View {
                             .font(.system(size: 13, weight: .medium))
                             .lineLimit(1)
                         if isCurrent {
-                            Text("Current")
+                            Text(LumiPluginLocalization.string("Current", bundle: .module))
                                 .font(.system(size: 9, weight: .semibold))
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 5)
@@ -264,7 +264,7 @@ public struct LayoutSettingsView: View {
                     detailRow(title: "Panel Bottom", icon: "rectangle.bottomthird.inset.filled", value: boolText(overrides.isPanelBottomVisible))
                 }
             } else {
-                Text("No user override — falls back to declared values")
+                Text(LumiPluginLocalization.string("No user override — falls back to declared values", bundle: .module))
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
             }

@@ -14,10 +14,11 @@ Lumi 的运行时状态联动层。
   与 `kernel.project?.currentProject.path` 不一致时,自动调用
   `project.openProject(at:)` 跟随切换。
 
-- **项目切换 → 清空当前对话**:
+- **项目切换 → 校验当前对话归属**:
   监听 `kernel.project.objectWillChange`,当 `currentProject.path` 实际发生
-  变化时,自动调用 `kernel.conversations?.deselectConversation()`,
-  把 `selectedConversationID` 置为 `nil`,避免旧对话与新项目状态不一致。
+  变化时,比较当前对话的 `projectPath` 与新项目路径。路径一致时保留选中;
+  不一致时调用 `kernel.conversations?.deselectConversation()`,避免旧对话与
+  新项目状态不一致。
 
 - **对话切换 → 同步 Provider/Model**:
   监听 `kernel.conversations?.objectWillChange`,当 `selectedConversationID`
@@ -35,7 +36,7 @@ Lumi 的运行时状态联动层。
   | 触发源                     | 反应                                  |
   | -------------------------- | ------------------------------------- |
   | 对话选中(且绑定项目)     | 跟随切换到对话绑定的项目 |
-  | 当前项目变化             | 清空当前选中的对话            |
+  | 当前项目变化             | 保留同项目对话;归属不一致时清空选择 |
 
   `deselectConversation()` 只重置 `selectedConversationID`,不会触发
   `kernel.project.objectWillChange`,因此不会自我循环。

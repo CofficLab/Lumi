@@ -23,39 +23,6 @@ public extension Notification {
     }
 }
 
-// MARK: - NotificationCenter Posting Helpers
-
-public extension NotificationCenter {
-    /// 发送 `.lumiConversationsDidChange` 通知
-    static func postLumiConversationsDidChange() {
-        NotificationCenter.default.post(name: .lumiConversationsDidChange, object: nil)
-    }
-
-    /// 发送 `.lumiConversationTitleDidChange` 通知
-    static func postLumiConversationTitleDidChange(conversationID: UUID?) {
-        let userInfo = conversationID.map {
-            [LumiNotificationUserInfoKey.conversationID: $0] as [AnyHashable: Any]
-        }
-        NotificationCenter.default.post(name: .lumiConversationTitleDidChange, object: nil, userInfo: userInfo)
-    }
-
-    /// 发送 `.lumiConversationDidDelete` 通知
-    static func postLumiConversationDidDelete(conversationID: UUID) {
-        let userInfo: [AnyHashable: Any] = [
-            LumiNotificationUserInfoKey.conversationID: conversationID,
-        ]
-        NotificationCenter.default.post(name: .lumiConversationDidDelete, object: nil, userInfo: userInfo)
-    }
-
-    /// 发送 `.lumiConversationWillDelete` 通知(对话即将被删除,ID 仍可访问)
-    static func postLumiConversationWillDelete(conversationID: UUID) {
-        let userInfo: [AnyHashable: Any] = [
-            LumiNotificationUserInfoKey.conversationID: conversationID,
-        ]
-        NotificationCenter.default.post(name: .lumiConversationWillDelete, object: nil, userInfo: userInfo)
-    }
-}
-
 // MARK: - NotificationCenter Subscribe Helpers
 
 public extension NotificationCenter {

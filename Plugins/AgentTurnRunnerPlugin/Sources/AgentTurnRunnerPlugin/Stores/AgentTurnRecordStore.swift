@@ -60,9 +60,12 @@ struct AgentTurnRecordDTO: Identifiable, Sendable {
 /// 使 `AgentTurnRunner` 可以从 LLM 请求记录中聚合出 `AgentTurnRecord`。
 actor AgentTurnRecordStore {
     static var defaultDatabaseRootURL: URL {
-        FileManager.default
+        let bundleIdentifier = Bundle.main.bundleIdentifier
+            ?? LumiRuntimeEnvironment.productionBundleIdentifier
+        return FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("com.coffic.lumi/AgentTurnRunner", isDirectory: true)
+            .appendingPathComponent(bundleIdentifier, isDirectory: true)
+            .appendingPathComponent("AgentTurnRunner", isDirectory: true)
     }
 
     private let modelContainer: ModelContainer

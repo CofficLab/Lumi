@@ -12,7 +12,7 @@ struct MetadataDisplaySection: View {
                 .appStoreConnectAddToChatMenu(
                     entityType: "metadataSection",
                     entityID: localization?.id ?? "none",
-                    title: "Metadata",
+                    title: AppStoreConnectLocalization.string("Metadata"),
                     sourceView: "VersionDetail.MetadataDisplaySection",
                     fields: [
                         "locale": localization?.locale ?? "-",

@@ -62,8 +62,8 @@ func featuresSection(_ features: [Feature]) -> some View {
 
 #Preview("Features Section") {
     FeaturesSection(features: [
-        Feature(icon: "brain", title: "Smart Conversations", description: "Support for local and cloud LLMs"),
-        Feature(icon: "hammer.circle", title: "Agent Capabilities", description: "Execute tools and tasks automatically")
+        Feature(icon: "brain", title: LumiPluginLocalization.string("Smart Conversations", bundle: .module), description: "Support for local and cloud LLMs"),
+        Feature(icon: "hammer.circle", title: LumiPluginLocalization.string("Agent Capabilities", bundle: .module), description: "Execute tools and tasks automatically")
     ])
     .padding()
     .frame(width: 520)

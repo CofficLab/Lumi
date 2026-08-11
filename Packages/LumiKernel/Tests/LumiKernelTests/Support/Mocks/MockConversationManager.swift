@@ -46,7 +46,9 @@ final class MockConversationManager: ConversationManaging {
     func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
 
     func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { .defaultEffort }
+    func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? { nil }
     func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
+    func clearReasoningEffort(for conversationID: UUID?) {}
 
     func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { .chat }
     func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}

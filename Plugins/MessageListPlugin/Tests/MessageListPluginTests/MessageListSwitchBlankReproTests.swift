@@ -37,7 +37,7 @@ struct MessageListSwitchBlankReproTests {
 
     /// 断言 viewmodel 当前展示的 historyRows 与选中对话一致(不错配)。
     private func expectConsistent(
-        _ viewModel: ListViewModel,
+        _ viewModel: ListV2ViewModel,
         selectedID: UUID?,
         sourceComment: String
     ) {
@@ -64,7 +64,7 @@ struct MessageListSwitchBlankReproTests {
         messages.seed(MockMessageManager.makeMessages(count: 5, conversationID: shortID), conversationID: shortID)
 
         let kernel = try makeKernel(messages: messages, conversations: conversations)
-        let viewModel = ListViewModel(kernel: kernel)
+        let viewModel = ListV2ViewModel(kernel: kernel)
 
         // 1. 先进入长对话并等其加载完。
         conversations.selectedConversationID = longID
@@ -91,7 +91,7 @@ struct MessageListSwitchBlankReproTests {
         messages.seed(MockMessageManager.makeMessages(count: 5, conversationID: shortID), conversationID: shortID)
 
         let kernel = try makeKernel(messages: messages, conversations: conversations)
-        let viewModel = ListViewModel(kernel: kernel)
+        let viewModel = ListV2ViewModel(kernel: kernel)
 
         // 并发地快速来回切换多次(模拟用户快速点击不同对话)。
         // 每个 activate 都是 async,慢读会让它们的完成顺序与发起顺序交错。
@@ -119,7 +119,7 @@ struct MessageListSwitchBlankReproTests {
         messages.seed(MockMessageManager.makeMessages(count: 4, conversationID: shortID), conversationID: shortID)
 
         let kernel = try makeKernel(messages: messages, conversations: conversations)
-        let viewModel = ListViewModel(kernel: kernel)
+        let viewModel = ListV2ViewModel(kernel: kernel)
 
         conversations.selectedConversationID = longID
         await viewModel.activate(conversationID: longID)
@@ -160,7 +160,7 @@ struct MessageListSwitchBlankReproTests {
         messages.seed(MockMessageManager.makeMessages(count: 6, conversationID: shortID), conversationID: shortID)
 
         let kernel = try makeKernel(messages: messages, conversations: conversations)
-        let viewModel = ListViewModel(kernel: kernel)
+        let viewModel = ListV2ViewModel(kernel: kernel)
 
         conversations.selectedConversationID = longID
         await viewModel.activate(conversationID: longID)

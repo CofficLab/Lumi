@@ -12,16 +12,16 @@ public final class LPgptProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("Free LLM Gateway by lpgpt.us", bundle: .module),
         defaultModel: "gpt-5.4",
         availableModels: [
-            "gpt-5.4",
-            "gpt-5.5"
-        ],
-        contextWindowSizes: [
-            "gpt-5.4": 1_000_000,
-            "gpt-5.5": 1_000_000
-        ],
-        modelCapabilities: [
-            "gpt-5.4": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true)
+            .init(
+                id: "gpt-5.4",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "gpt-5.5",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
         ],
         websiteURL: URL(string: "https://lpgpt.us")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_LPgpt"
@@ -45,7 +45,6 @@ public final class LPgptProvider: LumiLLMProvider, @unchecked Sendable {
             includeUsageInStreamOptions: true,
             returnsEmptyChunkWhenNoDelta: false,
             acceptsFunctionScopedToolCallID: false,
-            supportsReasoningEffort: true
         )
         self.adapter = OpenAICompatibleProviderAdapter(configuration: config)
         self.apiService = apiService

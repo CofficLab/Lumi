@@ -11,6 +11,7 @@ public final class KimiCodePlugin: LumiPlugin {
     }
     public let order = 103
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
@@ -18,11 +19,7 @@ public final class KimiCodePlugin: LumiPlugin {
     public func onBoot(kernel: LumiKernel) async throws {
         if let storage = kernel.storage {
             AvailabilityDiskCacheDirectoryResolver.set(
-                pluginName: "LLMProviderKimiCodePlugin-OpenAI",
-                directory: storage.pluginDataDirectory(for: "LLMProviderKimiCodePlugin")
-            )
-            AvailabilityDiskCacheDirectoryResolver.set(
-                pluginName: "LLMProviderKimiCodePlugin-Anthropic",
+                pluginName: "LLMProviderKimiCodePlugin",
                 directory: storage.pluginDataDirectory(for: "LLMProviderKimiCodePlugin")
             )
         }
@@ -32,8 +29,8 @@ public final class KimiCodePlugin: LumiPlugin {
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
         [
-            KimiCodeOpenAIProvider(apiService: LLMAPIService(kernel: kernel)),
-            KimiCodeAnthropicProvider(apiService: LLMAPIService(kernel: kernel)),
+            KimiCodeOpenAIProvider(network: kernel.network),
+            KimiCodeAnthropicProvider(network: kernel.network),
         ]
     }
 
@@ -64,4 +61,51 @@ public final class KimiCodePlugin: LumiPlugin {
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
+}
+
+// MARK: - API Key 静态入口
+
+public extension KimiCodePlugin {
+    nonisolated static let apiKeyStorageKey = "DevAssistant_ApiKey_KimiCode"
+
+    nonisolated static var currentApiKey: String {
+        resolvedStore().loadMigratingLegacyUserDefaults(forKey: apiKeyStorageKey) ?? ""
+    }
+
+    nonisolated static var hasApiKey: Bool { !currentApiKey.isEmpty }
+
+    nonisolated static func setApiKey(_ apiKey: String) {
+        resolvedStore().set(apiKey, forKey: apiKeyStorageKey)
+    }
+
+    nonisolated static func removeApiKey() {
+        resolvedStore().remove(forKey: apiKeyStorageKey)
+    }
+}
+
+// MARK: - 测试注入
+
+final class _KimiCodePluginKeyStoreBridge: @unchecked Sendable {
+    static let shared = _KimiCodePluginKeyStoreBridge()
+    private let lock = NSLock()
+    private var override: APIKeyStore?
+
+    func withOverride<T>(_ store: APIKeyStore?, _ body: () throws -> T) rethrows -> T {
+        lock.lock()
+        let previous = override
+        override = store
+        defer {
+            override = previous
+            lock.unlock()
+        }
+        return try body()
+    }
+
+    func resolve() -> APIKeyStore {
+        return override ?? APIKeyStore.shared
+    }
+}
+
+private nonisolated func resolvedStore() -> APIKeyStore {
+    _KimiCodePluginKeyStoreBridge.shared.resolve()
 }

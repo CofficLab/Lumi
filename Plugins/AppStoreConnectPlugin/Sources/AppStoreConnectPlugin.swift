@@ -1,7 +1,7 @@
 import Foundation
-import os.log
 import LumiKernel
 import LumiUI
+import os.log
 import SuperLogKit
 import SwiftUI
 
@@ -11,11 +11,13 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public var name: String {
         AppStoreConnectLocalization.string("AppStoreConnect", bundle: .module)
     }
+
     public let order = 65
     public nonisolated static let emoji = "🚀"
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-store-connect", category: "AppStoreConnectPlugin")
-    public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 
@@ -30,7 +32,9 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
             ListAppStoreConnectAppsTool(),
             ListAppStoreConnectVersionsTool(),
             CreateAppStoreConnectVersionTool(),
+            ReleaseAppStoreConnectVersionTool(),
             ListAppStoreConnectLocalizationsTool(),
+            CreateAppStoreConnectLocalizationTool(),
             ListAppStoreConnectScreenshotSetsTool(),
             ListAppStoreConnectScreenshotsTool(),
             ListAppStoreConnectCiProductsTool(),
@@ -41,11 +45,6 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
             CreateAppStoreConnectScreenshotSetTool(),
             StartAppStoreConnectCiBuildRunTool(),
             SetAppStoreConnectCiWorkflowEnabledTool(),
-            ListAppStoreConnectCoverArtTool(),
-            ReadAppStoreConnectCoverArtTool(),
-            CreateAppStoreConnectCoverArtTool(),
-            UpdateAppStoreConnectCoverArtTool(),
-            ExportAppStoreConnectCoverArtTool(),
         ]
     }
 
@@ -58,9 +57,36 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        [
+            PanelRailTabItem(
+                id: "app-store-connect.sidebar",
+                title: name,
+                systemImage: "app.badge.checkmark",
+                visibility: .viewContainer(id: id)
+            ) {
+                AppStoreConnectRailView(viewModel: VM.shared)
+            },
+        ]
+    }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+        [
+            ViewContainerItem(
+                id: id,
+                title: name,
+                systemImage: "app.badge.checkmark",
+                railVisibility: .alwaysVisible,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBodyVisibility: .alwaysVisible,
+                panelBottomVisibility: .unsupported,
+            ) {
+                MainView()
+            },
+        ]
+    }
+
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }

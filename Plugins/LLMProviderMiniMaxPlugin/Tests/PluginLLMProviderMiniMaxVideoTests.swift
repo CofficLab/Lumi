@@ -5,7 +5,7 @@ import LumiKernel
 
 // MARK: - Mock Client
 
-private final class MockMiniMaxVideoClient: MiniMaxVideoClientProtocol, @unchecked Sendable {
+private final class MockMiniMaxVideoClient: MiniMaxVideoAPIProtocol, @unchecked Sendable {
     var shouldFail = false
     var failAtStep: FailStep = .submit
     var generateCallCount = 0

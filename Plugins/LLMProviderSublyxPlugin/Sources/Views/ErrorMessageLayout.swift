@@ -66,7 +66,7 @@ struct SublyxProviderBadge: View {
     @LumiTheme private var theme
 
     var body: some View {
-        Text("Sublyx")
+        Text(LumiPluginLocalization.string("Sublyx", bundle: .module))
             .font(.appMicroEmphasized)
             .foregroundColor(.white)
             .padding(.horizontal, 6)

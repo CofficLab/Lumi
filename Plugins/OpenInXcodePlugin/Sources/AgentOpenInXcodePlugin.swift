@@ -16,6 +16,7 @@ public final class AgentOpenInXcodePlugin: LumiPlugin {
     public let order = 95
     public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

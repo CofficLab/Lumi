@@ -1,5 +1,4 @@
 import LumiKernel
-import LumiKernel
 import LumiUI
 import SwiftUI
 
@@ -13,7 +12,7 @@ struct MessageInfoButton: View {
         AppIconButton(
             systemImage: "info.circle",
             tint: isPresented ? theme.textPrimary : theme.textSecondary,
-            size: .regular,
+            size: .compact,
             isActive: isPresented
         ) {
             isPresented.toggle()
@@ -100,7 +99,7 @@ struct MessageInfoPopoverContent: View {
                         infoRow("思考内容", value: "\(thinking.count) 字符")
                     }
                     if message.metadata["hasImages"] == "true" {
-                        infoRow("图片附件", value: imageAttachmentSummary)
+                        infoRow("图片附件", value: "是")
                     }
                 }
 
@@ -111,30 +110,11 @@ struct MessageInfoPopoverContent: View {
                         }
                     }
                 }
-
-                if !message.metadata.isEmpty {
-                    infoSection("元数据") {
-                        ForEach(sortedMetadataKeys, id: \.self) { key in
-                            metadataRow(key: key, value: message.metadata[key] ?? "")
-                        }
-                    }
-                }
             }
             .padding(12)
         }
         .frame(width: 320)
         .frame(maxHeight: 460)
-    }
-
-    private var sortedMetadataKeys: [String] {
-        message.metadata.keys.sorted()
-    }
-
-    private var imageAttachmentSummary: String {
-        if let encoded = message.metadata["imageAttachments"], !encoded.isEmpty {
-            return "\(encoded.count) 字符（Base64 JSON）"
-        }
-        return "是"
     }
 
     @ViewBuilder
@@ -186,17 +166,6 @@ struct MessageInfoPopoverContent: View {
     }
 
     @ViewBuilder
-    private func metadataRow(key: String, value: String) -> some View {
-        if shouldSummarizeMetadata(key: key, value: value) {
-            infoRow(metadataLabel(for: key), value: metadataSummary(key: key, value: value), isMono: isMonoMetadata(key))
-        } else if value.contains("\n") || value.count > 120 {
-            infoMultilineRow(metadataLabel(for: key), value: value)
-        } else {
-            infoRow(metadataLabel(for: key), value: value, isMono: isMonoMetadata(key))
-        }
-    }
-
-    @ViewBuilder
     private func toolCallSummary(index: Int, toolCall: LumiToolCall) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             infoRow("#\(index) 操作", value: toolCall.displayDescription ?? "执行工具")
@@ -245,38 +214,5 @@ struct MessageInfoPopoverContent: View {
 
     private func lineCount(in text: String) -> Int {
         max(1, text.components(separatedBy: .newlines).count)
-    }
-
-    private func metadataLabel(for key: String) -> String {
-        switch key {
-        case "thinkingContent": "思考内容"
-        case "hasImages": "含图片"
-        case "imageAttachments": "图片数据"
-        case "isTransientStatus": "临时状态"
-        case "source": "来源"
-        case "language": "语言"
-        case "automationLevel": "自动化"
-        case "verbosity": "详细度"
-        default: key
-        }
-    }
-
-    private func shouldSummarizeMetadata(key: String, value: String) -> Bool {
-        key == "thinkingContent" || key == "imageAttachments" || value.count > 200
-    }
-
-    private func metadataSummary(key: String, value: String) -> String {
-        switch key {
-        case "thinkingContent":
-            return "\(value.count) 字符"
-        case "imageAttachments":
-            return "\(value.count) 字符（JSON）"
-        default:
-            return String(value.prefix(200)) + (value.count > 200 ? "…" : "")
-        }
-    }
-
-    private func isMonoMetadata(_ key: String) -> Bool {
-        key == "imageAttachments" || key.hasSuffix("ID") || key.hasSuffix("Id")
     }
 }

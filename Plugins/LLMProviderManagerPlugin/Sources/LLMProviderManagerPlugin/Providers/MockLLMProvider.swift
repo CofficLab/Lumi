@@ -21,14 +21,14 @@ public final class MockLLMProvider: LumiLLMProvider, @unchecked Sendable, SuperL
         displayName: "Mock Provider",
         description: "Local mock provider that echoes user input. Auto-detects weather/time/search/calc keywords to return mock tool calls.",
         defaultModel: "mock-default",
-        availableModels: ["mock-default"],
+        availableModels: [
+            .init(
+                id: "mock-default",
+                contextWindowSize: 8_192,
+                capabilities: .init(supportsVision: false, supportsTools: true)
+            ),
+        ],
         isLocal: true,
-        contextWindowSizes: [
-            "mock-default": 8_192
-        ],
-        modelCapabilities: [
-            "mock-default": .init(supportsVision: false, supportsTools: true, supportsTTS: false)
-        ],
         websiteURL: URL(string: "https://example.invalid/mock-provider")!
     )
 
@@ -222,7 +222,7 @@ public final class MockLLMProvider: LumiLLMProvider, @unchecked Sendable, SuperL
     // MARK: - Availability / Status / Error
 
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        Self.info.availableModels.contains(model) ? .available
+        Self.info.modelIDs.contains(model) ? .available
             : .unavailable(.unsupportedModel("Model '\(model)' is not provided by \(Self.info.displayName)"))
     }
 

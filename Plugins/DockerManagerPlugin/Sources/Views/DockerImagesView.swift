@@ -43,12 +43,12 @@ struct DockerImagesView: View, SuperLog {
                         )
 
                         Menu {
-                            Picker("Sort", selection: $viewModel.sortOption) {
+                            Picker(LumiPluginLocalization.string("Sort", bundle: .module), selection: $viewModel.sortOption) {
                                 Text(LumiPluginLocalization.string("Created", bundle: .module)).tag(DockerManagerViewModel.SortOption.created)
                                 Text(LumiPluginLocalization.string("Name", bundle: .module)).tag(DockerManagerViewModel.SortOption.name)
                                 Text(LumiPluginLocalization.string("Size", bundle: .module)).tag(DockerManagerViewModel.SortOption.size)
                             }
-                            Toggle("Descending", isOn: $viewModel.sortDescending)
+                            Toggle(LumiPluginLocalization.string("Descending", bundle: .module), isOn: $viewModel.sortDescending)
                         } label: {
                             GlassRow {
                                 Label(LumiPluginLocalization.string("Sort", bundle: .module), systemImage: "arrow.up.arrow.down")
@@ -309,9 +309,9 @@ struct DockerImageDetailView: View {
                     }
                     Spacer()
 
-                    AppButton("Scan", style: .secondary, fillsWidth: true, action: { Task { await viewModel.scanImage(image) } })
+                    AppButton(LumiPluginLocalization.string("Scan", bundle: .module), style: .secondary, fillsWidth: true, action: { Task { await viewModel.scanImage(image) } })
 
-                    AppButton("Delete", style: .destructive, fillsWidth: true, action: { showDeleteAlert = true })
+                    AppButton(LumiPluginLocalization.string("Delete", bundle: .module), style: .destructive, fillsWidth: true, action: { showDeleteAlert = true })
                 }
                 }
 

@@ -27,7 +27,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         tools: [any LLMToolSchemaProviding]?,
         systemPrompt: String
     ) throws -> [String: Any] {
-        var conversationMessages = messages.map(transformMessage)
+        var conversationMessages = transformMessages(messages)
 
         if !systemPrompt.isEmpty,
            !conversationMessages.contains(where: { ($0["role"] as? String) == MessageRole.system.rawValue }) {
@@ -87,11 +87,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             tools: tools,
             systemPrompt: systemPrompt
         )
-        var effectiveConfig = config
-        if !configuration.supportsReasoningEffort {
-            effectiveConfig.reasoningEffort = nil
-        }
-        OpenAICompatibleGenerationOptionsApplier.apply(config: effectiveConfig, model: model, to: &body)
+        OpenAICompatibleGenerationOptionsApplier.apply(config: config, model: model, to: &body)
         return body
     }
 
@@ -184,6 +180,48 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         }
 
         return dict
+    }
+
+    /// OpenAI-compatible chat endpoints generally accept only text in a
+    /// `tool` message. Keep the tool-result sequence protocol-valid, then add
+    /// one synthetic user vision message after each contiguous tool-result
+    /// batch so screenshots returned by tools are visible on the next model
+    /// turn. Anthropic adapters support images directly inside tool_result and
+    /// do not use this normalization path.
+    private func transformMessages(_ messages: [ChatMessage]) -> [[String: Any]] {
+        var output: [[String: Any]] = []
+        var index = 0
+
+        while index < messages.count {
+            let message = messages[index]
+            guard message.role == .tool, message.toolCallID != nil else {
+                output.append(transformMessage(message))
+                index += 1
+                continue
+            }
+
+            var resultImages: [MessageImage] = []
+            while index < messages.count {
+                var result = messages[index]
+                guard result.role == .tool, result.toolCallID != nil else { break }
+                resultImages.append(contentsOf: result.images)
+                result.images = []
+                output.append(transformMessage(result))
+                index += 1
+            }
+
+            if !resultImages.isEmpty {
+                output.append([
+                    "role": MessageRole.user.rawValue,
+                    "content": VisionMessageContentBuilder.openAIContent(
+                        text: "Updated screenshot returned by the preceding tool result. Use it only as the current visual state of the requested interface.",
+                        images: resultImages
+                    ),
+                ])
+            }
+        }
+
+        return output
     }
 
     public func formatTool(_ tool: any LLMToolSchemaProviding) -> [String: Any] {

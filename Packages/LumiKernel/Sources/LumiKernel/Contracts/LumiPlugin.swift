@@ -31,7 +31,7 @@ public protocol LumiPlugin: AnyObject {
 
     /// 插件开发阶段
     ///
-    /// 用于在管理界面以徽标提示成熟度。默认 `.stable`。
+    /// 用于在管理界面以徽标提示成熟度。**必须显式声明**。
     var stage: LumiPluginStage { get }
 
     /// 插件描述
@@ -89,6 +89,13 @@ public protocol LumiPlugin: AnyObject {
 
     /// 提供标题工具栏项
     func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem]
+
+    // MARK: - Command Contributions
+
+    /// 提供应用命令菜单组。
+    ///
+    /// 宿主根据 `CommandMenuGroup.placement` 将命令渲染到对应的 macOS 菜单位置。
+    func commandMenuGroups(kernel: LumiKernel) -> [CommandMenuGroup]
 
     // MARK: - Panel / Status Bar Contributions
 
@@ -218,11 +225,11 @@ public extension LumiPlugin {
     /// Agent 工具的默认实现:不贡献任何工具。
     func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] { [] }
 
+    /// 默认不贡献任何命令菜单组。
+    func commandMenuGroups(kernel: LumiKernel) -> [CommandMenuGroup] { [] }
+
     /// 默认分类:通用。
     var category: LumiPluginCategory { .general }
-
-    /// 默认阶段:稳定。
-    var stage: LumiPluginStage { .stable }
 
     /// 默认描述:空字符串。
     var pluginDescription: String { "" }

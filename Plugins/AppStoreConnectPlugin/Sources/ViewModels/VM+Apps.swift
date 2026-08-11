@@ -28,9 +28,6 @@ extension VM {
         localStore.setSelectedAppID(app.id, for: credentials)
         if appChanged {
             selectedVersion = nil
-            if page == .coverArt {
-                page = .distribution
-            }
             versions = []
             localizations = []
             editedLocalization = nil
@@ -44,7 +41,6 @@ extension VM {
             page = .distribution
         }
         Task { await loadVersions() }
-        reloadCoverArtList()
     }
 
     func applyPersistedOrDefaultSelectedApp() {

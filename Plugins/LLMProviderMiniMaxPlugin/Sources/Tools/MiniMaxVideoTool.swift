@@ -32,13 +32,13 @@ public struct MiniMaxVideoTool: LumiAgentTool {
 
     public nonisolated static let emoji = "🎬"
 
-    private let client: any MiniMaxVideoClientProtocol
+    private let client: any MiniMaxVideoAPIProtocol
     private let recordStore: MiniMaxVideoRecordStore?
 
     // MARK: - Init
 
     init(
-        client: any MiniMaxVideoClientProtocol = MiniMaxVideoClient(apiKeyProvider: {
+        client: any MiniMaxVideoAPIProtocol = MiniMaxVideoAPI(apiKeyProvider: {
             APIKeyStore.shared.loadMigratingLegacyUserDefaults(forKey: "DevAssistant_ApiKey_MiniMax")
         }),
         recordStore: MiniMaxVideoRecordStore? = nil

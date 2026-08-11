@@ -71,15 +71,12 @@ struct ActivityBar: View, SuperLog {
 
     @ViewBuilder
     private var containerList: some View {
-        ForEach(containers) { container in
-            AppActivityIconButton(
-                systemImage: container.systemImage,
-                label: container.title,
-                isActive: highlightedContainerID == container.id
-            ) {
-                highlightedContainerID = container.id
-                kernel.workspace?.activateContainer(id: container.id)
-            }
+        ActivityBarScrollableContainerList(
+            containers: containers,
+            highlightedContainerID: highlightedContainerID
+        ) { container in
+            highlightedContainerID = container.id
+            kernel.workspace?.activateContainer(id: container.id)
         }
     }
 }

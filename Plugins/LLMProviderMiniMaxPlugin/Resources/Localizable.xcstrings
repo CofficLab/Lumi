@@ -1,851 +1,1276 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "" : {
-
-    },
-    "%lld / %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld / %2$lld"
+  "sourceLanguage": "en",
+  "strings": {
+    "": {},
+    "%lld / %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld / %2$lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld / %lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld / %lld"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld / %lld"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld / %lld"
           }
         }
       }
     },
-    "%lld records" : {
-
-    },
-    "%lld%%" : {
-
-    },
-    "Configure your MiniMax TokenPlan API Key below, then resend your message." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configure your MiniMax TokenPlan API Key below, then resend your message."
+    "%lld records": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld records"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请在下方填写 MiniMax TokenPlan API Key 后重新发送消息。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 条记录"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請於下方填寫 MiniMax TokenPlan API Key 後重新發送訊息。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 条记录"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請於下方填寫 MiniMax TokenPlan API Key 後重新發送訊息。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 条记录"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請於下方填寫 MiniMax TokenPlan API Key 後重新發送訊息。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 条记录"
           }
         }
       }
     },
-    "Contributes MiniMax TokenPlan models and MiniMax-specific chat error renderers." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contributes MiniMax TokenPlan models and MiniMax-specific chat error renderers."
+    "%lld%%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供 MiniMax TokenPlan 模型与 MiniMax 专属聊天错误渲染器。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供 MiniMax TokenPlan 模型與 MiniMax 專屬聊天錯誤渲染器。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供 MiniMax TokenPlan 模型與 MiniMax 專屬聊天錯誤渲染器。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供 MiniMax TokenPlan 模型與 MiniMax 專屬聊天錯誤渲染器。"
-          }
-        }
-      }
-    },
-    "Copy" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "复制"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         }
       }
     },
-    "Enter MiniMax TokenPlan API Key" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter MiniMax TokenPlan API Key"
+    "Configure your MiniMax TokenPlan API Key below, then resend your message.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure your MiniMax TokenPlan API Key below, then resend your message."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入 MiniMax TokenPlan API Key"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在下方填写 MiniMax TokenPlan API Key 后重新发送消息。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入 MiniMax TokenPlan API Key"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請於下方填寫 MiniMax TokenPlan API Key 後重新發送訊息。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入 MiniMax TokenPlan API Key"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請於下方填寫 MiniMax TokenPlan API Key 後重新發送訊息。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入 MiniMax TokenPlan API Key"
-          }
-        }
-      }
-    },
-    "Error" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Error"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "错误"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錯誤"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錯誤"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錯誤"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請於下方填寫 MiniMax TokenPlan API Key 後重新發送訊息。"
           }
         }
       }
     },
-    "Expires in ~%lld hours" : {
-
-    },
-    "Get API Key on MiniMax Open Platform" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Get API Key on MiniMax Open Platform"
+    "Contributes MiniMax TokenPlan models and MiniMax-specific chat error renderers.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contributes MiniMax TokenPlan models and MiniMax-specific chat error renderers."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "前往 MiniMax 开放平台获取 API Key"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供 MiniMax TokenPlan 模型与 MiniMax 专属聊天错误渲染器。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "前往 MiniMax 開放平臺取得 API Key"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供 MiniMax TokenPlan 模型與 MiniMax 專屬聊天錯誤渲染器。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "前往 MiniMax 開放平臺取得 API Key"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供 MiniMax TokenPlan 模型與 MiniMax 專屬聊天錯誤渲染器。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "前往 MiniMax 開放平臺取得 API Key"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供 MiniMax TokenPlan 模型與 MiniMax 專屬聊天錯誤渲染器。"
           }
         }
       }
     },
-    "Hide API Key" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hide API Key"
+    "Copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏 API Key"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隱藏 API Key"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隱藏 API Key"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隱藏 API Key"
-          }
-        }
-      }
-    },
-    "Link expired" : {
-
-    },
-    "Loading..." : {
-
-    },
-    "MiniMax" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
           }
         }
       }
     },
-    "MiniMax HTTP %lld" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax HTTP %lld"
+    "Enter MiniMax TokenPlan API Key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter MiniMax TokenPlan API Key"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax HTTP %lld"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入 MiniMax TokenPlan API Key"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax HTTP %lld"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入 MiniMax TokenPlan API Key"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax HTTP %lld"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入 MiniMax TokenPlan API Key"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax HTTP %lld"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入 MiniMax TokenPlan API Key"
           }
         }
       }
     },
-    "MiniMax request failed" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax request failed"
+    "Error": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax 请求失败"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax 請求失敗"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax 請求失敗"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax 請求失敗"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤"
           }
         }
       }
     },
-    "MiniMax Token Plan" : {
-
-    },
-    "MiniMax Token Plan (Anthropic-compatible)" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax Token Plan (Anthropic-compatible)"
+    "Expires in ~%lld hours": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expires in ~%lld hours"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax Token Plan 订阅（兼容 Anthropic 接口）"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "约 %lld 小时后过期"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax Token Plan 訂閱（相容 Anthropic 介面）"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "约 %lld 小时后过期"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax Token Plan 訂閱（相容 Anthropic 介面）"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "约 %lld 小时后过期"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax Token Plan 訂閱（相容 Anthropic 介面）"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "约 %lld 小时后过期"
           }
         }
       }
     },
-    "MiniMax TokenPlan" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax TokenPlan"
+    "Get API Key on MiniMax Open Platform": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get API Key on MiniMax Open Platform"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax TokenPlan"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前往 MiniMax 开放平台获取 API Key"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax TokenPlan"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前往 MiniMax 開放平臺取得 API Key"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax TokenPlan"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前往 MiniMax 開放平臺取得 API Key"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax TokenPlan"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前往 MiniMax 開放平臺取得 API Key"
           }
         }
       }
     },
-    "MiniMax TokenPlan API Key invalid or expired" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax TokenPlan API Key invalid or expired"
+    "Hide API Key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide API Key"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax TokenPlan API Key 无效或已过期"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏 API Key"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax TokenPlan API Key 無效或已過期"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏 API Key"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax TokenPlan API Key 無效或已過期"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏 API Key"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax TokenPlan API Key 無效或已過期"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏 API Key"
           }
         }
       }
     },
-    "MiniMax TokenPlan API Key required" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MiniMax TokenPlan API Key required"
+    "Link expired": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link expired"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要 MiniMax TokenPlan API Key"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "链接已过期"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要 MiniMax TokenPlan API Key"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "链接已过期"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要 MiniMax TokenPlan API Key"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "链接已过期"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要 MiniMax TokenPlan API Key"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "链接已过期"
           }
         }
       }
     },
-    "Raw error details" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Raw error details"
+    "Loading...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "原始错误详情"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载中..."
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "原始錯誤詳情"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载中..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "原始錯誤詳情"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载中..."
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "原始錯誤詳情"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载中..."
           }
         }
       }
     },
-    "Received Data" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Received Data"
+    "MiniMax": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接收数据"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接收資料"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接收資料"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接收資料"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax"
           }
         }
       }
     },
-    "Request / Response Details" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Request / Response Details"
+    "MiniMax HTTP %lld": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax HTTP %lld"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请求 / 响应详情"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax HTTP %lld"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請求 / 回應詳情"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax HTTP %lld"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請求 / 回應詳情"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax HTTP %lld"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請求 / 回應詳情"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax HTTP %lld"
           }
         }
       }
     },
-    "Sending Data" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sending Data"
+    "MiniMax request failed": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax request failed"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "发送数据"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax 请求失败"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "發送資料"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax 請求失敗"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "發送資料"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax 請求失敗"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "發送資料"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax 請求失敗"
           }
         }
       }
     },
-    "Show API Key" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show API Key"
+    "MiniMax Token Plan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax Token Plan"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示 API Key"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax 令牌套餐"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示 API Key"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax 令牌套餐"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示 API Key"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax 令牌套餐"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示 API Key"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax 令牌套餐"
           }
         }
       }
     },
-    "Show raw error details" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show raw error details"
+    "MiniMax Token Plan (Anthropic-compatible)": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax Token Plan (Anthropic-compatible)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示原始错误详情"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax Token Plan 订阅（兼容 Anthropic 接口）"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示原始錯誤詳情"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax Token Plan 訂閱（相容 Anthropic 介面）"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示原始錯誤詳情"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax Token Plan 訂閱（相容 Anthropic 介面）"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示原始錯誤詳情"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax Token Plan 訂閱（相容 Anthropic 介面）"
           }
         }
       }
     },
-    "Show request and response details" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show request and response details"
+    "MiniMax TokenPlan": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax TokenPlan"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示请求与响应详情"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax TokenPlan"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示請求與回應詳情"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax TokenPlan"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示請求與回應詳情"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax TokenPlan"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示請求與回應詳情"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax TokenPlan"
           }
         }
       }
     },
-    "This model is not included in your Token Plan" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This model is not included in your Token Plan"
+    "MiniMax TokenPlan API Key invalid or expired": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax TokenPlan API Key invalid or expired"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前套餐不含该模型"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax TokenPlan API Key 无效或已过期"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當前方案不含此模型"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax TokenPlan API Key 無效或已過期"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當前方案不含此模型"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax TokenPlan API Key 無效或已過期"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當前方案不含此模型"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax TokenPlan API Key 無效或已過期"
           }
         }
       }
     },
-    "Use a TokenPlan API Key from the MiniMax open platform. Update it below, then resend your message." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use a TokenPlan API Key from the MiniMax open platform. Update it below, then resend your message."
+    "MiniMax TokenPlan API Key required": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MiniMax TokenPlan API Key required"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请使用 MiniMax 开放平台 TokenPlan 套餐生成的 API Key，更新后重新发送消息。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 MiniMax TokenPlan API Key"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請使用 MiniMax 開放平臺 TokenPlan 方案產生的 API Key，更新後重新發送訊息。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 MiniMax TokenPlan API Key"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請使用 MiniMax 開放平臺 TokenPlan 方案產生的 API Key，更新後重新發送訊息。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 MiniMax TokenPlan API Key"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請使用 MiniMax 開放平臺 TokenPlan 方案產生的 API Key，更新後重新發送訊息。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 MiniMax TokenPlan API Key"
           }
         }
       }
     },
-    "剩余:" : {
-
+    "Raw error details": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raw error details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原始错误详情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原始錯誤詳情"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原始錯誤詳情"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "原始錯誤詳情"
+          }
+        }
+      }
     },
-    "加载中..." : {
-
+    "Received Data": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Received Data"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收数据"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收資料"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收資料"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接收資料"
+          }
+        }
+      }
     },
-    "无法获取配额信息" : {
-
+    "Request / Response Details": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request / Response Details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请求 / 响应详情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請求 / 回應詳情"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請求 / 回應詳情"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請求 / 回應詳情"
+          }
+        }
+      }
     },
-    "无限" : {
-
+    "Sending Data": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending Data"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送数据"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "發送資料"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "發送資料"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "發送資料"
+          }
+        }
+      }
     },
-    "模型:" : {
-
+    "Show API Key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show API Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示 API Key"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示 API Key"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示 API Key"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示 API Key"
+          }
+        }
+      }
     },
-    "认证失败，请检查 API Key" : {
-
+    "Show raw error details": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show raw error details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示原始错误详情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示原始錯誤詳情"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示原始錯誤詳情"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示原始錯誤詳情"
+          }
+        }
+      }
     },
-    "调用次数:" : {
-
+    "Show request and response details": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show request and response details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示请求与响应详情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示請求與回應詳情"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示請求與回應詳情"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示請求與回應詳情"
+          }
+        }
+      }
+    },
+    "This model is not included in your Token Plan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This model is not included in your Token Plan"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前套餐不含该模型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前方案不含此模型"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前方案不含此模型"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當前方案不含此模型"
+          }
+        }
+      }
+    },
+    "Use a TokenPlan API Key from the MiniMax open platform. Update it below, then resend your message.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use a TokenPlan API Key from the MiniMax open platform. Update it below, then resend your message."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请使用 MiniMax 开放平台 TokenPlan 套餐生成的 API Key，更新后重新发送消息。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請使用 MiniMax 開放平臺 TokenPlan 方案產生的 API Key，更新後重新發送訊息。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請使用 MiniMax 開放平臺 TokenPlan 方案產生的 API Key，更新後重新發送訊息。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請使用 MiniMax 開放平臺 TokenPlan 方案產生的 API Key，更新後重新發送訊息。"
+          }
+        }
+      }
+    },
+    "剩余:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remaining:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剩余:"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剩余:"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剩余:"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剩余:"
+          }
+        }
+      }
+    },
+    "加载中...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载中..."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载中..."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载中..."
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加载中..."
+          }
+        }
+      }
+    },
+    "无法获取配额信息": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to fetch quota info"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法获取配额信息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法获取配额信息"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法获取配额信息"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法获取配额信息"
+          }
+        }
+      }
+    },
+    "无限": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无限"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无限"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无限"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无限"
+          }
+        }
+      }
+    },
+    "模型:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型:"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型:"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型:"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型:"
+          }
+        }
+      }
+    },
+    "认证失败，请检查 API Key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Authentication failed; please check your API Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "认证失败，请检查 API Key"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "认证失败，请检查 API Key"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "认证失败，请检查 API Key"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "认证失败，请检查 API Key"
+          }
+        }
+      }
+    },
+    "调用次数:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call count:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "调用次数:"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "调用次数:"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "调用次数:"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "调用次数:"
+          }
+        }
+      }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

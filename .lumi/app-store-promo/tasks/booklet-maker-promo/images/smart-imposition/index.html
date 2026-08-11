@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>智能拼版</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      background: #1a2a5e;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Noto Sans SC", sans-serif;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      padding: 5% 5% 5%;
+    }
+    .header { text-align: center; margin-bottom: 2%; }
+    .brand {
+      font-size: clamp(14px, 1.8vmin, 24px);
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.9;
+      margin-bottom: 0.5%;
+      color: #4A90E2;
+    }
+    h1 {
+      font-size: clamp(48px, 8vmin, 100px);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .subtitle {
+      font-size: clamp(16px, 2.2vmin, 30px);
+      font-weight: 400;
+      opacity: 0.85;
+      margin-top: 0.6%;
+    }
+    .visual {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5%;
+    }
+    .sheet {
+      width: clamp(280px, 34vmin, 460px);
+      height: clamp(195px, 24vmin, 330px);
+      background: #ffffff;
+      border-radius: 9px;
+      display: flex;
+      box-shadow: 0 10px 32px rgba(0,0,0,0.35), 0 0 24px rgba(74, 144, 226, 0.1);
+      overflow: hidden;
+      position: relative;
+    }
+    .sheet-cell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5%;
+      position: relative;
+      padding: 7%;
+    }
+    .sheet-cell .line {
+      width: 72%;
+      height: 2.5px;
+      background: #6a7a92;
+      border-radius: 1px;
+    }
+    .sheet-cell .line:nth-child(even) { width: 56%; }
+    .page-badge {
+      position: absolute;
+      bottom: 5%;
+      width: clamp(42px, 4.8vmin, 64px);
+      height: clamp(42px, 4.8vmin, 64px);
+      border-radius: 50%;
+      background: linear-gradient(145deg, #4A90E2 0%, #3a7bc8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(16px, 2vmin, 26px);
+      font-weight: 800;
+      color: #ffffff;
+      box-shadow: 0 3px 10px rgba(74, 144, 226, 0.4);
+    }
+    .page-badge.left { left: 10%; }
+    .page-badge.right { right: 10%; }
+    .fold-line {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: repeating-linear-gradient(to bottom, #4A90E2 0, #4A90E2 6px, transparent 6px, transparent 12px);
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+    .fold-label {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(12px, 1.4vmin, 18px);
+      color: #ffffff;
+      background: #4A90E2;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      z-index: 3;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(74, 144, 226, 0.4);
+    }
+    .sheet-label {
+      position: absolute;
+      top: 3.5%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(12px, 1.4vmin, 18px);
+      color: #4A90E2;
+      font-weight: 700;
+      z-index: 1;
+    }
+    .tag {
+      text-align: center;
+      margin-top: 2.5%;
+      font-size: clamp(15px, 2vmin, 26px);
+      font-weight: 700;
+      opacity: 1;
+      letter-spacing: 0.05em;
+      color: #4A90E2;
+      background: rgba(74, 144, 226, 0.12);
+      padding: 10px 28px;
+      border-radius: 22px;
+      display: inline-block;
+      align-self: center;
+      border: 1px solid rgba(74, 144, 226, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <section class="header">
+    <div class="brand">BookletMaker</div>
+    <h1>智能拼版</h1>
+    <div class="subtitle">自动计算页面顺序，折叠即成正确页序</div>
+  </section>
+  <section class="visual">
+    <div class="sheet">
+      <div class="sheet-label">正面</div>
+      <div class="sheet-cell">
+        <div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>
+        <div class="page-badge left">8</div>
+      </div>
+      <div class="sheet-cell">
+        <div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>
+        <div class="page-badge right">1</div>
+      </div>
+      <div class="fold-line"></div>
+      <div class="fold-label">折叠线</div>
+    </div>
+    <div class="sheet">
+      <div class="sheet-label">背面</div>
+      <div class="sheet-cell">
+        <div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>
+        <div class="page-badge left">2</div>
+      </div>
+      <div class="sheet-cell">
+        <div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>
+        <div class="page-badge right">7</div>
+      </div>
+      <div class="fold-line"></div>
+      <div class="fold-label">折叠线</div>
+    </div>
+  </section>
+  <div style="text-align: center;"><div class="tag">A4 双面打印 · 中间折叠 · 装订成册</div></div>
+</body>
+</html>

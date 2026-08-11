@@ -36,6 +36,28 @@
         }
       }
     },
+    "Conversation Verbosity": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Conversation Verbosity"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "new",
+            "value": "当前对话详细程度"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "當前對話詳細程度"
+          }
+        }
+      }
+    },
     "Detailed Verbosity Description": {
       "extractionState": "stale",
       "localizations": {
@@ -67,6 +89,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "詳細模式：包含完整推理過程、代碼上下文和補充說明"
+          }
+        }
+      }
+    },
+    "Global Verbosity": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Global Verbosity"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "new",
+            "value": "全局详细程度"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "全局詳細程度"
           }
         }
       }
@@ -118,25 +162,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Switch between Brief, Normal, and Detailed response styles"
+            "value": "在简洁、普通和详细回复风格之间切换"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Switch between Brief, Normal, and Detailed response styles"
+            "value": "在简洁、普通和详细回复风格之间切换"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Switch between Brief, Normal, and Detailed response styles"
+            "value": "在简洁、普通和详细回复风格之间切换"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Switch between Brief, Normal, and Detailed response styles"
+            "value": "在简洁、普通和详细回复风格之间切换"
           }
         }
       }
@@ -210,7 +254,6 @@
         }
       }
     },
-    "Verbosity Level": {},
     "详细级别": {
       "extractionState": "stale",
       "localizations": {

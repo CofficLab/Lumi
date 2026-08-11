@@ -66,7 +66,7 @@ public struct MainView: View {
             HStack {
                 Spacer()
                 if viewModel.isConnected {
-                    AppButton("Disconnect", systemImage: "bolt.horizontal.circle", style: .secondary, size: .small, action: { Task { await viewModel.disconnect() } })
+                    AppButton(LumiPluginLocalization.string("Disconnect", bundle: .module), systemImage: "bolt.horizontal.circle", style: .secondary, size: .small, action: { Task { await viewModel.disconnect() } })
                 }
                 if viewModel.isLoading {
                     ProgressView()
@@ -133,7 +133,7 @@ public struct AddConnectionView: View {
                         GlassTextField(title: "Host", text: $host, placeholder: "127.0.0.1")
                         GlassTextField(title: "Port", text: $portText, placeholder: type == .redis ? "6379" : (type == .postgresql ? "5432" : "3306"))
                         if type != .redis {
-                            GlassTextField(title: "Database", text: $database, placeholder: type == .postgresql ? "postgres" : "test")
+                            GlassTextField(title: LumiPluginLocalization.string("Database", bundle: .module), text: $database, placeholder: type == .postgresql ? "postgres" : "test")
                             GlassTextField(title: "Username", text: $username, placeholder: "user")
                         }
                         GlassTextField(title: "Password", text: $password, placeholder: "••••••••", isSecure: true)

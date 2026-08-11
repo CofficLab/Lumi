@@ -13,8 +13,43 @@ public final class IconDocumentStore: ObservableObject {
 
     private var undoStack: [IconDocument] = []
     private var redoStack: [IconDocument] = []
+    private var persistenceDirectory: URL?
+    private let fileManager = FileManager.default
+    private let fileService = IconDocumentFileService()
 
     public init() {}
+
+    /// Binds the store to the plugin-owned directory and restores all source files.
+    public func configure(persistenceDirectory: URL?) {
+        guard self.persistenceDirectory?.standardizedFileURL != persistenceDirectory?.standardizedFileURL else {
+            return
+        }
+
+        self.persistenceDirectory = persistenceDirectory
+        guard let persistenceDirectory else { return }
+
+        do {
+            try fileManager.createDirectory(at: persistenceDirectory, withIntermediateDirectories: true)
+            let urls = try fileManager.contentsOfDirectory(
+                at: persistenceDirectory,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            )
+            let loaded = urls
+                .filter { $0.pathExtension.lowercased() == "json" }
+                .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+                .compactMap { url -> IconDocument? in
+                    do { return try fileService.load(from: url) }
+                    catch { return nil }
+                }
+            documents = loaded
+            selectedDocumentId = loaded.first?.id
+            clearHistory()
+            lastError = nil
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
 
     public var selectedDocument: IconDocument? {
         guard let selectedDocumentId else { return documents.first }
@@ -33,6 +68,7 @@ public final class IconDocumentStore: ObservableObject {
         documents.insert(document, at: 0)
         selectedDocumentId = document.id
         clearHistory()
+        persist(document)
         lastError = nil
         return document
     }
@@ -45,6 +81,7 @@ public final class IconDocumentStore: ObservableObject {
         documents.insert(document, at: 0)
         selectedDocumentId = document.id
         clearHistory()
+        persist(document)
         lastError = nil
         return document
     }
@@ -66,6 +103,7 @@ public final class IconDocumentStore: ObservableObject {
         next.updatedAt = Date()
         documents[index] = next
         recordUndo(previous)
+        persist(next)
         lastError = nil
         return next
     }
@@ -159,10 +197,12 @@ public final class IconDocumentStore: ObservableObject {
             }
             documents[index] = replacement
             recordUndo(previous)
+            persist(replacement)
         } else {
             documents.insert(replacement, at: 0)
             selectedDocumentId = replacement.id
             clearHistory()
+            persist(replacement)
         }
         lastError = nil
         return replacement
@@ -177,6 +217,7 @@ public final class IconDocumentStore: ObservableObject {
         documents.insert(imported, at: 0)
         selectedDocumentId = imported.id
         clearHistory()
+        persist(imported)
         lastError = nil
         return imported
     }
@@ -189,6 +230,7 @@ public final class IconDocumentStore: ObservableObject {
 
         redoStack.append(documents[index])
         documents[index] = previous
+        persist(previous)
         updateHistoryFlags()
         lastError = nil
     }
@@ -201,6 +243,7 @@ public final class IconDocumentStore: ObservableObject {
 
         undoStack.append(documents[index])
         documents[index] = next
+        persist(next)
         updateHistoryFlags()
         lastError = nil
     }
@@ -211,6 +254,32 @@ public final class IconDocumentStore: ObservableObject {
         }
         selectedDocumentId = id
         clearHistory()
+    }
+
+    /// Removes a document from the store and deletes its persisted file.
+    public func deleteDocument(id: String) {
+        guard let index = documents.firstIndex(where: { $0.id == id }) else { return }
+        let document = documents[index]
+
+        // Delete persisted file
+        if let persistenceDirectory {
+            let url = persistenceDirectory.appendingPathComponent(fileName(for: document))
+            try? fileManager.removeItem(at: url)
+        }
+
+        documents.remove(at: index)
+
+        // Adjust selection
+        if selectedDocumentId == id {
+            if documents.isEmpty {
+                selectedDocumentId = nil
+            } else {
+                selectedDocumentId = documents[min(index, documents.count - 1)].id
+            }
+            clearHistory()
+        }
+
+        lastError = nil
     }
 
     public func setExportURL(_ url: URL) {
@@ -228,6 +297,29 @@ public final class IconDocumentStore: ObservableObject {
         lastExportURL = nil
         lastError = nil
         clearHistory()
+    }
+
+    private func persist(_ document: IconDocument) {
+        guard let persistenceDirectory else { return }
+        do {
+            try fileManager.createDirectory(at: persistenceDirectory, withIntermediateDirectories: true)
+            try fileService.save(document: document, to: fileURL(for: document))
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
+
+    private func fileURL(for document: IconDocument) -> URL {
+        persistenceDirectory!.appendingPathComponent(fileName(for: document))
+    }
+
+    private func fileName(for document: IconDocument) -> String {
+        let safe = document.title
+            .lowercased()
+            .replacingOccurrences(of: #"[^a-z0-9_-]+"#, with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        let base = safe.isEmpty ? "icon" : safe
+        return "\(base)-\(document.id.prefix(8)).json"
     }
 
     private func recordUndo(_ previous: IconDocument) {

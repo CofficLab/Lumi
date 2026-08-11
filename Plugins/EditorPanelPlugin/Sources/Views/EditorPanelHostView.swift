@@ -18,7 +18,7 @@ public struct EditorPanelHostView: View {
         if let editorProvider = kernel.editorProvider {
             editorProvider.makeEditorView()
         } else {
-            Text("Editor service unavailable")
+            Text(LumiPluginLocalization.string("Editor service unavailable", bundle: .module))
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -172,7 +172,7 @@ public enum ModelUsageStatsService {
             .filter { $0.avgTPS > 0 && $0.sampleCount > 0 }
             .compactMap { stat -> ModelFastModelEntry? in
                 guard let provider = providerMap[stat.providerID],
-                      provider.availableModels.contains(stat.modelName) else {
+                      provider.modelIDs.contains(stat.modelName) else {
                     return nil
                 }
                 return ModelFastModelEntry(

@@ -30,7 +30,7 @@ let package = Package(
             ],
             path: "Sources/LumiKernel",
             resources: [
-                .process("../Resources")
+                .process("../../Resources")
             ]
         ),
         .testTarget(

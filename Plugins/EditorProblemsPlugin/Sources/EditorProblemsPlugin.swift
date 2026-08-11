@@ -11,6 +11,7 @@ public final class EditorProblemsPlugin: LumiPlugin {
     }
     public let order = 1
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

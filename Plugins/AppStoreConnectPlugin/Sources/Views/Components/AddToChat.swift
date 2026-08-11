@@ -48,13 +48,7 @@ enum AddToChat {
 
         if mode == .analyze {
             lines.append("")
-            if entityType == "coverArtDocument" {
-                lines.append(
-                    "Task: Review this responsive HTML cover art document and iterate on index.html using app-store-connect.read-cover-art and app-store-connect.update-cover-art. Keep layouts working across all previewDisplayTypes for the deviceFamily."
-                )
-            } else {
-                lines.append("Task: Analyze this selected App Store Connect object and suggest the next best actions.")
-            }
+            lines.append("Task: Analyze this selected App Store Connect object and suggest the next best actions.")
         } else if mode == .devReference || mode == .devAnalyze {
             lines.append("")
             lines.append("[Development Context]")

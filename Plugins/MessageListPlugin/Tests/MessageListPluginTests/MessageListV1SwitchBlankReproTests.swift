@@ -5,7 +5,7 @@ import Testing
 
 /// V1 版本的「切换对话竞态」回归测试。
 ///
-/// 与 V2 的 `MessageListSwitchBlankReproTests` 对应，验证 `MessageListV1ViewModel`
+/// 与 V2 的 `MessageListSwitchBlankReproTests` 对应，验证 `ListV1ViewModel`
 /// 在并发切换对话时，`records` 和 `presentation` 必须属于用户最终选中的对话。
 ///
 /// 根因：`activate` 使用 `activeConversationID`（可变共享状态）做过期守卫，
@@ -29,17 +29,17 @@ struct MessageListV1SwitchBlankReproTests {
         return kernel
     }
 
-    /// 断言 viewmodel 的结论消息必须属于指定对话（无外来残留）。
+    /// 断言 viewmodel 的展示消息必须属于指定对话（无外来残留）。
     private func expectConsistent(
-        _ viewModel: MessageListV1ViewModel,
+        _ viewModel: ListV1ViewModel,
         selectedID: UUID?,
         sourceComment: String
     ) {
         if let selectedID {
-            let foreign = viewModel.conclusionMessages.filter { $0.conversationID != selectedID }
+            let foreign = viewModel.displayMessages.filter { $0.conversationID != selectedID }
             if !foreign.isEmpty {
                 Issue.record(
-                    "\(sourceComment): conclusionMessages 残留了非当前对话的消息(数据错配 → 可能空白)。外来消息数=\(foreign.count)"
+                    "\(sourceComment): displayMessages 残留了非当前对话的消息(数据错配 → 可能空白)。外来消息数=\(foreign.count)"
                 )
             }
             #expect(foreign.isEmpty)
@@ -87,7 +87,7 @@ struct MessageListV1SwitchBlankReproTests {
 
     // MARK: - Tests
 
-    @Test("长对话切短对话:激活后 conclusionMessages 必须属于短对话,无外来残留")
+    @Test("长对话切短对话:激活后展示消息必须属于短对话,无外来残留")
     func longToShort_noForeignRowsAfterSwitch() async throws {
         let messages = MockMessageManager()
         let conversations = MockConversationManager()
@@ -105,7 +105,7 @@ struct MessageListV1SwitchBlankReproTests {
         messages.seed(shortData.messages, conversationID: shortID)
 
         let kernel = try makeKernel(messages: messages, conversations: conversations, turnManager: turnManager)
-        let viewModel = MessageListV1ViewModel(kernel: kernel, pageSize: 40)
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 40)
 
         // 1. 先进入长对话并等其加载完
         conversations.selectedConversationID = longID
@@ -121,7 +121,7 @@ struct MessageListV1SwitchBlankReproTests {
         expectConsistent(viewModel, selectedID: shortID, sourceComment: "长切短后")
     }
 
-    @Test("快速来回切:最终激活的对话必须是 conclusionMessages 的归属对话")
+    @Test("快速来回切:最终激活的对话必须是展示消息的归属对话")
     func rapidSwitch_finalStateConsistent() async throws {
         let messages = MockMessageManager()
         let conversations = MockConversationManager()
@@ -138,7 +138,7 @@ struct MessageListV1SwitchBlankReproTests {
         messages.seed(shortData.messages, conversationID: shortID)
 
         let kernel = try makeKernel(messages: messages, conversations: conversations, turnManager: turnManager)
-        let viewModel = MessageListV1ViewModel(kernel: kernel, pageSize: 40)
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 40)
 
         // 顺序切换三次，确保最终状态正确
         // 注意：由于 @MainActor 方法会序列化执行，真正的并发竞态需要异步延迟来触发
@@ -160,7 +160,7 @@ struct MessageListV1SwitchBlankReproTests {
         expectConsistent(viewModel, selectedID: longID, sourceComment: "快速来回切后")
     }
 
-    @Test("isLoading 翻false后,hasVisibleContent 与 conclusionMessages 必须一致")
+    @Test("isLoading 翻false后,hasVisibleContent 与 items 必须一致")
     func afterLoading_consistentVisibleState() async throws {
         let messages = MockMessageManager()
         let conversations = MockConversationManager()
@@ -177,7 +177,7 @@ struct MessageListV1SwitchBlankReproTests {
         messages.seed(shortData.messages, conversationID: shortID)
 
         let kernel = try makeKernel(messages: messages, conversations: conversations, turnManager: turnManager)
-        let viewModel = MessageListV1ViewModel(kernel: kernel, pageSize: 40)
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 40)
 
         conversations.selectedConversationID = longID
         await viewModel.activate(conversationID: longID)
@@ -186,7 +186,7 @@ struct MessageListV1SwitchBlankReproTests {
 
         // 加载完成后状态一致性检查
         #expect(viewModel.isLoading == false)
-        #expect(viewModel.hasVisibleContent == !viewModel.conclusionMessages.isEmpty)
+        #expect(viewModel.hasVisibleContent == !viewModel.items.isEmpty)
         expectConsistent(viewModel, selectedID: shortID, sourceComment: "加载完成后")
     }
 }

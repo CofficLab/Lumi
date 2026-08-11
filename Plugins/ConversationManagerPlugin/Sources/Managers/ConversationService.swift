@@ -13,6 +13,8 @@ public final class ConversationService: ConversationManaging {
     @Published public private(set) var selectedConversationID: UUID?
     @Published public private(set) var currentTitle: String = "No conversation"
     @Published public private(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
+    @Published public private(set) var globalReasoningEffort: LumiReasoningEffort? = .defaultEffort
+    @Published public private(set) var globalAutomationLevel: LumiAutomationLevel = .build
 
     public var dataDirectory: URL { storageDirectory }
 
@@ -108,6 +110,8 @@ public final class ConversationService: ConversationManaging {
             preview: "",
             createdAt: now,
             updatedAt: now,
+            reasoningEffort: globalReasoningEffort,
+            automationLevel: globalAutomationLevel,
             providerID: providerID,
             modelName: modelName,
             projectPath: projectPath,
@@ -237,6 +241,10 @@ public final class ConversationService: ConversationManaging {
         try? saveConversations()
     }
 
+    public func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?) {
+        globalReasoningEffort = reasoningEffort
+    }
+
     public func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort {
         guard let conversationID else {
             return .defaultEffort
@@ -255,7 +263,29 @@ public final class ConversationService: ConversationManaging {
         try? saveConversations()
     }
 
+    public func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? {
+        guard let conversationID else {
+            return nil
+        }
+        return conversations.first { $0.id == conversationID }?.reasoningEffort
+    }
+
+    public func clearReasoningEffort(for conversationID: UUID?) {
+        guard let conversationID else {
+            return
+        }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return
+        }
+        conversations[index].reasoningEffort = nil
+        try? saveConversations()
+    }
+
     // MARK: - Automation Level
+
+    public func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) {
+        globalAutomationLevel = automationLevel
+    }
 
     public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {
         guard let conversationID else {

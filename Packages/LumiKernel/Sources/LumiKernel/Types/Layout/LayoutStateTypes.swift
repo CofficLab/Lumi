@@ -14,6 +14,10 @@ public struct LayoutStateInfo: Sendable, Codable {
     /// 每个 ViewContainer 用户手动调整过的可见性（键为容器 ID）。
     /// `nil` 字段表示用户未调整该开关，解析时回退到容器声明或全局默认。
     public var visibilityOverrides: [String: VisibilityFlags]
+    /// 每个 ViewContainer 的 Rail、聊天分区、底部面板分隔位置。
+    public var railDividers: [String: CGFloat]
+    public var chatSectionDividers: [String: CGFloat]
+    public var bottomPanelDividers: [String: CGFloat]
 
     public init(
         activeViewContainerID: String? = nil,
@@ -22,7 +26,10 @@ public struct LayoutStateInfo: Sendable, Codable {
         panelBottomVisible: Bool = true,
         activeRailTabIDs: [String: String] = [:],
         activeBottomTabIDs: [String: String] = [:],
-        visibilityOverrides: [String: VisibilityFlags] = [:]
+        visibilityOverrides: [String: VisibilityFlags] = [:],
+        railDividers: [String: CGFloat] = [:],
+        chatSectionDividers: [String: CGFloat] = [:],
+        bottomPanelDividers: [String: CGFloat] = [:]
     ) {
         self.activeViewContainerID = activeViewContainerID
         self.chatSectionVisible = chatSectionVisible
@@ -31,6 +38,9 @@ public struct LayoutStateInfo: Sendable, Codable {
         self.activeRailTabIDs = activeRailTabIDs
         self.activeBottomTabIDs = activeBottomTabIDs
         self.visibilityOverrides = visibilityOverrides
+        self.railDividers = railDividers
+        self.chatSectionDividers = chatSectionDividers
+        self.bottomPanelDividers = bottomPanelDividers
     }
 
     /// 自定义解码：旧版 `layout-info.json` 不含 tab 字典字段时，以空字典兜底，
@@ -43,6 +53,9 @@ public struct LayoutStateInfo: Sendable, Codable {
         case activeRailTabIDs
         case activeBottomTabIDs
         case visibilityOverrides
+        case railDividers
+        case chatSectionDividers
+        case bottomPanelDividers
     }
 
     public init(from decoder: Decoder) throws {
@@ -54,6 +67,9 @@ public struct LayoutStateInfo: Sendable, Codable {
         self.activeRailTabIDs = try c.decodeIfPresent([String: String].self, forKey: .activeRailTabIDs) ?? [:]
         self.activeBottomTabIDs = try c.decodeIfPresent([String: String].self, forKey: .activeBottomTabIDs) ?? [:]
         self.visibilityOverrides = try c.decodeIfPresent([String: VisibilityFlags].self, forKey: .visibilityOverrides) ?? [:]
+        self.railDividers = try c.decodeIfPresent([String: CGFloat].self, forKey: .railDividers) ?? [:]
+        self.chatSectionDividers = try c.decodeIfPresent([String: CGFloat].self, forKey: .chatSectionDividers) ?? [:]
+        self.bottomPanelDividers = try c.decodeIfPresent([String: CGFloat].self, forKey: .bottomPanelDividers) ?? [:]
     }
 }
 

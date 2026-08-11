@@ -12,25 +12,31 @@ public final class FeifeimiaoProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("LLM API by feifeimiao", bundle: .module),
         defaultModel: "gpt-5.5",
         availableModels: [
-            "gpt-5.5",
-            "gpt-5.4",
-            "gpt-5.4-mini",
-            "gpt-5.3",
-            "gpt-5.2"
-        ],
-        contextWindowSizes: [
-            "gpt-5.5": 1_000_000,
-            "gpt-5.4": 1_000_000,
-            "gpt-5.4-mini": 400_000,
-            "gpt-5.3": 400_000,
-            "gpt-5.2": 400_000
-        ],
-        modelCapabilities: [
-            "gpt-5.5": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.4": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.4-mini": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.3": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "gpt-5.2": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true)
+            .init(
+                id: "gpt-5.5",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "gpt-5.4",
+                contextWindowSize: 1_000_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "gpt-5.4-mini",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "gpt-5.3",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "gpt-5.2",
+                contextWindowSize: 400_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
         ],
         websiteURL: URL(string: "https://feifeimiao.top")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_Feifeimiao"
@@ -54,7 +60,6 @@ public final class FeifeimiaoProvider: LumiLLMProvider, @unchecked Sendable {
             includeUsageInStreamOptions: true,
             returnsEmptyChunkWhenNoDelta: false,
             acceptsFunctionScopedToolCallID: false,
-            supportsReasoningEffort: true
         )
         self.adapter = OpenAICompatibleProviderAdapter(configuration: config)
         self.apiService = apiService

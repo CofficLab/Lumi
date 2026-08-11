@@ -16,7 +16,9 @@ public final class InputPlugin: LumiPlugin {
         LumiPluginLocalization.string("Input Manager", bundle: .module)
     }
     public let order = 70
-	public let policy: LumiPluginPolicy = .disabled
+	public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
+    public let state: LumiPluginStage = .beta
 
     public init() {}
 
@@ -32,9 +34,13 @@ public final class InputPlugin: LumiPlugin {
         [
             ViewContainerItem(
                 id: id,
-                title: "Input Manager",
+                title: LumiPluginLocalization.string("Input Manager", bundle: .module),
                 systemImage: "keyboard",
-                panelHeaderVisibility: .unsupported
+                railVisibility: .unsupported,
+                chatVisibility: .unsupported,
+                panelHeaderVisibility: .unsupported,
+                panelBodyVisibility: .alwaysVisible,
+                panelBottomVisibility: .unsupported,
             ) {
                 InputSettingsView()
             },

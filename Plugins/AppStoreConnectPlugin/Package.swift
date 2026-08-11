@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/HTMLPreviewKit"),
+        .package(path: "../../Packages/AppStorePromoKit"),
     ],
     targets: [
         .target(
@@ -27,6 +28,7 @@ let package = Package(
                 .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "HTMLPreviewKit", package: "HTMLPreviewKit"),
+                .product(name: "AppStorePromoKit", package: "AppStorePromoKit"),
             ],
             path: "Sources",
             resources: [

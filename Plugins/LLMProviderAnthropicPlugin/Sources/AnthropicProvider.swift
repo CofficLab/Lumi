@@ -12,31 +12,41 @@ public final class AnthropicProvider: LumiLLMProvider, @unchecked Sendable {
         description: LumiPluginLocalization.string("Claude AI by Anthropic", bundle: .module),
         defaultModel: "claude-sonnet-4-20250514",
         availableModels: [
-            "claude-sonnet-4-20250514",
-            "claude-opus-4-20250514",
-            "claude-3-5-sonnet-20241022",
-            "claude-3-5-sonnet-20240620",
-            "claude-3-opus-20240229",
-            "claude-3-sonnet-20240229",
-            "claude-3-haiku-20240307"
-        ],
-        contextWindowSizes: [
-            "claude-sonnet-4-20250514": 200_000,
-            "claude-opus-4-20250514": 200_000,
-            "claude-3-5-sonnet-20241022": 200_000,
-            "claude-3-5-sonnet-20240620": 200_000,
-            "claude-3-opus-20240229": 200_000,
-            "claude-3-sonnet-20240229": 200_000,
-            "claude-3-haiku-20240307": 200_000
-        ],
-        modelCapabilities: [
-            "claude-sonnet-4-20250514": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "claude-opus-4-20250514": .init(supportsVision: true, supportsTools: true, supportsReasoningEffort: true),
-            "claude-3-5-sonnet-20241022": .init(supportsVision: true, supportsTools: true),
-            "claude-3-5-sonnet-20240620": .init(supportsVision: true, supportsTools: true),
-            "claude-3-opus-20240229": .init(supportsVision: true, supportsTools: true),
-            "claude-3-sonnet-20240229": .init(supportsVision: true, supportsTools: true),
-            "claude-3-haiku-20240307": .init(supportsVision: true, supportsTools: true)
+            .init(
+                id: "claude-sonnet-4-20250514",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "claude-opus-4-20250514",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true, thinkingAndReasoning: .fourLevel)
+            ),
+            .init(
+                id: "claude-3-5-sonnet-20241022",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "claude-3-5-sonnet-20240620",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "claude-3-opus-20240229",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "claude-3-sonnet-20240229",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
+            .init(
+                id: "claude-3-haiku-20240307",
+                contextWindowSize: 200_000,
+                capabilities: .init(supportsVision: true, supportsTools: true)
+            ),
         ],
         websiteURL: URL(string: "https://www.anthropic.com/")!,
         apiKeyStorageKey: "DevAssistant_ApiKey_Anthropic"
@@ -55,8 +65,7 @@ public final class AnthropicProvider: LumiLLMProvider, @unchecked Sendable {
         apiService: LLMAPIService = LLMAPIService()
     ) {
         let config = configuration ?? AnthropicCompatibleProviderConfiguration(
-            baseURL: "https://api.anthropic.com/v1/messages",
-            supportsThinkingBudget: true
+            baseURL: "https://api.anthropic.com/v1/messages"
         )
         self.adapter = AnthropicCompatibleProviderAdapter(configuration: config)
         self.apiService = apiService

@@ -10,6 +10,7 @@ public final class EditorChatPlugin: LumiPlugin {
     }
     public let order = 6
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

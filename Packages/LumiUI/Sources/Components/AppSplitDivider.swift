@@ -33,7 +33,23 @@ public extension View {
     /// Hover feedback is limited to the native draggable area so the cursor never
     /// advertises resizing where `NSSplitView` cannot begin a drag.
     func appSplitDivider(_ edge: AppSplitDividerEdge) -> some View {
-        modifier(AppSplitDividerModifier(edge: edge))
+        appSplitDivider(edge, initialPosition: nil, onResize: nil)
+    }
+
+    /// Adds interactive styling, restores the divider once after attachment, and
+    /// reports the leading pane's native size after resize.
+    func appSplitDivider(
+        _ edge: AppSplitDividerEdge,
+        initialPosition: CGFloat? = nil,
+        onResize: (@MainActor (CGFloat) -> Void)?
+    ) -> some View {
+        modifier(
+            AppSplitDividerModifier(
+                edge: edge,
+                initialPosition: initialPosition,
+                onResize: onResize
+            )
+        )
     }
 }
 
@@ -42,13 +58,17 @@ private struct AppSplitDividerModifier: ViewModifier {
     @State private var isHovered = false
 
     let edge: AppSplitDividerEdge
+    let initialPosition: CGFloat?
+    let onResize: (@MainActor (CGFloat) -> Void)?
 
     func body(content: Content) -> some View {
         content
             .background(
                 AppSplitDividerHoverCoordinator(
                     edge: edge,
-                    isHovered: $isHovered
+                    isHovered: $isHovered,
+                    initialPosition: initialPosition,
+                    onResize: onResize
                 )
             )
             .overlay(alignment: edge.alignment) {
@@ -97,9 +117,15 @@ private struct AppSplitDividerModifier: ViewModifier {
 private struct AppSplitDividerHoverCoordinator: NSViewRepresentable {
     let edge: AppSplitDividerEdge
     @Binding var isHovered: Bool
+    let initialPosition: CGFloat?
+    let onResize: (@MainActor (CGFloat) -> Void)?
 
     func makeNSView(context: Context) -> AppSplitDividerHoverCoordinatorView {
-        let view = AppSplitDividerHoverCoordinatorView(edge: edge)
+        let view = AppSplitDividerHoverCoordinatorView(
+            edge: edge,
+            initialPosition: initialPosition,
+            onResize: onResize
+        )
         view.onHoverChanged = { hovering in
             isHovered = hovering
         }
@@ -108,6 +134,8 @@ private struct AppSplitDividerHoverCoordinator: NSViewRepresentable {
 
     func updateNSView(_ nsView: AppSplitDividerHoverCoordinatorView, context: Context) {
         nsView.edge = edge
+        nsView.initialPosition = initialPosition
+        nsView.onResize = onResize
         nsView.onHoverChanged = { hovering in
             isHovered = hovering
         }
@@ -115,6 +143,8 @@ private struct AppSplitDividerHoverCoordinator: NSViewRepresentable {
         // 避免流式/滚动等高频更新反复触发 `enclosingSplitView` + `dividerIndex`。
         if nsView.splitView == nil {
             nsView.attachToSplitViewIfPossible()
+        } else {
+            nsView.applyInitialPositionIfNeeded()
         }
     }
 
@@ -129,14 +159,20 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "split-divider")
 
     var edge: AppSplitDividerEdge
+    var initialPosition: CGFloat?
     var onHoverChanged: ((Bool) -> Void)?
+    var onResize: (@MainActor (CGFloat) -> Void)?
 
     fileprivate weak var splitView: NSSplitView?
     private var dividerIndex: Int?
     private var trackingArea: NSTrackingArea?
     private var resizeObserver: NSObjectProtocol?
+    private var resizeCompletionWorkItem: DispatchWorkItem?
+    private var isResizeGestureActive = false
+    private var hasPendingResize = false
     private var isOverNativeDivider = false
     private var measuredTrackingThickness: CGFloat?
+    private var appliedInitialPosition: CGFloat?
 
     /// 已尝试 attach 的次数。未挂到 NSSplitView 时用指数退避重试,超过上限放弃,
     /// 避免在「视图根本不在 split view 里」时形成每帧 `DispatchQueue.main.async`
@@ -144,8 +180,14 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
     private var attachAttemptCount: Int = 0
     private var isScheduledForRetry = false
 
-    init(edge: AppSplitDividerEdge) {
+    init(
+        edge: AppSplitDividerEdge,
+        initialPosition: CGFloat? = nil,
+        onResize: (@MainActor (CGFloat) -> Void)? = nil
+    ) {
         self.edge = edge
+        self.initialPosition = initialPosition
+        self.onResize = onResize
         super.init(frame: .zero)
     }
 
@@ -205,13 +247,22 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 if Self.verbose {
-                    Self.logger.info("didResizeSubviews refresh tracking")
+                    Self.logger.info("didResizeSubviews pending resize")
                 }
-                self?.refreshTrackingArea()
+                // NSSplitView posts this notification continuously while dragging.
+                // Keep this path constant-time; rebuilding the tracking area here
+                // causes visible frame drops on every mouse movement.
+                guard NSEvent.pressedMouseButtons & 1 != 0 else { return }
+                self?.isResizeGestureActive = true
+                self?.hasPendingResize = true
+                self?.scheduleResizeCompletionCheck()
             }
         }
         refreshTrackingArea()
         hideNativeDivider()
+        DispatchQueue.main.async { [weak self] in
+            self?.applyInitialPositionIfNeeded()
+        }
     }
 
     func detach() {
@@ -226,9 +277,14 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
             NotificationCenter.default.removeObserver(resizeObserver)
         }
         resizeObserver = nil
+        resizeCompletionWorkItem?.cancel()
+        resizeCompletionWorkItem = nil
+        isResizeGestureActive = false
+        hasPendingResize = false
         dividerIndex = nil
         splitView = nil
         measuredTrackingThickness = nil
+        appliedInitialPosition = nil
     }
 
     // MARK: - Retry (指数退避,有上限)
@@ -342,6 +398,73 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
             return
         }
         updateHoverState(trackingRect.contains(location))
+    }
+
+    func applyInitialPositionIfNeeded() {
+        guard let splitView, let dividerIndex, let initialPosition,
+              initialPosition.isFinite, initialPosition > 0
+        else { return }
+        if let appliedInitialPosition,
+           abs(appliedInitialPosition - initialPosition) < 0.5 {
+            return
+        }
+
+        let availableSize = splitView.isVertical ? splitView.bounds.width : splitView.bounds.height
+        guard availableSize > 0 else { return }
+        appliedInitialPosition = initialPosition
+        let origin = splitView.isVertical ? splitView.bounds.minX : splitView.bounds.minY
+        splitView.setPosition(origin + initialPosition, ofDividerAt: dividerIndex)
+        // `setPosition` moves the native divider after the initial tracking area was
+        // created. Refresh on the next run-loop turn so hover/cursor hit testing follows
+        // the restored divider immediately, before the user performs the first drag.
+        DispatchQueue.main.async { [weak self] in
+            self?.refreshTrackingArea()
+        }
+        if Self.verbose {
+            Self.logger.info(
+                "restored divider index=\(dividerIndex) position=\(initialPosition)"
+            )
+        }
+    }
+
+    private func reportCurrentPosition() {
+        guard let splitView, let dividerIndex,
+              splitView.arrangedSubviews.indices.contains(dividerIndex)
+        else { return }
+        let pane = splitView.arrangedSubviews[dividerIndex]
+        let position = splitView.isVertical ? pane.frame.width : pane.frame.height
+        guard position.isFinite, position > 0 else { return }
+        onResize?(position)
+    }
+
+    private func finishResizeIfNeeded() {
+        guard isResizeGestureActive, hasPendingResize else {
+            isResizeGestureActive = false
+            return
+        }
+        isResizeGestureActive = false
+        hasPendingResize = false
+        // Let NSSplitView finish applying the final mouse position before reading
+        // the pane frame. This produces one kernel update per completed drag.
+        DispatchQueue.main.async { [weak self] in
+            self?.refreshTrackingArea()
+            self?.reportCurrentPosition()
+        }
+    }
+
+    private func scheduleResizeCompletionCheck() {
+        guard resizeCompletionWorkItem == nil else { return }
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.resizeCompletionWorkItem = nil
+            if NSEvent.pressedMouseButtons & 1 != 0 {
+                self.scheduleResizeCompletionCheck()
+            } else {
+                self.finishResizeIfNeeded()
+            }
+        }
+        resizeCompletionWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: workItem)
     }
 
     private func enclosingSplitView() -> NSSplitView? {

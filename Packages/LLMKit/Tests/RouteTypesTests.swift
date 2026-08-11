@@ -125,24 +125,24 @@ struct RouteCandidateTests {
             providerDisplayName: "Anthropic",
             model: "claude-sonnet-4-20250514",
             availability: .available,
-            contextWindowSizes: ["claude-sonnet-4-20250514": 200_000]
+            contextWindowSize: 200_000
         )
         #expect(candidate.providerId == "anthropic")
         #expect(candidate.providerDisplayName == "Anthropic")
         #expect(candidate.model == "claude-sonnet-4-20250514")
         #expect(candidate.availability == .available)
-        #expect(candidate.contextWindowSizes == ["claude-sonnet-4-20250514": 200_000])
+        #expect(candidate.contextWindowSize == 200_000)
     }
 
-    @Test("contextWindowSizes 默认为空")
-    func defaultContextWindowSizes() {
+    @Test("contextWindowSize 默认为 nil")
+    func defaultContextWindowSize() {
         let candidate = RouteCandidate(
             providerId: "p",
             providerDisplayName: "P",
             model: "m",
             availability: .unknown
         )
-        #expect(candidate.contextWindowSizes.isEmpty)
+        #expect(candidate.contextWindowSize == nil)
     }
 
     @Test("Equatable — 相同值相等")
@@ -152,33 +152,33 @@ struct RouteCandidateTests {
             providerDisplayName: "P",
             model: "m",
             availability: .available,
-            contextWindowSizes: ["m": 1000]
+            contextWindowSize: 1000
         )
         let b = RouteCandidate(
             providerId: "p",
             providerDisplayName: "P",
             model: "m",
             availability: .available,
-            contextWindowSizes: ["m": 1000]
+            contextWindowSize: 1000
         )
         #expect(a == b)
     }
 
-    @Test("Equatable — 不同 contextWindowSizes 不相等")
+    @Test("Equatable — 不同 contextWindowSize 不相等")
     func equatableDifferentWindows() {
         let a = RouteCandidate(
             providerId: "p",
             providerDisplayName: "P",
             model: "m",
             availability: .available,
-            contextWindowSizes: ["m": 1000]
+            contextWindowSize: 1000
         )
         let b = RouteCandidate(
             providerId: "p",
             providerDisplayName: "P",
             model: "m",
             availability: .available,
-            contextWindowSizes: [:]
+            contextWindowSize: nil
         )
         #expect(a != b)
     }

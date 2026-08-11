@@ -1,9 +1,12 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
     name: "ConversationAgentTurnCountPlugin",
-    platforms: [.macOS(.v14)],
+    defaultLocalization: "en",
+    platforms: [
+        .macOS(.v14)
+    ],
     products: [
         .library(
             name: "ConversationAgentTurnCountPlugin",
@@ -12,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
@@ -19,9 +23,13 @@ let package = Package(
             name: "ConversationAgentTurnCountPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources/ConversationAgentTurnCountPlugin"
+            path: "Sources",
+            resources: [
+                .process("../Resources/Localizable.xcstrings")
+            ]
         )
     ]
 )

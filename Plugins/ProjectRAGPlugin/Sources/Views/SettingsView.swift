@@ -95,7 +95,7 @@ public struct RAGSettingsView: View, SuperLog {
             ) {
                 toggleIndexingPause()
             }
-            AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
+            AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
                 Task { await loadStatus() }
             }
             AppButton("Open Data Directory", systemImage: "folder", size: .small) {
@@ -109,7 +109,7 @@ public struct RAGSettingsView: View, SuperLog {
     private var projectSidebar: some View {
         VStack(spacing: 0) {
             HStack {
-                Label("Projects", systemImage: "folder.fill")
+                Label(LumiPluginLocalization.string("Projects", bundle: .module), systemImage: "folder.fill")
                     .font(.appCaptionEmphasized)
                     .foregroundStyle(theme.textPrimary)
                 Spacer()

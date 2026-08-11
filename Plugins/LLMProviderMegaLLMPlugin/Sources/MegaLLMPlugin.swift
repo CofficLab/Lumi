@@ -12,6 +12,7 @@ public final class MegaLLMPlugin: LumiPlugin {
 
     public let order = 99
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}

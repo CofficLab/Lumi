@@ -22,6 +22,7 @@ public final class VideoConverterPlugin: LumiPlugin, SuperLog {
     }
     public let order = 870
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Initialization
 

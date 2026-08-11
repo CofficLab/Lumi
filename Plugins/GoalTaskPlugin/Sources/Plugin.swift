@@ -18,18 +18,25 @@ public final class Plugin: LumiPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.goal-task"
     public var name: String {
-        GoalTaskLocalization.string("GoalTask", bundle: .module)
+        LumiPluginLocalization.string("GoalTask", bundle: .module)
     }
     public let order = 91
     public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .agent
     public let stage: LumiPluginStage = .beta
-    public let pluginDescription = "Goal and task management for multi-step objectives."
+    public let pluginDescription = LumiPluginLocalization.string("Goal and task management for multi-step objectives.", bundle: .module)
 
     /// 共享的 GoalStateManager 实例
     private nonisolated(unsafe) static var _sharedManager: GoalStateManager?
 
-    public init() {}
+    /// Goal 视图模型,由 Plugin 在初始化时创建并持有。
+    /// 作为工具栏弹窗与侧栏的单一数据源,跨 view 重建保留订阅/加载状态;
+    /// 通过 `GoalVM.managerProvider` 注入数据源,默认仍走全局单例。
+    private let goalVM: GoalVM
+
+    public init() {
+        self.goalVM = GoalVM()
+    }
 
     /// 获取共享的 GoalStateManager
     public nonisolated static func currentManager() -> GoalStateManager? {
@@ -86,14 +93,7 @@ public final class Plugin: LumiPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                SidebarView(
-                    conversationIdProvider: {
-                        kernel.conversations?.selectedConversationID
-                    },
-                    backgroundColorProvider: {
-                        Color(nsColor: .controlBackgroundColor)
-                    }
-                )
+                SidebarView(viewModel: self.goalVM)
             }
         ]
     }
@@ -101,7 +101,7 @@ public final class Plugin: LumiPlugin, SuperLog {
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] {
         [
             ChatSectionToolbarItem(id: "\(id).toolbar-button", placement: .trailing) {
-                GoalToolbarButton(kernel: kernel)
+                GoalToolbarButton(viewModel: self.goalVM)
             }
         ]
     }

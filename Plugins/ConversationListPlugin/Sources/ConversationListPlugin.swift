@@ -13,6 +13,7 @@ public final class ConversationListPlugin: LumiPlugin {
     }
     public let order = 76
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public static let verbose = false
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
@@ -40,7 +41,7 @@ public final class ConversationListPlugin: LumiPlugin {
         return [
             PanelRailTabItem(
                 id: "chats",
-                title: "Chats",
+                title: LumiPluginLocalization.string("Chats", bundle: .module),
                 systemImage: "message.fill",
                 requiresChatSupport: true
             ) {
@@ -68,7 +69,7 @@ public final class ConversationListPlugin: LumiPlugin {
         return [
             LumiTitleToolbarItem(
                 id: "\(id).conversation-list",
-                title: "Chats",
+                title: LumiPluginLocalization.string("Chats", bundle: .module),
                 placement: .trailing,
                 order: 200
             ) {

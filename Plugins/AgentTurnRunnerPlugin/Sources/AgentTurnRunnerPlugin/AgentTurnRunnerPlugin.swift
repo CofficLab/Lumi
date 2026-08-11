@@ -1,3 +1,4 @@
+import AgentToolKit
 import Foundation
 import LumiKernel
 import LocalizationKit
@@ -20,6 +21,7 @@ public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
     public let name = LumiLocalization.string("Agent Turn Runner", bundle: .module, table: "Localizable")
     public let order = 64 // After MessageSendManagerPlugin (63)
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {
         if Self.verbose {
@@ -29,6 +31,8 @@ public final class AgentTurnRunnerPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {
         try await AgentTurnRunnerOnBootHook().execute(kernel)
+        ToolApprovalBridge.shared.start(kernel: kernel)
+        ToolCallRowRendererRegistry.shared.register(ToolApprovalRowRenderer())
     }
 
     public func onReady(kernel: LumiKernel) async throws {

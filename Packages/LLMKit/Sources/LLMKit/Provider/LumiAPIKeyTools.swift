@@ -17,6 +17,17 @@ public enum LumiAPIKeyTools {
         do {
             key = try APIKeyStore.shared
                 .loadMigratingLegacyUserDefaultsReportingErrors(forKey: storageKey) ?? ""
+        } catch let error as APIKeyStoreError {
+            // Keychain 抖动（expected-configured 但持续报 missing）时，
+            // APIKeyStore 已在错误里附带内存缓存值，直接放行而不是
+            // 向用户呈现"未配置/不可用"。
+            if let cached = error.cachedValue, !cached.isEmpty {
+                return cached
+            }
+            throw LumiLLMProviderSupportError.apiKeyAccessFailed(
+                provider: displayName,
+                details: error.localizedDescription
+            )
         } catch {
             throw LumiLLMProviderSupportError.apiKeyAccessFailed(
                 provider: displayName,

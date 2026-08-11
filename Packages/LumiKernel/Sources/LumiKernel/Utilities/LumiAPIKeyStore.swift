@@ -13,13 +13,15 @@ import KeychainKit
 public final class LumiAPIKeyStore: @unchecked Sendable {
     public static let shared = LumiAPIKeyStore()
 
-    /// 历史 keychain service，跨版本保持稳定，勿随意修改。
+    /// 历史正式版 service；Debug 会在运行时追加独立后缀。
     static let service = "com.coffic.lumi.apikey"
 
     private let store: KeychainStore
 
     public init(store: KeychainStore? = nil) {
-        self.store = store ?? KeychainStore(service: Self.service)
+        self.store = store ?? KeychainStore(
+            service: LumiRuntimeEnvironment.current.keychainService(for: Self.service)
+        )
     }
 
     public func string(forKey key: String) -> String? {

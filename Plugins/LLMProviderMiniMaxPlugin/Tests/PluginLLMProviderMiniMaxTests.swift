@@ -41,10 +41,10 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(MiniMaxTokenPlanProvider.info.displayName.isEmpty == false)
         #expect(MiniMaxTokenPlanProvider.info.defaultModel == "MiniMax-M2.7")
         #expect(MiniMaxTokenPlanProvider.apiKeyHelpURL != nil)
-        #expect(MiniMaxTokenPlanProvider.info.availableModels.contains("MiniMax-M3"))
-        #expect(MiniMaxTokenPlanProvider.info.availableModels.contains("MiniMax-M2.7"))
-        #expect(MiniMaxTokenPlanProvider.info.availableModels.contains("MiniMax-M2.7-highspeed"))
-        #expect(MiniMaxTokenPlanProvider.info.availableModels.contains("MiniMax-M2.5"))
+        #expect(MiniMaxTokenPlanProvider.info.availableModels.contains { $0.id == "MiniMax-M3" })
+        #expect(MiniMaxTokenPlanProvider.info.availableModels.contains { $0.id == "MiniMax-M2.7" })
+        #expect(MiniMaxTokenPlanProvider.info.availableModels.contains { $0.id == "MiniMax-M2.7-highspeed" })
+        #expect(MiniMaxTokenPlanProvider.info.availableModels.contains { $0.id == "MiniMax-M2.5" })
     }
 
     @Test func renderersMatchRenderKind() {
@@ -91,6 +91,17 @@ struct PluginLLMProviderMiniMaxTests {
         )
         #expect(HttpErrorRenderer.item.canRender(anthropicMessage))
 
+        let responsesMessage = LumiChatMessage(
+            conversationID: conversationID,
+            role: .error,
+            content: "",
+            providerID: MiniMaxResponsesProvider.info.id,
+            isError: true,
+            rawErrorDetail: "MiniMax returned an empty response",
+            renderKind: MiniMaxRenderKind.requestFailed
+        )
+        #expect(RequestFailedRenderer.item.canRender(responsesMessage))
+
         let unauthorizedMessage = LumiChatMessage(
             conversationID: conversationID,
             role: .error,
@@ -111,6 +122,80 @@ struct PluginLLMProviderMiniMaxTests {
         #expect(openAI is MiniMaxOpenAIProvider)
         #expect(anthropic is MiniMaxAnthropicProvider)
         #expect(MiniMaxOpenAIProvider.info.id != MiniMaxAnthropicProvider.info.id)
+    }
+
+    @Test func responsesParserAcceptsMiniMaxResponsesAPIEvents() throws {
+        let stream = """
+        event: response.reasoning_text.delta
+        data: {"type":"response.reasoning_text.delta","delta":"先判断","sequence_number":1}
+
+        event: response.output_text.delta
+        data: {"type":"response.output_text.delta","delta":"这是答案","sequence_number":2}
+
+        event: response.completed
+        data: {"type":"response.completed","response":{"status":"completed","usage":{"input_tokens":12,"output_tokens":7,"total_tokens":19}}}
+
+
+        """
+        let parser = MiniMaxResponsesSSEParser()
+        let splitIndex = stream.index(stream.startIndex, offsetBy: stream.count / 2)
+        let events = parser.append(Data(stream[..<splitIndex].utf8))
+            + parser.append(Data(stream[splitIndex...].utf8))
+            + parser.finish()
+
+        #expect(events.count == 3)
+        #expect(events[0].reasoning == "先判断")
+        #expect(events[1].text == "这是答案")
+        #expect(events[2].isDone)
+        #expect(events[2].usage?.inputTokens == 12)
+        #expect(events[2].usage?.outputTokens == 7)
+
+        let state = MiniMaxResponsesMessageState(
+            conversationID: UUID(),
+            providerID: MiniMaxResponsesProvider.info.id,
+            model: "MiniMax-M2.7-highspeed",
+            started: Date()
+        )
+        for event in events {
+            state.append(event)
+            if event.isDone { state.finish() }
+        }
+        let message = state.message()
+        #expect(message.content == "这是答案")
+        #expect(message.reasoningContent == "先判断")
+        #expect(message.inputTokenCount == 12)
+        #expect(message.outputTokenCount == 7)
+    }
+
+    @Test func responsesParserAccumulatesFunctionCallArguments() throws {
+        let stream = """
+        event: response.output_item.added
+        data: {"type":"response.output_item.added","item":{"type":"function_call","call_id":"call_1","name":"project_overview","arguments":""}}
+
+        event: response.function_call_arguments.delta
+        data: {"type":"response.function_call_arguments.delta","delta":"{\\"path\\":\\"/tmp\\"}"}
+
+        event: response.completed
+        data: {"type":"response.completed","response":{"status":"completed"}}
+
+
+        """
+        let events = MiniMaxResponsesEventParser.parse(Data(stream.utf8))
+        let state = MiniMaxResponsesMessageState(
+            conversationID: UUID(),
+            providerID: MiniMaxResponsesProvider.info.id,
+            model: "MiniMax-M2.7-highspeed",
+            started: Date()
+        )
+        for event in events {
+            state.append(event)
+            if event.isDone { state.finish() }
+        }
+
+        let call = try #require(state.message().toolCalls?.first)
+        #expect(call.id == "call_1")
+        #expect(call.name == "project_overview")
+        #expect(call.arguments.contains("/tmp"))
     }
 
     @Test func openAIToolCallIsFlushedWhenStreamOmitsDoneSentinel() {
@@ -182,6 +267,32 @@ struct PluginLLMProviderMiniMaxTests {
 
         #expect(function["arguments"] as? String == "{}")
         _ = try JSONSerialization.data(withJSONObject: body)
+    }
+
+    @Test func anthropicToolImagesAreNestedInsideToolResult() throws {
+        let attachment = LumiImageAttachment(
+            mimeType: "image/png",
+            base64Data: Data([0x89, 0x50, 0x4E, 0x47]).base64EncodedString(),
+            fileName: "preview.png"
+        )
+        let message = LumiChatMessage(
+            conversationID: UUID(),
+            role: .tool,
+            content: "已读取图片",
+            metadata: LumiImageAttachmentMetadata.encode([attachment]),
+            toolCallID: "call_image"
+        )
+        let body = MiniMaxRequestBuilder.anthropic(LumiLLMRequest(
+            messages: [message],
+            model: MiniMaxAnthropicProvider.info.defaultModel
+        ))
+
+        let messages = try #require(body["messages"] as? [[String: Any]])
+        let outerContent = try #require(messages[0]["content"] as? [[String: Any]])
+        let resultContent = try #require(outerContent[0]["content"] as? [[String: Any]])
+
+        #expect(outerContent.count == 1)
+        #expect(resultContent.map { $0["type"] as? String } == ["text", "image"])
     }
 
     @Test func openAIEmbeddedThinkTagsAreSeparatedFromContent() {

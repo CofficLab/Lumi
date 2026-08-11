@@ -21,6 +21,7 @@ public final class StoragePlugin: LumiPlugin, SuperLog {
     }
     public let order = 10
     public let policy: LumiPluginPolicy = .alwaysOn  // 核心插件，最先加载
+    public let stage: LumiPluginStage = .beta
 
     /// 数据根目录
     private let dataRootDirectory: URL

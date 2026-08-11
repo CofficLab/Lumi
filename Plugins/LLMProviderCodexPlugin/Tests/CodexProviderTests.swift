@@ -46,10 +46,11 @@ struct CodexProviderTests {
     @Test("exec arguments include reasoning effort when selected")
     func execArgumentsIncludeReasoningEffortWhenSelected() {
         let cli = CodexCLI(executablePath: "/tmp/codex")
-        let automaticArgs = cli.arguments(prompt: "hello", model: "gpt-5.5", reasoningEffort: .automatic)
+        let lowArgs = cli.arguments(prompt: "hello", model: "gpt-5.5", reasoningEffort: .low)
         let highArgs = cli.arguments(prompt: "hello", model: "gpt-5.5", reasoningEffort: .high)
 
-        #expect(!automaticArgs.contains("-c"))
+        #expect(lowArgs.contains("-c"))
+        #expect(lowArgs.contains("model_reasoning_effort=\"low\""))
         #expect(highArgs.contains("-c"))
         #expect(highArgs.contains("model_reasoning_effort=\"high\""))
         #expect(highArgs.last == "hello")

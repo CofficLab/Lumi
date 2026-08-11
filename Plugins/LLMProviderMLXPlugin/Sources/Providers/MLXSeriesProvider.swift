@@ -62,23 +62,21 @@ open class MLXSeriesProviderBase: LumiLLMProvider, @unchecked Sendable {
 
         let fallbackDefault = available.first?.id ?? recommended.first?.id ?? ""
 
-        let capabilityLookup = Dictionary(uniqueKeysWithValues: recommended.map {
-            ($0.id, LumiModelCapabilities(supportsVision: $0.supportsVision, supportsTools: $0.supportsTools))
-        })
-        let displayNameLookup = Dictionary(uniqueKeysWithValues: recommended.map {
-            ($0.id, $0.displayName)
-        })
+        let modelInfos: [LumiModelInfo] = available.map { model in
+            LumiModelInfo(
+                id: model.id,
+                displayName: model.displayName,
+                capabilities: LumiModelCapabilities(supportsVision: model.supportsVision, supportsTools: model.supportsTools)
+            )
+        }
 
         return LumiLLMProviderInfo(
             id: registration.providerID,
             displayName: registration.providerSlug,
             description: registration.providerDescription,
             defaultModel: fallbackDefault,
-            availableModels: available.map(\.id),
+            availableModels: modelInfos,
             isLocal: true,
-            contextWindowSizes: [:],
-            modelCapabilities: capabilityLookup,
-            modelDisplayNames: displayNameLookup,
             websiteURL: registration.websiteURL
         )
     }
@@ -93,7 +91,7 @@ open class MLXSeriesProviderBase: LumiLLMProvider, @unchecked Sendable {
         guard isAppleSiliconMac else {
             return .unavailable(.message("MLX 仅支持 Apple Silicon Mac，不支持 Intel Mac"))
         }
-        if Self.info.availableModels.contains(model) {
+        if Self.info.modelIDs.contains(model) {
             return .available
         }
         return .unavailable(.message("模型 \(model) 未注册或不可用"))

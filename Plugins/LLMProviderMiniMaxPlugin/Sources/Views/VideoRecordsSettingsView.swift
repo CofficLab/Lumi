@@ -78,7 +78,7 @@ public struct VideoRecordsSettingsView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("Loading...")
+                    Text(LumiPluginLocalization.string("Loading...", bundle: .module))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -199,7 +199,7 @@ public struct VideoRecordsSettingsView: View {
                                         .font(.appMicro)
                                         .foregroundStyle(.orange)
                                 } else {
-                                    Text("Link expired")
+                                    Text(LumiPluginLocalization.string("Link expired", bundle: .module))
                                         .font(.appMicro)
                                         .foregroundStyle(.red)
                                 }
@@ -210,7 +210,7 @@ public struct VideoRecordsSettingsView: View {
                 }
 
                 if let errorMessage = selectedRecord.errorMessage {
-                    AppSettingsSection(title: "Error", subtitle: "Generation failed") {
+                    AppSettingsSection(title: LumiPluginLocalization.string("Error", bundle: .module), subtitle: "Generation failed") {
                         Text(errorMessage)
                             .font(.appBody)
                             .foregroundStyle(.red)

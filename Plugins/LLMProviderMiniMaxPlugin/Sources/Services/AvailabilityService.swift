@@ -2,12 +2,9 @@ import Foundation
 import HttpKit
 import LLMKit
 import LumiKernel
-import LumiKernel
-import LumiKernel
 
 // MARK: - AvailabilityService
 
-// Type alias to disambiguate (no access control for enum methods compatibility)
 typealias FailureDetail = LumiLLMFailureDetail
 
 enum AvailabilityService {
@@ -27,11 +24,17 @@ enum AvailabilityService {
         await checkAvailability(provider: provider as any LumiLLMProvider, model: model)
     }
 
+    static func checkAvailability(
+        provider: MiniMaxResponsesProvider,
+        model: String
+    ) async -> LumiModelAvailabilityResult {
+        await checkAvailability(provider: provider as any LumiLLMProvider, model: model)
+    }
+
     private static func checkAvailability(
         provider: any LumiLLMProvider,
         model: String
     ) async -> LumiModelAvailabilityResult {
-        // 优先读磁盘缓存
         if let cached = cache.read(model: model),
            Date().timeIntervalSince(cached.timestamp) < cache.cacheInterval {
             return cached.result
@@ -49,9 +52,7 @@ enum AvailabilityService {
             result = .unavailable(LumiLLMFailureDetailResolver.resolve(from: error))
         }
         let mapped = mapUnsupportedModelResult(result)
-
         cache.write(model: model, result: mapped, timestamp: Date())
-
         return mapped
     }
 
@@ -60,7 +61,6 @@ enum AvailabilityService {
     ) -> LumiModelAvailabilityResult {
         guard case .unavailable(let failure) = result else { return result }
         guard isUnsupportedModelFailure(failure) else { return result }
-
         return .unavailable(
             failure.remapped(
                 summary: LumiPluginLocalization.string(
@@ -76,7 +76,6 @@ enum AvailabilityService {
         if failure.reason == .unsupportedModel {
             return true
         }
-
         let combined = [failure.summary, failure.transportDetails]
             .compactMap { $0 }
             .joined(separator: "\n")
@@ -94,7 +93,6 @@ enum AvailabilityService {
         if case let HTTPClientError.httpError(_, message) = error {
             return isUnsupportedModelResponse(message)
         }
-
         return isUnsupportedModelFailure(LumiLLMFailureDetailResolver.resolve(from: error))
     }
 }

@@ -5,6 +5,7 @@ enum BuiltInSubAgents {
         BugFixerAgent.definition,
         CodeReviewAgent.definition,
         ExploreAgent.definition,
+        ImageReaderAgent.definition,
         TestWriterAgent.definition,
     ]
 }

@@ -53,10 +53,10 @@ struct ProjectFileItemView: View {
         .animation(LumiMotion.enabled(LumiMotion.selection, preference: motionPreference), value: isCurrent)
         .contextMenu {
             if let onClose {
-                Button("Close") { onClose() }
+                Button(LumiPluginLocalization.string("Close", bundle: .module)) { onClose() }
             }
             if let onCloseOthers {
-                Button("Close Others") { onCloseOthers() }
+                Button(LumiPluginLocalization.string("Close Others", bundle: .module)) { onCloseOthers() }
             }
         }
     }

@@ -571,7 +571,7 @@ private extension LLMConfig {
         LLMConfig(
             model: request.model,
             providerId: "",
-            reasoningEffort: request.generationOptions.reasoningEffort?.rawValue
+            reasoningEffort: request.reasoningEffort?.rawValue
         )
     }
 }

@@ -21,6 +21,7 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     public var pluginDescription: String { PluginDiskManagerLocalization.string("Disk space analysis and large file cleaning") }
     public let order = 250
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     /// 磁盘清理类型选中状态：sidebar rail 与 main view 共享同一份，
     /// 避免在 rail 切换后 main view 仍停留在旧类型上。
@@ -39,6 +40,23 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: LumiKernel) async throws {}
 
     public func onReady(kernel: LumiKernel) async throws {}
+
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            DiskUsageTool(),
+            ScanLargeFilesTool(),
+            ScanDirectoryTreeTool(),
+            ScanCachesTool(),
+            CleanCachesTool(),
+            ScanXcodeCachesTool(),
+            CleanXcodeCachesTool(),
+            ScanProjectsTool(),
+            CleanProjectsTool(),
+            DeleteFilesTool(),
+        ]
+    }
 
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         [

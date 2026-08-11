@@ -12,6 +12,7 @@ struct ModelListItem: View {
     let isSelected: Bool
     let capabilities: LumiModelCapabilities?
     let contextWindowSize: Int?
+    let parameterSize: String?
     let onSelect: () -> Void
 
     var body: some View {
@@ -37,8 +38,8 @@ struct ModelListItem: View {
                     }
                 }
 
-                if let capabilities, hasAnyCapability(capabilities) || contextWindowSize != nil {
-                    capabilityRow(capabilities: capabilities, contextWindowSize: contextWindowSize)
+                if let capabilities, hasAnyCapability(capabilities) || contextWindowSize != nil || parameterSize != nil {
+                    capabilityRow(capabilities: capabilities, contextWindowSize: contextWindowSize, parameterSize: parameterSize)
                 }
             }
         }
@@ -50,11 +51,11 @@ struct ModelListItem: View {
         capabilities.supportsVision
             || capabilities.supportsTools
             || capabilities.supportsTTS
-            || capabilities.supportsReasoningEffort
+            || capabilities.thinkingAndReasoning.isEnabled
     }
 
     @ViewBuilder
-    private func capabilityRow(capabilities: LumiModelCapabilities?, contextWindowSize: Int?) -> some View {
+    private func capabilityRow(capabilities: LumiModelCapabilities?, contextWindowSize: Int?, parameterSize: String?) -> some View {
         HStack(spacing: 6) {
             if let capabilities {
                 if capabilities.supportsVision {
@@ -63,12 +64,16 @@ struct ModelListItem: View {
                 if capabilities.supportsTools {
                     AppTag("Tools", systemImage: "wrench.and.screwdriver")
                 }
-                if capabilities.supportsReasoningEffort {
-                    AppTag("Reasoning", systemImage: "brain")
-                }
                 if capabilities.supportsTTS {
                     AppTag("TTS", systemImage: "speaker.wave.2")
                 }
+                if capabilities.thinkingAndReasoning.isEnabled {
+                    AppTag(thinkingTagLabel(for: capabilities.thinkingAndReasoning), systemImage: "brain.head.profile")
+                }
+            }
+
+            if let parameterSize, !parameterSize.isEmpty {
+                AppTag(parameterSize, systemImage: "cpu")
             }
 
             Spacer()
@@ -78,6 +83,18 @@ struct ModelListItem: View {
                     .font(.appMicroEmphasized)
                     .foregroundColor(theme.textTertiary)
             }
+        }
+    }
+
+    /// 按档位数量显示不同文案：3 档 / 4 档模型打 `Thinking` 标签；
+    /// `toggle` 模型打 `Thinking On/Off` 标签以提示用户它是开关语义。
+    /// 如果未来需要更细的区分，可在 `LumiThinkingAndReasoning` 上加 `tagLabel` 字段。
+    private func thinkingTagLabel(for support: LumiThinkingAndReasoning) -> String {
+        switch support {
+        case .unsupported: ""
+        case .toggle: "Thinking"
+        case .threeLevel: "Thinking"
+        case .fourLevel: "Thinking"
         }
     }
 

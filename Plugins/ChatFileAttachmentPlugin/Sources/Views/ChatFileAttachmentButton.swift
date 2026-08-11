@@ -25,7 +25,7 @@ struct ChatFileAttachmentButton: View {
                 .background(theme.textPrimary.opacity(0.07), in: Circle())
         }
         .buttonStyle(.plain)
-        .help("Attach file")
+        .help(LumiPluginLocalization.string("Attach file", bundle: .module))
         .fileImporter(
             isPresented: $showImporter,
             allowedContentTypes: [.item],

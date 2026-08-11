@@ -5,15 +5,16 @@ import SwiftUI
 /// 「装订前」示意图：左侧为张数 tab（第一张 … 第四张），
 /// 右侧显示选中那张纸的实际拼版内容（横向纸张上并排的左右两页）。
 struct SheetPreviewView: View {
+    let document: CurrentPDFDocument
     let settings: BookletSettings
 
-    /// 当前选中的输出纸张（0-based）
+    /// 当前选中的物理纸张（0-based）
     @State private var selectedSheet: Int = 0
 
     /// 根据当前设置计算出的输出纸张序列
-    private var sheets: [OutputSheet] {
-        BookletLayoutEngine.buildSheets(inputPageCount: SampleStory.pageCount,
-                                        settings: settings)
+    private var sheets: [PhysicalSheet] {
+        BookletLayoutEngine.buildPhysicalSheets(inputPageCount: document.pageCount,
+                                                settings: settings)
     }
 
     var body: some View {
@@ -78,14 +79,12 @@ struct SheetPreviewView: View {
     @ViewBuilder
     private func sheetContent(in size: CGSize) -> some View {
         if sheets.indices.contains(selectedSheet) {
-            let sheet = sheets[selectedSheet]
+            let physicalSheet = sheets[selectedSheet]
             VStack(spacing: 6) {
-                OutputSheetView(sheet: sheet, settings: settings)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                Text(pairCaption(sheet))
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                outputSideView(physicalSheet.front)
+                if let back = physicalSheet.back {
+                    outputSideView(back)
+                }
             }
         } else {
             Color.clear
@@ -97,13 +96,33 @@ struct SheetPreviewView: View {
                                    Int64(sheet.leftPage),
                                    Int64(sheet.rightPage))
     }
+
+    private func outputSideView(_ outputSide: OutputSheet) -> some View {
+        VStack(spacing: 3) {
+            Text(outputSide.side == .front
+                 ? BookletLocalization.string("Front")
+                 : BookletLocalization.string("Back"))
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.secondary)
+            OutputSheetView(
+                sheet: outputSide,
+                document: document,
+                settings: settings
+            )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Text(pairCaption(outputSide))
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+        }
+    }
 }
 
 // MARK: - Output Sheet View
 
-/// 单张输出纸（横向）：按设置的边距/装订线摆放左右两个故事页。
+/// 单个打印面（横向）：按设置的边距/装订线摆放左右两个故事页。
 struct OutputSheetView: View {
     let sheet: OutputSheet
+    let document: CurrentPDFDocument
     let settings: BookletSettings
 
     var body: some View {
@@ -123,13 +142,13 @@ struct OutputSheetView: View {
 
             ZStack {
                 // 纸张背景
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color(nsColor: .textBackgroundColor))
+                FixedWhitePaperSurface()
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
                     .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     .frame(width: paperWidth, height: paperHeight)
 
                 RoundedRectangle(cornerRadius: 4)
-                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    .stroke(Color.black.opacity(0.22), lineWidth: 1)
                     .frame(width: paperWidth, height: paperHeight)
 
                 // 边距区域（淡色提示）
@@ -158,17 +177,21 @@ struct OutputSheetView: View {
     /// 单个故事页；页码 0 表示空白页
     @ViewBuilder
     private func sheetPage(_ pageNumber: Int, height: CGFloat, maxWidth: CGFloat) -> some View {
-        let pageAspect = 1.0 / 1.414
+        let pageAspect = document.pageAspectRatio
         let h = min(height, maxWidth / pageAspect)
 
         if pageNumber > 0 {
-            StoryPageView(pageNumber: pageNumber, height: h, textScale: 1.2)
+            PDFDocumentPageView(
+                documentURL: document.url,
+                pageNumber: pageNumber
+            )
+                .frame(width: h * pageAspect, height: h)
         } else {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(Color(nsColor: .textBackgroundColor))
+            FixedWhitePaperSurface()
+                .clipShape(RoundedRectangle(cornerRadius: 3))
                 .overlay(
                     RoundedRectangle(cornerRadius: 3)
-                        .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                        .stroke(Color.black.opacity(0.16), lineWidth: 1)
                 )
                 .frame(width: h * pageAspect, height: h)
         }
@@ -189,7 +212,7 @@ struct OutputSheetView: View {
                 )
         case .simplePair:
             Rectangle()
-                .fill(Color.secondary.opacity(0.3))
+                .fill(Color.black.opacity(0.22))
                 .frame(width: 1, height: paperHeight - 2 * margin)
         }
     }
@@ -198,13 +221,19 @@ struct OutputSheetView: View {
 // MARK: - Preview
 
 #Preview("Sheet Preview - Booklet Fold") {
-    SheetPreviewView(settings: BookletSettings())
+    SheetPreviewView(
+        document: try! DemoPDFProvider.makeDocument(),
+        settings: BookletSettings()
+    )
         .frame(width: 480, height: 260)
         .padding()
 }
 
 #Preview("Sheet Preview - Simple Pair") {
-    SheetPreviewView(settings: BookletSettings(layout: .simplePair))
+    SheetPreviewView(
+        document: try! DemoPDFProvider.makeDocument(),
+        settings: BookletSettings(layout: .simplePair)
+    )
         .frame(width: 480, height: 260)
         .padding()
 }

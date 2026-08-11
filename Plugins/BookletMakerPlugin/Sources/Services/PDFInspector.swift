@@ -78,7 +78,11 @@ final class PDFInspector: SuperLog, @unchecked Sendable {
         guard count > 0, let page = doc.page(at: 1) else {
             throw InspectionError.zeroPagePDF(url)
         }
-        let box = page.getBoxRect(.mediaBox)
+        // Preview.app presents the visible page defined by CropBox. A number
+        // of textbook PDFs retain a landscape two-page spread as MediaBox and
+        // expose each portrait page through CropBox; using MediaBox here makes
+        // the preview container and the rendered page disagree on aspect.
+        let box = page.getBoxRect(.cropBox)
         return PDFInfo(pageCount: count, firstPageSize: box.size)
     }
 }

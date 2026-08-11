@@ -21,12 +21,16 @@ import SwiftUI
 public final class LayoutManager: WorkspaceProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.layout.service")
     nonisolated public static let emoji = "📐"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     // MARK: - Persistence
 
     /// 布局持久化存储
     private let store: LayoutStore
+
+    /// Kernel 引用：所有布局事件统一经 `kernel.eventManager` 发射。
+    /// 由插件 OnBoot 阶段注入（在 `registerWorkspace` 之前赋值）。
+    public weak var kernel: LumiKernel?
 
     /// 持久化数据目录（`layout-info.json` 所在的 settings 子目录）。
     /// 供设置视图等外部消费者展示/打开数据目录用。
@@ -47,7 +51,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)[ActivityBarTrace] activeViewContainerID old=\(oldValue ?? "nil", privacy: .public) new=\(value ?? "nil", privacy: .public)")
             }
-            NotificationCenter.postActiveViewContainerIDDidChange(containerID: value)
+            kernel?.eventManager.post(.activeViewContainerIDDidChange, userInfo: ["containerID": value as Any])
         }
     }
 
@@ -65,7 +69,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)chatSectionVisible → \(value)")
             }
-            NotificationCenter.postChatSectionVisibleDidChange(visible: value)
+            kernel?.eventManager.post(.chatSectionVisibleDidChange, userInfo: ["visible": value])
         }
     }
 
@@ -76,7 +80,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)bottomPanelVisible → \(value)")
             }
-            NotificationCenter.postBottomPanelVisibleDidChange(visible: value)
+            kernel?.eventManager.post(.bottomPanelVisibleDidChange, userInfo: ["visible": value])
         }
     }
 
@@ -84,7 +88,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     @Published public var isRailVisible: Bool = true {
         didSet {
             guard isRailVisible != oldValue else { return }
-            NotificationCenter.postRailVisibleDidChange(visible: isRailVisible)
+            kernel?.eventManager.post(.railVisibleDidChange, userInfo: ["visible": isRailVisible])
         }
     }
 
@@ -93,7 +97,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         didSet {
             guard isChatVisible != oldValue else { return }
             // 使用现有的 chatSectionVisible 通知
-            NotificationCenter.postChatSectionVisibleDidChange(visible: isChatVisible)
+            kernel?.eventManager.post(.chatSectionVisibleDidChange, userInfo: ["visible": isChatVisible])
         }
     }
 
@@ -107,7 +111,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     @Published public var isPanelBottomVisible: Bool = true {
         didSet {
             guard isPanelBottomVisible != oldValue else { return }
-            NotificationCenter.postBottomPanelVisibleDidChange(visible: isPanelBottomVisible)
+            kernel?.eventManager.post(.bottomPanelVisibleDidChange, userInfo: ["visible": isPanelBottomVisible])
         }
     }
 
@@ -159,7 +163,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)activeRailTabID[\(viewContainerID)] → \(id)")
         }
-        NotificationCenter.postActiveRailTabIDDidChange(containerID: viewContainerID, railTabID: id)
+        kernel?.eventManager.post(.activeRailTabIDDidChange, userInfo: ["containerID": viewContainerID, "railTabID": id])
     }
 
     /// 从磁盘恢复某容器的 Rail Tab（不发送通知）。
@@ -204,7 +208,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         } else if activeViewContainerID == container.id {
             // 持久化恢复可能早于容器注册，activeViewContainerID 此时不会再次变化。
             // 补发通知，让依赖 currentViewContainer 的 UI 在容器真正可查询后刷新。
-            NotificationCenter.postActiveViewContainerIDDidChange(containerID: container.id)
+            kernel?.eventManager.post(.activeViewContainerIDDidChange, userInfo: ["containerID": container.id as Any])
         }
     }
 
@@ -218,7 +222,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     private func updateSortedViewContainers() {
         sortedViewContainers = viewContainerOrder.compactMap { viewContainers[$0] }
             .sorted { $0.order < $1.order }
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     // MARK: - Container Observers
@@ -233,9 +237,12 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
 
     public static let defaultBottomTabID = "editor-bottom-problems"
 
-    @Published private var railDividers: [String: CGFloat] = [:]
-    @Published private var chatSectionDividers: [String: CGFloat] = [:]
-    @Published private var bottomPanelDividers: [String: CGFloat] = [:]
+    // Divider positions are written during native NSSplitView drags. They must not be
+    // @Published: publishing every drag tick rebuilds the SwiftUI split tree and fights
+    // NSSplitView's native resize operation.
+    private var railDividers: [String: CGFloat] = [:]
+    private var chatSectionDividers: [String: CGFloat] = [:]
+    private var bottomPanelDividers: [String: CGFloat] = [:]
     @Published private var activeBottomTabIDs: [String: String] = [:]
     @Published private(set) var legacyBottomTabID: String?
 
@@ -362,7 +369,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)activeBottomTabID[\(viewContainerID)] → \(id)")
         }
-        NotificationCenter.postActiveBottomTabIDDidChange(containerID: viewContainerID, bottomTabID: id)
+        kernel?.eventManager.post(.activeBottomTabIDDidChange, userInfo: ["containerID": viewContainerID, "bottomTabID": id])
     }
 
     public func restoreActiveBottomTabID(_ id: String, for viewContainerID: String) {
@@ -396,12 +403,15 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             Self.logger.info("\(Self.t)railDivider[\(viewContainerID)] → \(clamped)")
         }
         logThreeColumnWidths(for: viewContainerID)
-        NotificationCenter.postRailDividerDidChange(containerID: viewContainerID, position: clamped)
+        kernel?.eventManager.post(.railDividerDidChange, userInfo: ["containerID": viewContainerID, "position": clamped])
+        scheduleDividerSave()
     }
 
     public func restoreRailDivider(_ position: CGFloat, for viewContainerID: String) {
         railDividers[viewContainerID] = position
     }
+
+    public var railDividersDictionary: [String: CGFloat] { railDividers }
 
     public func chatSectionDivider(
         for viewContainerID: String,
@@ -431,11 +441,15 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             Self.logger.info("\(Self.t)chatSectionDivider[\(viewContainerID).\(layout.persistenceKeySuffix)] → \(position)")
         }
         logThreeColumnWidths(for: viewContainerID)
-        NotificationCenter.postChatSectionDividerDidChange(
-            containerID: viewContainerID,
-            layout: layout.persistenceKeySuffix,
-            position: position
+        kernel?.eventManager.post(
+            .chatSectionDividerDidChange,
+            userInfo: [
+                "containerID": viewContainerID,
+                "layout": layout.persistenceKeySuffix,
+                "position": position
+            ]
         )
+        scheduleDividerSave()
     }
 
     public func restoreChatSectionDivider(
@@ -445,6 +459,8 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     ) {
         chatSectionDividers[chatSectionDividerKey(viewContainerID: viewContainerID, layout: layout)] = position
     }
+
+    public var chatSectionDividersDictionary: [String: CGFloat] { chatSectionDividers }
 
     public func bottomPanelDivider(for viewContainerID: String, fallback: CGFloat? = nil) -> CGFloat {
         bottomPanelDividers[viewContainerID] ?? fallback ?? defaultBottomPanelDivider
@@ -460,18 +476,32 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         if Self.verbose {
             Self.logger.info("\(Self.t)bottomPanelDivider[\(viewContainerID)] → \(position)")
         }
-        NotificationCenter.postBottomPanelDividerDidChange(containerID: viewContainerID, position: position)
+        kernel?.eventManager.post(.bottomPanelDividerDidChange, userInfo: ["containerID": viewContainerID, "position": position])
+        scheduleDividerSave()
     }
 
     public func restoreBottomPanelDivider(_ position: CGFloat, for viewContainerID: String) {
         bottomPanelDividers[viewContainerID] = position
     }
 
+    public var bottomPanelDividersDictionary: [String: CGFloat] { bottomPanelDividers }
+
     private func chatSectionDividerKey(
         viewContainerID: String,
         layout: LumiChatSectionLayout
     ) -> String {
         "\(viewContainerID).\(layout.persistenceKeySuffix)"
+    }
+
+    private var pendingDividerSave: DispatchWorkItem?
+
+    private func scheduleDividerSave() {
+        pendingDividerSave?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.saveState()
+        }
+        pendingDividerSave = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
     }
 
     public func setPanelColumnWidth(_ width: CGFloat, for viewContainerID: String) {
@@ -524,7 +554,10 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
             panelBottomVisible: isPanelBottomVisible,
             activeRailTabIDs: activeRailTabIDsDictionary,
             activeBottomTabIDs: activeBottomTabIDsDictionary,
-            visibilityOverrides: visibilityOverridesDictionary
+            visibilityOverrides: visibilityOverridesDictionary,
+            railDividers: railDividersDictionary,
+            chatSectionDividers: chatSectionDividersDictionary,
+            bottomPanelDividers: bottomPanelDividersDictionary
         )
         store.saveLayoutInfo(info)
         if Self.verbose {
@@ -573,7 +606,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
                 }
                 return $0.order < $1.order
             }
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     // MARK: - Chat Section
@@ -702,7 +735,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allStatusBarItems = statusBarItemOrder.compactMap { statusBarItems[$0] }
             .sorted(by: { $0.order < $1.order })
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     // MARK: - Panel
@@ -710,13 +743,13 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
     public func registerPanelHeaderItem(_ item: PanelHeaderItem) {
         panelHeaderItems[item.id] = item
         allPanelHeaderItems = Array(panelHeaderItems.values)
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     public func unregisterPanelHeaderItem(id: String) {
         panelHeaderItems.removeValue(forKey: id)
         allPanelHeaderItems = Array(panelHeaderItems.values)
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     public func registerPanelBottomTabItem(_ item: PanelBottomTabItem) {
@@ -737,7 +770,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allPanelBottomTabItems = panelBottomTabOrder.compactMap { panelBottomTabItems[$0] }
             .sorted(by: { $0.order < $1.order })
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     public func registerPanelRailTabItem(_ item: PanelRailTabItem) {
@@ -758,7 +791,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allPanelRailTabItems = panelRailTabOrder.compactMap { panelRailTabItems[$0] }
             .sorted(by: { $0.order < $1.order })
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     // MARK: - Menu Bar
@@ -781,7 +814,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allMenuBarContents = menuBarContentOrder.compactMap { menuBarContents[$0] }
             .sorted(by: { $0.order < $1.order })
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     public func registerMenuBarPopup(_ popup: MenuBarPopupItem) {
@@ -802,7 +835,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allMenuBarPopups = menuBarPopupOrder.compactMap { menuBarPopups[$0] }
             .sorted(by: { $0.order < $1.order })
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     // MARK: - Root Overlays
@@ -825,7 +858,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allRootOverlays = rootOverlayOrder.compactMap { rootOverlays[$0] }
             .sorted(by: { $0.order < $1.order })
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     // MARK: - Clear
@@ -908,34 +941,34 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
         objectWillChange.send()
         allChatSectionItems = chatSectionItemOrder.compactMap { chatSectionItems[$0] }
             .sorted(by: { $0.order < $1.order })
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     private func updateSortedChatSectionToolbarItems() {
         objectWillChange.send()
         allChatSectionToolbarItems = chatSectionToolbarItemOrder.compactMap { chatSectionToolbarItems[$0] }
             .sorted(by: { $0.order < $1.order })
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     private func updateSortedChatSectionToolbarBars() {
         objectWillChange.send()
         allChatSectionToolbarBarItems = chatSectionToolbarBarOrder.compactMap { chatSectionToolbarBars[$0] }
             .sorted(by: { $0.order < $1.order })
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     private func updateSortedChatSectionHeaders() {
         objectWillChange.send()
         allChatSectionHeaderItems = chatSectionHeaderOrder.compactMap { chatSectionHeaders[$0] }
             .sorted(by: { $0.order < $1.order })
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 
     private func updateSortedChatSectionActionBars() {
         objectWillChange.send()
         allChatSectionActionBarItems = chatSectionActionBarOrder.compactMap { chatSectionActionBars[$0] }
             .sorted(by: { $0.order < $1.order })
-        NotificationCenter.postWorkspaceContributionsDidChange()
+        kernel?.eventManager.post(.workspaceContributionsDidChange)
     }
 }

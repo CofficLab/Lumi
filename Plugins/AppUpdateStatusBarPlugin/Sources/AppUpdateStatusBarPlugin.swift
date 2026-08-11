@@ -10,6 +10,7 @@ public final class AppUpdateStatusBarPlugin: LumiPlugin {
     }
     public let order = 8
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .general }
 
     public init() {}

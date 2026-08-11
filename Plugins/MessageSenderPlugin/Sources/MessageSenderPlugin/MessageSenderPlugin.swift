@@ -24,6 +24,7 @@ public final class MessageSenderPlugin: LumiPlugin, SuperLog {
     }
     public let order = 63  // After MessageManagerPlugin (62)
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Initialization
 

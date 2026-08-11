@@ -54,6 +54,38 @@ struct LLMGenerationOptionsApplierTests {
         #expect(thinking?["budget_tokens"] as? Int == 4096)
     }
 
+    @Test("Anthropic applier maps xhigh to thinking budget 16384")
+    func anthropicXhighThinkingBudget() {
+        var body: [String: Any] = ["max_tokens": 8192]
+        let config = LLMConfig(model: "claude-sonnet-4", providerId: "anthropic", reasoningEffort: "xhigh")
+        AnthropicCompatibleGenerationOptionsApplier.apply(
+            config: config,
+            model: "claude-sonnet-4",
+            defaultMaxTokens: 8192,
+            to: &body
+        )
+        let thinking = body["thinking"] as? [String: Any]
+        #expect(thinking?["type"] as? String == "enabled")
+        #expect(thinking?["budget_tokens"] as? Int == 16384)
+        #expect(body["max_tokens"] as? Int == 17408)
+    }
+
+    @Test("Anthropic applier maps max to thinking budget 32768")
+    func anthropicMaxThinkingBudget() {
+        var body: [String: Any] = ["max_tokens": 8192]
+        let config = LLMConfig(model: "claude-sonnet-4", providerId: "anthropic", reasoningEffort: "max")
+        AnthropicCompatibleGenerationOptionsApplier.apply(
+            config: config,
+            model: "claude-sonnet-4",
+            defaultMaxTokens: 8192,
+            to: &body
+        )
+        let thinking = body["thinking"] as? [String: Any]
+        #expect(thinking?["type"] as? String == "enabled")
+        #expect(thinking?["budget_tokens"] as? Int == 32768)
+        #expect(body["max_tokens"] as? Int == 33792)
+    }
+
     @Test("Message preparer keeps system and drops status")
     func messagePreparer() {
         let messages = [

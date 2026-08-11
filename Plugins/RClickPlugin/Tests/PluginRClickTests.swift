@@ -4,7 +4,32 @@ import Foundation
 
 @MainActor
 @Test func packageLoads() async throws {
-    #expect(RClickPlugin().id == "RClick")
+    #expect(RClickPlugin().id == "com.coffic.lumi.plugin.rclick")
+}
+
+@Test func actionTypePersistenceKeepsLegacyHiddenMenuID() throws {
+    let data = try JSONEncoder().encode(RClickActionType.hideHiddenFiles)
+    #expect(String(data: data, encoding: .utf8) == "\"listHiddenFiles\"")
+    #expect(try JSONDecoder().decode(RClickActionType.self, from: data) == .hideHiddenFiles)
+}
+
+@Test func configNormalizationAppendsMissingActionsWithoutChangingExistingItems() {
+    let existing = RClickMenuItem(id: "copy", type: .copyPath, customTitle: "Copy", isEnabled: true)
+    let normalized = RClickConfig(items: [existing], fileTemplates: []).normalizedForStorage
+
+    #expect(normalized.items.first == existing)
+    #expect(Set(normalized.items.map(\.type)) == Set(RClickActionType.allCases))
+    #expect(normalized.items.allSatisfy { item in
+        RClickConfig.default.items.first(where: { $0.type == item.type })?.isEnabled == item.isEnabled
+    })
+}
+
+@Test func templateNormalizationAcceptsSafeValuesAndRejectsUnsafeValues() {
+    let normalized = NewFileTemplate(name: "  Readme  ", extensionName: "..md").normalizedForStorage
+    #expect(normalized?.name == "Readme")
+    #expect(normalized?.extensionName == "md")
+    #expect(NewFileTemplate(name: "Bad/Name", extensionName: "txt").normalizedForStorage == nil)
+    #expect(NewFileTemplate(name: "Shell", extensionName: "sh/path").normalizedForStorage == nil)
 }
 
 @MainActor
@@ -39,9 +64,12 @@ import Foundation
 
     let manager = RClickConfigManager(appGroupConfigFileURL: appGroupConfigURL, store: store)
 
-    #expect(manager.config == backupConfig)
+    #expect(Array(manager.config.items.prefix(1)) == backupConfig.items)
+    #expect(manager.config.items.contains { $0.type == .showHiddenFiles && !$0.isEnabled })
+    #expect(manager.config.items.contains { $0.type == .hideHiddenFiles && !$0.isEnabled })
+    #expect(manager.config.items.contains { $0.type == .unhideFile && !$0.isEnabled })
     #expect((try? Data(contentsOf: corruptURL)) == invalidData)
-    #expect((try? JSONDecoder().decode(RClickConfig.self, from: Data(contentsOf: appGroupConfigURL))) == backupConfig)
+    #expect((try? JSONDecoder().decode(RClickConfig.self, from: Data(contentsOf: appGroupConfigURL))) == manager.config)
 }
 
 @MainActor

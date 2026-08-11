@@ -1,8 +1,5 @@
 import Foundation
-import HttpKit
 import LLMKit
-import LumiKernel
-import LumiKernel
 import LumiKernel
 
 public final class KimiCodeOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
@@ -12,80 +9,40 @@ public final class KimiCodeOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
         description: LumiPluginLocalization.string("Kimi Code API via OpenAI-compatible endpoint.", bundle: .module),
         defaultModel: "k3",
         availableModels: [
-            "k3",
-            "k3-256k",
-            "kimi-for-coding",
-            "kimi-for-coding-highspeed"
-        ],
-        contextWindowSizes: [
-            "k3": 1_000_000,
-            "k3-256k": 256_000,
-            "kimi-for-coding": 256_000,
-            "kimi-for-coding-highspeed": 256_000
-        ],
-        modelCapabilities: [
-            "k3": .init(supportsVision: true, supportsTools: true),
-            "k3-256k": .init(supportsVision: true, supportsTools: true),
-            "kimi-for-coding": .init(supportsVision: true, supportsTools: true),
-            "kimi-for-coding-highspeed": .init(supportsVision: true, supportsTools: true)
-        ],
-        modelDisplayNames: [
-            "k3": "Kimi K3",
-            "k3-256k": "Kimi K3 256K",
-            "kimi-for-coding": "Kimi K2.7 Code",
-            "kimi-for-coding-highspeed": "Kimi K2.7 Code High Speed"
+            .init(id: "k3", displayName: "Kimi K3", contextWindowSize: 1_000_000,
+                  capabilities: .init(supportsVision: true, supportsTools: true)),
+            .init(id: "k3-256k", displayName: "Kimi K3 256K", contextWindowSize: 256_000,
+                  capabilities: .init(supportsVision: true, supportsTools: true)),
+            .init(id: "kimi-for-coding", displayName: "Kimi K2.7 Code", contextWindowSize: 256_000,
+                  capabilities: .init(supportsVision: true, supportsTools: true)),
+            .init(id: "kimi-for-coding-highspeed", displayName: "Kimi K2.7 Code High Speed", contextWindowSize: 256_000,
+                  capabilities: .init(supportsVision: true, supportsTools: true)),
         ],
         websiteURL: URL(string: "https://www.moonshot.cn/")!,
-        apiKeyStorageKey: "DevAssistant_ApiKey_KimiCode"
+        apiKeyStorageKey: KimiCodePlugin.apiKeyStorageKey
     )
 
-    private let adapter: OpenAICompatibleProviderAdapter
-
-    // MARK: - Internal Access for AvailabilityService
-
-    var internalAdapter: OpenAICompatibleProviderAdapter { adapter }
-    var internalApiService: LLMAPIService { apiService }
-    private let apiService: LLMAPIService
+    private let apiService: KimiCodeOpenAIService
 
     public init(
-        configuration: OpenAICompatibleProviderConfiguration? = nil,
-        apiService: LLMAPIService = LLMAPIService()
+        baseURL: String = "https://api.kimi.com/coding/v1/chat/completions",
+        network: (any NetworkProviding)? = nil
     ) {
-        let config = configuration ?? OpenAICompatibleProviderConfiguration(
-            baseURL: "https://api.kimi.com/coding/v1/chat/completions",
-            additionalHeaders: [:],
-            includeUsageInStreamOptions: true,
-            returnsEmptyChunkWhenNoDelta: false,
-            acceptsFunctionScopedToolCallID: false
-        )
-        self.adapter = OpenAICompatibleProviderAdapter(configuration: config)
-        self.apiService = apiService
+        self.apiService = KimiCodeOpenAIService(baseURL: baseURL, network: network)
     }
-
-    // MARK: - LumiLLMProvider Protocol
 
     public func lumiResolveAPIKey() throws -> String {
-        try LumiAPIKeyTools.resolve(
-            storageKey: Self.info._apiKeyStorageKey,
-            displayName: Self.info.displayName
-        )
+        let key = KimiCodePlugin.currentApiKey
+        guard !key.isEmpty else {
+            throw LumiLLMProviderSupportError.missingAPIKey(Self.info.displayName)
+        }
+        return key
     }
 
-    public func hasApiKey() -> Bool {
-        LumiAPIKeyTools.has(storageKey: Self.info._apiKeyStorageKey)
-    }
-
-    public func getApiKey() -> String {
-        LumiAPIKeyTools.get(storageKey: Self.info._apiKeyStorageKey)
-    }
-
-    public func setApiKey(_ apiKey: String) {
-        LumiAPIKeyTools.set(apiKey, storageKey: Self.info._apiKeyStorageKey)
-    }
-
-    public func removeApiKey() {
-        LumiAPIKeyTools.remove(storageKey: Self.info._apiKeyStorageKey)
-    }
+    public func hasApiKey() -> Bool { KimiCodePlugin.hasApiKey }
+    public func getApiKey() -> String { KimiCodePlugin.currentApiKey }
+    public func setApiKey(_ apiKey: String) { KimiCodePlugin.setApiKey(apiKey) }
+    public func removeApiKey() { KimiCodePlugin.removeApiKey() }
 
     public func send(_ request: LumiLLMRequest) async throws -> LumiChatMessage {
         try await sendStreaming(request) { _ in }
@@ -95,21 +52,82 @@ public final class KimiCodeOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
         _ request: LumiLLMRequest,
         onChunk: @escaping @Sendable (LumiStreamChunk) async -> Void
     ) async throws -> LumiChatMessage {
-        try await LumiStreamingRequestSupport.sendOpenAICompatibleStreaming(
-            request,
-            adapter: adapter,
-            apiService: apiService,
-            baseURLs: [adapter.configuration.baseURL] + adapter.configuration.fallbackBaseURLs,
-            resolveAPIKey: lumiResolveAPIKey,
-            buildRequest: { url, apiKey in
-                adapter.buildRequest(url: url, apiKey: apiKey)
-            },
-            onChunk: onChunk
+        guard let conversationID = request.messages.first?.conversationID else {
+            throw KimiCodeOpenAIProviderError.invalidRequest("Conversation is empty")
+        }
+        let body = KimiCodeRequestBuilder.body(for: request)
+        guard let url = URL(string: apiService.baseURL) else {
+            throw KimiCodeOpenAIProviderError.invalidRequest("Invalid Kimi Code URL")
+        }
+        var httpRequest = URLRequest(url: url)
+        httpRequest.httpMethod = "POST"
+        httpRequest.setValue("Bearer \(try lumiResolveAPIKey())", forHTTPHeaderField: "Authorization")
+        httpRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let requestStartedAt = Date()
+        let collector = KimiCodeChatMessageCollector(
+            message: KimiCodeChatMessage.assembling(
+                conversationID: conversationID,
+                providerID: Self.info.id,
+                modelName: request.model,
+                requestStartedAt: requestStartedAt
+            )
+        )
+
+        try await apiService.send(request: httpRequest, body: body) { event in
+            if let error = event.error {
+                collector.mutate { $0.isError = true; $0.rawErrorDetail = error }
+                return false
+            }
+            collector.mutate { $0.merge(event) }
+            if let content = event.content, !content.isEmpty {
+                await onChunk(LumiStreamChunk(content: content, eventTitle: "生成中"))
+            }
+            if let reasoning = event.reasoning, !reasoning.isEmpty {
+                await onChunk(LumiStreamChunk(content: reasoning, isThinking: true, eventTitle: "思考中"))
+            }
+            if event.done {
+                collector.mutate { $0.finalize() }
+                await onChunk(LumiStreamChunk(isDone: true, eventTitle: "结束"))
+                return false
+            }
+            return true
+        }
+
+        let message = collector.snapshot()
+        if message.isError {
+            throw KimiCodeOpenAIProviderError.api(message.rawErrorDetail ?? "Kimi Code returned an error")
+        }
+        if message.hitMaxTokensWithoutOutput {
+            throw KimiCodeOpenAIProviderError.maxTokensExceeded(message.outputTokenCount)
+        }
+        if message.content.isEmpty && (message.toolCalls?.isEmpty ?? true) {
+            throw KimiCodeOpenAIProviderError.invalidResponse("Kimi Code returned an empty response")
+        }
+        return message.toLumiChatMessage()
+    }
+
+    func ping(model: String) async throws {
+        guard let url = URL(string: apiService.baseURL) else {
+            throw KimiCodeOpenAIProviderError.invalidRequest("Invalid Kimi Code URL")
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(try lumiResolveAPIKey())", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        _ = try await apiService.sendOnce(
+            request: request,
+            body: [
+                "model": model,
+                "messages": [["role": "user", "content": "ping"]],
+                "stream": false,
+                "max_tokens": 1,
+            ]
         )
     }
 
     public func checkAvailability(model: String) async -> LumiModelAvailabilityResult {
-        await AvailabilityService.checkAvailabilityForOpenAI(provider: self, model: model)
+        await AvailabilityService.checkAvailability(provider: self, model: model)
     }
 
     public func providerStatus() -> LumiLLMProviderStatus? {
@@ -117,11 +135,22 @@ public final class KimiCodeOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
     }
 
     public func retryDisposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {
-        ErrorDispositionResolver.disposition(for: error, context: context)
+        if let error = error as? KimiCodeOpenAIProviderError {
+            return error.llmErrorDisposition
+        }
+        return context.attempt < context.maxAttempts ? .retryable() : .nonRetryable
     }
 
     public func errorRenderKind(for error: Error) -> String? {
-        nil
+        if let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: error) {
+            return KimiCodeRenderKind.http(statusCode)
+        }
+        if let localized = error as? LocalizedError,
+           let description = localized.errorDescription,
+           let statusCode = LumiProviderHTTPErrorParsing.statusCode(from: description) {
+            return KimiCodeRenderKind.http(statusCode)
+        }
+        return nil
     }
 
     public func makeErrorMessage(
@@ -132,7 +161,6 @@ public final class KimiCodeOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
     ) -> LumiChatMessage {
         LumiLLMProviderErrorSupport.makeErrorMessage(
             providerID: Self.info.id,
-
             conversationID: conversationID,
             request: request,
             error: error,

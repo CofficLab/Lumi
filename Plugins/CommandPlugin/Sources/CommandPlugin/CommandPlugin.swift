@@ -22,6 +22,7 @@ public final class CommandPlugin: LumiPlugin, SuperLog {
     }
     public let order = 15
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件，优先注册
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - State
 
@@ -48,6 +49,9 @@ public final class CommandPlugin: LumiPlugin, SuperLog {
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func commandMenuGroups(kernel: LumiKernel) -> [CommandMenuGroup] {
+        [DebugCommands().commandMenuGroup(kernel: kernel)]
+    }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }

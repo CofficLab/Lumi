@@ -29,9 +29,9 @@ public final class ConversationSortStabilizer: ObservableObject {
     ///
     /// - Parameters:
     ///   - id: 对话 ID
-    ///   - updatedAt: 数据库中的实际更新时间
+    ///   - lastMessageAt: 数据库中的最后消息时间
     /// - Returns: 用于排序的有效时间
-    public func effectiveSortTime(for id: UUID, updatedAt: Date) -> Date {
+    public func effectiveSortTime(for id: UUID, lastMessageAt: Date) -> Date {
         let currentTime = now()
 
         // 已有锚定时间且仍在窗口内 → 保持原锚点不变
@@ -41,9 +41,9 @@ public final class ConversationSortStabilizer: ObservableObject {
             return anchor
         }
 
-        // 超出窗口或首次出现 → 以 updatedAt 建立新锚点
-        anchorTimes[id] = updatedAt
-        return updatedAt
+        // 超出窗口或首次出现 → 以 lastMessageAt 建立新锚点
+        anchorTimes[id] = lastMessageAt
+        return lastMessageAt
     }
 
     /// 用户主动切换到某对话时调用，刷新其锚点

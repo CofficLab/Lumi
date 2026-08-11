@@ -19,6 +19,10 @@ public final class PluginManager: ObservableObject {
     private var messageRenderers: [String: LumiMessageRendererItem] = [:]
     private var messageRendererOrder: [String] = []
 
+    // IDs registered through LumiPlugin.commandMenuGroups(kernel:).
+    // Imperatively registered command groups are intentionally not tracked here.
+    private var pluginCommandMenuGroupIDs: Set<String> = []
+
     // 运行时状态。
     private var enabledOverrides: [String: Bool] = [:]
 
@@ -325,6 +329,30 @@ public final class PluginManager: ObservableObject {
 
     }
 
+    /// Collects command menu groups declared by enabled plugins.
+    ///
+    /// Only groups previously registered through `LumiPlugin.commandMenuGroups(kernel:)`
+    /// are removed during a rebuild. This preserves command groups registered directly
+    /// through `kernel.command` by legacy plugins and core services.
+    public func registerPluginCommandContributions(in kernel: LumiKernel) {
+        self.kernel = kernel
+        guard let command = kernel.command else { return }
+
+        for id in pluginCommandMenuGroupIDs {
+            command.unregisterCommandGroup(id: id)
+        }
+
+        var registeredIDs: Set<String> = []
+        for plugin in allPlugins {
+            guard effectiveEnabled(for: plugin) else { continue }
+            for group in plugin.commandMenuGroups(kernel: kernel) {
+                command.registerCommandGroup(group)
+                registeredIDs.insert(group.id)
+            }
+        }
+        pluginCommandMenuGroupIDs = registeredIDs
+    }
+
     /// 收集所有插件贡献的 LLM Provider,并注册到内核的 `LLMProviderManaging` 服务。
     ///
     /// 调用时机:在 `LumiKernel.startup()` 的 `onReady` 之后。每个 LLM Provider 插件
@@ -396,7 +424,7 @@ public final class PluginManager: ObservableObject {
         kernel.editorProvider?.replaceEditorPlugins(collectEditorPlugins(in: kernel))
     }
 
-    /// 全量重建所有插件贡献(Agent Tools + UI + LLM Provider + Editor Plugins)。
+    /// 全量重建所有插件贡献(Agent Tools + UI + Commands + LLM Provider + Editor Plugins)。
     ///
     /// 在插件启用/禁用后由宿主(`LumiFactory.subscribeToPluginChanges`)调用,
     /// 使被禁用插件的贡献即时撤回、被启用插件的贡献即时加入。
@@ -424,11 +452,14 @@ public final class PluginManager: ObservableObject {
         // 2. UI 贡献重建
         registerPluginUIContributions(in: kernel)
 
-        // 3. Editor Plugins 重建
+        // 3. Command 菜单贡献重建
+        registerPluginCommandContributions(in: kernel)
+
+        // 4. Editor Plugins 重建
         //    必须通过 replace 入口撤回已禁用插件的语言/语法/高亮贡献,再回放当前有效集合。
         registerEditorPlugins(in: kernel)
 
-        // 4. LLM Provider 重建(diff)
+        // 5. LLM Provider 重建(diff)
         guard let manager = kernel.llmProvider else { return }
         let effectiveIDs = Set(
             allPlugins
@@ -540,6 +571,8 @@ public final class PluginManager: ObservableObject {
         guard current != enabled else { return false }
 
         enabledOverrides[id] = enabled
+        // 立即通知 UI 更新,避免 Toggle 卡在旧状态
+        objectWillChange.send()
 
         do {
             if enabled {
@@ -551,10 +584,11 @@ public final class PluginManager: ObservableObject {
             // Lifecycle failure must not leave the manager claiming a state that
             // the plugin failed to enter.
             enabledOverrides[id] = current
+            objectWillChange.send()
+            notifyEnabledPluginsDidChange()
             return false
         }
 
-        objectWillChange.send()
         notifyEnabledPluginsDidChange()
         return true
     }
@@ -569,10 +603,15 @@ public final class PluginManager: ObservableObject {
         let defaultEnabled = plugin.policy.enabledByDefault
         guard override != defaultEnabled else {
             enabledOverrides.removeValue(forKey: id)
+            objectWillChange.send()
+            notifyEnabledPluginsDidChange()
             return true
         }
 
         enabledOverrides[id] = defaultEnabled
+        // 立即通知 UI 更新,避免 Toggle 卡在旧状态
+        objectWillChange.send()
+
         do {
             if defaultEnabled {
                 try await plugin.onEnable(kernel: runtimeKernel)
@@ -581,11 +620,12 @@ public final class PluginManager: ObservableObject {
             }
         } catch {
             enabledOverrides[id] = override
+            objectWillChange.send()
+            notifyEnabledPluginsDidChange()
             return false
         }
 
         enabledOverrides.removeValue(forKey: id)
-        objectWillChange.send()
         notifyEnabledPluginsDidChange()
         return true
     }

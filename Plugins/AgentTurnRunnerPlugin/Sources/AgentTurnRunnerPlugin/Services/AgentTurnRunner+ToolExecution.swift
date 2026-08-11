@@ -12,7 +12,15 @@ extension AgentTurnRunner {
     /// message, so the durable completion marker is the separate `.tool`
     /// message with the matching `toolCallID`.
     func incompleteToolCallMessage(in conversationID: UUID) -> LumiChatMessage? {
-        let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
+        incompleteToolCallMessage(
+            messages: kernel?.messageManager?.messages(for: conversationID) ?? []
+        )
+    }
+
+    /// Snapshot-based variant: reuses an already-fetched message history to
+    /// avoid a redundant DB fetch + sort. `executeTurnLoop` fetches once per
+    /// iteration and threads the snapshot through its helpers.
+    func incompleteToolCallMessage(messages: [LumiChatMessage]) -> LumiChatMessage? {
         let completedToolCallIDs = Set(
             messages.compactMap { message in
                 message.role == .tool ? message.toolCallID : nil
@@ -27,8 +35,14 @@ extension AgentTurnRunner {
     }
 
     func latestAssistantToolCalls(in conversationID: UUID) -> [LumiToolCall]? {
-        let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
-        return messages.reversed()
+        latestAssistantToolCalls(
+            messages: kernel?.messageManager?.messages(for: conversationID) ?? []
+        )
+    }
+
+    /// Snapshot-based variant. See `incompleteToolCallMessage(messages:)`.
+    func latestAssistantToolCalls(messages: [LumiChatMessage]) -> [LumiToolCall]? {
+        messages.reversed()
             .first(where: { $0.role == .assistant && !($0.toolCalls ?? []).isEmpty })?
             .toolCalls
     }
@@ -42,8 +56,24 @@ extension AgentTurnRunner {
         in assistantMessage: LumiChatMessage,
         conversationID: UUID
     ) async -> Bool {
+        await executePendingToolCalls(
+            in: assistantMessage,
+            conversationID: conversationID,
+            messages: kernel?.messageManager?.messages(for: conversationID) ?? []
+        )
+    }
+
+    /// Snapshot-based variant: accepts an already-fetched message history used
+    /// to seed the set of completed tool-call IDs. Inserts performed inside the
+    /// batch are tracked via the local `completedToolCallIDs` set, so the
+    /// passed snapshot only needs to reflect state before this batch resumed.
+    func executePendingToolCalls(
+        in assistantMessage: LumiChatMessage,
+        conversationID: UUID,
+        messages: [LumiChatMessage]
+    ) async -> Bool {
         guard let kernel,
-              let toolManager = kernel.toolManager,
+              kernel.toolManager != nil,
               let toolCalls = assistantMessage.toolCalls
         else {
             Self.logger.error("\(Self.t)ToolManager 不可用，无法继续工具批次")
@@ -52,7 +82,7 @@ extension AgentTurnRunner {
         }
 
         var completedToolCallIDs = Set(
-            (kernel.messageManager?.messages(for: conversationID) ?? []).compactMap { message in
+            messages.compactMap { message in
                 message.role == .tool ? message.toolCallID : nil
             }
         )
@@ -71,7 +101,7 @@ extension AgentTurnRunner {
                 )
             )
 
-            var result = await toolManager.execute(
+            var result = await executeToolCall(
                 toolCall,
                 conversationID: conversationID,
                 turnID: turnIDs[conversationID]
@@ -134,6 +164,19 @@ extension AgentTurnRunner {
         suspensionID: String? = nil
     ) -> AgentTurnSuspension? {
         let messages = kernel?.messageManager?.messages(for: conversationID) ?? []
+        return persistedSuspension(
+            messages: messages,
+            conversationID: conversationID,
+            suspensionID: suspensionID
+        )
+    }
+
+    /// Snapshot-based variant. See `incompleteToolCallMessage(messages:)`.
+    func persistedSuspension(
+        messages: [LumiChatMessage],
+        conversationID: UUID,
+        suspensionID: String? = nil
+    ) -> AgentTurnSuspension? {
         for message in messages.reversed() where message.role == .assistant {
             for toolCall in (message.toolCalls ?? []).reversed() {
                 if case let .suspend(suspension) = toolCall.result?.turnControl,

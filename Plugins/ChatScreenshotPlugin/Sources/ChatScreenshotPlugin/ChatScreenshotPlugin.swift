@@ -25,6 +25,7 @@ public final class ChatScreenshotPlugin: LumiPlugin, SuperLog {
     }
     public let order = 81
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     private weak var kernel: LumiKernel?
     private var notificationObserver: NSObjectProtocol?
@@ -48,22 +49,29 @@ public final class ChatScreenshotPlugin: LumiPlugin, SuperLog {
         }
         notificationObserver = token
 
-        // 2. 注册 ⌘⇧S 全局命令
-        kernel.command?.registerCommand(
-            menu: "Chat",
-            item: CommandItem(
-                id: "\(id).capture",
-                title: String(localized: "Capture Screenshot", bundle: .module),
-                shortcut: "s",
-                modifiers: [.command, .shift]
-            ) {
-                NotificationCenter.default.post(name: .lumiCaptureScreenshot, object: nil)
-            }
-        )
-
         if Self.verbose {
             Self.logger.info("\(Self.t)ChatScreenshotPlugin onReady 完成")
         }
+    }
+
+    public func commandMenuGroups(kernel: LumiKernel) -> [CommandMenuGroup] {
+        [
+            CommandMenuGroup(
+                id: "\(id).commands",
+                name: name,
+                items: [
+                    CommandItem(
+                        id: "\(id).capture",
+                        title: String(localized: "Capture Screenshot", bundle: .module),
+                        shortcut: "s",
+                        modifiers: [.command, .shift]
+                    ) {
+                        NotificationCenter.default.post(name: .lumiCaptureScreenshot, object: nil)
+                    },
+                ],
+                placement: .toolbar
+            ),
+        ]
     }
 
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] {

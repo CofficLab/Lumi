@@ -18,6 +18,7 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     }
     public let order = 10
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
+    public let stage: LumiPluginStage = .beta
 
     private var manager: LLMProviderManager?
 
@@ -25,7 +26,9 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {
         let service = LLMProviderManager()
+        service.kernel = kernel
         try kernel.registerLLMProviderService(service)
+        self.manager = service
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 LLMProviderManager 到内核")
         }

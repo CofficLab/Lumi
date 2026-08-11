@@ -13,6 +13,7 @@ public final class MessageManagerPlugin: LumiPlugin {
     }
     public let order = 62 // After ConversationManagerPlugin
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

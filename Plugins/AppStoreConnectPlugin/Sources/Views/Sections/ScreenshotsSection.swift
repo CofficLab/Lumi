@@ -33,7 +33,7 @@ struct ScreenshotsSection: View {
                 .appStoreConnectAddToChatMenu(
                     entityType: "uiActionButton",
                     entityID: "screenshots.add",
-                    title: "Add Screenshots",
+                    title: AppStoreConnectLocalization.string("Add Screenshots"),
                     sourceView: "VersionDetail.ScreenshotsSection",
                     fields: [
                         "actionID": "addScreenshots",
@@ -48,7 +48,7 @@ struct ScreenshotsSection: View {
                 .appStoreConnectAddToChatMenu(
                     entityType: "uiActionButton",
                     entityID: "screenshots.ensureSet",
-                    title: "Ensure Screenshot Set",
+                    title: AppStoreConnectLocalization.string("Ensure Screenshot Set"),
                     sourceView: "VersionDetail.ScreenshotsSection",
                     fields: [
                         "actionID": "ensureScreenshotSet",

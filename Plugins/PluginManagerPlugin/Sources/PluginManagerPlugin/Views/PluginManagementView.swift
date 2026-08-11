@@ -6,9 +6,17 @@ import SwiftUI
 /// 插件管理设置页。
 ///
 /// 两栏布局:左侧为插件列表(搜索 + 分类筛选),右侧为选中插件的详情
-/// 与启用开关。对齐旧版本 4.19.0 的体验。通过 `@ObservedObject kernel`
-/// 驱动刷新——`setPlugin` 会触发 `objectWillChange` 与 `.lumiEnabledPluginsDidChange`,
-/// 使列表/详情/全局 UI 贡献即时更新。
+/// 与启用开关。对齐旧版本 4.19.0 的体验。
+///
+/// 刷新机制:`kernel.pluginManager` 直接持有,未把 `objectWillChange`
+/// 转发到 kernel,故 `@ObservedObject kernel` 无法感知开关切换。本视图
+/// 监听 `.lumiEnabledPluginsDidChange` 通知并递增 `enabledRevision` 触发
+/// body 重算,使列表启用状态点、详情页开关与顶部统计即时更新。
+///
+/// 该文件只保留容器/布局/状态逻辑;具体渲染拆分为:
+/// - `PluginManagementHeader`:顶部统计
+/// - `PluginListRow`:列表单行
+/// - `PluginSettingsDetailView`:右侧详情面板
 struct PluginManagementView: View {
     @LumiTheme private var theme
     @ObservedObject var kernel: LumiKernel
@@ -16,6 +24,57 @@ struct PluginManagementView: View {
     @State private var selectedPluginID: String?
     @State private var searchText = ""
     @State private var selectedCategory: LumiPluginCategory?
+
+    /// 启用状态版本号。`pluginManager` 不通过 kernel 转发 `objectWillChange`,
+    /// 改由 `.lumiEnabledPluginsDidChange` 通知驱动:每次插件启用/禁用后递增,
+    /// 触发本视图 body 重算,使列表与详情读取到最新的 `effectiveEnabled`。
+    @State private var enabledRevision = 0
+
+    var body: some View {
+        let _ = enabledRevision // 依赖 enabledRevision,确保通知触发的变更驱动 body 重算
+
+        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 14) {
+                PluginManagementHeader(totalCount: plugins.count, enabledCount: enabledCount)
+
+                HStack(spacing: 0) {
+                    pluginListPane
+                        .frame(width: 300)
+                        .frame(maxHeight: .infinity)
+
+                    AppDivider(.vertical)
+
+                    pluginDetailPane
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+                .frame(minHeight: 520, maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(theme.divider, lineWidth: 1)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .onAppear {
+            if selectedPluginID == nil {
+                selectedPluginID = selectedPlugin?.id
+            }
+        }
+        .onLumiEnabledPluginsDidChange {
+            enabledRevision &+= 1
+        }
+        .onChange(of: filteredPlugins.map(\.id)) { _, ids in
+            guard let selectedPluginID,
+                  ids.contains(selectedPluginID)
+            else {
+                self.selectedPluginID = ids.first
+                return
+            }
+        }
+    }
+
+    // MARK: - Data Source
 
     /// 列表数据源:仅显示用户可配置的插件(对齐 4.19.0 的行为)。
     /// `alwaysOn`(不可禁用)与 `disabled`(不可启用)都不可配置,
@@ -52,62 +111,10 @@ struct PluginManagementView: View {
         return filteredPlugins.first ?? plugins.first
     }
 
-    var body: some View {
-        AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
-            VStack(alignment: .leading, spacing: 14) {
-                headerStats
-
-                HStack(spacing: 0) {
-                    pluginListPane
-                        .frame(width: 300)
-                        .frame(maxHeight: .infinity)
-
-                    AppDivider(.vertical)
-
-                    pluginDetailPane
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-                .frame(minHeight: 520, maxHeight: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.divider, lineWidth: 1)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        }
-        .onAppear {
-            if selectedPluginID == nil {
-                selectedPluginID = selectedPlugin?.id
-            }
-        }
-        .onChange(of: filteredPlugins.map(\.id)) { _, ids in
-            guard let selectedPluginID,
-                  ids.contains(selectedPluginID)
-            else {
-                self.selectedPluginID = ids.first
-                return
-            }
-        }
-    }
-
     /// 当前列表中处于有效启用状态的可配置插件数。
     /// 基于 `plugins`(已过滤 alwaysOn),与列表项数口径一致。
     private var enabledCount: Int {
         plugins.reduce(0) { $0 + (kernel.pluginManager.effectiveEnabled(for: $1) ? 1 : 0) }
-    }
-
-    private var headerStats: some View {
-        HStack(spacing: 10) {
-            Label(
-                String(format: PluginManagerText.string(PluginManagerText.pluginsCount), plugins.count),
-                systemImage: "puzzlepiece.extension"
-            )
-            Text(String(format: PluginManagerText.string(PluginManagerText.enabledCount), enabledCount))
-            Spacer()
-        }
-        .font(.appCaption)
-        .foregroundStyle(theme.textSecondary)
     }
 
     // MARK: - List Pane
@@ -141,7 +148,13 @@ struct PluginManagementView: View {
             ScrollView {
                 LazyVStack(spacing: 4) {
                     ForEach(filteredPlugins, id: \.id) { plugin in
-                        pluginListRow(plugin)
+                        PluginListRow(
+                            plugin: plugin,
+                            isSelected: selectedPluginID == plugin.id,
+                            isEnabled: kernel.pluginManager.effectiveEnabled(for: plugin)
+                        ) {
+                            selectedPluginID = plugin.id
+                        }
                     }
 
                     if filteredPlugins.isEmpty {
@@ -174,42 +187,6 @@ struct PluginManagementView: View {
         .buttonStyle(.plain)
     }
 
-    private func pluginListRow(_ plugin: LumiPlugin) -> some View {
-        let isSelected = selectedPluginID == plugin.id
-        let isEnabled = kernel.pluginManager.effectiveEnabled(for: plugin)
-
-        return AppListRow(isSelected: isSelected, action: { selectedPluginID = plugin.id }) {
-            HStack(alignment: .top, spacing: 10) {
-                VStack(spacing: 6) {
-                    Image(systemName: plugin.category.systemImage)
-                        .font(.appBody)
-                        .foregroundStyle(isSelected ? theme.primary : theme.textSecondary)
-                        .frame(width: 22, height: 22)
-
-                    Circle()
-                        .fill(isEnabled ? theme.success : theme.textTertiary.opacity(0.5))
-                        .frame(width: 6, height: 6)
-                }
-                .frame(width: 22)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(plugin.name)
-                            .font(.appCaptionEmphasized)
-                            .foregroundStyle(theme.textPrimary)
-                            .lineLimit(1)
-                    }
-
-                    Text(plugin.pluginDescription.isEmpty ? plugin.id : plugin.pluginDescription)
-                        .font(.appMicro)
-                        .foregroundStyle(theme.textSecondary)
-                        .lineLimit(2)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-
     // MARK: - Detail Pane
 
     @ViewBuilder
@@ -220,116 +197,6 @@ struct PluginManagementView: View {
             AppEmptyState(
                 icon: "puzzlepiece.extension",
                 title: PluginManagerText.string(PluginManagerText.selectPlugin)
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-    }
-}
-
-// MARK: - Detail
-
-private struct PluginSettingsDetailView: View {
-    @LumiTheme private var theme
-    let kernel: LumiKernel
-    let plugin: LumiPlugin
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                AppDivider()
-                pluginSettingsContent
-            }
-            .padding(22)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .appSurface(style: .panel, cornerRadius: 0)
-    }
-
-    private var header: some View {
-        HStack(alignment: .top, spacing: 16) {
-            Image(systemName: plugin.category.systemImage)
-                .font(.system(size: 38, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 64, height: 64)
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(theme.appAccentSoftFill)
-                )
-
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(spacing: 8) {
-                    Text(plugin.name)
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(theme.textPrimary)
-
-                    AppTag(plugin.stage.displayName, style: plugin.stage == .stable ? .accent : .subtle)
-                }
-
-                if !plugin.pluginDescription.isEmpty {
-                    Text(plugin.pluginDescription)
-                        .font(.appCaption)
-                        .foregroundStyle(theme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            // 启用/关闭开关置于右上角
-            enableControl
-                .fixedSize()
-        }
-    }
-
-    @ViewBuilder
-    private var enableControl: some View {
-        let isEnabled = kernel.pluginManager.effectiveEnabled(for: plugin)
-        if plugin.policy.isConfigurable {
-            Toggle(isOn: Binding(
-                get: { isEnabled },
-                set: { newValue in
-                    Task { @MainActor in
-                        await kernel.pluginManager.plugin(ofType: PluginManagerPlugin.self)?
-                            .setPluginEnabled(kernel: kernel, id: plugin.id, enabled: newValue)
-                    }
-                }
-            )) {
-                Text(PluginManagerText.string(PluginManagerText.enable))
-                    .font(.appBody)
-                    .foregroundStyle(theme.textPrimary)
-            }
-            .toggleStyle(.switch)
-        } else {
-            switch plugin.policy {
-            case .alwaysOn:
-                AppTag(PluginManagerText.string(PluginManagerText.alwaysOn), systemImage: "lock.fill", style: .accent)
-            case .disabled:
-                AppTag(PluginManagerText.string(PluginManagerText.disabled), systemImage: "minus.circle")
-            default:
-                EmptyView()
-            }
-        }
-    }
-
-    private func policyDisplayName(_ policy: LumiPluginPolicy) -> String {
-        switch policy {
-        case .alwaysOn: PluginManagerText.string(PluginManagerText.alwaysOn)
-        case .disabled: PluginManagerText.string(PluginManagerText.disabled)
-        case .optOut: "Opt-Out"
-        case .optIn: "Opt-In"
-        }
-    }
-
-    @ViewBuilder
-    private var pluginSettingsContent: some View {
-        if let about = plugin.pluginAboutView(kernel: kernel) {
-            about
-        } else {
-            AppEmptyState(
-                icon: "info.circle",
-                title: PluginManagerText.string(PluginManagerText.noDetailsProvided),
-                description: PluginManagerText.string(PluginManagerText.noDetailsHint)
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

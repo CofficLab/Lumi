@@ -339,14 +339,14 @@ struct ModelRouterTests {
             providerDisplayName: "OpenAI",
             model: "gpt-4o",
             availability: .available,
-            contextWindowSizes: ["gpt-4o": 128_000]
+            contextWindowSize: 128_000
         )
         let anthropic = RouteCandidate(
             providerId: "anthropic",
             providerDisplayName: "Anthropic",
             model: "claude-sonnet-4-20250514",
             availability: .available,
-            contextWindowSizes: ["claude-sonnet-4-20250514": 200_000]
+            contextWindowSize: 200_000
         )
         let result = router.route(candidates: [openai, anthropic], signal: signal)
         // openai:   100 + 8 + 16 = 124
@@ -373,14 +373,14 @@ struct ModelRouterTests {
             providerDisplayName: "OpenAI",
             model: "gpt-4o-mini",
             availability: .available,
-            contextWindowSizes: ["gpt-4o-mini": 128_000]
+            contextWindowSize: 128_000
         )
         let largeWindow = RouteCandidate(
             providerId: "anthropic",
             providerDisplayName: "Anthropic",
             model: "claude-sonnet-4-20250514",
             availability: .available,
-            contextWindowSizes: ["claude-sonnet-4-20250514": 200_000]
+            contextWindowSize: 200_000
         )
         let result = router.route(candidates: [smallWindow, largeWindow], signal: signal)
         // smallWindow: 100 + 1.28 + 2 = 103.28

@@ -64,6 +64,8 @@ public enum AnthropicCompatibleGenerationOptionsApplier {
         case "low": return 1024
         case "medium": return 4096
         case "high": return 8192
+        case "xhigh": return 16384
+        case "max": return 32768
         default: return nil
         }
     }

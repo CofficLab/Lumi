@@ -62,7 +62,7 @@ public struct DefaultModelScoring: ModelScoring {
             score += 8
         }
         if signal.messageLength > 2_000 {
-            score += Double(candidate.contextWindowSizes[candidate.model] ?? 0) / 100_000.0
+            score += Double(candidate.contextWindowSize ?? 0) / 100_000.0
         }
 
         // 任务类型与模型匹配

@@ -2,6 +2,64 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Folder</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.folder</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeIconSystemSymbolName</key>
+			<string>cylinder.split.1x2</string>
+			<key>CFBundleTypeName</key>
+			<string>SQLite Database</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.coffic.lumi.sqlite</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hans</string>
+		<string>zh-Hant</string>
+		<string>zh-HK</string>
+		<string>zh-TW</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(LUMI_URL_SCHEME)</string>
+			</array>
+		</dict>
+	</array>
+	<key>LumiAllowsAppUpdates</key>
+	<string>$(LUMI_ALLOWS_APP_UPDATES)</string>
+	<key>LumiAppGroupIdentifier</key>
+	<string>$(LUMI_APP_GROUP_IDENTIFIER)</string>
+	<key>LumiEnvironment</key>
+	<string>$(LUMI_ENVIRONMENT)</string>
+	<key>LumiKeychainServiceSuffix</key>
+	<string>$(LUMI_KEYCHAIN_SERVICE_SUFFIX)</string>
+	<key>LumiURLScheme</key>
+	<string>$(LUMI_URL_SCHEME)</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>SUAutomaticallyUpdate</key>
@@ -12,46 +70,17 @@
 	<true/>
 	<key>SUPublicEDKey</key>
 	<string>VRFIJExvMCeneBRzxR6mu2zPN9ggOUr0LNlcKYOb27o=</string>
-	<key>CFBundleDocumentTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeName</key>
-			<string>Folder</string>
-			<key>CFBundleTypeRole</key>
-			<string>Viewer</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>public.folder</string>
-			</array>
-			<key>LSHandlerRank</key>
-			<string>Alternate</string>
-		</dict>
-		<dict>
-			<key>CFBundleTypeName</key>
-			<string>SQLite Database</string>
-			<key>CFBundleTypeRole</key>
-			<string>Viewer</string>
-			<key>CFBundleTypeIconSystemSymbolName</key>
-			<string>cylinder.split.1x2</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.coffic.lumi.sqlite</string>
-			</array>
-			<key>LSHandlerRank</key>
-			<string>Alternate</string>
-		</dict>
-	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
-			<key>UTTypeIdentifier</key>
-			<string>com.coffic.lumi.sqlite</string>
-			<key>UTTypeDescription</key>
-			<string>SQLite Database</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>
 			</array>
+			<key>UTTypeDescription</key>
+			<string>SQLite Database</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.coffic.lumi.sqlite</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
@@ -61,17 +90,6 @@
 					<string>db</string>
 				</array>
 			</dict>
-		</dict>
-	</array>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>com.coffic.lumi</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>lumi</string>
-			</array>
 		</dict>
 	</array>
 </dict>

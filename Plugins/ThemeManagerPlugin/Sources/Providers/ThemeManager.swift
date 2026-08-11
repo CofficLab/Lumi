@@ -27,7 +27,7 @@ public final class ThemeManager: UIThemeProviding {
     /// Kernel event dispatcher, used to broadcast theme-change events.
     private weak var eventManager: EventManager?
 
-    /// Kernel reference, used to access the command service for menu registration.
+    /// Kernel reference, used to request a rebuild of declarative command contributions.
     private weak var kernel: LumiKernel?
 
     public var themes: [LumiUIThemeContribution] {
@@ -98,15 +98,25 @@ public final class ThemeManager: UIThemeProviding {
         }
     }
 
+    /// Inject the theme-selection store so the file is persisted through the
+    /// `StoragePlugin` convention instead of the legacy
+    /// `<Application Support>/LumiUI/theme-selection.plist` path. Must be
+    /// called before any `selectTheme(id:)` that should be remembered.
+    func setThemeSelectionStore(_ store: ThemeSelectionStore) {
+        self.themeSelectionStore = store
+        // Re-read any ID that may have already been written at the injected
+        // location, so the registry reflects the user's prior choice.
+        restoreSavedThemeIfPossible()
+    }
+
     /// Inject the kernel event manager used to broadcast theme-change events.
     public func setEventManager(_ eventManager: EventManager) {
         self.eventManager = eventManager
     }
 
-    /// Inject the kernel reference used to access the command service for menu registration.
+    /// Inject the kernel reference used to refresh declarative command contributions.
     public func setKernel(_ kernel: LumiKernel) {
         self.kernel = kernel
-        registerThemeMenuCommands()
     }
 
     /// Reload themes from all enabled plugins' theme contributions.
@@ -225,16 +235,12 @@ public final class ThemeManager: UIThemeProviding {
     /// can react without ThemeManager knowing about them.
     private func postThemeDidChange() {
         eventManager?.post(.themeDidChange)
-        registerThemeMenuCommands()
+        guard let kernel else { return }
+        kernel.pluginManager.registerPluginCommandContributions(in: kernel)
     }
 
-    /// 将当前主题列表注册为菜单栏命令组。
-    ///
-    /// 每次主题列表或选中状态变化时调用，先注销旧的再注册新的，
-    /// 使 `CommandMenuInstaller` 能够检测到签名变化并刷新菜单。
-    private func registerThemeMenuCommands() {
-        guard let kernel else { return }
-
+    /// 根据当前主题列表和选中状态创建菜单命令组。
+    func commandMenuGroup() -> CommandMenuGroup {
         let currentThemes = themeRegistry.themes
         let currentSelectedId = themeRegistry.selectedThemeId
 
@@ -248,18 +254,11 @@ public final class ThemeManager: UIThemeProviding {
             }
         }
 
-        let group = CommandMenuGroup(
+        return CommandMenuGroup(
             id: Self.commandGroupId,
             name: LumiPluginLocalization.string("Theme", bundle: .module),
             items: items,
             placement: .topLevelMenu
         )
-
-        kernel.command?.unregisterCommandGroup(id: Self.commandGroupId)
-        kernel.command?.registerCommandGroup(group)
-
-        if Self.verbose {
-            Self.logger.info("Registered \(items.count) theme menu commands")
-        }
     }
 }

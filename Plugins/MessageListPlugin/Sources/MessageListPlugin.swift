@@ -18,6 +18,7 @@ public final class MessageListPlugin: LumiPlugin, SuperLog {
     }
     public let order = 82
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

@@ -216,25 +216,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Edit File"
+            "value": "编辑文件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Edit File"
+            "value": "编辑文件"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Edit File"
+            "value": "编辑文件"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Edit File"
+            "value": "编辑文件"
           }
         }
       }
@@ -284,25 +284,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Execute a shell command in the terminal."
+            "value": "在终端中执行 shell 命令。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Execute a shell command in the terminal."
+            "value": "在终端中执行 shell 命令。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Execute a shell command in the terminal."
+            "value": "在终端中执行 shell 命令。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Execute a shell command in the terminal."
+            "value": "在终端中执行 shell 命令。"
           }
         }
       }
@@ -522,25 +522,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "List Directory"
+            "value": "列出目录"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "List Directory"
+            "value": "列出目录"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "List Directory"
+            "value": "列出目录"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "List Directory"
+            "value": "列出目录"
           }
         }
       }
@@ -556,25 +556,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "List files and directories at a given path. Useful for exploring the project structure."
+            "value": "列出指定路径下的文件和目录。适用于探索项目结构。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "List files and directories at a given path. Useful for exploring the project structure."
+            "value": "列出指定路径下的文件和目录。适用于探索项目结构。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "List files and directories at a given path. Useful for exploring the project structure."
+            "value": "列出指定路径下的文件和目录。适用于探索项目结构。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "List files and directories at a given path. Useful for exploring the project structure."
+            "value": "列出指定路径下的文件和目录。适用于探索项目结构。"
           }
         }
       }
@@ -692,25 +692,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Perform exact string replacements in a file."
+            "value": "在文件中进行精确的字符串替换。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Perform exact string replacements in a file."
+            "value": "在文件中进行精确的字符串替换。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Perform exact string replacements in a file."
+            "value": "在文件中进行精确的字符串替换。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Perform exact string replacements in a file."
+            "value": "在文件中进行精确的字符串替换。"
           }
         }
       }
@@ -726,25 +726,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Read File"
+            "value": "读取文件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Read File"
+            "value": "读取文件"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Read File"
+            "value": "读取文件"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Read File"
+            "value": "读取文件"
           }
         }
       }
@@ -760,25 +760,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
+            "value": "按行范围读取文件中的 UTF-8 文本。大文件应分块读取，使用 offset 与 limit。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
+            "value": "按行范围读取文件中的 UTF-8 文本。大文件应分块读取，使用 offset 与 limit。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
+            "value": "按行范围读取文件中的 UTF-8 文本。大文件应分块读取，使用 offset 与 limit。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
+            "value": "按行范围读取文件中的 UTF-8 文本。大文件应分块读取，使用 offset 与 limit。"
           }
         }
       }
@@ -896,25 +896,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Run Command"
+            "value": "运行命令"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Run Command"
+            "value": "运行命令"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Run Command"
+            "value": "运行命令"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Run Command"
+            "value": "运行命令"
           }
         }
       }
@@ -1305,25 +1305,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Write File"
+            "value": "写入文件"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Write File"
+            "value": "写入文件"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Write File"
+            "value": "写入文件"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Write File"
+            "value": "写入文件"
           }
         }
       }
@@ -1339,25 +1339,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Write UTF-8 text content to a file."
+            "value": "将 UTF-8 文本内容写入文件。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Write UTF-8 text content to a file."
+            "value": "将 UTF-8 文本内容写入文件。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Write UTF-8 text content to a file."
+            "value": "将 UTF-8 文本内容写入文件。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Write UTF-8 text content to a file."
+            "value": "将 UTF-8 文本内容写入文件。"
           }
         }
       }

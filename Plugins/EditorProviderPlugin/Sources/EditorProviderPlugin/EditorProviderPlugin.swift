@@ -25,6 +25,7 @@ public final class EditorProviderPlugin: LumiPlugin, SuperLog {
     }
     public let order = 1
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - State
 

@@ -16,6 +16,7 @@ public final class AgentOpenInCursorPlugin: LumiPlugin {
     public let order = 60
     public let category: LumiPluginCategory = .open
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

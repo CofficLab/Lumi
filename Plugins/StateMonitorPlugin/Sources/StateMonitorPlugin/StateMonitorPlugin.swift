@@ -9,8 +9,9 @@ import SwiftUI
 /// 当前职责:
 /// - `OnConversationSelectedHook`:选中对话后,自动跟随其绑定的项目
 ///   (`kernel.conversations?.objectWillChange` → `kernel.project.openProject(at:)`)。
-/// - `OnProjectChangedHook`:当前项目切换时,清空当前选中的对话
-///   (`kernel.project.objectWillChange` → `kernel.conversations.deselectConversation()`)。
+/// - `OnProjectChangedHook`:当前项目切换时,校验当前对话归属;仅当对话项目与
+///   新项目不一致时清空选择(`kernel.project.objectWillChange` →
+///   `kernel.conversations.deselectConversation()`)。
 /// - `OnConversationProviderModelSyncHook`:选中对话后,把对话绑定的 Provider/Model
 ///   同步到内核全局(`kernel.conversations.objectWillChange` →
 ///   `kernel.llmProvider.selectProvider(id:)` / `selectModel(providerID:model:)`)。
@@ -20,8 +21,8 @@ import SwiftUI
 ///   `.lumiSelectedLocalProviderIDDidChange` / `.lumiSelectedModelsDidChange` →
 ///   `kernel.conversations.selectProvider(id:model:for:)`)。
 ///   仅在不一致时写入,避免覆盖用户刚手动选择的对话绑定。
-/// - `OnConversationVerbositySyncHook`:选中对话后,把对话绑定的详细程度
-///   同步到内核全局(`kernel.conversations.objectWillChange` →
+/// - `OnConversationVerbositySyncHook`:选中对话后或当前对话详细程度被修改时,
+///   把对话绑定的详细程度同步到内核全局(`kernel.conversations.objectWillChange` →
 ///   `kernel.conversations.setGlobalVerbosity`)。
 /// - `OnGlobalVerbositySyncHook`:全局详细程度变化时,把全局值同步到当前对话
 ///   (`kernel.conversations.objectWillChange` →
@@ -29,14 +30,14 @@ import SwiftUI
 ///
 /// 前两条 hook 形成对称联动:
 ///   - 选中对话 → 跟随对话绑定的项目;
-///   - 项目变化 → 清空当前对话,避免旧对话与新项目不一致。
+///   - 项目变化 → 保留同项目对话,仅清空归属不一致的旧对话。
 ///
 /// Provider/Model 两条 hook 形成对称联动:
 ///   - 选中对话 → 把对话的 Provider/Model 写入内核全局,使后续发送的消息使用对话绑定的模型;
 ///   - 全局 Provider/Model 变化 → 把全局选择同步到当前对话,使对话绑定与全局一致。
 ///
 /// Verbosity 两条 hook 形成对称联动:
-///   - 选中对话 → 把对话的详细程度写入内核全局;
+///   - 选中对话或当前对话详细程度被修改 → 把对话的详细程度写入内核全局;
 ///   - 全局详细程度变化 → 把全局值同步到当前对话,使对话绑定与全局一致。
 ///
 /// 设计意图:
@@ -55,6 +56,7 @@ public final class StateMonitorPlugin: LumiPlugin {
     public let name = "State Monitor"
     public let order = 75
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Hooks
 

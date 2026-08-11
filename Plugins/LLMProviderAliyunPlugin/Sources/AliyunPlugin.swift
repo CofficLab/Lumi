@@ -1,7 +1,4 @@
 import SwiftUI
-import LLMKit
-import LumiKernel
-import LumiKernel
 import LumiKernel
 import LumiUI
 
@@ -14,7 +11,8 @@ public final class AliyunPlugin: LumiPlugin {
         LumiPluginLocalization.string("阿里云 CodingPlan", bundle: .module)
     }
     public let order = 105
-	public let policy: LumiPluginPolicy = .alwaysOn
+    public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}
@@ -30,11 +28,13 @@ public final class AliyunPlugin: LumiPlugin {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
-
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] {
-        [AliyunProvider(apiService: LLMAPIService(kernel: kernel))]
+        let network = kernel.network
+        return [
+            AliyunProvider(network: network),
+            AliyunTokenPlanProvider(network: network),
+        ]
     }
-
 
     // MARK: - LumiPlugin stubs
 

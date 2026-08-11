@@ -46,25 +46,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to kill process %1$@ (PID: %2$@)?"
+            "value": "确定要终止进程 %@（PID：%@）吗？"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to kill process %1$@ (PID: %2$@)?"
+            "value": "确定要终止进程 %@（PID：%@）吗？"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to kill process %1$@ (PID: %2$@)?"
+            "value": "确定要终止进程 %@（PID：%@）吗？"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are you sure you want to kill process %1$@ (PID: %2$@)?"
+            "value": "确定要终止进程 %@（PID：%@）吗？"
           }
         }
       }

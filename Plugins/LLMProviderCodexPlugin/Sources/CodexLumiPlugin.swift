@@ -11,6 +11,7 @@ public final class CodexLumiPlugin: LumiPlugin {
     }
     public let order = 11
 	public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
     public var category: LumiPluginCategory { .llmProvider }
 
     public init() {}

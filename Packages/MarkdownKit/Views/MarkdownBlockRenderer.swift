@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import BeautifulMermaid
+import LumiUI
 import MarkdownKitCore
 
 /// Markdown 块级元素渲染器
@@ -24,11 +25,17 @@ public struct MarkdownBlockRenderer: View {
     ) {
         self.markdown = markdown
         self.theme = theme
-        self._blocks = State(initialValue: MarkdownBlockCache.shared.blocks(for: markdown))
+        // 缓存命中(历史行常见)时同步初始化,首屏即有 measured height;
+        // miss 时(长文本首次出现)用空数组初始化,避免主线程同步全量解析,
+        // 由 body 的 .task 异步解析后填充。
+        let initial = MarkdownBlockCache.shared.cachedBlocks(for: markdown) ?? []
+        self._blocks = State(initialValue: initial)
     }
 
     /// Blocks are initialized from the bounded process cache so their measured
-    /// height is available during the first layout pass.
+    /// height is available during the first layout pass. On a cache miss the
+    /// view starts empty and is populated asynchronously by `.task` below,
+    /// keeping full Markdown parsing off the main thread's first render.
     @State private var blocks: [MarkdownBlock]
     @Environment(\.preferOuterScroll) private var preferOuterScroll
 
@@ -40,6 +47,14 @@ public struct MarkdownBlockRenderer: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(theme.textColor ?? .primary)
+        .task(id: markdown) {
+            // 缓存命中(init 已填充)时 blocks 不会变,这里是一次廉价的不变赋值;
+            // miss 时在这里异步完成全量解析,填充首屏留空的内容。
+            let parsed = MarkdownBlockCache.shared.blocks(for: markdown)
+            if parsed != blocks {
+                blocks = parsed
+            }
+        }
     }
 
     // MARK: - Block Rendering
@@ -286,6 +301,30 @@ private final class MarkdownBlockCache: @unchecked Sendable {
                 : MarkdownParser.parse(String(markdown.prefix(boundary)))
         )
         return parsed
+    }
+
+    /// 只返回缓存命中或流式增量结果,不触发全量解析。
+    ///
+    /// 供 `MarkdownBlockRenderer.init` 用:命中时同步初始化(首屏即有 measured
+    /// height);miss 时返回 nil,init 用空数组初始化,由 `.task` 异步解析后填充,
+    /// 避免长文本首次出现时在主线程同步全量解析造成卡顿。
+    func cachedBlocks(for markdown: String) -> [MarkdownBlock]? {
+        lock.lock()
+        defer { lock.unlock() }
+
+        // 1) Exact hit.
+        if let cached = cache[markdown] {
+            return cached
+        }
+
+        // 2) Streaming append — already cheap (tail parse only), return inline.
+        if let slot = streamingSlot,
+           markdown.hasPrefix(slot.stableSource) {
+            return nil // 仍交给 blocks(for:) 处理(它需要推进 stable boundary)
+        }
+
+        // 3) Miss — 需全量解析,返回 nil 让调用方异步处理。
+        return nil
     }
 
     /// Returns the length of the prefix of `markdown` that ends at the last

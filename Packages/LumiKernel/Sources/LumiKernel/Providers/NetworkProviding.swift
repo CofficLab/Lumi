@@ -6,8 +6,13 @@ import Foundation
 ///
 /// 提供 HTTP 请求功能，支持 GET/POST/PUT/DELETE 等方法。
 /// 由具体实现包提供（可基于 URLSession 或其他网络库实现）。
-@MainActor
-public protocol NetworkProviding: AnyObject {
+///
+/// 协议刻意 **不** 标 `@MainActor`：流式请求(`stream`)的 SSE 字节循环和 HTTP
+/// 交换记录写入(SwiftData)都不应占用主线程。具体实现(`NetworkProvider`)
+/// 是无状态、线程安全的(`session` 是 `Sendable`,`exchangeStore` 后台写入),
+/// 因此所有方法都是 nonisolated。调用方(各 LLM provider)本就在后台 `await`,
+/// 去掉 `@MainActor` 后它们不再被迫 hop 到主线程。
+public protocol NetworkProviding: AnyObject, Sendable {
     /// 发起同步请求并返回响应
     ///
     /// - Parameter request: HTTP 请求配置

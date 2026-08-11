@@ -15,6 +15,7 @@ public final class EditorStickySymbolBarHeaderPlugin: LumiPlugin {
     }
     public let order = 85
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

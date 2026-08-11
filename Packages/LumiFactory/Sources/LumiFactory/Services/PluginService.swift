@@ -1,16 +1,17 @@
 import ActivityHeatmapPlugin
 import AgentRulesPlugin
 import AgentTempStoragePlugin
-import AppUpdatePlugin
 import AgentTurnNotificationPlugin
 import AgentTurnRunnerPlugin
 import AppIconDesignerPlugin
 import AppManagerPlugin
 import AppStoreConnectPlugin
+import AppStorePromoDesignerPlugin
 import AskUserPlugin
 import BookletMakerPlugin
 import BrewManagerPlugin
 import BrowserPlugin
+import ComputerUsePlugin
 import CADDesignerPlugin
 import StoryWriterPlugin
 import StateMonitorPlugin
@@ -18,7 +19,7 @@ import CaffeinatePlugin
 import ConversationAttachmentPlugin
 import ConversationPendingMessagePlugin
 import ChatFileAttachmentPlugin
-import ChatModePlugin
+import ConversationModePlugin
 import ChatPanelPlugin
 import ChatScreenshotPlugin
 import ClipboardManagerPlugin
@@ -107,10 +108,10 @@ import OpenInXcodePlugin
 import OpenRemotePlugin
 import PluginManagerPlugin
 import PortManagerPlugin
+import ProjectFileBreadcrumbPlugin
 import ProjectFilesPlugin
 import ProjectFileTreePlugin
 import ProjectOverviewPlugin
-import ProjectRAGPlugin
 import ProjectsPlugin
 import QuickFileSearchPlugin
 import QuickLauncherPlugin
@@ -122,6 +123,7 @@ import ShowImagePlugin
 import SkillPlugin
 import StoragePlugin
 import TerminalPlugin
+import TextActionsPlugin
 import ThemeAuroraPlugin
 import ThemeAutumnPlugin
 import ThemeDraculaPlugin
@@ -201,7 +203,6 @@ public enum PluginService {
             StateMonitorPlugin(),
             ConversationListPlugin(),
             ConversationNewPlugin(),
-            ProjectRAGPlugin(),
             GitPlugin(),
             AgentRulesPlugin(),
             CommandPlugin(),
@@ -232,9 +233,12 @@ public enum PluginService {
             EditorSwiftPlugin(),
             // Project files panel — 在 PanelHeader 显示项目已打开的文件。
             ProjectFilesPlugin(),
+            // Panel Header 面包屑导航 — 显示当前文件路径，点击跳转。仅依赖 LumiKernel。
+            ProjectFileBreadcrumbPlugin(),
             // Editor 预览面板 — 在 PanelBottom 显示文件预览。
             EditorPreviewBottomPanelPlugin(),
             TerminalPlugin(),
+            TextActionsPlugin(),
             DeviceInfoPlugin(),
             ProjectFileTreePlugin(),
             ClipboardManagerPlugin(),
@@ -244,7 +248,7 @@ public enum PluginService {
             ConversationReasoningPlugin(),
             ConversationVerbosityPlugin(),
             ConversationSpeedPlugin(),
-            ChatModePlugin(),
+            ConversationModePlugin(),
             ConversationLanguagePlugin(),
             VideoConverterPlugin(),
             NettoPlugin(),
@@ -264,11 +268,13 @@ public enum PluginService {
             CaffeinatePlugin(),
             AgentTempStoragePlugin(),
             AppIconDesignerPlugin(),
+            PromoDesignerPlugin(),
             WebFetchPlugin(),
             WebSearchPlugin(),
             MemoryPlugin(),
             DownloadPlugin(),
             BrowserPlugin(),
+            ComputerUsePlugin(),
             ShowImagePlugin(),
             GitHubPlugin(),
             GoalTaskPlugin(),
@@ -286,7 +292,6 @@ public enum PluginService {
             DatabaseManagerPlugin(),
             ConversationForkPlugin(),
             AgentTurnNotificationPlugin(),
-            AppUpdatePlugin(),
             // User interaction
             AskUserPlugin(),
             // Themes

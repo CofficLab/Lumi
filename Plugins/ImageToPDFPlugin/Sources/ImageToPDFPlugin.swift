@@ -34,6 +34,7 @@ public final class ImageToPDFPlugin: LumiPlugin, SuperLog {
     }
     public let order = 875
     public let policy: LumiPluginPolicy = .optIn
+    public let stage: LumiPluginStage = .beta
 
     public var pluginDescription: String {
         ImageToPDFLocalization.string(

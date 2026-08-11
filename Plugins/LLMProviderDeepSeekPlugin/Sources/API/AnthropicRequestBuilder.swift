@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 import LumiKernel
 
 /// 把 `LumiLLMRequest` 编码为 Anthropic Messages API 请求体。
@@ -13,13 +14,13 @@ import LumiKernel
 ///   与同一消息的文本 content 共存
 /// - `tools[]` 是 `{name, description, input_schema}`，没有 OpenAI 的 `type:function` 包装
 /// - `max_tokens` 为 Anthropic 必填项；未指定时取保守默认值
-/// - `thinking` 在 `reasoningEffort != nil && != .automatic` 时启用
+/// - `thinking` 始终启用，`budget_tokens` 由 `reasoningEffort` 控制
 enum AnthropicRequestBuilder {
     /// Anthropic Messages API 必填 `max_tokens` 的默认预算。
     /// 用户未在请求中提供时使用；过大不必要，过小会被服务端拒绝。
     static let defaultMaxTokens = 4096
 
-    /// `reasoningEffort` 为 nil 或 `.automatic` 时使用的思考预算。
+    /// `reasoningEffort` 为 nil 时使用的思考预算。
     ///
     /// 实测(2026-08-06)：DeepSeek V4 服务端**默认开启 thinking 且无预算上限**；
     /// 若请求不显式传 `thinking` 参数，4096 token 输出预算会被思考全部消耗，
@@ -50,10 +51,10 @@ enum AnthropicRequestBuilder {
             body["tools"] = request.tools.map(tool)
         }
 
-        // 始终显式给出 thinking 预算(含 nil / .automatic),防止服务端默认
+        // 始终显式给出 thinking 预算(含 nil),防止服务端默认
         // thinking 无上限吃掉全部输出预算。clamp 到 maxThinkingBudget,
-        // 避免 high(8192) 或 medium(4096) 超过 max_tokens(4096)。
-        let requested = thinkingBudget(for: request.generationOptions.reasoningEffort)
+        // 避免 xhigh/max 超过 max_tokens(4096)。
+        let requested = thinkingBudget(for: request.reasoningEffort)
             ?? defaultThinkingBudget
         body["thinking"] = [
             "type": "enabled",
@@ -103,7 +104,7 @@ enum AnthropicRequestBuilder {
                     pendingToolResults.append([
                         "type": "tool_result",
                         "tool_use_id": toolCallID,
-                        "content": message.content,
+                        "content": toolResultContent(for: message),
                     ])
                 }
                 continue
@@ -136,7 +137,7 @@ enum AnthropicRequestBuilder {
         case .user:
             return [
                 "role": "user",
-                "content": textContentBlocks(for: message.content),
+                "content": anthropicContentBlocks(for: message),
             ]
         case .assistant:
             var blocks: [[String: Any]] = []
@@ -183,6 +184,19 @@ enum AnthropicRequestBuilder {
     private static func textContentBlocks(for text: String) -> [[String: Any]] {
         guard !text.isEmpty else { return [] }
         return [["type": "text", "text": text]]
+    }
+
+    private static func anthropicContentBlocks(for message: LumiChatMessage) -> [[String: Any]] {
+        VisionMessageContentBuilder.anthropicBlocks(
+            text: message.content,
+            images: LumiVisionMessageSupport.messageImages(from: message.metadata)
+        )
+    }
+
+    private static func toolResultContent(for message: LumiChatMessage) -> Any {
+        let images = LumiVisionMessageSupport.messageImages(from: message.metadata)
+        guard !images.isEmpty else { return message.content }
+        return VisionMessageContentBuilder.anthropicBlocks(text: message.content, images: images)
     }
 
     /// 把 `LumiAgentTool` 映射为 Anthropic `tools[]` 元素。
@@ -238,17 +252,18 @@ enum AnthropicRequestBuilder {
 
     /// 把 `LumiReasoningEffort` 翻译为 Anthropic `thinking.budget_tokens`。
     ///
-    /// Anthropic 的 `thinking` 是显式 budget 控制；`nil` / `.automatic` 返回 `nil`，
+    /// Anthropic 的 `thinking` 是显式 budget 控制；`nil` 返回 `nil`，
     /// 由调用方回退到 `defaultThinkingBudget`（绝不能"不传 thinking"，否则 DeepSeek
     /// V4 服务端默认 thinking 无上限，会吃掉全部输出预算——实测 2026-08-06）。
     /// 其余档位按经验映射到 token 预算。
     private static func thinkingBudget(for effort: LumiReasoningEffort?) -> Int? {
         switch effort {
-        case nil, .automatic: nil
-        case .minimal: 1024
+        case nil: nil
         case .low: 2048
-        case .medium: 4096
-        case .high: 8192
+        case .medium: 3072
+        case .high: 4096
+        case .xhigh: 8192
+        case .max: 16384
         }
     }
 

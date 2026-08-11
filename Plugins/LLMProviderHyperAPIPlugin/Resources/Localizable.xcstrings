@@ -13,25 +13,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contributes HyperAPI models to Lumi Chat."
+            "value": "为 Lumi Chat 提供 HyperAPI 模型。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contributes HyperAPI models to Lumi Chat."
+            "value": "为 Lumi Chat 提供 HyperAPI 模型。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contributes HyperAPI models to Lumi Chat."
+            "value": "为 Lumi Chat 提供 HyperAPI 模型。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contributes HyperAPI models to Lumi Chat."
+            "value": "为 Lumi Chat 提供 HyperAPI 模型。"
           }
         }
       }

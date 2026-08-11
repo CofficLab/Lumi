@@ -21,7 +21,7 @@ final class AppKitAskUserRenderer: AppKitMessageRenderer {
     private let controlsStack = NSStackView()
     private let statusLabel = NSTextField(labelWithString: "")
     private let freeTextField = NSTextField()
-    private let submitButton = NSButton(title: "Submit", target: nil, action: nil)
+    private let submitButton = NSButton(title: LumiPluginLocalization.string("Submit", bundle: .module), target: nil, action: nil)
 
     init(environment: AppKitMessageRendererRegistry.Environment) {
         self.environment = environment
@@ -86,9 +86,7 @@ final class AppKitAskUserRenderer: AppKitMessageRenderer {
     }
 
     func configure(view: NSView, row: AppKitMessageRow) {
-        guard let payload = AppKitAskUserPayload.parse(
-            from: row.message.toolCalls?.first?.result?.content
-        ) else {
+        guard let payload = Self.pendingPayload(in: row.message) else {
             questionLabel.stringValue = LumiPluginLocalization.string("Cannot parse question", bundle: .module)
             statusLabel.stringValue = ""
             controlsStack.arrangedSubviews.forEach { controlsStack.removeArrangedSubview($0) }
@@ -136,7 +134,7 @@ final class AppKitAskUserRenderer: AppKitMessageRenderer {
     }
 
     func measure(row: AppKitMessageRow, width: CGFloat) -> CGFloat {
-        guard let payload = AppKitAskUserPayload.parse(from: row.message.toolCalls?.first?.result?.content) else {
+        guard let payload = Self.pendingPayload(in: row.message) else {
             return 44
         }
         switch payload.effectiveMode {
@@ -177,6 +175,13 @@ final class AppKitAskUserRenderer: AppKitMessageRenderer {
                 )
             )
         }
+    }
+
+    private static func pendingPayload(in message: LumiChatMessage) -> AppKitAskUserPayload? {
+        message.toolCalls?.lazy.compactMap { call in
+            guard call.result?.turnControl.isSuspended == true else { return nil }
+            return AppKitAskUserPayload.parse(from: call.result?.content)
+        }.first
     }
 
     private func setControlsEnabled(_ enabled: Bool) {

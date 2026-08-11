@@ -12,7 +12,6 @@ xcuserdata/
 *.o
 *.a
 *.dylib
-!Plugins/ProjectRAGPlugin/Resources/vec0.dylib
 *.so
 *.exe
 
@@ -43,9 +42,6 @@ Packages/*/Package.resolved
 !Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 .build/
-
-# Local `swift build` output inside package directories
-Packages/SuperLogKit/build/
 
 # CocoaPods
 #
@@ -81,7 +77,6 @@ fastlane/test_output
 /DerivedData
 /buildServer.json
 .compile_file
-scripts/test-version-bump.sh
 
 # Workbuddy
 .workbuddy/

@@ -12,25 +12,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ has %2$lld lines."
+            "value": "%@ 有 %lld 行。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ has %2$lld lines."
+            "value": "%@ 有 %lld 行。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ has %2$lld lines."
+            "value": "%@ 有 %lld 行。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ has %2$lld lines."
+            "value": "%@ 有 %lld 行。"
           }
         }
       }
@@ -1006,25 +1006,25 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Showing top %1$lld of %2$lld issues, sorted by severity."
+            "value": "显示按严重程度排序的前 %lld / %lld 个问题。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Showing top %1$lld of %2$lld issues, sorted by severity."
+            "value": "显示按严重程度排序的前 %lld / %lld 个问题。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "Showing top %1$lld of %2$lld issues, sorted by severity."
+            "value": "显示按严重程度排序的前 %lld / %lld 个问题。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "Showing top %1$lld of %2$lld issues, sorted by severity."
+            "value": "显示按严重程度排序的前 %lld / %lld 个问题。"
           }
         }
       }

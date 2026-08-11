@@ -1,0 +1,441 @@
+import Cocoa
+import FinderSync
+import os
+import SuperLogKit
+
+class FinderSync: FIFinderSync, SuperLog {
+    static let emoji = "🧩"
+    static let verbose: Bool = true
+
+    static let logger = Logger(subsystem: "com.coffic.lumi", category: "finder")
+
+    let myFolderURL = URL(fileURLWithPath: "/Users")
+    let appGroupId = FinderRuntimeEnvironment.appGroupIdentifier
+    let configFilename = "RClickConfig.json"
+
+    /// 缓存模板列表，用于通过 tag 索引（representedObject 在 Extension 中不可靠）
+    var cachedTemplates: [NewFileTemplate] = []
+
+    /// Finder 菜单 action 回调时当前目录可能已经无法再次从控制器取得，提前缓存菜单对应目录。
+    var cachedNewFileTargetURL: URL?
+    var cachedSelectedURLs: [URL] = []
+
+    private enum ConfigLoadReason: String {
+        case configNotFound = "config_not_found"
+        case decodeFailed = "decode_failed"
+        case invalidConfig = "invalid_config"
+        case loaded = "loaded"
+    }
+
+    override init() {
+        super.init()
+
+        if Self.verbose {
+            if FinderSync.verbose {
+                            FinderSync.logger.info("\(self.t)从路径启动: \(Bundle.main.bundlePath)")
+            }
+        }
+
+        // Set up the directory we are syncing.
+        FIFinderSyncController.default().directoryURLs = [self.myFolderURL]
+
+        // Set up images for our badge identifiers. For demonstration purposes, this is just one image.
+        /*
+         if let ep = Bundle(for: type(of: self)).path(forResource: "badge", ofType: "png") {
+             let image = NSImage(contentsOfFile: ep)
+             FIFinderSyncController.default().setBadgeImage(image!, label: "Status One", forBadgeIdentifier: "One")
+         }
+         */
+    }
+
+    // MARK: - Menu and Toolbar Item Support
+
+    override var toolbarItemName: String {
+        return "LumiFinder"
+    }
+
+    override var toolbarItemToolTip: String {
+        return "Lumi Finder Extension: Click the toolbar item for a menu."
+    }
+
+    override var toolbarItemImage: NSImage {
+        return NSImage(systemSymbolName: "cursorarrow.click.2", accessibilityDescription: nil)!
+    }
+
+    override func menu(for menuKind: FIMenuKind) -> NSMenu {
+        cachedNewFileTargetURL = getCurrentDirectoryURL()
+        cachedSelectedURLs = getSelectedURLs() ?? []
+        if Self.verbose {
+            if FinderSync.verbose {
+                            FinderSync.logger.info("\(self.t)菜单调用，类型: \(menuKind.rawValue)")
+            }
+        }
+
+        // Produce a menu for the extension.
+        let menu = NSMenu(title: "Lumi")
+        let loadResult = loadConfig()
+        let config = loadResult.config
+
+        if Self.verbose {
+            if FinderSync.verbose {
+                            FinderSync.logger.info("\(self.t)配置加载结果: \(loadResult.reason.rawValue)，菜单项: \(config.items.count)")
+            }
+        }
+
+        let items = config.items.filter { $0.isEnabled }
+
+        if Self.verbose {
+            if FinderSync.verbose {
+                            FinderSync.logger.info("\(self.t)生成菜单，共 \(items.count) 个启用的菜单项")
+            }
+        }
+
+        // Only show separator if we have items
+        if !items.isEmpty {
+            // menu.addItem(NSMenuItem.separator()) // Finder usually adds separator for us
+        }
+
+        // Check macOS version for icon support
+        let showIcons = SystemUtil.isMacOSVersion(atLeast: 11)
+
+        if Self.verbose {
+            if FinderSync.verbose {
+                            FinderSync.logger.info("\(self.t)图标显示: \(showIcons) (要求 macOS 11.0+，当前: \(SystemUtil.macOSVersionString()))")
+            }
+        }
+
+        func menuIcon(_ name: String) -> NSImage? {
+            let isDark = NSAppearance.current.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                || (UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?["AppleInterfaceStyle"] as? String == "Dark")
+            let color = isDark ? NSColor.white : NSColor.black
+            guard let symbolImage = NSImage(systemSymbolName: name, accessibilityDescription: nil) else {
+                return nil
+            }
+            let config = NSImage.SymbolConfiguration(paletteColors: [color])
+            let colored = symbolImage.withSymbolConfiguration(config) ?? symbolImage
+            colored.isTemplate = false
+            return colored
+        }
+
+        for item in items {
+            switch item.type {
+            case .openInVSCode:
+                let vscodeItem = menu.addItem(withTitle: item.customTitle ?? "在 VS Code 中打开", action: #selector(openInVSCode(_:)), keyEquivalent: "")
+                if showIcons {
+                    vscodeItem.image = menuIcon("chevron.left.forwardslash.chevron.right")
+                }
+
+            case .openInTerminal:
+                let termItem = menu.addItem(withTitle: item.customTitle ?? "在终端中打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
+                if showIcons {
+                    termItem.image = menuIcon("apple.terminal")
+                }
+
+            case .copyPath:
+                let copyPathItem = menu.addItem(withTitle: item.customTitle ?? "复制路径", action: #selector(copyPath(_:)), keyEquivalent: "")
+                if showIcons {
+                    copyPathItem.image = menuIcon("doc.on.doc")
+                }
+
+            case .newFile:
+                let newFileItem = menu.addItem(withTitle: item.customTitle ?? "新建文件", action: nil, keyEquivalent: "")
+                if showIcons {
+                    newFileItem.image = menuIcon("doc.badge.plus")
+                }
+
+                let newFileMenu = NSMenu(title: "New File")
+                newFileItem.submenu = newFileMenu
+
+                let templates = (config.fileTemplates ?? defaultTemplates()).filter { $0.isEnabled }
+
+                // 缓存模板，通过 tag 索引
+                self.cachedTemplates = templates
+
+                for (index, template) in templates.enumerated() {
+                    let tItem = newFileMenu.addItem(withTitle: "\(template.name) (.\(template.extensionName))", action: #selector(createNewFileFromTemplate(_:)), keyEquivalent: "")
+                    tItem.tag = index
+                    if showIcons {
+                        tItem.image = menuIcon("doc.text")
+                    }
+                }
+
+            case .deleteFile:
+                let deleteItem = menu.addItem(withTitle: item.customTitle ?? "删除文件", action: #selector(deleteFile(_:)), keyEquivalent: "")
+                if showIcons {
+                    deleteItem.image = menuIcon("trash")
+                }
+
+            case .hideFile:
+                let hideItem = menu.addItem(withTitle: item.customTitle ?? "隐藏文件", action: #selector(hideFile(_:)), keyEquivalent: "")
+                if showIcons {
+                    hideItem.image = menuIcon("eye.slash")
+                }
+
+            case .unhideFile:
+                let unhideItem = menu.addItem(withTitle: item.customTitle ?? "取消隐藏文件", action: #selector(unhideFile(_:)), keyEquivalent: "")
+                if showIcons {
+                    unhideItem.image = menuIcon("eye")
+                }
+
+            case .showHiddenFiles:
+                let showHiddenFilesItem = menu.addItem(withTitle: item.customTitle ?? "显示隐藏文件", action: #selector(showHiddenFiles(_:)), keyEquivalent: "")
+                if showIcons {
+                    showHiddenFilesItem.image = menuIcon("eye")
+                }
+
+            case .hideHiddenFiles:
+                let hideHiddenFilesItem = menu.addItem(withTitle: item.customTitle ?? "不显示隐藏文件", action: #selector(hideHiddenFiles(_:)), keyEquivalent: "")
+                if showIcons {
+                    hideHiddenFilesItem.image = menuIcon("eye.slash")
+                }
+            }
+        }
+
+        return menu
+    }
+
+    // MARK: - Helpers
+
+    private func loadConfig() -> (config: RClickConfig, reason: ConfigLoadReason) {
+        guard let data = loadConfigData() else {
+            if Self.verbose {
+                if FinderSync.verbose {
+                                    FinderSync.logger.warning("\(self.t)未找到 App Group 配置文件: \(self.configFilename)")
+                }
+            }
+            return (defaultConfig(), .configNotFound)
+        }
+
+        do {
+            let decoded = try JSONDecoder().decode(RClickConfig.self, from: data)
+            let sanitized = sanitize(config: decoded)
+            let reason: ConfigLoadReason = sanitized.items.isEmpty ? .invalidConfig : .loaded
+            return (sanitized.items.isEmpty ? defaultConfig() : sanitized, reason)
+        } catch {
+            if Self.verbose {
+                if FinderSync.verbose {
+                                    FinderSync.logger.error("\(self.t)配置解析失败: \(error.localizedDescription)")
+                }
+            }
+            return (defaultConfig(), .decodeFailed)
+        }
+    }
+
+    private func loadConfigData() -> Data? {
+        guard let fileURL = appGroupConfigFileURL() else { return nil }
+        return try? Data(contentsOf: fileURL)
+    }
+
+    private func appGroupConfigFileURL() -> URL? {
+        FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupId)?
+            .appendingPathComponent(configFilename, isDirectory: false)
+    }
+
+    func getSelectedURLs() -> [URL]? {
+        let items = FIFinderSyncController.default().selectedItemURLs()
+        if Self.verbose {
+            if FinderSync.verbose {
+                            FinderSync.logger.info("\(self.t)获取选中 URL: 找到 \(items?.count ?? 0) 项")
+            }
+        }
+        return items
+    }
+
+    func getCurrentDirectoryURL() -> URL? {
+        let url = FIFinderSyncController.default().targetedURL()
+        if Self.verbose {
+            if FinderSync.verbose {
+                            FinderSync.logger.info("\(self.t)获取当前目录 URL: \(url?.path ?? "nil")")
+            }
+        }
+        return url
+    }
+
+    func isDirectory(_ url: URL) -> Bool {
+        return (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+    }
+
+    func openURLs(_ urls: [URL], withAppBundleIdentifier bundleId: String) {
+        if Self.verbose {
+            if FinderSync.verbose {
+                            FinderSync.logger.info("\(self.t)打开 URL，数量: \(urls.count)，bundle: \(bundleId)")
+            }
+        }
+
+        guard !urls.isEmpty else {
+            if Self.verbose {
+                if FinderSync.verbose {
+                                    FinderSync.logger.warning("\(self.t)openURLs 收到空 URL 列表，已跳过")
+                }
+            }
+            return
+        }
+
+        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) else {
+            if Self.verbose {
+                if FinderSync.verbose {
+                                    FinderSync.logger.warning("\(self.t)未找到 bundle ID 对应的应用: \(bundleId)")
+                }
+            }
+            return
+        }
+
+        if Self.verbose {
+            if FinderSync.verbose {
+                            FinderSync.logger.info("\(self.t)找到应用 URL: \(appURL.path)")
+            }
+        }
+
+        NSWorkspace.shared.open(urls, withApplicationAt: appURL, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+            if let error = error {
+                if Self.verbose {
+                    if FinderSync.verbose {
+                                            FinderSync.logger.error("\(self.t)打开 URL 失败: \(error.localizedDescription)")
+                    }
+                }
+            } else {
+                if Self.verbose {
+                    if FinderSync.verbose {
+                                            FinderSync.logger.info("\(self.t)成功请求打开")
+                    }
+                }
+            }
+        }
+    }
+
+    func createNewFile(extension ext: String, content: String, namePrefix: String, targetURL: URL? = nil) {
+        guard let target = targetURL ?? cachedNewFileTargetURL ?? getCurrentDirectoryURL() else {
+            if Self.verbose {
+                if FinderSync.verbose {
+                                    FinderSync.logger.warning("\(self.t)创建文件失败 - 没有目标目录")
+                }
+            }
+            return
+        }
+
+        let safePrefix = sanitizeFileName(namePrefix)
+        let safeExt = sanitizeExtension(ext)
+        var filename = "\(safePrefix).\(safeExt)"
+        var fileURL = target.appendingPathComponent(filename)
+        var counter = 1
+
+        while FileManager.default.fileExists(atPath: fileURL.path) {
+            filename = "\(safePrefix) \(counter).\(safeExt)"
+            fileURL = target.appendingPathComponent(filename)
+            counter += 1
+        }
+
+        if Self.verbose {
+            if FinderSync.verbose {
+                            FinderSync.logger.info("\(self.t)尝试写入文件: \(fileURL.path)")
+            }
+        }
+
+        do {
+            try content.write(to: fileURL, atomically: true, encoding: .utf8)
+            if Self.verbose {
+                if FinderSync.verbose {
+                                    FinderSync.logger.info("\(self.t)文件创建成功")
+                }
+            }
+        } catch {
+            if Self.verbose {
+                if FinderSync.verbose {
+                                    FinderSync.logger.error("\(self.t)文件创建失败: \(error.localizedDescription)")
+                }
+            }
+            showCreateFileError(fileURL: fileURL, error: error)
+        }
+    }
+
+    /// 新建文件失败时提示用户，避免静默失败
+    private func showCreateFileError(fileURL: URL, error: Error) {
+        let alert = NSAlert()
+        alert.messageText = "无法新建文件"
+        alert.informativeText = "无法在「\(fileURL.deletingLastPathComponent().path)」中创建「\(fileURL.lastPathComponent)」。\n\n原因：\(error.localizedDescription)\n\n请检查 Lumi 是否已被授予该文件夹的访问权限（系统设置 → 隐私与安全性 → 文件与文件夹）。"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "好")
+        alert.runModal()
+    }
+
+    private func sanitize(config: RClickConfig) -> RClickConfig {
+        let items = config.items.enumerated().map { index, item in
+            var normalized = item
+            if normalized.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                normalized.id = "menu-\(index)"
+            }
+            return normalized
+        }
+
+        let defaultItems = [
+            RClickMenuItem(id: "default-open-vscode", type: .openInVSCode, isEnabled: true),
+            RClickMenuItem(id: "default-open-terminal", type: .openInTerminal, isEnabled: true),
+            RClickMenuItem(id: "default-copy-path", type: .copyPath, isEnabled: true),
+            RClickMenuItem(id: "default-new-file", type: .newFile, isEnabled: true),
+            RClickMenuItem(id: "default-delete", type: .deleteFile, isEnabled: false),
+            RClickMenuItem(id: "default-hide", type: .hideFile, isEnabled: false),
+            RClickMenuItem(id: "default-unhide", type: .unhideFile, isEnabled: false),
+            RClickMenuItem(id: "default-show-hidden", type: .showHiddenFiles, isEnabled: false),
+            RClickMenuItem(id: "default-hide-hidden", type: .hideHiddenFiles, isEnabled: false)
+        ]
+        let existingTypes = Set(items.map(\.type))
+        let completedItems = items + defaultItems.filter { !existingTypes.contains($0.type) }
+
+        let templates: [NewFileTemplate]? = config.fileTemplates?.compactMap { template in
+            guard template.isEnabled else { return template }
+
+            let ext = sanitizeExtension(template.extensionName)
+            let name = sanitizeFileName(template.name)
+            guard !name.isEmpty, !ext.isEmpty else { return nil }
+
+            var normalized = template
+            normalized.name = name
+            normalized.extensionName = ext
+            return normalized
+        }
+
+        return RClickConfig(items: completedItems, fileTemplates: templates)
+    }
+
+    private func defaultTemplates() -> [NewFileTemplate] {
+        [
+            NewFileTemplate(id: "t1", name: "文本文档", extensionName: "txt", content: "", isEnabled: true),
+            NewFileTemplate(id: "t2", name: "Markdown", extensionName: "md", content: "", isEnabled: true)
+        ]
+    }
+
+    private func defaultConfig() -> RClickConfig {
+        RClickConfig(
+            items: [
+                RClickMenuItem(id: "1", type: .openInVSCode, isEnabled: true),
+                RClickMenuItem(id: "2", type: .openInTerminal, isEnabled: true),
+                RClickMenuItem(id: "3", type: .copyPath, isEnabled: true),
+                RClickMenuItem(id: "4", type: .newFile, isEnabled: true),
+                RClickMenuItem(id: "5", type: .deleteFile, isEnabled: false),
+                RClickMenuItem(id: "6", type: .hideFile, isEnabled: false),
+                RClickMenuItem(id: "7", type: .unhideFile, isEnabled: false),
+                RClickMenuItem(id: "8", type: .showHiddenFiles, isEnabled: false),
+                RClickMenuItem(id: "9", type: .hideHiddenFiles, isEnabled: false)
+            ],
+            fileTemplates: defaultTemplates()
+        )
+    }
+
+    private func sanitizeExtension(_ ext: String) -> String {
+        let stripped = ext
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ".", with: "")
+        let allowed = stripped.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) || $0 == "-" || $0 == "_" }
+        let value = String(String.UnicodeScalarView(allowed))
+        return value.isEmpty ? "txt" : value
+    }
+
+    private func sanitizeFileName(_ name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleaned = trimmed
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: ":", with: "_")
+        return cleaned.isEmpty ? "新建文件" : cleaned
+    }
+}

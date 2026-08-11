@@ -24,7 +24,7 @@ import SuperLogKit
 public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-turn-runner")
     public nonisolated static let emoji = "🤖"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     // MARK: - Properties
 
@@ -214,10 +214,28 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             throw AgentTurnManagingError.invalidResumeRequest
         }
 
-        let result = LumiToolResult(
-            content: suspension.payload,
-            turnControl: .resumed(suspension, answer: request.answer)
-        )
+        let suspendedToolCall = assistantMessage.toolCalls?.first(where: { $0.id == toolCallID })
+        let result: LumiToolResult
+        if suspension.kind == Self.toolApprovalSuspensionKind,
+           let suspendedToolCall {
+            if isToolApprovalGranted(request.answer) {
+                result = await executeApprovedToolCall(
+                    suspendedToolCall,
+                    conversationID: conversationID
+                )
+            } else {
+                result = LumiToolResult(
+                    content: "User rejected the tool execution request.",
+                    isError: true,
+                    turnControl: .resumed(suspension, answer: request.answer)
+                )
+            }
+        } else {
+            result = LumiToolResult(
+                content: suspension.payload,
+                turnControl: .resumed(suspension, answer: request.answer)
+            )
+        }
         kernel?.messageManager?.updateToolCallResult(
             result,
             toolCallID: toolCallID,
@@ -231,7 +249,9 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             kernel?.messageManager?.updateMessage(
                 id: pendingToolMessage.id,
                 in: conversationID,
-                content: request.answer
+                content: suspension.kind == Self.toolApprovalSuspensionKind
+                    ? result.content
+                    : request.answer
             )
         }
 
@@ -244,6 +264,20 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
         }
         if pendingSuspensions[conversationID]?.isEmpty == true {
             pendingSuspensions.removeValue(forKey: conversationID)
+        }
+
+        // Approval can occur before later calls in the same assistant batch
+        // have run. Continue that batch now; a later risky/interactive call
+        // may suspend independently.
+        if let incompleteMessage = incompleteToolCallMessage(in: conversationID) {
+            let suspendedAgain = await executePendingToolCalls(
+                in: incompleteMessage,
+                conversationID: conversationID
+            )
+            if suspendedAgain {
+                turnStates[conversationID] = suspensions[conversationID].map(AgentTurnState.suspended) ?? .running
+                return .awaitingUserResponse
+            }
         }
 
         let latestToolCalls = latestAssistantToolCalls(in: conversationID)
@@ -467,13 +501,20 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 return
             }
 
+            // 每轮迭代取一次消息快照,供后续所有只读辅助方法复用,避免它们各自重新
+            // fetch + 合并 pending + 全量排序(messages(for:) 在工具回合内会被反复调用,
+            // 长对话放大明显)。下方的 status / assistant / tool 落库发生在本快照使用
+            // 完毕之后或下一轮迭代(届时重新取),语义安全。
+            let messages = kernel.messageManager?.messages(for: conversationID) ?? []
+
             // Resume any incomplete tool-call batch before asking the LLM for a
             // new response. A single assistant message may contain multiple
             // calls, and a suspended call leaves later calls without results.
-            if let pendingAssistantMessage = incompleteToolCallMessage(in: conversationID) {
+            if let pendingAssistantMessage = incompleteToolCallMessage(messages: messages) {
                 let suspended = await executePendingToolCalls(
                     in: pendingAssistantMessage,
-                    conversationID: conversationID
+                    conversationID: conversationID,
+                    messages: messages
                 )
                 if suspended {
                     return
@@ -486,8 +527,9 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             }
 
             // Build request with current message history
-            let history = kernel.messageManager?.messages(for: conversationID) ?? []
-            let tools = (kernel.toolManager?.allAgentTools() ?? []).filter {
+            let history = messages
+            let automationLevel = kernel.conversations?.automationLevel(for: conversationID) ?? .build
+            let tools = (automationLevel.allowsTools ? kernel.toolManager?.allAgentTools() ?? [] : []).filter {
                 !turnCreationExcludedToolNames[conversationID, default: []].contains($0.name)
             }
 
@@ -503,18 +545,20 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             }
 
             let targetProvider: any LumiLLMProvider
-            if let conversationProviderID = kernel.conversations?.providerID(for: conversationID),
-               let conversationProvider = kernel.llmProvider?.llmProvider(id: conversationProviderID) {
-                targetProvider = conversationProvider
-            } else if let selectedProviderID = kernel.llmProvider?.selectedProviderID,
-                      let selectedProvider = kernel.llmProvider?.llmProvider(id: selectedProviderID) {
+            // 优先使用全局选择的 provider（与 ModelSelectorPlugin 一致）
+            if let selectedProviderID = kernel.llmProvider?.selectedProviderID,
+               let selectedProvider = kernel.llmProvider?.llmProvider(id: selectedProviderID) {
                 targetProvider = selectedProvider
+            } else if let conversationProviderID = kernel.conversations?.providerID(for: conversationID),
+                      let conversationProvider = kernel.llmProvider?.llmProvider(id: conversationProviderID) {
+                targetProvider = conversationProvider
             } else {
                 targetProvider = provider
             }
 
-            let model = kernel.conversations?.modelName(for: conversationID)
-                ?? kernel.llmProvider?.selectedModel
+            // 优先使用全局选择的 model（与 ModelSelectorPlugin 一致）
+            let model = kernel.llmProvider?.selectedModel
+                ?? kernel.conversations?.modelName(for: conversationID)
                 ?? type(of: targetProvider).info.defaultModel
 
             // 抽取最近一条 user message 的图片附件(由 MessageSender 写入 metadata["imageAttachments"])。
@@ -547,27 +591,31 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 preparedMessages = [systemMessage] + nonSystem
             }
 
+            let reasoningSupport = type(of: targetProvider).info
+                .modelInfo(for: model)?.capabilities?.thinkingAndReasoning ?? .unsupported
+            let reasoningEffort: LumiReasoningEffort?
+            switch reasoningSupport {
+            case .unsupported:
+                reasoningEffort = nil
+            case .toggle:
+                reasoningEffort = kernel.conversations?.reasoningEffortOptional(for: conversationID)
+            case .threeLevel, .fourLevel:
+                reasoningEffort = kernel.conversations?.reasoningEffort(for: conversationID)
+            }
+
             let request = LumiLLMRequest(
                 messages: preparedMessages,
                 model: model,
                 tools: tools,
                 imageAttachments: pendingImages,
                 fileAttachments: pendingFiles,
-                generationOptions: LumiLLMGenerationOptions(
-                    reasoningEffort: type(of: targetProvider).info.modelCapabilities[model]?.supportsReasoningEffort == true
-                        ? kernel.conversations?.reasoningEffort(for: conversationID)
-                        : nil
-                )
+                reasoningEffort: reasoningEffort
             )
 
             // 记录本次发出的请求到磁盘(SwiftData),用于设置界面回看。
-            let providerID = type(of: targetProvider).info.id
-            await AgentTurnRunnerRecordStoreBridge.shared.store?.record(
-                request: request,
-                conversationID: conversationID,
-                turnID: turnID,
-                providerID: providerID
-            )
+            // 注意:此前此处在 sendStreaming 之前同步 await save,磁盘 I/O 直接拉长 TTFT。
+            // 该记录仅为设置页回看,丢失不影响对话正确性;改为请求发出后 fire-and-forget,
+            // 让磁盘写不阻塞 LLM 调用。下面在 sendStreaming 之后用后台 Task 补记。
 
             // Call LLM
             // 流式输出:runner 调 kernel.messageStreaming (store) 写临时行,UI 读 store 渲染。
@@ -615,6 +663,19 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 errorMessage.turnID = turnID
                 kernel.messageManager?.insertMessage(errorMessage, to: conversationID)
                 postMessageSavedNotification(message: errorMessage, conversationID: conversationID)
+
+                // 失败路径同样补记本次请求(fire-and-forget,见上方成功路径说明)。
+                let providerID = type(of: targetProvider).info.id
+                let recordStore = AgentTurnRunnerRecordStoreBridge.shared.store
+                Task.detached(priority: .utility) {
+                    await recordStore?.record(
+                        request: request,
+                        conversationID: conversationID,
+                        turnID: turnID,
+                        providerID: providerID
+                    )
+                }
+
                 failedConversations.insert(conversationID)
                 return
             }
@@ -641,6 +702,22 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             kernel.messageManager?.insertMessage(assistantMessage, to: conversationID)
             postMessageSavedNotification(message: assistantMessage, conversationID: conversationID)
             await streamingStore?.endStreaming(conversationID: conversationID)
+
+            // 请求记录补记(fire-and-forget)。此前在 sendStreaming 前同步 await save,
+            // 磁盘 I/O 阻塞了首个 token。记录仅为设置页回看,丢失不影响正确性;
+            // 现改到请求发出且 LLM 调用结束后,用后台 Task 写入,不再阻塞对话流程。
+            // 在 MainActor 上先取出 store 引用(bridge.shared 本身是 @MainActor),
+            // 再交由 detached Task 在后台 actor 上落盘,避免捕获 @MainActor 隔离的 bridge。
+            let providerID = type(of: targetProvider).info.id
+            let recordStore = AgentTurnRunnerRecordStoreBridge.shared.store
+            Task.detached(priority: .utility) {
+                await recordStore?.record(
+                    request: request,
+                    conversationID: conversationID,
+                    turnID: turnID,
+                    providerID: providerID
+                )
+            }
 
             // No tool calls → turn complete
             guard let toolCalls = assistantMessage.toolCalls, !toolCalls.isEmpty else {
@@ -678,12 +755,12 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 )
 
                 // Execute tool
-                guard let toolManager = kernel.toolManager else {
+                guard kernel.toolManager != nil else {
                     Self.logger.error("\(Self.t)ToolManager 不可用")
                     continue
                 }
 
-                var result = await toolManager.execute(
+                var result = await executeToolCall(
                     toolCall,
                     conversationID: conversationID,
                     turnID: turnID

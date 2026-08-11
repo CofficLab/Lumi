@@ -12,6 +12,7 @@ public final class ConversationPendingMessagePlugin: LumiPlugin {
     /// Bottom-fixed order: after attachment previews and immediately before input (83).
     public let order = 82
     public let policy: LumiPluginPolicy = .alwaysOn
+    public let stage: LumiPluginStage = .beta
 
     public init() {}
 

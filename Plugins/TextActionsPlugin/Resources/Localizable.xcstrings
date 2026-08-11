@@ -1,0 +1,56 @@
+{
+  "sourceLanguage" : "en",
+  "version" : "1.0",
+  "strings" : {
+    "Text Actions" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "文本操作" } }
+      }
+    },
+    "Selected Text Actions" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "选中文字后的快捷操作" } }
+      }
+    },
+    "Enable Text Actions" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启用文本操作" } }
+      }
+    },
+    "Show a floating menu after selecting text in another macOS app." : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在其他 macOS 应用中选中文字后显示浮动菜单。" } }
+      }
+    },
+    "Accessibility permission is required to read selected text from other apps." : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "读取其他应用的选中文字需要辅助功能权限。" } }
+      }
+    },
+    "Accessibility permission granted" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "辅助功能权限已授予" } }
+      }
+    },
+    "Accessibility permission not granted" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "尚未授予辅助功能权限" } }
+      }
+    },
+    "Open System Settings" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开系统设置" } }
+      }
+    },
+    "Copy" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "复制" } }
+      }
+    },
+    "Search" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "搜索" } }
+      }
+    }
+  }
+}

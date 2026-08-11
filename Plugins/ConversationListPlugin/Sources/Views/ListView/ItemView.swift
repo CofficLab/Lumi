@@ -86,9 +86,20 @@ public struct ItemView: View {
                             .foregroundColor(theme.textTertiary)
                     }
 
-                    Text(conversation.updatedAt.relativeTime)
+                    Text(conversation.lastMessageAt.relativeTime)
                         .font(.footnote)
                         .foregroundColor(theme.textTertiary)
+
+                    if let automationLevel = conversation.automationLevel {
+                        Text("·")
+                            .foregroundColor(theme.textTertiary)
+
+                        Label(automationLevel.displayName, systemImage: automationLevel.iconName)
+                            .labelStyle(.titleAndIcon)
+                            .font(.footnote)
+                            .foregroundColor(theme.textTertiary)
+                            .lineLimit(1)
+                    }
                 }
             }
 

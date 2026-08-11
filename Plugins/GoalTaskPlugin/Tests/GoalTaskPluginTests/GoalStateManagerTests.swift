@@ -204,11 +204,11 @@ struct GoalStateManagerTests {
         // 完成 Task → Goal 自动推导为 completed
         _ = try await manager.updateGoalTaskStatus(id: created.tasks[0].id, status: .completed, result: nil)
 
-        let vm = SidebarViewModel()
+        let vm = GoalVM()
         let goals = await manager.fetchGoals(conversationId: cid)
-        vm.activeGoal = goals.first.map { GoalDisplayItem(from: $0) }
         if let goal = goals.first {
-            vm.activeTasks = (await manager.fetchTasks(goalId: goal.id)).map { GoalTaskDisplayItem(from: $0) }
+            let tasks = (await manager.fetchTasks(goalId: goal.id)).map { GoalTaskDisplayItem(from: $0) }
+            vm.goals = [GoalListItem(goal: GoalDisplayItem(from: goal), tasks: tasks)]
         }
 
         // 数据仍在 DB（尚未被 hook 清理），但全部到终态 → 应隐藏
@@ -238,10 +238,14 @@ struct GoalStateManagerTests {
         // 只完成第一个 Task，第二个仍 pending
         _ = try await manager.updateGoalTaskStatus(id: created.tasks[0].id, status: .completed, result: nil)
 
-        let vm = SidebarViewModel()
-        vm.activeGoal = GoalDisplayItem(from: created.goal)
+        let vm = GoalVM()
         let tasks = await manager.fetchTasks(goalId: created.goal.id)
-        vm.activeTasks = tasks.map { GoalTaskDisplayItem(from: $0) }
+        vm.goals = [
+            GoalListItem(
+                goal: GoalDisplayItem(from: created.goal),
+                tasks: tasks.map { GoalTaskDisplayItem(from: $0) }
+            )
+        ]
 
         #expect(vm.hasActiveWork == true)
     }

@@ -41,7 +41,7 @@ struct PopoverContent: View {
                 onSelect: { _, _ in isPresented = false }
             )
         }
-        .frame(width: 600, height: 600)
+        .frame(width: 780, height: 600)
         .onAppear {
             // Use initial selection if available
             if selectedProviderID == nil {

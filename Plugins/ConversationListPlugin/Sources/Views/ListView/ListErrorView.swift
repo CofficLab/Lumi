@@ -19,7 +19,7 @@ struct ListErrorView: View {
                 .font(.appTitle)
                 .foregroundColor(theme.error.opacity(0.7))
 
-            Text("Unable to load conversations")
+            Text(LumiPluginLocalization.string("Unable to load conversations", bundle: .module))
                 .font(.appMicro)
                 .foregroundColor(theme.textTertiary)
                 .multilineTextAlignment(.center)

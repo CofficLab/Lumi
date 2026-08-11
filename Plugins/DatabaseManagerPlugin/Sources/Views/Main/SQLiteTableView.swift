@@ -53,7 +53,7 @@ struct SQLiteTableView: View {
                     .font(.appBodyEmphasized)
                     .foregroundColor(theme.textPrimary)
                 if viewModel.selectedSQLiteTable != nil {
-                    Text("First 50 rows")
+                    Text(LumiPluginLocalization.string("First 50 rows", bundle: .module))
                         .font(.appCaption)
                         .foregroundColor(theme.textSecondary)
                 }

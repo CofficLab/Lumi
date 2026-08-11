@@ -22,6 +22,7 @@ public final class QuickLauncherPlugin: LumiPlugin, SuperLog {
     }
     public let order = 8
 	public let policy: LumiPluginPolicy = .disabled
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Initialization
 

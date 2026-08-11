@@ -27,6 +27,7 @@ public final class EditorKernelPlugin: LumiPlugin, SuperLog {
     }
     public let order = 1
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
+    public let stage: LumiPluginStage = .beta
 
     // MARK: - Initialization
 
