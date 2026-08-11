@@ -52,13 +52,6 @@ struct ActivityBar: View, SuperLog {
         .frame(width: 48)
         .appSurface(style: .panel, cornerRadius: 0)
         .borderTrailing()
-        #if DEBUG
-        .overlay(
-            Rectangle()
-                .fill(theme.warning.opacity(0.20))
-                .allowsHitTesting(false)
-        )
-        #endif
         .onWorkspaceContributionsDidChange {
             containers = kernel.workspace?.allViewContainers ?? []
         }
