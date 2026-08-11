@@ -38,6 +38,27 @@ enum AliyunAnthropicRequestBuilder {
         return body
     }
 
+    /// 返回「sanitize 后名字 → 原始注册名」的映射,供流式响应解析时把模型回传的
+    /// 工具名还原为 Lumi 注册 id(工具执行按原始 id 查找)。
+    ///
+    /// 背景:Anthropic 工具名规范要求 `^[a-zA-Z0-9_-]{1,64}$`,不允许点号。而 Lumi 工具
+    /// id 普遍采用 `plugin.action` 形式(如 `app-store-connect.list-apps`),`sanitizeToolName`
+    /// 在发给模型时把点号替换成下划线。模型回传的 sanitized 名若不还原,`ToolManagerService`
+    /// 会因注册名(带点)与回传名(下划线)不一致而报 "Tool not found"。
+    ///
+    /// 多个原始名映射到同一 sanitize 名时先注册者优先,保证反查确定性
+    /// (与 DeepSeek 插件 `AnthropicRequestBuilder.toolNameMap` 的策略一致)。
+    static func toolNameMap(for request: LumiLLMRequest) -> [String: String] {
+        var map: [String: String] = [:]
+        for tool in request.tools {
+            let sanitized = sanitizeToolName(tool.name)
+            if map[sanitized] == nil {
+                map[sanitized] = tool.name
+            }
+        }
+        return map
+    }
+
     /// 把 `request.imageAttachments`（请求级附件）合并到最后一条 user 消息的 metadata，
     /// 使其与本构建器「只读消息 metadata」的图片链路（`imageContentBlocks(for:)`）兼容。
     ///

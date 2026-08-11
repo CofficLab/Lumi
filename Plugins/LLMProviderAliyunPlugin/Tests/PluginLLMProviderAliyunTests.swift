@@ -5,6 +5,35 @@ import LumiKernel
 import Testing
 @testable import LLMProviderAliyunPlugin
 
+/// 用 `LumiAgentTool` 协议构造请求体所需的最小 mock。
+///
+/// 仅实现 builder 关心的字段:`name` / `toolDescription` / `inputSchema`,
+/// 不会真正执行。用于工具名 sanitize / 还原的 round-trip 测试。
+private final class StubTool: LumiAgentTool, @unchecked Sendable {
+    let stubName: String
+    let stubDescription: String
+    let stubSchema: LumiJSONValue
+
+    init(name: String, description: String = "", schema: LumiJSONValue = .object([:])) {
+        self.stubName = name
+        self.stubDescription = description
+        self.stubSchema = schema
+    }
+
+    static var info: LumiAgentToolInfo {
+        .init(id: "stub", displayName: "stub", description: "")
+    }
+    var name: String { stubName }
+    var toolDescription: String { stubDescription }
+    var inputSchema: LumiJSONValue { stubSchema }
+    var tags: Set<LumiToolTag> { [] }
+
+    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String { "" }
+    func executeResult(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> LumiToolExecutionResult {
+        LumiToolExecutionResult(content: "")
+    }
+}
+
 @Suite(.serialized)
 @MainActor
 struct PluginLLMProviderAliyunTests {
@@ -326,5 +355,82 @@ struct PluginLLMProviderAliyunTests {
         #expect(failure.hasTransportDiagnostics)
         #expect(failure.transportDetails?.contains("invalid_parameter") == true)
         #expect(failure.httpStatusCode == 400)
+    }
+}
+
+// MARK: - 工具名 sanitize / 还原 round-trip
+
+@Suite("AliyunAnthropicRequestBuilder 工具名映射")
+struct AliyunToolNameMapTests {
+    private func makeRequest(tools: [any LumiAgentTool]) -> LumiLLMRequest {
+        LumiLLMRequest(
+            messages: [LumiChatMessage(conversationID: UUID(), role: .user, content: "hi")],
+            model: "qwen3.7-plus",
+            tools: tools,
+            imageAttachments: [],
+            fileAttachments: [],
+            reasoningEffort: nil
+        )
+    }
+
+    @Test("带点工具名被 sanitize 成下划线后,通过映射表可还原回注册名")
+    func dottedToolNameRoundTrips() throws {
+        let original = "app-store-connect.list-apps"
+        let tool = StubTool(name: original)
+        let request = makeRequest(tools: [tool])
+
+        // 正向:发给模型的工具名点号被替换成下划线;连字符本身合法,保持原样。
+        let body = AliyunAnthropicRequestBuilder.body(for: request)
+        let toolsArray = try #require(body["tools"] as? [[String: Any]])
+        let sentName = try #require(toolsArray.first?["name"] as? String)
+        #expect(sentName == "app-store-connect_list-apps")
+
+        // 反向:映射表能把 sanitized 名还原成注册名。
+        let map = AliyunAnthropicRequestBuilder.toolNameMap(for: request)
+        #expect(map[sentName] == original)
+    }
+
+    @Test("模型回传 sanitized 名时, merge 还原成注册名(端到端 round-trip)")
+    func mergeRestoresRegisteredName() throws {
+        let original = "disk-manager.scan-large-files"
+        let tool = StubTool(name: original)
+        let request = makeRequest(tools: [tool])
+        let toolNameMap = AliyunAnthropicRequestBuilder.toolNameMap(for: request)
+
+        var message = AliyunChatMessage.assembling(
+            conversationID: UUID(),
+            providerID: "aliyun",
+            modelName: "qwen3.7-plus",
+            toolNameMap: toolNameMap
+        )
+
+        // 模拟 EventParser 解析到的 content_block_start:模型回传的是 sanitized 名。
+        // 连字符合法保留,只有点号被替换,故 sanitized 为 "disk-manager_scan-large-files"。
+        let sanitized = "disk-manager_scan-large-files"
+        message.merge(AliyunAnthropicEvent(toolName: sanitized, toolID: "call_1"))
+        // tool 参数 JSON 累积
+        message.merge(AliyunAnthropicEvent(toolInputJSONDelta: "{\""))
+        message.finalize()
+
+        let lumiMessage = message.toLumiChatMessage()
+        let calls = try #require(lumiMessage.toolCalls)
+        #expect(calls.count == 1)
+        #expect(calls[0].name == original, "merge 后应还原成带点的注册名,而非 sanitized 名")
+    }
+
+    @Test("无点号的合法工具名:映射为恒等,不影响既有行为")
+    func legalToolNameIsIdentity() {
+        let tool = StubTool(name: "search")
+        let request = makeRequest(tools: [tool])
+
+        let map = AliyunAnthropicRequestBuilder.toolNameMap(for: request)
+        #expect(map["search"] == "search")
+    }
+
+    @Test("无工具时映射表为空")
+    func emptyToolsYieldEmptyMap() {
+        let request = makeRequest(tools: [])
+        let map = AliyunAnthropicRequestBuilder.toolNameMap(for: request)
+        #expect(map.isEmpty)
     }
 }
