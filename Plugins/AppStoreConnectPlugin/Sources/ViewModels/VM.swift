@@ -14,7 +14,6 @@ final class VM: ObservableObject, SuperLog {
 
     enum Page: String, CaseIterable, Identifiable {
         case account
-        case apps
         case distribution
         case xcodeCloud
 
@@ -23,7 +22,6 @@ final class VM: ObservableObject, SuperLog {
         var title: String {
             switch self {
             case .account: return AppStoreConnectLocalization.string("Account")
-            case .apps: return AppStoreConnectLocalization.string("Apps")
             case .distribution: return AppStoreConnectLocalization.string("Distribution")
             case .xcodeCloud: return AppStoreConnectLocalization.string("Xcode Cloud")
             }
@@ -32,7 +30,6 @@ final class VM: ObservableObject, SuperLog {
         var systemImage: String {
             switch self {
             case .account: return "key"
-            case .apps: return "square.grid.2x2"
             case .distribution: return "shippingbox"
             case .xcodeCloud: return "cloud"
             }
@@ -40,13 +37,13 @@ final class VM: ObservableObject, SuperLog {
 
         var showsTopBar: Bool {
             switch self {
-            case .account, .apps: return false
+            case .account: return false
             case .distribution, .xcodeCloud: return true
             }
         }
     }
 
-    static let generalPages: [Page] = [.account, .apps]
+    static let generalPages: [Page] = [.account]
 
     @Published var page: Page = .account
     @Published var credentials: AppStoreConnectCredentials

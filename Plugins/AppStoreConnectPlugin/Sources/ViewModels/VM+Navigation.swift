@@ -7,10 +7,6 @@ extension VM {
             case .account:
                 try await client.testConnection()
                 connectionStatus = AppStoreConnectLocalization.string("Connected")
-            case .apps:
-                let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-                apps = try await client.listApps(search: query.isEmpty ? nil : query)
-                connectionStatus = AppStoreConnectLocalization.string("Connected")
             case .distribution:
                 try await reloadDistributionFromNetwork()
             case .xcodeCloud:
@@ -36,8 +32,6 @@ extension VM {
     func preparePageIfNeeded(_ page: Page) async {
         guard credentials.isComplete else { return }
         switch page {
-        case .apps where apps.isEmpty:
-            await loadApps()
         case .distribution:
             if versions.isEmpty, selectedApp != nil {
                 await loadVersions()
