@@ -5,47 +5,47 @@ extension Notification.Name {
     /// 当前激活的视图容器已变更
     /// object: nil
     /// userInfo: ["containerID": String?]
-    public static let activeViewContainerIDDidChange = Notification.Name("ActiveViewContainerIDDidChange")
+    public static let activeViewContainerIDDidChange = LumiKernelEvent.activeViewContainerIDDidChange.notificationName
 
     /// 侧边栏 Rail Tab 已变更（按 ViewContainer 分别记录）
     /// object: nil
     /// userInfo: ["containerID": String, "railTabID": String]
-    public static let activeRailTabIDDidChange = Notification.Name("ActiveRailTabIDDidChange")
+    public static let activeRailTabIDDidChange = LumiKernelEvent.activeRailTabIDDidChange.notificationName
 
     /// 底部面板 Tab 已变更（按 ViewContainer 分别记录）
     /// object: nil
     /// userInfo: ["containerID": String, "bottomTabID": String]
-    public static let activeBottomTabIDDidChange = Notification.Name("ActiveBottomTabIDDidChange")
+    public static let activeBottomTabIDDidChange = LumiKernelEvent.activeBottomTabIDDidChange.notificationName
 
     /// 底部面板可见性已变更
     /// object: nil
     /// userInfo: ["visible": Bool]
-    public static let bottomPanelVisibleDidChange = Notification.Name("BottomPanelVisibleDidChange")
+    public static let bottomPanelVisibleDidChange = LumiKernelEvent.bottomPanelVisibleDidChange.notificationName
 
     /// 聊天区可见性已变更
     /// object: nil
     /// userInfo: ["visible": Bool]
-    public static let chatSectionVisibleDidChange = Notification.Name("ChatSectionVisibleDidChange")
+    public static let chatSectionVisibleDidChange = LumiKernelEvent.chatSectionVisibleDidChange.notificationName
 
     /// Rail 视图可见性已变更
     /// object: nil
     /// userInfo: ["visible": Bool]
-    public static let railVisibleDidChange = Notification.Name("RailVisibleDidChange")
+    public static let railVisibleDidChange = LumiKernelEvent.railVisibleDidChange.notificationName
 
     /// 侧边栏 Rail divider 位置已变更
     /// object: nil
     /// userInfo: ["containerID": String, "position": CGFloat]
-    public static let railDividerDidChange = Notification.Name("RailDividerDidChange")
+    public static let railDividerDidChange = LumiKernelEvent.railDividerDidChange.notificationName
 
     /// 聊天区 divider 位置已变更
     /// object: nil
     /// userInfo: ["containerID": String, "layout": String, "position": CGFloat]
-    public static let chatSectionDividerDidChange = Notification.Name("ChatSectionDividerDidChange")
+    public static let chatSectionDividerDidChange = LumiKernelEvent.chatSectionDividerDidChange.notificationName
 
     /// 底部面板 divider 位置已变更
     /// object: nil
     /// userInfo: ["containerID": String, "position": CGFloat]
-    public static let bottomPanelDividerDidChange = Notification.Name("BottomPanelDividerDidChange")
+    public static let bottomPanelDividerDidChange = LumiKernelEvent.bottomPanelDividerDidChange.notificationName
 
     /// 工作区 UI 贡献清单已变更（标题栏 / 聊天分区 / 状态栏 / 面板 / 菜单栏 /
     /// 根覆盖层 / 视图容器等任一清单注册、注销或全量重建后触发）。
@@ -56,95 +56,7 @@ extension Notification.Name {
     /// 与 `objectWillChange` 的区别：本事件是**变更完成后**的广播，消费视图
     /// （如 ChatHeaderView）可在 handler 里从 workspace 服务重新拉取自己关心的
     /// 清单快照，由事件驱动刷新。
-    public static let workspaceContributionsDidChange = Notification.Name("WorkspaceContributionsDidChange")
-}
-
-// MARK: - Layout NotificationCenter Extensions
-
-extension NotificationCenter {
-    public static func postActiveViewContainerIDDidChange(containerID: String?) {
-        NotificationCenter.default.post(
-            name: .activeViewContainerIDDidChange,
-            object: nil,
-            userInfo: ["containerID": containerID as Any]
-        )
-    }
-
-    public static func postActiveRailTabIDDidChange(containerID: String, railTabID: String) {
-        NotificationCenter.default.post(
-            name: .activeRailTabIDDidChange,
-            object: nil,
-            userInfo: ["containerID": containerID, "railTabID": railTabID]
-        )
-    }
-
-    public static func postActiveBottomTabIDDidChange(containerID: String, bottomTabID: String) {
-        NotificationCenter.default.post(
-            name: .activeBottomTabIDDidChange,
-            object: nil,
-            userInfo: ["containerID": containerID, "bottomTabID": bottomTabID]
-        )
-    }
-
-    public static func postBottomPanelVisibleDidChange(visible: Bool) {
-        NotificationCenter.default.post(
-            name: .bottomPanelVisibleDidChange,
-            object: nil,
-            userInfo: ["visible": visible]
-        )
-    }
-
-    public static func postChatSectionVisibleDidChange(visible: Bool) {
-        NotificationCenter.default.post(
-            name: .chatSectionVisibleDidChange,
-            object: nil,
-            userInfo: ["visible": visible]
-        )
-    }
-
-    public static func postRailVisibleDidChange(visible: Bool) {
-        NotificationCenter.default.post(
-            name: .railVisibleDidChange,
-            object: nil,
-            userInfo: ["visible": visible]
-        )
-    }
-
-    public static func postRailDividerDidChange(containerID: String, position: CGFloat) {
-        NotificationCenter.default.post(
-            name: .railDividerDidChange,
-            object: nil,
-            userInfo: ["containerID": containerID, "position": position]
-        )
-    }
-
-    public static func postChatSectionDividerDidChange(
-        containerID: String,
-        layout: String,
-        position: CGFloat
-    ) {
-        NotificationCenter.default.post(
-            name: .chatSectionDividerDidChange,
-            object: nil,
-            userInfo: ["containerID": containerID, "layout": layout, "position": position]
-        )
-    }
-
-    public static func postBottomPanelDividerDidChange(containerID: String, position: CGFloat) {
-        NotificationCenter.default.post(
-            name: .bottomPanelDividerDidChange,
-            object: nil,
-            userInfo: ["containerID": containerID, "position": position]
-        )
-    }
-
-    /// 广播工作区 UI 贡献清单已变更。
-    ///
-    /// 由 workspace 服务（LayoutManager）在**贡献清单更新完成后**调用一次，
-    /// 消费视图收到后从服务重新拉取快照。
-    public static func postWorkspaceContributionsDidChange() {
-        NotificationCenter.default.post(name: .workspaceContributionsDidChange, object: nil)
-    }
+    public static let workspaceContributionsDidChange = LumiKernelEvent.workspaceContributionsDidChange.notificationName
 }
 
 // MARK: - Layout Event Payload Helper
