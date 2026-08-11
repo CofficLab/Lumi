@@ -18,6 +18,7 @@ public struct LayoutKernelOnBootHook: SuperLog {
     public func execute(_ kernel: LumiKernel) async throws {
         let store = LayoutStore(pluginDirectory: kernel.storage?.pluginDataDirectory(for: "LayoutKernel"))
         let manager = LayoutManager(store: store)
+        manager.kernel = kernel
 
         // 从磁盘恢复布局状态
         if let info = store.loadLayoutInfo() {
