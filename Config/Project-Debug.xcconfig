@@ -14,7 +14,10 @@ MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE
 // 优化：关闭，便于调试
 GCC_DYNAMIC_NO_PIC = NO
 GCC_OPTIMIZATION_LEVEL = 0
-SWIFT_OPTIMIZATION_LEVEL = "-Onone"
+// 注意：-Onone 不要加引号。xcconfig 里以 - 开头的值被引号包裹时，
+// Xcode 会把引号保留并传给 swiftc，导致 "-Onone" 被当成输入文件路径
+// （报 "Unexpected input file: .../"-Onone""）。
+SWIFT_OPTIMIZATION_LEVEL = -Onone
 
 // DEBUG 宏
 GCC_PREPROCESSOR_DEFINITIONS = DEBUG=1 $(inherited)
