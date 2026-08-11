@@ -22,7 +22,13 @@ final public class SidebarViewModel: ObservableObject {
     public var currentConversationId: String?
     private nonisolated let notificationObserverHolder = NotificationObserverHolder()
 
-    public init() {}
+    /// 数据源提供器,默认从全局 `GoalTaskPlugin.currentManager()` 取。
+    /// 注入点允许外部传入自定义 `GoalStateManager`(测试 / 多实例场景)。
+    private let managerProvider: () -> GoalStateManager?
+
+    public init(managerProvider: @escaping () -> GoalStateManager? = { GoalTaskPlugin.currentManager() }) {
+        self.managerProvider = managerProvider
+    }
 
     /// 是否有可见的 Goal(需要展示侧栏)
     public var hasActiveWork: Bool {
@@ -51,10 +57,10 @@ final public class SidebarViewModel: ObservableObject {
         return "\(completed)/\(activeTasks.count)"
     }
 
-    /// 每次访问时动态获取 manager，避免缓存导致初始化时序问题
+    /// 获取数据源;通过 `managerProvider` 注入,避免硬编码全局单例。
     @MainActor
     private var manager: GoalStateManager? {
-        GoalTaskPlugin.currentManager()
+        managerProvider()
     }
 
     public func removeObserver() {

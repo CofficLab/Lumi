@@ -29,7 +29,16 @@ public final class Plugin: LumiPlugin, SuperLog {
     /// 共享的 GoalStateManager 实例
     private nonisolated(unsafe) static var _sharedManager: GoalStateManager?
 
-    public init() {}
+    /// 侧栏视图模型。由 Plugin 持有,跨 view 重建保留订阅/加载状态;
+    /// 通过 `SidebarViewModel.managerProvider` 注入数据源,默认仍走全局单例。
+    private let sidebarViewModel = SidebarViewModel()
+
+    /// 通用 Goal 视图模型,由 Plugin 在初始化时创建并持有。
+    private let goalVM: GoalVM
+
+    public init() {
+        self.goalVM = GoalVM()
+    }
 
     /// 获取共享的 GoalStateManager
     public nonisolated static func currentManager() -> GoalStateManager? {
@@ -86,14 +95,9 @@ public final class Plugin: LumiPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                SidebarView(
-                    conversationIdProvider: {
-                        kernel.conversations?.selectedConversationID
-                    },
-                    backgroundColorProvider: {
-                        Color(nsColor: .controlBackgroundColor)
-                    }
-                )
+                GoalRootView(viewModel: self.goalVM) {
+                    SidebarView(viewModel: self.sidebarViewModel, kernel: kernel)
+                }
             }
         ]
     }

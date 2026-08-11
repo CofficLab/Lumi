@@ -4,24 +4,18 @@ import LumiKernel
 
 /// 右侧栏视图 - 展示当前会话的单一活跃 Goal 及其 Tasks
 ///
-/// 容器职责:状态机、生命周期、与 `GoalStateManager` 的数据绑定,
-/// 以及整体尺寸/背景/边框。子组件拆分至:
-/// - `SidebarHeader`:顶部状态行 + 折叠/刷新/描述按钮
-/// - `SidebarTaskList` / `TaskRowView`:任务列表与单行渲染
-/// - `SidebarBlockedReason`:阻塞原因提示
-/// - `GoalDescriptionPopoverContent`:描述长文本弹窗
-///
-/// 相关展示模型位于 `Models/` 目录(`GoalDisplayItem` /
-/// `GoalTaskDisplayItem` / `NotificationObserverHolder`)。
+/// 数据完全来自外部注入的 `SidebarViewModel`,本视图不感知数据来源;
+/// 视图仅负责根据 ViewModel 的状态进行渲染,并把"切换会话"事件
+/// 透传给 ViewModel(`refresh(conversationId:)`)。
 public struct SidebarView: View {
-    @StateObject private var viewModel = SidebarViewModel()
+    /// 外部注入的视图模型,由调用方(如 Plugin)持有并管理生命周期。
+    @ObservedObject var viewModel: SidebarViewModel
+
+    /// 弱引用宿主 kernel,仅用于读取 `selectedConversationID`,
+    /// 不作为数据源持有。
+    private weak var kernel: LumiKernel?
+
     @State private var isCollapsed = false
-
-    /// 获取当前会话 ID 的闭包(内部统一为 String?)
-    private let conversationIdProvider: () -> String?
-
-    /// 获取背景色的闭包
-    private let backgroundColorProvider: () -> Color
 
     private static let headerHeight: CGFloat = 44
     private static let maxTaskListHeight: CGFloat = 160
@@ -34,12 +28,16 @@ public struct SidebarView: View {
         viewModel.hasActiveWork
     }
 
-    public init(
-        conversationIdProvider: @escaping () -> UUID?,
-        backgroundColorProvider: @escaping () -> Color = { Color.clear }
-    ) {
-        self.conversationIdProvider = { conversationIdProvider()?.uuidString }
-        self.backgroundColorProvider = backgroundColorProvider
+    public init(viewModel: SidebarViewModel, kernel: LumiKernel) {
+        self.viewModel = viewModel
+        // kernel 字段为 weak,Swift 在赋值时自动转为弱引用,
+        // 避免 View(值类型)意外延长宿主 kernel 的生命周期。
+        self.kernel = kernel
+    }
+
+    /// 获取当前会话 ID,内部统一为 String?
+    private var currentConversationId: String? {
+        kernel?.conversations?.selectedConversationID?.uuidString
     }
 
     public var body: some View {
@@ -71,12 +69,6 @@ public struct SidebarView: View {
         .frame(height: hasVisibleGoal ? sidebarHeight : 0)
         .frame(maxWidth: .infinity, alignment: .top)
         .frame(minWidth: hasVisibleGoal ? 240 : 0, idealWidth: hasVisibleGoal ? 320 : 0)
-        .background {
-            if hasVisibleGoal {
-                backgroundColorProvider()
-                    .opacity(0.82)
-            }
-        }
         .overlay {
             if hasVisibleGoal {
                 VStack(spacing: 0) {
@@ -90,8 +82,8 @@ public struct SidebarView: View {
                 }
             }
         }
-        .task(id: conversationIdProvider()) {
-            await viewModel.refresh(conversationId: conversationIdProvider())
+        .task(id: currentConversationId) {
+            await viewModel.refresh(conversationId: currentConversationId)
         }
         .onDisappear {
             viewModel.removeObserver()
@@ -143,5 +135,3 @@ public struct SidebarView: View {
         return height
     }
 }
-
-// SidebarViewModel 已迁移至 `Sources/ViewModels/SidebarViewModel.swift`(保持 public 以兼容测试)。
