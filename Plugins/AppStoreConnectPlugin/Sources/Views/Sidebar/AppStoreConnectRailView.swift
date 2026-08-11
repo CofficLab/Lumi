@@ -1,16 +1,23 @@
 import LumiUI
 import SwiftUI
 
-struct Sidebar: View {
+/// AppStoreConnect 侧边栏 Rail 视图。
+///
+/// 由 `AppStoreConnectPlugin` 注册为 `PanelRailTabItem`，
+/// 仅在 app-store-connect ViewContainer 中可见。
+/// 与主内容 `MainView` 共享同一个 `VM.shared`，选中状态自动同步。
+struct AppStoreConnectRailView: View {
     @ObservedObject var viewModel: VM
+
+    init(viewModel: VM = .shared) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if viewModel.selectedApp != nil {
                 VersionsSection(viewModel: viewModel)
                     .padding(.top, 6)
-
-                CoverArtSidebarSection(viewModel: viewModel)
             }
 
             Spacer(minLength: 0)
@@ -22,8 +29,7 @@ struct Sidebar: View {
             }
             .padding(.bottom, 6)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(.regularMaterial)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func sidebarSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -50,17 +56,5 @@ struct Sidebar: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
         .background(viewModel.page == page ? Color.accentColor.opacity(0.16) : Color.clear)
-    }
-}
-
-extension AppStoreApp {
-    var platformLabel: String {
-        switch platform.normalizedASCPlatform {
-        case "MAC_OS": return "macOS"
-        case "IOS": return "iOS"
-        case "TV_OS": return "tvOS"
-        case "VISION_OS": return "visionOS"
-        default: return platform
-        }
     }
 }

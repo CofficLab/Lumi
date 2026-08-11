@@ -6,9 +6,12 @@ import SwiftUI
 /// 插件管理设置页。
 ///
 /// 两栏布局:左侧为插件列表(搜索 + 分类筛选),右侧为选中插件的详情
-/// 与启用开关。对齐旧版本 4.19.0 的体验。通过 `@ObservedObject kernel`
-/// 驱动刷新——`setPlugin` 会触发 `objectWillChange` 与 `.lumiEnabledPluginsDidChange`,
-/// 使列表/详情/全局 UI 贡献即时更新。
+/// 与启用开关。对齐旧版本 4.19.0 的体验。
+///
+/// 刷新机制:`kernel.pluginManager` 直接持有,未把 `objectWillChange`
+/// 转发到 kernel,故 `@ObservedObject kernel` 无法感知开关切换。本视图
+/// 监听 `.lumiEnabledPluginsDidChange` 通知并递增 `enabledRevision` 触发
+/// body 重算,使列表启用状态点、详情页开关与顶部统计即时更新。
 ///
 /// 该文件只保留容器/布局/状态逻辑;具体渲染拆分为:
 /// - `PluginManagementHeader`:顶部统计
@@ -22,7 +25,14 @@ struct PluginManagementView: View {
     @State private var searchText = ""
     @State private var selectedCategory: LumiPluginCategory?
 
+    /// 启用状态版本号。`pluginManager` 不通过 kernel 转发 `objectWillChange`,
+    /// 改由 `.lumiEnabledPluginsDidChange` 通知驱动:每次插件启用/禁用后递增,
+    /// 触发本视图 body 重算,使列表与详情读取到最新的 `effectiveEnabled`。
+    @State private var enabledRevision = 0
+
     var body: some View {
+        let _ = enabledRevision // 依赖 enabledRevision,确保通知触发的变更驱动 body 重算
+
         AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 14) {
                 PluginManagementHeader(totalCount: plugins.count, enabledCount: enabledCount)
@@ -50,6 +60,9 @@ struct PluginManagementView: View {
             if selectedPluginID == nil {
                 selectedPluginID = selectedPlugin?.id
             }
+        }
+        .onLumiEnabledPluginsDidChange {
+            enabledRevision &+= 1
         }
         .onChange(of: filteredPlugins.map(\.id)) { _, ids in
             guard let selectedPluginID,
