@@ -316,6 +316,51 @@ final class AnthropicCompatibleProviderAdapterTests: XCTestCase {
         XCTAssertEqual(result.toolCalls?.first?.name, "read_file")
     }
 
+    func testParseResponseRestoresSanitizedToolNameWhenReverseMapProvided() throws {
+        let adapter = makeAdapter()
+        // 带点工具名经 formatTool sanitize 成下划线；reverseMap 应还原成注册 id。
+        let reverseMap = ["app-store-connect_list-apps": "app-store-connect.list-apps"]
+        let data = Data(
+            """
+            {
+              "content": [
+                {
+                  "type": "tool_use",
+                  "id": "call_1",
+                  "name": "app-store-connect_list-apps",
+                  "input": {}
+                }
+              ]
+            }
+            """.utf8
+        )
+
+        let result = try adapter.parseResponse(data: data, reverseMap: reverseMap)
+
+        XCTAssertEqual(
+            result.toolCalls?.first?.name,
+            "app-store-connect.list-apps",
+            "reverseMap 应把 sanitized 名还原成带点注册 id"
+        )
+    }
+
+    func testParseResponsePassesThroughToolNameWhenNoReverseMap() throws {
+        let adapter = makeAdapter()
+        let data = Data(
+            """
+            {
+              "content": [
+                { "type": "tool_use", "id": "call_1", "name": "read_file", "input": {} }
+              ]
+            }
+            """.utf8
+        )
+
+        let result = try adapter.parseResponse(data: data)
+
+        XCTAssertEqual(result.toolCalls?.first?.name, "read_file")
+    }
+
     func testParseResponseThrowsAPIError() {
         let adapter = makeAdapter()
         let data = Data(#"{"error":{"message":"Invalid API key"}}"#.utf8)

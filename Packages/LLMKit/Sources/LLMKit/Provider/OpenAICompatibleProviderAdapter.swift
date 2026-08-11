@@ -237,7 +237,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         ]
     }
 
-    public func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?, reasoningContent: String?) {
+    public func parseResponse(data: Data, reverseMap: [String: String]? = nil) throws -> (content: String, toolCalls: [ToolCall]?, reasoningContent: String?) {
         if let errorResponse = try? JSONDecoder().decode(OpenAICompatibleErrorResponse.self, from: data) {
             throw OpenAICompatibleProviderError.apiError(message: errorResponse.error.message)
         }
@@ -248,10 +248,14 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             throw OpenAICompatibleProviderError.noChoices
         }
 
+        // 工具名经 `formatTool`/`transformMessage` sanitize（点号→下划线），这里须按
+        // reverseMap 还原成 Lumi 注册 id，否则工具调度按原始 id 查找时会找不到工具。
+        // 与流式路径 `LumiStreamingRequestSupport.withToolNameReverseMap` 语义一致；
+        // reverseMap 为空/未提供时原样透传（无工具场景）。
         let toolCalls = choiceMessage.toolCalls?.map { toolCall in
             ToolCall(
                 id: toolCall.id,
-                name: toolCall.function.name,
+                name: reverseMap?[toolCall.function.name] ?? toolCall.function.name,
                 arguments: toolCall.function.arguments
             )
         }

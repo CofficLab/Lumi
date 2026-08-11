@@ -310,6 +310,73 @@ final class OpenAICompatibleProviderAdapterTests: XCTestCase {
         XCTAssertNil(result.toolCalls)
     }
 
+    func testParseResponseRestoresSanitizedToolNameWhenReverseMapProvided() throws {
+        let adapter = makeAdapter()
+        // 带点工具名（app-store-connect.list-apps）经 formatTool sanitize 成
+        // app-store-connect_list-apps；reverseMap 应把模型回传的名字还原成注册 id。
+        let reverseMap = ["app-store-connect_list-apps": "app-store-connect.list-apps"]
+        let data = Data(
+            #"""
+            {
+              "choices": [
+                {
+                  "message": {
+                    "content": "",
+                    "tool_calls": [
+                      {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": { "name": "app-store-connect_list-apps", "arguments": "{}" }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+            """#.utf8
+        )
+
+        let result = try adapter.parseResponse(data: data, reverseMap: reverseMap)
+
+        XCTAssertEqual(
+            result.toolCalls,
+            [ToolCall(id: "call_1", name: "app-store-connect.list-apps", arguments: "{}")],
+            "reverseMap 应把 sanitized 名还原成带点注册 id"
+        )
+    }
+
+    func testParseResponsePassesThroughToolNameWhenNoReverseMap() throws {
+        let adapter = makeAdapter()
+        // 未提供 reverseMap（无工具场景）时原样透传，保持既有行为。
+        let data = Data(
+            #"""
+            {
+              "choices": [
+                {
+                  "message": {
+                    "content": "",
+                    "tool_calls": [
+                      {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": { "name": "read_file", "arguments": "{}" }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+            """#.utf8
+        )
+
+        let result = try adapter.parseResponse(data: data)
+
+        XCTAssertEqual(
+            result.toolCalls,
+            [ToolCall(id: "call_1", name: "read_file", arguments: "{}")]
+        )
+    }
+
     func testParseResponseThrowsNoChoices() {
         let adapter = makeAdapter()
         let data = Data(#"{"choices":[]}"#.utf8)

@@ -129,7 +129,7 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
     // MARK: - 响应解析
 
     /// 解析非流式响应
-    public func parseResponse(data: Data) throws -> (content: String, toolCalls: [ToolCall]?) {
+    public func parseResponse(data: Data, reverseMap: [String: String]? = nil) throws -> (content: String, toolCalls: [ToolCall]?) {
         if let errorResponse = try? JSONDecoder().decode(AnthropicCompatibleErrorResponse.self, from: data) {
             throw AnthropicCompatibleProviderError.apiError(message: errorResponse.error.message)
         }
@@ -149,7 +149,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                 let normalDict = inputDict.mapValues { $0.value }
                 let inputData = try JSONSerialization.data(withJSONObject: normalDict)
                 let inputString = String(data: inputData, encoding: .utf8) ?? "{}"
-                toolCalls.append(ToolCall(id: id, name: name, arguments: inputString))
+                // 工具名经 formatTool sanitize（点号→下划线），这里按 reverseMap 还原成
+                // Lumi 注册 id，否则工具调度按原始 id 查找时会找不到工具。未提供时透传。
+                toolCalls.append(ToolCall(id: id, name: reverseMap?[name] ?? name, arguments: inputString))
             }
         }
 
