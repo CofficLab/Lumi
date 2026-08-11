@@ -9,16 +9,14 @@ struct PluginDiskManagerTests {
     func pluginMetadataIsStable() {
         #expect(DiskManagerPlugin().id == "com.coffic.lumi.plugin.disk-manager")
         #expect(DiskManagerPlugin().name.isEmpty == false)
-        #expect(DiskManagerPlugin().category == .system)
-        #expect(DiskManagerPlugin().order == 44)
+        #expect(DiskManagerPlugin().order == 250)
         #expect(DiskManagerPlugin().policy == .optIn)
+        #expect(DiskManagerPlugin().stage == .beta)
     }
 
     @Test
     func viewContainerContributionIsAvailable() throws {
-        let items = DiskManagerPlugin.viewContainers(
-            lumiCore: LumiPluginContext(activeSectionID: "workspace", activeSectionTitle: "Workspace")
-        )
+        let items = DiskManagerPlugin().viewContainers(kernel: LumiKernel())
         let item = try #require(items.first)
         #expect(item.id == DiskManagerPlugin().id)
         #expect(item.title == DiskManagerPlugin().name)

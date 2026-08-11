@@ -41,6 +41,23 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
 
     public func onReady(kernel: LumiKernel) async throws {}
 
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            DiskUsageTool(),
+            ScanLargeFilesTool(),
+            ScanDirectoryTreeTool(),
+            ScanCachesTool(),
+            CleanCachesTool(),
+            ScanXcodeCachesTool(),
+            CleanXcodeCachesTool(),
+            ScanProjectsTool(),
+            CleanProjectsTool(),
+            DeleteFilesTool(),
+        ]
+    }
+
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         [
             ViewContainerItem(
