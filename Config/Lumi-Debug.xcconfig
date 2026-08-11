@@ -24,7 +24,6 @@ ENABLE_USER_SELECTED_FILES = readonly
 
 // 权限
 CODE_SIGN_ENTITLEMENTS = LumiApp/App.entitlements
-PROVISIONING_PROFILE_SPECIFIER = ""
 
 // Lumi 环境标识（Debug）
 LUMI_ENVIRONMENT = debug
