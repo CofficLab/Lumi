@@ -12,34 +12,25 @@ struct MainView: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            Sidebar(viewModel: viewModel)
-                .frame(width: 220)
-                .layoutPriority(1)
+        VStack(spacing: 0) {
+            if viewModel.page.showsTopBar {
+                TopBar(viewModel: viewModel)
+            }
 
-            Divider()
+            if let error = viewModel.errorMessage, shouldShowGlobalError {
+                ErrorBanner(message: error)
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                Divider()
+            }
 
-            VStack(spacing: 0) {
-                if viewModel.page.showsTopBar {
-                    TopBar(viewModel: viewModel)
+            ZStack {
+                pageContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if viewModel.isBusy {
+                    ConnectBusyOverlay()
                 }
-
-                if let error = viewModel.errorMessage, shouldShowGlobalError {
-                    ErrorBanner(message: error)
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                    Divider()
-                }
-
-                ZStack {
-                    pageContent
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                    if viewModel.isBusy {
-                        ConnectBusyOverlay()
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -76,8 +67,6 @@ struct MainView: View {
             AppsPage(viewModel: viewModel)
         case .distribution:
             DistributionPage(viewModel: viewModel, importingScreenshots: $importingScreenshots)
-        case .coverArt:
-            CoverArtPage(viewModel: viewModel)
         case .xcodeCloud:
             XcodeCloudPage(viewModel: viewModel)
         }

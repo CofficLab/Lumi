@@ -13,8 +13,6 @@ extension VM {
                 connectionStatus = AppStoreConnectLocalization.string("Connected")
             case .distribution:
                 try await reloadDistributionFromNetwork()
-            case .coverArt:
-                break
             case .xcodeCloud:
                 if selectedCiWorkflow != nil {
                     try await reloadSelectedCiWorkflowDetailFromNetwork()

@@ -45,11 +45,6 @@ extension VM {
         selectVersion(version)
     }
 
-    func openCoverArtMaker() {
-        reloadCoverArtList()
-        page = .coverArt
-    }
-
     func releaseVersion(_ version: AppStoreVersion) async {
         guard version.isPendingDeveloperRelease else { return }
         await runBusy(forceRefresh: true) {

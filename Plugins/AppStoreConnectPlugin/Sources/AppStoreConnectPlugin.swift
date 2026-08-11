@@ -45,11 +45,6 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
             CreateAppStoreConnectScreenshotSetTool(),
             StartAppStoreConnectCiBuildRunTool(),
             SetAppStoreConnectCiWorkflowEnabledTool(),
-            ListAppStoreConnectCoverArtTool(),
-            ReadAppStoreConnectCoverArtTool(),
-            CreateAppStoreConnectCoverArtTool(),
-            UpdateAppStoreConnectCoverArtTool(),
-            ExportAppStoreConnectCoverArtTool(),
         ]
     }
 
@@ -62,7 +57,18 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
+    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+        [
+            PanelRailTabItem(
+                id: "app-store-connect.sidebar",
+                title: name,
+                systemImage: "app.badge.checkmark",
+                visibility: .viewContainer(id: id)
+            ) {
+                AppStoreConnectRailView(viewModel: VM.shared)
+            },
+        ]
+    }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         [
@@ -70,7 +76,7 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: name,
                 systemImage: "app.badge.checkmark",
-                railVisibility: .unsupported,
+                railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
                 panelHeaderVisibility: .unsupported,
                 panelBodyVisibility: .alwaysVisible,
