@@ -10,7 +10,7 @@ import os
 /// 负责管理所有插件的设置标签项和 LLM 提供商设置项的注册和查询。
 ///
 /// 同时贡献两个"应用基础设置"标签:General / Appearance。
-/// 这些页面过去是 `LumiFactory` 硬编码的内置标签;现在统一改为由插件贡献,
+/// 这些页面过去是 `LumiFactory` 硬编码的内置标签;现在统一改为由插件贡献(宿主层现归 FactoryCore),
 /// 使设置界面的所有标签都走同一条 `settingsTabItems(kernel:)` 链路。
 @MainActor
 public final class SettingsPlugin: LumiPlugin, SuperLog {

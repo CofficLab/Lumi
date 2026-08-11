@@ -3,7 +3,7 @@ import LumiKernel
 import LumiUI
 import SwiftUI
 
-/// "外观"设置页(原 LumiFactory 的 AppearanceSettingsPage)。
+/// "外观"设置页(原 LumiFactory 的 AppearanceSettingsPage，宿主层现归 FactoryCore)。
 /// 依赖 `kernel.theme` 服务展示与切换主题。
 struct AppearanceSettingsView: View {
     @LumiTheme private var theme

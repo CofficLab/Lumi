@@ -426,7 +426,7 @@ public final class PluginManager: ObservableObject {
 
     /// 全量重建所有插件贡献(Agent Tools + UI + Commands + LLM Provider + Editor Plugins)。
     ///
-    /// 在插件启用/禁用后由宿主(`LumiFactory.subscribeToPluginChanges`)调用,
+    /// 在插件启用/禁用后由宿主(`FactoryCore.subscribeToPluginChanges`)调用,
     /// 使被禁用插件的贡献即时撤回、被启用插件的贡献即时加入。
     ///
     /// - Agent Tools:先清空 ToolManager 再按有效启用状态重新注册。
