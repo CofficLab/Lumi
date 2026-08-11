@@ -111,12 +111,27 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
 // MARK: - Runtime Bridge
 
 enum AppManagerPluginRuntimeBridge {
+    /// StoragePlugin 未就绪时的兜底数据目录。
+    /// 刻意复刻项目级约定路径（与 `StoragePlugin.makeDefaultDataRootDirectory`
+    /// 及 `StorageService.pluginDataDirectory(for:)` 保持一致）：
+    /// `<Application Support>/<bundleID>/db_<debug|production>_v<major>/AppManagerPlugin/`
+    /// 避免与注入后的标准路径分叉，导致同一份缓存数据落到两处目录。
     static let fallbackPluginDataDirectory: URL = {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "4"
+        let majorVersion = version.split(separator: ".").first.flatMap { Int($0) } ?? 4
+
+        #if DEBUG
+        let dbDirectoryName = "db_debug_v\(majorVersion)"
+        #else
+        let dbDirectoryName = "db_production_v\(majorVersion)"
+        #endif
+
         return appSupport
             .appendingPathComponent(bundleID, isDirectory: true)
+            .appendingPathComponent(dbDirectoryName, isDirectory: true)
             .appendingPathComponent("AppManagerPlugin", isDirectory: true)
     }()
 }
