@@ -29,11 +29,9 @@ public final class Plugin: LumiPlugin, SuperLog {
     /// 共享的 GoalStateManager 实例
     private nonisolated(unsafe) static var _sharedManager: GoalStateManager?
 
-    /// 侧栏视图模型。由 Plugin 持有,跨 view 重建保留订阅/加载状态;
-    /// 通过 `SidebarViewModel.managerProvider` 注入数据源,默认仍走全局单例。
-    private let sidebarViewModel = SidebarViewModel()
-
-    /// 通用 Goal 视图模型,由 Plugin 在初始化时创建并持有。
+    /// Goal 视图模型,由 Plugin 在初始化时创建并持有。
+    /// 作为工具栏弹窗与侧栏的单一数据源,跨 view 重建保留订阅/加载状态;
+    /// 通过 `GoalVM.managerProvider` 注入数据源,默认仍走全局单例。
     private let goalVM: GoalVM
 
     public init() {
@@ -95,9 +93,7 @@ public final class Plugin: LumiPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                GoalRootView(viewModel: self.goalVM) {
-                    SidebarView(viewModel: self.sidebarViewModel, kernel: kernel)
-                }
+                SidebarView(viewModel: self.goalVM)
             }
         ]
     }

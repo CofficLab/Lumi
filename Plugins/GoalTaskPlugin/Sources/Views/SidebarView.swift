@@ -1,19 +1,9 @@
-import SwiftUI
-import SuperLogKit
 import LumiKernel
+import SuperLogKit
+import SwiftUI
 
-/// 右侧栏视图 - 展示当前会话的单一活跃 Goal 及其 Tasks
-///
-/// 数据完全来自外部注入的 `SidebarViewModel`,本视图不感知数据来源;
-/// 视图仅负责根据 ViewModel 的状态进行渲染,并把"切换会话"事件
-/// 透传给 ViewModel(`refresh(conversationId:)`)。
 public struct SidebarView: View {
-    /// 外部注入的视图模型,由调用方(如 Plugin)持有并管理生命周期。
-    @ObservedObject var viewModel: SidebarViewModel
-
-    /// 弱引用宿主 kernel,仅用于读取 `selectedConversationID`,
-    /// 不作为数据源持有。
-    private weak var kernel: LumiKernel?
+    @ObservedObject var viewModel: GoalVM
 
     @State private var isCollapsed = false
 
@@ -28,16 +18,8 @@ public struct SidebarView: View {
         viewModel.hasActiveWork
     }
 
-    public init(viewModel: SidebarViewModel, kernel: LumiKernel) {
+    init(viewModel: GoalVM) {
         self.viewModel = viewModel
-        // kernel 字段为 weak,Swift 在赋值时自动转为弱引用,
-        // 避免 View(值类型)意外延长宿主 kernel 的生命周期。
-        self.kernel = kernel
-    }
-
-    /// 获取当前会话 ID,内部统一为 String?
-    private var currentConversationId: String? {
-        kernel?.conversations?.selectedConversationID?.uuidString
     }
 
     public var body: some View {
@@ -79,8 +61,9 @@ public struct SidebarView: View {
                 }
             }
         }
-        .task(id: currentConversationId) {
-            await viewModel.refresh(conversationId: currentConversationId)
+        .onLumiSelectedConversationDidChange { uuid in
+            viewModel.updateCurrentConversationID(uuid)
+            Task { await viewModel.refresh() }
         }
         .onDisappear {
             viewModel.removeObserver()

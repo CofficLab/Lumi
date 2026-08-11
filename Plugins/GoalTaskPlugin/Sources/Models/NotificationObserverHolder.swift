@@ -7,8 +7,8 @@ import Foundation
 /// 编译问题。该 holder 以 `@unchecked Sendable` 包装,既允许跨 actor 传递,
 /// 又在 `deinit` 中兜底移除,避免遗留观察者。
 ///
-/// 标记 `internal` 是因为多个 ViewModel 共享同一份实现(`SidebarViewModel`
-/// 当前是唯一使用者,但工具栏 ViewModel 后续也可能接入通知)。
+/// 标记 `internal` 是因为多个 ViewModel 共享同一份实现(`GoalVM`
+/// 当前是唯一使用者,后续若有其他 ViewModel 接入通知也可复用)。
 final class NotificationObserverHolder: @unchecked Sendable {
     private var observer: NSObjectProtocol?
 
