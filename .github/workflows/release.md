@@ -120,3 +120,43 @@ base64 AuthKey_XXXX.p8 > api.txt
 | APP_STORE_CONNECT_KEY_BASE64 | api.txt 内容 |
 | APP_STORE_CONNECT_KEY_ID | Key ID |
 | APP_STORE_CONNECT_KEY_ISSUER_ID | Issuer ID |
+
+## 五、独立 app 的发版（Tag → Xcode Cloud）
+
+Lumi 走上面的 Developer ID + Notarization 流程。其余独立 app（BookletMaker、AppIconDesigner、CADDesigner、DatabaseManager）走 **git tag → Xcode Cloud** 流程：GitHub Actions 按 conventional commit scope 自动打 tag，Xcode Cloud 监听对应 tag 触发构建发版。
+
+### Tag 与 scope 约定
+
+| app | tag 前缀 | conventional commit scope | 版本注入脚本 | xcconfig |
+|-----|---------|--------------------------|-------------|----------|
+| BookletMaker | `booklet-v*` | `booklet` \| `bookletmaker` \| `bookletmakerapp` | `set-booklet-version.sh` | `Config/BookletMaker.xcconfig` |
+| AppIconDesigner | `appicondesigner-v*` | `appicondesigner` \| `appicondesignerapp` | `set-appicondesigner-version.sh` | `Config/AppIconDesigner.xcconfig` |
+| CADDesigner | `caddesigner-v*` | `caddesigner` \| `caddesignerapp` | `set-caddesigner-version.sh` | `Config/CADDesigner.xcconfig` |
+| DatabaseManager | `databasemanager-v*` | `databasemanager` \| `databasemanagerapp` | `set-databasemanager-version.sh` | `Config/DatabaseManager.xcconfig` |
+
+### 流程
+
+1. commit 推到 `main` → 对应的 `*-tag.yml` workflow 按 scope 计算下一个版本并打 tag。
+2. Xcode Cloud（在 App Store Connect 后台为每个 app 各配一个 workflow）监听对应 tag 前缀触发构建。
+3. `ci_post_clone.sh` 按 `CI_TAG` 前缀分发到对应 `set-*-version.sh`，把版本号写入该 app 的 xcconfig（版本号不进 git 历史）。
+4. Xcode Cloud archive + 上传 TestFlight。
+
+### 给某个 app 发版
+
+提交时带上对应 scope 即可，例如：
+
+```
+feat(appicondesigner): 支持导出 1024 图标
+fix(caddesigner): 修复导出崩溃
+feat(databasemanager): 新增 Redis 连接
+```
+
+下一次推 `main` 时对应 workflow 会自动打 tag（`feat` → minor 递增；`fix`/`chore` → patch；`!` → major）。首次从 `*-v1.0.0` 起步。
+
+### 在 App Store Connect 配置 Xcode Cloud（每个 app 一次性）
+
+为每个独立 app 在 ASC 后台新建一个 Xcode Cloud workflow：
+- **触发条件**：New tag，匹配该 app 的 tag 前缀（如 `appicondesigner-v*`）。
+- **Scheme**：对应 app 的 scheme。
+- **脚本**：仓库根 `ci_scripts/` 自动生效（所有 app 共用，通过 `SCHEME_NAME` 环境变量区分）。
+

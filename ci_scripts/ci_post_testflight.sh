@@ -36,8 +36,10 @@ echo "    时间戳:               $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 # 3. 汇总本次构建关键信息(只读)
 # --------------------------------------------------
 echo "==> [ci_post_testflight] 构建汇总..."
-INFO_PLIST="AppIconDesignerApp/AppIconDesigner-Info.plist"
-if [[ -f "${INFO_PLIST}" ]]; then
+# 路径约定：{Scheme}App/{Scheme}-Info.plist（5 个 app 通用）
+SCHEME="${SCHEME_NAME:-}"
+INFO_PLIST="${SCHEME}App/${SCHEME}-Info.plist"
+if [[ -n "${SCHEME}" && -f "${INFO_PLIST}" ]]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
         BUNDLE_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "${INFO_PLIST}" 2>/dev/null || echo "<未找到>")
         SHORT_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "${INFO_PLIST}" 2>/dev/null || echo "<未找到>")
