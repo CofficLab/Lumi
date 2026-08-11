@@ -77,7 +77,7 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
                 title: name,
                 systemImage: "app.badge.checkmark",
                 railVisibility: .alwaysVisible,
-                chatVisibility: .unsupported,
+                chatVisibility: .visibleByDefault,
                 panelHeaderVisibility: .unsupported,
                 panelBodyVisibility: .alwaysVisible,
                 panelBottomVisibility: .unsupported,
