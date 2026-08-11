@@ -23,6 +23,9 @@ let package = Package(
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "EditorService", package: "EditorService"),
+            ],
+            resources: [
+                .process("Resources")
             ]
         ),
         .testTarget(
