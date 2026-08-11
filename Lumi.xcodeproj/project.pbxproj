@@ -7,13 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0B3231D330111C1600423DC1 /* LumiFactory in Frameworks */ = {isa = PBXBuildFile; productRef = 0B3231D230111C1600423DC1 /* LumiFactory */; };
-		AI0000000000000000000001 /* LumiFactory in Frameworks */ = {isa = PBXBuildFile; productRef = AI0000000000000000000010 /* LumiFactory */; };
-		BM0000000000000000000001 /* LumiFactory in Frameworks */ = {isa = PBXBuildFile; productRef = BM0000000000000000000010 /* LumiFactory */; };
-		CD0000000000000000000001 /* LumiFactory in Frameworks */ = {isa = PBXBuildFile; productRef = CD0000000000000000000010 /* LumiFactory */; };
-		DB0000000000000000000001 /* LumiFactory in Frameworks */ = {isa = PBXBuildFile; productRef = DB0000000000000000000010 /* LumiFactory */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
-		F5CBA19130119F6C00425FF6 /* LumiFactory in Frameworks */ = {isa = PBXBuildFile; productRef = F5CBA19030119F6C00425FF6 /* LumiFactory */; };
+		AIFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = AIFC000000000000000001 /* FactoryCore */; };
+		AIFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = AIFL000000000000000001 /* FactoryLumi */; };
+		BMFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = BMFC000000000000000001 /* FactoryCore */; };
+		BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; productRef = BMFB000000000000000001 /* FactoryBookletMaker */; };
+		CDFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = CDFC000000000000000001 /* FactoryCore */; };
+		CDFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = CDFL000000000000000001 /* FactoryLumi */; };
+		DBFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = DBFC000000000000000001 /* FactoryCore */; };
+		DBFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = DBFL000000000000000001 /* FactoryLumi */; };
+		F5FC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = F5FC000000000000000001 /* FactoryCore */; };
+		F5FL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = F5FL000000000000000001 /* FactoryLumi */; };
 		LF000000000000000014 /* LumiFinder.appex in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = LF000000000000000001 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		LF000000000000000015 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* SuperLogKit */; };
 		LF00000000000000001A /* LocalizationKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000019 /* LocalizationKit */; };
@@ -154,7 +158,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AI0000000000000000000001 /* LumiFactory in Frameworks */,
+				AIFC00000000000000B001 /* FactoryCore in Frameworks */,
+				AIFL00000000000000B001 /* FactoryLumi in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -162,7 +167,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BM0000000000000000000001 /* LumiFactory in Frameworks */,
+				BMFC00000000000000B001 /* FactoryCore in Frameworks */,
+				BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -170,7 +176,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CD0000000000000000000001 /* LumiFactory in Frameworks */,
+				CDFC00000000000000B001 /* FactoryCore in Frameworks */,
+				CDFL00000000000000B001 /* FactoryLumi in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -178,7 +185,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DB0000000000000000000001 /* LumiFactory in Frameworks */,
+				DBFC00000000000000B001 /* FactoryCore in Frameworks */,
+				DBFL00000000000000B001 /* FactoryLumi in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -186,8 +194,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F5CBA19130119F6C00425FF6 /* LumiFactory in Frameworks */,
-				0B3231D330111C1600423DC1 /* LumiFactory in Frameworks */,
+				F5FC00000000000000B001 /* FactoryCore in Frameworks */,
+				F5FL00000000000000B001 /* FactoryLumi in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,7 +258,8 @@
 			);
 			name = AppIconDesigner;
 			packageProductDependencies = (
-				AI0000000000000000000010 /* LumiFactory */,
+				AIFC000000000000000001 /* FactoryCore */,
+				AIFL000000000000000001 /* FactoryLumi */,
 			);
 			productName = AppIconDesigner;
 			productReference = AI0000000000000000000002 /* AppIconDesigner.app */;
@@ -273,7 +282,8 @@
 			);
 			name = BookletMaker;
 			packageProductDependencies = (
-				BM0000000000000000000010 /* LumiFactory */,
+				BMFC000000000000000001 /* FactoryCore */,
+				BMFB000000000000000001 /* FactoryBookletMaker */,
 			);
 			productName = BookletMaker;
 			productReference = BM0000000000000000000002 /* BookletMaker.app */;
@@ -296,7 +306,8 @@
 			);
 			name = CADDesigner;
 			packageProductDependencies = (
-				CD0000000000000000000010 /* LumiFactory */,
+				CDFC000000000000000001 /* FactoryCore */,
+				CDFL000000000000000001 /* FactoryLumi */,
 			);
 			productName = CADDesigner;
 			productReference = CD0000000000000000000002 /* CADDesigner.app */;
@@ -319,7 +330,8 @@
 			);
 			name = DatabaseManager;
 			packageProductDependencies = (
-				DB0000000000000000000010 /* LumiFactory */,
+				DBFC000000000000000001 /* FactoryCore */,
+				DBFL000000000000000001 /* FactoryLumi */,
 			);
 			productName = DatabaseManager;
 			productReference = DB0000000000000000000002 /* DatabaseManager.app */;
@@ -346,8 +358,8 @@
 			);
 			name = Lumi;
 			packageProductDependencies = (
-				0B3231D230111C1600423DC1 /* LumiFactory */,
-				F5CBA19030119F6C00425FF6 /* LumiFactory */,
+				F5FC000000000000000001 /* FactoryCore */,
+				F5FL000000000000000001 /* FactoryLumi */,
 				F5CBA1A13020000000425FF6 /* AppUpdatePlugin */,
 				F5CBA1A53020000000425FF6 /* ProjectRAGPlugin */,
 			);
@@ -422,7 +434,9 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				F5CBA19C3011A02800425FF6 /* XCLocalSwiftPackageReference "Packages/LumiFactory" */,
+				FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */,
+				FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */,
+				FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */,
 				LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
 				LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/LocalizationKit" */,
 				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/AppUpdatePlugin" */,
@@ -1177,9 +1191,17 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		F5CBA19C3011A02800425FF6 /* XCLocalSwiftPackageReference "Packages/LumiFactory" */ = {
+		FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LumiFactory;
+			relativePath = Packages/FactoryCore;
+		};
+		FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FactoryLumi;
+		};
+		FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FactoryBookletMaker;
 		};
 		LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -1200,29 +1222,55 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		0B3231D230111C1600423DC1 /* LumiFactory */ = {
+		AIFC000000000000000001 /* FactoryCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = LumiFactory;
+			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
+			productName = FactoryCore;
 		};
-		AI0000000000000000000010 /* LumiFactory */ = {
+		AIFL000000000000000001 /* FactoryLumi */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = LumiFactory;
+			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
+			productName = FactoryLumi;
 		};
-		BM0000000000000000000010 /* LumiFactory */ = {
+		BMFC000000000000000001 /* FactoryCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = LumiFactory;
+			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
+			productName = FactoryCore;
 		};
-		CD0000000000000000000010 /* LumiFactory */ = {
+		BMFB000000000000000001 /* FactoryBookletMaker */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = LumiFactory;
+			package = FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */;
+			productName = FactoryBookletMaker;
 		};
-		DB0000000000000000000010 /* LumiFactory */ = {
+		CDFC000000000000000001 /* FactoryCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = LumiFactory;
+			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
+			productName = FactoryCore;
 		};
-		F5CBA19030119F6C00425FF6 /* LumiFactory */ = {
+		CDFL000000000000000001 /* FactoryLumi */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = LumiFactory;
+			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
+			productName = FactoryLumi;
+		};
+		DBFC000000000000000001 /* FactoryCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
+			productName = FactoryCore;
+		};
+		DBFL000000000000000001 /* FactoryLumi */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
+			productName = FactoryLumi;
+		};
+		F5FC000000000000000001 /* FactoryCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
+			productName = FactoryCore;
+		};
+		F5FL000000000000000001 /* FactoryLumi */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
+			productName = FactoryLumi;
 		};
 		F5CBA1A13020000000425FF6 /* AppUpdatePlugin */ = {
 			isa = XCSwiftPackageProductDependency;
