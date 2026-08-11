@@ -32,12 +32,6 @@ struct PromoDesignerToolbar: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            PromoScopeBadge(scope: workspace.selectedScope)
-            Text(task.title)
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(1)
-            Spacer()
-
             languagePicker
             displayPicker
             modePicker
