@@ -110,11 +110,6 @@ final public class SidebarViewModel: ObservableObject {
         isLoading = false
     }
 
-    public func forceRefresh() async {
-        // 手动刷新使用当前 cid 作为期望值
-        await reloadFromDB(expectedCid: currentConversationId)
-    }
-
     /// 从数据库重新加载当前 cid 的活跃 Goal 与 Tasks。
     ///
     /// - Parameter expectedCid: 调用瞬间期望的会话 id。每次 await 之后都会与

@@ -2,8 +2,8 @@ import SwiftUI
 
 /// SidebarView 顶部状态行。
 ///
-/// 展示当前活跃 Goal 的图标/标题/进度文本,并提供描述弹窗、刷新、折叠
-/// 三个操作入口。所有回调由 `SidebarView` 注入,本组件不持有状态机。
+/// 展示当前活跃 Goal 的图标/标题/进度文本,并提供描述弹窗、折叠
+/// 两个操作入口。所有回调由 `SidebarView` 注入,本组件不持有状态机。
 struct SidebarHeader: View {
     @State private var showDescriptionPopover = false
 
@@ -12,7 +12,6 @@ struct SidebarHeader: View {
     let isCollapsed: Bool
 
     let onToggleCollapsed: () -> Void
-    let onRefresh: () -> Void
 
     var body: some View {
         HStack(spacing: 6) {
@@ -27,7 +26,6 @@ struct SidebarHeader: View {
             }
 
             descriptionButton
-            refreshButton
             collapseButton
         }
         .padding(.horizontal, 12)
@@ -75,17 +73,6 @@ struct SidebarHeader: View {
                 GoalDescriptionPopoverContent(text: description)
             }
         }
-    }
-
-    private var refreshButton: some View {
-        Button {
-            onRefresh()
-        } label: {
-            Image(systemName: "arrow.clockwise")
-                .font(.caption)
-        }
-        .buttonStyle(.borderless)
-        .help(LumiPluginLocalization.string("Refresh", bundle: .module))
     }
 
     private var collapseButton: some View {

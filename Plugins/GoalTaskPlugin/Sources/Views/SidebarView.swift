@@ -47,10 +47,7 @@ public struct SidebarView: View {
                     activeGoal: viewModel.activeGoal,
                     progressText: viewModel.progressText,
                     isCollapsed: isCollapsed,
-                    onToggleCollapsed: { isCollapsed.toggle() },
-                    onRefresh: {
-                        Task { await viewModel.forceRefresh() }
-                    }
+                    onToggleCollapsed: { isCollapsed.toggle() }
                 )
 
                 if isCollapsed {
