@@ -7,15 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		AIFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = AIFC000000000000000001 /* FactoryCore */; };
 		AIFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = AIFL000000000000000001 /* FactoryLumi */; };
-		BMFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = BMFC000000000000000001 /* FactoryCore */; };
 		BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; productRef = BMFB000000000000000001 /* FactoryBookletMaker */; };
+		BMFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = BMFC000000000000000001 /* FactoryCore */; };
 		CDFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = CDFC000000000000000001 /* FactoryCore */; };
 		CDFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = CDFL000000000000000001 /* FactoryLumi */; };
 		DBFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = DBFC000000000000000001 /* FactoryCore */; };
 		DBFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = DBFL000000000000000001 /* FactoryLumi */; };
+		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F5FC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = F5FC000000000000000001 /* FactoryCore */; };
 		F5FL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = F5FL000000000000000001 /* FactoryLumi */; };
 		LF000000000000000014 /* LumiFinder.appex in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = LF000000000000000001 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -48,10 +48,20 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		08B37721AB3348660D4B2D5E /* DatabaseManager.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = DatabaseManager.xcconfig; path = Config/DatabaseManager.xcconfig; sourceTree = "<group>"; };
+		10DD2383E811EBAC5B6264D5 /* AppIconDesigner.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = AppIconDesigner.xcconfig; path = Config/AppIconDesigner.xcconfig; sourceTree = "<group>"; };
+		4991976404FE2623D0C4E068 /* Lumi-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Lumi-Debug.xcconfig"; path = "Config/Lumi-Debug.xcconfig"; sourceTree = "<group>"; };
+		57BB92AADE19B8FAE116DCAD /* Lumi-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Lumi-Release.xcconfig"; path = "Config/Lumi-Release.xcconfig"; sourceTree = "<group>"; };
+		70E0C23EA196F323323F057B /* CADDesigner.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = CADDesigner.xcconfig; path = Config/CADDesigner.xcconfig; sourceTree = "<group>"; };
+		7BACB91084647EBF2FC35695 /* Project-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Project-Debug.xcconfig"; path = "Config/Project-Debug.xcconfig"; sourceTree = "<group>"; };
+		AE205FD720E849E1FFA4D49C /* Project-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Project-Release.xcconfig"; path = "Config/Project-Release.xcconfig"; sourceTree = "<group>"; };
 		AI0000000000000000000002 /* AppIconDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppIconDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BEB5089FCE8F5EB98AEF0906 /* LumiFinder-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "LumiFinder-Debug.xcconfig"; path = "Config/LumiFinder-Debug.xcconfig"; sourceTree = "<group>"; };
 		BM0000000000000000000002 /* BookletMaker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BookletMaker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD0000000000000000000002 /* CADDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CADDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DB0000000000000000000002 /* DatabaseManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DatabaseManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD36141333F791471BC94F98 /* BookletMaker.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = BookletMaker.xcconfig; path = Config/BookletMaker.xcconfig; sourceTree = "<group>"; };
+		ED0129D9D619E8053070A012 /* LumiFinder-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "LumiFinder-Release.xcconfig"; path = "Config/LumiFinder-Release.xcconfig"; sourceTree = "<group>"; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		LF000000000000000001 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -235,6 +245,16 @@
 				DB0000000000000000000002 /* DatabaseManager.app */,
 				LF000000000000000001 /* LumiFinder.appex */,
 				0BBD822C30067A13005CCD05 /* Frameworks */,
+				7BACB91084647EBF2FC35695 /* Project-Debug.xcconfig */,
+				AE205FD720E849E1FFA4D49C /* Project-Release.xcconfig */,
+				10DD2383E811EBAC5B6264D5 /* AppIconDesigner.xcconfig */,
+				DD36141333F791471BC94F98 /* BookletMaker.xcconfig */,
+				70E0C23EA196F323323F057B /* CADDesigner.xcconfig */,
+				08B37721AB3348660D4B2D5E /* DatabaseManager.xcconfig */,
+				4991976404FE2623D0C4E068 /* Lumi-Debug.xcconfig */,
+				57BB92AADE19B8FAE116DCAD /* Lumi-Release.xcconfig */,
+				BEB5089FCE8F5EB98AEF0906 /* LumiFinder-Debug.xcconfig */,
+				ED0129D9D619E8053070A012 /* LumiFinder-Release.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -434,13 +454,13 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */,
-				FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */,
-				FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */,
-				LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
-				LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/LocalizationKit" */,
-				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/AppUpdatePlugin" */,
-				F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/ProjectRAGPlugin" */,
+				FC00000000000000000001 /* XCLocalSwiftPackageReference "FactoryCore" */,
+				FL00000000000000000001 /* XCLocalSwiftPackageReference "FactoryLumi" */,
+				FB00000000000000000001 /* XCLocalSwiftPackageReference "FactoryBookletMaker" */,
+				LF000000000000000017 /* XCLocalSwiftPackageReference "SuperLogKit" */,
+				LF000000000000000018 /* XCLocalSwiftPackageReference "LocalizationKit" */,
+				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "AppUpdatePlugin" */,
+				F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "ProjectRAGPlugin" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -603,522 +623,99 @@
 /* Begin XCBuildConfiguration section */
 		AI000000000000000000000D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 10DD2383E811EBAC5B6264D5 /* AppIconDesigner.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = AppIconDesignerApp/App.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "AppIconDesignerApp/AppIconDesigner-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = AppIconDesigner;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.appicondesigner;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
 		AI000000000000000000000E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 10DD2383E811EBAC5B6264D5 /* AppIconDesigner.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = AppIconDesignerApp/App.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "AppIconDesignerApp/AppIconDesigner-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = AppIconDesigner;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.appicondesigner;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
 		BM000000000000000000000D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = DD36141333F791471BC94F98 /* BookletMaker.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = BookletMakerApp/App.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
-				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
-				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
-				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
-				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
-				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
-				ENABLE_RESOURCE_ACCESS_USB = NO;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "BookletMakerApp/BookletMaker-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = BookletMaker;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
 		BM000000000000000000000E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = DD36141333F791471BC94F98 /* BookletMaker.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = BookletMakerApp/App.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
-				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
-				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
-				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
-				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
-				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
-				ENABLE_RESOURCE_ACCESS_USB = NO;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "BookletMakerApp/BookletMaker-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = BookletMaker;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
 		CD000000000000000000000D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 70E0C23EA196F323323F057B /* CADDesigner.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = CADDesignerApp/App.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "CADDesignerApp/CADDesigner-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = CADDesigner;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.caddesigner;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
 		CD000000000000000000000E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 70E0C23EA196F323323F057B /* CADDesigner.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = CADDesignerApp/App.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "CADDesignerApp/CADDesigner-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = CADDesigner;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.caddesigner;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
 		DB000000000000000000000D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 08B37721AB3348660D4B2D5E /* DatabaseManager.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = DatabaseManagerApp/App.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "DatabaseManagerApp/DatabaseManager-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = DatabaseManager;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.databasemanager;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
 		DB000000000000000000000E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 08B37721AB3348660D4B2D5E /* DatabaseManager.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = DatabaseManagerApp/App.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "DatabaseManagerApp/DatabaseManager-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = DatabaseManager;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.databasemanager;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
 		F54F8C882F1A3B6600AABB2A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BACB91084647EBF2FC35695 /* Project-Debug.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
 		F54F8C892F1A3B6600AABB2A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AE205FD720E849E1FFA4D49C /* Project-Release.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEAD_CODE_STRIPPING = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
-				SDKROOT = macosx;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Release;
 		};
 		F54F8C8B2F1A3B6600AABB2A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4991976404FE2623D0C4E068 /* Lumi-Debug.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = LumiApp/App.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 600;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "LumiApp/Lumi-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Lumi (Debug)";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				LUMI_ALLOWS_APP_UPDATES = NO;
-				LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi.debug;
-				LUMI_ENVIRONMENT = debug;
-				LUMI_KEYCHAIN_SERVICE_SUFFIX = .debug;
-				LUMI_URL_SCHEME = "lumi-debug";
-				MARKETING_VERSION = 5.8.4;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.debug;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
 		F54F8C8C2F1A3B6600AABB2A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 57BB92AADE19B8FAE116DCAD /* Lumi-Release.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = LumiApp/App.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 600;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "LumiApp/Lumi-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Lumi;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				LUMI_ALLOWS_APP_UPDATES = YES;
-				LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi;
-				LUMI_ENVIRONMENT = release;
-				LUMI_KEYCHAIN_SERVICE_SUFFIX = "";
-				LUMI_URL_SCHEME = lumi;
-				MARKETING_VERSION = 5.8.4;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
 		LF000000000000000006 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BEB5089FCE8F5EB98AEF0906 /* LumiFinder-Debug.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = Plugins/RClickPlugin/FinderExtension/LumiFinder.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 500;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Plugins/RClickPlugin/FinderExtension/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi.debug;
-				LUMI_FINDER_DISPLAY_NAME = "Lumi Finder (Debug)";
-				LUMI_URL_SCHEME = "lumi-debug";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 5.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.debug.finder;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
 		LF000000000000000007 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = ED0129D9D619E8053070A012 /* LumiFinder-Release.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = Plugins/RClickPlugin/FinderExtension/LumiFinder.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 500;
-				DEVELOPMENT_TEAM = Y6HZ9JJYV6;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Plugins/RClickPlugin/FinderExtension/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi;
-				LUMI_FINDER_DISPLAY_NAME = "Lumi Finder";
-				LUMI_URL_SCHEME = lumi;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 5.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.finder;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -1191,85 +788,75 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryCore;
-		};
-		FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryLumi;
-		};
-		FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryBookletMaker;
-		};
-		LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/SuperLogKit;
-		};
-		LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/LocalizationKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LocalizationKit;
-		};
-		F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/AppUpdatePlugin" */ = {
+		F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "AppUpdatePlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/AppUpdatePlugin;
 		};
-		F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/ProjectRAGPlugin" */ = {
+		F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "ProjectRAGPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/ProjectRAGPlugin;
+		};
+		FB00000000000000000001 /* XCLocalSwiftPackageReference "FactoryBookletMaker" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FactoryBookletMaker;
+		};
+		FC00000000000000000001 /* XCLocalSwiftPackageReference "FactoryCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FactoryCore;
+		};
+		FL00000000000000000001 /* XCLocalSwiftPackageReference "FactoryLumi" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FactoryLumi;
+		};
+		LF000000000000000017 /* XCLocalSwiftPackageReference "SuperLogKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SuperLogKit;
+		};
+		LF000000000000000018 /* XCLocalSwiftPackageReference "LocalizationKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LocalizationKit;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		AIFC000000000000000001 /* FactoryCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
+			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "FactoryCore" */;
 			productName = FactoryCore;
 		};
 		AIFL000000000000000001 /* FactoryLumi */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
+			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "FactoryLumi" */;
 			productName = FactoryLumi;
-		};
-		BMFC000000000000000001 /* FactoryCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
-			productName = FactoryCore;
 		};
 		BMFB000000000000000001 /* FactoryBookletMaker */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */;
+			package = FB00000000000000000001 /* XCLocalSwiftPackageReference "FactoryBookletMaker" */;
 			productName = FactoryBookletMaker;
+		};
+		BMFC000000000000000001 /* FactoryCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "FactoryCore" */;
+			productName = FactoryCore;
 		};
 		CDFC000000000000000001 /* FactoryCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
+			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "FactoryCore" */;
 			productName = FactoryCore;
 		};
 		CDFL000000000000000001 /* FactoryLumi */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
+			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "FactoryLumi" */;
 			productName = FactoryLumi;
 		};
 		DBFC000000000000000001 /* FactoryCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
+			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "FactoryCore" */;
 			productName = FactoryCore;
 		};
 		DBFL000000000000000001 /* FactoryLumi */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
-			productName = FactoryLumi;
-		};
-		F5FC000000000000000001 /* FactoryCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
-			productName = FactoryCore;
-		};
-		F5FL000000000000000001 /* FactoryLumi */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
+			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "FactoryLumi" */;
 			productName = FactoryLumi;
 		};
 		F5CBA1A13020000000425FF6 /* AppUpdatePlugin */ = {
@@ -1279,6 +866,16 @@
 		F5CBA1A53020000000425FF6 /* ProjectRAGPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ProjectRAGPlugin;
+		};
+		F5FC000000000000000001 /* FactoryCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "FactoryCore" */;
+			productName = FactoryCore;
+		};
+		F5FL000000000000000001 /* FactoryLumi */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "FactoryLumi" */;
+			productName = FactoryLumi;
 		};
 		LF000000000000000016 /* SuperLogKit */ = {
 			isa = XCSwiftPackageProductDependency;

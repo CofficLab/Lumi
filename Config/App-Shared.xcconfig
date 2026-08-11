@@ -1,0 +1,19 @@
+//
+// App-Shared.xcconfig
+// 5 个 macOS app target（Lumi / AppIconDesigner / BookletMaker / CADDesigner / DatabaseManager）共享。
+// LumiFinder 是 app-extension，不走这里。
+//
+
+#include "Base.xcconfig"
+
+// 运行时
+DEAD_CODE_STRIPPING = YES
+ENABLE_HARDENED_RUNTIME = YES
+ENABLE_PREVIEWS = YES
+COMBINE_HIDPI_IMAGES = YES
+
+// Info.plist 自动生成
+GENERATE_INFOPLIST_FILE = YES
+
+// Framework 搜索路径（macOS app）
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks

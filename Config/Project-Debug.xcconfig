@@ -1,0 +1,25 @@
+//
+// Project-Debug.xcconfig
+// 项目级 Debug build configuration（绑定在 PBXProject 上，所有 target 继承）。
+//
+
+#include "Base.xcconfig"
+#include "CommonWarnings.xcconfig"
+
+// 调试信息
+COPY_PHASE_STRIP = NO
+DEBUG_INFORMATION_FORMAT = dwarf
+MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE
+
+// 优化：关闭，便于调试
+GCC_DYNAMIC_NO_PIC = NO
+GCC_OPTIMIZATION_LEVEL = 0
+SWIFT_OPTIMIZATION_LEVEL = "-Onone"
+
+// DEBUG 宏
+GCC_PREPROCESSOR_DEFINITIONS = DEBUG=1 $(inherited)
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG $(inherited)
+
+// 调试体验
+ENABLE_TESTABILITY = YES
+ONLY_ACTIVE_ARCH = YES

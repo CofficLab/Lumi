@@ -1,0 +1,19 @@
+//
+// Base.xcconfig
+// 所有 target 与项目级 build configuration 共享的最基础设置。
+// 被 Project-Debug/Release.xcconfig、App-Shared.xcconfig、LumiFinder-*.xcconfig include。
+//
+
+// 签名
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_IDENTITY = "Apple Development"
+
+// 团队
+DEVELOPMENT_TEAM = Y6HZ9JJYV6
+
+// Swift
+SWIFT_VERSION = 6.0
+SWIFT_EMIT_LOC_STRINGS = YES
+
+// 产物名跟随 target 名
+PRODUCT_NAME = $(TARGET_NAME)

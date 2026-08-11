@@ -1,0 +1,37 @@
+//
+// Lumi-Release.xcconfig
+// Lumi 主 app 的 Release build configuration。
+//
+
+#include "App-Shared.xcconfig"
+
+// 产物
+PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi
+INFOPLIST_KEY_CFBundleDisplayName = Lumi
+INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities"
+INFOPLIST_KEY_NSHumanReadableCopyright = ""
+INFOPLIST_FILE = LumiApp/Lumi-Info.plist
+
+// 图标
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
+ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor
+
+// 沙盒：关闭；网络出站放行
+ENABLE_APP_SANDBOX = NO
+ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES
+ENABLE_USER_SELECTED_FILES = readonly
+
+// 权限
+CODE_SIGN_ENTITLEMENTS = LumiApp/App.entitlements
+PROVISIONING_PROFILE_SPECIFIER = ""
+
+// Lumi 环境标识（Release）
+LUMI_ENVIRONMENT = release
+LUMI_ALLOWS_APP_UPDATES = YES
+LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi
+LUMI_KEYCHAIN_SERVICE_SUFFIX = ""
+LUMI_URL_SCHEME = lumi
+
+// 版本号（CI release.yml 改这里；与 Debug 保持一致）
+MARKETING_VERSION = 5.8.4
+CURRENT_PROJECT_VERSION = 600

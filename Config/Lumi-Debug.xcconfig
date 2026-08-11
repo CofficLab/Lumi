@@ -1,0 +1,38 @@
+//
+// Lumi-Debug.xcconfig
+// Lumi 主 app 的 Debug build configuration。
+// Debug 与 Release 差异较大（环境标识、bundle id、URL scheme），故分两个文件。
+//
+
+#include "App-Shared.xcconfig"
+
+// 产物
+PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.debug
+INFOPLIST_KEY_CFBundleDisplayName = "Lumi (Debug)"
+INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities"
+INFOPLIST_KEY_NSHumanReadableCopyright = ""
+INFOPLIST_FILE = LumiApp/Lumi-Info.plist
+
+// 图标
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
+ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor
+
+// 沙盒：关闭；网络出站放行
+ENABLE_APP_SANDBOX = NO
+ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES
+ENABLE_USER_SELECTED_FILES = readonly
+
+// 权限
+CODE_SIGN_ENTITLEMENTS = LumiApp/App.entitlements
+PROVISIONING_PROFILE_SPECIFIER = ""
+
+// Lumi 环境标识（Debug）
+LUMI_ENVIRONMENT = debug
+LUMI_ALLOWS_APP_UPDATES = NO
+LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi.debug
+LUMI_KEYCHAIN_SERVICE_SUFFIX = .debug
+LUMI_URL_SCHEME = lumi-debug
+
+// 版本号（CI release.yml 改这里）
+MARKETING_VERSION = 5.8.4
+CURRENT_PROJECT_VERSION = 600

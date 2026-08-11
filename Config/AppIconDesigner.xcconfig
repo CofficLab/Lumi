@@ -1,0 +1,25 @@
+//
+// AppIconDesigner.xcconfig
+// AppIconDesigner target（Debug 与 Release 共用）。
+//
+
+#include "App-Shared.xcconfig"
+
+// 产物
+PRODUCT_BUNDLE_IDENTIFIER = com.coffic.appicondesigner
+INFOPLIST_KEY_CFBundleDisplayName = AppIconDesigner
+INFOPLIST_FILE = AppIconDesignerApp/AppIconDesigner-Info.plist
+
+// 图标
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
+
+// 沙盒：关闭
+ENABLE_APP_SANDBOX = NO
+ENABLE_USER_SELECTED_FILES = readwrite
+
+// 权限
+CODE_SIGN_ENTITLEMENTS = AppIconDesignerApp/App.entitlements
+
+// 版本号（各自独立，CI 不改这里）
+MARKETING_VERSION = 1.0.0
+CURRENT_PROJECT_VERSION = 1
