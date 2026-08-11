@@ -1,4 +1,5 @@
-import LumiFactory
+import FactoryCore
+import FactoryLumi
 import SwiftUI
 
 @main
@@ -7,10 +8,11 @@ struct DatabaseManagerApp: App {
 
     private static let databaseManagerPluginID = "com.coffic.lumi.plugin.database-manager"
 
-    /// 独立应用的插件集合是有意维护的严格白名单。
-    /// LumiFactory 不会根据依赖关系自动扩充它。
-    private static let hostConfiguration = LumiHostConfiguration(
-        pluginAllowlist: [
+    /// 过渡期：仍通过 FactoryLumi 的 ID 选择 API 从完整目录筛选插件。
+    /// 待建立专属 FactoryDatabaseManager 后，应改为编译期最小组合，
+    /// 不再链接完整插件图。当前行为与重构前的白名单完全一致。
+    private static let hostConfiguration = try? FactoryLumi.configuration(
+        allowingIDs: [
             "com.coffic.lumi.plugin.storage",
             "com.coffic.lumi.plugin.projects",
             "com.coffic.lumi.plugin.layout",
@@ -36,7 +38,7 @@ struct DatabaseManagerApp: App {
 
     var body: some Scene {
         WindowGroup("DatabaseManager", id: "database-manager.main") {
-            LumiFactory.makeMainWindow(configuration: Self.hostConfiguration)
+            FactoryCore.makeMainWindow(configuration: Self.hostConfiguration!)
                 .environmentObject(appDelegate)
                 .onReceive(appDelegate.$pendingOpenPath.compactMap { $0 }) { path in
                     OpenProjectHandler.shared.requestOpen(path: path)
@@ -53,12 +55,12 @@ struct DatabaseManagerApp: App {
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 1100, height: 760)
         .commands {
-            LumiFactory.makeCommands()
+            FactoryCore.makeCommands()
         }
 
         // ActivityBar 目前使用这个稳定 ID 打开设置窗口；独立进程中可安全复用。
         Window("设置", id: AppBootstrap.settingsWindowID) {
-            LumiFactory.makeSettingsWindow()
+            FactoryCore.makeSettingsWindow()
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
