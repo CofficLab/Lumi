@@ -5,7 +5,7 @@ struct ListAppStoreConnectVersionsTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
         id: "app-store-connect.list-versions",
         displayName: AppStoreConnectLocalization.string("List App Store versions"),
-        description: AppStoreConnectLocalization.string("List App Store Connect versions for a given app ID.")
+        description: AppStoreConnectLocalization.string("List App Store Connect versions for a given app ID. Each line includes the appStoreVersion id, which is required by list-localizations, create-localization and read-version.")
     )
 
     var inputSchema: LumiJSONValue {
@@ -38,9 +38,10 @@ struct ListAppStoreConnectVersionsTool: LumiAgentTool {
             let header = "App Store versions for app id=\(appID):"
             let lines = versions.map { version in
                 let created = version.createdDate?.description ?? "unknown date"
-                return "- \(version.versionString) [\(version.platform)] state=\(version.appStoreState) created=\(created)"
+                return "- \(version.versionString) [\(version.platform)] id=\(version.id) state=\(version.appStoreState) created=\(created)"
             }
-            return ([header] + lines).joined(separator: "\n")
+            let footer = "Use the id field as versionID for list-localizations / create-localization / read-version."
+            return ([header] + lines + [footer]).joined(separator: "\n")
         } catch {
             return "Failed to list versions: \(error.localizedDescription)"
         }

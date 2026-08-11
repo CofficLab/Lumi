@@ -3742,6 +3742,7 @@
       }
     },
     "List App Store Connect versions for a given app ID." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

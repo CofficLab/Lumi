@@ -26,6 +26,21 @@ extension ConnectClient {
         }
     }
 
+    func readVersion(id: String) async throws -> AppStoreVersion {
+        let query = [
+            URLQueryItem(
+                name: "fields[appStoreVersions]",
+                value: "platform,versionString,appStoreState,appVersionState,createdDate"
+            )
+        ]
+        Self.logger.info("\(Self.t)readVersion id=\(id)")
+        let response: AppStoreConnectSingleResponse<AppStoreVersion> = try await request(
+            path: "/v1/appStoreVersions/\(id)",
+            queryItems: query
+        )
+        return response.data
+    }
+
     func listLocalizations(versionID: String) async throws -> [AppStoreVersionLocalization] {
         let query = [
             URLQueryItem(name: "limit", value: "100"),
