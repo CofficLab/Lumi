@@ -1,6 +1,7 @@
 import AppUpdatePlugin
 import FactoryCore
 import FactoryLumi
+import LumiKernel
 import ProjectRAGPlugin
 import SwiftUI
 
