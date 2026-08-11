@@ -6,6 +6,9 @@ public enum AppStorePromoStoreError: LocalizedError, Equatable {
     case alreadyExists(String)
     case notFound(String)
     case imageNotFound(String)
+    case invalidLocale(String)
+    case localeNotFound(String)
+    case localeAlreadyExists(String)
     case invalidHTML([AppStorePromoLintIssue])
     case patchTextMissing(String)
     case patchTextNotUnique(String)
@@ -18,6 +21,9 @@ public enum AppStorePromoStoreError: LocalizedError, Equatable {
         case .alreadyExists(let path): "Item already exists at \(path)"
         case .notFound(let path): "Promotional task not found at \(path)"
         case .imageNotFound(let image): "Promotional image not found: \(image)"
+        case .invalidLocale(let locale): "Invalid locale identifier: \(locale)"
+        case .localeNotFound(let locale): "Promotional image locale not found: \(locale)"
+        case .localeAlreadyExists(let locale): "Promotional image locale already exists: \(locale)"
         case .invalidHTML(let issues): "HTML validation failed: \(issues.map(\.message).joined(separator: " "))"
         case .patchTextMissing(let value): "Patch text was not found: \(value.prefix(80))"
         case .patchTextNotUnique(let value): "Patch text must occur exactly once: \(value.prefix(80))"
@@ -40,6 +46,7 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
     public static let manifestFileName = "manifest.json"
     public static let imagesDirectoryName = "images"
     public static let assetsDirectoryName = "assets"
+    public static let localizationsDirectoryName = "localizations"
     public static let defaultRelativeRoot = "tasks"
 
     public let relativeRoot: String
@@ -107,12 +114,16 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
             at: directory.appendingPathComponent(Self.imagesDirectoryName, isDirectory: true),
             withIntermediateDirectories: true
         )
+        let requestedLocale = localeIdentifier.isEmpty ? "en-US" : localeIdentifier
+        guard let normalizedLocale = AppStorePromoLocale.normalize(requestedLocale) else {
+            throw AppStorePromoStoreError.invalidLocale(localeIdentifier)
+        }
         let task = AppStorePromoTask(
             id: normalized,
             title: title.isEmpty ? normalized : title,
             appName: appName,
             deviceFamily: deviceFamily,
-            localeIdentifier: localeIdentifier.isEmpty ? "en-US" : localeIdentifier
+            localeIdentifier: normalizedLocale
         )
         try writeManifest(task, to: directory)
         return task
@@ -152,6 +163,7 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
             id: normalizedImageSlug,
             title: title.isEmpty ? normalizedImageSlug : title,
             order: task.images.count,
+            localeIdentifiers: [task.localeIdentifier],
             createdAt: now,
             updatedAt: now
         )
@@ -176,7 +188,8 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
     public func readImage(
         storagePath: String,
         taskSlug: String,
-        imageSlug: String
+        imageSlug: String,
+        localeIdentifier: String? = nil
     ) throws -> AppStorePromoResolvedImage {
         let taskDirectory = try taskDirectoryURL(storagePath: storagePath, taskSlug: taskSlug)
         let task = try readTask(storagePath: storagePath, taskSlug: taskSlug)
@@ -186,13 +199,71 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
         let directory = taskDirectory
             .appendingPathComponent(Self.imagesDirectoryName, isDirectory: true)
             .appendingPathComponent(image.id, isDirectory: true)
-        let htmlURL = directory.appendingPathComponent(image.htmlFileName)
+        let resolvedLocale = try resolveLocale(localeIdentifier, image: image, task: task)
+        let htmlURL = localizedHTMLURL(
+            directory: directory,
+            image: image,
+            localeIdentifier: resolvedLocale
+        )
         guard fileManager.fileExists(atPath: htmlURL.path) else { throw AppStorePromoStoreError.imageNotFound(imageSlug) }
         return AppStorePromoResolvedImage(
             task: task,
             image: image,
             directoryURL: directory,
-            html: try String(contentsOf: htmlURL, encoding: .utf8)
+            html: try String(contentsOf: htmlURL, encoding: .utf8),
+            localeIdentifier: resolvedLocale,
+            htmlURL: htmlURL
+        )
+    }
+
+    @discardableResult
+    public func addLocalization(
+        _ localeIdentifier: String,
+        copying sourceLocaleIdentifier: String? = nil,
+        storagePath: String,
+        taskSlug: String,
+        imageSlug: String
+    ) throws -> AppStorePromoResolvedImage {
+        guard let normalizedLocale = AppStorePromoLocale.normalize(localeIdentifier) else {
+            throw AppStorePromoStoreError.invalidLocale(localeIdentifier)
+        }
+        let taskDirectory = try taskDirectoryURL(storagePath: storagePath, taskSlug: taskSlug)
+        var task = try readTask(storagePath: storagePath, taskSlug: taskSlug)
+        guard let imageIndex = task.images.firstIndex(where: { $0.id == imageSlug }) else {
+            throw AppStorePromoStoreError.imageNotFound(imageSlug)
+        }
+        let image = task.images[imageIndex]
+        guard !image.localeIdentifiers.contains(where: { $0.caseInsensitiveCompare(normalizedLocale) == .orderedSame }) else {
+            throw AppStorePromoStoreError.localeAlreadyExists(normalizedLocale)
+        }
+
+        let source = try readImage(
+            storagePath: storagePath,
+            taskSlug: taskSlug,
+            imageSlug: imageSlug,
+            localeIdentifier: sourceLocaleIdentifier
+        )
+        let destinationURL = localizedHTMLURL(
+            directory: source.directoryURL,
+            image: image,
+            localeIdentifier: normalizedLocale
+        )
+        try fileManager.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try source.html.write(to: destinationURL, atomically: true, encoding: .utf8)
+
+        let now = Date()
+        task.images[imageIndex].localeIdentifiers.append(normalizedLocale)
+        task.images[imageIndex].updatedAt = now
+        task.schemaVersion = AppStorePromoTask.currentSchemaVersion
+        task.updatedAt = now
+        try writeManifest(task, to: taskDirectory)
+        return AppStorePromoResolvedImage(
+            task: task,
+            image: task.images[imageIndex],
+            directoryURL: source.directoryURL,
+            html: source.html,
+            localeIdentifier: normalizedLocale,
+            htmlURL: destinationURL
         )
     }
 
@@ -201,9 +272,15 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
         _ html: String,
         storagePath: String,
         taskSlug: String,
-        imageSlug: String
+        imageSlug: String,
+        localeIdentifier: String? = nil
     ) throws -> AppStorePromoResolvedImage {
-        var resolved = try readImage(storagePath: storagePath, taskSlug: taskSlug, imageSlug: imageSlug)
+        var resolved = try readImage(
+            storagePath: storagePath,
+            taskSlug: taskSlug,
+            imageSlug: imageSlug,
+            localeIdentifier: localeIdentifier
+        )
         let report = linter.lint(html: html, documentDirectory: resolved.directoryURL)
         guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
         try html.write(to: resolved.htmlURL, atomically: true, encoding: .utf8)
@@ -220,7 +297,9 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
             task: task,
             image: task.images[index],
             directoryURL: resolved.directoryURL,
-            html: html
+            html: html,
+            localeIdentifier: resolved.localeIdentifier,
+            htmlURL: resolved.htmlURL
         )
         return resolved
     }
@@ -230,9 +309,15 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
         operations: [AppStorePromoPatchOperation],
         storagePath: String,
         taskSlug: String,
-        imageSlug: String
+        imageSlug: String,
+        localeIdentifier: String? = nil
     ) throws -> AppStorePromoResolvedImage {
-        let current = try readImage(storagePath: storagePath, taskSlug: taskSlug, imageSlug: imageSlug)
+        let current = try readImage(
+            storagePath: storagePath,
+            taskSlug: taskSlug,
+            imageSlug: imageSlug,
+            localeIdentifier: localeIdentifier
+        )
         var candidate = current.html
         for operation in operations {
             let count = candidate.components(separatedBy: operation.oldText).count - 1
@@ -244,12 +329,23 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
             candidate,
             storagePath: storagePath,
             taskSlug: taskSlug,
-            imageSlug: imageSlug
+            imageSlug: imageSlug,
+            localeIdentifier: current.localeIdentifier
         )
     }
 
-    public func lintImage(storagePath: String, taskSlug: String, imageSlug: String) throws -> AppStorePromoLintReport {
-        let image = try readImage(storagePath: storagePath, taskSlug: taskSlug, imageSlug: imageSlug)
+    public func lintImage(
+        storagePath: String,
+        taskSlug: String,
+        imageSlug: String,
+        localeIdentifier: String? = nil
+    ) throws -> AppStorePromoLintReport {
+        let image = try readImage(
+            storagePath: storagePath,
+            taskSlug: taskSlug,
+            imageSlug: imageSlug,
+            localeIdentifier: localeIdentifier
+        )
         return linter.lint(html: image.html, documentDirectory: image.directoryURL)
     }
 
@@ -313,7 +409,41 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
     }
 
     private func readManifest(at url: URL) throws -> AppStorePromoTask {
-        try decoder.decode(AppStorePromoTask.self, from: Data(contentsOf: url))
+        var task = try decoder.decode(AppStorePromoTask.self, from: Data(contentsOf: url))
+        for index in task.images.indices where task.images[index].localeIdentifiers.isEmpty {
+            task.images[index].localeIdentifiers = [task.localeIdentifier]
+        }
+        return task
+    }
+
+    private func resolveLocale(
+        _ requested: String?,
+        image: AppStorePromoImage,
+        task: AppStorePromoTask
+    ) throws -> String {
+        let available = image.localeIdentifiers.isEmpty ? [task.localeIdentifier] : image.localeIdentifiers
+        guard let requested, !requested.isEmpty else { return available[0] }
+        guard let normalized = AppStorePromoLocale.normalize(requested) else {
+            throw AppStorePromoStoreError.invalidLocale(requested)
+        }
+        guard let match = available.first(where: { $0.caseInsensitiveCompare(normalized) == .orderedSame }) else {
+            throw AppStorePromoStoreError.localeNotFound(normalized)
+        }
+        return match
+    }
+
+    private func localizedHTMLURL(
+        directory: URL,
+        image: AppStorePromoImage,
+        localeIdentifier: String
+    ) -> URL {
+        let primaryLocale = image.localeIdentifiers.first
+        if primaryLocale == nil || primaryLocale == localeIdentifier {
+            return directory.appendingPathComponent(image.htmlFileName)
+        }
+        return directory
+            .appendingPathComponent(Self.localizationsDirectoryName, isDirectory: true)
+            .appendingPathComponent("\(localeIdentifier).html")
     }
 
     private func writeManifest(_ task: AppStorePromoTask, to directory: URL) throws {

@@ -72,6 +72,10 @@ enum PromoToolSupport {
         result["taskId"] = ["type": "string", "description": "Promotional artwork task slug."]
         if includeImage {
             result["imageId"] = ["type": "string", "description": "Promotional image slug within the task."]
+            result["localeIdentifier"] = [
+                "type": "string",
+                "description": "Optional image language version, such as en-US, zh-Hans, or ja. Defaults to the image's primary language."
+            ]
         }
         return result
     }

@@ -75,6 +75,107 @@ struct AppStorePromoKitTests {
         #expect(try store.readImage(storagePath: root.path, taskSlug: "promo", imageSlug: "one").html == image.html)
     }
 
+    @Test func imageLanguageVersionsAreIndependentAndLegacySafe() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppStorePromoDocumentStore()
+        _ = try store.createTask(
+            storagePath: root.path,
+            slug: "localized",
+            title: "Localized",
+            appName: "Lumi",
+            deviceFamily: .mac,
+            localeIdentifier: "en-US"
+        )
+        let primary = try store.createImage(
+            storagePath: root.path,
+            taskSlug: "localized",
+            imageSlug: "hero",
+            title: "Hello"
+        )
+        #expect(primary.image.localeIdentifiers == ["en-US"])
+
+        let chinese = try store.addLocalization(
+            "zh-hans",
+            copying: "en-US",
+            storagePath: root.path,
+            taskSlug: "localized",
+            imageSlug: "hero"
+        )
+        #expect(chinese.localeIdentifier == "zh-Hans")
+        #expect(chinese.image.localeIdentifiers == ["en-US", "zh-Hans"])
+        #expect(chinese.html == primary.html)
+
+        let localizedHTML = primary.html.replacingOccurrences(of: "Hello", with: "你好")
+        _ = try store.replaceHTML(
+            localizedHTML,
+            storagePath: root.path,
+            taskSlug: "localized",
+            imageSlug: "hero",
+            localeIdentifier: "zh-Hans"
+        )
+        let english = try store.readImage(
+            storagePath: root.path,
+            taskSlug: "localized",
+            imageSlug: "hero",
+            localeIdentifier: "en-US"
+        )
+        let readChinese = try store.readImage(
+            storagePath: root.path,
+            taskSlug: "localized",
+            imageSlug: "hero",
+            localeIdentifier: "zh-Hans"
+        )
+        #expect(english.html.contains("Hello"))
+        #expect(readChinese.html.contains("你好"))
+        #expect(english.htmlURL.lastPathComponent == "index.html")
+        #expect(readChinese.htmlURL.lastPathComponent == "zh-Hans.html")
+    }
+
+    @Test func legacyImageWithoutLocalesUsesTaskLocale() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let imageDirectory = root.appendingPathComponent("tasks/legacy/images/hero", isDirectory: true)
+        try FileManager.default.createDirectory(at: imageDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let json = """
+        {
+          "schemaVersion": 1,
+          "id": "legacy",
+          "title": "Legacy",
+          "appName": "Lumi",
+          "deviceFamily": "mac",
+          "localeIdentifier": "ja",
+          "images": [{
+            "id": "hero",
+            "title": "Hero",
+            "order": 0,
+            "htmlFileName": "index.html",
+            "createdAt": "2026-01-01T00:00:00Z",
+            "updatedAt": "2026-01-01T00:00:00Z"
+          }],
+          "createdAt": "2026-01-01T00:00:00Z",
+          "updatedAt": "2026-01-01T00:00:00Z"
+        }
+        """
+        try Data(json.utf8).write(
+            to: root.appendingPathComponent("tasks/legacy/manifest.json"),
+            options: .atomic
+        )
+        try "<!doctype html><html><body>従来版</body></html>".write(
+            to: imageDirectory.appendingPathComponent("index.html"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let store = AppStorePromoDocumentStore()
+        let task = try store.readTask(storagePath: root.path, taskSlug: "legacy")
+        let image = try store.readImage(storagePath: root.path, taskSlug: "legacy", imageSlug: "hero")
+        #expect(task.images[0].localeIdentifiers == ["ja"])
+        #expect(image.localeIdentifier == "ja")
+        #expect(image.html.contains("従来版"))
+    }
+
     @Test func storeDeletesManagedImagesAndTasks() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

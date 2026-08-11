@@ -15,6 +15,7 @@ final class WorkspaceStore: ObservableObject {
     @Published var selectedScope: Scope = .project
     @Published var selectedTaskID: String?
     @Published var selectedImageID: String?
+    @Published var selectedLocaleIdentifier: String?
     @Published var selectedDisplayType = "APP_IPHONE_67"
     @Published var lastError: String?
     @Published var lastExportURL: URL?
@@ -133,13 +134,25 @@ final class WorkspaceStore: ObservableObject {
             return
         }
         do {
-            let image = try documentStore.readImage(
-                storagePath: storagePath(for: selectedScope),
-                taskSlug: selectedTaskID,
-                imageSlug: selectedImageID ?? scope.images.sorted(by: { $0.order < $1.order }).first?.id ?? ""
-            )
+            let imageID = selectedImageID ?? scope.images.sorted(by: { $0.order < $1.order }).first?.id ?? ""
+            let image: AppStorePromoResolvedImage
+            do {
+                image = try documentStore.readImage(
+                    storagePath: storagePath(for: selectedScope),
+                    taskSlug: selectedTaskID,
+                    imageSlug: imageID,
+                    localeIdentifier: selectedLocaleIdentifier
+                )
+            } catch AppStorePromoStoreError.localeNotFound {
+                image = try documentStore.readImage(
+                    storagePath: storagePath(for: selectedScope),
+                    taskSlug: selectedTaskID,
+                    imageSlug: imageID
+                )
+            }
             selectedImage = image
             selectedImageID = image.image.id
+            selectedLocaleIdentifier = image.localeIdentifier
             self.selectedTaskID = image.task.id
             let allowed = AppStorePromoDisplaySpec.presets(for: image.task.deviceFamily)
             if !allowed.contains(where: { $0.displayType == selectedDisplayType }) {
@@ -153,6 +166,9 @@ final class WorkspaceStore: ObservableObject {
     // MARK: - Selection
 
     func selectScope(_ scope: Scope, taskID: String, imageID: String?) {
+        if selectedScope != scope || selectedTaskID != taskID || selectedImageID != imageID {
+            selectedLocaleIdentifier = nil
+        }
         selectedScope = scope
         selectedTaskID = taskID
         selectedImageID = imageID
@@ -177,12 +193,35 @@ final class WorkspaceStore: ObservableObject {
 
     // MARK: - Mutations
 
+    func selectLocale(_ localeIdentifier: String) {
+        selectedLocaleIdentifier = localeIdentifier
+        refreshSelectedImage()
+    }
+
+    func addLocale(_ localeIdentifier: String) {
+        guard let selectedImage else { return }
+        do {
+            let localized = try documentStore.addLocalization(
+                localeIdentifier,
+                copying: selectedImage.localeIdentifier,
+                storagePath: storagePath(for: selectedScope),
+                taskSlug: selectedImage.task.id,
+                imageSlug: selectedImage.image.id
+            )
+            selectedLocaleIdentifier = localized.localeIdentifier
+            reload(scope: selectedScope, selectTask: localized.task.id, image: localized.image.id)
+        } catch {
+            setError(error)
+        }
+    }
+
     func deleteTask(scope: Scope, id: String) {
         do {
             try documentStore.deleteTask(storagePath: storagePath(for: scope), taskSlug: id)
             if selectedScope == scope, selectedTaskID == id {
                 selectedTaskID = nil
                 selectedImageID = nil
+                selectedLocaleIdentifier = nil
                 selectedImage = nil
             }
             reload()

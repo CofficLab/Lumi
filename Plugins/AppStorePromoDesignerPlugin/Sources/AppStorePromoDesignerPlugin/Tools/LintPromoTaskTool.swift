@@ -21,10 +21,17 @@ public struct LintPromoTaskTool: LumiAgentTool {
         var lines: [String] = []
         var errors = 0
         for image in task.images.sorted(by: { $0.order < $1.order }) {
-            let report = try PromoToolSupport.store.lintImage(storagePath: storagePath, taskSlug: taskID, imageSlug: image.id)
-            errors += report.errors.count
-            let details = report.issues.map { "\($0.severity.rawValue):\($0.code) \($0.message)" }.joined(separator: " | ")
-            lines.append("image=\(image.id) \(report.isValid ? "valid" : "invalid") \(details)")
+            for localeIdentifier in image.localeIdentifiers {
+                let report = try PromoToolSupport.store.lintImage(
+                    storagePath: storagePath,
+                    taskSlug: taskID,
+                    imageSlug: image.id,
+                    localeIdentifier: localeIdentifier
+                )
+                errors += report.errors.count
+                let details = report.issues.map { "\($0.severity.rawValue):\($0.code) \($0.message)" }.joined(separator: " | ")
+                lines.append("image=\(image.id) locale=\(localeIdentifier) \(report.isValid ? "valid" : "invalid") \(details)")
+            }
         }
         return (["Promo task lint (scope=\(scope.rawValue)): \(errors == 0 ? "PASS" : "FAIL") errors=\(errors)"] + lines).joined(separator: "\n")
     }

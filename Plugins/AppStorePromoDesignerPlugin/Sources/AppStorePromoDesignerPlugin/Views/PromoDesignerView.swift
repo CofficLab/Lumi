@@ -60,7 +60,7 @@ public struct PromoDesignerView: View {
                             sendBlockToChat(selection, resolved: resolved)
                         }
                     )
-                    .id("\(resolved.image.updatedAt.timeIntervalSince1970)-\(preset.displayType)")
+                    .id("\(resolved.image.updatedAt.timeIntervalSince1970)-\(resolved.localeIdentifier)-\(preset.displayType)")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     zoomBar
                 }
@@ -171,34 +171,40 @@ public struct PromoDesignerView: View {
                 withIntermediateDirectories: true
             )
             for imageMeta in task.images.sorted(by: { $0.order < $1.order }) {
-                let image = try workspace.documentStore.readImage(
-                    storagePath: storagePath,
-                    taskSlug: task.id,
-                    imageSlug: imageMeta.id
-                )
-                let report = try workspace.documentStore.lintImage(
-                    storagePath: storagePath,
-                    taskSlug: task.id,
-                    imageSlug: imageMeta.id
-                )
-                guard report.isValid else {
-                    throw AppStorePromoStoreError.invalidHTML(report.errors)
+                for localeIdentifier in imageMeta.localeIdentifiers {
+                    let image = try workspace.documentStore.readImage(
+                        storagePath: storagePath,
+                        taskSlug: task.id,
+                        imageSlug: imageMeta.id,
+                        localeIdentifier: localeIdentifier
+                    )
+                    let report = try workspace.documentStore.lintImage(
+                        storagePath: storagePath,
+                        taskSlug: task.id,
+                        imageSlug: imageMeta.id,
+                        localeIdentifier: localeIdentifier
+                    )
+                    guard report.isValid else {
+                        throw AppStorePromoStoreError.invalidHTML(report.errors)
+                    }
+                    let data = try await AppStorePromoHTMLExporter.exportPNG(
+                        html: image.html,
+                        fileURL: image.htmlURL,
+                        preset: preset
+                    )
+                    let localeDirectory = targetDirectory.appendingPathComponent(localeIdentifier, isDirectory: true)
+                    try FileManager.default.createDirectory(at: localeDirectory, withIntermediateDirectories: true)
+                    let filename = String(
+                        format: "%02d-%@-%@.png",
+                        imageMeta.order + 1,
+                        imageMeta.id,
+                        preset.displayType
+                    )
+                    try data.write(
+                        to: localeDirectory.appendingPathComponent(filename),
+                        options: .atomic
+                    )
                 }
-                let data = try await AppStorePromoHTMLExporter.exportPNG(
-                    html: image.html,
-                    fileURL: image.htmlURL,
-                    preset: preset
-                )
-                let filename = String(
-                    format: "%02d-%@-%@.png",
-                    imageMeta.order + 1,
-                    imageMeta.id,
-                    preset.displayType
-                )
-                try data.write(
-                    to: targetDirectory.appendingPathComponent(filename),
-                    options: .atomic
-                )
             }
             workspace.lastExportURL = targetDirectory
             workspace.lastError = nil
@@ -220,6 +226,7 @@ public struct PromoDesignerView: View {
 
         任务：\(resolved.task.title)（\(resolved.task.deviceFamily.rawValue)）
         图片：\(resolved.image.title)
+        语言：\(resolved.localeIdentifier)
         区块标识：\(selection.blockID)
 
         当前该区块的 HTML：

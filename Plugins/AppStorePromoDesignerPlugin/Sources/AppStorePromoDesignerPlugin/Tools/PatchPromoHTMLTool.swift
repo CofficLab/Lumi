@@ -33,9 +33,10 @@ public struct PatchPromoHTMLTool: LumiAgentTool {
             operations: operations,
             storagePath: try await PromoToolSupport.storagePath(for: scope),
             taskSlug: taskID,
-            imageSlug: imageID
+            imageSlug: imageID,
+            localeIdentifier: arguments.string("localeIdentifier")
         )
         await PromoToolSupport.notify(scope: scope, taskID: taskID, imageID: imageID)
-        return "Applied \(operations.count) HTML patches atomically (scope=\(scope.rawValue)).\nCall app_store_promo_preview_image to inspect the rendered result."
+        return "Applied \(operations.count) HTML patches atomically (scope=\(scope.rawValue), locale=\(arguments.string("localeIdentifier") ?? "primary")).\nCall app_store_promo_preview_image to inspect the rendered result."
     }
 }

@@ -19,6 +19,7 @@ struct PromoDesignerPluginTests {
             "app_store_promo_create_task",
             "app_store_promo_read_task",
             "app_store_promo_create_image",
+            "app_store_promo_add_image_language",
             "app_store_promo_read_html",
             "app_store_promo_replace_html",
             "app_store_promo_patch_html",
@@ -69,6 +70,26 @@ struct PromoDesignerPluginTests {
         )
         #expect(createImage.contains("scope=app"))
         #expect(createImage.contains("Created promotional HTML image"))
+
+        let addLanguage = try await AddPromoImageLocalizationTool().execute(
+            arguments: [
+                "taskId": .string("launch-set"),
+                "imageId": .string("agent-workflows"),
+                "localeIdentifier": .string("zh-Hans"),
+            ],
+            kernel: kernel
+        )
+        #expect(addLanguage.contains("locale=zh-Hans"))
+
+        let localizedHTML = try await ReadPromoHTMLTool().execute(
+            arguments: [
+                "taskId": .string("launch-set"),
+                "imageId": .string("agent-workflows"),
+                "localeIdentifier": .string("zh-Hans"),
+            ],
+            kernel: kernel
+        )
+        #expect(localizedHTML.contains("localeIdentifier=zh-Hans"))
 
         _ = try await CreatePromoImageTool().execute(
             arguments: [

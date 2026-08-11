@@ -31,13 +31,19 @@ public struct ReviewPromoImageTool: LumiAgentTool {
         let image = try PromoToolSupport.store.readImage(
             storagePath: storagePath,
             taskSlug: try PromoToolSupport.required("taskId", arguments),
-            imageSlug: try PromoToolSupport.required("imageId", arguments)
+            imageSlug: try PromoToolSupport.required("imageId", arguments),
+            localeIdentifier: arguments.string("localeIdentifier")
         )
         let type = arguments.string("displayType") ?? AppStorePromoDisplaySpec.presets(for: image.task.deviceFamily).first?.displayType
         guard let type, let preset = AppStorePromoDisplaySpec.preset(for: type), preset.family == image.task.deviceFamily else {
             throw PromoToolSupport.ToolArgumentError.invalid("displayType")
         }
-        let report = try PromoToolSupport.store.lintImage(storagePath: storagePath, taskSlug: image.task.id, imageSlug: image.image.id)
+        let report = try PromoToolSupport.store.lintImage(
+            storagePath: storagePath,
+            taskSlug: image.task.id,
+            imageSlug: image.image.id,
+            localeIdentifier: image.localeIdentifier
+        )
         guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
 
         // 2. 渲染 PNG（复用 PreviewPromoImageTool 的渲染管线）。
@@ -47,13 +53,14 @@ public struct ReviewPromoImageTool: LumiAgentTool {
         let attachment = LumiImageAttachment(
             mimeType: "image/png",
             base64Data: data.base64EncodedString(),
-            fileName: "\(image.image.id)-\(type).png"
+            fileName: "\(image.image.id)-\(image.localeIdentifier)-\(type).png"
         )
         let focus = arguments.string("focus")?.trimmingCharacters(in: .whitespacesAndNewlines)
         let request = LumiLLMRequest(
             messages: Self.designerReviewMessages(
                 task: image.task,
                 image: image.image,
+                localeIdentifier: image.localeIdentifier,
                 displayType: type,
                 focus: focus,
                 attachment: attachment
@@ -110,6 +117,7 @@ public struct ReviewPromoImageTool: LumiAgentTool {
     private static func designerReviewMessages(
         task: AppStorePromoTask,
         image: AppStorePromoImage,
+        localeIdentifier: String,
         displayType: String,
         focus: String?,
         attachment: LumiImageAttachment
@@ -131,7 +139,7 @@ public struct ReviewPromoImageTool: LumiAgentTool {
             Task: \(task.title)
             App: \(task.appName)
             Device family: \(task.deviceFamily.rawValue)
-            Locale: \(task.localeIdentifier)
+            Locale: \(localeIdentifier)
             Image: \(image.title) (order \(image.order + 1))
             Rendered display type: \(displayType)
 

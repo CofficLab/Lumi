@@ -53,25 +53,38 @@ public struct ExportPromoTaskTool: LumiAgentTool {
         var stagedExports: [StagedExport] = []
         for preset in presets {
             for imageMeta in task.images.sorted(by: { $0.order < $1.order }) {
-                let filename = String(format: "%02d-%@.png", imageMeta.order + 1, imageMeta.id)
-                let destinationURL = outputDirectory
-                    .appendingPathComponent(preset.displayType, isDirectory: true)
-                    .appendingPathComponent(filename)
-                if fileManager.fileExists(atPath: destinationURL.path), !overwrite {
-                    throw AppStorePromoStoreError.alreadyExists(destinationURL.path)
-                }
+                for localeIdentifier in imageMeta.localeIdentifiers {
+                    let filename = String(format: "%02d-%@.png", imageMeta.order + 1, imageMeta.id)
+                    let destinationURL = outputDirectory
+                        .appendingPathComponent(localeIdentifier, isDirectory: true)
+                        .appendingPathComponent(preset.displayType, isDirectory: true)
+                        .appendingPathComponent(filename)
+                    if fileManager.fileExists(atPath: destinationURL.path), !overwrite {
+                        throw AppStorePromoStoreError.alreadyExists(destinationURL.path)
+                    }
 
-                let image = try PromoToolSupport.store.readImage(storagePath: storagePath, taskSlug: taskID, imageSlug: imageMeta.id)
-                let report = try PromoToolSupport.store.lintImage(storagePath: storagePath, taskSlug: taskID, imageSlug: imageMeta.id)
-                guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
-                let data = try await AppStorePromoHTMLExporter.exportPNG(html: image.html, fileURL: image.htmlURL, preset: preset)
-                let stagedURL = stagingDirectory.appendingPathComponent("rendered-\(stagedExports.count).png")
-                try data.write(to: stagedURL, options: .atomic)
-                stagedExports.append(StagedExport(
-                    stagedURL: stagedURL,
-                    destinationURL: destinationURL,
-                    summary: "\(destinationURL.path) \(preset.width)x\(preset.height) \(data.count) bytes"
-                ))
+                    let image = try PromoToolSupport.store.readImage(
+                        storagePath: storagePath,
+                        taskSlug: taskID,
+                        imageSlug: imageMeta.id,
+                        localeIdentifier: localeIdentifier
+                    )
+                    let report = try PromoToolSupport.store.lintImage(
+                        storagePath: storagePath,
+                        taskSlug: taskID,
+                        imageSlug: imageMeta.id,
+                        localeIdentifier: localeIdentifier
+                    )
+                    guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
+                    let data = try await AppStorePromoHTMLExporter.exportPNG(html: image.html, fileURL: image.htmlURL, preset: preset)
+                    let stagedURL = stagingDirectory.appendingPathComponent("rendered-\(stagedExports.count).png")
+                    try data.write(to: stagedURL, options: .atomic)
+                    stagedExports.append(StagedExport(
+                        stagedURL: stagedURL,
+                        destinationURL: destinationURL,
+                        summary: "\(destinationURL.path) \(preset.width)x\(preset.height) \(data.count) bytes"
+                    ))
+                }
             }
         }
 

@@ -37,12 +37,32 @@
         }
       }
     },
+    "Add Language" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加语言"
+          }
+        }
+      }
+    },
     "App Store Promo Designer" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "App Store 宣传图设计器"
+          }
+        }
+      }
+    },
+    "Preview Language" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览语言"
           }
         }
       }

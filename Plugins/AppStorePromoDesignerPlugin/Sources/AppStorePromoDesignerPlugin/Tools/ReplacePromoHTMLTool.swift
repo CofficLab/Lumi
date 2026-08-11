@@ -23,9 +23,10 @@ public struct ReplacePromoHTMLTool: LumiAgentTool {
             try PromoToolSupport.required("html", arguments),
             storagePath: try await PromoToolSupport.storagePath(for: scope),
             taskSlug: taskID,
-            imageSlug: imageID
+            imageSlug: imageID,
+            localeIdentifier: arguments.string("localeIdentifier")
         )
         await PromoToolSupport.notify(scope: scope, taskID: taskID, imageID: imageID)
-        return "Promotional HTML updated and validated (scope=\(scope.rawValue)). bytes=\(image.html.utf8.count)\nCall app_store_promo_preview_image to inspect the rendered result."
+        return "Promotional HTML updated and validated (scope=\(scope.rawValue), locale=\(image.localeIdentifier)). bytes=\(image.html.utf8.count)\nCall app_store_promo_preview_image to inspect the rendered result."
     }
 }

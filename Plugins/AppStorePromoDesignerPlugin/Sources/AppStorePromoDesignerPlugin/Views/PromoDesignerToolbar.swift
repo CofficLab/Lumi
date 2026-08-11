@@ -38,6 +38,7 @@ struct PromoDesignerToolbar: View {
                 .lineLimit(1)
             Spacer()
 
+            languagePicker
             displayPicker
             modePicker
 
@@ -61,6 +62,46 @@ struct PromoDesignerToolbar: View {
     }
 
     // MARK: - 子视图
+
+    @ViewBuilder
+    private var languagePicker: some View {
+        if let image = workspace.selectedImage {
+            Menu {
+                ForEach(image.image.localeIdentifiers, id: \.self) { localeIdentifier in
+                    Button {
+                        workspace.selectLocale(localeIdentifier)
+                    } label: {
+                        let locale = AppStorePromoLocale(identifier: localeIdentifier)
+                        if localeIdentifier == workspace.selectedLocaleIdentifier {
+                            Label(locale.displayName, systemImage: "checkmark")
+                        } else {
+                            Text(locale.displayName)
+                        }
+                    }
+                }
+
+                Divider()
+
+                Menu {
+                    let existing = Set(image.image.localeIdentifiers)
+                    ForEach(AppStorePromoLocale.common.filter { !existing.contains($0.identifier) }) { locale in
+                        Button(locale.displayName) {
+                            workspace.addLocale(locale.identifier)
+                        }
+                    }
+                } label: {
+                    Label(PromoLocalization.string("Add Language"), systemImage: "plus")
+                }
+            } label: {
+                Label(
+                    AppStorePromoLocale(identifier: image.localeIdentifier).localizedName,
+                    systemImage: "globe"
+                )
+            }
+            .help(PromoLocalization.string("Preview Language"))
+            .accessibilityLabel(PromoLocalization.string("Preview Language"))
+        }
+    }
 
     @ViewBuilder
     private var displayPicker: some View {

@@ -17,8 +17,9 @@ public struct ReadPromoHTMLTool: LumiAgentTool {
         let image = try PromoToolSupport.store.readImage(
             storagePath: try await PromoToolSupport.storagePath(for: scope),
             taskSlug: try PromoToolSupport.required("taskId", arguments),
-            imageSlug: try PromoToolSupport.required("imageId", arguments)
+            imageSlug: try PromoToolSupport.required("imageId", arguments),
+            localeIdentifier: arguments.string("localeIdentifier")
         )
-        return "--- index.html ---\n\(image.html)"
+        return "localeIdentifier=\(image.localeIdentifier) htmlPath=\(image.htmlURL.path)\n--- HTML ---\n\(image.html)"
     }
 }

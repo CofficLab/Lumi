@@ -58,6 +58,7 @@ public struct AppStorePromoImage: Codable, Equatable, Identifiable, Sendable {
     public var title: String
     public var order: Int
     public var htmlFileName: String
+    public var localeIdentifiers: [String]
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -66,6 +67,7 @@ public struct AppStorePromoImage: Codable, Equatable, Identifiable, Sendable {
         title: String,
         order: Int,
         htmlFileName: String = "index.html",
+        localeIdentifiers: [String] = [],
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -73,13 +75,29 @@ public struct AppStorePromoImage: Codable, Equatable, Identifiable, Sendable {
         self.title = title
         self.order = order
         self.htmlFileName = htmlFileName
+        self.localeIdentifiers = localeIdentifiers
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, order, htmlFileName, localeIdentifiers, createdAt, updatedAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        order = try container.decode(Int.self, forKey: .order)
+        htmlFileName = try container.decodeIfPresent(String.self, forKey: .htmlFileName) ?? "index.html"
+        localeIdentifiers = try container.decodeIfPresent([String].self, forKey: .localeIdentifiers) ?? []
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }
 }
 
 public struct AppStorePromoTask: Codable, Equatable, Identifiable, Sendable {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var id: String
@@ -119,14 +137,57 @@ public struct AppStorePromoResolvedImage: Equatable, Sendable {
     public let image: AppStorePromoImage
     public let directoryURL: URL
     public let html: String
+    public let localeIdentifier: String
+    private let resolvedHTMLURL: URL
 
-    public var htmlURL: URL { directoryURL.appendingPathComponent(image.htmlFileName) }
+    public var htmlURL: URL { resolvedHTMLURL }
     public var assetsDirectoryURL: URL { directoryURL.appendingPathComponent("assets", isDirectory: true) }
 
-    public init(task: AppStorePromoTask, image: AppStorePromoImage, directoryURL: URL, html: String) {
+    public init(
+        task: AppStorePromoTask,
+        image: AppStorePromoImage,
+        directoryURL: URL,
+        html: String,
+        localeIdentifier: String? = nil,
+        htmlURL: URL? = nil
+    ) {
         self.task = task
         self.image = image
         self.directoryURL = directoryURL
         self.html = html
+        self.localeIdentifier = localeIdentifier ?? task.localeIdentifier
+        self.resolvedHTMLURL = htmlURL ?? directoryURL.appendingPathComponent(image.htmlFileName)
+    }
+}
+
+public struct AppStorePromoLocale: Equatable, Hashable, Identifiable, Sendable {
+    public static let common: [AppStorePromoLocale] = [
+        "en-US", "en-GB", "zh-Hans", "zh-Hant", "ja", "ko", "fr-FR", "de-DE",
+        "es-ES", "pt-BR", "it", "nl-NL", "ru", "ar", "tr", "th", "vi"
+    ].map(AppStorePromoLocale.init(identifier:))
+
+    public let identifier: String
+    public var id: String { identifier }
+
+    public init(identifier: String) {
+        self.identifier = identifier
+    }
+
+    public var localizedName: String {
+        Locale.current.localizedString(forIdentifier: identifier) ?? identifier
+    }
+
+    public var displayName: String { "\(localizedName) · \(identifier)" }
+
+    public static func normalize(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pattern = #"^[A-Za-z]{2,3}(?:-[A-Za-z]{2,4}|-[0-9]{3})*$"#
+        guard !trimmed.isEmpty, trimmed.range(of: pattern, options: .regularExpression) != nil else { return nil }
+        return trimmed.split(separator: "-").enumerated().map { index, part in
+            if index == 0 { return part.lowercased() }
+            if part.count == 4 { return part.prefix(1).uppercased() + part.dropFirst().lowercased() }
+            if part.count == 2 { return part.uppercased() }
+            return String(part)
+        }.joined(separator: "-")
     }
 }
