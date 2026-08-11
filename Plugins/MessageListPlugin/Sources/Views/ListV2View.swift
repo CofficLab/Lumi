@@ -8,7 +8,7 @@ import SwiftUI
 struct ListV2View: View, SuperLog {
     nonisolated static let logger = MessageListPlugin.logger
     nonisolated static let emoji = "📄"
-    nonisolated static let verbose: Bool = true
+    nonisolated static let verbose: Bool = false
 
     let kernel: LumiKernel
     @StateObject private var viewModel: ListV2ViewModel

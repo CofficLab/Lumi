@@ -342,6 +342,7 @@ public final class ToolManagerService: ToolManaging {
     ) {
         // 捕获必要的信息到值类型，避免引用 kernel 等复杂对象
         let store = recordStore
+        let eventManager = kernel?.eventManager
 
         // 后台异步记录，不 await，不阻塞
         Task {
@@ -362,9 +363,8 @@ public final class ToolManagerService: ToolManaging {
                 riskLevel: riskLevel,
                 turnControl: turnControl
             )
-            NotificationCenter.default.post(
-                name: .lumiToolActivityDidChange,
-                object: nil,
+            eventManager?.post(
+                .toolActivityDidChange,
                 userInfo: [
                     "conversationID": conversationID
                 ]
