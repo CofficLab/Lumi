@@ -54,9 +54,8 @@ struct AppListSection: View {
                         isSelected: viewModel.selectedApp?.id == app.id,
                         action: { viewModel.selectApp(app, openDistribution: true) }
                     ) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 10) {
                             IconView(url: app.iconURL)
-                                .frame(width: 16, height: 16)
 
                             Text(app.name)
                                 .font(.callout)
@@ -64,10 +63,10 @@ struct AppListSection: View {
 
                             Spacer(minLength: 0)
                         }
+                        .padding(.vertical, 2)
                     }
                 }
             }
-            .padding(.horizontal, 4)
         }
     }
 }
