@@ -40,13 +40,12 @@ GET /v2/inAppPurchases
       "id": "iap-123",
       "attributes": {
         "productId": "com.example.premium",
-        "referenceName": "Premium Upgrade",
+        "name": "Premium Upgrade",
         "inAppPurchaseType": "NON_CONSUMABLE",
         "state": "APPROVED",
         "reviewNote": "Premium features unlock note",
         "familySharable": false,
-        "contentHosting": false,
-        "contentHostingEnabled": false
+        "contentHosting": false
       },
       "relationships": {
         "app": {
@@ -106,7 +105,7 @@ POST /v2/inAppPurchases
     "type": "inAppPurchases",
     "attributes": {
       "productId": "com.example.coins.100",
-      "referenceName": "100 Coins Pack",
+      "name": "100 Coins Pack",
       "inAppPurchaseType": "CONSUMABLE",
       "reviewNote": "Virtual currency for in-app use"
     },
@@ -138,7 +137,7 @@ PATCH /v2/inAppPurchases/{id}
     "type": "inAppPurchases",
     "id": "iap-123",
     "attributes": {
-      "referenceName": "Updated Name",
+      "name": "Updated Name",
       "reviewNote": "Updated review note",
       "familySharable": true
     }
@@ -162,13 +161,12 @@ DELETE /v2/inAppPurchases/{id}
   "id": "string",
   "attributes": {
     "productId": "string",
-    "referenceName": "string",
+    "name": "string",
     "inAppPurchaseType": "string",
     "state": "string",
     "reviewNote": "string",
     "familySharable": "boolean",
-    "contentHosting": "boolean",
-    "contentHostingEnabled": "boolean"
+    "contentHosting": "boolean"
   },
   "relationships": {
     "app": "object",
@@ -187,13 +185,12 @@ DELETE /v2/inAppPurchases/{id}
 | Attribute | Type | Description |
 |-----------|------|-------------|
 | `productId` | string | 产品 ID（在 App Store Connect 中唯一） |
-| `referenceName` | string | 参考名称（内部使用） |
+| `name` | string | 名称（内部参考名） |
 | `inAppPurchaseType` | string | 购买类型 |
 | `state` | string | 状态 |
 | `reviewNote` | string | 审核说明（给审核员看的） |
 | `familySharable` | boolean | 是否支持家庭共享 |
 | `contentHosting` | boolean | 是否托管内容 |
-| `contentHostingEnabled` | boolean | 内容托管是否启用 |
 
 ## In-App Purchase Types
 

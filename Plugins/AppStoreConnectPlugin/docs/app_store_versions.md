@@ -23,7 +23,7 @@ GET /v1/appStoreVersions
 |-----------|------|----------|-------------|
 | `filter[app]` | string[] | No | 按应用 ID 过滤 |
 | `filter[platform]` | string[] | No | 按平台过滤：`IOS`, `MAC_OS`, `TV_OS` |
-| `filter[appStoreState]` | string[] | No | 按状态过滤 |
+| `filter[appVersionState]` | string[] | No | 按状态过滤 |
 | `filter[versionString]` | string[] | No | 按版本号过滤 |
 | `sort` | string | No | 排序字段：`createdDate`, `-createdDate`, `versionString`, `-versionString` |
 | `fields[appStoreVersions]` | string[] | No | 指定返回的字段 |
@@ -41,8 +41,7 @@ GET /v1/appStoreVersions
       "attributes": {
         "versionString": "1.0.0",
         "platform": "IOS",
-        "appStoreState": "READY_FOR_SALE",
-        "appVersionState": "READY_FOR_SALE",
+        "appVersionState": "READY_FOR_DISTRIBUTION",
         "copyright": "© 2024 Example Inc.",
         "downloadable": true,
         "earliestReleaseDate": null,
@@ -118,8 +117,7 @@ GET /v1/appStoreVersions/{id}
     "attributes": {
       "versionString": "1.0.0",
       "platform": "IOS",
-      "appStoreState": "READY_FOR_SALE",
-      "appVersionState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
       "copyright": "© 2024 Example Inc.",
       "downloadable": true,
       "releaseType": "AFTER_APPROVAL",
@@ -188,7 +186,7 @@ POST /v1/appStoreVersions
     "attributes": {
       "versionString": "1.1.0",
       "platform": "IOS",
-      "appStoreState": "DEVELOPER_REJECTED",
+      "appVersionState": "DEVELOPER_REJECTED",
       "copyright": "© 2024 Example Inc.",
       "releaseType": "AFTER_APPROVAL"
     }
@@ -258,8 +256,7 @@ HTTP/1.1 204 No Content
   "attributes": {
     "versionString": "string",
     "platform": "string",
-    "appStoreState": "string",
-    "appVersionState": "string",
+      "appVersionState": "string",
     "copyright": "string",
     "downloadable": "boolean",
     "earliestReleaseDate": "string|null",
@@ -287,8 +284,7 @@ HTTP/1.1 204 No Content
 |-----------|------|-------------|
 | `versionString` | string | 版本号字符串（如 "1.0.0"） |
 | `platform` | string | 平台：`IOS`, `MAC_OS`, `TV_OS` |
-| `appStoreState` | string | App Store 状态 |
-| `appVersionState` | string | 版本状态 |
+| `appVersionState` | string | 版本状态（旧字段 `appStoreState` 已废弃） |
 | `copyright` | string | 版权信息 |
 | `downloadable` | boolean | 是否可下载 |
 | `earliestReleaseDate` | string\|null | 最早发布日期（ISO 8601 格式） |
@@ -296,25 +292,25 @@ HTTP/1.1 204 No Content
 | `releaseType` | string | 发布类型：`MANUAL`, `AFTER_APPROVAL`, `SCHEDULED` |
 | `usesIdfa` | boolean | 是否使用 IDFA |
 
-## App Store States
+## App Store Version States（appVersionState，旧字段 `appStoreState` 已废弃）
 
 | State | Description |
 |-------|-------------|
+| `ACCEPTED` | 已接受 |
 | `DEVELOPER_REJECTED` | 开发者拒绝 |
-| `DEVELOPER_REMOVED_FROM_SALE` | 开发者从销售中移除 |
 | `IN_REVIEW` | 审核中 |
+| `INVALID_BINARY` | 无效二进制文件 |
 | `METADATA_REJECTED` | 元数据被拒绝 |
 | `PENDING_APPLE_RELEASE` | 等待 Apple 按计划发布（`releaseType: SCHEDULED`） |
 | `PENDING_DEVELOPER_RELEASE` | 等待开发者发布（`releaseType: MANUAL`，审核已通过） |
 | `PREPARE_FOR_SUBMISSION` | 准备提交 |
 | `PROCESSING_FOR_DISTRIBUTION` | 处理分发 |
-| `READY_FOR_SALE` | 准备销售 |
+| `READY_FOR_DISTRIBUTION` | 准备分发 |
+| `READY_FOR_REVIEW` | 准备审核 |
 | `REJECTED` | 被拒绝 |
-| `REMOVED_FROM_SALE` | 从销售中移除 |
+| `REPLACED_WITH_NEW_VERSION` | 被新版本替换 |
 | `WAITING_FOR_EXPORT_COMPLIANCE` | 等待出口合规 |
 | `WAITING_FOR_REVIEW` | 等待审核 |
-| `WAITING_FOR_REVIEWER_ACTION` | 等待审核员操作 |
-| `REPLACED_WITH_NEW_VERSION` | 被新版本替换 |
 
 ### 手动发布
 
