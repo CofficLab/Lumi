@@ -1,5 +1,4 @@
 import LumiKernel
-import LumiLocalizationKit
 import LumiUI
 import SwiftUI
 
@@ -21,34 +20,10 @@ struct LoadingView: View {
         Color(hex: isDark ? "A79BFF" : "6558D8")
     }
 
-    private var secondaryTextColor: Color {
-        Color(hex: isDark ? "D7D8E8" : "5D6074")
-    }
-
     var body: some View {
         ZStack {
             backgroundView
-
-            VStack(spacing: DesignTokens.Spacing.xxl) {
-                Spacer()
-
-                breathingMark
-
-                VStack(spacing: DesignTokens.Spacing.md) {
-                    Text("Lumi")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundStyle(isDark ? Color.white : Color(hex: "29283D"))
-
-                    Text(LumiLocalization.string("Loading components and plugins…", bundle: .module))
-                        .font(.appCaption)
-                        .foregroundColor(secondaryTextColor)
-                }
-                .frame(maxWidth: 320)
-
-                Spacer()
-                Spacer()
-            }
-            .padding(.horizontal, DesignTokens.Spacing.xl)
+            breathingMark
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(backgroundColor)
