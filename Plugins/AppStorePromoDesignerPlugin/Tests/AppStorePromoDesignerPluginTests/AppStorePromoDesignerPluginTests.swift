@@ -6,6 +6,15 @@ import Testing
 @MainActor
 @Suite("App Store promo designer plugin", .serialized)
 struct PromoDesignerPluginTests {
+    @Test func openingWithoutConfiguredStorageDoesNotShowAnError() {
+        Runtime.reset()
+        WorkspaceStore.shared.reload()
+
+        #expect(WorkspaceStore.shared.projectTasks.isEmpty)
+        #expect(WorkspaceStore.shared.appTasks.isEmpty)
+        #expect(WorkspaceStore.shared.lastError == nil)
+    }
+
     @Test func contributesOptInWorkspaceAndCompleteToolSet() {
         let plugin = PromoDesignerPlugin()
         let kernel = LumiKernel()

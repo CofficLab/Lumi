@@ -83,6 +83,7 @@ final class WorkspaceStore: ObservableObject {
 
     /// 重新加载所有 scope 的任务列表以及当前选中图像。
     func reload() {
+        lastError = nil
         reloadProject()
         reloadApp()
         refreshSelectedImage()
@@ -90,6 +91,7 @@ final class WorkspaceStore: ObservableObject {
 
     /// 当某个 scope 的数据发生变化时调用，按需刷新任务与选中。
     func reload(scope: Scope, selectTask taskID: String? = nil, image imageID: String? = nil) {
+        lastError = nil
         switch scope {
         case .project:
             reloadProject()
@@ -108,9 +110,12 @@ final class WorkspaceStore: ObservableObject {
     }
 
     private func reloadProject() {
+        guard !projectStoragePath.isEmpty else {
+            projectTasks = []
+            return
+        }
         do {
             projectTasks = try documentStore.listTasks(storagePath: projectStoragePath)
-            lastError = nil
         } catch {
             projectTasks = []
             lastError = error.localizedDescription
@@ -118,9 +123,12 @@ final class WorkspaceStore: ObservableObject {
     }
 
     private func reloadApp() {
+        guard !appStoragePath.isEmpty else {
+            appTasks = []
+            return
+        }
         do {
             appTasks = try documentStore.listTasks(storagePath: appStoragePath)
-            lastError = nil
         } catch {
             appTasks = []
             lastError = error.localizedDescription
