@@ -3,22 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.8.4</title>
-            <pubDate>Mon, 10 Aug 2026 02:01:26 +0000</pubDate>
-            <sparkle:version>601</sparkle:version>
-            <sparkle:shortVersionString>5.8.4</sparkle:shortVersionString>
+            <title>5.9.0</title>
+            <pubDate>Tue, 11 Aug 2026 07:25:01 +0000</pubDate>
+            <sparkle:version>602</sparkle:version>
+            <sparkle:shortVersionString>5.9.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.8.4</h2>
-<h3>Changes since v5.8.3</h3>
+            <description><![CDATA[<h2>Release v5.9.0</h2>
+<h3>Changes since v5.8.4</h3>
 <ul>
-<li>fix(ci): assert non-main-app build lines unchanged by md5, not by value</li>
-<li>fix(ci): brace-quote NEW_BUILD_VERSION / OTHER_COUNT in Chinese echo strings</li>
-<li>fix(ci): scope CURRENT_PROJECT_VERSION bump to Lumi main app only</li>
-<li>fix(ci): use awk instead of grep -c in build number assertions</li>
-<li>refactor(AppStorePromoDesigner): remove preview/source mode toggle</li>
+<li>feat: 更新 App Store 推广页面和相关插件</li>
+<li>feat: 更新 App Store 推广页面和 UI 组件</li>
+<li>feat(AppStorePromo): expand designer plugin tools and document model</li>
+<li>feat(AppStorePromoDesignerPlugin): support per-project storage alongside app storage</li>
+<li>feat(BookletMakerPlugin): inject dynamic title into centre title toolbar</li>
+<li>feat(DiskManager): add agent tools for disk management</li>
+<li>feat(GoalTaskPlugin): hide toolbar button when no goals exist</li>
+<li>feat(HTTPExchangeStore): add nonisolated background write path</li>
+<li>feat(ListV2View): render independent streaming row with stable ID</li>
+<li>feat(ListV2ViewModel): subscribe to streaming store with frame gate</li>
+<li>feat(ListV3View): mirror V2 streaming row support + add explicit .id()</li>
+<li>feat(MessageStreamingStore): broadcast objectWillChange for streaming subscribers</li>
+<li>fix(GoalTaskPlugin): drop stale Sidebar response when switching conversations</li>
+<li>fix(i18n): rename Promo Tasks rail header to 宣传图</li>
+<li>fix(LLMKit): dedupe keychain status trace and fix APIKeyStore test fixtures</li>
+<li>fix(LLMKit): serve in-memory cached API keys on flaky keychain reads</li>
+<li>fix(PluginManager): notify UI immediately to avoid Toggle sticking</li>
+<li>fix(PluginManager): refresh enable toggle via plugin change notification</li>
+<li>fix(plugins): migrate tool activity to eventManager and disable MessageList verbose logging</li>
+<li>fix(promo): guard empty storage paths and add booklet-maker-core en-US localization</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.8.4</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.8.4/Lumi_5.8.4_x86_64.dmg" length="48173973" type="application/octet-stream" sparkle:edSignature="wU4/iJ2tJA+x5u9FdwvYW+G7+7D6vmCwAOQkLjXZ91+7JYQuG2sdfNUlRmqbiJL2KZtzH/tVRm0UdSWc3LlNBQ=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.9.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.9.0/Lumi_5.9.0_x86_64.dmg" length="48120606" type="application/octet-stream" sparkle:edSignature="u0z8ahcTcoaG2Z3AJGP3oKuVxcA2njIlcGrktSaVjJUYN5badud1irzsdoFWAgmhEUtW96AloUvt/ApSvi5nAQ=="/>
         </item>
     </channel>
 </rss>
