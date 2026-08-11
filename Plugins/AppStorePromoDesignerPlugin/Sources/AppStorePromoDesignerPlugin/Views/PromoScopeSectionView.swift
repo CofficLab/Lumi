@@ -1,7 +1,9 @@
+import LumiUI
 import SwiftUI
 
 /// Rail 中单个 scope 分组的展开容器：标题 + 任务列表或空态提示。
 struct PromoScopeSectionView<EmptyContent: View>: View {
+    @LumiTheme private var theme
     @Binding var isExpanded: Bool
     let icon: String
     let iconColor: Color
@@ -57,23 +59,23 @@ struct PromoScopeSectionView<EmptyContent: View>: View {
 
     @ViewBuilder
     private var header: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: DesignTokens.Spacing.xs + 2) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(.footnote)
                 .foregroundStyle(iconColor)
             Text(title)
                 .font(.subheadline.weight(.semibold))
+                .foregroundStyle(theme.textPrimary)
             Text(subtitle)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(.footnote)
+                .foregroundStyle(theme.textTertiary)
                 .lineLimit(1)
             Spacer(minLength: 0)
             Text("\(count)")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
+                .font(.footnote.monospacedDigit())
+                .foregroundStyle(theme.textTertiary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, DesignTokens.Spacing.xs)
         .contentShape(Rectangle())
     }
 }

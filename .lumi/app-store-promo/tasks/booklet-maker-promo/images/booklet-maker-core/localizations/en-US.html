@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-Hans">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>小册子制作</title>
+  <title>Booklet Maker</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; height: 100%; overflow: hidden; }
@@ -13,9 +13,9 @@
       color: #ffffff;
       display: flex;
       flex-direction: column;
-      padding: 5% 5% 8%;
+      padding: 5% 5% 5%;
     }
-    .header { text-align: center; margin-bottom: 3%; }
+    .header { text-align: center; margin-bottom: 2%; }
     .brand {
       font-size: clamp(14px, 1.8vmin, 24px);
       font-weight: 700;
@@ -33,10 +33,10 @@
       text-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .subtitle {
-      font-size: clamp(14px, 2vmin, 28px);
+      font-size: clamp(16px, 2.2vmin, 30px);
       font-weight: 400;
-      opacity: 0.5;
-      margin-top: 0.8%;
+      opacity: 0.85;
+      margin-top: 0.6%;
     }
     .visual {
       flex: 1;
@@ -158,14 +158,14 @@
     .tag {
       text-align: center;
       margin-top: 3%;
-      font-size: clamp(14px, 2vmin, 24px);
+      font-size: clamp(15px, 2vmin, 26px);
       font-weight: 700;
       opacity: 1;
       letter-spacing: 0.05em;
       color: #4A90E2;
       background: rgba(74, 144, 226, 0.12);
-      padding: 8px 24px;
-      border-radius: 20px;
+      padding: 10px 28px;
+      border-radius: 22px;
       display: inline-block;
       align-self: center;
       border: 1px solid rgba(74, 144, 226, 0.25);
@@ -175,31 +175,31 @@
 <body>
   <section class="header">
     <div class="brand">BookletMaker</div>
-    <h1>小册子制作</h1>
-    <div class="subtitle">普通 PDF 一键转为可装订小册子</div>
+    <h1>Booklet Maker</h1>
+    <div class="subtitle">Convert any PDF into a printable booklet in one click</div>
   </section>
   <section class="visual">
     <div class="pdf-stack">
       <div class="pdf-page">
         <div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div>
-        <div class="page-num">第 1 页</div>
+        <div class="page-num">Page 1</div>
       </div>
       <div class="pdf-page">
         <div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div>
-        <div class="page-num">第 2 页</div>
+        <div class="page-num">Page 2</div>
       </div>
       <div class="pdf-page">
         <div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div>
-        <div class="page-num">第 3 页</div>
+        <div class="page-num">Page 3</div>
       </div>
       <div class="pdf-page">
         <div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div><div class="pdf-line"></div>
-        <div class="page-num">第 4 页</div>
+        <div class="page-num">Page 4</div>
       </div>
     </div>
     <div class="arrow-group">
       <div class="arrow">→</div>
-      <div class="arrow-label">自动拼版</div>
+      <div class="arrow-label">Auto Imposition</div>
     </div>
     <div class="booklet">
       <div class="booklet-page">
@@ -210,6 +210,6 @@
       </div>
     </div>
   </section>
-  <div style="text-align: center;"><div class="tag">拖入 PDF · 自动拼版 · 双面打印</div></div>
+  <div style="text-align: center;"><div class="tag">Drop PDF · Auto Layout · Duplex Print</div></div>
 </body>
 </html>

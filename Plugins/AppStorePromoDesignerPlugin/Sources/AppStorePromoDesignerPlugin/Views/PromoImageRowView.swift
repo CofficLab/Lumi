@@ -1,9 +1,11 @@
 import AppStorePromoKit
+import LumiUI
 import SwiftUI
 
 /// Rail 中的单个图像行：点击选中，context menu 提供删除。
 struct PromoImageRowView: View {
     @ObservedObject var workspace: WorkspaceStore
+    @LumiTheme private var theme
     let scope: Scope
     let task: AppStorePromoTask
     let image: AppStorePromoImage
@@ -20,27 +22,21 @@ struct PromoImageRowView: View {
     // MARK: - Body
 
     var body: some View {
-        Button {
+        // 菜单挂在 row 上：放进 AppListRow 的 Button label 会被按钮吞掉右键事件。
+        AppListRow(isSelected: isSelected, action: {
             workspace.selectScope(scope, taskID: task.id, imageID: image.id)
-        } label: {
+        }) {
             HStack(spacing: 8) {
-                Image(systemName: "photo")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                 Text("\(image.order + 1)")
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .font(.appMonoMicro)
+                    .foregroundStyle(theme.textTertiary)
                 Text(image.title)
-                    .font(.caption)
+                    .font(.appMicroEmphasized)
+                    .foregroundStyle(theme.textPrimary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
             }
-            .padding(.leading, 18)
-            .padding(.vertical, 6)
-            .padding(.trailing, 7)
-            .background(highlightBackground)
         }
-        .buttonStyle(.plain)
         .contextMenu {
             Button(role: .destructive) {
                 workspace.deleteImage(scope: scope, taskID: task.id, imageID: image.id)
@@ -56,12 +52,6 @@ struct PromoImageRowView: View {
         workspace.selectedScope == scope
             && workspace.selectedTaskID == task.id
             && workspace.selectedImageID == image.id
-    }
-
-    @ViewBuilder
-    private var highlightBackground: some View {
-        RoundedRectangle(cornerRadius: 6)
-            .fill(isSelected ? Color.accentColor.opacity(0.18) : .clear)
     }
 }
 

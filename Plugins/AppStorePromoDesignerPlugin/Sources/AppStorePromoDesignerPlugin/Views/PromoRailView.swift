@@ -1,9 +1,11 @@
 import AppStorePromoKit
+import LumiUI
 import SwiftUI
 
 /// Promo 任务 Rail 容器：列出 project / app 两个 scope 下的任务与图像。
 public struct PromoRailView: View {
     @ObservedObject private var workspace = WorkspaceStore.shared
+    @LumiTheme private var theme
     @State private var expandedTaskIDs: Set<String> = []
     @State private var expandedScopes: Set<Scope> = [.project, .app]
 
@@ -18,23 +20,28 @@ public struct PromoRailView: View {
             HStack {
                 Text(PromoLocalization.string("Promo Tasks")).font(.headline)
                 Spacer()
-                Text("\(totalTaskCount)").font(.caption).foregroundStyle(.secondary)
+                Text("\(totalTaskCount)")
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(theme.textTertiary)
                 Button { workspace.reload() } label: { Image(systemName: "arrow.clockwise") }
                     .buttonStyle(.plain)
+                    .foregroundStyle(theme.textTertiary)
                     .help(PromoLocalization.string("Refresh"))
             }
-            .padding(12)
+            .padding(.horizontal, DesignTokens.Spacing.md)
+            .padding(.vertical, DesignTokens.Spacing.sm)
             Divider()
 
             if workspace.appStorageDirectory == nil {
                 PromoRailEmptyView(message: PromoLocalization.string("Plugin storage is unavailable."))
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {
+                    LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
                         scopeSection(.project)
                         scopeSection(.app)
                     }
-                    .padding(10)
+                    .padding(.horizontal, DesignTokens.Spacing.sm)
+                    .padding(.vertical, DesignTokens.Spacing.xs)
                 }
             }
         }
@@ -69,7 +76,7 @@ public struct PromoRailView: View {
         PromoScopeSectionView(
             isExpanded: scopeBinding(scope),
             icon: scope == .project ? "folder" : "app.badge",
-            iconColor: scope == .project ? Color.accentColor : .secondary,
+            iconColor: scope == .project ? theme.primary : theme.textTertiary,
             title: title,
             subtitle: subtitle,
             count: tasks.count,

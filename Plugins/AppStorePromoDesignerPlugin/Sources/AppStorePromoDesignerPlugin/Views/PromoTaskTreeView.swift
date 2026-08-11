@@ -1,9 +1,11 @@
 import AppStorePromoKit
+import LumiUI
 import SwiftUI
 
 /// Rail 中的任务节点：可展开展示其下所有图像，点击标题选中任务。
 struct PromoTaskTreeView: View {
     @ObservedObject var workspace: WorkspaceStore
+    @LumiTheme private var theme
     @Binding var isExpanded: Bool
     let scope: Scope
     let task: AppStorePromoTask
@@ -28,19 +30,22 @@ struct PromoTaskTreeView: View {
         DisclosureGroup(isExpanded: $isExpanded) {
             if task.images.isEmpty {
                 Text(PromoLocalization.string("No images yet"))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, 30)
-                    .padding(.vertical, 5)
+                    .font(.footnote)
+                    .foregroundStyle(theme.textTertiary)
+                    .padding(.leading, DesignTokens.Spacing.sm)
+                    .padding(.vertical, DesignTokens.Spacing.xs)
             } else {
-                ForEach(task.images.sorted(by: { $0.order < $1.order })) { image in
-                    PromoImageRowView(
-                        workspace: workspace,
-                        scope: scope,
-                        task: task,
-                        image: image
-                    )
+                VStack(spacing: DesignTokens.Spacing.xs) {
+                    ForEach(task.images.sorted(by: { $0.order < $1.order })) { image in
+                        PromoImageRowView(
+                            workspace: workspace,
+                            scope: scope,
+                            task: task,
+                            image: image
+                        )
+                    }
                 }
+                .padding(.leading, DesignTokens.Spacing.sm)
             }
         } label: {
             taskHeader
@@ -51,32 +56,31 @@ struct PromoTaskTreeView: View {
 
     @ViewBuilder
     private var taskHeader: some View {
-        Button {
+        // 点选任务即选中（并自动展开）；展开/折叠交给 DisclosureGroup 原生三角。
+        // 菜单挂在 row 上，避免被 AppListRow 的 Button 吞掉右键事件。
+        AppListRow(isSelected: isSelected, action: {
             workspace.selectScope(
                 scope,
                 taskID: task.id,
                 imageID: task.images.sorted(by: { $0.order < $1.order }).first?.id
             )
             isExpanded = true
-        } label: {
-            HStack(spacing: 8) {
+        }) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
                 Image(systemName: "rectangle.stack")
+                    .foregroundStyle(theme.textTertiary)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(task.title)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.appMicroEmphasized)
+                        .foregroundStyle(theme.textPrimary)
                         .lineLimit(1)
                     Text("\(task.images.count) \(PromoLocalization.string("images")) · \(task.deviceFamily.rawValue)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                        .foregroundStyle(theme.textTertiary)
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.vertical, 6)
-            .padding(.trailing, 6)
-            .contentShape(Rectangle())
-            .background(highlightBackground)
         }
-        .buttonStyle(.plain)
         .contextMenu {
             Button(role: .destructive) {
                 workspace.deleteTask(scope: scope, id: task.id)
@@ -90,12 +94,6 @@ struct PromoTaskTreeView: View {
 
     private var isSelected: Bool {
         workspace.selectedScope == scope && workspace.selectedTaskID == task.id
-    }
-
-    @ViewBuilder
-    private var highlightBackground: some View {
-        RoundedRectangle(cornerRadius: 7)
-            .fill(isSelected ? Color.accentColor.opacity(0.12) : .clear)
     }
 }
 
