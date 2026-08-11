@@ -8,7 +8,11 @@ import SwiftUI
 /// 支持两种用法:
 /// 1. `GoalRootView(viewModel: vm)` —— 仅承载插件根容器(无自定义内容)
 /// 2. `GoalRootView(viewModel: vm) { CustomContentView() }` —— 在根容器内嵌入业务视图
-public struct GoalRootView<Content: View>: View, SuperLog {
+///
+/// 监听 `onLumiSelectedConversationDidChange`,在切换/清空对话时:
+/// - 写入 `viewModel.currentConversationID`
+/// - 触发 `viewModel.refresh()` 重新拉取当前对话的 Goal 列表
+struct GoalRootView<Content: View>: View, SuperLog {
     public nonisolated static var emoji: String { "🎯" }
     public nonisolated static var verbose: Bool { true }
     public nonisolated static var logger: Logger { GoalTaskPlugin.logger }
@@ -28,6 +32,7 @@ public struct GoalRootView<Content: View>: View, SuperLog {
         content()
             .onLumiSelectedConversationDidChange { uuid in
                 viewModel.updateCurrentConversationID(uuid)
+                Task { await viewModel.refresh() }
             }
     }
 }

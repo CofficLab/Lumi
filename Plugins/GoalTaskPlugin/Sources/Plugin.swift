@@ -105,7 +105,7 @@ public final class Plugin: LumiPlugin, SuperLog {
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] {
         [
             ChatSectionToolbarItem(id: "\(id).toolbar-button", placement: .trailing) {
-                GoalToolbarButton(kernel: kernel)
+                GoalToolbarButton(viewModel: self.goalVM)
             }
         ]
     }

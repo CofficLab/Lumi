@@ -7,11 +7,10 @@ import SwiftUI
 
 /// 显示在 chat 工具栏的 Goal 按钮(Verbosity 按钮右侧),点击展示当前对话的所有 Goal 列表。
 ///
-/// 本文件只保留主按钮 + 视图模型;弹窗内容与单行渲染分别位于
-/// `GoalPopoverContent.swift` 与 `GoalRowView.swift`;
-/// 展示模型 `GoalListItem` / `GoalDisplayItem` / `GoalTaskDisplayItem` 位于 `Models/`。
+/// 数据来自外部注入的 `GoalVM`(由 `Plugin` 持有,与 `SidebarView` 共享同一份数据)。
+/// 弹窗内容与单行渲染分别位于 `GoalPopoverContent.swift` 与 `GoalRowView.swift`。
 struct GoalToolbarButton: View {
-    @StateObject private var viewModel: GoalToolbarViewModel
+    @ObservedObject var viewModel: GoalVM
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @State private var isPopoverPresented = false
 
@@ -19,8 +18,8 @@ struct GoalToolbarButton: View {
         viewModel.goals.count
     }
 
-    init(kernel: LumiKernel) {
-        _viewModel = StateObject(wrappedValue: GoalToolbarViewModel(kernel: kernel))
+    init(viewModel: GoalVM) {
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -41,5 +40,3 @@ struct GoalToolbarButton: View {
         }
     }
 }
-
-// GoalToolbarViewModel 已迁移至 `Sources/ViewModels/GoalToolbarViewModel.swift`(internal)。

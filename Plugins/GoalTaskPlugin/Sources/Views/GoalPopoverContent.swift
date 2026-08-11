@@ -11,7 +11,7 @@ import SwiftUI
 /// - 有数据:ScrollView + `GoalRowView`
 struct GoalPopoverContent: View {
     @LumiTheme private var theme
-    @ObservedObject var viewModel: GoalToolbarViewModel
+    @ObservedObject var viewModel: GoalVM
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
