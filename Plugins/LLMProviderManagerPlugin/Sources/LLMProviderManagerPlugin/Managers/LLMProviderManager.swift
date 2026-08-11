@@ -20,6 +20,10 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
     @Published private var _selectedProviderID: String?
     @Published private var _selectedModel: String?
 
+    /// Kernel 引用：provider/model 选中事件统一经 `kernel.eventManager` 发射。
+    /// 由插件 OnBoot 阶段注入（在 `registerLLMProviderService` 之前赋值）。
+    public weak var kernel: LumiKernel?
+
     /// 共享的 provider 可用性状态。ModelSelector / Settings 页面都引用同一个实例。
     public let providerAvailabilityState = ModelAvailabilityState()
 
@@ -133,7 +137,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             Self.logger.info("\(Self.t)selectProvider ➡️ 已选择 id=\(id)")
         }
         // Post notification for UI updates
-        NotificationCenter.default.post(name: .lumiSelectedRemoteProviderIDDidChange, object: nil)
+        kernel?.eventManager.post(.selectedRemoteProviderIDDidChange)
     }
 
     // MARK: - Model Selection
@@ -158,7 +162,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             Self.logger.info("\(Self.t)selectModel ➡️ 已选择 provider=\(providerID), model=\(model)")
         }
         // Post notification for UI updates
-        NotificationCenter.default.post(name: .lumiSelectedModelsDidChange, object: nil)
+        kernel?.eventManager.post(.selectedModelsDidChange)
     }
 
     // MARK: - Send
