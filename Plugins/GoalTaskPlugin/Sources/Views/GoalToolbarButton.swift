@@ -23,20 +23,22 @@ struct GoalToolbarButton: View {
     }
 
     var body: some View {
-        Button {
-            Task {
-                await viewModel.refresh()
+        if self.viewModel.goals.count > 0 {
+            Button {
+                Task {
+                    await viewModel.refresh()
+                }
+                isPopoverPresented.toggle()
+            } label: {
+                Image(systemName: "target")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(theme.textSecondary)
             }
-            isPopoverPresented.toggle()
-        } label: {
-            Image(systemName: "target")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(theme.textSecondary)
-        }
-        .buttonStyle(.plain)
-        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            GoalPopoverContent(viewModel: viewModel)
-                .frame(width: 320, height: 400)
+            .buttonStyle(.plain)
+            .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+                GoalPopoverContent(viewModel: viewModel)
+                    .frame(width: 320, height: 400)
+            }
         }
     }
 }
