@@ -71,6 +71,15 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
         [
             LumiTitleToolbarItem(
+                id: "\(id).title",
+                title: name,
+                placement: .center,
+                order: 0
+            ) {
+                Text(self.name)
+                    .font(.system(size: 13, weight: .semibold))
+            },
+            LumiTitleToolbarItem(
                 id: "\(id).toolbar-button",
                 title: LumiPluginLocalization.string("Database Connections", bundle: .module),
                 placement: .trailing,
