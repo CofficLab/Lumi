@@ -118,6 +118,30 @@ final class AgentTurnViewModel: ObservableObject {
         )
     }
 
+    nonisolated static func processDisclosureTitle(
+        item: AgentTurnPresentationItem,
+        userMessages: [LumiChatMessage],
+        processCount: Int,
+        now: Date
+    ) -> String {
+        let startedAt = item.record?.startedAt ?? userMessages.first?.createdAt ?? now
+        let endedAt = item.record?.endedAt ?? now
+        let elapsed = max(0, endedAt.timeIntervalSince(startedAt))
+        return "耗时\(formattedDuration(elapsed)) \(processCount)条"
+    }
+
+    private nonisolated static func formattedDuration(_ duration: TimeInterval) -> String {
+        let totalSeconds = Int(duration.rounded(.down))
+        if totalSeconds < 60 {
+            return "\(totalSeconds)秒"
+        }
+        let totalMinutes = totalSeconds / 60
+        guard totalMinutes >= 60 else { return "\(totalMinutes)分钟" }
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        return minutes == 0 ? "\(hours)小时" : "\(hours)小时\(minutes)分钟"
+    }
+
     private func bindNotifications() {
         NotificationCenter.default.publisher(for: .lumiMessagesDidChange)
             .filter { [item] notification in

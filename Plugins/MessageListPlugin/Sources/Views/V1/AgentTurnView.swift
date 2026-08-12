@@ -58,20 +58,13 @@ struct AgentTurnView: View {
 
     private var processDisclosure: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isProcessExpanded.toggle()
+            if item.isShowingProcess {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    processDisclosureButton(now: context.date)
                 }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: isProcessExpanded ? "chevron.down" : "chevron.right")
-                    Text("过程 · \(viewModel.projection.processMessages.count) 条")
-                }
-                .font(.appCaption)
-                .foregroundStyle(.secondary)
-                .contentShape(Rectangle())
+            } else {
+                processDisclosureButton(now: .now)
             }
-            .buttonStyle(.plain)
 
             if isProcessExpanded {
                 VStack(alignment: .leading, spacing: 8) {
@@ -83,6 +76,28 @@ struct AgentTurnView: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+    }
+
+    private func processDisclosureButton(now: Date) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isProcessExpanded.toggle()
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: isProcessExpanded ? "chevron.down" : "chevron.right")
+                Text(AgentTurnViewModel.processDisclosureTitle(
+                    item: item,
+                    userMessages: viewModel.projection.userMessages,
+                    processCount: viewModel.projection.processMessages.count,
+                    now: now
+                ))
+            }
+            .font(.appCaption)
+            .foregroundStyle(.secondary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     /// List 只提供尾部身份；消息与活动状态仍由本 Turn 自行获取。

@@ -198,4 +198,71 @@ struct AgentTurnViewModelTests {
         #expect(projection.processMessages.isEmpty)
         #expect(projection.lastMessage == nil)
     }
+
+    @Test("过程标题显示已完成 Turn 的固定耗时与条数")
+    func completedTurnProcessTitleUsesRecordedDuration() {
+        let startedAt = Date(timeIntervalSinceReferenceDate: 10_000)
+        let record = AgentTurnRecord(
+            id: UUID(),
+            conversationID: conversationID,
+            state: .completed,
+            startedAt: startedAt,
+            endedAt: startedAt.addingTimeInterval(125)
+        )
+        let item = AgentTurnPresentationItem(
+            recorded: AgentTurnSummaryItem(
+                record: record,
+                userMessage: nil,
+                processMessages: [],
+                message: LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .assistant,
+                    content: "完成"
+                )
+            ),
+            acceptsLiveActivity: false
+        )
+
+        let title = AgentTurnViewModel.processDisclosureTitle(
+            item: item,
+            userMessages: [],
+            processCount: 2,
+            now: startedAt.addingTimeInterval(999)
+        )
+
+        #expect(title == "耗时2分钟 2条")
+    }
+
+    @Test("运行中 Turn 的过程耗时使用当前时间")
+    func runningTurnProcessTitleUsesCurrentTime() {
+        let startedAt = Date(timeIntervalSinceReferenceDate: 20_000)
+        let record = AgentTurnRecord(
+            id: UUID(),
+            conversationID: conversationID,
+            state: .running,
+            startedAt: startedAt
+        )
+        let item = AgentTurnPresentationItem(
+            recorded: AgentTurnSummaryItem(
+                record: record,
+                userMessage: nil,
+                processMessages: [],
+                message: LumiChatMessage(
+                    conversationID: conversationID,
+                    role: .status,
+                    content: "…"
+                )
+            ),
+            acceptsLiveActivity: true
+        )
+
+        let title = AgentTurnViewModel.processDisclosureTitle(
+            item: item,
+            userMessages: [],
+            processCount: 3,
+            now: startedAt.addingTimeInterval(9)
+        )
+
+        #expect(title == "耗时9秒 3条")
+    }
 }
