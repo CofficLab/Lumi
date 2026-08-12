@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 public struct GlassTextField: View {
@@ -120,8 +119,7 @@ public struct GlassTextField: View {
             isEnabled: !text.isEmpty
         ) {
             guard !text.isEmpty else { return }
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(text, forType: .string)
+            LumiPasteboard.copyString(text)
             didCopy = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 didCopy = false

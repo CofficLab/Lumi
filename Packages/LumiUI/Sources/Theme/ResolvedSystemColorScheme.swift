@@ -1,11 +1,15 @@
-import AppKit
 import SwiftUI
+
+#if canImport(AppKit)
+import AppKit
+#endif
 
 /// 跟随系统主题时，用于解析 `Color.adaptive` 的当前明暗。
 public enum ResolvedSystemColorScheme {
     nonisolated(unsafe) public static var current: ColorScheme = .light
 }
 
+#if canImport(AppKit)
 extension NSWindow {
     /// 系统菜单栏 / status item 所在窗口，不应套用 Lumi 主题 `appearance`。
     var isMenuBarOwnedWindow: Bool {
@@ -43,6 +47,7 @@ public enum ThemeWindowAppearanceSync {
             }
     }
 }
+#endif
 
 public extension Notification.Name {
     static let lumiThemeDidSyncWindowAppearances = Notification.Name("lumiThemeDidSyncWindowAppearances")

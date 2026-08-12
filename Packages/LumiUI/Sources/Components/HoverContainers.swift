@@ -1,3 +1,4 @@
+#if canImport(AppKit)
 import AppKit
 import Combine
 import SwiftUI
@@ -518,3 +519,4 @@ public func sidebarToolbarPopover<Content: View, Detail: View>(
         content()
     }
 }
+#endif

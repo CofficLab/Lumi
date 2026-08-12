@@ -18,7 +18,9 @@ public final class LumiUIThemeRegistry: ObservableObject {
     public var onSystemAppearanceDidChange: (() -> Void)?
 
     public init() {
+        #if canImport(AppKit)
         _ = SystemAppearanceObserver.shared
+        #endif
     }
 
     public var themes: [LumiUIThemeContribution] {
@@ -82,7 +84,9 @@ public final class LumiUIThemeRegistry: ObservableObject {
             systemColorScheme = scheme
             republishCurrentUITheme()
             onSystemAppearanceDidChange?()
+            #if canImport(AppKit)
             ThemeWindowAppearanceSync.syncAllWindows()
+            #endif
         }
     }
 
@@ -150,6 +154,8 @@ public final class LumiUIThemeRegistry: ObservableObject {
         let resolvedUI = source.uiTheme ?? ChromeToUIThemeAdapter(chrome: source.chromeTheme)
         self.uiTheme = resolvedUI
         LumiUIThemeStore.shared.setTheme(resolvedUI)
+        #if canImport(AppKit)
         ThemeWindowAppearanceSync.syncAllWindows()
+        #endif
     }
 }

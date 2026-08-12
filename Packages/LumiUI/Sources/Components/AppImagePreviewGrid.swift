@@ -1,9 +1,8 @@
-import AppKit
 import SwiftUI
 
 public struct AppImagePreviewGrid: View {
     let imageDataList: [Data]
-    @State private var previewingImage: NSImage?
+    @State private var previewingImage: LumiPlatformImage?
 
     public init(imageDataList: [Data]) {
         self.imageDataList = imageDataList
@@ -17,11 +16,11 @@ public struct AppImagePreviewGrid: View {
             spacing: 8
         ) {
             ForEach(Array(imageDataList.enumerated()), id: \.offset) { _, data in
-                if let nsImage = NSImage(data: data) {
+                if let nsImage = LumiPlatformImage(data: data) {
                     Button {
                         previewingImage = nsImage
                     } label: {
-                        Image(nsImage: nsImage)
+                        Image(lumiImage: nsImage)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: 180, height: 120)
@@ -55,7 +54,7 @@ public struct AppImagePreviewGrid: View {
 }
 
 private struct AppImagePreviewSheet: View {
-    let image: NSImage
+    let image: LumiPlatformImage
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -73,7 +72,7 @@ private struct AppImagePreviewSheet: View {
             Divider()
 
             GeometryReader { geometry in
-                Image(nsImage: image)
+                Image(lumiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(maxWidth: geometry.size.width, maxHeight: geometry.size.height)

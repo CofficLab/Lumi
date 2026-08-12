@@ -4,7 +4,11 @@ import SwiftUI
 public struct AppTheme {
     public struct Colors {
         public static let primary = Color("AccentColor")
+        #if canImport(AppKit)
         public static let background = Color(nsColor: .windowBackgroundColor)
+        #elseif canImport(UIKit)
+        public static let background = Color(uiColor: .systemBackground)
+        #endif
 
         public static let gradientStart = Color(hex: "4facfe")
         public static let gradientEnd = Color(hex: "00f2fe")

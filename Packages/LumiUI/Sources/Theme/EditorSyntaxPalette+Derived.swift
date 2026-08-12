@@ -1,5 +1,10 @@
-import AppKit
 import SwiftUI
+
+#if canImport(AppKit)
+import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
 
 extension EditorSyntaxPalette {
     /// 从外壳主题色推导语法调色板，保证编辑器背景与外壳 atmosphere 一致。
@@ -67,6 +72,7 @@ extension EditorSyntaxPalette {
     }
 
     private static func hexString(from color: Color, isDark: Bool, fallback: String) -> String {
+        #if canImport(AppKit)
         let appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)!
         var rgb: NSColor?
         appearance.performAsCurrentDrawingAppearance {
@@ -76,6 +82,17 @@ extension EditorSyntaxPalette {
         let r = Int(round(rgb.redComponent * 255))
         let g = Int(round(rgb.greenComponent * 255))
         let b = Int(round(rgb.blueComponent * 255))
+        #elseif canImport(UIKit)
+        let trait = UITraitCollection(userInterfaceStyle: isDark ? .dark : .light)
+        let resolved = UIColor(color).resolvedColor(with: trait)
+        var rr: CGFloat = 0, gg: CGFloat = 0, bb: CGFloat = 0, aa: CGFloat = 0
+        resolved.getRed(&rr, green: &gg, blue: &bb, alpha: &aa)
+        let r = Int(round(rr * 255))
+        let g = Int(round(gg * 255))
+        let b = Int(round(bb * 255))
+        #else
+        let r = 0, g = 0, b = 0
+        #endif
         return String(format: "%02X%02X%02X", r, g, b)
     }
 }

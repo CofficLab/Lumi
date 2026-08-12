@@ -1,5 +1,10 @@
-import AppKit
 import SwiftUI
+
+#if canImport(AppKit)
+import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
 
 /// 解析 macOS 当前有效外观（不受 SwiftUI `preferredColorScheme` / `NSWindow.appearance` 残留影响）。
 @MainActor
@@ -33,11 +38,15 @@ public enum SystemAppearanceResolver {
         if let style = globalInterfaceStyle {
             return style.lowercased().contains("dark") ? .dark : .light
         }
+        #if canImport(AppKit)
         guard NSApp != nil else {
             return systemIsDarkByPreference ? .dark : .light
         }
         let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         return isDark ? .dark : .light
+        #elseif canImport(UIKit)
+        return UITraitCollection.current.userInterfaceStyle == .dark ? .dark : .light
+        #endif
     }
 
     @MainActor
@@ -61,6 +70,7 @@ public enum AppThemeAppearanceResolver {
     }
 
     /// `Color.adaptive(light:dark:)` 在固定主题下使用的分支。
+    #if canImport(AppKit)
     nonisolated static func adaptiveUsesDarkBranch(for appearance: NSAppearance) -> Bool {
         switch ActiveChromeTheme.current.appearanceKind {
         case .dark:
@@ -71,6 +81,7 @@ public enum AppThemeAppearanceResolver {
             return ResolvedSystemColorScheme.current == .dark
         }
     }
+    #endif
 }
 
 extension Color {
@@ -107,6 +118,7 @@ extension Color {
     public init(light: String, dark: String) {
         switch ActiveChromeTheme.current.appearanceKind {
         case .system:
+            #if canImport(AppKit)
             // 用 NSColor 动态颜色让 AppKit/SwiftUI 在系统外观切换时自动重新解析，
             // 避免返回静态 Color 导致已渲染视图（如 NSHostingView 承载的文件树 cell）
             // 不随外观刷新、只能靠手动重建视图才更新颜色的问题。
@@ -118,6 +130,15 @@ extension Color {
                     : lightNSColor
             }
             self.init(dynamicNSColor)
+            #elseif canImport(UIKit)
+            // iOS：用 UIColor 动态颜色，随 traitCollection.userInterfaceStyle 自动重解析。
+            let lightUIColor = UIColor(hex: light)
+            let darkUIColor = UIColor(hex: dark)
+            let dynamicUIColor = UIColor { trait in
+                trait.userInterfaceStyle == .dark ? darkUIColor : lightUIColor
+            }
+            self.init(dynamicUIColor)
+            #endif
         case .dark:
             self.init(hex: dark)
         case .light:
@@ -152,19 +173,26 @@ extension Color {
 
     /// 判断当前颜色在当前外观下是否为浅色（感知亮度 > 0.5）
     ///
-    /// 使用 NSColor 解析后计算相对亮度，支持自适应颜色（adaptive color）。
+    /// 使用平台原生颜色解析后计算相对亮度，支持自适应颜色（adaptive color）。
     public var isLightColor: Bool {
+        #if canImport(AppKit)
         let nsColor = NSColor(self)
         guard let rgbColor = nsColor.usingColorSpace(.sRGB) else { return false }
         let r = Double(rgbColor.redComponent)
         let g = Double(rgbColor.greenComponent)
         let b = Double(rgbColor.blueComponent)
+        #elseif canImport(UIKit)
+        var rf: CGFloat = 0, gf: CGFloat = 0, bf: CGFloat = 0, af: CGFloat = 0
+        UIColor(self).getRed(&rf, green: &gf, blue: &bf, alpha: &af)
+        let r = Double(rf), g = Double(gf), b = Double(bf)
+        #endif
         // ITU-R BT.601 感知亮度公式
         let luminance = 0.299 * r + 0.587 * g + 0.114 * b
         return luminance > 0.5
     }
 }
 
+#if canImport(AppKit)
 private extension NSColor {
     convenience init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -191,3 +219,31 @@ private extension NSColor {
         )
     }
 }
+#elseif canImport(UIKit)
+private extension UIColor {
+    convenience init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3:
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6:
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8:
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (1, 1, 1, 0)
+        }
+
+        self.init(
+            red: CGFloat(r) / 255,
+            green: CGFloat(g) / 255,
+            blue: CGFloat(b) / 255,
+            alpha: CGFloat(a) / 255
+        )
+    }
+}
+#endif
