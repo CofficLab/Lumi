@@ -6,6 +6,8 @@ struct VersionStatusBanner: View {
     @ObservedObject var viewModel: VM
     let localePickerSourceView: String
     @State private var showsReleaseConfirmation = false
+    @State private var showsSubmitConfirmation = false
+    @State private var showsWithdrawConfirmation = false
 
     private let toolbarPadding = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
 
@@ -49,6 +51,33 @@ struct VersionStatusBanner: View {
 
                 Spacer()
 
+                if version.isSubmittable {
+                    AppButton(
+                        AppStoreConnectLocalization.string("Submit for Review"),
+                        systemImage: "paperplane.fill",
+                        style: .primary,
+                        size: .small
+                    ) {
+                        showsSubmitConfirmation = true
+                    }
+                    .disabled(viewModel.isBusy || viewModel.assignedBuildID == nil)
+                    .help(viewModel.assignedBuildID == nil
+                        ? AppStoreConnectLocalization.string("Assign a build before submitting for review.")
+                        : AppStoreConnectLocalization.string("Submit this version to App Review."))
+                }
+
+                if viewModel.submissionID != nil {
+                    AppButton(
+                        AppStoreConnectLocalization.string("Withdraw Submission"),
+                        systemImage: "arrow.uturn.backward.circle",
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        showsWithdrawConfirmation = true
+                    }
+                    .disabled(viewModel.isBusy)
+                }
+
                 if version.isPendingDeveloperRelease {
                     AppButton(
                         AppStoreConnectLocalization.string("Release to App Store"),
@@ -90,6 +119,36 @@ struct VersionStatusBanner: View {
         } message: {
             Text(AppStoreConnectLocalization.string(
                 "Release %@ to the App Store? This action cannot be undone via the API.",
+                version.versionString
+            ))
+        }
+        .confirmationDialog(
+            AppStoreConnectLocalization.string("Submit for Review"),
+            isPresented: $showsSubmitConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(AppStoreConnectLocalization.string("Submit"), role: .destructive) {
+                Task { await viewModel.submitForReview() }
+            }
+            Button(AppStoreConnectLocalization.string("Cancel"), role: .cancel) {}
+        } message: {
+            Text(AppStoreConnectLocalization.string(
+                "Submit version %@ to App Review? Make sure the build, metadata, and screenshots are complete.",
+                version.versionString
+            ))
+        }
+        .confirmationDialog(
+            AppStoreConnectLocalization.string("Withdraw Submission"),
+            isPresented: $showsWithdrawConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(AppStoreConnectLocalization.string("Withdraw"), role: .destructive) {
+                Task { await viewModel.withdrawSubmission() }
+            }
+            Button(AppStoreConnectLocalization.string("Cancel"), role: .cancel) {}
+        } message: {
+            Text(AppStoreConnectLocalization.string(
+                "Withdraw the review submission for version %@? You can submit again later.",
                 version.versionString
             ))
         }

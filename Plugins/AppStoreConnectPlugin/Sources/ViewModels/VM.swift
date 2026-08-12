@@ -65,6 +65,11 @@ final class VM: ObservableObject, SuperLog {
     @Published var screenshotsBySetID: [String: [AppScreenshot]] = [:]
     @Published var selectedScreenshotDisplayType = "APP_IPHONE_67"
     @Published var metadataIsDirty = false
+    @Published var builds: [ConnectBuild] = []
+    @Published var assignedBuildID: String?
+    @Published var selectedBuildID: String?
+    @Published var submissionID: String?
+    @Published var isUploadingScreenshots = false
     @Published var ciProducts: [CiProduct] = []
     @Published var selectedCiProduct: CiProduct?
     @Published var ciWorkflows: [CiWorkflow] = []

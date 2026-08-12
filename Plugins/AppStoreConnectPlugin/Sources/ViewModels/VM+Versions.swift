@@ -38,7 +38,12 @@ extension VM {
         screenshotSets = []
         screenshots = []
         screenshotsBySetID = [:]
+        builds = []
+        assignedBuildID = nil
+        selectedBuildID = nil
+        submissionID = nil
         Task { await loadLocalizations() }
+        Task { await loadReleaseInfo() }
     }
 
     func openDistribution(for version: AppStoreVersion) {
@@ -123,6 +128,7 @@ extension VM {
 
         guard errorMessage == nil, createdVersionID != nil else { return false }
         await loadLocalizations()
+        await loadReleaseInfo()
         return true
     }
 
