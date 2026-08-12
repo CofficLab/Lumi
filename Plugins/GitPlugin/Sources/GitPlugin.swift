@@ -62,9 +62,97 @@ public final class GitPlugin: LumiPlugin, SuperLog {
                 GitCommitHistorySidebarView(project: project, gitVM: gitVM)
                     .environmentObject(gitVM)
             },
+            PanelRailTabItem(
+                id: "\(id).tools",
+                title: LumiPluginLocalization.string("Tools", bundle: .module),
+                systemImage: "wrench.and.screwdriver",
+                visibility: .viewContainer(id: id),
+                requiresProjectSupport: true
+            ) {
+                GitToolsHostView(project: project)
+            },
         ]
     }
-    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
+    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+        guard let project = kernel.project else { return [] }
+        return [
+            StatusBarItem(
+                id: "\(id).stash",
+                title: LumiPluginLocalization.string("Stashes", bundle: .module),
+                systemImage: "tray.full",
+                placement: .trailing,
+                order: 100,
+                statusBarView: {
+                    AnyView(GitStashStatusTile(
+                        project: project,
+                        onTap: { /* opening the panel is handled by the rail tab */ }
+                    ))
+                }
+            ),
+            StatusBarItem(
+                id: "\(id).gitignore",
+                title: LumiPluginLocalization.string(".gitignore", bundle: .module),
+                systemImage: "eye.slash",
+                placement: .trailing,
+                order: 101,
+                statusBarView: {
+                    AnyView(GitIgnoreStatusTile(
+                        project: project,
+                        onTap: { }
+                    ))
+                }
+            ),
+            StatusBarItem(
+                id: "\(id).lfs",
+                title: LumiPluginLocalization.string("Git LFS", bundle: .module),
+                systemImage: "externaldrive",
+                placement: .trailing,
+                order: 102,
+                statusBarView: {
+                    AnyView(GitLFSStatusTile(
+                        project: project,
+                        onTap: { }
+                    ))
+                }
+            ),
+            StatusBarItem(
+                id: "\(id).submodule",
+                title: LumiPluginLocalization.string("Submodules", bundle: .module),
+                systemImage: "folder.badge.gearshape",
+                placement: .trailing,
+                order: 103,
+                statusBarView: {
+                    AnyView(GitSubmoduleStatusTile(
+                        project: project,
+                        onTap: { }
+                    ))
+                }
+            ),
+            StatusBarItem(
+                id: "\(id).conflict",
+                title: LumiPluginLocalization.string("Merge conflicts", bundle: .module),
+                systemImage: "exclamationmark.triangle",
+                placement: .trailing,
+                order: 104,
+                statusBarView: {
+                    AnyView(GitConflictStatusTile(
+                        project: project,
+                        onTap: { }
+                    ))
+                }
+            ),
+            StatusBarItem(
+                id: "\(id).autopush",
+                title: LumiPluginLocalization.string("Auto Push", bundle: .module),
+                systemImage: "arrow.up.to.line",
+                placement: .trailing,
+                order: 105,
+                statusBarView: {
+                    AnyView(AutoPushStatusTile(onTap: { }))
+                }
+            ),
+        ]
+    }
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         guard let project = kernel.project else { return [] }
         return [
