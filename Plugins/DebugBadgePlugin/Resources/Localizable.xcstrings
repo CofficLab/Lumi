@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "DEBUG" : {
-
-    },
     "Debug Badge" : {
       "localizations" : {
         "en" : {
@@ -21,6 +18,7 @@
       }
     },
     "Running a Debug build" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
