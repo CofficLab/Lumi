@@ -11,6 +11,7 @@ import SwiftUI
 @MainActor
 public struct SettingsView: View {
     @ObservedObject private var viewModel: ProjectsViewModel
+    @ObservedObject private var kernel: LumiKernel
     @LumiTheme private var theme
 
     @State private var selectedProjectPath: String?
@@ -20,8 +21,9 @@ public struct SettingsView: View {
     @State private var openedFilesByPath: [String: ProjectOpenedFiles] = [:]
     @State private var isLoadingOpenedFiles = true
 
-    public init(viewModel: ProjectsViewModel) {
+    public init(viewModel: ProjectsViewModel, kernel: LumiKernel) {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
+        self._kernel = ObservedObject(wrappedValue: kernel)
     }
 
     private var projects: [ProjectEntry] {
@@ -194,6 +196,9 @@ public struct SettingsView: View {
                     }
 
                     openedFilesSection(for: project)
+
+                    // 聚合其它插件（如 ProjectRAGPlugin）通过 settingsSections 贡献的区块。
+                    contributedSections(for: project)
                 }
                 .padding(22)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -265,6 +270,14 @@ public struct SettingsView: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func contributedSections(for project: ProjectEntry) -> some View {
+        let sections = kernel.settings?.settingsSections(forTabID: LumiSettingsTabID.projects) ?? []
+        ForEach(sections.sorted { $0.order < $1.order }) { section in
+            section.makeContent(context: .init(projectPath: project.path))
         }
     }
 

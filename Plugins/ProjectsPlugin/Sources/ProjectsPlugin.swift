@@ -78,12 +78,12 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         }
         return [
             SettingsTabItem(
-                id: "\(id).settings",
+                id: LumiSettingsTabID.projects,
                 title: LumiPluginLocalization.string("Projects", bundle: .module),
                 systemImage: "folder",
                 order: order
             ) {
-                SettingsView(viewModel: viewModel)
+                SettingsView(viewModel: viewModel, kernel: kernel)
             },
         ]
     }
