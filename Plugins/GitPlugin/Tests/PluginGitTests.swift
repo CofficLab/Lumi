@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import GitPlugin
 
@@ -9,6 +10,24 @@ import Testing
     #expect(plugin.name.isEmpty == false)
     #expect(plugin.order == 11)
     #expect(plugin.category == .development)
+}
+
+@MainActor
+@Test func gitStatusBarVisibilityIsScopedToGitContainer() {
+    let gitContainerID = "com.coffic.lumi.plugin.git"
+
+    #expect(GitStatusBarVisibilityGate<EmptyView>.isVisible(
+        activeContainerID: gitContainerID,
+        containerID: gitContainerID
+    ))
+    #expect(!GitStatusBarVisibilityGate<EmptyView>.isVisible(
+        activeContainerID: "com.coffic.lumi.plugin.workspace",
+        containerID: gitContainerID
+    ))
+    #expect(!GitStatusBarVisibilityGate<EmptyView>.isVisible(
+        activeContainerID: nil,
+        containerID: gitContainerID
+    ))
 }
 
 @MainActor

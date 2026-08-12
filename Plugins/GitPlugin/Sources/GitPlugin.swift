@@ -83,10 +83,12 @@ public final class GitPlugin: LumiPlugin, SuperLog {
                 placement: .trailing,
                 order: 100,
                 statusBarView: {
-                    AnyView(GitStashStatusTile(
-                        project: project,
-                        onTap: { /* opening the panel is handled by the rail tab */ }
-                    ))
+                    AnyView(GitStatusBarVisibilityGate(containerID: self.id, kernel: kernel) {
+                        GitStashStatusTile(
+                            project: project,
+                            onTap: { /* opening the panel is handled by the rail tab */ }
+                        )
+                    })
                 }
             ),
             StatusBarItem(
@@ -96,10 +98,12 @@ public final class GitPlugin: LumiPlugin, SuperLog {
                 placement: .trailing,
                 order: 101,
                 statusBarView: {
-                    AnyView(GitIgnoreStatusTile(
-                        project: project,
-                        onTap: { }
-                    ))
+                    AnyView(GitStatusBarVisibilityGate(containerID: self.id, kernel: kernel) {
+                        GitIgnoreStatusTile(
+                            project: project,
+                            onTap: { }
+                        )
+                    })
                 }
             ),
             StatusBarItem(
@@ -109,10 +113,12 @@ public final class GitPlugin: LumiPlugin, SuperLog {
                 placement: .trailing,
                 order: 102,
                 statusBarView: {
-                    AnyView(GitLFSStatusTile(
-                        project: project,
-                        onTap: { }
-                    ))
+                    AnyView(GitStatusBarVisibilityGate(containerID: self.id, kernel: kernel) {
+                        GitLFSStatusTile(
+                            project: project,
+                            onTap: { }
+                        )
+                    })
                 }
             ),
             StatusBarItem(
@@ -122,10 +128,12 @@ public final class GitPlugin: LumiPlugin, SuperLog {
                 placement: .trailing,
                 order: 103,
                 statusBarView: {
-                    AnyView(GitSubmoduleStatusTile(
-                        project: project,
-                        onTap: { }
-                    ))
+                    AnyView(GitStatusBarVisibilityGate(containerID: self.id, kernel: kernel) {
+                        GitSubmoduleStatusTile(
+                            project: project,
+                            onTap: { }
+                        )
+                    })
                 }
             ),
             StatusBarItem(
@@ -135,10 +143,12 @@ public final class GitPlugin: LumiPlugin, SuperLog {
                 placement: .trailing,
                 order: 104,
                 statusBarView: {
-                    AnyView(GitConflictStatusTile(
-                        project: project,
-                        onTap: { }
-                    ))
+                    AnyView(GitStatusBarVisibilityGate(containerID: self.id, kernel: kernel) {
+                        GitConflictStatusTile(
+                            project: project,
+                            onTap: { }
+                        )
+                    })
                 }
             ),
             StatusBarItem(
@@ -148,7 +158,9 @@ public final class GitPlugin: LumiPlugin, SuperLog {
                 placement: .trailing,
                 order: 105,
                 statusBarView: {
-                    AnyView(AutoPushStatusTile(onTap: { }))
+                    AnyView(GitStatusBarVisibilityGate(containerID: self.id, kernel: kernel) {
+                        AutoPushStatusTile(onTap: { })
+                    })
                 }
             ),
         ]
