@@ -1,4 +1,8 @@
+#if canImport(AppKit)
 import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -346,6 +350,10 @@ public struct LayoutSettingsView: View {
     private func openDataDirectory() {
         guard let url = kernel.workspace?.settingsDirectory else { return }
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        #if canImport(AppKit)
         _ = NSWorkspace.shared.open(url)
+        #elseif canImport(UIKit)
+        _ = UIApplication.shared.open(url)
+        #endif
     }
 }

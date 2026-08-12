@@ -67,7 +67,11 @@ public struct LayoutMenuButton: View {
                 .appSurface(style: .popover, cornerRadius: 8, borderColor: theme.divider)
                 .appThemedAppearance()
                 .background {
+                    #if canImport(AppKit)
                     ThemeWindowAppearanceBridge()
+                    #else
+                    EmptyView()
+                    #endif
                 }
             }
             .help(LumiPluginLocalization.string("Layout"))
