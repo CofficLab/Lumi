@@ -4,6 +4,9 @@
     "" : {
 
     },
+    "·" : {
+
+    },
     "#" : {
 
     },
@@ -19,6 +22,16 @@
     },
     "%lld" : {
 
+    },
+    "%lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@"
+          }
+        }
+      }
     },
     "+" : {
 
@@ -370,6 +383,9 @@
         }
       }
     },
+    "DDL is not available for this object." : {
+
+    },
     "Delete" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -474,6 +490,9 @@
         }
       }
     },
+    "Loading structure…" : {
+
+    },
     "Multi-Database Support" : {
       "localizations" : {
         "en" : {
@@ -542,6 +561,9 @@
           }
         }
       }
+    },
+    "No items" : {
+
     },
     "No keys" : {
       "extractionState" : "stale",
@@ -680,6 +702,9 @@
           }
         }
       }
+    },
+    "Open a table or view to inspect its structure." : {
+
     },
     "Reload" : {
       "localizations" : {
@@ -856,6 +881,9 @@
       }
     },
     "SSL / TLS" : {
+
+    },
+    "Structure Section" : {
 
     },
     "Switch to Connections above to add or pick a database." : {
