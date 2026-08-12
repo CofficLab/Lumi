@@ -53,7 +53,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
                 panelBodyVisibility: .alwaysVisible,
                 panelBottomVisibility: .unsupported
             ) {
-                AnyView(MainView(viewModel: self.sharedViewModel))
+                AnyView(DatabaseWorkspaceView(viewModel: self.sharedViewModel))
             },
         ]
     }

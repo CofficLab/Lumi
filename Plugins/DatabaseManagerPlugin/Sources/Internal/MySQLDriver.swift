@@ -5,6 +5,7 @@ import Logging
 import MySQLNIO
 import NIOCore
 import NIOPosix
+import NIOSSL
 
 public final class MySQLDriver: DatabaseDriver, Sendable {
     public var type: DatabaseType { .mysql }
@@ -28,7 +29,8 @@ public final class MySQLDriver: DatabaseDriver, Sendable {
             port: port,
             username: user,
             password: config.password,
-            database: config.database
+            database: config.database,
+            sslOption: config.sslOption
         )
     }
 }
@@ -37,16 +39,20 @@ public actor MySQLConnection: DatabaseConnection {
     private let group: EventLoopGroup
     private var conn: MySQLNIO.MySQLConnection?
 
-    public init(host: String, port: Int, username: String, password: String?, database: String) async throws {
+    public init(host: String, port: Int, username: String, password: String?, database: String, sslOption: ConnectionSSLOption? = nil) async throws {
         group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         let socketAddress = try SocketAddress.makeAddressResolvingHost(host, port: port)
+        let tlsConfiguration: TLSConfiguration? = {
+            guard let ssl = sslOption, ssl.enablesTLS else { return nil }
+            return ssl.makeTLSConfiguration()
+        }()
         let future = MySQLNIO.MySQLConnection.connect(
             to: socketAddress,
             username: username,
             database: database,
             password: password,
-            tlsConfiguration: nil,
-            serverHostname: nil,
+            tlsConfiguration: tlsConfiguration,
+            serverHostname: sslOption?.enablesTLS == true ? host : nil,
             on: group.next()
         )
         conn = try await future.get()

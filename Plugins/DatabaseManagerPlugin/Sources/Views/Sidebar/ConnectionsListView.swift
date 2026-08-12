@@ -21,6 +21,8 @@ struct ConnectionsListView: View {
 
     /// Add Connection 表单是否展示。
     @State private var showAddConfigSheet: Bool = false
+    /// 正在编辑的连接；非 nil 时弹出编辑表单。
+    @State private var editingConfig: DatabaseConfig?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,7 +55,13 @@ struct ConnectionsListView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showAddConfigSheet) {
-            AddConnectionView(viewModel: viewModel, isPresented: $showAddConfigSheet)
+            ConnectionFormView(viewModel: viewModel, isPresented: $showAddConfigSheet)
+        }
+        .sheet(item: $editingConfig) { config in
+            ConnectionFormView(viewModel: viewModel, isPresented: Binding(
+                get: { editingConfig != nil },
+                set: { if !$0 { editingConfig = nil } }
+            ), editing: config)
         }
     }
 
@@ -107,6 +115,11 @@ struct ConnectionsListView: View {
             }
         }
         .contextMenu {
+            Button {
+                editingConfig = config
+            } label: {
+                Label(LumiPluginLocalization.string("Edit", bundle: .module), systemImage: "pencil")
+            }
             Button(role: .destructive) {
                 viewModel.removeConfig(config)
             } label: {

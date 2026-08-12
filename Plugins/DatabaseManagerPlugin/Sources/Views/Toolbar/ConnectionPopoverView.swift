@@ -26,7 +26,7 @@ struct ConnectionPopoverView: View {
         .padding(.vertical, 4)
         .frame(width: 280)
         .sheet(isPresented: $showAddConfigSheet) {
-            AddConnectionView(viewModel: viewModel, isPresented: $showAddConfigSheet)
+            ConnectionFormView(viewModel: viewModel, isPresented: $showAddConfigSheet)
         }
     }
 

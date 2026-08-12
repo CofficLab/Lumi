@@ -7,7 +7,7 @@ public enum DatabaseType: String, CaseIterable, Codable, Sendable {
     case redis = "Redis"
 }
 
-public struct DatabaseConfig: Codable, Hashable, Sendable {
+public struct DatabaseConfig: Codable, Hashable, Sendable, Identifiable {
     public var id: UUID
     public var name: String
     public var type: DatabaseType
@@ -105,6 +105,12 @@ public struct QueryResult: Sendable, Equatable {
 public protocol DatabaseDriver: Sendable {
     var type: DatabaseType { get }
     func connect(config: DatabaseConfig) async throws -> any DatabaseConnection
+    /// 该驱动声明的能力。默认取 ``DatabaseType/capabilities``，驱动可覆盖以反映实际实现进度。
+    var capabilities: DatabaseCapabilities { get }
+}
+
+public extension DatabaseDriver {
+    var capabilities: DatabaseCapabilities { type.capabilities }
 }
 
 public protocol DatabaseConnection: AnyObject, Sendable {
