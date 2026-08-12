@@ -311,6 +311,37 @@ import Testing
     DatabaseConnectionStore.resetSavedConfigs()
 }
 
+// MARK: - Identifier quoting & unified open
+
+@Test func quoteIdentifierUsesDialectQuoteCharacter() {
+    // SQLite / PostgreSQL：双引号
+    #expect(DatabaseViewModel.quoteIdentifier("users", for: .sqlite) == "\"users\"")
+    #expect(DatabaseViewModel.quoteIdentifier("users", for: .postgresql) == "\"users\"")
+    // MySQL：反引号
+    #expect(DatabaseViewModel.quoteIdentifier("users", for: .mysql) == "`users`")
+    // Redis：无引用字符，原样返回
+    #expect(DatabaseViewModel.quoteIdentifier("user:1", for: .redis) == "user:1")
+}
+
+@Test func quoteIdentifierEscapesEmbeddedQuote() {
+    #expect(DatabaseViewModel.quoteIdentifier("quoted\"table", for: .sqlite) == "\"quoted\"\"table\"")
+    #expect(DatabaseViewModel.quoteIdentifier("order`desc", for: .mysql) == "`order``desc`")
+}
+
+@MainActor
+@Test func openObjectBuildsLimitedSelectForMySQL() async throws {
+    let viewModel = DatabaseViewModel(loadSavedConfigs: false)
+    // 构造一个已选中的 MySQL 上下文（不实际联网，仅验证查询构造）。
+    let config = DatabaseConfig(name: "MySQL", type: .mysql, host: "h", port: 3306, database: "db", username: "u")
+    viewModel.configs = [config]
+    viewModel.selectedConfig = config
+    // openObject 会尝试执行并失败（无连接），但 queryText 应已被设置。
+    let object = DatabaseObject(kind: .table, name: "users", database: "db")
+    await viewModel.openObject(object)
+    #expect(viewModel.queryText == "SELECT * FROM `users` LIMIT 100;")
+    DatabaseConnectionStore.resetSavedConfigs()
+}
+
 
 
 

@@ -209,4 +209,15 @@ public extension DatabaseType {
         case .redis: return 6379
         }
     }
+
+    /// 侧边栏顶层展示的对象分类。索引/触发器等随表结构展示，不在此列。
+    /// Redis 没有关系型对象，返回空（键浏览走专门路径）。
+    var sidebarObjectKinds: [DatabaseObjectKind] {
+        switch self {
+        case .sqlite: return [.table, .view]
+        case .mysql: return [.table, .view, .procedure, .function]
+        case .postgresql: return [.table, .view, .materializedView, .procedure, .function]
+        case .redis: return []
+        }
+    }
 }

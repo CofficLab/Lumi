@@ -168,6 +168,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                 await loadSQLiteTables()
             }
 
+            // 为侧边栏对象树预加载可见分类（表/视图/例程），MySQL/PG 由此不再空白。
+            await refreshSidebarObjects()
+
             if let previousConfigId, previousConfigId != config.id {
                 await manager.disconnect(configId: previousConfigId)
             }
@@ -292,6 +295,47 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     public func openRedisKey(_ key: String) async {
         queryText = "GET \(key)"
         await executeQuery()
+    }
+
+    /// 加载当前连接在侧边栏可见的对象分类（表/视图/例程…），结果写入 ``schemaCache``。
+    /// MySQL/PG 首次连接后侧边栏不再为空，全靠这里填充。
+    public func refreshSidebarObjects() async {
+        guard let config = selectedConfig, config.type != .redis else { return }
+        guard let connection = await manager.getConnection(for: config.id) else { return }
+        let database: String? = config.type == .sqlite ? nil : config.database
+        for kind in config.type.sidebarObjectKinds {
+            _ = try? await schemaCache.objects(
+                for: config,
+                kind: kind,
+                database: database,
+                schema: nil,
+                connection: connection
+            )
+        }
+    }
+
+    /// 统一打开一个数据库对象（表/视图）。SQLite 走既有 ``openSQLiteTable``，
+    /// MySQL/PostgreSQL 用对应方言的标识符引用构造 `SELECT ... LIMIT N`。
+    public func openObject(_ object: DatabaseObject) async {
+        guard let config = selectedConfig else { return }
+        switch config.type {
+        case .sqlite:
+            await openSQLiteTable(object.name)
+        case .mysql, .postgresql:
+            let limit = config.type.capabilities.defaultQueryLimit
+            let table = Self.quoteIdentifier(object.name, for: config.type)
+            queryText = "SELECT * FROM \(table) LIMIT \(limit);"
+            await executeQuery()
+        case .redis:
+            break
+        }
+    }
+
+    /// 按方言引用单个标识符（SQLite/PG 用双引号，MySQL 用反引号）。
+    public static func quoteIdentifier(_ name: String, for type: DatabaseType) -> String {
+        guard let quote = type.capabilities.identifierQuoteCharacter else { return name }
+        let escaped = name.replacingOccurrences(of: String(quote), with: String(quote) + String(quote))
+        return "\(quote)\(escaped)\(quote)"
     }
     
     /// 加载 SQLite 表列表
