@@ -9,7 +9,7 @@
 // 产物
 PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker
 INFOPLIST_KEY_CFBundleDisplayName = BookletMaker
-INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities"
+INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.utilities
 INFOPLIST_FILE = BookletMakerApp/BookletMaker-Info.plist
 
 // 图标
