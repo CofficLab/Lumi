@@ -141,6 +141,12 @@ public protocol LumiPlugin: AnyObject {
     /// 应返回带稳定 `id` / `title` / `systemImage` 的项目,内容由 `makeContent()` 渲染。
     func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem]
 
+    /// 设置页 section 项。挂载到指定 tab 的内容区（而非整页 tab）。
+    /// 用于向其它插件提供的设置 tab 追加局部区块；返回的 section 需指定
+    /// `tabID` 以挂载到目标 tab，内容由消费侧调用 `makeContent(context:)` 渲染。
+    /// 若渲染依赖具体实体（如单个项目），消费侧会通过 `context` 传入其标识。
+    func settingsSections(kernel: LumiKernel) -> [SettingsSection]
+
     /// (当前未接入宿主 UI;保留 API 以备扩展。新插件建议使用 `settingsTabItems`。)
     func addSettingsView(kernel: LumiKernel) -> [AnyView]
 
@@ -245,4 +251,7 @@ public extension LumiPlugin {
 
     /// 默认不处理任何外部文件打开请求。
     func openFile(kernel: LumiKernel, url: URL) -> Bool { false }
+
+    /// 默认不贡献任何设置 section。
+    func settingsSections(kernel: LumiKernel) -> [SettingsSection] { [] }
 }
