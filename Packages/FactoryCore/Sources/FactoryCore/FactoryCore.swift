@@ -1,3 +1,4 @@
+import KernelHosting
 import LumiKernel
 import SuperLogKit
 import SwiftUI
@@ -18,78 +19,31 @@ public enum FactoryCore: SuperLog {
     nonisolated public static let emoji = "🏭"
     nonisolated static let verbose = false
 
-    // MARK: - Kernel Registry
+    // MARK: - Kernel Registry (delegates to KernelHosting)
 
     /// 已创建的内核实例
-    public private(set) static var kernels: [LumiKernel] = []
+    public static var kernels: [LumiKernel] { KernelHosting.kernels }
 
     /// 主内核（第一个创建的）
-    public static var mainKernel: LumiKernel? {
-        kernels.first
-    }
+    public static var mainKernel: LumiKernel? { KernelHosting.mainKernel }
 
-    // MARK: - Kernel Factory
+    // MARK: - Kernel Factory (delegates to KernelHosting)
 
     /// 创建并初始化新内核
     ///
     /// 创建 LumiKernel 实例，注册 `configuration.plugins`，并调用 bootstrap。
+    /// 实际生命周期由平台中性的 `KernelHosting` 承载，本门面仅负责解包配置，
+    /// 让 macOS 现有调用方签名保持不变。
     /// - Parameter configuration: 宿主 Factory 组装好的最终配置。
     /// - Returns: 初始化完成的内核实例
     /// - Throws: 初始化过程中的错误
     public static func createKernel(
         configuration: FactoryConfiguration
     ) async throws -> LumiKernel {
-        if verbose {
-            logger.info("\(t)创建新内核实例")
-        }
-
-        // 1. 创建内核
-        let kernel = LumiKernel()
-
-        // 2. 初始化插件（存储插件实例）。插件列表由宿主在编译期确定，
-        //    Core 不再做任何 ID 过滤或白名单补齐。
-        if verbose {
-            logger.info("\(t)初始化 \(configuration.plugins.count) 个插件")
-        }
-        try await kernel.pluginManager.initializePlugins(configuration.plugins, kernel: kernel)
-
-        // 宿主可显式启用 opt-in 插件。这里不补齐任何依赖；
-        // 插件集合不足时仍由内核启动自检或插件生命周期明确报错。
-        if !configuration.enabledPluginIDs.isEmpty {
-            let overrides = Dictionary(
-                uniqueKeysWithValues: configuration.enabledPluginIDs.map { ($0, true) }
-            )
-            kernel.pluginManager.applyPersistedPluginStates(overrides)
-        }
-
-        // 3. 订阅插件变更通知，当插件启用/禁用时重新注册 UI 贡献
-        subscribeToPluginChanges(kernel: kernel)
-
-        // 4. 启动内核（调用插件生命周期 + 服务校验 + UI/LLM/Tool 收集）
-        try await kernel.startup()
-
-        // 5. 保存到内核列表
-        kernels.append(kernel)
-
-        if verbose {
-            Self.logger.info("\(Self.t)内核创建完成，已注册 \(kernel.pluginManager.allPlugins.count) 个插件")
-        }
-        return kernel
-    }
-
-    /// 订阅 `.lumiEnabledPluginsDidChange` 通知，
-    /// 在运行期插件启用/禁用时全量重建插件贡献(UI + LLM Provider)。
-    private static func subscribeToPluginChanges(kernel: LumiKernel) {
-        NotificationCenter.default.addObserver(
-            forName: .lumiEnabledPluginsDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak kernel] _ in
-            guard let kernel else { return }
-            // 全量重建:禁用插件的贡献即时撤回,启用插件的贡献即时加入。
-            kernel.pluginManager.rebuildAllContributions(in: kernel)
-            kernel.refreshMenuBarPresentation()
-        }
+        try await KernelHosting.createKernel(
+            plugins: configuration.plugins,
+            enabledPluginIDs: configuration.enabledPluginIDs
+        )
     }
 
     /// 创建主内核（如果尚未创建）
@@ -101,31 +55,22 @@ public enum FactoryCore: SuperLog {
     public static func createMainKernel(
         configuration: FactoryConfiguration
     ) async throws -> LumiKernel {
-        if let existing = mainKernel {
-            if verbose {
-                logger.info("\(t)返回已存在的主内核")
-            }
-            return existing
-        }
-        return try await createKernel(configuration: configuration)
+        try await KernelHosting.createMainKernel(
+            plugins: configuration.plugins,
+            enabledPluginIDs: configuration.enabledPluginIDs
+        )
     }
 
     /// 销毁指定内核
     ///
     /// - Parameter kernel: 要销毁的内核
     public static func destroyKernel(_ kernel: LumiKernel) {
-        kernels.removeAll { $0 === kernel }
-        if verbose {
-            logger.info("\(t)内核已销毁，剩余 \(kernels.count) 个")
-        }
+        KernelHosting.destroyKernel(kernel)
     }
 
     /// 销毁所有内核（用于测试或重置）
     public static func destroyAllKernels() {
-        kernels.removeAll()
-        if verbose {
-            logger.info("\(t)所有内核已销毁")
-        }
+        KernelHosting.destroyAllKernels()
     }
 
     // MARK: - Window Factory

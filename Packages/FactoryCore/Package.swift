@@ -8,6 +8,7 @@ let package = Package(
         .library(name: "FactoryCore", targets: ["FactoryCore"]),
     ],
     dependencies: [
+        .package(path: "../KernelHosting"),
         .package(path: "../LumiKernel"),
         .package(path: "../LumiUI"),
         .package(path: "../LumiLocalizationKit"),
@@ -18,6 +19,7 @@ let package = Package(
         .target(
             name: "FactoryCore",
             dependencies: [
+                .product(name: "KernelHosting", package: "KernelHosting"),
                 .product(name: "LumiKernel", package: "LumiKernel"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LumiLocalizationKit", package: "LumiLocalizationKit"),
