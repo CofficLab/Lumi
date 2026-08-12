@@ -5,7 +5,7 @@ public struct ExportAppIconTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
         id: "export_app_icon",
         displayName: "Export App Icon",
-        description: "Export the current App Icon Designer document or candidate image as an Xcode-ready AppIcon.appiconset."
+        description: "Export the current App Icon Designer document or candidate image as an Xcode 26 AppIcon.icon that supports macOS 15 and later."
     )
 
     public init() {}
@@ -20,7 +20,7 @@ public struct ExportAppIconTool: LumiAgentTool {
                 ],
                 "outputDirectory": [
                     "type": "string",
-                    "description": "Absolute directory path where AppIcon.appiconset should be created. For Xcode assets, use the .xcassets directory."
+                    "description": "Absolute directory path where AppIcon.icon should be created."
                 ],
                 "setName": [
                     "type": "string",
@@ -32,7 +32,7 @@ public struct ExportAppIconTool: LumiAgentTool {
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
-        "Export app icon set"
+        "Export Xcode app icon"
     }
 
     public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
@@ -67,51 +67,41 @@ public struct ExportAppIconTool: LumiAgentTool {
                 throw ExportAppIconToolError.noSelectedSource
             }
 
-            let service = AppIconExportService()
-            let result: AppIconExportService.ExportResult
+            let service = IconComposerExportService()
+            let result: IconComposerExportService.ExportResult
             switch exportSource {
             case .artifact(let artifact):
-                result = try service.exportAppIconSet(
+                result = try service.export(
                     sourceImagePath: artifact.sourcePath,
                     outputDirectory: outputURL,
-                    setName: setName?.isEmpty == false ? setName! : "AppIcon"
+                    name: setName?.isEmpty == false ? setName! : "AppIcon"
                 )
             case .document(let document):
                 result = try await MainActor.run {
-                    try service.exportAppIconSet(
+                    try service.export(
                         document: document,
                         outputDirectory: outputURL,
-                        setName: setName?.isEmpty == false ? setName! : "AppIcon"
+                        name: setName?.isEmpty == false ? setName! : "AppIcon"
                     )
                 }
             }
 
             await MainActor.run {
-                AppIconArtifactStore.shared.setExportURL(result.appIconSetURL)
-                IconDocumentStore.shared.setExportURL(result.appIconSetURL)
-            }
-
-            let warningText: String
-            if result.lintWarnings.isEmpty {
-                warningText = IconToolSupport.localized(language, en: "warnings: none", zh: "警告: 无")
-            } else {
-                let title = IconToolSupport.localized(language, en: "warnings:", zh: "警告:")
-                warningText = title + "\n" + result.lintWarnings.map { "- \($0.message)" }.joined(separator: "\n")
+                AppIconArtifactStore.shared.setExportURL(result.iconURL)
+                IconDocumentStore.shared.setExportURL(result.iconURL)
             }
 
             return IconToolSupport.localized(
                 language,
                 en: """
-                Exported app icon set.
-                path: \(result.appIconSetURL.path)
-                images: \(result.imageCount)
-                \(warningText)
+                Exported Xcode app icon.
+                path: \(result.iconURL.path)
+                Add AppIcon.icon to an Xcode 26 project; Xcode generates the macOS 15 fallback automatically.
                 """,
                 zh: """
-                已导出 App 图标集。
-                路径: \(result.appIconSetURL.path)
-                图片数: \(result.imageCount)
-                \(warningText)
+                已导出 Xcode App 图标。
+                路径: \(result.iconURL.path)
+                将 AppIcon.icon 添加到 Xcode 26 项目；Xcode 会自动生成 macOS 15 兼容图标。
                 """
             )
         } catch {

@@ -53,12 +53,12 @@ public struct DesignerView: View {
                 .disabled(isExporting)
 
                 Button {
-                    Task { await exportAppIconSet(document) }
+                    Task { await exportXcodeIcon(document) }
                 } label: {
-                    Label(L.string("Export AppIcon Set"), systemImage: "app.dashed")
+                    Label(L.string("Export Xcode Icon"), systemImage: "app.dashed")
                 }
                 .disabled(isExporting)
-                .help(L.string("Export an Xcode-ready AppIcon.appiconset"))
+                .help(L.string("Export an AppIcon.icon for macOS 15 and later"))
             }
 
             if isExporting {
@@ -138,18 +138,18 @@ public struct DesignerView: View {
         }
     }
 
-    private func exportAppIconSet(_ document: IconDocument) async {
-        guard let directoryURL = pickDirectory(title: L.string("Choose export location for AppIcon Set")) else { return }
+    private func exportXcodeIcon(_ document: IconDocument) async {
+        guard let directoryURL = pickDirectory(title: L.string("Choose export location for Xcode Icon")) else { return }
 
         isExporting = true
         defer { isExporting = false }
 
         do {
-            let result = try AppIconExportService().exportAppIconSet(
+            let result = try IconComposerExportService().export(
                 document: document,
                 outputDirectory: directoryURL
             )
-            documentStore.setExportURL(result.appIconSetURL)
+            documentStore.setExportURL(result.iconURL)
         } catch {
             documentStore.setError(error.localizedDescription)
         }

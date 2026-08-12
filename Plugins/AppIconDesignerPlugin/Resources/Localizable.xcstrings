@@ -1665,36 +1665,54 @@
         }
       }
     },
-    "Export AppIcon Set": {
+    "Choose export location for Xcode Icon": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose export location for Xcode Icon" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选择 Xcode 图标导出位置" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選擇 Xcode 圖示匯出位置" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "選擇 Xcode 圖示匯出位置" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "選擇 Xcode 圖示匯出位置" } }
+      }
+    },
+    "Export an AppIcon.icon for macOS 15 and later": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Export an AppIcon.icon for macOS 15 and later" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "导出适用于 macOS 15 及更高版本的 AppIcon.icon" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "匯出適用於 macOS 15 及更新版本的 AppIcon.icon" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "匯出適用於 macOS 15 及更新版本的 AppIcon.icon" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "匯出適用於 macOS 15 及更新版本的 AppIcon.icon" } }
+      }
+    },
+    "Export Xcode Icon": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Export AppIcon Set"
+            "value": "Export Xcode Icon"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "导出 AppIcon 集合"
+            "value": "导出 Xcode 图标"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出 AppIcon 集合"
+            "value": "匯出 Xcode 圖示"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出 AppIcon 集合"
+            "value": "匯出 Xcode 圖示"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "匯出 AppIcon 集合"
+            "value": "匯出 Xcode 圖示"
           }
         }
       }
