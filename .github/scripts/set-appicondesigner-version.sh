@@ -17,10 +17,13 @@
 #   依赖环境变量：
 #     CI_TAG          Xcode Cloud 注入的触发 tag（appicondesigner-v1.2.3）
 #     CI_BUILD_NUMBER Xcode Cloud 构建号（用于 CURRENT_PROJECT_VERSION）
-#   在仓库根目录执行。
+#   可以从任意工作目录执行。
 #
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # -----------------------------------------------------------------------------
 # 1. 解析版本号
@@ -48,7 +51,11 @@ if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
   exit 1
 fi
 
-BUILD_NUMBER="${CI_BUILD_NUMBER:-1}"
+BUILD_NUMBER="${CI_BUILD_NUMBER:-}"
+if ! echo "$BUILD_NUMBER" | grep -qE '^[1-9][0-9]*$'; then
+  echo "==> [set-appicondesigner-version] 错误：CI_BUILD_NUMBER='$BUILD_NUMBER' 不是正整数" >&2
+  exit 1
+fi
 
 echo "==> [set-appicondesigner-version] 写入 AppIconDesigner 版本"
 echo "    tag:              $TAG"
@@ -62,25 +69,25 @@ echo "    CURRENT_PROJECT_VERSION → $BUILD_NUMBER"
 # Debug/Release 共用这一个文件（两者配置一致），
 # 所以改这一个文件即可同时覆盖两个 configuration。
 # -----------------------------------------------------------------------------
-XCCONFIG="Config/AppIconDesigner.xcconfig"
+XCCONFIG="${REPOSITORY_ROOT}/Config/AppIconDesigner.xcconfig"
 if [ ! -f "$XCCONFIG" ]; then
   echo "==> [set-appicondesigner-version] 错误：找不到 $XCCONFIG" >&2
   exit 1
 fi
 
-sed -i '' "s/^MARKETING_VERSION = .*/MARKETING_VERSION = $VERSION;/" "$XCCONFIG"
-sed -i '' "s/^CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/" "$XCCONFIG"
+sed -i '' "s/^MARKETING_VERSION = .*/MARKETING_VERSION = $VERSION/" "$XCCONFIG"
+sed -i '' "s/^CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/" "$XCCONFIG"
 
 # -----------------------------------------------------------------------------
 # 3. 校验
 # -----------------------------------------------------------------------------
-if ! grep -q "^MARKETING_VERSION = $VERSION;" "$XCCONFIG"; then
+if ! grep -q "^MARKETING_VERSION = $VERSION$" "$XCCONFIG"; then
   echo "==> [set-appicondesigner-version] 错误：MARKETING_VERSION 未写入 $XCCONFIG" >&2
   exit 1
 fi
-if ! grep -q "^CURRENT_PROJECT_VERSION = $BUILD_NUMBER;" "$XCCONFIG"; then
+if ! grep -q "^CURRENT_PROJECT_VERSION = $BUILD_NUMBER$" "$XCCONFIG"; then
   echo "==> [set-appicondesigner-version] 错误：CURRENT_PROJECT_VERSION 未写入 $XCCONFIG" >&2
   exit 1
 fi
 
-echo "==> [set-appicondesigner-version] 完成，已更新 $XCCONFIG"
+echo "==> [set-appicondesigner-version] 完成，已更新 Config/AppIconDesigner.xcconfig"
