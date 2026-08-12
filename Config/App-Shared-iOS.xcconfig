@@ -1,0 +1,28 @@
+//
+// App-Shared-iOS.xcconfig
+// iOS app target 共享设置，与 macOS 的 App-Shared.xcconfig 对应。
+// 不 include App-Shared.xcconfig（后者含 macOS 专属的 hardened runtime / HIDPI / 运行路径），
+// 直接 include Base.xcconfig，再覆盖平台相关项。
+//
+
+#include "Base.xcconfig"
+
+// 平台：覆盖项目级 CommonWarnings.xcconfig 里的 SDKROOT = macosx
+SDKROOT = iphoneos
+SUPPORTED_PLATFORMS = iphoneos iphonesimulator
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+TARGETED_DEVICE_FAMILY = 1,2
+
+// 非 Catalyst：原生 iOS
+SUPPORTS_MACCATALYST = NO
+
+// 运行时
+DEAD_CODE_STRIPPING = YES
+ENABLE_PREVIEWS = YES
+
+// Info.plist 由 build settings 自动生成；启动屏由 Xcode 生成空白 UILaunchScreen
+GENERATE_INFOPLIST_FILE = YES
+INFOPLIST_KEY_UILaunchScreen_Generation = YES
+
+// Framework 搜索路径（iOS app）
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/Frameworks
