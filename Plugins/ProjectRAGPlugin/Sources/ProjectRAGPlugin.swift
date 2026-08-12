@@ -49,14 +49,23 @@ public final class ProjectRAGPlugin: LumiPlugin, SuperLog {
     public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+        // 已合并进 ProjectsPlugin 的"项目"设置 tab：通过 `settingsSections` 把"代码索引"
+        // 区块贡献到每个项目详情，不再贡献独立 tab。
+        return []
+    }
+
+    public func settingsSections(kernel: LumiKernel) -> [SettingsSection] {
         return [
-            SettingsTabItem(
-                id: "\(id).index-status",
-                title: LumiPluginLocalization.string("Project RAG", bundle: .module),
-                systemImage: "doc.text.magnifyingglass",
-                order: 200
-            ) {
-                RAGSettingsView(kernel: kernel)
+            SettingsSection(
+                id: "\(id).project-index",
+                tabID: LumiSettingsTabID.projects,
+                order: 100
+            ) { context in
+                if let path = context.projectPath {
+                    RAGProjectDetailSectionView(projectPath: path, kernel: kernel)
+                } else {
+                    EmptyView()
+                }
             },
         ]
     }
