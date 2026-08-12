@@ -84,3 +84,53 @@ struct RenameSchemaColumnSheet: View {
         .frame(width: 380)
     }
 }
+
+struct AddSchemaIndexSheet: View {
+    @Binding var isPresented: Bool
+    let availableColumns: [String]
+    let onAdd: (NewTableIndexDraft) throws -> Void
+
+    @State private var name = ""
+    @State private var selectedColumns: Set<String> = []
+    @State private var isUnique = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Add Index").font(.title3.weight(.semibold))
+            TextField("Index Name", text: $name)
+            Toggle("Unique Index", isOn: $isUnique)
+            Text("Columns").font(.appCaption).foregroundStyle(.secondary)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    ForEach(availableColumns, id: \.self) { column in
+                        Toggle(column, isOn: Binding(
+                            get: { selectedColumns.contains(column) },
+                            set: { selected in
+                                if selected { selectedColumns.insert(column) }
+                                else { selectedColumns.remove(column) }
+                            }
+                        ))
+                    }
+                }
+            }
+            .frame(maxHeight: 180)
+            if let errorMessage { Text(errorMessage).font(.appCaption).foregroundStyle(.red) }
+            HStack {
+                Spacer()
+                AppButton("Cancel", style: .secondary, size: .small) { isPresented = false }
+                AppButton("Stage Index", systemImage: "plus", style: .primary, size: .small) {
+                    do {
+                        let ordered = availableColumns.filter(selectedColumns.contains)
+                        try onAdd(NewTableIndexDraft(name: name, columns: ordered, isUnique: isUnique))
+                        isPresented = false
+                    } catch {
+                        errorMessage = error.localizedDescription
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .frame(width: 420)
+    }
+}

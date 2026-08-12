@@ -546,7 +546,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             guard openTableObject?.id == object.id else { return }
             selectedTableSchema = schema
             if schemaChangeManager?.hasChanges != true {
-                schemaChangeManager = SchemaChangeManager(table: object, columns: schema.columns)
+                schemaChangeManager = SchemaChangeManager(table: object, columns: schema.columns, indexes: schema.indexes)
             }
             if changeManager?.hasChanges != true {
                 changeManager = TableChangeManager(table: object, schema: schema)
@@ -577,6 +577,16 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
 
     public func stageDropColumn(_ column: TableColumn) throws {
         try schemaChangeManager?.stageDrop(column)
+        objectWillChange.send()
+    }
+
+    public func stageAddIndex(_ draft: NewTableIndexDraft) throws {
+        try schemaChangeManager?.stageAddIndex(draft)
+        objectWillChange.send()
+    }
+
+    public func stageDropIndex(_ index: TableIndex) throws {
+        try schemaChangeManager?.stageDropIndex(index)
         objectWillChange.send()
     }
 

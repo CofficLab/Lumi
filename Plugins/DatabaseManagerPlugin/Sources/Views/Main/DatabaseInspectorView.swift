@@ -12,6 +12,7 @@ public struct DatabaseInspectorView: View {
     @State private var ddlText = ""
     @State private var ddlEditorState = SourceEditorState()
     @State private var showAddColumn = false
+    @State private var showAddIndex = false
     @State private var renameColumn: TableColumn?
     @State private var schemaEditError: String?
     @Environment(\.colorScheme) private var colorScheme
@@ -41,6 +42,15 @@ public struct DatabaseInspectorView: View {
         .sheet(isPresented: $showAddColumn) {
             AddSchemaColumnSheet(isPresented: $showAddColumn) { draft in
                 try viewModel.stageAddColumn(draft)
+            }
+        }
+        .sheet(isPresented: $showAddIndex) {
+            if let schema = viewModel.selectedTableSchema {
+                AddSchemaIndexSheet(
+                    isPresented: $showAddIndex,
+                    availableColumns: schema.columns.map(\.name),
+                    onAdd: { draft in try viewModel.stageAddIndex(draft) }
+                )
             }
         }
         .sheet(isPresented: renameColumnBinding) {
@@ -149,6 +159,10 @@ public struct DatabaseInspectorView: View {
                 AppIconButton(systemImage: "plus", label: "Add Column", size: .compact) {
                     showAddColumn = true
                 }
+            } else if section == .indexes, canEditStructure {
+                AppIconButton(systemImage: "plus", label: "Add Index", size: .compact) {
+                    showAddIndex = true
+                }
             }
         }
         .padding(.horizontal, 12)
@@ -161,14 +175,7 @@ public struct DatabaseInspectorView: View {
         case .columns:
             columnsContent(schema.columns)
         case .indexes:
-            metadataList(schema.indexes) { index in
-                SchemaMetadataCard(
-                    title: index.name,
-                    subtitle: index.columns.joined(separator: ", "),
-                    badges: [index.isUnique ? "UNIQUE" : "INDEX"],
-                    details: [("Type", index.indexType ?? "Default")]
-                )
-            }
+            indexesContent(schema.indexes)
         case .foreignKeys:
             metadataList(schema.foreignKeys) { key in
                 SchemaMetadataCard(
@@ -218,6 +225,34 @@ public struct DatabaseInspectorView: View {
                         title: column.name,
                         subtitle: column.dataType,
                         status: "NEW",
+                        onRemove: { viewModel.removeSchemaChange(id: change.id) }
+                    )
+                }
+            }
+        }
+    }
+
+    private func indexesContent(_ indexes: [TableIndex]) -> some View {
+        LazyVStack(spacing: 8) {
+            ForEach(Array(indexes.enumerated()), id: \.offset) { _, index in
+                SchemaIndexCard(
+                    index: index,
+                    canEdit: canEditStructure,
+                    onDrop: {
+                        do {
+                            try viewModel.stageDropIndex(index)
+                        } catch {
+                            schemaEditError = error.localizedDescription
+                        }
+                    }
+                )
+            }
+            ForEach(pendingAddedIndexes) { change in
+                if case .addIndex(_, let index) = change {
+                    PendingSchemaChangeCard(
+                        title: index.name,
+                        subtitle: index.columns.joined(separator: ", "),
+                        status: index.isUnique ? "NEW UNIQUE" : "NEW INDEX",
                         onRemove: { viewModel.removeSchemaChange(id: change.id) }
                     )
                 }
@@ -368,6 +403,13 @@ public struct DatabaseInspectorView: View {
         } ?? []
     }
 
+    private var pendingAddedIndexes: [PendingSchemaChange] {
+        viewModel.schemaChangeManager?.changes.filter {
+            if case .addIndex = $0 { return true }
+            return false
+        } ?? []
+    }
+
     private var schemaEditErrorBinding: Binding<Bool> {
         Binding(get: { schemaEditError != nil }, set: { if !$0 { schemaEditError = nil } })
     }
@@ -496,6 +538,35 @@ private struct PendingSchemaChangeCard: View {
                 Spacer()
                 AppTag(status, systemImage: nil, style: .subtle)
                 AppIconButton(systemImage: "xmark", label: "Remove Change", size: .compact, action: onRemove)
+            }
+        }
+    }
+}
+
+private struct SchemaIndexCard: View {
+    let index: TableIndex
+    let canEdit: Bool
+    let onDrop: () -> Void
+
+    var body: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(index.name).font(.appMicroEmphasized).textSelection(.enabled)
+                    Spacer()
+                    AppTag(index.isUnique ? "UNIQUE" : "INDEX", systemImage: nil, style: .subtle)
+                    if canEdit {
+                        Menu {
+                            Button("Drop Index…", role: .destructive, action: onDrop)
+                        } label: {
+                            Image(systemName: "ellipsis")
+                        }
+                        .menuStyle(.borderlessButton)
+                        .fixedSize()
+                    }
+                }
+                Text(index.columns.joined(separator: ", ")).font(.appMicro).foregroundStyle(.secondary)
+                SchemaDetailRow(label: "Type", value: index.indexType ?? "Default")
             }
         }
     }

@@ -15,14 +15,29 @@ public struct NewTableColumnDraft: Equatable, Sendable {
     }
 }
 
+public struct NewTableIndexDraft: Equatable, Sendable {
+    public var name: String
+    public var columns: [String]
+    public var isUnique: Bool
+
+    public init(name: String = "", columns: [String] = [], isUnique: Bool = false) {
+        self.name = name
+        self.columns = columns
+        self.isUnique = isUnique
+    }
+}
+
 public enum PendingSchemaChange: Identifiable, Equatable, Sendable {
     case addColumn(id: UUID, column: NewTableColumnDraft)
     case renameColumn(id: UUID, oldName: String, newName: String)
     case dropColumn(id: UUID, column: TableColumn)
+    case addIndex(id: UUID, index: NewTableIndexDraft)
+    case dropIndex(id: UUID, index: TableIndex)
 
     public var id: UUID {
         switch self {
-        case .addColumn(let id, _), .renameColumn(let id, _, _), .dropColumn(let id, _): id
+        case .addColumn(let id, _), .renameColumn(let id, _, _), .dropColumn(let id, _),
+             .addIndex(let id, _), .dropIndex(let id, _): id
         }
     }
 
@@ -36,6 +51,8 @@ public enum PendingSchemaChange: Identifiable, Equatable, Sendable {
         case .addColumn(_, let column): return "Add column ‘\(column.name)’"
         case .renameColumn(_, let oldName, let newName): return "Rename ‘\(oldName)’ to ‘\(newName)’"
         case .dropColumn(_, let column): return "Drop column ‘\(column.name)’"
+        case .addIndex(_, let index): return "Add index ‘\(index.name)’"
+        case .dropIndex(_, let index): return "Drop index ‘\(index.name)’"
         }
     }
 }
@@ -48,6 +65,10 @@ public enum SchemaChangeValidationError: LocalizedError, Equatable {
     case primaryKeyDrop(String)
     case requiredColumnNeedsDefault
     case unsafeSQLFragment
+    case missingIndexColumns
+    case unknownIndexColumn(String)
+    case duplicateIndex(String)
+    case protectedIndex(String)
 
     public var errorDescription: String? {
         switch self {
@@ -58,6 +79,10 @@ public enum SchemaChangeValidationError: LocalizedError, Equatable {
         case .primaryKeyDrop(let name): "Primary key column ‘\(name)’ cannot be dropped in this version."
         case .requiredColumnNeedsDefault: "A NOT NULL column added to an existing table requires a default value."
         case .unsafeSQLFragment: "Column type or default contains an unsafe SQL fragment."
+        case .missingIndexColumns: "Select at least one column for the index."
+        case .unknownIndexColumn(let name): "Column ‘\(name)’ does not exist."
+        case .duplicateIndex(let name): "An index named ‘\(name)’ already exists."
+        case .protectedIndex(let name): "System or primary index ‘\(name)’ cannot be dropped here."
         }
     }
 }
@@ -67,11 +92,13 @@ public enum SchemaChangeValidationError: LocalizedError, Equatable {
 public final class SchemaChangeManager: ObservableObject {
     public let table: DatabaseObject
     public let originalColumns: [TableColumn]
+    public let originalIndexes: [TableIndex]
     @Published public private(set) var changes: [PendingSchemaChange] = []
 
-    public init(table: DatabaseObject, columns: [TableColumn]) {
+    public init(table: DatabaseObject, columns: [TableColumn], indexes: [TableIndex] = []) {
         self.table = table
         self.originalColumns = columns
+        self.originalIndexes = indexes
     }
 
     public var hasChanges: Bool { !changes.isEmpty }
@@ -114,10 +141,37 @@ public final class SchemaChangeManager: ObservableObject {
             switch change {
             case .renameColumn(_, let oldName, _): oldName == column.name
             case .dropColumn(_, let existing): existing.name == column.name
-            case .addColumn: false
+            case .addColumn, .addIndex, .dropIndex: false
             }
         }
         changes.append(.dropColumn(id: UUID(), column: column))
+    }
+
+    public func stageAddIndex(_ draft: NewTableIndexDraft) throws {
+        let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { throw SchemaChangeValidationError.blankName }
+        guard !draft.columns.isEmpty else { throw SchemaChangeValidationError.missingIndexColumns }
+        guard !containsIndex(named: name) else { throw SchemaChangeValidationError.duplicateIndex(name) }
+        let availableColumns = Set(effectiveColumnNames.map { $0.lowercased() })
+        if let unknown = draft.columns.first(where: { !availableColumns.contains($0.lowercased()) }) {
+            throw SchemaChangeValidationError.unknownIndexColumn(unknown)
+        }
+        changes.append(.addIndex(
+            id: UUID(),
+            index: NewTableIndexDraft(name: name, columns: draft.columns, isUnique: draft.isUnique)
+        ))
+    }
+
+    public func stageDropIndex(_ index: TableIndex) throws {
+        let lowercaseName = index.name.lowercased()
+        guard lowercaseName != "primary", !lowercaseName.hasPrefix("sqlite_autoindex_") else {
+            throw SchemaChangeValidationError.protectedIndex(index.name)
+        }
+        changes.removeAll { change in
+            if case .dropIndex(_, let existing) = change { return existing.name == index.name }
+            return false
+        }
+        changes.append(.dropIndex(id: UUID(), index: index))
     }
 
     public func remove(id: UUID) {
@@ -138,8 +192,29 @@ public final class SchemaChangeManager: ObservableObject {
                 return "ALTER TABLE \(tableName) RENAME COLUMN \(DatabaseViewModel.quoteIdentifier(oldName, for: type)) TO \(DatabaseViewModel.quoteIdentifier(newName, for: type));"
             case .dropColumn(_, let column):
                 return "ALTER TABLE \(tableName) DROP COLUMN \(DatabaseViewModel.quoteIdentifier(column.name, for: type));"
+            case .addIndex(_, let index):
+                let name = DatabaseViewModel.quoteIdentifier(index.name, for: type)
+                let columns = index.columns.map { DatabaseViewModel.quoteIdentifier($0, for: type) }.joined(separator: ", ")
+                let unique = index.isUnique ? "UNIQUE " : ""
+                switch type {
+                case .mysql: return "ALTER TABLE \(tableName) ADD \(unique)INDEX \(name) (\(columns));"
+                case .sqlite, .postgresql: return "CREATE \(unique)INDEX \(name) ON \(tableName) (\(columns));"
+                case .redis: return ""
+                }
+            case .dropIndex(_, let index):
+                let name = DatabaseViewModel.quoteIdentifier(index.name, for: type)
+                switch type {
+                case .mysql: return "ALTER TABLE \(tableName) DROP INDEX \(name);"
+                case .postgresql:
+                    if let schema = table.schema, !schema.isEmpty {
+                        return "DROP INDEX \(DatabaseViewModel.quoteIdentifier(schema, for: type)).\(name);"
+                    }
+                    return "DROP INDEX \(name);"
+                case .sqlite: return "DROP INDEX \(name);"
+                case .redis: return ""
+                }
             }
-        }
+        }.filter { !$0.isEmpty }
     }
 
     private func containsColumn(named name: String, excludingOriginal: String? = nil) -> Bool {
@@ -153,6 +228,28 @@ public final class SchemaChangeManager: ObservableObject {
             return false
         }
         return originals || additions
+    }
+
+    private var effectiveColumnNames: [String] {
+        var names = originalColumns.map(\.name)
+        for change in changes {
+            switch change {
+            case .addColumn(_, let column): names.append(column.name)
+            case .renameColumn(_, let oldName, let newName):
+                if let index = names.firstIndex(of: oldName) { names[index] = newName }
+            case .dropColumn(_, let column): names.removeAll { $0 == column.name }
+            case .addIndex, .dropIndex: break
+            }
+        }
+        return names
+    }
+
+    private func containsIndex(named name: String) -> Bool {
+        originalIndexes.contains { $0.name.caseInsensitiveCompare(name) == .orderedSame }
+            || changes.contains {
+                if case .addIndex(_, let index) = $0 { return index.name.caseInsensitiveCompare(name) == .orderedSame }
+                return false
+            }
     }
 
     private func normalized(_ draft: NewTableColumnDraft) -> NewTableColumnDraft {

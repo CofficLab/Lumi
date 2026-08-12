@@ -103,6 +103,40 @@ import Testing
 }
 
 @MainActor
+@Test func schemaChangeManagerGeneratesDialectAwareIndexDDL() throws {
+    let table = DatabaseObject(kind: .table, name: "users", database: "app", schema: "public")
+    let columns = [TableColumn(name: "email", dataType: "TEXT", isNullable: true, isPrimaryKey: false, defaultValue: nil, position: 0)]
+    let manager = SchemaChangeManager(table: table, columns: columns)
+    try manager.stageAddIndex(NewTableIndexDraft(name: "users_email_idx", columns: ["email"], isUnique: true))
+
+    #expect(manager.statements(for: .sqlite) == ["CREATE UNIQUE INDEX \"users_email_idx\" ON \"users\" (\"email\");"])
+    #expect(manager.statements(for: .mysql) == ["ALTER TABLE `app`.`users` ADD UNIQUE INDEX `users_email_idx` (`email`);"])
+    #expect(manager.statements(for: .postgresql) == ["CREATE UNIQUE INDEX \"users_email_idx\" ON \"public\".\"users\" (\"email\");"])
+    #expect(throws: SchemaChangeValidationError.protectedIndex("PRIMARY")) {
+        try manager.stageDropIndex(TableIndex(name: "PRIMARY", columns: ["email"], isUnique: true))
+    }
+}
+
+@MainActor
+@Test func sqliteIndexChangesApplyAndReloadInspector() async throws {
+    let viewModel = DatabaseViewModel(loadSavedConfigs: false)
+    let demoConfig = try #require(viewModel.configs.first { $0.name == "Demo SQLite" })
+    await viewModel.connect(config: demoConfig)
+    await viewModel.openObject(DatabaseObject(kind: .table, name: "users"))
+
+    try viewModel.stageAddIndex(NewTableIndexDraft(name: "users_email_idx", columns: ["email"], isUnique: true))
+    await viewModel.saveSchemaChanges()
+    let index = try #require(viewModel.selectedTableSchema?.indexes.first { $0.name == "users_email_idx" })
+    #expect(index.columns == ["email"])
+    #expect(index.isUnique)
+
+    try viewModel.stageDropIndex(index)
+    await viewModel.saveSchemaChanges()
+    #expect(viewModel.selectedTableSchema?.indexes.contains { $0.name == "users_email_idx" } == false)
+    #expect(viewModel.tableSchemaError == nil)
+}
+
+@MainActor
 @Test func sqliteSchemaChangesApplyAndReloadInspector() async throws {
     let viewModel = DatabaseViewModel(loadSavedConfigs: false)
     let demoConfig = try #require(viewModel.configs.first { $0.name == "Demo SQLite" })
@@ -946,6 +980,4 @@ private func freshHistoryStore() -> QueryHistoryStore {
     await store.clear()
     #expect((await store.recent(limit: 10)).isEmpty)
 }
-
-
 
