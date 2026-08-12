@@ -354,7 +354,8 @@ final class MiniMaxAnthropicSSEParser: @unchecked Sendable {
 enum MiniMaxRequestBuilder {
     static func openAI(_ request: LumiLLMRequest) -> [String: Any] {
         var body: [String: Any] = ["model": request.model, "messages": request.messages.compactMap(openAIMessage), "stream": true]
-        if !request.tools.isEmpty { body["tools"] = request.tools.map { ["type": "function", "function": ["name": $0.name, "description": $0.toolDescription, "parameters": $0.inputSchema.anyValue]] } }
+        // 函数名仅允许字母/数字/_/-，带点号等非法字符的工具名须转义，否则整包请求被 400 拒绝。
+        if !request.tools.isEmpty { body["tools"] = request.tools.map { ["type": "function", "function": ["name": LLMToolNameSanitizer.sanitize($0.name), "description": $0.toolDescription, "parameters": $0.inputSchema.anyValue]] } }
         if let effort = request.reasoningEffort { body["reasoning_effort"] = effort.rawValue }
         if let temperature = request.temperature { body["temperature"] = temperature }
         if let topP = request.topP { body["top_p"] = topP }
@@ -363,13 +364,24 @@ enum MiniMaxRequestBuilder {
         return body
     }
 
+    /// 建立「sanitize 后名字 → 原始注册名」的反查映射，供流式响应解析时还原
+    /// （OpenAI / Anthropic / Responses 三条路径共用同一套工具集，映射一致）。
+    static func toolNameMap(for request: LumiLLMRequest) -> [String: String] {
+        var map: [String: String] = [:]
+        for tool in request.tools {
+            let sanitized = LLMToolNameSanitizer.sanitize(tool.name)
+            if map[sanitized] == nil { map[sanitized] = tool.name }
+        }
+        return map
+    }
+
     static func anthropic(_ request: LumiLLMRequest) -> [String: Any] {
         let system = request.messages.filter { $0.role == .system }.map(\.content).filter { !$0.isEmpty }.joined(separator: "\n\n")
         // Use dynamic max_tokens from options, with sensible defaults per model family
         let maxTokens = request.maxTokens ?? (request.model.contains("M3") ? 131072 : 65536)
         var body: [String: Any] = ["model": request.model, "max_tokens": maxTokens, "messages": anthropicMessages(request.messages), "stream": true]
         if !system.isEmpty { body["system"] = system }
-        if !request.tools.isEmpty { body["tools"] = request.tools.map { ["name": $0.name, "description": $0.toolDescription, "input_schema": $0.inputSchema.anyValue] } }
+        if !request.tools.isEmpty { body["tools"] = request.tools.map { ["name": LLMToolNameSanitizer.sanitize($0.name), "description": $0.toolDescription, "input_schema": $0.inputSchema.anyValue] } }
         // MiniMax 的 Anthropic 协议：本次请求携带了 `reasoningEffort` 即认为启用 thinking 块；
         // M2.x 与 M3 都发 `thinking.type="adaptive"`；若 `reasoningEffort == nil`，
         // 不发送 `thinking` 字段，让服务端按模型默认（关闭）处理。
@@ -395,11 +407,12 @@ enum MiniMaxRequestBuilder {
             var value: [String: Any] = ["role": "assistant", "content": message.content]
             if let calls = message.toolCalls {
                 value["tool_calls"] = calls.map {
+                    // 历史消息回传同样要转义，否则下一轮请求仍会被供应商 400 拒绝。
                     [
                         "id": $0.id,
                         "type": "function",
                         "function": [
-                            "name": $0.name,
+                            "name": LLMToolNameSanitizer.sanitize($0.name),
                             "arguments": MiniMaxToolArguments.normalized($0.arguments),
                         ],
                     ]
@@ -422,7 +435,7 @@ enum MiniMaxRequestBuilder {
                 ])
             case .assistant:
                 var blocks: [[String: Any]] = message.content.isEmpty ? [] : [["type": "text", "text": message.content]]
-                blocks += (message.toolCalls ?? []).map { ["type": "tool_use", "id": $0.id, "name": $0.name, "input": parseJSON($0.arguments)] }
+                blocks += (message.toolCalls ?? []).map { ["type": "tool_use", "id": $0.id, "name": LLMToolNameSanitizer.sanitize($0.name), "input": parseJSON($0.arguments)] }
                 if !blocks.isEmpty { output.append(["role": "assistant", "content": blocks]) }
             case .tool:
                 guard let id = message.toolCallID else { continue }

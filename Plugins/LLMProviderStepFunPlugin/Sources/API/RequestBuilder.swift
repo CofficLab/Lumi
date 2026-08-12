@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 import LumiKernel
 
 enum StepFunRequestBuilder {
@@ -11,13 +12,24 @@ enum StepFunRequestBuilder {
         if !request.tools.isEmpty {
             body["tools"] = request.tools.map { tool in
                 ["type": "function", "function": [
-                    "name": tool.name,
+                    // 函数名仅允许字母/数字/_/-，带点号等非法字符的工具名须转义。
+                    "name": LLMToolNameSanitizer.sanitize(tool.name),
                     "description": tool.toolDescription,
                     "parameters": tool.inputSchema.anyValue,
                 ]]
             }
         }
         return body
+    }
+
+    /// 建立「sanitize 后名字 → 原始注册名」的反查映射，供流式响应解析时还原。
+    static func toolNameMap(for request: LumiLLMRequest) -> [String: String] {
+        var map: [String: String] = [:]
+        for tool in request.tools {
+            let sanitized = LLMToolNameSanitizer.sanitize(tool.name)
+            if map[sanitized] == nil { map[sanitized] = tool.name }
+        }
+        return map
     }
 
     private static func message(_ message: LumiChatMessage) -> [String: Any]? {
@@ -27,10 +39,11 @@ enum StepFunRequestBuilder {
         case .assistant:
             var value: [String: Any] = ["role": "assistant", "content": message.content]
             if let calls = message.toolCalls, !calls.isEmpty {
+                // 历史消息回传同样要转义，否则下一轮请求仍会被供应商 400 拒绝。
                 value["tool_calls"] = calls.map { [
                     "id": $0.id,
                     "type": "function",
-                    "function": ["name": $0.name, "arguments": $0.arguments],
+                    "function": ["name": LLMToolNameSanitizer.sanitize($0.name), "arguments": $0.arguments],
                 ] }
             }
             return value

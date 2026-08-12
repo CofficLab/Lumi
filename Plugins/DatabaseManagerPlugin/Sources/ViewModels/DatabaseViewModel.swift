@@ -19,12 +19,28 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     /// 侧边栏当前展示的内容：数据浏览（Tables/Keys）或连接列表。
     @Published public var sidebarMode: DatabaseSidebarMode = .browser
 
+    /// 结构元数据缓存（表/列/索引等），侧边栏对象树与结构 Tab 共用。
+    public let schemaCache = SchemaCacheService()
+
+    /// 右侧 Inspector 是否可见（结构详情 / ER 图 / EXPLAIN 等将放在这里）。
+    @Published public var inspectorVisible: Bool = false
+
+    public func toggleInspector() {
+        inspectorVisible.toggle()
+    }
+
     private let manager = DatabaseManagerCore.shared
     nonisolated(unsafe) private var connectedConfigId: UUID?
     /// 是否已尝试过自动重连（每次启动只自动连一次）。
     private var didAutoConnect = false
 
-    public init() {
+    public convenience init() {
+        self.init(loadSavedConfigs: true)
+    }
+
+    /// 测试专用初始化：`loadSavedConfigs == false` 时跳过从 UserDefaults 读取已存配置，
+    /// 始终使用一份独立的内存 demo 连接，避免并行测试共享进程级 UserDefaults 串扰。
+    public init(loadSavedConfigs: Bool) {
         Task {
             await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
         }
@@ -34,7 +50,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             }
         }
         // 恢复上次保存的连接；首次使用时保留一个内存 demo 连接
-        let savedConfigs = DatabaseConnectionStore.loadConfigs()
+        let savedConfigs = loadSavedConfigs ? DatabaseConnectionStore.loadConfigs() : []
         if savedConfigs.isEmpty {
             let demoConfig = DatabaseConfig(name: "Demo SQLite", type: .sqlite, database: ":memory:")
             configs = [demoConfig]
@@ -61,6 +77,30 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         DatabaseConnectionStore.saveConfigs(configs)
         Task {
             await DatabaseAgentConnectionRegistry.shared.upsert(config)
+        }
+    }
+
+    /// 编辑已存在的连接配置（保留 id）。若表单里密码留空，沿用已存密码，避免误清空。
+    /// 若当前正连着该连接，则用新配置断开重连。
+    public func updateConfig(_ config: DatabaseConfig) {
+        guard let index = configs.firstIndex(where: { $0.id == config.id }) else { return }
+        var updated = config
+        if (updated.password?.isEmpty ?? true) {
+            updated.password = configs[index].password
+        }
+        let wasConnected = (selectedConfig?.id == config.id && isConnected)
+        configs[index] = updated
+        DatabaseConnectionStore.saveConfigs(configs)
+        Task { await DatabaseAgentConnectionRegistry.shared.upsert(updated) }
+
+        if wasConnected {
+            Task {
+                await disconnect()
+                await connect(config: updated)
+            }
+        } else if selectedConfig?.id == config.id {
+            // 未连接但已选中：同步选中引用，让侧边栏/UI 立即反映新名称等
+            selectedConfig = updated
         }
     }
 
@@ -107,6 +147,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             redisKeys = []
             sqliteTables = []
             selectedSQLiteTable = nil
+            // 切换连接时清掉旧连接的结构缓存
+            schemaCache.invalidate(configId: config.id)
             // 记住这次连接，下次自动重连
             DatabaseConnectionStore.lastSelectedConfigID = config.id
             
@@ -125,6 +167,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
                 }
                 await loadSQLiteTables()
             }
+
+            // 为侧边栏对象树预加载可见分类（表/视图/例程），MySQL/PG 由此不再空白。
+            await refreshSidebarObjects()
 
             if let previousConfigId, previousConfigId != config.id {
                 await manager.disconnect(configId: previousConfigId)
@@ -159,6 +204,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         redisKeys = []
         sqliteTables = []
         selectedSQLiteTable = nil
+        schemaCache.invalidate(configId: config.id)
         // 显式断开后，下次不再自动重连这个连接
         DatabaseConnectionStore.lastSelectedConfigID = nil
     }
@@ -221,22 +267,24 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         isLoading = false
     }
     
-    /// 加载 Redis 键列表（使用 SCAN 分段加载的简化版）
+    /// 加载 Redis 键列表（循环 SCAN 直到游标归零，带安全上限避免巨型键空间卡死）。
     public func loadRedisKeys() async {
         guard let config = selectedConfig, config.type == .redis else { return }
         guard let connection = await manager.getConnection(for: config.id) else { return }
+        guard let redis = connection as? RedisConnection else {
+            errorMessage = "Redis 连接类型异常"
+            return
+        }
         do {
-            let result = try await connection.query("SCAN 0 MATCH * COUNT 100", params: nil)
-            // rows 是 [["key1"], ["key2"], ...]
-            let keys = result.rows.compactMap { row -> String? in
-                if let first = row.first {
-                    switch first {
-                    case .string(let s): return s
-                    default: return first.description
-                    }
-                }
-                return nil
-            }
+            var cursor = "0"
+            var keys: [String] = []
+            /// 单次加载的安全上限，避免在生产键空间（数百万键）里无止境扫描。
+            let safetyCap = 10_000
+            repeat {
+                let step = try await redis.scanKeys(cursor: cursor, match: "*", count: 200)
+                keys.append(contentsOf: step.keys)
+                cursor = step.nextCursor
+            } while cursor != "0" && keys.count < safetyCap
             redisKeys = keys
         } catch {
             errorMessage = error.localizedDescription
@@ -247,6 +295,47 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     public func openRedisKey(_ key: String) async {
         queryText = "GET \(key)"
         await executeQuery()
+    }
+
+    /// 加载当前连接在侧边栏可见的对象分类（表/视图/例程…），结果写入 ``schemaCache``。
+    /// MySQL/PG 首次连接后侧边栏不再为空，全靠这里填充。
+    public func refreshSidebarObjects() async {
+        guard let config = selectedConfig, config.type != .redis else { return }
+        guard let connection = await manager.getConnection(for: config.id) else { return }
+        let database: String? = config.type == .sqlite ? nil : config.database
+        for kind in config.type.sidebarObjectKinds {
+            _ = try? await schemaCache.objects(
+                for: config,
+                kind: kind,
+                database: database,
+                schema: nil,
+                connection: connection
+            )
+        }
+    }
+
+    /// 统一打开一个数据库对象（表/视图）。SQLite 走既有 ``openSQLiteTable``，
+    /// MySQL/PostgreSQL 用对应方言的标识符引用构造 `SELECT ... LIMIT N`。
+    public func openObject(_ object: DatabaseObject) async {
+        guard let config = selectedConfig else { return }
+        switch config.type {
+        case .sqlite:
+            await openSQLiteTable(object.name)
+        case .mysql, .postgresql:
+            let limit = config.type.capabilities.defaultQueryLimit
+            let table = Self.quoteIdentifier(object.name, for: config.type)
+            queryText = "SELECT * FROM \(table) LIMIT \(limit);"
+            await executeQuery()
+        case .redis:
+            break
+        }
+    }
+
+    /// 按方言引用单个标识符（SQLite/PG 用双引号，MySQL 用反引号）。
+    public static func quoteIdentifier(_ name: String, for type: DatabaseType) -> String {
+        guard let quote = type.capabilities.identifierQuoteCharacter else { return name }
+        let escaped = name.replacingOccurrences(of: String(quote), with: String(quote) + String(quote))
+        return "\(quote)\(escaped)\(quote)"
     }
     
     /// 加载 SQLite 表列表

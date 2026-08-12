@@ -34,11 +34,17 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
             ReadAppStoreConnectVersionTool(),
             CreateAppStoreConnectVersionTool(),
             ReleaseAppStoreConnectVersionTool(),
+            ListAppStoreConnectBuildsTool(),
+            AssignAppStoreConnectBuildTool(),
+            SubmitAppStoreConnectVersionTool(),
+            WithdrawAppStoreConnectSubmissionTool(),
             ListAppStoreConnectLocalizationsTool(),
             CreateAppStoreConnectLocalizationTool(),
             ReadAppStoreConnectLocalizationTool(),
             ListAppStoreConnectScreenshotSetsTool(),
             ListAppStoreConnectScreenshotsTool(),
+            UploadAppStoreConnectScreenshotTool(),
+            DeleteAppStoreConnectScreenshotTool(),
             ListAppStoreConnectCiProductsTool(),
             ListAppStoreConnectCiWorkflowsTool(),
             ReadAppStoreConnectCiWorkflowTool(),
@@ -56,7 +62,18 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+        [
+            LumiTitleToolbarItem(
+                id: "\(id).title",
+                title: name,
+                placement: .center,
+                order: 0
+            ) {
+                AppStoreConnectToolbarTitleView(containerID: self.id, kernel: kernel, title: self.name)
+            },
+        ]
+    }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {

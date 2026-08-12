@@ -14,9 +14,8 @@ import LumiKernel
 /// `.user` 消息作为 `userMessage` —— 天然就是触发该 turn 的用户输入,
 /// 不依赖 turnID / triggerMessageID,也不动运行时与持久化。
 ///
-/// **运行中 turn**:`.running` / `.idle` 也产出一行。若有中间助手消息就显示它,
-/// 否则合成一条"思考中…"占位(`role = .status`)。这样运行中的 turn 始终在
-/// 列表里,不再依赖漂浮的 status 行。
+/// **运行中 turn**:`processMessages` 暴露当前 turn 的助手工具调用、工具结果及
+/// 瞬时 status；视图展示这些过程。turn 进入终态后，视图折叠为 `message`。
 struct AgentTurnSummaryBuilder {
     func build(
         records: [AgentTurnRecord],
@@ -29,6 +28,11 @@ struct AgentTurnSummaryBuilder {
 
         // 用户消息回溯匹配需要按时间升序的全量消息流。
         let chronological = messages.sorted(by: messageOrdering)
+        // 无 turnID 的瞬时 status 属于当前会话而非某个历史 turn；只挂到最新活跃 turn。
+        let latestActiveTurnID = records
+            .filter { !$0.isFinished }
+            .max(by: recordOrdering)?
+            .id
 
         return records
             .sorted(by: recordOrdering)
@@ -39,7 +43,27 @@ struct AgentTurnSummaryBuilder {
                 let user = userMessage(before: chronological, startedAt: record.startedAt)
                 let message = summaryMessage(for: record, messages: turnMessages)
                     ?? placeholderMessage(for: record)
-                return AgentTurnSummaryItem(record: record, userMessage: user, message: message)
+                let transientStatuses = chronological.filter { candidate in
+                    candidate.role == .status
+                        && candidate.turnID == nil
+                        && candidate.conversationID == record.conversationID
+                        && record.id == latestActiveTurnID
+                }
+                let processMessages = (turnMessages + transientStatuses)
+                    .filter {
+                        $0.id != message.id
+                            && $0.role != .user
+                            && $0.role != .system
+                            // V1 只展示工具正在做什么，不暴露工具的原始返回内容。
+                            && $0.role != .tool
+                    }
+                    .sorted(by: messageOrdering)
+                return AgentTurnSummaryItem(
+                    record: record,
+                    userMessage: user,
+                    processMessages: processMessages,
+                    message: message
+                )
             }
     }
 

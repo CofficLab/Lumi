@@ -79,55 +79,15 @@ public struct SidebarView: View {
     private var dataBrowser: some View {
         VStack(spacing: 0) {
             switch viewModel.selectedConfig?.type {
-            case .sqlite:
-                tablesBrowser
             case .redis:
                 keysBrowser
-            default:
+            case .sqlite, .mysql, .postgresql:
+                DatabaseObjectTreeView(viewModel: viewModel, onToggleMode: { toggleMode() })
+            case nil:
                 emptyHint
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    private var tablesBrowser: some View {
-        VStack(spacing: 0) {
-            DatabaseSidebarHeaderBar(
-                title: LumiPluginLocalization.string("Tables", bundle: .module),
-                systemImage: "tablecells",
-                onLoad: { Task { await viewModel.loadSQLiteTables() } },
-                onToggleMode: { toggleMode() },
-                toggleMode: viewModel.sidebarMode
-            )
-
-            if viewModel.sqliteTables.isEmpty {
-                SidebarEmptyView(
-                    systemImage: "tablecells",
-                    title: LumiPluginLocalization.string("No tables", bundle: .module),
-                    description: LumiPluginLocalization.string("Click Reload to refresh the table list.", bundle: .module)
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 4) {
-                        ForEach(viewModel.sqliteTables, id: \.self) { table in
-                            DatabaseTableRow(
-                                tableName: table,
-                                isSelected: viewModel.selectedSQLiteTable == table,
-                                onSelect: {
-                                    Task { await viewModel.openSQLiteTable(table) }
-                                }
-                            )
-                        }
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                }
-                .scrollIndicators(.hidden)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var keysBrowser: some View {

@@ -53,7 +53,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
                 panelBodyVisibility: .alwaysVisible,
                 panelBottomVisibility: .unsupported
             ) {
-                AnyView(MainView(viewModel: self.sharedViewModel))
+                AnyView(DatabaseWorkspaceView(viewModel: self.sharedViewModel))
             },
         ]
     }
@@ -70,6 +70,14 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
         [
+            LumiTitleToolbarItem(
+                id: "\(id).title",
+                title: name,
+                placement: .center,
+                order: 0
+            ) {
+                DatabaseManagerToolbarTitleView(containerID: "database-manager", kernel: kernel, title: self.name)
+            },
             LumiTitleToolbarItem(
                 id: "\(id).toolbar-button",
                 title: LumiPluginLocalization.string("Database Connections", bundle: .module),

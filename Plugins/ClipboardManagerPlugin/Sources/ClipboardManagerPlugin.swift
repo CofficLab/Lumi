@@ -48,7 +48,18 @@ public final class ClipboardManagerPlugin: LumiPlugin, SuperLog {
     public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
+    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+        [
+            LumiTitleToolbarItem(
+                id: "\(id).title",
+                title: name,
+                placement: .center,
+                order: 0
+            ) {
+                ClipboardManagerToolbarTitleView(containerID: self.id, kernel: kernel, title: self.name)
+            },
+        ]
+    }
     public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }

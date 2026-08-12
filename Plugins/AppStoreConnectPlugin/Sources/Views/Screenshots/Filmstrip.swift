@@ -34,6 +34,7 @@ struct ScreenshotFilmstrip: View {
     let pendingScreenshots: [PendingScreenshot]
     let displayType: String
     let onRemovePending: (PendingScreenshot) -> Void
+    var onDeleteRemote: ((AppScreenshot) -> Void)? = nil
 
     private var layout: FilmstripLayout {
         FilmstripLayout.make(for: displayType)
@@ -43,7 +44,7 @@ struct ScreenshotFilmstrip: View {
         ScrollView(.horizontal, showsIndicators: true) {
             HStack(alignment: .top, spacing: 12) {
                 ForEach(screenshots) { screenshot in
-                    FilmstripRemoteCard(screenshot: screenshot, layout: layout)
+                    FilmstripRemoteCard(screenshot: screenshot, layout: layout, onDelete: onDeleteRemote.map { handler in { handler(screenshot) } })
                 }
 
                 ForEach(pendingScreenshots) { screenshot in
@@ -62,18 +63,44 @@ struct ScreenshotFilmstrip: View {
 private struct FilmstripRemoteCard: View {
     let screenshot: AppScreenshot
     let layout: FilmstripLayout
+    var onDelete: (() -> Void)? = nil
     @State private var isHovering = false
+    @State private var showsDeleteConfirmation = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            thumbnail
-                .frame(width: layout.cardWidth, height: layout.cardHeight)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color.secondary.opacity(0.2))
-                )
+            ZStack(alignment: .topTrailing) {
+                thumbnail
+                    .frame(width: layout.cardWidth, height: layout.cardHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(Color.secondary.opacity(0.2))
+                    )
 
+                if let onDelete, isHovering {
+                    AppIconButton(systemImage: "trash", tint: .red) {
+                        showsDeleteConfirmation = true
+                    }
+                    .padding(4)
+                    .transition(.opacity)
+                    .confirmationDialog(
+                        AppStoreConnectLocalization.string("Delete Screenshot"),
+                        isPresented: $showsDeleteConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button(AppStoreConnectLocalization.string("Delete"), role: .destructive) {
+                            onDelete()
+                        }
+                        Button(AppStoreConnectLocalization.string("Cancel"), role: .cancel) {}
+                    } message: {
+                        Text(AppStoreConnectLocalization.string(
+                            "Delete %@ from App Store Connect? This cannot be undone.",
+                            screenshot.fileName.isEmpty ? screenshot.id : screenshot.fileName
+                        ))
+                    }
+                }
+            }
         }
         .appStoreConnectAddToChatMenu(
             entityType: "screenshot",

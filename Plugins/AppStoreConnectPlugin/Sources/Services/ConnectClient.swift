@@ -33,7 +33,7 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
 
     private let baseURL = URL(string: "https://api.appstoreconnect.apple.com")!
     private let credentialsProvider: @Sendable () -> AppStoreConnectCredentials
-    private let session: URLSession
+    let session: URLSession
     private let cache: ConnectAPICache
     var fetchPolicy: ConnectFetchPolicy = .cacheFirst
 
@@ -143,6 +143,50 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(T.self, from: data)
+    }
+
+    /// 发送不期望响应体的请求（如 DELETE 或返回 204 的 PATCH relationships）。
+    func requestWithoutResponse(
+        path: String,
+        method: String,
+        queryItems: [URLQueryItem] = [],
+        body: Data? = nil
+    ) async throws {
+        guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+            throw AppStoreConnectClientError.invalidURL
+        }
+        components.path = path
+        if !queryItems.isEmpty {
+            components.queryItems = queryItems
+        }
+        guard let url = components.url else {
+            throw AppStoreConnectClientError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("Bearer \(try makeJWT())", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let body {
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AppStoreConnectClientError.invalidResponse
+        }
+
+        guard (200 ..< 300).contains(httpResponse.statusCode) else {
+            throw AppStoreConnectClientError.requestFailed(apiErrorMessage(from: data, statusCode: httpResponse.statusCode))
+        }
+
+        cache.invalidateAfterMutation(
+            method: method,
+            path: path,
+            body: body,
+            accountKey: makeAccountKey()
+        )
     }
 
     func makeCacheKey(method: String, path: String, queryItems: [URLQueryItem]) -> String {

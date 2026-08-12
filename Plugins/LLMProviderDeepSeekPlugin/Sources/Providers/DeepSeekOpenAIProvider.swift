@@ -71,6 +71,7 @@ public final class DeepSeekOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
             throw DeepSeekOpenAIProviderError.invalidRequest("Conversation is empty")
         }
         let body = DeepSeekRequestBuilder.body(for: request)
+        let toolNameMap = DeepSeekRequestBuilder.toolNameMap(for: request)
         guard let url = URL(string: apiService.baseURL) else {
             throw DeepSeekOpenAIProviderError.invalidRequest("Invalid DeepSeek URL")
         }
@@ -96,7 +97,15 @@ public final class DeepSeekOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
                 collector.mutate { $0.isError = true; $0.rawErrorDetail = error }
                 return false
             }
-            collector.mutate { $0.merge(event) }
+            // 模型回传的工具名是 sanitize 后的，按映射还原为 Lumi 注册 id 后再合并。
+            var mappedEvent = event
+            if !toolNameMap.isEmpty {
+                mappedEvent.toolDeltas = event.toolDeltas.map { delta in
+                    guard let name = delta.name, let restored = toolNameMap[name] else { return delta }
+                    return DeepSeekToolDelta(id: delta.id, name: restored, arguments: delta.arguments)
+                }
+            }
+            collector.mutate { $0.merge(mappedEvent) }
             if let content = event.content, !content.isEmpty {
                 await onChunk(LumiStreamChunk(content: content, eventTitle: "生成中"))
             }

@@ -32,6 +32,18 @@ public final class CaffeinatePlugin: LumiPlugin, SuperLog {
     }
 
 
+    // MARK: - Agent Tools
+
+    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+        [
+            CaffeinateActivateTool(),
+            CaffeinateDeactivateTool(),
+            CaffeinateStatusTool(),
+            CaffeinateTurnOffDisplayTool(),
+        ]
+    }
+
+
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
@@ -49,7 +61,23 @@ public final class CaffeinatePlugin: LumiPlugin, SuperLog {
     public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
     public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
+    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+//        [
+//            ViewContainerItem(
+//                id: "\(id).container",
+//                title: LumiPluginLocalization.string("Caffeinate", bundle: .module),
+//                systemImage: "cup.and.saucer.fill",
+//                railVisibility: .unsupported,
+//                chatVisibility: .unsupported,
+//                panelHeaderVisibility: .unsupported,
+//                panelBodyVisibility: .visibleByDefault,
+//                panelBottomVisibility: .unsupported
+//            ) {
+//                CaffeinateViewContainer(kernel: kernel)
+//            },
+//        ]
+        []
+    }
     public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
     public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }

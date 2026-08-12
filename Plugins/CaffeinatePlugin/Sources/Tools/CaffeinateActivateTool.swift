@@ -51,10 +51,8 @@ struct CaffeinateActivateTool: LumiAgentTool, SuperLog {
             mode = .systemAndDisplay
         }
 
-        if Self.verbose {
-            if CaffeinatePlugin.verbose {
-                            CaffeinatePlugin.logger.info("\(Self.t)Activating caffeinate: mode=\(mode.rawValue), duration=\(duration)s")
-            }
+        if CaffeinatePlugin.verbose {
+            CaffeinatePlugin.logger.info("\(self.t)Activating caffeinate: mode=\(mode.rawValue), duration=\(duration)s")
         }
 
         let manager = CaffeinateManager.shared

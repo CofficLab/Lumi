@@ -41,6 +41,28 @@ struct ScreenshotsSection: View {
                     ]
                 )
 
+                if readyPendingCount > 0 {
+                    AppButton(
+                        AppStoreConnectLocalization.string("Upload %d Pending", readyPendingCount),
+                        systemImage: "arrow.up.doc",
+                        style: .primary,
+                        size: .small
+                    ) {
+                        Task { await viewModel.uploadPendingScreenshots() }
+                    }
+                    .disabled(viewModel.isBusy || viewModel.isUploadingScreenshots || viewModel.selectedScreenshotSet == nil)
+                    .appStoreConnectAddToChatMenu(
+                        entityType: "uiActionButton",
+                        entityID: "screenshots.uploadPending",
+                        title: AppStoreConnectLocalization.string("Upload Pending Screenshots"),
+                        sourceView: "VersionDetail.ScreenshotsSection",
+                        fields: [
+                            "actionID": "uploadPendingScreenshots",
+                            "readyCount": String(readyPendingCount),
+                        ]
+                    )
+                }
+
                 AppButton(AppStoreConnectLocalization.string("Ensure Screenshot Set"), systemImage: "folder.badge.plus", size: .small) {
                     Task { await viewModel.ensureScreenshotSet() }
                 }
@@ -155,7 +177,8 @@ struct ScreenshotsSection: View {
                     screenshots: viewModel.screenshots,
                     pendingScreenshots: isEditable ? viewModel.pendingScreenshots : [],
                     displayType: viewModel.selectedScreenshotDisplayType,
-                    onRemovePending: { viewModel.removeScreenshot($0) }
+                    onRemovePending: { viewModel.removeScreenshot($0) },
+                    onDeleteRemote: isEditable ? { screenshot in Task { await viewModel.deleteRemoteScreenshot(screenshot) } } : nil
                 )
             }
         }
@@ -163,6 +186,13 @@ struct ScreenshotsSection: View {
 
     private var hasScreenshotContent: Bool {
         !viewModel.screenshots.isEmpty || !viewModel.pendingScreenshots.isEmpty
+    }
+
+    private var readyPendingCount: Int {
+        viewModel.pendingScreenshots.filter {
+            if case .ready = $0.status { return true }
+            return false
+        }.count
     }
 
     @ViewBuilder

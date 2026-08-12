@@ -164,7 +164,7 @@ enum AnthropicRequestBuilder {
                         "type": "tool_use",
                         "id": call.id,
                         // 历史消息回传同样要转义,否则第二轮请求仍会被 400 拒绝
-                        "name": sanitizeToolName(call.name),
+                        "name": LLMToolNameSanitizer.sanitize(call.name),
                         "input": parseJSONObject(call.arguments),
                     ])
                 }
@@ -201,12 +201,12 @@ enum AnthropicRequestBuilder {
 
     /// 把 `LumiAgentTool` 映射为 Anthropic `tools[]` 元素。
     ///
-    /// 工具名经 `sanitizeToolName` 转义:DeepSeek 的 Anthropic 兼容端点严格校验
+    /// 工具名经 `LLMToolNameSanitizer` 转义:DeepSeek 的 Anthropic 兼容端点严格校验
     /// `tools[].name` 必须匹配 `^[a-zA-Z0-9_-]+$`,而插件工具 id 可能是
     /// `app-store-connect.list-apps` 这类带点号的格式,直接发送会被 400 拒绝。
     private static func tool(_ tool: any LumiAgentTool) -> [String: Any] {
         var value: [String: Any] = [
-            "name": sanitizeToolName(tool.name),
+            "name": LLMToolNameSanitizer.sanitize(tool.name),
             "input_schema": tool.inputSchema.anyValue,
         ]
         if !tool.toolDescription.isEmpty {
@@ -222,32 +222,12 @@ enum AnthropicRequestBuilder {
     static func toolNameMap(for request: LumiLLMRequest) -> [String: String] {
         var map: [String: String] = [:]
         for tool in request.tools {
-            let sanitized = sanitizeToolName(tool.name)
+            let sanitized = LLMToolNameSanitizer.sanitize(tool.name)
             if map[sanitized] == nil {
                 map[sanitized] = tool.name
             }
         }
         return map
-    }
-
-    /// 把工具名转义为 DeepSeek Anthropic 端点允许的字符集 `^[a-zA-Z0-9_-]+$`。
-    ///
-    /// 采用 **ASCII 字节级** 校验(不能用 `Character.isLetter`,它会把中文等
-    /// Unicode 字母也判为合法,而服务端模式是纯 ASCII);非法字节统一替换为 `_`。
-    static func sanitizeToolName(_ raw: String) -> String {
-        var result = ""
-        result.reserveCapacity(raw.utf8.count)
-        for byte in raw.utf8 {
-            let isLegal =
-                (byte >= 0x61 && byte <= 0x7A) || // a-z
-                (byte >= 0x41 && byte <= 0x5A) || // A-Z
-                (byte >= 0x30 && byte <= 0x39) || // 0-9
-                byte == 0x5F ||                   // _
-                byte == 0x2D                      // -
-            result.append(Character(UnicodeScalar(isLegal ? byte : 0x5F)))
-        }
-        // 空名 / 全非法字符的兜底
-        return result.isEmpty ? "tool" : result
     }
 
     /// 把 `LumiReasoningEffort` 翻译为 Anthropic `thinking.budget_tokens`。

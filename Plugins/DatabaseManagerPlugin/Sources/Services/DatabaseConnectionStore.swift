@@ -50,6 +50,12 @@ enum DatabaseConnectionStore {
         keychain.remove(forKey: passwordKey(for: configID))
     }
 
+    /// 清空已保存的配置与「上次选中」记录（仅供测试隔离使用）。
+    static func resetSavedConfigs() {
+        UserDefaults.standard.removeObject(forKey: configsKey)
+        UserDefaults.standard.removeObject(forKey: lastSelectedKey)
+    }
+
     // MARK: - Last Selected
 
     /// 上次成功连接的配置 ID；显式断开后应置 nil（不再自动重连）。

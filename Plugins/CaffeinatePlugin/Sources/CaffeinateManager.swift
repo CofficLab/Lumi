@@ -32,6 +32,12 @@ final class CaffeinateManager: SuperLog {
     /// Whether the current activation was requested with the immediate display-off action.
     private(set) var isDisplayOffRequested = false
 
+    /// 用户在 ViewContainer 配置的「启动时默认模式」。
+    ///
+    /// 实际生效还需要 Agent 工具 / MenuBar Popup / ViewContainer 在激活时调用
+    /// `applyDefaultModeIfNeeded()`，它会读取 LocalStore 并在未激活时按下一次模式。
+    private(set) var persistedDefaultMode: SleepMode?
+
     /// IOKit assertion ID
     private var assertionID: IOPMAssertionID = 0
 
@@ -52,7 +58,37 @@ final class CaffeinateManager: SuperLog {
 
     func configure(kernel: LumiKernel) {
         self.kernel = kernel
+        CaffeinateLocalStore.shared.configure(kernel: kernel)
+        reloadPersistedDefaultMode()
         synchronizeLogoHighlight()
+    }
+
+    /// 从 LocalStore 重新加载用户配置的默认模式。
+    ///
+    /// 在 `configure(kernel:)` 启动时调用一次；用户在 ViewContainer 中修改 Toggle
+    /// 时通过 ViewModel 显式触发。
+    func reloadPersistedDefaultMode() {
+        if let raw = CaffeinateLocalStore.shared.defaultModeRaw,
+           let stored = SleepMode(rawValue: raw) {
+            persistedDefaultMode = stored
+        } else {
+            persistedDefaultMode = nil
+        }
+    }
+
+    /// 写入新的默认启动模式并更新内存中的值。
+    ///
+    /// - Parameter mode: 要持久化的模式；传 `nil` 表示清除偏好（恢复随用随选）。
+    @discardableResult
+    func setPersistedDefaultMode(_ mode: SleepMode?) -> Bool {
+        let success = CaffeinateLocalStore.shared.setDefaultModeRaw(mode?.rawValue)
+        if success {
+            persistedDefaultMode = mode
+            if Self.verbose {
+                CaffeinatePlugin.logger.info("\(self.t)Persisted default mode updated to: \(mode?.rawValue ?? "nil")")
+            }
+        }
+        return success
     }
 
     private func synchronizeLogoHighlight() {

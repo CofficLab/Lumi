@@ -6,9 +6,9 @@ import SwiftUI
 
 /// Message List V1 View (brief / 简洁模式)
 ///
-/// 每个 AgentTurn 渲染成一组:触发该 turn 的用户消息 + turn 的最终回复。
-/// 运行中的 turn 也产出一行占位(在列表里),不再有漂浮 status 行。
-/// 流式正文、工具调用和工具结果均不进入 V1 展示投影。
+/// 每个 AgentTurn 渲染成一组:触发该 turn 的用户消息 + 稳定的 turn 容器。
+/// 运行中容器展示 status、思考、工具调用/结果及流式正文；turn 结束时动画折叠，
+/// 只保留最终回复。历史终态 turn 首次加载时直接显示结果。
 struct ListV1View: View, SuperLog {
     nonisolated static let logger = MessageListPlugin.logger
     nonisolated static let emoji = "📃"
@@ -106,6 +106,19 @@ struct ListV1View: View, SuperLog {
             // 「是否在底部」由观察 NSScrollView 的 tracker 报告,写入非 Observable
             // 的 `atBottomBox`,不触发 SwiftUI invalidation —— 切断布局反馈环。
             .background(ScrollViewBottomTracker { atBottomBox.value = $0 })
+            // ViewModel 在空态也监听消息变化，可能会先于下方 View 事件完成刷新。
+            // 因此再按实际可见行边界跟随一次，确保用户消息/Status 更新始终可见。
+            .onChange(of: visibleRowIDs) { _, _ in
+                guard atBottomBox.value else { return }
+                Task { @MainActor in
+                    await scrollCoordinator.scrollToBottomAfterLayout(
+                        proxy: proxy,
+                        messages: displayedHistoryMessages,
+                        animated: false,
+                        condition: { atBottomBox.value }
+                    )
+                }
+            }
             // 切会话/首屏加载完成:messageScrollView 在 isLoading 翻转时会销毁重建,
             // 重建后 onAppear 触发。此时 atBottomBox 已被事件 handler 重置为 true,
             // 内容就绪即滚到底 —— 不抢跑 scroll(避免打在旧会话布局上作废)。
@@ -160,8 +173,7 @@ struct ListV1View: View, SuperLog {
         }
     }
 
-    /// 每个 turn 渲染成一组:用户消息(若有) + turn 回复/占位。
-    /// 运行中的 turn 也在此产出一行占位,不再有漂浮 status。
+    /// 每个 turn 渲染成一组:用户消息(若有) + 稳定的动态/结果容器。
     @ViewBuilder
     private func historyRows(proxy: ScrollViewProxy) -> some View {
         if turnViewModel.hasEarlierTurns {
@@ -183,13 +195,38 @@ struct ListV1View: View, SuperLog {
                 .plainMessageListRow()
             }
 
-            // turn 回复 / 运行中占位。
-            MessageRowView(
+            // 稳定的 turn 容器：进行中展示过程，完成时折叠为最终结果。
+            AgentTurnV1View(
                 kernel: kernel,
-                message: item.message,
+                item: item,
+                streamingMessage: turnViewModel.liveStreamingMessage(for: item),
                 verbosity: verbosity
             )
-            .id(item.message.id)
+            .id(item.id)
+            .plainMessageListRow()
+        }
+
+        // 用户消息会先于 AgentTurnRecord 落库；在 Turn 出现前立即作为稳定尾行展示。
+        // Turn 建立后 ViewModel 会用同一个消息 ID 将其归入对应 Turn，避免重复。
+        ForEach(turnViewModel.pendingUserMessages) { userMessage in
+            MessageRowView(
+                kernel: kernel,
+                message: userMessage,
+                verbosity: verbosity
+            )
+            .id(userMessage.id)
+            .plainMessageListRow()
+        }
+
+        // Status 比 AgentTurnRecord 更早到达；先作为尾部反馈展示，Turn 出现后
+        // ViewModel 会把它移入对应的动态过程区域。
+        if let statusMessage = turnViewModel.pendingStatusMessage {
+            MessageRowView(
+                kernel: kernel,
+                message: statusMessage,
+                verbosity: verbosity
+            )
+            .id(statusMessage.id)
             .plainMessageListRow()
         }
     }
@@ -213,6 +250,10 @@ struct ListV1View: View, SuperLog {
     }
 
     private var displayedHistoryMessages: [LumiChatMessage] { turnViewModel.displayMessages }
+
+    private var visibleRowIDs: [UUID] {
+        displayedHistoryMessages.map(\.id)
+    }
 
     private var selectedConversationID: UUID? {
         kernel.conversations?.selectedConversationID

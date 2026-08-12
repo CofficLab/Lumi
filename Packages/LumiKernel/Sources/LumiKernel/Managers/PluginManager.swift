@@ -276,6 +276,9 @@ public final class PluginManager: ObservableObject {
             for item in plugin.settingsTabItems(kernel: kernel) {
                 kernel.settings?.registerSettingsTabItem(item)
             }
+            for section in plugin.settingsSections(kernel: kernel) {
+                kernel.settings?.registerSettingsSection(section)
+            }
             for item in plugin.llmProviderSettingsItems(kernel: kernel) {
                 kernel.settings?.registerLLMProviderSettingsItem(item)
             }

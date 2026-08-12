@@ -4,6 +4,7 @@ import Foundation
 import Logging
 import NIOCore
 import NIOPosix
+import NIOSSL
 import PostgresNIO
 
 public final class PostgreSQLDriver: DatabaseDriver, Sendable {
@@ -28,7 +29,8 @@ public final class PostgreSQLDriver: DatabaseDriver, Sendable {
             port: port,
             username: user,
             password: config.password,
-            database: config.database
+            database: config.database,
+            sslOption: config.sslOption
         )
     }
 }
@@ -38,8 +40,23 @@ public actor PGConnection: DatabaseConnection {
     private let conn: PostgresConnection
     private let logger = Logger(label: "com.lumi.postgres")
 
-    public init(host: String, port: Int, username: String, password: String?, database: String) async throws {
+    public init(host: String, port: Int, username: String, password: String?, database: String, sslOption: ConnectionSSLOption? = nil) async throws {
         group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+
+        let tls: PostgresConnection.Configuration.TLS
+        switch sslOption {
+        case nil, .disable:
+            tls = .disable
+        case .prefer:
+            // prefer：尽量加密，握手失败则回退明文（postgres-nio 内部处理回退）。
+            let ctx = try NIOSSLContext(configuration: sslOption!.makeTLSConfiguration())
+            tls = .prefer(ctx)
+        case .require, .verifyCA, .verifyFull:
+            // require/verify-ca/verify-full：强制加密，证书校验强度由 makeTLSConfiguration 决定。
+            // postgres-nio 的 TLS 枚举没有 verifyFull case，校验差异通过 TLSConfiguration 表达。
+            let ctx = try NIOSSLContext(configuration: sslOption!.makeTLSConfiguration())
+            tls = .require(ctx)
+        }
 
         let config = PostgresConnection.Configuration(
             host: host,
@@ -47,7 +64,7 @@ public actor PGConnection: DatabaseConnection {
             username: username,
             password: password ?? "",
             database: database,
-            tls: .disable
+            tls: tls
         )
 
         conn = try await PostgresConnection.connect(

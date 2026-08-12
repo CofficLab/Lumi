@@ -5,7 +5,7 @@ import Foundation
 /// 仅承载协议字段，不做任何行为。`XiaomiEventParser` 负责构造。
 struct XiaomiEvent: Sendable {
     let content: String?
-    let toolDeltas: [XiaomiToolDelta]
+    var toolDeltas: [XiaomiToolDelta]
     let stopReason: String?
     let done: Bool
     let error: String?

@@ -151,6 +151,18 @@ public extension View {
         }
     }
 
+    /// 监听 `.lumiTurnFinished` 通知，并传出会话 ID、父会话 ID 和结束原因。
+    ///
+    /// `parentConversationID` 非 nil 表示该 turn 属于子 Agent。
+    func onLumiTurnFinished(perform action: @escaping (_ conversationID: UUID?, _ parentConversationID: UUID?, _ reason: LumiTurnEndReason?) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiTurnFinished)) { notification in
+            let conversationID = notification.lumiConversationID
+            let parentConversationID = notification.userInfo?[LumiTurnFinishedNotification.parentConversationIDKey] as? UUID
+            let reason = LumiTurnEndReason(notificationUserInfo: notification.userInfo)
+            action(conversationID, parentConversationID, reason)
+        }
+    }
+
     /// 监听 `.lumiSelectedRemoteProviderIDDidChange` 通知
     func onLumiSelectedRemoteProviderIDDidChange(perform action: @escaping () -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedRemoteProviderIDDidChange)) { _ in

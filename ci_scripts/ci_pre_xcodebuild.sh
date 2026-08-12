@@ -12,13 +12,13 @@ set -euo pipefail
 echo "==> [ci_pre_xcodebuild] 开始执行..."
 
 # --------------------------------------------------
-# 1. 构建配置参数(从环境变量读取,无则用默认值)
+# 1. 构建配置参数(从环境变量读取,Xcode Cloud 必注入 SCHEME_NAME)
 # --------------------------------------------------
-SCHEME="${SCHEME_NAME:-AppIconDesigner}"
+SCHEME="${SCHEME_NAME:-}"
 CONFIGURATION="${CONFIGURATION:-Debug}"
-PRODUCT_NAME="${PRODUCT_NAME:-AppIconDesigner}"
+PRODUCT_NAME="${PRODUCT_NAME:-${SCHEME}}"
 
-echo "    Scheme: ${SCHEME}"
+echo "    Scheme: ${SCHEME:-<未设置>}"
 echo "    Configuration: ${CONFIGURATION}"
 echo "    Product: ${PRODUCT_NAME}"
 
@@ -51,11 +51,16 @@ echo "    -> 对于 Archive 操作,需在 App Store Connect 中配置正确的�
 # --------------------------------------------------
 # 4. 验证 Info.plist 存在
 # --------------------------------------------------
-INFO_PLIST="AppIconDesignerApp/AppIconDesigner-Info.plist"
-if [[ -f "${INFO_PLIST}" ]]; then
-    echo "    ✓ ${INFO_PLIST} 存在"
+# 路径约定：{Scheme}App/{Scheme}-Info.plist（5 个 app 通用）
+if [[ -n "${SCHEME}" ]]; then
+    INFO_PLIST="${SCHEME}App/${SCHEME}-Info.plist"
+    if [[ -f "${INFO_PLIST}" ]]; then
+        echo "    ✓ ${INFO_PLIST} 存在"
+    else
+        echo "WARNING: ${INFO_PLIST} 不存在!"
+    fi
 else
-    echo "WARNING: ${INFO_PLIST} 不存在!"
+    echo "    SCHEME_NAME 未设置，跳过 Info.plist 校验"
 fi
 
 # --------------------------------------------------

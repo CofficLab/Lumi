@@ -20,7 +20,7 @@ import SuperLogKit
 /// 避免快速切换对话时显示上一个对话的残留 Goal。
 @MainActor
 final class GoalVM: ObservableObject, SuperLog {
-    public nonisolated static let verbose: Bool = true
+    public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = GoalTaskPlugin.logger
     public nonisolated static let emoji = "🇫🇯"
 

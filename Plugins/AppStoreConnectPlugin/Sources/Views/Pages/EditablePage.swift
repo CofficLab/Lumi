@@ -16,6 +16,8 @@ struct EditablePage: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    BuildSection(viewModel: viewModel, version: version)
+
                     ScreenshotsSection(
                         viewModel: viewModel,
                         importingScreenshots: $importingScreenshots,

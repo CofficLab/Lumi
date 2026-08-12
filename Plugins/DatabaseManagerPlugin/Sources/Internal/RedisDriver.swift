@@ -393,6 +393,53 @@ public actor RedisConnection: DatabaseConnection {
         alive
     }
 
+    /// 执行一次 SCAN 步骤，返回下一次游标与本次取到的键。
+    ///
+    /// SCAN 是 Redis 提供的增量式扫描：游标回到 "0" 表示一轮完成。
+    /// 调用方需循环直到 `nextCursor == "0"` 才能确保覆盖全部键。
+    ///
+    /// - Parameters:
+    ///   - cursor: 本次扫描游标，首轮传 `"0"`。
+    ///   - match: 可选的键名 glob（如 `"user:*"`）。
+    ///   - count: 提示每次扫描的工作量（非硬上限）。
+    /// - Returns: `(nextCursor, keys)`。
+    func scanKeys(cursor: String, match: String?, count: Int) async throws -> (nextCursor: String, keys: [String]) {
+        var args = ["SCAN", cursor]
+        if let match, !match.isEmpty {
+            args += ["MATCH", match]
+        }
+        args += ["COUNT", String(max(1, count))]
+
+        let response = try await send(args)
+        guard case .array(let outer?) = response, outer.count >= 2 else {
+            return ("0", [])
+        }
+
+        let nextCursor: String
+        switch outer[0] {
+        case .bulkString(let data):
+            nextCursor = data.flatMap { String(data: $0, encoding: .utf8) } ?? "0"
+        case .simpleString(let s):
+            nextCursor = s
+        default:
+            nextCursor = "0"
+        }
+
+        let keys: [String]
+        if case .array(let inner?) = outer[1] {
+            keys = inner.compactMap { value -> String? in
+                if case .bulkString(let data?) = value {
+                    return String(data: data, encoding: .utf8)
+                }
+                return nil
+            }
+        } else {
+            keys = []
+        }
+
+        return (nextCursor, keys)
+    }
+
     private func waitForReady(timeout: TimeInterval = 5) async throws {
         let readyState = RedisReadyState()
 
