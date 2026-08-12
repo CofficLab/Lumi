@@ -41,10 +41,8 @@ struct CaffeinateDeactivateTool: LumiAgentTool, SuperLog {
             """
         }
 
-        if Self.verbose {
-            if CaffeinatePlugin.verbose {
-                            CaffeinatePlugin.logger.info("\(Self.t)Deactivating caffeinate")
-            }
+        if CaffeinatePlugin.verbose {
+            CaffeinatePlugin.logger.info("\(self.t)Deactivating caffeinate")
         }
 
         manager.deactivate()

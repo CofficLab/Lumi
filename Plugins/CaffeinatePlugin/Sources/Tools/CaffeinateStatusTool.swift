@@ -31,10 +31,8 @@ struct CaffeinateStatusTool: LumiAgentTool, SuperLog {
     func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let manager = CaffeinateManager.shared
 
-        if Self.verbose {
-            if CaffeinatePlugin.verbose {
-                            CaffeinatePlugin.logger.info("\(Self.t)Querying caffeinate status")
-            }
+        if CaffeinatePlugin.verbose {
+            CaffeinatePlugin.logger.info("\(self.t)Querying caffeinate status")
         }
 
         guard manager.isActive else {

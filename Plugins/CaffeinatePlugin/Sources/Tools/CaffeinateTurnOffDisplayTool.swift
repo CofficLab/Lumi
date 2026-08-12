@@ -37,10 +37,8 @@ struct CaffeinateTurnOffDisplayTool: LumiAgentTool, SuperLog {
     func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let duration = arguments.double("duration") ?? 0
 
-        if Self.verbose {
-            if CaffeinatePlugin.verbose {
-                            CaffeinatePlugin.logger.info("\(Self.t)Activating caffeinate with display off, duration=\(duration)s")
-            }
+        if CaffeinatePlugin.verbose {
+            CaffeinatePlugin.logger.info("\(self.t)Activating caffeinate with display off, duration=\(duration)s")
         }
 
         let manager = CaffeinateManager.shared

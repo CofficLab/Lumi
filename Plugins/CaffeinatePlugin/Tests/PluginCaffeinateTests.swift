@@ -1,56 +1,92 @@
+import Foundation
 import LumiKernel
 import Testing
 @testable import CaffeinatePlugin
 
+/// Metadata and contributor stability tests for the Caffeinate plugin.
+///
+/// Note: these tests assert the *current* `LumiPlugin` contract
+/// (`viewContainers`, `menuBarPopupItems`, `pluginAboutView`). Earlier
+/// iterations of this file referenced a now-removed
+/// `LumiPluginContext` / `navigationId` / `isConfigurable` API surface.
 @MainActor
 struct PluginCaffeinateTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(CaffeinatePlugin().id == "Caffeinate")
-        #expect(CaffeinatePlugin.navigationId == "caffeinate_settings")
-        #expect(CaffeinatePlugin.name.isEmpty == false)
-        #expect(CaffeinatePlugin.isConfigurable == true)
-        #expect(CaffeinatePlugin().category == .system)
-        #expect(CaffeinatePlugin().order == 7)
-        #expect(CaffeinatePlugin().policy == .alwaysOn)
+        let plugin = CaffeinatePlugin()
+
+        #expect(plugin.id == "Caffeinate")
+        #expect(plugin.name.isEmpty == false)
+        #expect(plugin.order == 1)
+        #expect(plugin.policy == .alwaysOn)
+        #expect(plugin.category == .system)
+        #expect(plugin.stage == .beta)
+        #expect(plugin.pluginDescription.isEmpty == false)
     }
 
     @Test
-    func pluginRegistersCaffeinateTools() {
-        let tools = CaffeinatePlugin.agentTools(
-            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
-        )
+    func pluginExposesMenuBarPopupItem() {
+        let plugin = CaffeinatePlugin()
+        let popups = plugin.menuBarPopupItems(kernel: LumiKernel())
 
+        #expect(popups.count == 1)
+        #expect(popups.first?.id == "Caffeinate.popup")
+    }
+
+    @Test
+    func pluginExposesViewContainer() {
+        let plugin = CaffeinatePlugin()
+        let containers = plugin.viewContainers(kernel: LumiKernel())
+
+        #expect(containers.count == 1)
+        #expect(containers.first?.id == "Caffeinate.container")
+        #expect(containers.first?.systemImage.isEmpty == false)
+    }
+
+    @Test
+    func pluginProvidesAboutView() {
+        let plugin = CaffeinatePlugin()
+
+        #expect(plugin.pluginAboutView(kernel: LumiKernel()) != nil)
+    }
+
+    @Test
+    func agentToolsExistAndHaveSchemas() {
+        let activate = CaffeinateActivateTool()
+        let activateProperties = Self.extractProperties(activate.inputSchema)
+        #expect(activateProperties?["mode"] != nil)
+        #expect(activateProperties?["duration"] != nil)
+
+        let turnOffDisplayProperties = Self.extractProperties(
+            CaffeinateTurnOffDisplayTool().inputSchema
+        )
+        #expect(turnOffDisplayProperties?["duration"] != nil)
+
+        // Risk level assertions use the modern `riskLevel(arguments:kernel:)` signature.
+        let kernel = LumiKernel()
+        #expect(CaffeinateActivateTool().riskLevel(arguments: [:], kernel: kernel) == .low)
+        #expect(CaffeinateDeactivateTool().riskLevel(arguments: [:], kernel: kernel) == .low)
+        #expect(CaffeinateStatusTool().riskLevel(arguments: [:], kernel: kernel) == .low)
+        #expect(CaffeinateTurnOffDisplayTool().riskLevel(arguments: [:], kernel: kernel) == .low)
+    }
+
+    @Test
+    func pluginRegistersAgentTools() {
+        let tools = CaffeinatePlugin().agentTools(kernel: LumiKernel())
+
+        #expect(tools.count == 4)
         #expect(tools.map(\.name) == [
             "caffeinate_activate",
             "caffeinate_deactivate",
             "caffeinate_status",
             "caffeinate_turn_off_display",
         ])
-        #expect(CaffeinatePlugin.menuBarPopupItems(
-            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
-        ).isEmpty == false)
     }
 
-    @Test
-    func toolSchemasAndRiskLevelsAreStable() {
-        let activate = CaffeinateActivateTool()
-        let activateProperties = Self.extractProperties(activate.inputSchema)
-        #expect(activateProperties?["mode"] != nil)
-        #expect(activateProperties?["duration"] != nil)
-        #expect(activate.riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
-
-        let turnOffDisplayProperties = Self.extractProperties(CaffeinateTurnOffDisplayTool().inputSchema)
-        #expect(turnOffDisplayProperties?["duration"] != nil)
-
-        #expect(CaffeinateDeactivateTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
-        #expect(CaffeinateStatusTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
-        #expect(CaffeinateTurnOffDisplayTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
-    }
-
-    /// 从 LumiJSONValue schema 中提取 properties 对象。
+    /// 从 `LumiJSONValue` schema 中提取 `properties` 字典。
     private static func extractProperties(_ schema: LumiJSONValue) -> [String: LumiJSONValue]? {
-        guard case .object(let keys) = schema, case .object(let properties) = keys["properties"] else {
+        guard case .object(let keys) = schema,
+              case .object(let properties) = keys["properties"] else {
             return nil
         }
         return properties
@@ -58,7 +94,8 @@ struct PluginCaffeinateTests {
 
     @Test
     func localizationCatalogIsPackaged() {
-        #expect(PluginCaffeinateLocalization.bundle.url(forResource: "Caffeinate", withExtension: "xcstrings") != nil)
-        #expect(PluginCaffeinateLocalization.string("Anti-Sleep").isEmpty == false)
+        let bundle = Bundle.module
+        #expect(bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
+        #expect(LumiPluginLocalization.string("Caffeinate", bundle: .module).isEmpty == false)
     }
 }
