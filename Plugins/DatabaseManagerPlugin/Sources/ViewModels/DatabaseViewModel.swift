@@ -29,6 +29,12 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
 
     /// 当前在主区打开的表/视图对象；nil 表示未打开（显示 SQL 编辑器）。
     @Published public var openTableObject: DatabaseObject?
+    /// 当前打开对象的完整结构，供 Inspector 与数据编辑共用。
+    @Published public private(set) var selectedTableSchema: TableSchema?
+    /// 表结构是否正在加载。
+    @Published public private(set) var isLoadingTableSchema: Bool = false
+    /// 表结构加载失败信息；不覆盖查询区的通用错误。
+    @Published public private(set) var tableSchemaError: String?
     /// 当前页码（从 0 起）。
     @Published public var tablePage: Int = 0
     /// 每页行数。
@@ -179,6 +185,11 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             redisKeys = []
             sqliteTables = []
             selectedSQLiteTable = nil
+            openTableObject = nil
+            selectedTableSchema = nil
+            tableSchemaError = nil
+            tableRowCount = nil
+            changeManager = nil
             // 切换连接时清掉旧连接的结构缓存
             schemaCache.invalidate(configId: config.id)
             // 记住这次连接，下次自动重连
@@ -236,6 +247,11 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         redisKeys = []
         sqliteTables = []
         selectedSQLiteTable = nil
+        openTableObject = nil
+        selectedTableSchema = nil
+        tableSchemaError = nil
+        tableRowCount = nil
+        changeManager = nil
         schemaCache.invalidate(configId: config.id)
         // 显式断开后，下次不再自动重连这个连接
         DatabaseConnectionStore.lastSelectedConfigID = nil
@@ -468,17 +484,15 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         switch object.kind {
         case .table, .view, .materializedView:
             openTableObject = object
+            selectedTableSchema = nil
+            tableSchemaError = nil
             tablePage = 0
             tableRowCount = nil
             tableOrderBy = nil
             changeManager = nil
             // 兼容旧 UI（空状态判断等）
             if config.type == .sqlite { selectedSQLiteTable = object.name }
-            // 加载表结构以建立变更跟踪（需要主键）
-            if let connection = await manager.getConnection(for: config.id),
-               let schema = try? await schemaCache.tableSchema(for: object, config: config, connection: connection) {
-                changeManager = TableChangeManager(table: object, schema: schema)
-            }
+            await loadSelectedTableSchema()
             await loadTablePage()
         case .procedure, .function, .index, .trigger:
             // 例程/索引/触发器暂不在主区打开（留给后续结构 Tab）
@@ -489,6 +503,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     /// 关闭表浏览，回到 SQL 编辑器。
     public func closeTableBrowser() {
         openTableObject = nil
+        selectedTableSchema = nil
+        tableSchemaError = nil
         tableRowCount = nil
         queryResult = nil
     }
@@ -496,6 +512,40 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     /// 从表浏览切到 SQL 编辑器，但保留当前 queryText/queryResult（让用户可基于浏览语句继续编辑）。
     public func switchToQueryEditor() {
         openTableObject = nil
+        selectedTableSchema = nil
+        tableSchemaError = nil
+    }
+
+    /// 加载当前对象结构；刷新时绕过缓存重新读取数据库 catalog。
+    public func loadSelectedTableSchema(refresh: Bool = false) async {
+        guard let config = selectedConfig, let object = openTableObject else { return }
+        guard let connection = await manager.getConnection(for: config.id) else {
+            tableSchemaError = "Not connected to database"
+            return
+        }
+
+        isLoadingTableSchema = true
+        tableSchemaError = nil
+        defer { isLoadingTableSchema = false }
+
+        do {
+            let schema = try await schemaCache.tableSchema(
+                for: object,
+                config: config,
+                connection: connection,
+                refresh: refresh
+            )
+            guard openTableObject?.id == object.id else { return }
+            selectedTableSchema = schema
+            if changeManager?.hasChanges != true {
+                changeManager = TableChangeManager(table: object, schema: schema)
+            }
+        } catch {
+            guard openTableObject?.id == object.id else { return }
+            selectedTableSchema = nil
+            changeManager = nil
+            tableSchemaError = error.localizedDescription
+        }
     }
 
     /// 加载当前页数据（`SELECT * FROM ... [ORDER BY ...] LIMIT pageSize OFFSET page*pageSize`）。

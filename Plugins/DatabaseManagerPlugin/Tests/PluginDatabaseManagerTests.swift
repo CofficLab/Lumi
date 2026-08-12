@@ -32,6 +32,37 @@ import Testing
 }
 
 @MainActor
+@Test func openingSQLiteTableLoadsInspectorSchema() async throws {
+    let viewModel = DatabaseViewModel(loadSavedConfigs: false)
+    let demoConfig = try #require(viewModel.configs.first { $0.name == "Demo SQLite" })
+    await viewModel.connect(config: demoConfig)
+
+    let userTable = DatabaseObject(kind: .table, name: "users")
+    await viewModel.openObject(userTable)
+
+    let schema = try #require(viewModel.selectedTableSchema)
+    #expect(schema.table.name == "users")
+    #expect(schema.columns.map(\.name) == ["id", "name", "email"])
+    #expect(schema.columns.first?.isPrimaryKey == true)
+    #expect(schema.ddl?.contains("CREATE TABLE users") == true)
+    #expect(viewModel.tableSchemaError == nil)
+}
+
+@MainActor
+@Test func disconnectClearsInspectorSchemaState() async throws {
+    let viewModel = DatabaseViewModel(loadSavedConfigs: false)
+    let demoConfig = try #require(viewModel.configs.first { $0.name == "Demo SQLite" })
+    await viewModel.connect(config: demoConfig)
+    await viewModel.openObject(DatabaseObject(kind: .table, name: "users"))
+
+    await viewModel.disconnect()
+
+    #expect(viewModel.openTableObject == nil)
+    #expect(viewModel.selectedTableSchema == nil)
+    #expect(viewModel.changeManager == nil)
+}
+
+@MainActor
 @Test func failedConnectionKeepsPreviousConnectionUsable() async throws {
     let viewModel = DatabaseViewModel(loadSavedConfigs: false)
     let demoConfig = try #require(viewModel.configs.first { $0.name == "Demo SQLite" })
@@ -852,8 +883,6 @@ private func freshHistoryStore() -> QueryHistoryStore {
     await store.clear()
     #expect((await store.recent(limit: 10)).isEmpty)
 }
-
-
 
 
 

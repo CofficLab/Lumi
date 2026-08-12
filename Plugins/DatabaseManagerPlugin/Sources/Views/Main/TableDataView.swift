@@ -132,6 +132,13 @@ struct TableDataView: View {
                 action: { Task { await viewModel.loadTablePage() } }
             )
             AppButton(
+                "Structure",
+                systemImage: "list.bullet.rectangle",
+                style: .secondary,
+                size: .small,
+                action: { viewModel.inspectorVisible = true }
+            )
+            AppButton(
                 LumiPluginLocalization.string("SQL", bundle: .module),
                 systemImage: "curlybraces",
                 style: .ghost,
