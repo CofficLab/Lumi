@@ -1,0 +1,15 @@
+//
+// BookletMaker-iOS.xcconfig
+// BookletMaker-iOS target（Debug 与 Release 共用）。
+// 版本号由 CI 注入前为默认值；与 macOS BookletMaker.xcconfig 对应。
+//
+
+#include "App-Shared-iOS.xcconfig"
+
+// 产物（iOS 端使用独立 bundle id，避免开发期签名歧义；可在 Stage 6 调整）
+PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker.ios
+INFOPLIST_KEY_CFBundleDisplayName = BookletMaker
+
+// 版本号（与 macOS 对齐）
+MARKETING_VERSION = 1.0.0
+CURRENT_PROJECT_VERSION = 1
