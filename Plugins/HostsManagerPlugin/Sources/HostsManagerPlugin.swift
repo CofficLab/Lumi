@@ -61,8 +61,7 @@ public final class HostsManagerPlugin: LumiPlugin, SuperLog {
                 placement: .center,
                 order: 0
             ) {
-                Text(self.name)
-                    .font(.system(size: 13, weight: .semibold))
+                HostsManagerToolbarTitleView(containerID: self.id, kernel: kernel, title: self.name)
             },
         ]
     }

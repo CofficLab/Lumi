@@ -93,8 +93,7 @@ public final class PromoDesignerPlugin: LumiPlugin {
                 placement: .center,
                 order: 0
             ) {
-                Text(self.name)
-                    .font(.system(size: 13, weight: .semibold))
+                PromoDesignerToolbarTitleView(containerID: self.id, kernel: kernel, title: self.name)
             },
         ]
     }

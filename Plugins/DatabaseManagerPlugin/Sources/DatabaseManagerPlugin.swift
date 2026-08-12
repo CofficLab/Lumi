@@ -76,8 +76,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
                 placement: .center,
                 order: 0
             ) {
-                Text(self.name)
-                    .font(.system(size: 13, weight: .semibold))
+                DatabaseManagerToolbarTitleView(containerID: "database-manager", kernel: kernel, title: self.name)
             },
             LumiTitleToolbarItem(
                 id: "\(id).toolbar-button",

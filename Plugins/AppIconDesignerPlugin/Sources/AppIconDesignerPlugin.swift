@@ -74,8 +74,7 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
                 placement: .center,
                 order: 0
             ) {
-                Text(self.name)
-                    .font(.system(size: 13, weight: .semibold))
+                AppIconDesignerToolbarTitleView(containerID: self.id, kernel: kernel, title: self.name)
             },
         ]
     }

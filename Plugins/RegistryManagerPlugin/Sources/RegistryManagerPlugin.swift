@@ -61,8 +61,7 @@ public final class RegistryManagerPlugin: LumiPlugin, SuperLog {
                 placement: .center,
                 order: 0
             ) {
-                Text(self.name)
-                    .font(.system(size: 13, weight: .semibold))
+                RegistryManagerToolbarTitleView(containerID: self.id, kernel: kernel, title: self.name)
             },
         ]
     }
