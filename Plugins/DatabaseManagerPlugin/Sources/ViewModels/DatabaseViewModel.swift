@@ -25,6 +25,24 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     /// 右侧 Inspector 是否可见（结构详情 / ER 图 / EXPLAIN 等将放在这里）。
     @Published public var inspectorVisible: Bool = false
 
+    // MARK: - 表浏览状态（统一分页）
+
+    /// 当前在主区打开的表/视图对象；nil 表示未打开（显示 SQL 编辑器）。
+    @Published public var openTableObject: DatabaseObject?
+    /// 当前页码（从 0 起）。
+    @Published public var tablePage: Int = 0
+    /// 每页行数。
+    @Published public var tablePageSize: Int = 100
+    /// 表的总行数（精确 COUNT，后台异步填充；nil 表示未知）。
+    @Published public var tableRowCount: Int?
+    /// 服务端排序（列名 + 方向）；nil 表示不排序。
+    @Published public var tableOrderBy: (column: String, ascending: Bool)?
+
+    /// 当前打开表的变更跟踪队列；无主键或未打开表时为 nil（不可编辑）。
+    @Published public var changeManager: TableChangeManager?
+    /// 是否正在展示「Preview SQL」面板。
+    @Published public var showChangePreview: Bool = false
+
     public func toggleInspector() {
         inspectorVisible.toggle()
     }
@@ -314,28 +332,242 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         }
     }
 
-    /// 统一打开一个数据库对象（表/视图）。SQLite 走既有 ``openSQLiteTable``，
-    /// MySQL/PostgreSQL 用对应方言的标识符引用构造 `SELECT ... LIMIT N`。
+    /// 统一打开一个数据库对象。表/视图进入分页浏览主区；其它对象暂不处理。
     public func openObject(_ object: DatabaseObject) async {
         guard let config = selectedConfig else { return }
-        switch config.type {
-        case .sqlite:
-            await openSQLiteTable(object.name)
-        case .mysql, .postgresql:
-            let limit = config.type.capabilities.defaultQueryLimit
-            let table = Self.quoteIdentifier(object.name, for: config.type)
-            queryText = "SELECT * FROM \(table) LIMIT \(limit);"
-            await executeQuery()
-        case .redis:
+        switch object.kind {
+        case .table, .view, .materializedView:
+            openTableObject = object
+            tablePage = 0
+            tableRowCount = nil
+            tableOrderBy = nil
+            changeManager = nil
+            // 兼容旧 UI（空状态判断等）
+            if config.type == .sqlite { selectedSQLiteTable = object.name }
+            // 加载表结构以建立变更跟踪（需要主键）
+            if let connection = await manager.getConnection(for: config.id),
+               let schema = try? await schemaCache.tableSchema(for: object, config: config, connection: connection) {
+                changeManager = TableChangeManager(table: object, schema: schema)
+            }
+            await loadTablePage()
+        case .procedure, .function, .index, .trigger:
+            // 例程/索引/触发器暂不在主区打开（留给后续结构 Tab）
             break
         }
     }
 
+    /// 关闭表浏览，回到 SQL 编辑器。
+    public func closeTableBrowser() {
+        openTableObject = nil
+        tableRowCount = nil
+        queryResult = nil
+    }
+
+    /// 从表浏览切到 SQL 编辑器，但保留当前 queryText/queryResult（让用户可基于浏览语句继续编辑）。
+    public func switchToQueryEditor() {
+        openTableObject = nil
+    }
+
+    /// 加载当前页数据（`SELECT * FROM ... [ORDER BY ...] LIMIT pageSize OFFSET page*pageSize`）。
+    /// 页码超出范围时自动钳制到最后一页。
+    public func loadTablePage() async {
+        guard let config = selectedConfig, let table = openTableObject else { return }
+        guard config.type.capabilities.supportsPagination else { return }
+        guard let connection = await manager.getConnection(for: config.id) else {
+            errorMessage = "未连接到数据库"
+            return
+        }
+
+        let tableExpr = Self.qualifiedName(for: table, type: config.type)
+        var sql = "SELECT * FROM \(tableExpr)"
+        if let order = tableOrderBy {
+            let col = Self.quoteIdentifier(order.column, for: config.type)
+            sql += " ORDER BY \(col) \(order.ascending ? "ASC" : "DESC")"
+        }
+        let offset = tablePage * tablePageSize
+        sql += " LIMIT \(tablePageSize) OFFSET \(offset)"
+
+        isLoading = true
+        errorMessage = nil
+        do {
+            let result = try await connection.query(sql, params: nil)
+            queryResult = result
+            // 如果本页空且不是首页，回退到上一页（例如删除后）
+            if result.rows.isEmpty, tablePage > 0 {
+                tablePage = max(0, tablePage - 1)
+                await loadTablePage()
+                isLoading = false
+                return
+            }
+            queryText = sql  // 让 SQL 编辑器可见当前浏览语句
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isLoading = false
+
+        // 后台拉取精确行数（不阻塞页面展示）
+        if tableRowCount == nil {
+            Task { await refreshTableRowCount() }
+        }
+    }
+
+    /// 后台执行 `SELECT COUNT(*) FROM ...` 填充 ``tableRowCount``。
+    public func refreshTableRowCount() async {
+        guard let config = selectedConfig, let table = openTableObject else { return }
+        guard config.type.capabilities.supportsPagination else { return }
+        guard let connection = await manager.getConnection(for: config.id) else { return }
+        let tableExpr = Self.qualifiedName(for: table, type: config.type)
+        do {
+            let result = try await connection.query("SELECT COUNT(*) FROM \(tableExpr)", params: nil)
+            if let row = result.rows.first, let first = row.first {
+                switch first {
+                case .integer(let v): tableRowCount = v
+                case .double(let v): tableRowCount = Int(v)
+                case .string(let s): tableRowCount = Int(s)
+                default: break
+                }
+            }
+        } catch {
+            // 行数查询失败不影响浏览
+        }
+    }
+
+    public func nextPage() async {
+        tablePage += 1
+        await loadTablePage()
+    }
+
+    public func prevPage() async {
+        guard tablePage > 0 else { return }
+        tablePage -= 1
+        await loadTablePage()
+    }
+
+    public func setPageSize(_ size: Int) async {
+        tablePageSize = max(1, size)
+        tablePage = 0
+        await loadTablePage()
+    }
+
+    /// 点击表头排序：同一列循环 升→降→关。
+    public func toggleSort(column: String) async {
+        if let current = tableOrderBy, current.column == column {
+            if current.ascending { tableOrderBy = (column, false) }
+            else { tableOrderBy = nil }
+        } else {
+            tableOrderBy = (column, true)
+        }
+        tablePage = 0
+        await loadTablePage()
+    }
+
+    // MARK: - 数据编辑（变更跟踪）
+
+    /// 暂存一个单元格修改到变更队列。
+    public func stageCellChange(column: String, newValue: DatabaseValue, rowValues: [DatabaseValue], columns: [String]) {
+        changeManager?.stageCellUpdate(column: column, newValue: newValue, rowValues: rowValues, columns: columns)
+        // changeManager 自身的 objectWillChange 不会传导到观察本 viewModel 的视图，手动通知。
+        objectWillChange.send()
+    }
+
+    /// 暂存新增行的某列值。
+    public func stageInsertCell(insertId: UUID, column: String, value: DatabaseValue) {
+        changeManager?.setInsertColumn(insertId: insertId, column: column, value: value)
+        objectWillChange.send()
+    }
+
+    /// 新增一个空行（返回临时 id）。
+    @discardableResult
+    public func addRow() -> UUID? {
+        guard let id = changeManager?.addInsert() else { return nil }
+        objectWillChange.send()
+        return id
+    }
+
+    /// 移除一个未保存的新增行。
+    public func removePendingInsert(_ insertId: UUID) {
+        changeManager?.removeInsert(insertId)
+        objectWillChange.send()
+    }
+
+    /// 切换某行的删除标记。
+    public func toggleRowDeletion(rowValues: [DatabaseValue], columns: [String]) {
+        changeManager?.toggleRowDeletion(rowValues: rowValues, columns: columns)
+        objectWillChange.send()
+    }
+
+    public func undoChange() {
+        changeManager?.undo()
+        objectWillChange.send()
+    }
+
+    public func redoChange() {
+        changeManager?.redo()
+        objectWillChange.send()
+    }
+
+    /// 丢弃所有未保存的单元格修改。
+    public func discardChanges() {
+        changeManager?.discardAll()
+        objectWillChange.send()
+    }
+
+    /// 当前待提交的 SQL 语句（DELETE → INSERT → UPDATE）。
+    public var pendingChangeSQL: [String] {
+        guard let config = selectedConfig, let cm = changeManager else { return [] }
+        return cm.generatedAllStatements(for: config.type)
+    }
+
+    /// 在事务中应用全部待提交变更，成功后清空队列并刷新当前页。
+    public func saveChanges() async {
+        guard let config = selectedConfig, let cm = changeManager, cm.hasChanges else { return }
+        guard let connection = await manager.getConnection(for: config.id) else {
+            errorMessage = "未连接到数据库"
+            return
+        }
+        let statements = cm.generatedAllStatements(for: config.type)
+        isLoading = true
+        errorMessage = nil
+        do {
+            let tx = try await connection.beginTransaction()
+            do {
+                for sql in statements {
+                    _ = try await tx.execute(sql, params: nil)
+                }
+                try await tx.commit()
+            } catch {
+                try? await tx.rollback()
+                throw error
+            }
+            cm.discardAll()
+            objectWillChange.send()
+            await loadTablePage()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isLoading = false
+    }
+
     /// 按方言引用单个标识符（SQLite/PG 用双引号，MySQL 用反引号）。
-    public static func quoteIdentifier(_ name: String, for type: DatabaseType) -> String {
+    public nonisolated static func quoteIdentifier(_ name: String, for type: DatabaseType) -> String {
         guard let quote = type.capabilities.identifierQuoteCharacter else { return name }
         let escaped = name.replacingOccurrences(of: String(quote), with: String(quote) + String(quote))
         return "\(quote)\(escaped)\(quote)"
+    }
+
+    /// 构造带库/schema 限定的表名（MySQL: `db`.`t`；PG: "schema"."t"；SQLite: "t"）。
+    public nonisolated static func qualifiedName(for object: DatabaseObject, type: DatabaseType) -> String {
+        func q(_ s: String) -> String { quoteIdentifier(s, for: type) }
+        switch type {
+        case .mysql:
+            if let db = object.database, !db.isEmpty { return "\(q(db)).\(q(object.name))" }
+            return q(object.name)
+        case .postgresql:
+            if let schema = object.schema, !schema.isEmpty { return "\(q(schema)).\(q(object.name))" }
+            return q(object.name)
+        case .sqlite, .redis:
+            return q(object.name)
+        }
     }
     
     /// 加载 SQLite 表列表

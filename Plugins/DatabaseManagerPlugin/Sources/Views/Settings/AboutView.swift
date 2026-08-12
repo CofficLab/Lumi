@@ -15,35 +15,41 @@ struct AboutView: View {
                 FeatureHighlight(
                     icon: "server.rack",
                     title: L("Multi-Database Support"),
-                    description: L("Connect to SQLite, MySQL, PostgreSQL, and Redis databases")
+                    description: L("Connect to SQLite, MySQL, PostgreSQL, and Redis with optional SSL/TLS")
                 )
 
                 FeatureHighlight(
                     icon: "tablecells",
-                    title: L("Data Browser"),
-                    description: L("Browse and inspect database tables and records")
+                    title: L("Unified Data Browser"),
+                    description: L("Browse tables, views, and routines across engines with pagination and sorting")
                 )
 
                 FeatureHighlight(
                     icon: "square.and.pencil",
-                    title: L("Query Editor"),
-                    description: L("Write and execute SQL queries with syntax highlighting")
+                    title: L("Safe Inline Editing"),
+                    description: L("Edit cells and rows; preview the generated SQL and save in a transaction")
                 )
 
                 FeatureHighlight(
-                    icon: "chart.bar",
-                    title: L("Schema Inspector"),
-                    description: L("View database schema, indexes, and relationships")
+                    icon: "arrow.uturn.backward.circle",
+                    title: L("Undo & Redo"),
+                    description: L("Stage changes with full undo/redo before committing anything to the database")
+                )
+
+                FeatureHighlight(
+                    icon: "curlybraces",
+                    title: L("Custom SQL"),
+                    description: L("Run your own SQL and inspect paginated, sortable results")
                 )
 
                 // How It Works
                 HowItWorksCard(
                     title: coreL("about.section.howItWorks"),
                     steps: [
-                        L("Configure database connections in settings"),
-                        L("Browse available databases and tables"),
-                        L("Execute queries and view results"),
-                        L("Export data in various formats")
+                        L("Add a connection or open a .sqlite file"),
+                        L("Browse tables from the sidebar object tree"),
+                        L("Edit data inline or run custom SQL"),
+                        L("Preview changes and save in a transaction")
                     ]
                 )
 
@@ -51,9 +57,9 @@ struct AboutView: View {
                 TipsCard(
                     title: coreL("about.section.tips"),
                     tips: [
-                        L("Use read-only mode for production databases"),
-                        L("Save frequently used queries as snippets"),
-                        L("Enable connection pooling for better performance")
+                        L("Double-click a cell to edit — changes queue until you save"),
+                        L("Tables without a primary key are read-only"),
+                        L("Use Preview SQL to review statements before saving")
                     ]
                 )
             }

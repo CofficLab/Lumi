@@ -39,8 +39,9 @@ public struct MainView: View {
 
     @ViewBuilder
     private var connectedContent: some View {
-        if viewModel.selectedConfig?.type == .sqlite {
-            SQLiteTableView(viewModel: viewModel)
+        if viewModel.openTableObject != nil {
+            // 从侧边栏打开了表/视图 → 统一分页浏览
+            TableDataView(viewModel: viewModel)
         } else {
             VStack(spacing: 0) {
                 queryEditor

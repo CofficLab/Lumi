@@ -33,7 +33,30 @@ struct QueryResultSectionView: View {
             AppErrorBanner(message: LocalizedStringKey(error))
                 .padding(12)
         } else if let result = viewModel.queryResult {
-            QueryResultView(result: result)
+            // 仅在浏览表时启用表头排序点击 + 单元格编辑
+            if viewModel.openTableObject != nil {
+                QueryResultView(
+                    result: result,
+                    sortColumn: viewModel.tableOrderBy?.column,
+                    sortAscending: viewModel.tableOrderBy?.ascending ?? true,
+                    onToggleSort: { column in Task { await viewModel.toggleSort(column: column) } },
+                    changeManager: viewModel.changeManager,
+                    onStageChange: { column, rowValues, columns, newValue in
+                        viewModel.stageCellChange(column: column, newValue: newValue, rowValues: rowValues, columns: columns)
+                    },
+                    onStageInsertChange: { insertId, column, value in
+                        viewModel.stageInsertCell(insertId: insertId, column: column, value: value)
+                    },
+                    onToggleRowDeletion: { rowValues, columns in
+                        viewModel.toggleRowDeletion(rowValues: rowValues, columns: columns)
+                    },
+                    onRemoveInsert: { insertId in
+                        viewModel.removePendingInsert(insertId)
+                    }
+                )
+            } else {
+                QueryResultView(result: result)
+            }
         } else {
             AppEmptyState(
                 icon: viewModel.selectedSQLiteTable == nil ? "tablecells" : "tray",
