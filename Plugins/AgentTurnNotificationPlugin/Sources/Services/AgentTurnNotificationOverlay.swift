@@ -14,8 +14,12 @@ public struct AgentTurnNotificationOverlay<Content: View>: View {
             .onAppear {
                 handler.bind()
             }
-            .onLumiTurnCompleted { conversationId in
+            .onLumiTurnFinished { conversationId, parentConversationID, reason in
                 guard let conversationId else { return }
+                // 子 Agent 结束不弹通知
+                guard parentConversationID == nil else { return }
+                // 仅在正常结束时弹通知（cancelled / failed 不弹）
+                guard reason == .completed else { return }
                 handler.postTurnFinishedNotification(conversationId: conversationId)
             }
     }
