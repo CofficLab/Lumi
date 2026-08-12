@@ -22,6 +22,10 @@ public final class DefaultSettingsProviding: SettingsProviding {
     private var llmProviderSettingsItems: [String: LLMProviderSettingsItem] = [:]
     private var llmProviderSettingsOrder: [String] = []
 
+    @Published public private(set) var allSettingsSections: [SettingsSection] = []
+    private var settingsSections: [String: SettingsSection] = [:]
+    private var settingsSectionOrder: [String] = []
+
     public init() {}
 
     public func registerSettingsTabItem(_ item: SettingsTabItem) {
@@ -52,13 +56,30 @@ public final class DefaultSettingsProviding: SettingsProviding {
         updateSortedLLMProviderSettings()
     }
 
+    public func registerSettingsSection(_ section: SettingsSection) {
+        if settingsSections[section.id] == nil {
+            settingsSectionOrder.append(section.id)
+        }
+        settingsSections[section.id] = section
+        updateSortedSettingsSections()
+    }
+
+    public func unregisterSettingsSection(id: String) {
+        settingsSections.removeValue(forKey: id)
+        settingsSectionOrder.removeAll { $0 == id }
+        updateSortedSettingsSections()
+    }
+
     public func clearAllContributions() {
         settingsTabItems.removeAll()
         settingsTabOrder.removeAll()
         llmProviderSettingsItems.removeAll()
         llmProviderSettingsOrder.removeAll()
+        settingsSections.removeAll()
+        settingsSectionOrder.removeAll()
         updateSortedSettingsTabs()
         updateSortedLLMProviderSettings()
+        updateSortedSettingsSections()
     }
 
     private func updateSortedSettingsTabs() {
@@ -67,5 +88,9 @@ public final class DefaultSettingsProviding: SettingsProviding {
 
     private func updateSortedLLMProviderSettings() {
         allLLMProviderSettingsItems = llmProviderSettingsOrder.compactMap { llmProviderSettingsItems[$0] }
+    }
+
+    private func updateSortedSettingsSections() {
+        allSettingsSections = settingsSectionOrder.compactMap { settingsSections[$0] }
     }
 }
