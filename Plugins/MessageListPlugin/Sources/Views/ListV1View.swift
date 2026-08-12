@@ -106,6 +106,19 @@ struct ListV1View: View, SuperLog {
             // 「是否在底部」由观察 NSScrollView 的 tracker 报告,写入非 Observable
             // 的 `atBottomBox`,不触发 SwiftUI invalidation —— 切断布局反馈环。
             .background(ScrollViewBottomTracker { atBottomBox.value = $0 })
+            // ViewModel 在空态也监听消息变化，可能会先于下方 View 事件完成刷新。
+            // 因此再按实际可见行边界跟随一次，确保用户消息/Status 更新始终可见。
+            .onChange(of: visibleRowIDs) { _, _ in
+                guard atBottomBox.value else { return }
+                Task { @MainActor in
+                    await scrollCoordinator.scrollToBottomAfterLayout(
+                        proxy: proxy,
+                        messages: displayedHistoryMessages,
+                        animated: false,
+                        condition: { atBottomBox.value }
+                    )
+                }
+            }
             // 切会话/首屏加载完成:messageScrollView 在 isLoading 翻转时会销毁重建,
             // 重建后 onAppear 触发。此时 atBottomBox 已被事件 handler 重置为 true,
             // 内容就绪即滚到底 —— 不抢跑 scroll(避免打在旧会话布局上作废)。
@@ -204,6 +217,18 @@ struct ListV1View: View, SuperLog {
             .id(userMessage.id)
             .plainMessageListRow()
         }
+
+        // Status 比 AgentTurnRecord 更早到达；先作为尾部反馈展示，Turn 出现后
+        // ViewModel 会把它移入对应的动态过程区域。
+        if let statusMessage = turnViewModel.pendingStatusMessage {
+            MessageRowView(
+                kernel: kernel,
+                message: statusMessage,
+                verbosity: verbosity
+            )
+            .id(statusMessage.id)
+            .plainMessageListRow()
+        }
     }
 
     private func loadEarlierButton(
@@ -225,6 +250,10 @@ struct ListV1View: View, SuperLog {
     }
 
     private var displayedHistoryMessages: [LumiChatMessage] { turnViewModel.displayMessages }
+
+    private var visibleRowIDs: [UUID] {
+        displayedHistoryMessages.map(\.id)
+    }
 
     private var selectedConversationID: UUID? {
         kernel.conversations?.selectedConversationID

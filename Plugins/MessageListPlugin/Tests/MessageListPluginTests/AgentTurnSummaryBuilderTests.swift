@@ -80,8 +80,8 @@ struct AgentTurnSummaryBuilderTests {
         #expect(items.first?.message.id == prompt.id)
     }
 
-    @Test("运行中的 Turn 按时间展示过程消息")
-    func runningTurnExposesChronologicalProcessMessages() throws {
+    @Test("运行中的 Turn 展示工具调用与状态,但隐藏工具输出")
+    func runningTurnHidesToolResultMessages() throws {
         let turnID = UUID()
         let process = message(
             turnID: turnID,
@@ -98,7 +98,8 @@ struct AgentTurnSummaryBuilderTests {
         )
 
         #expect(items.count == 1)
-        #expect(items.first?.processMessages.map(\.id) == [process.id, tool.id, thinking.id])
+        #expect(items.first?.processMessages.map(\.id) == [process.id, thinking.id])
+        #expect(items.first?.processMessages.contains { $0.role == .tool } == false)
         #expect(items.first?.isShowingProcess == true)
     }
 
@@ -144,6 +145,24 @@ struct AgentTurnSummaryBuilderTests {
 
         #expect(items.first { $0.id == olderTurnID }?.processMessages.isEmpty == true)
         #expect(items.first { $0.id == latestTurnID }?.processMessages.map(\.id) == [status.id])
+    }
+
+    @Test("早于 Turn startedAt 创建的发送状态仍归入最新活跃 Turn")
+    func preTurnStatusMovesIntoLatestActiveTurn() throws {
+        let turnID = UUID()
+        let status = LumiChatMessage(
+            conversationID: conversationID,
+            role: .status,
+            content: "正在发送消息…",
+            createdAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+
+        let items = builder.build(
+            records: [record(id: turnID, state: .running, offset: 1)],
+            messages: [status]
+        )
+
+        #expect(items.first?.processMessages.map(\.id) == [status.id])
     }
 
     @Test("没有关联消息的 Turn 也产出占位行,结果按时间正序")

@@ -357,4 +357,53 @@ struct MessageListV1SwitchBlankReproTests {
         #expect(viewModel.pendingUserMessages.map(\.id) == [userMessage.id])
         #expect(viewModel.hasVisibleContent == true)
     }
+
+    @Test("Turn 建立前立即展示最新 Status,建立后归入动态 Turn")
+    func statusAppearsBeforeTurnAndMovesIntoActiveTurn() async throws {
+        let messages = MockMessageManager()
+        let conversations = MockConversationManager()
+        let turnManager = MockAgentTurnManager()
+        let conversationID = UUID()
+        let userMessage = LumiChatMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "开始工作",
+            createdAt: Date(timeIntervalSinceReferenceDate: 3_000)
+        )
+        let status = LumiChatMessage(
+            conversationID: conversationID,
+            role: .status,
+            content: "正在发送消息…",
+            createdAt: Date(timeIntervalSinceReferenceDate: 3_001),
+            metadata: ["isTransientStatus": "true"]
+        )
+        messages.seed([userMessage, status], conversationID: conversationID)
+
+        let kernel = try makeKernel(
+            messages: messages,
+            conversations: conversations,
+            turnManager: turnManager
+        )
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 40)
+        conversations.selectedConversationID = conversationID
+        await viewModel.activate(conversationID: conversationID)
+
+        #expect(viewModel.pendingUserMessages.map(\.id) == [userMessage.id])
+        #expect(viewModel.pendingStatusMessage?.id == status.id)
+        #expect(viewModel.hasVisibleContent == true)
+
+        let turnID = UUID()
+        turnManager.seed([
+            AgentTurnRecord(
+                id: turnID,
+                conversationID: conversationID,
+                state: .running,
+                startedAt: userMessage.createdAt.addingTimeInterval(0.5)
+            ),
+        ], conversationID: conversationID)
+        _ = await viewModel.refresh()
+
+        #expect(viewModel.pendingStatusMessage == nil)
+        #expect(viewModel.items.first?.processMessages.map(\.id) == [status.id])
+    }
 }

@@ -8,6 +8,8 @@ private struct MessageListV1Presentation: Equatable {
     var turnItems: [AgentTurnSummaryItem] = []
     /// 已落库、但尚未被当前可见 AgentTurn 认领的用户消息。
     var pendingUserMessages: [LumiChatMessage] = []
+    /// AgentTurnRecord 尚未出现时，立即展示 MessageManager 中的最新瞬时状态。
+    var pendingStatusMessage: LumiChatMessage?
 }
 
 /// V1-only data source that pages AgentTurns and projects each turn into a
@@ -48,6 +50,7 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
 
     var items: [AgentTurnSummaryItem] { presentation.turnItems }
     var pendingUserMessages: [LumiChatMessage] { presentation.pendingUserMessages }
+    var pendingStatusMessage: LumiChatMessage? { presentation.pendingStatusMessage }
     /// 供滚动辅助器与“自己刚发送”检测使用的完整可见消息序列。
     var displayMessages: [LumiChatMessage] {
         let turnMessages = presentation.turnItems.flatMap { item in
@@ -56,9 +59,13 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
             }
             return [item.message]
         }
-        return (turnMessages + presentation.pendingUserMessages).sorted(by: messageOrdering)
+        let pendingStatus = presentation.pendingStatusMessage.map { [$0] } ?? []
+        return (turnMessages + presentation.pendingUserMessages + pendingStatus)
+            .sorted(by: messageOrdering)
     }
-    var hasVisibleContent: Bool { !items.isEmpty || !pendingUserMessages.isEmpty }
+    var hasVisibleContent: Bool {
+        !items.isEmpty || !pendingUserMessages.isEmpty || pendingStatusMessage != nil
+    }
 
     /// 用户当前选中的对话 ID（来自内核状态，反映真实意图）。
     /// 用于替代 `activeConversationID` 做过期守卫，避免并发 `activate` 导致竞态。
@@ -205,9 +212,14 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
                 return message.createdAt > newestVisibleTurnStartedAt
             }
             .sorted(by: messageOrdering)
+        let hasActiveTurn = turnItems.contains(where: \.isShowingProcess)
+        let pendingStatusMessage = hasActiveTurn
+            ? nil
+            : messages.last(where: { $0.role == .status })
         presentation = MessageListV1Presentation(
             turnItems: turnItems,
-            pendingUserMessages: pendingUserMessages
+            pendingUserMessages: pendingUserMessages,
+            pendingStatusMessage: pendingStatusMessage
         )
     }
 

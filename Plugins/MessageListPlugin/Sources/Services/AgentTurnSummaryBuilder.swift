@@ -47,11 +47,16 @@ struct AgentTurnSummaryBuilder {
                     candidate.role == .status
                         && candidate.turnID == nil
                         && candidate.conversationID == record.conversationID
-                        && candidate.createdAt >= record.startedAt
                         && record.id == latestActiveTurnID
                 }
                 let processMessages = (turnMessages + transientStatuses)
-                    .filter { $0.id != message.id && $0.role != .user && $0.role != .system }
+                    .filter {
+                        $0.id != message.id
+                            && $0.role != .user
+                            && $0.role != .system
+                            // V1 只展示工具正在做什么，不暴露工具的原始返回内容。
+                            && $0.role != .tool
+                    }
                     .sorted(by: messageOrdering)
                 return AgentTurnSummaryItem(
                     record: record,
