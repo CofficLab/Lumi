@@ -6,9 +6,9 @@ import SwiftUI
 
 /// Message List V1 View (brief / 简洁模式)
 ///
-/// 每个 AgentTurn 渲染成一组:触发该 turn 的用户消息 + turn 的最终回复。
-/// 运行中的 turn 也产出一行占位(在列表里),不再有漂浮 status 行。
-/// 流式正文、工具调用和工具结果均不进入 V1 展示投影。
+/// 每个 AgentTurn 渲染成一组:触发该 turn 的用户消息 + 稳定的 turn 容器。
+/// 运行中容器展示 status、思考、工具调用/结果及流式正文；turn 结束时动画折叠，
+/// 只保留最终回复。历史终态 turn 首次加载时直接显示结果。
 struct ListV1View: View, SuperLog {
     nonisolated static let logger = MessageListPlugin.logger
     nonisolated static let emoji = "📃"
@@ -160,8 +160,7 @@ struct ListV1View: View, SuperLog {
         }
     }
 
-    /// 每个 turn 渲染成一组:用户消息(若有) + turn 回复/占位。
-    /// 运行中的 turn 也在此产出一行占位,不再有漂浮 status。
+    /// 每个 turn 渲染成一组:用户消息(若有) + 稳定的动态/结果容器。
     @ViewBuilder
     private func historyRows(proxy: ScrollViewProxy) -> some View {
         if turnViewModel.hasEarlierTurns {
@@ -183,13 +182,26 @@ struct ListV1View: View, SuperLog {
                 .plainMessageListRow()
             }
 
-            // turn 回复 / 运行中占位。
-            MessageRowView(
+            // 稳定的 turn 容器：进行中展示过程，完成时折叠为最终结果。
+            AgentTurnV1View(
                 kernel: kernel,
-                message: item.message,
+                item: item,
+                streamingMessage: turnViewModel.liveStreamingMessage(for: item),
                 verbosity: verbosity
             )
-            .id(item.message.id)
+            .id(item.id)
+            .plainMessageListRow()
+        }
+
+        // 用户消息会先于 AgentTurnRecord 落库；在 Turn 出现前立即作为稳定尾行展示。
+        // Turn 建立后 ViewModel 会用同一个消息 ID 将其归入对应 Turn，避免重复。
+        ForEach(turnViewModel.pendingUserMessages) { userMessage in
+            MessageRowView(
+                kernel: kernel,
+                message: userMessage,
+                verbosity: verbosity
+            )
+            .id(userMessage.id)
             .plainMessageListRow()
         }
     }

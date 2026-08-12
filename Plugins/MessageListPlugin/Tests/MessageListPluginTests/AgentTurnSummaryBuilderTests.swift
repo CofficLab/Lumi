@@ -80,8 +80,8 @@ struct AgentTurnSummaryBuilderTests {
         #expect(items.first?.message.id == prompt.id)
     }
 
-    @Test("运行中的 Turn 即使无助手消息也产出一行占位,且不暴露过程消息")
-    func runningTurnProducesPlaceholderRow() throws {
+    @Test("运行中的 Turn 按时间展示过程消息")
+    func runningTurnExposesChronologicalProcessMessages() throws {
         let turnID = UUID()
         let process = message(
             turnID: turnID,
@@ -89,16 +89,61 @@ struct AgentTurnSummaryBuilderTests {
             toolCalls: [LumiToolCall(id: "tool", name: "search", arguments: "{}")],
             offset: 1
         )
+        let tool = message(turnID: turnID, role: .tool, content: "tool output", offset: 2)
+        let thinking = message(turnID: turnID, role: .status, content: "正在思考…", offset: 3)
 
         let items = builder.build(
             records: [record(id: turnID, state: .running, offset: 0)],
-            messages: [process]
+            messages: [thinking, tool, process]
         )
 
-        // 运行中 turn 始终产出一行;过程消息(带 toolCalls)不会被选作展示内容,
-        // 因此回落到合成的占位消息(role = .status)。
         #expect(items.count == 1)
-        #expect(items.first?.message.role == .status)
+        #expect(items.first?.processMessages.map(\.id) == [process.id, tool.id, thinking.id])
+        #expect(items.first?.isShowingProcess == true)
+    }
+
+    @Test("完成的 Turn 保留过程快照但默认只展示结果")
+    func completedTurnCollapsesToResult() throws {
+        let turnID = UUID()
+        let process = message(
+            turnID: turnID,
+            content: "calling a tool",
+            toolCalls: [LumiToolCall(id: "tool", name: "search", arguments: "{}")],
+            offset: 1
+        )
+        let final = message(turnID: turnID, content: "final summary", offset: 2)
+
+        let items = builder.build(
+            records: [record(id: turnID, state: .completed, offset: 0)],
+            messages: [process, final]
+        )
+
+        #expect(items.first?.processMessages.map(\.id) == [process.id])
+        #expect(items.first?.message.id == final.id)
+        #expect(items.first?.isShowingProcess == false)
+    }
+
+    @Test("无 turnID 的瞬时状态只属于最新活跃 Turn")
+    func transientStatusBelongsOnlyToLatestActiveTurn() throws {
+        let olderTurnID = UUID()
+        let latestTurnID = UUID()
+        let status = LumiChatMessage(
+            conversationID: conversationID,
+            role: .status,
+            content: "正在搜索…",
+            createdAt: Date(timeIntervalSince1970: 1_700_000_003)
+        )
+
+        let items = builder.build(
+            records: [
+                record(id: olderTurnID, state: .running, offset: 0),
+                record(id: latestTurnID, state: .running, offset: 2),
+            ],
+            messages: [status]
+        )
+
+        #expect(items.first { $0.id == olderTurnID }?.processMessages.isEmpty == true)
+        #expect(items.first { $0.id == latestTurnID }?.processMessages.map(\.id) == [status.id])
     }
 
     @Test("没有关联消息的 Turn 也产出占位行,结果按时间正序")

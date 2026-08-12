@@ -189,4 +189,172 @@ struct MessageListV1SwitchBlankReproTests {
         #expect(viewModel.hasVisibleContent == !viewModel.items.isEmpty)
         expectConsistent(viewModel, selectedID: shortID, sourceComment: "加载完成后")
     }
+
+    @Test("流式消息只挂到当前最新的运行中 Turn")
+    func streamingMessageBelongsToLatestRunningTurn() async throws {
+        let messages = MockMessageManager()
+        let conversations = MockConversationManager()
+        let turnManager = MockAgentTurnManager()
+        let streaming = MockMessageStreaming()
+        let conversationID = UUID()
+        let olderTurnID = UUID()
+        let activeTurnID = UUID()
+        let base = Date(timeIntervalSinceReferenceDate: 1_000)
+
+        turnManager.seed([
+            AgentTurnRecord(
+                id: olderTurnID,
+                conversationID: conversationID,
+                state: .running,
+                startedAt: base
+            ),
+            AgentTurnRecord(
+                id: activeTurnID,
+                conversationID: conversationID,
+                state: .running,
+                startedAt: base.addingTimeInterval(10)
+            ),
+        ], conversationID: conversationID)
+
+        let kernel = LumiKernel()
+        try kernel.registerService(MessageManaging.self, messages)
+        try kernel.registerService(ConversationManaging.self, conversations)
+        try kernel.registerService(MessageStreaming.self, streaming)
+        try kernel.registerService(AgentTurnManaging.self, turnManager)
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 40)
+
+        conversations.selectedConversationID = conversationID
+        await viewModel.activate(conversationID: conversationID)
+        let live = LumiChatMessage(
+            id: LumiStreamingRowID,
+            conversationID: conversationID,
+            role: .assistant,
+            content: "正在生成"
+        )
+        streaming.inject(row: live, stage: .generating, conversationID: conversationID)
+        try await Task.sleep(nanoseconds: 30_000_000)
+
+        let older = try #require(viewModel.items.first { $0.id == olderTurnID })
+        let active = try #require(viewModel.items.first { $0.id == activeTurnID })
+        #expect(viewModel.liveStreamingMessage(for: older) == nil)
+        #expect(viewModel.liveStreamingMessage(for: active)?.id == LumiStreamingRowID)
+    }
+
+    @Test("用户消息先落库时立即展示,Turn 出现后无重复")
+    func userMessageAppearsBeforeTurnAndMergesAfterTurnCreation() async throws {
+        let messages = MockMessageManager()
+        let conversations = MockConversationManager()
+        let turnManager = MockAgentTurnManager()
+        let conversationID = UUID()
+        let userMessage = LumiChatMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "立即显示我",
+            createdAt: Date(timeIntervalSinceReferenceDate: 2_000)
+        )
+
+        messages.seed([userMessage], conversationID: conversationID)
+        let kernel = try makeKernel(
+            messages: messages,
+            conversations: conversations,
+            turnManager: turnManager
+        )
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 40)
+        conversations.selectedConversationID = conversationID
+
+        await viewModel.activate(conversationID: conversationID)
+
+        #expect(viewModel.items.isEmpty)
+        #expect(viewModel.pendingUserMessages.map(\.id) == [userMessage.id])
+        #expect(viewModel.hasVisibleContent == true)
+
+        let turnID = UUID()
+        turnManager.seed([
+            AgentTurnRecord(
+                id: turnID,
+                conversationID: conversationID,
+                state: .running,
+                startedAt: userMessage.createdAt.addingTimeInterval(0.1)
+            ),
+        ], conversationID: conversationID)
+        _ = await viewModel.refresh()
+
+        #expect(viewModel.pendingUserMessages.isEmpty)
+        #expect(viewModel.items.first?.userMessage?.id == userMessage.id)
+    }
+
+    @Test("分页窗口之外的旧用户消息不会被误判为待处理尾行")
+    func olderUnclaimedUserMessageIsNotPending() async throws {
+        let messages = MockMessageManager()
+        let conversations = MockConversationManager()
+        let turnManager = MockAgentTurnManager()
+        let conversationID = UUID()
+        let oldUser = LumiChatMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "旧分页消息",
+            createdAt: Date(timeIntervalSinceReferenceDate: 1_000)
+        )
+        let latestUser = LumiChatMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "当前消息",
+            createdAt: Date(timeIntervalSinceReferenceDate: 2_000)
+        )
+        let latestTurnID = UUID()
+        turnManager.seed([
+            AgentTurnRecord(
+                id: latestTurnID,
+                conversationID: conversationID,
+                state: .running,
+                startedAt: Date(timeIntervalSinceReferenceDate: 2_001)
+            ),
+        ], conversationID: conversationID)
+        messages.seed([oldUser, latestUser], conversationID: conversationID)
+
+        let kernel = try makeKernel(
+            messages: messages,
+            conversations: conversations,
+            turnManager: turnManager
+        )
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 1)
+        conversations.selectedConversationID = conversationID
+        await viewModel.activate(conversationID: conversationID)
+
+        #expect(viewModel.items.first?.userMessage?.id == latestUser.id)
+        #expect(viewModel.pendingUserMessages.isEmpty)
+    }
+
+    @Test("空状态也会响应第一条用户消息通知")
+    func emptyStateRefreshesWhenFirstUserMessageArrives() async throws {
+        let messages = MockMessageManager()
+        let conversations = MockConversationManager()
+        let turnManager = MockAgentTurnManager()
+        let conversationID = UUID()
+        let kernel = try makeKernel(
+            messages: messages,
+            conversations: conversations,
+            turnManager: turnManager
+        )
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 40)
+        conversations.selectedConversationID = conversationID
+        await viewModel.activate(conversationID: conversationID)
+        #expect(viewModel.hasVisibleContent == false)
+
+        let userMessage = LumiChatMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "第一条消息"
+        )
+        messages.seed([userMessage], conversationID: conversationID)
+        NotificationCenter.default.post(
+            name: .lumiMessagesDidChange,
+            object: nil,
+            userInfo: [LumiNotificationUserInfoKey.conversationID: conversationID]
+        )
+        try await Task.sleep(nanoseconds: 30_000_000)
+
+        #expect(viewModel.pendingUserMessages.map(\.id) == [userMessage.id])
+        #expect(viewModel.hasVisibleContent == true)
+    }
 }
