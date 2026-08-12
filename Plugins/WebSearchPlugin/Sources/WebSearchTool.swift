@@ -7,7 +7,7 @@ public struct WebSearchTool: LumiAgentTool, SuperLog {
     public nonisolated static let emoji = "🔍"
     public nonisolated static let verbose: Bool = false
     private nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "tool.web-search")
-    private let searchClient: @Sendable (String) async throws -> [WebSearchResult]
+    private let searchClient: (@Sendable (String) async throws -> [WebSearchResult])?
 
     public static let info = LumiAgentToolInfo(
         id: "web_search",
@@ -21,7 +21,7 @@ public struct WebSearchTool: LumiAgentTool, SuperLog {
     public init(
         searchClient: (@Sendable (String) async throws -> [WebSearchResult])? = nil
     ) {
-        self.searchClient = searchClient ?? WebSearchTool.fetchDuckDuckGoResults
+        self.searchClient = searchClient
     }
 
     public var inputSchema: LumiJSONValue {
@@ -59,7 +59,15 @@ public struct WebSearchTool: LumiAgentTool, SuperLog {
         }
 
         try kernel.checkCancellation()
-        let results = try await searchClient(query)
+        let results: [WebSearchResult]
+        if let searchClient {
+            results = try await searchClient(query)
+        } else {
+            guard let network = await MainActor.run(body: { kernel.network }) else {
+                return "Error: Network service is unavailable."
+            }
+            results = try await Self.fetchDuckDuckGoResults(query: query, network: network)
+        }
         try kernel.checkCancellation()
 
         if results.isEmpty {
@@ -104,23 +112,22 @@ public struct WebSearchResult: Equatable, Sendable {
 }
 
 extension WebSearchTool {
-    private static func fetchDuckDuckGoResults(query: String) async throws -> [WebSearchResult] {
+    private static func fetchDuckDuckGoResults(
+        query: String,
+        network: any NetworkProviding
+    ) async throws -> [WebSearchResult] {
         var components = URLComponents(string: "https://html.duckduckgo.com/html/")!
         components.queryItems = [
             URLQueryItem(name: "q", value: query)
         ]
         guard let url = components.url else { return [] }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.timeoutInterval = 12
-        request.setValue("Lumi/1.0", forHTTPHeaderField: "User-Agent")
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        if let httpResponse = response as? HTTPURLResponse,
-           !(200...299).contains(httpResponse.statusCode) {
-            throw WebSearchError.badStatus(httpResponse.statusCode)
-        }
+        let response = try await network.get(
+            url: url,
+            headers: ["User-Agent": "Lumi/1.0"],
+            timeout: 12
+        )
+        let data = response.body
 
         guard let html = String(data: data, encoding: .utf8) else {
             throw WebSearchError.invalidResponse

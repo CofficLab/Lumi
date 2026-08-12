@@ -1,22 +1,45 @@
 @preconcurrency import Foundation
-import HttpKit
+import LumiKernel
 
 public protocol WebFetchFetching: Sendable {
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse)
 }
 
-/// 基于 HttpKit 的 HTTP 请求实现
-public struct URLSessionWebFetchFetcher: WebFetchFetching {
-    private let client: HTTPClient
+/// Kernel-backed HTTP implementation.
+public struct KernelWebFetchFetcher: WebFetchFetching {
+    private let network: any NetworkProviding
 
-    public init() {
-        self.client = HTTPClient(timeoutIntervalForRequest: 60) { config in
-            config.httpMaximumConnectionsPerHost = 5
-        }
+    public init(network: any NetworkProviding) {
+        self.network = network
     }
 
     public func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        try await client.sendRequestWithResponse(request: request)
+        guard let url = request.url else { throw WebFetchError.invalidResponseType }
+        let response: HTTPResponse
+        do {
+            response = try await network.request(HTTPRequest(
+                url: url,
+                method: HTTPMethod(rawValue: request.httpMethod ?? "GET") ?? .get,
+                headers: request.allHTTPHeaderFields ?? [:],
+                body: request.httpBody,
+                timeout: request.timeoutInterval
+            ))
+        } catch let error as HTTPNetworkError {
+            guard let statusCode = error.statusCode else { throw error }
+            response = HTTPResponse(
+                statusCode: statusCode,
+                headers: error.headers,
+                body: error.body ?? Data(),
+                url: error.url
+            )
+        }
+        guard let httpResponse = HTTPURLResponse(
+            url: response.url,
+            statusCode: response.statusCode,
+            httpVersion: "HTTP/1.1",
+            headerFields: response.headers
+        ) else { throw WebFetchError.invalidResponseType }
+        return (response.body, httpResponse)
     }
 }
 
@@ -47,7 +70,7 @@ public struct WebFetchService: Sendable {
     private let now: @Sendable () -> Date
 
     public init(
-        fetcher: any WebFetchFetching = URLSessionWebFetchFetcher(),
+        fetcher: any WebFetchFetching,
         cache: WebFetchCache? = .shared,
         tempDirectory: URL = FileManager.default.temporaryDirectory,
         now: @escaping @Sendable () -> Date = Date.init

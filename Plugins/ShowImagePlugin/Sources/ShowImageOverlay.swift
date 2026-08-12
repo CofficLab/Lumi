@@ -1,3 +1,4 @@
+import LumiKernel
 import LumiUI
 import SuperLogKit
 import SwiftUI
@@ -16,10 +17,12 @@ public struct ShowImageOverlay<Content: View>: View, SuperLog {
     }
 
     public let content: Content
+    private let network: any NetworkProviding
 
     @StateObject private var state = ShowImageState.shared
 
-    public init(@ViewBuilder content: () -> Content) {
+    public init(network: any NetworkProviding, @ViewBuilder content: () -> Content) {
+        self.network = network
         self.content = content()
     }
 
@@ -29,6 +32,7 @@ public struct ShowImageOverlay<Content: View>: View, SuperLog {
                 if let item = state.displayItem {
                     ShowImagePreviewPanel(
                         displayItem: item,
+                        network: network,
                         onDismiss: {
                             state.clear()
                         }
@@ -48,6 +52,7 @@ public struct ShowImageOverlay<Content: View>: View, SuperLog {
 /// 以 overlay 形式显示在应用顶部，可关闭。
 struct ShowImagePreviewPanel: View {
     let displayItem: ShowImageState.DisplayItem
+    let network: any NetworkProviding
     let onDismiss: () -> Void
 
     @State private var loadedImage: NSImage?
@@ -179,7 +184,7 @@ struct ShowImagePreviewPanel: View {
                     isLoading = false
                     return
                 }
-                let (data, _) = try await URLSession.shared.data(from: url)
+                let data = try await network.get(url: url, timeout: 30).body
                 guard !Task.isCancelled else { return }
                 guard let image = NSImage(data: data) else {
                     errorText = LumiPluginLocalization.string("无法解析图片数据", bundle: .module)

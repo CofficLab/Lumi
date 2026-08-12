@@ -64,7 +64,10 @@ public struct WebFetchTool: LumiAgentTool, SuperLog {
         }
 
         let prompt = arguments.string("prompt")
-        let service = WebFetchService()
+        guard let network = await MainActor.run(body: { kernel.network }) else {
+            return "Error: Network service is unavailable."
+        }
+        let service = WebFetchService(fetcher: KernelWebFetchFetcher(network: network))
         try kernel.checkCancellation()
         let result = await service.fetch(urlString: urlString, prompt: prompt)
         try kernel.checkCancellation()
