@@ -11,7 +11,12 @@ import SwiftUI
 @MainActor
 public struct SettingsView: View {
     @ObservedObject private var viewModel: ProjectsViewModel
-    @ObservedObject private var kernel: LumiKernel
+    /// 仅用于查询 `settingsSections(forTabID:)`。
+    /// 刻意不使用 `@ObservedObject`：kernel 聚合了所有服务的 `objectWillChange`，
+    /// 观察它会让本视图随全局总线高频重绘，进而反复重建 section 的 AnyView、
+    /// 反复重启子视图的 `.task`，表现为区块永远停在 loading。
+    /// section 在启动时即已注册，无需动态响应其变化。
+    private let kernel: LumiKernel
     @LumiTheme private var theme
 
     @State private var selectedProjectPath: String?
@@ -23,7 +28,7 @@ public struct SettingsView: View {
 
     public init(viewModel: ProjectsViewModel, kernel: LumiKernel) {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
-        self._kernel = ObservedObject(wrappedValue: kernel)
+        self.kernel = kernel
     }
 
     private var projects: [ProjectEntry] {
