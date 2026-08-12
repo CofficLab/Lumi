@@ -21,12 +21,14 @@ final class MiniMaxResponsesMessageState: @unchecked Sendable {
     private let model: String
     private var inputTokens: Int?
     private var outputTokens: Int?
+    private let toolNameMap: [String: String]
 
-    init(conversationID: UUID, providerID: String, model: String, started: Date) {
+    init(conversationID: UUID, providerID: String, model: String, started: Date, toolNameMap: [String: String] = [:]) {
         self.conversationID = conversationID
         self.providerID = providerID
         self.model = model
         self.started = started
+        self.toolNameMap = toolNameMap
     }
 
     func setError(_ value: String) {
@@ -76,7 +78,8 @@ final class MiniMaxResponsesMessageState: @unchecked Sendable {
     private func saveCallLocked() {
         guard let id = activeCallID, let name = activeCallName else { return }
         let arguments = activeCallArguments.isEmpty ? "{}" : normalizedArguments(activeCallArguments)
-        calls.append(LumiToolCall(id: id, name: name, arguments: arguments))
+        // 模型回传的工具名是 sanitize 后的，按映射还原为 Lumi 注册 id，否则工具调度按原始 id 查找时会找不到。
+        calls.append(LumiToolCall(id: id, name: toolNameMap[name] ?? name, arguments: arguments))
         activeCallID = nil
         activeCallName = nil
         activeCallArguments = ""

@@ -80,7 +80,8 @@ public final class MiniMaxResponsesProvider: LumiLLMProvider, @unchecked Sendabl
             conversationID: conversationID,
             providerID: Self.info.id,
             model: request.model,
-            started: Date()
+            started: Date(),
+            toolNameMap: MiniMaxRequestBuilder.toolNameMap(for: request)
         )
 
         try await service.send(apiKey: try lumiResolveAPIKey(), body: body) { [weak self] event in

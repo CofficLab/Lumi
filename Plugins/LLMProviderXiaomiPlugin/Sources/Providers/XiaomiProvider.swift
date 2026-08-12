@@ -92,6 +92,7 @@ public final class XiaomiProvider: LumiLLMProvider, @unchecked Sendable {
             throw XiaomiOpenAIProviderError.invalidRequest("Conversation is empty")
         }
         let body = XiaomiRequestBuilder.body(for: request)
+        let toolNameMap = XiaomiRequestBuilder.toolNameMap(for: request)
         guard let url = URL(string: apiService.baseURL) else {
             throw XiaomiOpenAIProviderError.invalidRequest("Invalid Xiaomi URL")
         }
@@ -117,7 +118,15 @@ public final class XiaomiProvider: LumiLLMProvider, @unchecked Sendable {
                 collector.mutate { $0.isError = true; $0.rawErrorDetail = error }
                 return false
             }
-            collector.mutate { $0.merge(event) }
+            // 模型回传的工具名是 sanitize 后的，按映射还原为 Lumi 注册 id 后再合并。
+            var mappedEvent = event
+            if !toolNameMap.isEmpty {
+                mappedEvent.toolDeltas = event.toolDeltas.map { delta in
+                    guard let name = delta.name, let restored = toolNameMap[name] else { return delta }
+                    return XiaomiToolDelta(id: delta.id, name: restored, arguments: delta.arguments)
+                }
+            }
+            collector.mutate { $0.merge(mappedEvent) }
             if let content = event.content, !content.isEmpty {
                 await onChunk(LumiStreamChunk(content: content, eventTitle: "生成中"))
             }

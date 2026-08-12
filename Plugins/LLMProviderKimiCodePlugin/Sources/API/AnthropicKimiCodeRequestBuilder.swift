@@ -107,7 +107,7 @@ enum AnthropicKimiCodeRequestBuilder {
                     blocks.append([
                         "type": "tool_use",
                         "id": call.id,
-                        "name": sanitizeToolName(call.name),
+                        "name": LLMToolNameSanitizer.sanitize(call.name),
                         "input": parseJSONObject(call.arguments),
                     ])
                 }
@@ -139,7 +139,7 @@ enum AnthropicKimiCodeRequestBuilder {
 
     private static func tool(_ tool: any LumiAgentTool) -> [String: Any] {
         var value: [String: Any] = [
-            "name": sanitizeToolName(tool.name),
+            "name": LLMToolNameSanitizer.sanitize(tool.name),
             "input_schema": tool.inputSchema.anyValue,
         ]
         if !tool.toolDescription.isEmpty {
@@ -151,24 +151,10 @@ enum AnthropicKimiCodeRequestBuilder {
     static func toolNameMap(for request: LumiLLMRequest) -> [String: String] {
         var map: [String: String] = [:]
         for tool in request.tools {
-            let sanitized = sanitizeToolName(tool.name)
+            let sanitized = LLMToolNameSanitizer.sanitize(tool.name)
             if map[sanitized] == nil { map[sanitized] = tool.name }
         }
         return map
-    }
-
-    static func sanitizeToolName(_ raw: String) -> String {
-        var result = ""
-        result.reserveCapacity(raw.utf8.count)
-        for byte in raw.utf8 {
-            let isLegal =
-                (byte >= 0x61 && byte <= 0x7A) ||
-                (byte >= 0x41 && byte <= 0x5A) ||
-                (byte >= 0x30 && byte <= 0x39) ||
-                byte == 0x5F || byte == 0x2D
-            result.append(Character(UnicodeScalar(isLegal ? byte : 0x5F)))
-        }
-        return result.isEmpty ? "tool" : result
     }
 
     private static func thinkingBudget(for effort: LumiReasoningEffort?) -> Int? {

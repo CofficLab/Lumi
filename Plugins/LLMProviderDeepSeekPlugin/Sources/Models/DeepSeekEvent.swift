@@ -7,7 +7,7 @@ import Foundation
 struct DeepSeekEvent: Sendable {
     let content: String?
     let reasoning: String?
-    let toolDeltas: [DeepSeekToolDelta]
+    var toolDeltas: [DeepSeekToolDelta]
     let stopReason: String?
     let done: Bool
     let error: String?

@@ -1,4 +1,5 @@
 import Foundation
+import LLMKit
 import LumiKernel
 
 enum MiniMaxResponsesBuilder {
@@ -32,12 +33,13 @@ enum MiniMaxResponsesBuilder {
             input = .history(try buildHistory(nonSystem))
         }
 
+        // 函数名仅允许字母/数字/_/-，带点号等非法字符的工具名须转义，否则整包请求被 400 拒绝。
         let tools: [MiniMaxResponsesTool]? = request.tools.isEmpty ? nil : request.tools.map { tool in
             let params: [String: Any] = {
                 if let dict = tool.inputSchema.anyValue as? [String: Any] { return dict }
                 return [:]
             }()
-            return MiniMaxResponsesTool(name: tool.name, description: tool.toolDescription, parameters: params)
+            return MiniMaxResponsesTool(name: LLMToolNameSanitizer.sanitize(tool.name), description: tool.toolDescription, parameters: params)
         }
 
         return MiniMaxResponsesRequest(
@@ -72,7 +74,8 @@ enum MiniMaxResponsesBuilder {
                             items.append(.init(role: "assistant", content: contentParts.joined(separator: "\n")))
                             contentParts = []
                         }
-                        items.append(.init(functionCall: call.id, name: call.name, arguments: call.arguments))
+                        // 历史消息回传同样要转义，否则下一轮请求仍会被供应商 400 拒绝。
+                        items.append(.init(functionCall: call.id, name: LLMToolNameSanitizer.sanitize(call.name), arguments: call.arguments))
                     }
                 } else if !contentParts.isEmpty {
                     items.append(.init(role: "assistant", content: contentParts.joined(separator: "\n")))

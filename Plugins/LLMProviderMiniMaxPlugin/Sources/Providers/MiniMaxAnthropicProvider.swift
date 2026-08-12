@@ -67,7 +67,7 @@ public final class MiniMaxAnthropicProvider: LumiLLMProvider, @unchecked Sendabl
         }
 
         let body = try JSONSerialization.data(withJSONObject: MiniMaxRequestBuilder.anthropic(request), options: [.sortedKeys])
-        let state = MiniMaxMessageState(conversationID: conversationID, providerID: Self.info.id, model: request.model, started: Date())
+        let state = MiniMaxMessageState(conversationID: conversationID, providerID: Self.info.id, model: request.model, started: Date(), toolNameMap: MiniMaxRequestBuilder.toolNameMap(for: request))
         try await service.send(apiKey: try lumiResolveAPIKey(), body: body) { event in
             if let error = event.error {
                 state.setError(error)

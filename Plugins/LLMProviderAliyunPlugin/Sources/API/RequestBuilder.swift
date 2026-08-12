@@ -42,7 +42,7 @@ enum AliyunAnthropicRequestBuilder {
     /// 工具名还原为 Lumi 注册 id(工具执行按原始 id 查找)。
     ///
     /// 背景:Anthropic 工具名规范要求 `^[a-zA-Z0-9_-]{1,64}$`,不允许点号。而 Lumi 工具
-    /// id 普遍采用 `plugin.action` 形式(如 `app-store-connect.list-apps`),`sanitizeToolName`
+    /// id 普遍采用 `plugin.action` 形式(如 `app-store-connect.list-apps`),`LLMToolNameSanitizer`
     /// 在发给模型时把点号替换成下划线。模型回传的 sanitized 名若不还原,`ToolManagerService`
     /// 会因注册名(带点)与回传名(下划线)不一致而报 "Tool not found"。
     ///
@@ -51,7 +51,7 @@ enum AliyunAnthropicRequestBuilder {
     static func toolNameMap(for request: LumiLLMRequest) -> [String: String] {
         var map: [String: String] = [:]
         for tool in request.tools {
-            let sanitized = sanitizeToolName(tool.name)
+            let sanitized = LLMToolNameSanitizer.sanitize(tool.name)
             if map[sanitized] == nil {
                 map[sanitized] = tool.name
             }
@@ -198,7 +198,7 @@ enum AliyunAnthropicRequestBuilder {
                     blocks.append([
                         "type": "tool_use",
                         "id": call.id,
-                        "name": sanitizeToolName(call.name),
+                        "name": LLMToolNameSanitizer.sanitize(call.name),
                         "input": call.arguments.isEmpty ? [:] : parseJSONObject(call.arguments),
                     ])
                 }
@@ -238,28 +238,13 @@ enum AliyunAnthropicRequestBuilder {
 
     private static func tool(_ tool: any LumiAgentTool) -> [String: Any] {
         var value: [String: Any] = [
-            "name": sanitizeToolName(tool.name),
+            "name": LLMToolNameSanitizer.sanitize(tool.name),
             "input_schema": tool.inputSchema.anyValue,
         ]
         if !tool.toolDescription.isEmpty {
             value["description"] = tool.toolDescription
         }
         return value
-    }
-
-    static func sanitizeToolName(_ raw: String) -> String {
-        var result = ""
-        result.reserveCapacity(raw.utf8.count)
-        for byte in raw.utf8 {
-            let isLegal =
-                (byte >= 0x61 && byte <= 0x7A) ||
-                (byte >= 0x41 && byte <= 0x5A) ||
-                (byte >= 0x30 && byte <= 0x39) ||
-                byte == 0x5F ||
-                byte == 0x2D
-            result.append(Character(UnicodeScalar(isLegal ? byte : 0x5F)))
-        }
-        return result.isEmpty ? "tool" : result
     }
 
     private static func thinkingBudget(for effort: LumiReasoningEffort?) -> Int? {

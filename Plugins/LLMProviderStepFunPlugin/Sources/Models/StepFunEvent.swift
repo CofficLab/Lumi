@@ -6,7 +6,7 @@ import Foundation
 /// `StepFunChatMessage` 负责消费。
 struct StepFunEvent: Sendable {
     let content: String?
-    let toolDeltas: [StepFunToolDelta]
+    var toolDeltas: [StepFunToolDelta]
     let stopReason: String?
     let done: Bool
     let error: String?
