@@ -280,7 +280,7 @@ struct BookletExplanationView: View {
                 .padding(.vertical, 4)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.leading, 16)
         .padding(.bottom, 8)
     }
 
@@ -315,7 +315,7 @@ struct BookletExplanationView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.leading, 16)
         .padding(.bottom, 8)
     }
 
