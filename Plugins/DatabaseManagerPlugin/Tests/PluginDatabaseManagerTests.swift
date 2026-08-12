@@ -63,6 +63,69 @@ import Testing
 }
 
 @MainActor
+@Test func schemaChangeManagerGeneratesDialectAwareColumnDDL() throws {
+    let table = DatabaseObject(kind: .table, name: "order", database: "shop", schema: "public")
+    let manager = SchemaChangeManager(table: table, columns: [])
+    try manager.stageAdd(NewTableColumnDraft(name: "created at", dataType: "TIMESTAMP", defaultValue: "CURRENT_TIMESTAMP"))
+
+    #expect(manager.statements(for: .sqlite) == [
+        "ALTER TABLE \"order\" ADD COLUMN \"created at\" TIMESTAMP DEFAULT CURRENT_TIMESTAMP;"
+    ])
+    #expect(manager.statements(for: .mysql) == [
+        "ALTER TABLE `shop`.`order` ADD COLUMN `created at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP;"
+    ])
+    #expect(manager.statements(for: .postgresql) == [
+        "ALTER TABLE \"public\".\"order\" ADD COLUMN \"created at\" TIMESTAMP DEFAULT CURRENT_TIMESTAMP;"
+    ])
+}
+
+@MainActor
+@Test func schemaChangeManagerValidatesUnsafeAndDestructiveChanges() throws {
+    let columns = [
+        TableColumn(name: "id", dataType: "INTEGER", isNullable: false, isPrimaryKey: true, defaultValue: nil, position: 0),
+        TableColumn(name: "email", dataType: "TEXT", isNullable: true, isPrimaryKey: false, defaultValue: nil, position: 1),
+    ]
+    let manager = SchemaChangeManager(table: DatabaseObject(kind: .table, name: "users"), columns: columns)
+
+    #expect(throws: SchemaChangeValidationError.unsafeSQLFragment) {
+        try manager.stageAdd(NewTableColumnDraft(name: "safe", dataType: "TEXT; DROP TABLE users"))
+    }
+    #expect(throws: SchemaChangeValidationError.duplicateColumn("email")) {
+        try manager.stageRename(columns[0], to: "email")
+    }
+    #expect(throws: SchemaChangeValidationError.primaryKeyDrop("id")) {
+        try manager.stageDrop(columns[0])
+    }
+
+    try manager.stageDrop(columns[1])
+    #expect(manager.hasDestructiveChanges)
+    #expect(manager.statements(for: .sqlite) == ["ALTER TABLE \"users\" DROP COLUMN \"email\";"])
+}
+
+@MainActor
+@Test func sqliteSchemaChangesApplyAndReloadInspector() async throws {
+    let viewModel = DatabaseViewModel(loadSavedConfigs: false)
+    let demoConfig = try #require(viewModel.configs.first { $0.name == "Demo SQLite" })
+    await viewModel.connect(config: demoConfig)
+    await viewModel.openObject(DatabaseObject(kind: .table, name: "users"))
+
+    try viewModel.stageAddColumn(NewTableColumnDraft(name: "nickname", dataType: "TEXT"))
+    await viewModel.saveSchemaChanges()
+    #expect(viewModel.selectedTableSchema?.columns.contains { $0.name == "nickname" } == true)
+
+    let nickname = try #require(viewModel.selectedTableSchema?.columns.first { $0.name == "nickname" })
+    try viewModel.stageRenameColumn(nickname, to: "display_name")
+    await viewModel.saveSchemaChanges()
+    #expect(viewModel.selectedTableSchema?.columns.contains { $0.name == "display_name" } == true)
+
+    let displayName = try #require(viewModel.selectedTableSchema?.columns.first { $0.name == "display_name" })
+    try viewModel.stageDropColumn(displayName)
+    await viewModel.saveSchemaChanges()
+    #expect(viewModel.selectedTableSchema?.columns.contains { $0.name == "display_name" } == false)
+    #expect(viewModel.tableSchemaError == nil)
+}
+
+@MainActor
 @Test func failedConnectionKeepsPreviousConnectionUsable() async throws {
     let viewModel = DatabaseViewModel(loadSavedConfigs: false)
     let demoConfig = try #require(viewModel.configs.first { $0.name == "Demo SQLite" })
@@ -883,7 +946,6 @@ private func freshHistoryStore() -> QueryHistoryStore {
     await store.clear()
     #expect((await store.recent(limit: 10)).isEmpty)
 }
-
 
 
 

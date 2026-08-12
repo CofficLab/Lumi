@@ -35,6 +35,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     @Published public private(set) var isLoadingTableSchema: Bool = false
     /// 表结构加载失败信息；不覆盖查询区的通用错误。
     @Published public private(set) var tableSchemaError: String?
+    /// 当前表结构的暂存变更；必须经预览确认后才会执行。
+    @Published public private(set) var schemaChangeManager: SchemaChangeManager?
+    @Published public var showSchemaChangePreview: Bool = false
     /// 当前页码（从 0 起）。
     @Published public var tablePage: Int = 0
     /// 每页行数。
@@ -190,6 +193,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             tableSchemaError = nil
             tableRowCount = nil
             changeManager = nil
+            schemaChangeManager = nil
             // 切换连接时清掉旧连接的结构缓存
             schemaCache.invalidate(configId: config.id)
             // 记住这次连接，下次自动重连
@@ -252,6 +256,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         tableSchemaError = nil
         tableRowCount = nil
         changeManager = nil
+        schemaChangeManager = nil
         schemaCache.invalidate(configId: config.id)
         // 显式断开后，下次不再自动重连这个连接
         DatabaseConnectionStore.lastSelectedConfigID = nil
@@ -490,6 +495,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             tableRowCount = nil
             tableOrderBy = nil
             changeManager = nil
+            schemaChangeManager = nil
             // 兼容旧 UI（空状态判断等）
             if config.type == .sqlite { selectedSQLiteTable = object.name }
             await loadSelectedTableSchema()
@@ -505,6 +511,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         openTableObject = nil
         selectedTableSchema = nil
         tableSchemaError = nil
+        schemaChangeManager = nil
         tableRowCount = nil
         queryResult = nil
     }
@@ -514,6 +521,7 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         openTableObject = nil
         selectedTableSchema = nil
         tableSchemaError = nil
+        schemaChangeManager = nil
     }
 
     /// 加载当前对象结构；刷新时绕过缓存重新读取数据库 catalog。
@@ -537,6 +545,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             )
             guard openTableObject?.id == object.id else { return }
             selectedTableSchema = schema
+            if schemaChangeManager?.hasChanges != true {
+                schemaChangeManager = SchemaChangeManager(table: object, columns: schema.columns)
+            }
             if changeManager?.hasChanges != true {
                 changeManager = TableChangeManager(table: object, schema: schema)
             }
@@ -544,8 +555,71 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             guard openTableObject?.id == object.id else { return }
             selectedTableSchema = nil
             changeManager = nil
+            schemaChangeManager = nil
             tableSchemaError = error.localizedDescription
         }
+    }
+
+    public var pendingSchemaChangeSQL: [String] {
+        guard let config = selectedConfig else { return [] }
+        return schemaChangeManager?.statements(for: config.type) ?? []
+    }
+
+    public func stageAddColumn(_ draft: NewTableColumnDraft) throws {
+        try schemaChangeManager?.stageAdd(draft)
+        objectWillChange.send()
+    }
+
+    public func stageRenameColumn(_ column: TableColumn, to name: String) throws {
+        try schemaChangeManager?.stageRename(column, to: name)
+        objectWillChange.send()
+    }
+
+    public func stageDropColumn(_ column: TableColumn) throws {
+        try schemaChangeManager?.stageDrop(column)
+        objectWillChange.send()
+    }
+
+    public func removeSchemaChange(id: UUID) {
+        schemaChangeManager?.remove(id: id)
+        objectWillChange.send()
+    }
+
+    public func discardSchemaChanges() {
+        schemaChangeManager?.discardAll()
+        objectWillChange.send()
+    }
+
+    public func saveSchemaChanges() async {
+        guard let config = selectedConfig,
+              let manager = schemaChangeManager,
+              manager.hasChanges else { return }
+        guard let connection = await self.manager.getConnection(for: config.id) else {
+            tableSchemaError = "Not connected to database"
+            return
+        }
+
+        let statements = manager.statements(for: config.type)
+        isLoadingTableSchema = true
+        tableSchemaError = nil
+        do {
+            let transaction = try await connection.beginTransaction()
+            do {
+                for statement in statements {
+                    _ = try await transaction.execute(statement, params: nil)
+                }
+                try await transaction.commit()
+            } catch {
+                try? await transaction.rollback()
+                throw error
+            }
+            manager.discardAll()
+            await loadSelectedTableSchema(refresh: true)
+            await loadTablePage()
+        } catch {
+            tableSchemaError = error.localizedDescription
+        }
+        isLoadingTableSchema = false
     }
 
     /// 加载当前页数据（`SELECT * FROM ... [ORDER BY ...] LIMIT pageSize OFFSET page*pageSize`）。
