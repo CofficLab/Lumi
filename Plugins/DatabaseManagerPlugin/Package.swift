@@ -30,7 +30,8 @@ let package = Package(
             name: "DatabaseManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "KeychainKit", package: "KeychainKit"),
                 .product(name: "MySQLNIO", package: "mysql-nio"),

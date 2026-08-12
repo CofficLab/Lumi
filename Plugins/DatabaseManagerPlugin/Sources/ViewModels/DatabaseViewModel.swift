@@ -43,6 +43,20 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     /// 是否正在展示「Preview SQL」面板。
     @Published public var showChangePreview: Bool = false
 
+    /// 多语句执行的结果（每语句一条）；为空时表示当前是单语句模式。
+    @Published public var multiExecutions: [StatementExecution] = []
+    /// 多结果当前选中的 tab 索引。
+    @Published public var selectedExecutionIndex: Int = 0
+
+    /// 查询历史（UI 通过此状态渲染）。
+    @Published public var history: [QueryHistoryEntry] = []
+    /// 是否显示历史面板。
+    @Published public var showHistory: Bool = false
+    /// 历史搜索关键字。
+    @Published public var historySearchText: String = ""
+
+    private let historyStore = QueryHistoryStore.shared
+
     public func toggleInspector() {
         inspectorVisible.toggle()
     }
@@ -244,6 +258,8 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
 
         isLoading = true
         errorMessage = nil
+        // 单语句模式：清掉多结果 tab 栏。
+        multiExecutions = []
 
         do {
             let upper = queryText.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
@@ -283,8 +299,122 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
             errorMessage = error.localizedDescription
         }
         isLoading = false
+        // 成功或失败都记历史（失败时用户可能想重试/修改）。
+        await recordExecutedSQLs([queryText])
     }
-    
+
+    /// 把 `queryText` 按 `;` 拆成多条语句依次执行（事务不包裹：跨引擎语义不一致）。
+    ///
+    /// - 每条语句独立计时、独立捕获结果/错误；
+    /// - 任一语句失败仍继续执行后续语句（与 TablePro 默认行为一致）；
+    /// - 结果填入 ``multiExecutions``，同时 ``queryResult`` 指向最后一条成功语句的结果，
+    ///   保持单结果视图的向后兼容。
+    public func executeAllStatements() async {
+        let statements = SQLStatementParser.split(queryText)
+        guard !statements.isEmpty else { return }
+        // 单条语句走既有路径（保持行为一致，也避免多结果 UI 在单语句时显得啰嗦）。
+        if statements.count == 1 {
+            await executeQuery()
+            return
+        }
+
+        guard let config = selectedConfig,
+              let connection = await manager.getConnection(for: config.id) else {
+            errorMessage = "未连接到数据库"
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+        multiExecutions = []
+        queryResult = nil
+        var executions: [StatementExecution] = []
+        var lastSuccess: QueryResult?
+
+        for stmt in statements {
+            let start = Date()
+            var exec = StatementExecution(sql: stmt)
+            do {
+                if Self.isReadStatement(stmt, type: config.type) {
+                    let result = try await connection.query(stmt, params: nil)
+                    exec.result = result
+                    lastSuccess = result
+                } else {
+                    let affected = try await connection.execute(stmt, params: nil)
+                    let result = QueryResult(
+                        columns: ["Result"],
+                        rows: [[.string("OK. Rows affected: \(affected)")]],
+                        rowsAffected: affected
+                    )
+                    exec.result = result
+                    lastSuccess = result
+                }
+            } catch {
+                exec.errorMessage = error.localizedDescription
+            }
+            exec.durationMs = Date().timeIntervalSince(start) * 1000
+            executions.append(exec)
+        }
+
+        multiExecutions = executions
+        queryResult = lastSuccess
+        selectedExecutionIndex = 0
+        isLoading = false
+        await recordExecutedSQLs(statements)
+    }
+
+    /// 判断一条 SQL 是否为"读"语句（走 query 路径）而非"写"（走 execute 路径）。
+    public static func isReadStatement(_ sql: String, type: DatabaseType) -> Bool {
+        if type == .redis {
+            let upper = sql.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            return upper.hasPrefix("GET") || upper.hasPrefix("SCAN") || upper.hasPrefix("HGET")
+                || upper.hasPrefix("LRANGE") || upper.hasPrefix("SMEMBERS") || upper.hasPrefix("ZRANGE")
+        }
+        let upper = sql.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        return upper.hasPrefix("SELECT") || upper.hasPrefix("PRAGMA")
+            || upper.hasPrefix("SHOW") || upper.hasPrefix("DESCRIBE")
+    }
+
+    // MARK: - 查询历史
+
+    /// 加载最近 N 条历史到 ``history``。
+    public func loadRecentHistory(limit: Int = 100) async {
+        history = await historyStore.recent(limit: limit)
+    }
+
+    /// 按关键字搜索历史。
+    public func searchHistory(_ query: String) async {
+        historySearchText = query
+        history = await historyStore.search(query)
+    }
+
+    /// 把一条历史条目载入编辑器（替换 queryText）。
+    public func loadHistoryEntry(_ entry: QueryHistoryEntry) {
+        queryText = entry.sql
+        showHistory = false
+    }
+
+    /// 删除某条历史。
+    public func deleteHistoryEntry(_ entry: QueryHistoryEntry) async {
+        await historyStore.delete(id: entry.id)
+        await loadRecentHistory()
+    }
+
+    /// 清空全部历史。
+    public func clearHistory() async {
+        await historyStore.clear()
+        history.removeAll()
+    }
+
+    /// 记录已执行的 SQL（多语句时按语句逐条记）。
+    private func recordExecutedSQLs(_ statements: [String]) async {
+        guard let config = selectedConfig else { return }
+        for sql in statements {
+            await historyStore.record(sql: sql, configName: config.name, database: config.database)
+        }
+        await loadRecentHistory()
+    }
+
     /// 加载 Redis 键列表（循环 SCAN 直到游标归零，带安全上限避免巨型键空间卡死）。
     public func loadRedisKeys() async {
         guard let config = selectedConfig, config.type == .redis else { return }

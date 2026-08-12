@@ -33,6 +33,9 @@ public struct MainView: View {
         .sheet(isPresented: $showAddConfigSheet) {
             ConnectionFormView(viewModel: viewModel, isPresented: $showAddConfigSheet)
         }
+        .sheet(isPresented: $viewModel.showHistory) {
+            QueryHistoryView(viewModel: viewModel)
+        }
     }
 
     // MARK: - Connected
@@ -63,7 +66,8 @@ public struct MainView: View {
     }
 
     private var toolbar: some View {
-        AppToolbarContainer(height: 48) {
+        let statementCount = SQLStatementParser.split(viewModel.queryText).count
+        return AppToolbarContainer(height: 48) {
             HStack {
                 Spacer()
                 if viewModel.isConnected {
@@ -75,6 +79,24 @@ public struct MainView: View {
                 }
                 AppButton("Run", systemImage: "play.fill", style: .primary, size: .small, action: { Task { await viewModel.executeQuery() } })
                     .keyboardShortcut(.return, modifiers: .command)
+                if statementCount > 1 {
+                    AppButton(
+                        "\(LumiPluginLocalization.string("Run All", bundle: .module)) (\(statementCount))",
+                        systemImage: "play.rectangle.fill",
+                        style: .secondary,
+                        size: .small,
+                        action: { Task { await viewModel.executeAllStatements() } }
+                    )
+                    .keyboardShortcut(.return, modifiers: [.command, .shift])
+                }
+                AppButton(
+                    LumiPluginLocalization.string("History", bundle: .module),
+                    systemImage: "clock.arrow.circlepath",
+                    style: .ghost,
+                    size: .small,
+                    action: { viewModel.showHistory = true }
+                )
+                .keyboardShortcut("y", modifiers: .command)
             }
         }
     }

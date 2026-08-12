@@ -660,6 +660,182 @@ private func makeUsersSchema() -> TableSchema {
     #expect(viewModel.changeManager?.pendingInsertCount == 1)
 }
 
+// MARK: - SQL statement parser
+
+@Test func sqlParserSplitsOnTopLevelSemicolon() {
+    let sql = "SELECT 1; SELECT 2; SELECT 3"
+    let stmts = SQLStatementParser.split(sql)
+    #expect(stmts == ["SELECT 1", "SELECT 2", "SELECT 3"])
+}
+
+@Test func sqlParserRespectsSingleQuotedString() {
+    // 字符串里的分号不应切分
+    let sql = "INSERT INTO t VALUES ('a;b;c'); SELECT 1"
+    let stmts = SQLStatementParser.split(sql)
+    #expect(stmts.count == 2)
+    #expect(stmts[0].contains("'a;b;c'"))
+}
+
+@Test func sqlParserRespectsEscapedQuotes() {
+    // '' 转义（SQL 标准）
+    let sql = "SELECT 'it''s;ok'; SELECT 2"
+    let stmts = SQLStatementParser.split(sql)
+    #expect(stmts.count == 2)
+    #expect(stmts[0].contains("it''s;ok"))
+}
+
+@Test func sqlParserRespectsDoubleQuotedIdentifier() {
+    let sql = #"SELECT "col;name" FROM t; SELECT 2"#
+    let stmts = SQLStatementParser.split(sql)
+    #expect(stmts.count == 2)
+    #expect(stmts[0].contains(#""col;name""#))
+}
+
+@Test func sqlParserRespectsBacktickIdentifier() {
+    let sql = "SELECT `col;name` FROM t; SELECT 2"
+    let stmts = SQLStatementParser.split(sql)
+    #expect(stmts.count == 2)
+    #expect(stmts[0].contains("`col;name`"))
+}
+
+@Test func sqlParserIgnoresLineComments() {
+    let sql = """
+    SELECT 1; -- this; is a comment
+    SELECT 2;
+    """
+    let stmts = SQLStatementParser.split(sql)
+    #expect(stmts.count == 2)
+}
+
+@Test func sqlParserIgnoresBlockComments() {
+    let sql = "SELECT /* ; not split ; */ 1; SELECT 2"
+    let stmts = SQLStatementParser.split(sql)
+    #expect(stmts.count == 2)
+}
+
+@Test func sqlParserHandlesNestedBlockComments() {
+    let sql = "SELECT /* outer /* inner */ still */ 1; SELECT 2"
+    let stmts = SQLStatementParser.split(sql)
+    #expect(stmts.count == 2)
+}
+
+@Test func sqlParserReturnsEmptyForBlankInput() {
+    #expect(SQLStatementParser.split("").isEmpty)
+    #expect(SQLStatementParser.split("   \n\t  ").isEmpty)
+    #expect(SQLStatementParser.split("-- only a comment").isEmpty)
+    #expect(SQLStatementParser.split("/* block */").isEmpty)
+}
+
+@Test func sqlParserHandlesTrailingSemicolon() {
+    let sql = "SELECT 1;"
+    let stmts = SQLStatementParser.split(sql)
+    #expect(stmts == ["SELECT 1"])
+}
+
+@Test func sqlParserHandlesMultipleSemicolons() {
+    // 连续分号应视为空语句被过滤
+    let sql = "SELECT 1;;;SELECT 2"
+    let stmts = SQLStatementParser.split(sql)
+    #expect(stmts == ["SELECT 1", "SELECT 2"])
+}
+
+@MainActor
+@Test func executeAllStatementsCollectsMultipleResults() async throws {
+    let viewModel = DatabaseViewModel(loadSavedConfigs: false)
+    let demoConfig = try #require(viewModel.configs.first { $0.name == "Demo SQLite" })
+    await viewModel.connect(config: demoConfig)
+    // 三条语句：一个 SELECT、一个 INSERT、一个 SELECT
+    viewModel.queryText = "SELECT COUNT(*) AS c FROM users; INSERT INTO users (name, email) VALUES ('Carol', 'c@x.com'); SELECT COUNT(*) AS c FROM users;"
+    await viewModel.executeAllStatements()
+
+    #expect(viewModel.multiExecutions.count == 3)
+    let allSucceeded = viewModel.multiExecutions.allSatisfy { $0.succeeded }
+    #expect(allSucceeded)
+    // 第一条应为 2（demo 初始两行）
+    let firstCount = viewModel.multiExecutions[0].result?.rows.first?.first
+    #expect(firstCount == .integer(2))
+    // 第三条应为 3（INSERT 后）
+    let thirdCount = viewModel.multiExecutions[2].result?.rows.first?.first
+    #expect(thirdCount == .integer(3))
+    // 单结果视图应指向最后一条成功结果（保持向后兼容）
+    #expect(viewModel.queryResult?.rows.first?.first == .integer(3))
+}
+
+@MainActor
+@Test func executeAllStatementsContinuesAfterError() async throws {
+    let viewModel = DatabaseViewModel(loadSavedConfigs: false)
+    let demoConfig = try #require(viewModel.configs.first { $0.name == "Demo SQLite" })
+    await viewModel.connect(config: demoConfig)
+    // 中间一条故意错（表不存在），前后两条成功
+    viewModel.queryText = "SELECT 1 AS a; SELECT * FROM nonexistent_table_xyz; SELECT 2 AS b;"
+    await viewModel.executeAllStatements()
+
+    #expect(viewModel.multiExecutions.count == 3)
+    #expect(viewModel.multiExecutions[0].succeeded)
+    #expect(!viewModel.multiExecutions[1].succeeded)  // 第二条失败
+    #expect(viewModel.multiExecutions[2].succeeded)    // 仍继续执行第三条
+}
+
+// MARK: - Query history
+
+private func freshHistoryStore() -> QueryHistoryStore {
+    let suite = UserDefaults(suiteName: "test-history-\(UUID().uuidString)")!
+    return QueryHistoryStore(defaults: suite)
+}
+
+@Test func historyRecordAndRecentOrdering() async {
+    let store = freshHistoryStore()
+    await store.record(sql: "SELECT 1", configName: "A", database: "db")
+    await store.record(sql: "SELECT 2", configName: "A", database: "db")
+    let recent = await store.recent(limit: 10)
+    #expect(recent.count == 2)
+    #expect(recent[0].sql == "SELECT 2")  // 最新在前
+    #expect(recent[1].sql == "SELECT 1")
+}
+
+@Test func historyDeDuplicatesBySqlAndConnection() async {
+    let store = freshHistoryStore()
+    await store.record(sql: "SELECT 1", configName: "A", database: "db")
+    await store.record(sql: "SELECT 1", configName: "A", database: "db")
+    await store.record(sql: "SELECT 1", configName: "B", database: "db")
+    let recent = await store.recent(limit: 10)
+    #expect(recent.count == 2)  // 同 A 的 SELECT 1 去重；B 的 SELECT 1 保留
+    #expect(recent.filter { $0.configName == "A" }.count == 1)
+}
+
+@Test func historyRejectsSensitiveStatements() async {
+    let store = freshHistoryStore()
+    await store.record(sql: "CREATE USER bob IDENTIFIED BY 'pw'", configName: "A", database: "db")
+    await store.record(sql: "ALTER USER bob SET PASSWORD 'x'", configName: "A", database: "db")
+    await store.record(sql: "SELECT * FROM users", configName: "A", database: "db")
+    let recent = await store.recent(limit: 10)
+    #expect(recent.count == 1)
+    #expect(recent.first?.sql.hasPrefix("SELECT") == true)
+}
+
+@Test func historySearchMatchesSqlOrConnection() async {
+    let store = freshHistoryStore()
+    await store.record(sql: "SELECT * FROM orders", configName: "Prod", database: "app")
+    await store.record(sql: "INSERT INTO logs", configName: "Dev", database: "app")
+    let bySql = await store.search("orders")
+    #expect(bySql.count == 1)
+    let byConn = await store.search("prod")
+    #expect(byConn.count == 1)
+    let byNothing = await store.search("nonexistent")
+    #expect(byNothing.isEmpty)
+}
+
+@Test func historyDeleteAndClear() async {
+    let store = freshHistoryStore()
+    await store.record(sql: "SELECT 1", configName: "A", database: "db")
+    await store.record(sql: "SELECT 2", configName: "A", database: "db")
+    let firstId = (await store.recent(limit: 10)).first!.id
+    await store.delete(id: firstId)
+    #expect((await store.recent(limit: 10)).count == 1)
+    await store.clear()
+    #expect((await store.recent(limit: 10)).isEmpty)
+}
+
 
 
 
