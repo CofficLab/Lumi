@@ -41,6 +41,10 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
         ]
     }
 
+    public func editorPlugins(kernel: LumiKernel) -> [any EditorPlugin] {
+        [DatabaseSQLEditorPlugin()]
+    }
+
     public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
         [
             ViewContainerItem(

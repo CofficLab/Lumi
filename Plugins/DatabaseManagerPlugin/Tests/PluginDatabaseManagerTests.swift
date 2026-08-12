@@ -1,6 +1,23 @@
 import Foundation
+import LumiKernel
 import Testing
 @testable import DatabaseManagerPlugin
+
+@MainActor
+@Test func databasePluginContributesSQLLanguageSupport() {
+    let editorPlugins = DatabaseManagerPlugin().editorPlugins(kernel: LumiKernel())
+
+    #expect(editorPlugins.count == 1)
+    #expect(editorPlugins[0].id == "DatabaseManager.sql-language")
+}
+
+@Test func sqlGrammarProviderExposesBundledHighlightQuery() {
+    let provider = DatabaseSQLGrammarProvider()
+
+    #expect(provider.grammarId == "sql")
+    #expect(provider.treeSitterLanguage() != nil)
+    #expect(provider.highlightQueryURLs().contains { $0.lastPathComponent == "highlights.scm" })
+}
 
 @MainActor
 @Test func demoSQLiteConnectionLoadsDemoTables() async throws {
@@ -835,7 +852,6 @@ private func freshHistoryStore() -> QueryHistoryStore {
     await store.clear()
     #expect((await store.recent(limit: 10)).isEmpty)
 }
-
 
 
 
