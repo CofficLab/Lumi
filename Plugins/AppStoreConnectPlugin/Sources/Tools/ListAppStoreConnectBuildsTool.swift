@@ -35,7 +35,7 @@ struct ListAppStoreConnectBuildsTool: LumiAgentTool {
         }
         let platform = arguments["platform"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
 
         do {

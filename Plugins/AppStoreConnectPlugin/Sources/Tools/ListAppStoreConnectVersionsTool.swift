@@ -26,7 +26,7 @@ struct ListAppStoreConnectVersionsTool: LumiAgentTool {
             return "Missing or empty appID. Pass a valid App Store Connect app identifier."
         }
 
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
 
         do {

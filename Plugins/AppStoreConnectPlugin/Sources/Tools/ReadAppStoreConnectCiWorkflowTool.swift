@@ -25,7 +25,7 @@ struct ReadAppStoreConnectCiWorkflowTool: LumiAgentTool {
         guard let workflowID = arguments["workflowID"]?.stringValue, !workflowID.isEmpty else {
             return "Missing or empty workflowID."
         }
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
         do {
             let wf = try await client.readCiWorkflow(id: workflowID)

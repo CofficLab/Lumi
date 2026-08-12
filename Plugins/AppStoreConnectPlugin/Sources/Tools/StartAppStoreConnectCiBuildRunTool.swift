@@ -28,7 +28,7 @@ struct StartAppStoreConnectCiBuildRunTool: LumiAgentTool {
             return "Missing or empty workflowID."
         }
         let branch = arguments["branch"]?.stringValue ?? ""
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
         do {
             let run = try await client.startCiBuildRun(workflowID: workflowID, branch: branch)

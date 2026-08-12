@@ -25,7 +25,7 @@ struct ListAppStoreConnectLocalizationsTool: LumiAgentTool {
         guard let versionID = arguments["versionID"]?.stringValue, !versionID.isEmpty else {
             return "Missing or empty versionID."
         }
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
         do {
             let localizations = try await client.listLocalizations(versionID: versionID)

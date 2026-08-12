@@ -30,7 +30,7 @@ struct ReleaseAppStoreConnectVersionTool: LumiAgentTool {
               !versionID.isEmpty else {
             return "Missing or empty versionID."
         }
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
         do {
             try await client.releaseVersion(versionID: versionID)

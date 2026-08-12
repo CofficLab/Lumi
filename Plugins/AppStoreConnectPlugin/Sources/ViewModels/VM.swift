@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import LumiKernel
 import os
 import SuperLogKit
 
@@ -109,22 +110,33 @@ final class VM: ObservableObject, SuperLog {
     static let loadingOverlayDelay: Duration = .milliseconds(500)
 
     let credentialStore: CredentialStore
-    let client: ConnectClient
+    private(set) var client: ConnectClient
     let localStore: AppStoreConnectPluginLocalStore
 
     init(
         credentialStore: CredentialStore = .shared,
-        localStore: AppStoreConnectPluginLocalStore = .shared
+        localStore: AppStoreConnectPluginLocalStore = .shared,
+        network: (any NetworkProviding)? = nil
     ) {
         self.credentialStore = credentialStore
         self.localStore = localStore
         let loadedCredentials = credentialStore.load()
         self.credentials = loadedCredentials
         self.hasStoredPrivateKey = !loadedCredentials.privateKey.isEmpty
-        self.client = ConnectClient(credentialsProvider: { credentialStore.load() })
+        if let network {
+            self.client = ConnectClient(credentialsProvider: { credentialStore.load() }, network: network)
+        } else {
+            // Pre-boot construction has no transport. onBoot replaces this with
+            // the Kernel-backed client before the plugin UI can issue requests.
+            self.client = ConnectClient(credentialsProvider: { credentialStore.load() })
+        }
         if loadedCredentials.isComplete {
             connectionStatus = AppStoreConnectLocalization.string("Credentials configured")
         }
+    }
+
+    func configure(network: any NetworkProviding) {
+        client = ConnectClient(credentialsProvider: { [credentialStore] in credentialStore.load() }, network: network)
     }
 
     var filteredApps: [AppStoreApp] {

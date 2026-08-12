@@ -30,7 +30,7 @@ struct SetAppStoreConnectCiWorkflowEnabledTool: LumiAgentTool {
         guard let isEnabled = AppStoreConnectToolSupport.parseBool(arguments["isEnabled"]) else {
             return "Missing or invalid isEnabled. Use true or false."
         }
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
         do {
             let workflow = try await client.updateCiWorkflowEnabled(id: workflowID, isEnabled: isEnabled)

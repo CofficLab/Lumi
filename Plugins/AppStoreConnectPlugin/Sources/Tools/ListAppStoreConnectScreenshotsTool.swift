@@ -25,7 +25,7 @@ struct ListAppStoreConnectScreenshotsTool: LumiAgentTool {
         guard let screenshotSetID = arguments["screenshotSetID"]?.stringValue, !screenshotSetID.isEmpty else {
             return "Missing or empty screenshotSetID."
         }
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
         do {
             let screenshots = try await client.listScreenshots(screenshotSetID: screenshotSetID)

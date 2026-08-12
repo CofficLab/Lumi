@@ -25,7 +25,7 @@ struct ListAppStoreConnectScreenshotSetsTool: LumiAgentTool {
         guard let localizationID = arguments["localizationID"]?.stringValue, !localizationID.isEmpty else {
             return "Missing or empty localizationID."
         }
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
         do {
             let payload = try await client.loadScreenshotSets(localizationID: localizationID)
