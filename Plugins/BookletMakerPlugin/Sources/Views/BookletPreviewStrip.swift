@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 // MARK: - Booklet Preview Strip
@@ -42,8 +43,8 @@ private struct ThumbnailCard: View {
     var body: some View {
         VStack(spacing: 4) {
             Group {
-                if let image = NSImage(contentsOf: thumbnail.fileURL) {
-                    Image(nsImage: image)
+                if let image = LumiPlatformImage(lumiContentsOf: thumbnail.fileURL) {
+                    Image(lumiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(maxHeight: 160)

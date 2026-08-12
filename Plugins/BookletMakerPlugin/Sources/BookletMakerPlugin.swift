@@ -85,6 +85,7 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     // MARK: - Save Panel
 
     private func presentSavePanel() {
+        #if os(macOS)
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.pdf]
         panel.nameFieldStringValue = suggestedFileName()
@@ -93,6 +94,9 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
         if panel.runModal() == .OK, let url = panel.url {
             Task { await sharedViewModel.export(to: url) }
         }
+        #else
+        // iOS: 导出通过 SwiftUI `.fileExporter` 在视图层呈现（Stage 6 接入）。
+        #endif
     }
 
     private func suggestedFileName() -> String {
@@ -101,6 +105,7 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     }
 
     private func presentSplitDirectoryPanel() {
+        #if os(macOS)
         let panel = NSOpenPanel()
         panel.title = BookletLocalization.string("Choose Split PDF Output Folder")
         panel.message = BookletLocalization.string(
@@ -121,6 +126,9 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
                 }
             }
         }
+        #else
+        // iOS: 目录选择通过 SwiftUI `.fileExporter`/文档选择器在视图层呈现（Stage 6 接入）。
+        #endif
     }
 
     // MARK: - LumiPlugin Stubs

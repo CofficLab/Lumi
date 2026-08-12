@@ -1,10 +1,13 @@
-import AppKit
 import Combine
 import CoreGraphics
 import Foundation
 import os
 import SuperLogKit
 import SwiftUI
+
+#if canImport(AppKit)
+import AppKit
+#endif
 
 // MARK: - Booklet Maker View Model
 
@@ -412,8 +415,11 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     // MARK: - Finder helper
 
     /// Reveal a file in Finder. Silently no-ops if Finder can't be reached.
+    /// macOS-only; iOS has no Finder.
     func revealInFinder(_ url: URL) {
+        #if os(macOS)
         NSWorkspace.shared.activateFileViewerSelecting([url])
+        #endif
     }
 
     private func releaseSecurityScope() {

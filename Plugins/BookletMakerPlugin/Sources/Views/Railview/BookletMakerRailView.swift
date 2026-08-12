@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// Shared rail for the PDF toolbox. The current document is global while
@@ -72,7 +73,7 @@ struct BookletMakerRailView: View {
                         RoundedRectangle(cornerRadius: 9)
                             .fill(viewModel.selectedTool == tool
                                   ? Color.accentColor.opacity(0.15)
-                                  : Color(nsColor: .controlBackgroundColor))
+                                  : Color.lumiControlBackground)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 9)
@@ -208,7 +209,7 @@ struct BookletMakerRailView: View {
             .padding(9)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(nsColor: .controlBackgroundColor))
+                    .fill(Color.lumiControlBackground)
             )
 
             if !viewModel.lastSplitOutputURLs.isEmpty {

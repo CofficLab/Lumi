@@ -46,3 +46,36 @@ public enum LumiPasteboard {
         #endif
     }
 }
+
+// MARK: - 跨平台语义色
+
+public extension Color {
+    /// 跨平台"控件背景"语义色（macOS=`.controlBackgroundColor`，iOS=`.secondarySystemBackground`）。
+    static var lumiControlBackground: Color {
+        #if canImport(AppKit)
+        return Color(nsColor: .controlBackgroundColor)
+        #elseif canImport(UIKit)
+        return Color(uiColor: .secondarySystemBackground)
+        #endif
+    }
+
+    /// 跨平台"文本背景"语义色（macOS=`.textBackgroundColor`，iOS=`.systemBackground`）。
+    static var lumiTextBackground: Color {
+        #if canImport(AppKit)
+        return Color(nsColor: .textBackgroundColor)
+        #elseif canImport(UIKit)
+        return Color(uiColor: .systemBackground)
+        #endif
+    }
+}
+
+public extension LumiPlatformImage {
+    /// 从文件 URL 加载图像（macOS=`NSImage(contentsOf:)`，iOS=`UIImage(contentsOfFile:)`）。
+    convenience init?(lumiContentsOf url: URL) {
+        #if canImport(AppKit)
+        self.init(contentsOf: url)
+        #elseif canImport(UIKit)
+        self.init(contentsOfFile: url.path)
+        #endif
+    }
+}

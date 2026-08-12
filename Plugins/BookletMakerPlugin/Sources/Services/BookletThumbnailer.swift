@@ -1,9 +1,14 @@
-import AppKit
 import CoreGraphics
 import Foundation
 import os
 import PDFKit
 import SuperLogKit
+
+#if canImport(AppKit)
+import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - Booklet Thumbnailer
 
@@ -79,25 +84,12 @@ final class BookletThumbnailer: SuperLog, @unchecked Sendable {
             guard pageRect.width > 0, pageRect.height > 0 else { continue }
 
             let scale = maxPixelWidth / pageRect.width
-            let pixelSize = NSSize(width: maxPixelWidth,
+            let pixelSize = CGSize(width: maxPixelWidth,
                                    height: pageRect.height * scale)
 
-            let image = NSImage(size: pixelSize)
-            image.lockFocus()
-            if let ctx = NSGraphicsContext.current?.cgContext {
-                ctx.setFillColor(.white)
-                ctx.fill(CGRect(origin: .zero, size: pixelSize))
-                ctx.saveGState()
-                ctx.scaleBy(x: scale, y: scale)
-                ctx.translateBy(x: -pageRect.minX, y: -pageRect.minY)
-                page.draw(with: .cropBox, to: ctx)
-                ctx.restoreGState()
-            }
-            image.unlockFocus()
-
-            guard let tiff = image.tiffRepresentation,
-                  let rep = NSBitmapImageRep(data: tiff),
-                  let png = rep.representation(using: .png, properties: [:]) else {
+            guard let png = Self.renderThumbnailPNG(
+                page: page, pageRect: pageRect, scale: scale, pixelSize: pixelSize
+            ) else {
                 continue
             }
 
@@ -112,4 +104,52 @@ final class BookletThumbnailer: SuperLog, @unchecked Sendable {
         }
         return results
     }
+
+    // MARK: - Platform PNG render
+
+    /// Render one PDF page to PNG thumbnail data. macOS keeps the original
+    /// `NSImage` + `lockFocus` + `NSBitmapImageRep` pipeline; iOS uses
+    /// `UIGraphicsImageRenderer`. Both draw the page with the same transform.
+    #if canImport(AppKit)
+    private static func renderThumbnailPNG(
+        page: PDFPage, pageRect: CGRect, scale: CGFloat, pixelSize: CGSize
+    ) -> Data? {
+        let image = NSImage(size: pixelSize)
+        image.lockFocus()
+        if let ctx = NSGraphicsContext.current?.cgContext {
+            ctx.setFillColor(.white)
+            ctx.fill(CGRect(origin: .zero, size: pixelSize))
+            ctx.saveGState()
+            ctx.scaleBy(x: scale, y: scale)
+            ctx.translateBy(x: -pageRect.minX, y: -pageRect.minY)
+            page.draw(with: .cropBox, to: ctx)
+            ctx.restoreGState()
+        }
+        image.unlockFocus()
+
+        guard let tiff = image.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff) else {
+            return nil
+        }
+        return rep.representation(using: .png, properties: [:])
+    }
+    #elseif canImport(UIKit)
+    private static func renderThumbnailPNG(
+        page: PDFPage, pageRect: CGRect, scale: CGFloat, pixelSize: CGSize
+    ) -> Data? {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: pixelSize, format: format)
+        return renderer.pngData { uiContext in
+            let ctx = uiContext.cgContext
+            ctx.setFillColor(red: 1, green: 1, blue: 1, alpha: 1)
+            ctx.fill(CGRect(origin: .zero, size: pixelSize))
+            ctx.saveGState()
+            ctx.scaleBy(x: scale, y: scale)
+            ctx.translateBy(x: -pageRect.minX, y: -pageRect.minY)
+            page.draw(with: .cropBox, to: ctx)
+            ctx.restoreGState()
+        }
+    }
+    #endif
 }

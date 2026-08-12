@@ -1,5 +1,4 @@
 import SwiftUI
-import AppKit
 
 // MARK: - Booklet Explanation View
 

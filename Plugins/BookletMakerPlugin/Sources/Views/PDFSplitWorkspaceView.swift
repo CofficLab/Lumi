@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// Visual split editor for the shared current PDF.
@@ -55,7 +56,7 @@ struct PDFSplitWorkspaceView: View {
             .frame(height: 205)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(nsColor: .controlBackgroundColor))
+                    .fill(Color.lumiControlBackground)
             )
         }
     }
@@ -196,7 +197,7 @@ struct PDFSplitWorkspaceView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(Color(nsColor: .controlBackgroundColor))
+                .fill(Color.lumiControlBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10)
