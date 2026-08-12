@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import LumiKernel
 import os
 import SuperLogKit
 
@@ -33,17 +34,28 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
 
     private let baseURL = URL(string: "https://api.appstoreconnect.apple.com")!
     private let credentialsProvider: @Sendable () -> AppStoreConnectCredentials
-    let session: URLSession
+    private let network: (any NetworkProviding)?
     private let cache: ConnectAPICache
     var fetchPolicy: ConnectFetchPolicy = .cacheFirst
 
     init(
         credentialsProvider: @escaping @Sendable () -> AppStoreConnectCredentials,
-        session: URLSession = .shared,
+        network: any NetworkProviding,
         cache: ConnectAPICache = .shared
     ) {
         self.credentialsProvider = credentialsProvider
-        self.session = session
+        self.network = network
+        self.cache = cache
+    }
+
+    /// Creates an unconfigured client for view-model construction before plugin
+    /// boot. Requests fail locally until Kernel network is injected.
+    init(
+        credentialsProvider: @escaping @Sendable () -> AppStoreConnectCredentials,
+        cache: ConnectAPICache = .shared
+    ) {
+        self.credentialsProvider = credentialsProvider
+        self.network = nil
         self.cache = cache
     }
 
@@ -116,13 +128,10 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
 
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AppStoreConnectClientError.invalidResponse
-        }
+        let (data, statusCode) = try await send(request)
 
-        guard (200 ..< 300).contains(httpResponse.statusCode) else {
-            throw AppStoreConnectClientError.requestFailed(apiErrorMessage(from: data, statusCode: httpResponse.statusCode))
+        guard (200 ..< 300).contains(statusCode) else {
+            throw AppStoreConnectClientError.requestFailed(apiErrorMessage(from: data, statusCode: statusCode))
         }
 
         if method == "GET" {
@@ -172,13 +181,10 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
 
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AppStoreConnectClientError.invalidResponse
-        }
+        let (data, statusCode) = try await send(request)
 
-        guard (200 ..< 300).contains(httpResponse.statusCode) else {
-            throw AppStoreConnectClientError.requestFailed(apiErrorMessage(from: data, statusCode: httpResponse.statusCode))
+        guard (200 ..< 300).contains(statusCode) else {
+            throw AppStoreConnectClientError.requestFailed(apiErrorMessage(from: data, statusCode: statusCode))
         }
 
         cache.invalidateAfterMutation(
@@ -213,6 +219,38 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
                 .joined(separator: ": ")
         }
         return AppStoreConnectLocalization.string("App Store Connect request failed with HTTP %d.", statusCode)
+    }
+
+    func send(_ request: URLRequest) async throws -> (data: Data, statusCode: Int) {
+        guard let url = request.url else {
+            throw AppStoreConnectClientError.invalidURL
+        }
+
+        if let network {
+            let kernelRequest = HTTPRequest(
+                url: url,
+                method: HTTPMethod(rawValue: request.httpMethod ?? "GET") ?? .get,
+                headers: request.allHTTPHeaderFields ?? [:],
+                body: request.httpBody,
+                timeout: request.timeoutInterval
+            )
+            do {
+                let response = try await network.request(kernelRequest)
+                return (response.body, response.statusCode)
+            } catch let error as HTTPNetworkError {
+                // NetworkProviding reports non-2xx responses as errors. Preserve
+                // the response payload so App Store Connect API errors keep their
+                // existing user-facing messages.
+                if let statusCode = error.statusCode {
+                    return (error.body ?? Data(), statusCode)
+                }
+                throw error
+            }
+        }
+
+        throw AppStoreConnectClientError.requestFailed(
+            AppStoreConnectLocalization.string("Network service is unavailable.")
+        )
     }
 
     private func makeJWT() throws -> String {

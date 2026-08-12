@@ -32,7 +32,7 @@ struct UpdateAppStoreConnectLocalizationTool: LumiAgentTool {
         guard let localizationID = arguments["localizationID"]?.stringValue, !localizationID.isEmpty else {
             return "Missing or empty localizationID."
         }
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
 
         // Only the fields explicitly provided by the caller are sent in the PATCH body;

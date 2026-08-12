@@ -30,7 +30,7 @@ struct CreateAppStoreConnectScreenshotSetTool: LumiAgentTool {
         guard let displayType = arguments["displayType"]?.stringValue, !displayType.isEmpty else {
             return "Missing or empty displayType."
         }
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
         do {
             let set = try await client.createScreenshotSet(localizationID: localizationID, displayType: displayType)

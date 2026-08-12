@@ -32,7 +32,7 @@ struct ListAppStoreConnectCiBuildRunsTool: LumiAgentTool {
         let parsedLimit = AppStoreConnectToolSupport.parseInt(arguments["limit"]) ?? 20
         let limit = min(max(parsedLimit, 1), 200)
 
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
         do {
             let runs = try await client.listCiBuildRuns(workflowID: workflowID, limit: limit)

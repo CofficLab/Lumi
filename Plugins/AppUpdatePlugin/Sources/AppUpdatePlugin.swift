@@ -37,6 +37,9 @@ public final class AppUpdatePlugin: LumiPlugin {
         // Eagerly touch the singleton so the notification observers are registered.
         // The actual Sparkle controller is lazily initialized on first use.
         let updateService = UpdateService.shared
+        if let network = kernel.network {
+            updateService.configure(network: network)
+        }
 
         // Trigger feed URL detection at app launch.
         // This is a one-shot app-level action handled here in the plugin's

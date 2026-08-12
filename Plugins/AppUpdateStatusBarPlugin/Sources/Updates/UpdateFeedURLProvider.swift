@@ -1,4 +1,5 @@
 import Foundation
+import LumiKernel
 import os
 
 /// Provides the update feed URL, with reachability checking and fallback.
@@ -12,13 +13,13 @@ final class UpdateFeedURLProvider {
     /// Resolves the feed URL from the bundle, checking reachability.
     /// Returns the URL if reachable, `nil` otherwise.
     @MainActor
-    static func resolveFeedURL() async -> URL? {
+    static func resolveFeedURL(network: any NetworkProviding) async -> URL? {
         guard let detectedURL = FeedURLDetector.detectFeedURL() else {
             logger.info("No feed URL detected in bundle")
             return nil
         }
 
-        let isReachable = await FeedURLReachabilityChecker.checkReachability(of: detectedURL)
+        let isReachable = await FeedURLReachabilityChecker.checkReachability(of: detectedURL, network: network)
         guard isReachable else {
             logger.info("Feed URL not reachable: \(detectedURL)")
             return nil

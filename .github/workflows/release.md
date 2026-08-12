@@ -138,8 +138,9 @@ Lumi 走上面的 Developer ID + Notarization 流程。其余独立 app（Bookle
 
 1. commit 推到 `main` → 对应的 `*-tag.yml` workflow 按 scope 计算下一个版本并打 tag。
 2. Xcode Cloud（在 App Store Connect 后台为每个 app 各配一个 workflow）监听对应 tag 前缀触发构建。
-3. `ci_post_clone.sh` 按 `CI_TAG` 前缀分发到对应 `set-*-version.sh`，把版本号写入该 app 的 xcconfig（版本号不进 git 历史）。
-4. Xcode Cloud archive + 上传 TestFlight。
+3. `ci_post_clone.sh` 从脚本自身位置定位仓库根目录，再按 `CI_TAG` 前缀分发到对应 `set-*-version.sh`，把版本号写入该 app 的 xcconfig（版本号不进 git 历史）。发布 tag 下若脚本缺失、版本非法或 `CI_BUILD_NUMBER` 非正整数，构建会立即失败，避免上传错误版本。
+4. 修改版本注入逻辑后，运行 `.github/scripts/test-ci-version-injection.sh` 回归测试；该脚本会模拟 Xcode Cloud 从 `ci_scripts` 目录启动的行为。
+5. Xcode Cloud archive + 上传 TestFlight。
 
 ### 给某个 app 发版
 
@@ -159,4 +160,3 @@ feat(databasemanager): 新增 Redis 连接
 - **触发条件**：New tag，匹配该 app 的 tag 前缀（如 `appicondesigner-v*`）。
 - **Scheme**：对应 app 的 scheme。
 - **脚本**：仓库根 `ci_scripts/` 自动生效（所有 app 共用，通过 `SCHEME_NAME` 环境变量区分）。
-

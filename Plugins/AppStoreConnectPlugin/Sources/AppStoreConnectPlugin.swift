@@ -23,12 +23,20 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: LumiKernel) async throws {
         AppStoreConnectPlugin.bootstrapFromLumiCoreIfNeeded(kernel: kernel)
+        AppStoreConnectToolSupport.configure(network: kernel.network)
+        if let network = kernel.network {
+            VM.shared.configure(network: network)
+            await ScreenshotImageCache.shared.configure(network: network)
+        }
     }
 
-    public func onReady(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: LumiKernel) async throws {
+        await configureNetwork(from: kernel)
+    }
 
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
-        [
+        AppStoreConnectToolSupport.configure(network: kernel.network)
+        return [
             ListAppStoreConnectAppsTool(),
             ListAppStoreConnectVersionsTool(),
             ReadAppStoreConnectVersionTool(),
@@ -54,6 +62,13 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
             StartAppStoreConnectCiBuildRunTool(),
             SetAppStoreConnectCiWorkflowEnabledTool(),
         ]
+    }
+
+    private func configureNetwork(from kernel: LumiKernel) async {
+        AppStoreConnectToolSupport.configure(network: kernel.network)
+        guard let network = kernel.network else { return }
+        VM.shared.configure(network: network)
+        await ScreenshotImageCache.shared.configure(network: network)
     }
 
     // MARK: - LumiPlugin stubs

@@ -25,7 +25,7 @@ struct ListAppStoreConnectCiWorkflowsTool: LumiAgentTool {
         guard let productID = arguments["productID"]?.stringValue, !productID.isEmpty else {
             return "Missing or empty productID."
         }
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
         do {
             let workflows = try await client.listCiWorkflows(productID: productID)

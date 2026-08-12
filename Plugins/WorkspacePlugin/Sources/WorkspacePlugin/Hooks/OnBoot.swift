@@ -45,11 +45,14 @@ public struct LayoutKernelOnBootHook: SuperLog {
                 manager.restoreRailDivider(position, for: containerID)
             }
             for (key, position) in info.chatSectionDividers {
-                let parts = key.split(separator: ".", maxSplits: 1).map(String.init)
-                guard parts.count == 2,
-                      let layout = LumiChatSectionLayout.from(persistenceKeySuffix: parts[1])
+                // key 形如 "<containerID>.<layoutSuffix>"，容器 ID 本身含点（反域名格式），
+                // 必须从最后一个 "." 处切分，否则后缀解析失败导致该记录被丢弃。
+                guard let dotIndex = key.lastIndex(of: ".") else { continue }
+                let containerID = String(key[key.startIndex..<dotIndex])
+                let suffix = String(key[key.index(after: dotIndex)...])
+                guard let layout = LumiChatSectionLayout.from(persistenceKeySuffix: suffix)
                 else { continue }
-                manager.restoreChatSectionDivider(position, for: parts[0], layout: layout)
+                manager.restoreChatSectionDivider(position, for: containerID, layout: layout)
             }
             for (containerID, position) in info.bottomPanelDividers {
                 manager.restoreBottomPanelDivider(position, for: containerID)

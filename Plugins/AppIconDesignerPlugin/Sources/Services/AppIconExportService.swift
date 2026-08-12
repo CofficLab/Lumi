@@ -172,6 +172,15 @@ public struct AppIconExportService {
         return try pngData(cgImage: cgImage)
     }
 
+    /// Normalizes a source image to a square 1024px artwork for Icon Composer.
+    public func renderSourcePNG(sourceImagePath: String, pixelSize: Int = 1024) throws -> Data {
+        let sourceURL = URL(fileURLWithPath: sourceImagePath)
+        guard let image = NSImage(contentsOf: sourceURL), let cgImage = image.normalizedSquareCGImage() else {
+            throw AppIconExportError.invalidSourceImage(sourceImagePath)
+        }
+        return try renderPNG(cgImage: cgImage, pixelSize: min(max(pixelSize, 1), 4096))
+    }
+
     private static func safeSetName(_ name: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
         let safe = name

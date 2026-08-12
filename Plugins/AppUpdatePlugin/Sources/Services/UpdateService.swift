@@ -29,7 +29,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     public private(set) var updaterController: SPUStandardUpdaterController?
 
     /// Feed URL detector (actor). Network probes run off the main actor.
-    private let feedURLDetector = FeedURLDetector(initialURL: UpdateFeedURLProvider.primary)
+    private var feedURLDetector: FeedURLDetector?
 
     /// Update lifecycle state machine (tracks state + version only).
     private let stateMachine = UpdateServiceStateMachine()
@@ -70,6 +70,13 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
 
     // MARK: - Public API
 
+    public func configure(network: any NetworkProviding) {
+        feedURLDetector = FeedURLDetector(
+            initialURL: UpdateFeedURLProvider.primary,
+            reachabilityChecker: KernelNetworkReachabilityChecker(network: network)
+        )
+    }
+
     /// Lazily initialize the Sparkle updater controller.
     ///
     /// The original implementation deferred initialization to avoid blocking the
@@ -99,6 +106,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     /// initialization hops back to the main actor.
     public func setupFeedURLIfNeeded() {
         guard LumiRuntimeEnvironment.current.allowsAppUpdates else { return }
+        guard let feedURLDetector else { return }
         Task.detached(priority: .utility) { [feedURLDetector] in
             await feedURLDetector.detectIfNeeded()
             let url = await feedURLDetector.resolvedFeedURL

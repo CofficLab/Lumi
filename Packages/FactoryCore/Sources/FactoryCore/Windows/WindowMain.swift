@@ -19,15 +19,22 @@ public struct WindowMain: View, SuperLog {
     @State private var windowSaveDelegate: EditorWindowSaveDelegate?
     @State private var mainWindow: NSWindow?
     private let configuration: FactoryConfiguration
+    private let loadingView: AnyView
 
     public init(configuration: FactoryConfiguration) {
         self.configuration = configuration
+        self.loadingView = AnyView(LoadingView())
+    }
+
+    init(configuration: FactoryConfiguration, loadingView: AnyView) {
+        self.configuration = configuration
+        self.loadingView = loadingView
     }
 
     public var body: some View {
         Group {
             if isInitializing {
-                LoadingView()
+                loadingView
             } else if let error = initializationError {
                 CrashedView(error: error)
             } else if let kernel = kernel {

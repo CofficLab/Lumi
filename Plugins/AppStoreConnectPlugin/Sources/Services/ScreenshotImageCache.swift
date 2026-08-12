@@ -26,20 +26,21 @@ actor ScreenshotImageCache {
     }()
 
     private let diskStore: ScreenshotCacheDiskStore
-    private let session: URLSession
+    private var network: (any NetworkProviding)?
     private let memoryCache = MemoryDataCache(limit: ScreenshotCacheConfiguration.memoryCostLimit)
     private var inFlightTasks: [String: Task<Data, Error>] = [:]
 
-    init(rootDirectory: URL, session: URLSession? = nil, diskStore: ScreenshotCacheDiskStore? = nil) {
+    init(
+        rootDirectory: URL,
+        network: (any NetworkProviding)? = nil,
+        diskStore: ScreenshotCacheDiskStore? = nil
+    ) {
         self.diskStore = diskStore ?? ScreenshotCacheDiskStore(rootDirectory: rootDirectory)
-        if let session {
-            self.session = session
-        } else {
-            let configuration = URLSessionConfiguration.ephemeral
-            configuration.timeoutIntervalForRequest = ScreenshotCacheConfiguration.networkTimeout
-            configuration.timeoutIntervalForResource = ScreenshotCacheConfiguration.networkTimeout
-            self.session = URLSession(configuration: configuration)
-        }
+        self.network = network
+    }
+
+    func configure(network: any NetworkProviding) {
+        self.network = network
     }
 
     func data(for url: URL, screenshotID: String? = nil) async throws -> Data {
@@ -127,12 +128,18 @@ actor ScreenshotImageCache {
     }
 
     private func fetchFromNetwork(url: URL) async throws -> Data {
-        let (data, response) = try await session.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200 ..< 300).contains(httpResponse.statusCode) else {
-            throw ScreenshotImageCacheError.invalidResponse
+        if let network {
+            do {
+                return try await network.get(
+                    url: url,
+                    timeout: ScreenshotCacheConfiguration.networkTimeout
+                ).body
+            } catch {
+                throw ScreenshotImageCacheError.invalidResponse
+            }
         }
-        return data
+
+        throw ScreenshotImageCacheError.invalidResponse
     }
 
     private func isValidImageData(_ data: Data) -> Bool {

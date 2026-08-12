@@ -2,13 +2,22 @@ import Foundation
 import LumiKernel
 
 enum AppStoreConnectToolSupport {
-    static func makeClient() -> (client: ConnectClient?, errorMessage: String?) {
+    private static let networkHolder = AppStoreConnectNetworkHolder()
+
+    static func configure(network: (any NetworkProviding)?) {
+        networkHolder.set(network)
+    }
+
+    static func makeClient(kernel _: LumiKernel) -> (client: ConnectClient?, errorMessage: String?) {
         let credentialStore = CredentialStore.shared
         let credentials = credentialStore.load()
         guard credentials.isComplete else {
             return (nil, "App Store Connect credentials are incomplete. Configure issuer ID, key ID, and private key in the App Store plugin settings first.")
         }
-        return (ConnectClient(credentialsProvider: { credentialStore.load() }), nil)
+        guard let network = networkHolder.get() else {
+            return (nil, "Network service is unavailable.")
+        }
+        return (ConnectClient(credentialsProvider: { credentialStore.load() }, network: network), nil)
     }
 
     static func parseInt(_ value: LumiJSONValue?) -> Int? {
@@ -33,5 +42,18 @@ enum AppStoreConnectToolSupport {
             }
         }
         return nil
+    }
+}
+
+private final class AppStoreConnectNetworkHolder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var network: (any NetworkProviding)?
+
+    func set(_ network: (any NetworkProviding)?) {
+        lock.withLock { self.network = network }
+    }
+
+    func get() -> (any NetworkProviding)? {
+        lock.withLock { network }
     }
 }

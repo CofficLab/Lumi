@@ -29,7 +29,7 @@ struct ListAppStoreConnectAppsTool: LumiAgentTool {
         let rawLimit = AppStoreConnectToolSupport.parseInt(arguments["limit"])
         let limit = min(max(rawLimit ?? 20, 1), 100)
 
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
 
         do {

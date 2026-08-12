@@ -16,42 +16,61 @@ public struct LayoutMenuButton: View {
         self._kernel = ObservedObject(wrappedValue: kernel)
     }
 
+    private var chatVisibility: ViewContainerVisibility {
+        kernel.workspace?.currentViewContainer?.chatVisibility ?? .unsupported
+    }
+
+    private var panelBottomVisibility: ViewContainerVisibility {
+        kernel.workspace?.currentViewContainer?.panelBottomVisibility ?? .unsupported
+    }
+
+    private var hasAdjustableLayoutItem: Bool {
+        chatVisibility.allowsUserVisibilityOverride
+            || panelBottomVisibility.allowsUserVisibilityOverride
+    }
+
     public var body: some View {
         let layoutManager = kernel.workspace
 
-        return AppIconButton(
-            systemImage: "sidebar.leading",
-            isActive: isPopoverPresented
-        ) {
-            isPopoverPresented.toggle()
-        }
-        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            VStack(alignment: .leading, spacing: 0) {
-                AppToggleRow(
-                    title: LocalizedStringKey(LumiPluginLocalization.string("Right Sidebar")),
-                    systemImage: "rectangle.rightthird.inset.filled",
-                    isOn: Binding(
-                        get: { layoutManager?.isChatVisible ?? true },
-                        set: { layoutManager?.setChatVisible($0) }
-                    )
-                )
+        if hasAdjustableLayoutItem {
+            AppIconButton(
+                systemImage: "sidebar.leading",
+                isActive: isPopoverPresented
+            ) {
+                isPopoverPresented.toggle()
+            }
+            .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+                VStack(alignment: .leading, spacing: 0) {
+                    if chatVisibility.allowsUserVisibilityOverride {
+                        AppToggleRow(
+                            title: LocalizedStringKey(LumiPluginLocalization.string("Right Sidebar")),
+                            systemImage: "rectangle.rightthird.inset.filled",
+                            isOn: Binding(
+                                get: { layoutManager?.isChatVisible ?? true },
+                                set: { layoutManager?.setChatVisible($0) }
+                            )
+                        )
+                    }
 
-                AppToggleRow(
-                    title: LocalizedStringKey(LumiPluginLocalization.string("Bottom Panel")),
-                    systemImage: "rectangle.bottomthird.inset.filled",
-                    isOn: Binding(
-                        get: { layoutManager?.isPanelBottomVisible ?? true },
-                        set: { layoutManager?.setPanelBottomVisible($0) }
-                    )
-                )
+                    if panelBottomVisibility.allowsUserVisibilityOverride {
+                        AppToggleRow(
+                            title: LocalizedStringKey(LumiPluginLocalization.string("Bottom Panel")),
+                            systemImage: "rectangle.bottomthird.inset.filled",
+                            isOn: Binding(
+                                get: { layoutManager?.isPanelBottomVisible ?? true },
+                                set: { layoutManager?.setPanelBottomVisible($0) }
+                            )
+                        )
+                    }
+                }
+                .frame(minWidth: 220, alignment: .leading)
+                .appSurface(style: .popover, cornerRadius: 8, borderColor: theme.divider)
+                .appThemedAppearance()
+                .background {
+                    ThemeWindowAppearanceBridge()
+                }
             }
-            .frame(minWidth: 220, alignment: .leading)
-            .appSurface(style: .popover, cornerRadius: 8, borderColor: theme.divider)
-            .appThemedAppearance()
-            .background {
-                ThemeWindowAppearanceBridge()
-            }
+            .help(LumiPluginLocalization.string("Layout"))
         }
-        .help(LumiPluginLocalization.string("Layout"))
     }
 }

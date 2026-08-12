@@ -1,5 +1,4 @@
 import Foundation
-import HttpKit
 import LLMKit
 import LumiKernel
 import SuperLogKit
@@ -23,6 +22,10 @@ enum TokenPlanService: SuperLog {
 
     /// 获取 Token Plan 配额
     static func fetchTokenPlan(network: (any NetworkProviding)? = nil) async -> TokenPlanStatus {
+        guard let network else {
+            return .unavailable
+        }
+
         let tokenPlanURL = "https://www.minimaxi.com/v1/token_plan/remains"
 
         if Self.verbose { Self.logger.info("\(Self.t)开始查询 Token Plan 配额 url=\(tokenPlanURL)") }
@@ -46,38 +49,27 @@ enum TokenPlanService: SuperLog {
         request.timeoutInterval = timeout
 
         do {
-            let data: Data
-            let statusCode: Int
-            if let network {
-                let response = try await network.request(HTTPRequest(
-                    url: url,
-                    method: .get,
-                    headers: request.allHTTPHeaderFields ?? [:],
-                    timeout: timeout
-                ))
-                data = response.body
-                statusCode = response.statusCode
-            } else {
-                let client = HTTPClient(timeoutIntervalForRequest: timeout, timeoutIntervalForResource: timeout)
-                let result = try await client.sendRequestWithResponse(request: request)
-                data = result.0
-                statusCode = result.1.statusCode
-            }
+            let response = try await network.request(HTTPRequest(
+                url: url,
+                method: .get,
+                headers: request.allHTTPHeaderFields ?? [:],
+                timeout: timeout
+            ))
+            let data = response.body
+            let statusCode = response.statusCode
 
             // 响应体日志、JSON 解析和模型构造都放到 utility 任务，避免网络返回后占用主线程。
             return await Task.detached(priority: .utility) {
                 Self.processResponse(data: data, statusCode: statusCode)
             }.value
 
-        } catch let error as HTTPClientError {
-            if case let .httpError(statusCode, message) = error {
-                if statusCode == 401 || statusCode == 403 {
-                    if Self.verbose { Self.logger.warning("\(Self.t)HTTP \(statusCode)，返回认证失败 message=\(message)") }
-                    return .authError
-                }
-                if Self.verbose { Self.logger.error("\(Self.t)HTTP 请求失败，返回配额不可用 statusCode=\(statusCode) message=\(message)") }
-            } else if Self.verbose {
-                Self.logger.error("\(Self.t)HTTP 客户端错误，返回配额不可用 error=\(String(describing: error))")
+        } catch let error as HTTPNetworkError {
+            if error.statusCode == 401 || error.statusCode == 403 {
+                if Self.verbose { Self.logger.warning("\(Self.t)HTTP \(error.statusCode ?? 0)，返回认证失败") }
+                return .authError
+            }
+            if Self.verbose {
+                Self.logger.error("\(Self.t)HTTP 请求失败，返回配额不可用 error=\(String(describing: error))")
             }
             return .unavailable
         } catch {

@@ -7,7 +7,8 @@ import SwiftUI
 /// Message List V1 View (brief / 简洁模式)
 ///
 /// 每个 AgentTurn 渲染成一组:触发该 turn 的用户消息 + 稳定的 turn 容器。
-/// 运行中容器展示 status、思考、工具调用/结果及流式正文；turn 结束时动画折叠，
+/// 运行中容器展示 status、思考、工具调用及流式正文（隐藏工具原始输出）；
+/// turn 结束时动画折叠，
 /// 只保留最终回复。历史终态 turn 首次加载时直接显示结果。
 struct ListV1View: View, SuperLog {
     nonisolated static let logger = MessageListPlugin.logger
@@ -173,7 +174,7 @@ struct ListV1View: View, SuperLog {
         }
     }
 
-    /// 每个 turn 渲染成一组:用户消息(若有) + 稳定的动态/结果容器。
+    /// List 只排列多个 AgentTurnView；消息展示完全由 AgentTurnView 负责。
     @ViewBuilder
     private func historyRows(proxy: ScrollViewProxy) -> some View {
         if turnViewModel.hasEarlierTurns {
@@ -183,50 +184,14 @@ struct ListV1View: View, SuperLog {
             .plainMessageListRow(insets: EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
         }
 
-        ForEach(turnViewModel.items) { item in
-            // 用户消息:turn 的提问(按时间回溯匹配,可能为 nil)。
-            if let userMessage = item.userMessage {
-                MessageRowView(
-                    kernel: kernel,
-                    message: userMessage,
-                    verbosity: verbosity
-                )
-                .id(userMessage.id)
-                .plainMessageListRow()
-            }
-
-            // 稳定的 turn 容器：进行中展示过程，完成时折叠为最终结果。
-            AgentTurnV1View(
+        ForEach(turnViewModel.agentTurns) { item in
+            AgentTurnView(
                 kernel: kernel,
                 item: item,
-                streamingMessage: turnViewModel.liveStreamingMessage(for: item),
+                lastAgentTurnID: turnViewModel.agentTurns.last?.id,
                 verbosity: verbosity
             )
             .id(item.id)
-            .plainMessageListRow()
-        }
-
-        // 用户消息会先于 AgentTurnRecord 落库；在 Turn 出现前立即作为稳定尾行展示。
-        // Turn 建立后 ViewModel 会用同一个消息 ID 将其归入对应 Turn，避免重复。
-        ForEach(turnViewModel.pendingUserMessages) { userMessage in
-            MessageRowView(
-                kernel: kernel,
-                message: userMessage,
-                verbosity: verbosity
-            )
-            .id(userMessage.id)
-            .plainMessageListRow()
-        }
-
-        // Status 比 AgentTurnRecord 更早到达；先作为尾部反馈展示，Turn 出现后
-        // ViewModel 会把它移入对应的动态过程区域。
-        if let statusMessage = turnViewModel.pendingStatusMessage {
-            MessageRowView(
-                kernel: kernel,
-                message: statusMessage,
-                verbosity: verbosity
-            )
-            .id(statusMessage.id)
             .plainMessageListRow()
         }
     }

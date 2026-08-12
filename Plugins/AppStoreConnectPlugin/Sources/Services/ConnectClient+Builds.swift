@@ -21,8 +21,9 @@ extension ConnectClient {
                 value: "version,uploadedDate,expirationDate,expired,minOsVersion,processingState,usesNonExemptEncryption,preReleaseVersion"
             ),
             URLQueryItem(name: "include", value: "preReleaseVersion"),
-            URLQueryItem(name: "fields[preReleaseVersions]", value: "version,platform"),
-            URLQueryItem(name: "limit[preReleaseVersions]", value: "1")
+            URLQueryItem(name: "fields[preReleaseVersions]", value: "version,platform")
+            // 注意：不要加 limit[preReleaseVersion]——该关系是 to-one，
+            // 服务端会拒绝：to-one relationship can not have a limit applied
         ]
         if let platform, !platform.isEmpty {
             query.append(URLQueryItem(name: "filter[preReleaseVersion.platform]", value: platform.normalizedASCPlatform))

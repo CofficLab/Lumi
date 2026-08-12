@@ -44,7 +44,7 @@ struct UploadAppStoreConnectScreenshotTool: LumiAgentTool {
             return "File not found: \(filePath)"
         }
 
-        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient()
+        let (client, errorMessage) = AppStoreConnectToolSupport.makeClient(kernel: kernel)
         guard let client else { return errorMessage ?? "Failed to initialize App Store Connect client." }
 
         do {

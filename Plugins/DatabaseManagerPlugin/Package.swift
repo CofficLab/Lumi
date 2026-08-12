@@ -17,6 +17,9 @@ let package = Package(
         .package(path: "../../Packages/LumiKernel"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/EditorSource"),
+        .package(path: "../../Packages/EditorLanguageRuntime"),
+        .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/KeychainKit"),
         .package(url: "https://github.com/vapor/mysql-nio", from: "1.9.0"),
@@ -30,7 +33,12 @@ let package = Package(
             name: "DatabaseManagerPlugin",
             dependencies: [
                 .product(name: "LumiKernel", package: "LumiKernel"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "EditorSource", package: "EditorSource"),
+                .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
+                .product(name: "EditorService", package: "EditorService"),
+                "TreeSitterSQL",
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "KeychainKit", package: "KeychainKit"),
                 .product(name: "MySQLNIO", package: "mysql-nio"),
@@ -41,9 +49,17 @@ let package = Package(
                 .product(name: "Logging", package: "swift-log"),
             ],
             path: "Sources",
+            exclude: ["TreeSitterSQL"],
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../Resources/Localizable.xcstrings"),
+                .copy("Resources/tree-sitter-sql")
             ]
+        ),
+        .target(
+            name: "TreeSitterSQL",
+            path: "Sources/TreeSitterSQL",
+            publicHeadersPath: "include",
+            cSettings: [.headerSearchPath("vendored-headers")]
         ),
         .testTarget(
             name: "DatabaseManagerPluginTests",

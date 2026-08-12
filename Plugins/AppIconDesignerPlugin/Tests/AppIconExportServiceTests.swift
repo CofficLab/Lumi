@@ -6,6 +6,55 @@ import Foundation
 @MainActor
 @Suite("PluginAppIconDesigner")
 struct AppIconExportServiceTests {
+    @Test("exports an Xcode 26 Icon Composer package")
+    func exportsIconComposerPackage() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PluginIconComposerTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+        let document = IconDocument(
+            title: "Cross-version Icon",
+            background: .linearGradient(
+                colors: ["#111827", "#2563eb"],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            layers: [
+                IconLayer(
+                    name: "Mark",
+                    shape: .circle(cx: 512, cy: 512, radius: 240),
+                    fill: .color("#ffffff")
+                )
+            ]
+        )
+
+        let result = try IconComposerExportService().export(
+            document: document,
+            outputDirectory: tempRoot
+        )
+
+        let manifestURL = result.iconURL.appendingPathComponent("icon.json")
+        let artworkURL = result.iconURL.appendingPathComponent("Assets/Artwork.png")
+        #expect(result.iconURL.lastPathComponent == "AppIcon.icon")
+        #expect(FileManager.default.fileExists(atPath: manifestURL.path))
+        #expect(FileManager.default.fileExists(atPath: artworkURL.path))
+
+        let object = try #require(
+            JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any]
+        )
+        let platforms = try #require(object["supported-platforms"] as? [String: Any])
+        #expect(platforms["squares"] as? [String] == ["macOS"])
+
+        let groups = try #require(object["groups"] as? [[String: Any]])
+        let layers = try #require(groups.first?["layers"] as? [[String: Any]])
+        #expect(layers.first?["image-name"] as? String == "Artwork.png")
+
+        let bitmap = try #require(NSBitmapImageRep(data: Data(contentsOf: artworkURL)))
+        #expect(bitmap.pixelsWide == 1024)
+        #expect(bitmap.pixelsHigh == 1024)
+    }
+
     @Test("exports macOS appiconset")
     func exportsAppIconSet() throws {
         let tempRoot = FileManager.default.temporaryDirectory

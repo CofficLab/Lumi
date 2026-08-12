@@ -4,14 +4,6 @@ import LumiKernel
 import os
 import SuperLogKit
 
-private struct MessageListV1Presentation: Equatable {
-    var turnItems: [AgentTurnSummaryItem] = []
-    /// 已落库、但尚未被当前可见 AgentTurn 认领的用户消息。
-    var pendingUserMessages: [LumiChatMessage] = []
-    /// AgentTurnRecord 尚未出现时，立即展示 MessageManager 中的最新瞬时状态。
-    var pendingStatusMessage: LumiChatMessage?
-}
-
 /// V1-only data source that pages AgentTurns and projects each turn into a
 /// live process plus terminal result. Persisted process messages are rebuilt
 /// with the turn snapshot; high-frequency streaming text is published separately.
@@ -21,12 +13,14 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
     nonisolated static let emoji = "📑"
     nonisolated static let verbose = false
 
-    @Published private var presentation = MessageListV1Presentation()
+    @Published private var presentation = ListV1Presentation()
     @Published private(set) var isLoading = true
     @Published private(set) var isLoadingEarlier = false
     @Published private(set) var hasEarlierTurns = false
-    /// 当前会话的流式助手消息。独立于持久化投影，逐 token 只更新活跃 Turn。
-    @Published private(set) var streamingMessage: LumiChatMessage?
+    /// 仅供分页/滚动与既有回归测试使用，不传给 AgentTurnView。
+    private var summaryItems: [AgentTurnSummaryItem] = []
+    private var pendingUserSnapshot: [LumiChatMessage] = []
+    private var pendingStatusSnapshot: LumiChatMessage?
 
     private let kernel: LumiKernel
     private let builder = AgentTurnSummaryBuilder()
@@ -40,32 +34,31 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
     private var cancellables: Set<AnyCancellable> = []
     private var didBindMessageNotifications = false
     private var didBindServices = false
-    private var didBindStreaming = false
-    private var streamingRefreshTask: Task<Void, Never>?
 
     init(kernel: LumiKernel, pageSize: Int = 40) {
         self.kernel = kernel
         self.pageSize = pageSize
     }
 
-    var items: [AgentTurnSummaryItem] { presentation.turnItems }
-    var pendingUserMessages: [LumiChatMessage] { presentation.pendingUserMessages }
-    var pendingStatusMessage: LumiChatMessage? { presentation.pendingStatusMessage }
+    /// ListV1View 的唯一数据源：每一项都对应一个 AgentTurnView。
+    var agentTurns: [AgentTurnPresentationItem] { presentation.agentTurns }
+
+    // 旧粒度只读访问器仅保留给现有行为回归测试；视图层不得使用。
+    var items: [AgentTurnSummaryItem] { summaryItems }
+    var pendingUserMessages: [LumiChatMessage] { pendingUserSnapshot }
+    var pendingStatusMessage: LumiChatMessage? { pendingStatusSnapshot }
     /// 供滚动辅助器与“自己刚发送”检测使用的完整可见消息序列。
     var displayMessages: [LumiChatMessage] {
-        let turnMessages = presentation.turnItems.flatMap { item in
-            if let userMessage = item.userMessage {
-                return [userMessage, item.message]
-            }
-            return [item.message]
+        let turnMessages = summaryItems.flatMap { item in
+            (item.userMessage.map { [$0] } ?? []) + [item.message]
         }
-        let pendingStatus = presentation.pendingStatusMessage.map { [$0] } ?? []
-        return (turnMessages + presentation.pendingUserMessages + pendingStatus)
-            .sorted(by: messageOrdering)
+        return turnMessages
+            + pendingUserSnapshot
+            + (pendingStatusSnapshot.map { [$0] } ?? [])
+        .sorted(by: messageOrdering)
     }
-    var hasVisibleContent: Bool {
-        !items.isEmpty || !pendingUserMessages.isEmpty || pendingStatusMessage != nil
-    }
+
+    var hasVisibleContent: Bool { !agentTurns.isEmpty }
 
     /// 用户当前选中的对话 ID（来自内核状态，反映真实意图）。
     /// 用于替代 `activeConversationID` 做过期守卫，避免并发 `activate` 导致竞态。
@@ -83,7 +76,6 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
         let mySequence = activationSequence
 
         activeConversationID = conversationID
-        streamingMessage = nil
         isLoading = true
         defer { isLoading = false }
 
@@ -92,7 +84,10 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
             // 无对话 ID 或无 turnManager 时，清空状态
             if mySequence == activationSequence {
                 records = []
-                presentation = MessageListV1Presentation()
+                presentation = ListV1Presentation()
+                summaryItems = []
+                pendingUserSnapshot = []
+                pendingStatusSnapshot = nil
                 hasEarlierTurns = false
             }
             return
@@ -114,7 +109,6 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
             Self.logger.info("\(self.t)Turn 记录加载完成: \(self.records.count) 条")
         }
         await rebuildItems(for: conversationID, sequence: mySequence)
-        applyStreamingState()
     }
 
     /// Refreshes the newest Turn page while retaining any earlier pages the
@@ -158,7 +152,7 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
               !isLoadingEarlier,
               let conversationID = activeConversationID,
               let cursor = records.last?.id,
-              let anchorID = items.first?.id,
+              let anchorID = agentTurns.first?.id,
               let turnManager = kernel.agentTurnManager else { return nil }
 
         isLoadingEarlier = true
@@ -188,7 +182,10 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
     private func rebuildItems(for conversationID: UUID, sequence: UInt64) async {
         guard let messageManager = kernel.messageManager else {
             if sequence == activationSequence {
-                presentation = MessageListV1Presentation()
+                presentation = ListV1Presentation()
+                summaryItems = []
+                pendingUserSnapshot = []
+                pendingStatusSnapshot = nil
             }
             return
         }
@@ -216,11 +213,32 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
         let pendingStatusMessage = hasActiveTurn
             ? nil
             : messages.last(where: { $0.role == .status })
-        presentation = MessageListV1Presentation(
-            turnItems: turnItems,
-            pendingUserMessages: pendingUserMessages,
-            pendingStatusMessage: pendingStatusMessage
-        )
+        let latestActiveTurnID = turnItems.last(where: \.isShowingProcess)?.id
+        var agentTurns = turnItems.map {
+            AgentTurnPresentationItem(
+                recorded: $0,
+                acceptsLiveActivity: $0.id == latestActiveTurnID
+            )
+        }
+        if !pendingUserMessages.isEmpty {
+            for (index, userMessage) in pendingUserMessages.enumerated() {
+                agentTurns.append(AgentTurnPresentationItem(
+                    pendingUserMessages: [userMessage],
+                    statusMessage: index == pendingUserMessages.indices.last
+                        ? pendingStatusMessage
+                        : nil
+                ))
+            }
+        } else if let pendingStatusMessage {
+            agentTurns.append(AgentTurnPresentationItem(
+                pendingUserMessages: [],
+                statusMessage: pendingStatusMessage
+            ))
+        }
+        summaryItems = turnItems
+        pendingUserSnapshot = pendingUserMessages
+        pendingStatusSnapshot = pendingStatusMessage
+        presentation = ListV1Presentation(agentTurns: agentTurns)
     }
 
     private func newestRecordFirst(_ lhs: AgentTurnRecord, _ rhs: AgentTurnRecord) -> Bool {
@@ -231,14 +249,6 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
     private func messageOrdering(_ lhs: LumiChatMessage, _ rhs: LumiChatMessage) -> Bool {
         if lhs.createdAt == rhs.createdAt { return lhs.id.uuidString < rhs.id.uuidString }
         return lhs.createdAt < rhs.createdAt
-    }
-
-    /// 只有最新的未结束 Turn 消费当前会话的流式消息，防止它串到历史 Turn。
-    func liveStreamingMessage(for item: AgentTurnSummaryItem) -> LumiChatMessage? {
-        guard item.isShowingProcess,
-              items.last(where: \.isShowingProcess)?.id == item.id,
-              streamingMessage?.conversationID == item.record.conversationID else { return nil }
-        return streamingMessage
     }
 
     private func bindServicesIfNeeded() {
@@ -275,42 +285,5 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
             didBindServices = true
         }
 
-        guard !didBindStreaming, let streaming = kernel.messageStreaming else { return }
-        streaming.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.scheduleStreamingRefresh()
-            }
-            .store(in: &cancellables)
-        didBindStreaming = true
-    }
-
-    /// 合并高频 token 广播，最多每帧更新一次 V1 活跃 Turn。
-    private func scheduleStreamingRefresh() {
-        guard streamingRefreshTask == nil else { return }
-        streamingRefreshTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 16_000_000)
-            guard !Task.isCancelled, let self else { return }
-            self.streamingRefreshTask = nil
-            self.applyStreamingState()
-        }
-    }
-
-    private func applyStreamingState() {
-        guard let conversationID = activeConversationID,
-              selectedConversationID == conversationID,
-              let streaming = kernel.messageStreaming else {
-            streamingMessage = nil
-            return
-        }
-        let stage = streaming.streamingStage(for: conversationID)
-        let row = streaming.streamingRow(for: conversationID)
-        if (stage == .thinking || stage == .generating),
-           let row,
-           row.conversationID == conversationID {
-            streamingMessage = row
-        } else {
-            streamingMessage = nil
-        }
     }
 }

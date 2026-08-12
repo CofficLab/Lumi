@@ -190,8 +190,8 @@ struct MessageListV1SwitchBlankReproTests {
         expectConsistent(viewModel, selectedID: shortID, sourceComment: "加载完成后")
     }
 
-    @Test("流式消息只挂到当前最新的运行中 Turn")
-    func streamingMessageBelongsToLatestRunningTurn() async throws {
+    @Test("只有当前最新的运行中 Turn 接收实时活动")
+    func onlyLatestRunningTurnAcceptsLiveActivity() async throws {
         let messages = MockMessageManager()
         let conversations = MockConversationManager()
         let turnManager = MockAgentTurnManager()
@@ -225,19 +225,10 @@ struct MessageListV1SwitchBlankReproTests {
 
         conversations.selectedConversationID = conversationID
         await viewModel.activate(conversationID: conversationID)
-        let live = LumiChatMessage(
-            id: LumiStreamingRowID,
-            conversationID: conversationID,
-            role: .assistant,
-            content: "正在生成"
-        )
-        streaming.inject(row: live, stage: .generating, conversationID: conversationID)
-        try await Task.sleep(nanoseconds: 30_000_000)
-
-        let older = try #require(viewModel.items.first { $0.id == olderTurnID })
-        let active = try #require(viewModel.items.first { $0.id == activeTurnID })
-        #expect(viewModel.liveStreamingMessage(for: older) == nil)
-        #expect(viewModel.liveStreamingMessage(for: active)?.id == LumiStreamingRowID)
+        let older = try #require(viewModel.agentTurns.first { $0.id == olderTurnID })
+        let active = try #require(viewModel.agentTurns.first { $0.id == activeTurnID })
+        #expect(older.acceptsLiveActivity == false)
+        #expect(active.acceptsLiveActivity == true)
     }
 
     @Test("用户消息先落库时立即展示,Turn 出现后无重复")
@@ -405,5 +396,49 @@ struct MessageListV1SwitchBlankReproTests {
 
         #expect(viewModel.pendingStatusMessage == nil)
         #expect(viewModel.items.first?.processMessages.map(\.id) == [status.id])
+    }
+
+    @Test("V1 列表统一输出 AgentTurn 展示项")
+    func listProjectsPendingAndRecordedAgentTurns() async throws {
+        let messages = MockMessageManager()
+        let conversations = MockConversationManager()
+        let turnManager = MockAgentTurnManager()
+        let conversationID = UUID()
+        let userMessage = LumiChatMessage(
+            conversationID: conversationID,
+            role: .user,
+            content: "保持同一个 Turn View",
+            createdAt: Date(timeIntervalSinceReferenceDate: 4_000)
+        )
+        messages.seed([userMessage], conversationID: conversationID)
+        let kernel = try makeKernel(
+            messages: messages,
+            conversations: conversations,
+            turnManager: turnManager
+        )
+        let viewModel = ListV1ViewModel(kernel: kernel, pageSize: 40)
+        conversations.selectedConversationID = conversationID
+        await viewModel.activate(conversationID: conversationID)
+
+        #expect(viewModel.agentTurns.count == 1)
+        #expect(viewModel.agentTurns.first?.isPending == true)
+        #expect(viewModel.agentTurns.first?.id == userMessage.id)
+
+        let turnID = UUID()
+        turnManager.seed([
+            AgentTurnRecord(
+                id: turnID,
+                conversationID: conversationID,
+                state: .running,
+                startedAt: userMessage.createdAt.addingTimeInterval(0.1)
+            ),
+        ], conversationID: conversationID)
+        _ = await viewModel.refresh()
+
+        #expect(viewModel.agentTurns.count == 1)
+        #expect(viewModel.agentTurns.first?.isPending == false)
+        #expect(viewModel.agentTurns.first?.id == turnID)
+        #expect(viewModel.agentTurns.first?.conversationID == conversationID)
+        #expect(viewModel.agentTurns.first?.record?.id == turnID)
     }
 }

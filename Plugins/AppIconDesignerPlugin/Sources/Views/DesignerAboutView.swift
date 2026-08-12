@@ -34,7 +34,7 @@ struct DesignerAboutView: View {
                 FeatureHighlight(
                     icon: "square.and.arrow.up.fill",
                     title: AppIconDesignerLocalization.string("Xcode Export"),
-                    description: AppIconDesignerLocalization.string("Export your designs as Xcode-ready AppIcon.appiconset with all required sizes for iOS, macOS, and watchOS.")
+                    description: AppIconDesignerLocalization.string("Export an AppIcon.icon for macOS 15 and later")
                 )
 
                 FeatureHighlight(

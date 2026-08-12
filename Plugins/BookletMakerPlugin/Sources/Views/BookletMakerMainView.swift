@@ -12,19 +12,11 @@ struct BookletMakerMainView: View {
                     document: viewModel.currentDocument,
                     settings: viewModel.settings
                 )
-                .padding()
             case .split:
                 PDFSplitWorkspaceView(viewModel: viewModel)
             }
         }
-            .frame(maxWidth: .infinity)
-            .frame(maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .frame(maxHeight: .infinity)
     }
-}
-
-// MARK: - Preview
-
-#Preview("Empty State") {
-    BookletMakerMainView(viewModel: BookletMakerViewModel())
-        .frame(width: 800, height: 600)
 }

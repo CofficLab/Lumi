@@ -137,6 +137,19 @@ public enum FactoryCore: SuperLog {
         WindowMain(configuration: configuration)
     }
 
+    /// 创建使用宿主自定义启动页面的主窗口视图。
+    ///
+    /// 未使用此重载时，FactoryCore 会显示当前宿主 App 的应用图标。
+    public static func makeMainWindow<LoadingContent: View>(
+        configuration: FactoryConfiguration,
+        @ViewBuilder loadingView: () -> LoadingContent
+    ) -> some View {
+        WindowMain(
+            configuration: configuration,
+            loadingView: AnyView(loadingView())
+        )
+    }
+
     /// 创建设置窗口视图
     public static func makeSettingsWindow() -> some View {
         WindowSettings()

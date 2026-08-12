@@ -93,10 +93,8 @@ extension ConnectClient {
         }
         request.httpBody = chunk
 
-        let (_, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200 ..< 300).contains(httpResponse.statusCode) else {
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+        let (_, statusCode) = try await send(request)
+        guard (200 ..< 300).contains(statusCode) else {
             throw AppStoreConnectClientError.requestFailed(
                 AppStoreConnectLocalization.string("Screenshot chunk upload failed with HTTP %d.", statusCode)
             )

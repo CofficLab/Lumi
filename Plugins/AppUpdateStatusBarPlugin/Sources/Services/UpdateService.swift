@@ -18,9 +18,11 @@ public final class UpdateService: ObservableObject {
     @Published public var lastUpdateCheckError: String?
 
     private let stateMachine = UpdateServiceStateMachine()
+    private let network: any NetworkProviding
     private var cancellables = Set<AnyCancellable>()
 
-    public init() {
+    public init(network: any NetworkProviding) {
+        self.network = network
         // Observe state machine changes
         stateMachine.$state
             .receive(on: RunLoop.main)
@@ -48,7 +50,7 @@ public final class UpdateService: ObservableObject {
 
         do {
             // Resolve feed URL
-            guard let feedURL = await UpdateFeedURLProvider.resolveFeedURL() else {
+            guard let feedURL = await UpdateFeedURLProvider.resolveFeedURL(network: network) else {
                 stateMachine.noUpdateAvailable()
                 return
             }
@@ -58,12 +60,7 @@ public final class UpdateService: ObservableObject {
             }
 
             // Fetch the appcast/feed
-            let (data, response) = try await URLSession.shared.data(from: feedURL)
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
-                stateMachine.noUpdateAvailable()
-                return
-            }
+            let data = try await network.get(url: feedURL, timeout: 30).body
 
             // Parse the feed and check for a newer version
             let latestVersion = parseLatestVersion(from: data)

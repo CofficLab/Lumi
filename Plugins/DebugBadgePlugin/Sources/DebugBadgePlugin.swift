@@ -5,7 +5,7 @@ import SwiftUI
 
 /// Debug Badge Plugin
 ///
-/// 在 Debug 构建下，于标题工具栏右上角显示一个橙色「DEBUG」胶囊徽标，
+/// 在 Debug 构建下，于标题工具栏左上角显示一个橙色「DEBUG」胶囊徽标，
 /// 提示用户当前运行的是 Debug 构建（行为类似 Flutter 的 debug 标识）。
 ///
 /// 徽标视图本身由 `#if DEBUG` 编译剔除，Release 构建中插件不贡献任何工具栏项；
@@ -39,7 +39,7 @@ public final class DebugBadgePlugin: LumiPlugin {
             LumiTitleToolbarItem(
                 id: "\(id).badge",
                 title: LumiPluginLocalization.string("Running a Debug build", bundle: .module),
-                placement: .trailing,
+                placement: .leading,
                 order: 900
             ) {
                 DebugBadgeView()
@@ -81,7 +81,7 @@ public final class DebugBadgePlugin: LumiPlugin {
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 }
 
-/// 标题工具栏右上角的「DEBUG」胶囊徽标。
+/// 标题工具栏左上角的「DEBUG」胶囊徽标。
 ///
 /// 使用主题 `warning` 色（橙 #FF9F0A）作为背景，白色粗体文字，
 /// 与 Lumi 主题体系保持一致。

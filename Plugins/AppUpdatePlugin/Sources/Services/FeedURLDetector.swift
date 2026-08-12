@@ -8,7 +8,7 @@ import Foundation
 ///
 /// Responsibilities:
 /// 1. 30-minute cache window (avoid HEAD requests on every check);
-/// 2. Injectable reachability probing (default `URLSessionReachabilityChecker`);
+/// 2. Injectable reachability probing;
 /// 3. Primary → fallback decision;
 /// 4. Expose the current feed URL for the Sparkle delegate to read.
 public actor FeedURLDetector {
@@ -41,12 +41,12 @@ public actor FeedURLDetector {
 
     /// - Parameters:
     ///   - initialURL: Initial feed URL. Production uses `UpdateFeedURLProvider.primary`.
-    ///   - reachabilityChecker: Reachability checker. Default `URLSessionReachabilityChecker()`.
+    ///   - reachabilityChecker: Reachability checker.
     ///   - cacheWindow: Probe cache window. Default `defaultCacheWindow` (30 minutes).
     ///   - clock: Time source. Default `Date.init`. Tests may inject a virtual clock.
     public init(
         initialURL: URL,
-        reachabilityChecker: FeedURLReachabilityChecker = URLSessionReachabilityChecker(),
+        reachabilityChecker: FeedURLReachabilityChecker,
         cacheWindow: TimeInterval = FeedURLDetector.defaultCacheWindow,
         clock: @escaping @Sendable () -> Date = { Date() }
     ) {
