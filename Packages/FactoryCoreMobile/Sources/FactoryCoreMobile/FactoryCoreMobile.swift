@@ -15,12 +15,14 @@ public enum FactoryCoreMobile {
     public static func makeMainScene(
         plugins: [any LumiPlugin],
         enabledPluginIDs: Set<String> = [],
-        initialContainerID: String? = nil
+        initialContainerID: String? = nil,
+        requiresAllCoreServices: Bool = false
     ) -> some View {
         MobileHostRoot(
             plugins: plugins,
             enabledPluginIDs: enabledPluginIDs,
-            initialContainerID: initialContainerID
+            initialContainerID: initialContainerID,
+            requiresAllCoreServices: requiresAllCoreServices
         )
     }
 }
@@ -30,6 +32,7 @@ private struct MobileHostRoot: View {
     let plugins: [any LumiPlugin]
     let enabledPluginIDs: Set<String>
     let initialContainerID: String?
+    let requiresAllCoreServices: Bool
     @State private var kernel: LumiKernel?
     @State private var bootError: String?
 
@@ -57,7 +60,8 @@ private struct MobileHostRoot: View {
             do {
                 let booted = try await KernelHosting.createKernel(
                     plugins: plugins,
-                    enabledPluginIDs: enabledPluginIDs
+                    enabledPluginIDs: enabledPluginIDs,
+                    requiresAllCoreServices: requiresAllCoreServices
                 )
                 if let id = initialContainerID {
                     booted.workspace?.activateContainer(id: id)

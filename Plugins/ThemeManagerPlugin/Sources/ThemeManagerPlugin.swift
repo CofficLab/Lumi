@@ -95,6 +95,7 @@ public final class ThemeManagerPlugin: LumiPlugin {
             ]
         }
 
+        #if canImport(AppKit)
         return [
             StatusBarItem(
                 id: "\(id).switcher",
@@ -106,5 +107,9 @@ public final class ThemeManagerPlugin: LumiPlugin {
                 }
             ),
         ]
+        #else
+        // iOS 无状态栏：不贡献主题切换器。
+        return []
+        #endif
     }
 }

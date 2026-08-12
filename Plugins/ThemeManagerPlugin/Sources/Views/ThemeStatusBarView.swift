@@ -1,3 +1,4 @@
+#if canImport(AppKit)
 import SwiftUI
 import LumiKernel
 import LumiUI
@@ -38,3 +39,4 @@ struct ThemeStatusBarView: View {
         }
     }
 }
+#endif

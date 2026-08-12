@@ -9,6 +9,9 @@ struct BookletDropZoneView: View {
     @ObservedObject var viewModel: BookletMakerViewModel
 
     @State private var isTargeted: Bool = false
+    #if os(iOS)
+    @State private var isPresentingImporter = false
+    #endif
 
     var body: some View {
         VStack(spacing: 12) {
@@ -38,6 +41,13 @@ struct BookletDropZoneView: View {
         .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
             handleDrop(providers: providers)
         }
+        #if os(iOS)
+        .fileImporter(isPresented: $isPresentingImporter, allowedContentTypes: [.pdf]) { result in
+            if case .success(let url) = result {
+                Task { await viewModel.loadPDF(url) }
+            }
+        }
+        #endif
     }
 
     // MARK: - Sub Views
@@ -117,7 +127,7 @@ struct BookletDropZoneView: View {
             Task { await viewModel.loadPDF(url) }
         }
         #else
-        // iOS: PDF 选择通过 SwiftUI `.fileImporter` 在视图层呈现（Stage 6 接入）。
+        isPresentingImporter = true
         #endif
     }
 

@@ -41,7 +41,8 @@ public enum KernelHosting: SuperLog {
     /// - Throws: 初始化过程中的错误。
     public static func createKernel(
         plugins: [any LumiPlugin],
-        enabledPluginIDs: Set<String> = []
+        enabledPluginIDs: Set<String> = [],
+        requiresAllCoreServices: Bool = true
     ) async throws -> LumiKernel {
         if verbose {
             logger.info("\(t)创建新内核实例")
@@ -68,6 +69,9 @@ public enum KernelHosting: SuperLog {
 
         // 3. 订阅插件变更通知，当插件启用/禁用时重新注册 UI 贡献
         subscribeToPluginChanges(kernel: kernel)
+
+        // 是否强制要求全部核心服务（macOS 宿主默认 true；单用途 iOS app 可 false）
+        kernel.requiresAllCoreServices = requiresAllCoreServices
 
         // 4. 启动内核（调用插件生命周期 + 服务校验 + UI/LLM/Tool 收集）
         try await kernel.startup()

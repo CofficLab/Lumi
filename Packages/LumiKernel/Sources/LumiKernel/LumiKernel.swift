@@ -36,6 +36,14 @@ public final class LumiKernelContainer: ObservableObject {
     /// 插件实现),保留此注册表供将来纯内核实现的联动链登记。详见 `LumiCoordinator`。
     public let coordinatorRegistry: LumiCoordinatorRegistry
 
+    /// 是否在 `startup()` 中强制要求全部 13 个核心服务都已注册。
+    ///
+    /// 默认 `true`：完整内核（Lumi / macOS BookletMaker）链接了全部服务插件，
+    /// 缺失即视为配置错误并抛出。单用途 app（如 iOS BookletMaker 只链接部分
+    /// 服务插件）可置为 `false`：`startup()` 跳过该校验，依赖缺失服务的聚合
+    /// 步骤会优雅 no-op。macOS 行为不受影响。
+    public var requiresAllCoreServices: Bool = true
+
     // MARK: - Initialization
 
     public init() {
@@ -114,36 +122,38 @@ public final class LumiKernelContainer: ObservableObject {
         // 1. 插件系统 On Boot — 阶段 1:注册内核服务与 UI 贡献
         try await pluginManager.onBoot(kernel: self)
 
-        // 2. 服务校验 — 必需的内核服务必须在 OnBoot 阶段注册完毕
-        guard storage != nil,
-              project != nil,
-              workspace != nil,
-              command != nil,
-              messageSender != nil,
-              llmProvider != nil,
-              agentTurnManager != nil,
-              editorProvider != nil,
-              toolManager != nil,
-              settings != nil,
-              logo != nil,
-              theme != nil,
-              messageRendererManager != nil else {
-            let missingServices = [
-                storage == nil ? "Storage" : nil,
-                project == nil ? "Project" : nil,
-                workspace == nil ? "Workspace" : nil,
-                command == nil ? "Command" : nil,
-                messageSender == nil ? "MessageSend" : nil,
-                llmProvider == nil ? "LLMProvider" : nil,
-                agentTurnManager == nil ? "AgentTurnManager" : nil,
-                editorProvider == nil ? "Editor" : nil,
-                toolManager == nil ? "AgentTool" : nil,
-                settings == nil ? "Settings" : nil,
-                logo == nil ? "Logo" : nil,
-                theme == nil ? "Theme" : nil,
-                messageRendererManager == nil ? "MessageRendererManager" : nil,
-            ].compactMap { $0 }
-            throw LumiKernelError.missingRequiredServices(missingServices)
+        if requiresAllCoreServices {
+            // 2. 服务校验 — 完整内核必须在 OnBoot 阶段注册全部 13 个核心服务。
+            guard storage != nil,
+                  project != nil,
+                  workspace != nil,
+                  command != nil,
+                  messageSender != nil,
+                  llmProvider != nil,
+                  agentTurnManager != nil,
+                  editorProvider != nil,
+                  toolManager != nil,
+                  settings != nil,
+                  logo != nil,
+                  theme != nil,
+                  messageRendererManager != nil else {
+                let missingServices = [
+                    storage == nil ? "Storage" : nil,
+                    project == nil ? "Project" : nil,
+                    workspace == nil ? "Workspace" : nil,
+                    command == nil ? "Command" : nil,
+                    messageSender == nil ? "MessageSend" : nil,
+                    llmProvider == nil ? "LLMProvider" : nil,
+                    agentTurnManager == nil ? "AgentTurnManager" : nil,
+                    editorProvider == nil ? "Editor" : nil,
+                    toolManager == nil ? "AgentTool" : nil,
+                    settings == nil ? "Settings" : nil,
+                    logo == nil ? "Logo" : nil,
+                    theme == nil ? "Theme" : nil,
+                    messageRendererManager == nil ? "MessageRendererManager" : nil,
+                ].compactMap { $0 }
+                throw LumiKernelError.missingRequiredServices(missingServices)
+            }
         }
 
         // 3. 插件系统 On Ready — 阶段 2:依赖服务的异步初始化

@@ -21,6 +21,7 @@
 		LF000000000000000014 /* LumiFinder.appex in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = LF000000000000000001 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		LF000000000000000015 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* SuperLogKit */; };
 		LF00000000000000001A /* LocalizationKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000019 /* LocalizationKit */; };
+		FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */ = {isa = PBXBuildFile; productRef = FBMIOD000000000000000001 /* FactoryBookletMakerMobile */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -229,6 +230,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BI0000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -389,6 +398,13 @@
 			fileSystemSynchronizedGroups = (
 				BI0000000000000000000004 /* BookletMakeriOSApp */,
 			);
+			packageProductDependencies = (
+				FBMIOD000000000000000001 /* FactoryBookletMakerMobile */,
+			);
+			name = "BookletMaker-iOS";
+			fileSystemSynchronizedGroups = (
+				BI0000000000000000000004 /* BookletMakeriOSApp */,
+			);
 			name = "BookletMaker-iOS";
 			productName = "BookletMaker-iOS";
 			productReference = BI0000000000000000000002 /* BookletMaker-iOS.app */;
@@ -503,6 +519,7 @@
 				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "AppUpdatePlugin" */,
 				F5DBBA0000000000DBGP0001 /* XCLocalSwiftPackageReference "DebugBadgePlugin" */,
 				F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "ProjectRAGPlugin" */,
+			FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "FactoryBookletMakerMobile" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -900,6 +917,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LocalizationKit;
 		};
+		FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "FactoryBookletMakerMobile" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FactoryBookletMakerMobile;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -972,6 +993,11 @@
 		LF000000000000000019 /* LocalizationKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LocalizationKit;
+		};
+		FBMIOD000000000000000001 /* FactoryBookletMakerMobile */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "FactoryBookletMakerMobile" */;
+			productName = FactoryBookletMakerMobile;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

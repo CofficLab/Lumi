@@ -95,7 +95,14 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
             Task { await sharedViewModel.export(to: url) }
         }
         #else
-        // iOS: 导出通过 SwiftUI `.fileExporter` 在视图层呈现（Stage 6 接入）。
+        // iOS: 生成到临时文件后弹出系统分享面板（保存到「文件」/ 分享）。
+        Task { @MainActor in
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent(suggestedFileName())
+            try? FileManager.default.removeItem(at: url)
+            await sharedViewModel.export(to: url)
+            SharePresenter.share(fileURL: url)
+        }
         #endif
     }
 
@@ -127,7 +134,14 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
             }
         }
         #else
-        // iOS: 目录选择通过 SwiftUI `.fileExporter`/文档选择器在视图层呈现（Stage 6 接入）。
+        // iOS: 拆分到临时目录后用分享面板导出。
+        Task { @MainActor in
+            let dir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("booklet-split-\(UUID().uuidString)", isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            await sharedViewModel.exportSplit(to: dir)
+            SharePresenter.share(fileURL: dir)
+        }
         #endif
     }
 
