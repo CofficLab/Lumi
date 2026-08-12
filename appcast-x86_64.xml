@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.10.0</title>
-            <pubDate>Tue, 11 Aug 2026 16:06:32 +0000</pubDate>
-            <sparkle:version>603</sparkle:version>
-            <sparkle:shortVersionString>5.10.0</sparkle:shortVersionString>
+            <title>5.11.0</title>
+            <pubDate>Wed, 12 Aug 2026 06:15:50 +0000</pubDate>
+            <sparkle:version>604</sparkle:version>
+            <sparkle:shortVersionString>5.11.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.10.0</h2>
-<h3>Changes since v5.9.0</h3>
+            <description><![CDATA[<h2>Release v5.11.0</h2>
+<h3>Changes since v5.10.0</h3>
 <ul>
-<li>document:  update documentation</li>
-<li>feat: add AboutView for all non-disabled plugins missing one</li>
-<li>feat(app-store-connect): enable chat visibility for the plugin</li>
-<li>feat(AppStoreConnectPlugin): add ReadAppStoreConnectLocalizationTool</li>
-<li>feat(AppStoreConnectPlugin): add ReadAppStoreConnectVersionTool</li>
-<li>feat(AppStoreConnectPlugin): support partial localization updates</li>
-<li>feat(LumiUI): add selection state localization strings</li>
-<li>fix(aliyun): restore registered tool names after sanitize round-trip</li>
-<li>fix(app-store-connect): correct docs to match official App Store Connect API</li>
-<li>fix(AppManagerPlugin): align cache database path with project storage convention</li>
-<li>fix(build): remove quotes around SWIFT_OPTIMIZATION_LEVEL in xcconfig</li>
-<li>fix(build): resolve automatic signing conflict in xcconfig</li>
-<li>fix(LLMKit): restore sanitized tool names via reverseMap</li>
-<li>fix(LumiApp): add missing import LumiKernel for LumiPlugin type</li>
-<li>fix(version): restore Lumi 5.9.0 / build 602 after dev merge</li>
-<li>refactor(app-store-connect): adopt LumiUI across views and add missing components</li>
-<li>refactor(AppStoreConnect): adjust sidebar icon size and spacing</li>
-<li>refactor(AppStoreConnect): redesign rail view layout with inline app list and version picker</li>
-<li>refactor(AppStoreConnect): use AppListRow component from LumiUI</li>
-<li>refactor(build): migrate build settings from pbxproj to xcconfig</li>
+<li>feat: add DebugBadgePlugin for displaying debug information badge</li>
+<li>feat(AppStoreConnect): add build, submission and screenshot upload tools</li>
+<li>feat(AppStoreConnectPlugin): register centered title toolbar item</li>
+<li>feat(CaffeinatePlugin): add ViewContainer and register agent tools</li>
+<li>feat(DatabaseManager): SSL support, schema introspection, connection editing, inspector workspace</li>
+<li>feat(DatabaseManager): unified sidebar object tree for SQLite/MySQL/PostgreSQL</li>
+<li>feat(GitPlugin): add Stash, GitIgnore, LFS, Submodule, Conflict, AutoPush modules</li>
+<li>feat(LumiKernel): add SettingsSection for cross-plugin settings tab composition</li>
+<li>feat(MessageList): add AgentTurnV1View and improve turn summary rendering</li>
+<li>feat(MessageList): show pending status &amp; hide raw tool output</li>
+<li>feat(plugins): add centered title toolbar items to panel plugins</li>
+<li>feat(Projects): render contributed settings sections from other plugins</li>
+<li>feat(Settings): implement SettingsSection registration in DefaultSettingsProviding</li>
+<li>fix(AgentTurnNotificationPlugin): suppress notification for sub-agent turn completions</li>
+<li>fix(Config): remove quotes around LSApplicationCategoryType to fix ITMS-90249</li>
+<li>fix(LLMProvider): sanitize tool names to prevent 400 from strict APIs</li>
+<li>fix(plugins): scope centered title to the active view container</li>
+<li>fix(ProjectsPlugin): avoid high-frequency redraw in SettingsView</li>
+<li>fix(xcodeproj): register DebugBadgePlugin as local Swift package</li>
+<li>refactor(ProjectRAG): migrate from standalone settings tab to SettingsSection</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.10.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.10.0/Lumi_5.10.0_x86_64.dmg" length="46875572" type="application/octet-stream" sparkle:edSignature="h0ez4pd424yAKhQtzk8iHh+ZIcu3//kPOxtCVB3qdbj88rPvGIfiSNNkkWe2t+N+GNZy+zzXnvmwmlrbz0oFCw=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.11.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.11.0/Lumi_5.11.0_x86_64.dmg" length="48798059" type="application/octet-stream" sparkle:edSignature="b0aYflHpa8DUgTunY7fQmNIkygxNYhpGYY4dhHeJj6GldUXBHGrvk/KRhOQx/LM9PBvroltrv2vA9pG09qZeAQ=="/>
         </item>
     </channel>
 </rss>
