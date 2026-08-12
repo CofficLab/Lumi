@@ -11,29 +11,25 @@ public struct UpdateIconShapeTool: LumiAgentTool {
     public init() {}
 
     public var inputSchema: LumiJSONValue {
-        [
-            "type": "object",
-            "properties": [
-                "layerId": ["type": "string", "description": "Layer id to update."],
-                "x": ["type": "number", "description": "Rectangle/capsule/triangle/symbol/text x position."],
-                "y": ["type": "number", "description": "Rectangle/capsule/triangle/symbol/text y position."],
-                "width": ["type": "number", "description": "Rectangle/capsule/triangle width."],
-                "height": ["type": "number", "description": "Rectangle/capsule/triangle height."],
-                "cornerRadius": ["type": "number", "description": "Rectangle corner radius."],
-                "cx": ["type": "number", "description": "Circle center x."],
-                "cy": ["type": "number", "description": "Circle center y."],
-                "radius": ["type": "number", "description": "Circle radius."],
-                "x1": ["type": "number", "description": "Line start x."],
-                "y1": ["type": "number", "description": "Line start y."],
-                "x2": ["type": "number", "description": "Line end x."],
-                "y2": ["type": "number", "description": "Line end y."],
-                "size": ["type": "number", "description": "Symbol or text size."],
-                "weight": ["type": "string", "description": "Symbol or text weight."],
-                "symbolName": ["type": "string", "description": "SF Symbol name."],
-                "text": ["type": "string", "description": "Text layer value."],
-            ],
-            "required": ["layerId"],
-        ]
+        var properties = IconToolSupport.baseProperties()
+        properties["layerId"] = ["type": "string", "description": "Layer id to update."]
+        properties["x"] = ["type": "number", "description": "Rectangle/capsule/triangle/symbol/text x position."]
+        properties["y"] = ["type": "number", "description": "Rectangle/capsule/triangle/symbol/text y position."]
+        properties["width"] = ["type": "number", "description": "Rectangle/capsule/triangle width."]
+        properties["height"] = ["type": "number", "description": "Rectangle/capsule/triangle height."]
+        properties["cornerRadius"] = ["type": "number", "description": "Rectangle corner radius."]
+        properties["cx"] = ["type": "number", "description": "Circle center x."]
+        properties["cy"] = ["type": "number", "description": "Circle center y."]
+        properties["radius"] = ["type": "number", "description": "Circle radius."]
+        properties["x1"] = ["type": "number", "description": "Line start x."]
+        properties["y1"] = ["type": "number", "description": "Line start y."]
+        properties["x2"] = ["type": "number", "description": "Line end x."]
+        properties["y2"] = ["type": "number", "description": "Line end y."]
+        properties["size"] = ["type": "number", "description": "Symbol or text size."]
+        properties["weight"] = ["type": "string", "description": "Symbol or text weight."]
+        properties["symbolName"] = ["type": "string", "description": "SF Symbol name."]
+        properties["text"] = ["type": "string", "description": "Text layer value."]
+        return ["type": "object", "properties": .object(properties), "required": ["layerId"]]
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
@@ -51,21 +47,25 @@ public struct UpdateIconShapeTool: LumiAgentTool {
         }
 
         do {
-            let document = try await MainActor.run {
-                try IconDocumentStore.shared.updateLayer(id: layerId) { layer in
+            let (document, scope) = try await IconToolSupport.resolveDocument(arguments, kernel: kernel)
+            let updated = try await MainActor.run {
+                try IconDocumentStore.shared.updateLayer(id: layerId, documentId: document.id, scope: scope) { layer in
                     layer.shape = updatedShape(layer.shape, arguments: arguments)
                 }
             }
+            await IconToolSupport.notify(scope: scope, documentId: document.id)
             return IconToolSupport.localized(
                 language,
                 en: """
                 Updated icon shape.
-                documentId: \(document.id)
+                scope=\(scope.rawValue)
+                documentId: \(updated.id)
                 layerId: \(layerId)
                 """,
                 zh: """
                 已更新图标形状。
-                文档ID: \(document.id)
+                作用域: \(scope.rawValue)
+                文档ID: \(updated.id)
                 图层ID: \(layerId)
                 """
             )

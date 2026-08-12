@@ -42,6 +42,9 @@ public struct DesignerView: View {
                 }
             }
 
+            IconDesignerScopeBadge(scope: documentStore.selectedScope)
+                .help(L.string("Current storage scope"))
+
             Spacer()
 
             if let document = documentStore.selectedDocument {

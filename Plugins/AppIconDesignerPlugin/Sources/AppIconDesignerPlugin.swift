@@ -29,9 +29,7 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: LumiKernel) async throws {
-        IconDocumentStore.shared.configure(
-            persistenceDirectory: kernel.storage?.pluginDataDirectory(for: "AppIconDesigner")
-        )
+        IconDesignerRuntime.configure(kernel: kernel)
     }
 
     public func onReady(kernel: LumiKernel) async throws {
@@ -44,6 +42,7 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
 
     public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
         [
+            ListIconDocumentsTool(),
             CreateIconDocumentTool(),
             ApplyIconPresetTool(),
             LoadIconDocumentTool(),
@@ -57,7 +56,12 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
             ExportIconSVGTool(),
             ExportAppIconTool(),
             RegisterAppIconArtifactTool(),
+            ReviewIconTool(),
         ]
+    }
+
+    public func willSendToLLM(kernel: LumiKernel, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
+        await IconDesignerWillSendToLLMHook().execute(kernel: kernel, messages: messages)
     }
 
     // MARK: - LumiPlugin stubs
@@ -100,6 +104,7 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
                 id: id,
                 title: name,
                 systemImage: "app.dashed",
+                supportsProject: true,
                 railVisibility: .alwaysVisible,
                 chatVisibility: .alwaysVisible,
                 panelHeaderVisibility: .unsupported,
@@ -129,7 +134,9 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
     public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
     public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
-    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
+    public func onContainerActivated(kernel: LumiKernel, containerID: String) {
+        if containerID == id { IconDocumentStore.shared.reload() }
+    }
     public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
     public func configureEditorRuntime(kernel: LumiKernel) async {}
 }

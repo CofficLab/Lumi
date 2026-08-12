@@ -11,7 +11,7 @@ public struct LintIconDocumentTool: LumiAgentTool {
     public init() {}
 
     public var inputSchema: LumiJSONValue {
-        ["type": "object", "properties": [:]]
+        ["type": "object", "properties": .object(IconToolSupport.baseProperties())]
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
@@ -25,12 +25,7 @@ public struct LintIconDocumentTool: LumiAgentTool {
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let language = IconToolSupport.language(kernel)
         do {
-            let document = try await MainActor.run {
-                guard let document = IconDocumentStore.shared.selectedDocument else {
-                    throw IconDocumentStoreError.noSelectedDocument
-                }
-                return document
-            }
+            let (document, scope) = try await IconToolSupport.resolveDocument(arguments, kernel: kernel)
 
             let report = IconDocumentLinter().lint(document)
             if report.issues.isEmpty {
@@ -38,11 +33,13 @@ public struct LintIconDocumentTool: LumiAgentTool {
                     language,
                     en: """
                     Icon document passed quality checks.
+                    scope=\(scope.rawValue)
                     documentId: \(document.id)
                     exportable: true
                     """,
                     zh: """
                     图标文档已通过质量检查。
+                    作用域: \(scope.rawValue)
                     文档ID: \(document.id)
                     可导出: true
                     """
@@ -61,12 +58,14 @@ public struct LintIconDocumentTool: LumiAgentTool {
                 language,
                 en: """
                 Icon document quality report.
+                scope=\(scope.rawValue)
                 documentId: \(document.id)
                 exportable: \(report.isExportable)
                 \(lines)
                 """,
                 zh: """
                 图标文档质量报告。
+                作用域: \(scope.rawValue)
                 文档ID: \(document.id)
                 可导出: \(report.isExportable)
                 \(lines)

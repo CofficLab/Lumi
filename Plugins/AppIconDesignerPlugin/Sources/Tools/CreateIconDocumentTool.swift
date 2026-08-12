@@ -11,15 +11,12 @@ public struct CreateIconDocumentTool: LumiAgentTool {
     public init() {}
 
     public var inputSchema: LumiJSONValue {
-        [
-            "type": "object",
-            "properties": [
-                "title": ["type": "string", "description": "Document title."],
-                "width": ["type": "number", "description": "Canvas width. Defaults to 1024."],
-                "height": ["type": "number", "description": "Canvas height. Defaults to 1024."],
-                "background": ["type": "string", "description": "Background color, for example #111827 or #00000000."],
-            ],
-        ]
+        var properties = IconToolSupport.baseProperties(includeDocumentId: false)
+        properties["title"] = ["type": "string", "description": "Document title."]
+        properties["width"] = ["type": "number", "description": "Canvas width. Defaults to 1024."]
+        properties["height"] = ["type": "number", "description": "Canvas height. Defaults to 1024."]
+        properties["background"] = ["type": "string", "description": "Background color, for example #111827 or #00000000."]
+        return ["type": "object", "properties": .object(properties)]
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
@@ -32,6 +29,7 @@ public struct CreateIconDocumentTool: LumiAgentTool {
 
     public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
         let language = IconToolSupport.language(kernel)
+        let scope = try await IconToolSupport.resolveScope(arguments, kernel: kernel)
         let title = IconToolSupport.string(arguments, "title")
         let width = IconToolSupport.double(arguments, "width", default: 1024)
         let height = IconToolSupport.double(arguments, "height", default: 1024)
@@ -42,14 +40,17 @@ public struct CreateIconDocumentTool: LumiAgentTool {
                 title: title,
                 width: width,
                 height: height,
-                background: background
+                background: background,
+                scope: scope
             )
         }
+        await IconToolSupport.notify(scope: scope, documentId: document.id)
 
         switch language {
         case .chinese:
             return """
             已创建图标文档。
+            作用域: \(scope.rawValue)
             文档ID: \(document.id)
             标题: \(document.title)
             尺寸: \(Int(document.width))x\(Int(document.height))
@@ -57,6 +58,7 @@ public struct CreateIconDocumentTool: LumiAgentTool {
         case .english:
             return """
             Created icon document.
+            scope=\(scope.rawValue)
             documentId: \(document.id)
             title: \(document.title)
             size: \(Int(document.width))x\(Int(document.height))

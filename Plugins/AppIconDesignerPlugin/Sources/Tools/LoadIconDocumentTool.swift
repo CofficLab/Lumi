@@ -11,14 +11,10 @@ public struct LoadIconDocumentTool: LumiAgentTool {
     public init() {}
 
     public var inputSchema: LumiJSONValue {
-        [
-            "type": "object",
-            "properties": [
-                "inputPath": ["type": "string", "description": "Absolute JSON file path to load."],
-                "replaceSelected": ["type": "boolean", "description": "Replace the selected document instead of importing a new copy."],
-            ],
-            "required": ["inputPath"],
-        ]
+        var properties = IconToolSupport.baseProperties()
+        properties["inputPath"] = ["type": "string", "description": "Absolute JSON file path to load."]
+        properties["replaceSelected"] = ["type": "boolean", "description": "Replace the selected document instead of importing a new copy."]
+        return ["type": "object", "properties": .object(properties), "required": ["inputPath"]]
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
@@ -39,24 +35,28 @@ public struct LoadIconDocumentTool: LumiAgentTool {
             let inputURL = URL(fileURLWithPath: inputPath)
             let loadedDocument = try IconDocumentFileService().load(from: inputURL)
             let replaceSelected = IconToolSupport.bool(arguments, "replaceSelected", default: false)
+            let scope = try await IconToolSupport.resolveScope(arguments, kernel: kernel)
 
             let document = try await MainActor.run {
                 if replaceSelected {
-                    return try IconDocumentStore.shared.replaceSelectedDocument(loadedDocument)
+                    return try IconDocumentStore.shared.replaceDocument(loadedDocument, scope: scope)
                 }
-                return IconDocumentStore.shared.importDocument(loadedDocument)
+                return IconDocumentStore.shared.importDocument(loadedDocument, scope: scope)
             }
+            await IconToolSupport.notify(scope: scope, documentId: document.id)
 
             return IconToolSupport.localized(
                 language,
                 en: """
                 Loaded icon document.
+                scope=\(scope.rawValue)
                 documentId: \(document.id)
                 title: \(document.title)
                 layerCount: \(document.layers.count)
                 """,
                 zh: """
                 已加载图标文档。
+                作用域: \(scope.rawValue)
                 文档ID: \(document.id)
                 标题: \(document.title)
                 图层数: \(document.layers.count)

@@ -11,14 +11,11 @@ public struct SetIconBackgroundTool: LumiAgentTool {
     public init() {}
 
     public var inputSchema: LumiJSONValue {
-        [
-            "type": "object",
-            "properties": [
-                "color": ["type": "string", "description": "Background color, for example #111827 or #00000000."],
-                "type": ["type": "string", "enum": ["color", "linearGradient", "radialGradient"], "description": "Background paint type."],
-                "colors": ["type": "array", "items": ["type": "string"], "description": "Gradient colors."],
-            ],
-        ]
+        var properties = IconToolSupport.baseProperties()
+        properties["color"] = ["type": "string", "description": "Background color, for example #111827 or #00000000."]
+        properties["type"] = ["type": "string", "enum": ["color", "linearGradient", "radialGradient"], "description": "Background paint type."]
+        properties["colors"] = ["type": "array", "items": ["type": "string"], "description": "Gradient colors."]
+        return ["type": "object", "properties": .object(properties)]
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
@@ -34,20 +31,24 @@ public struct SetIconBackgroundTool: LumiAgentTool {
         let paint = makePaint(arguments: arguments)
 
         do {
-            let document = try await MainActor.run {
-                try IconDocumentStore.shared.updateSelectedDocument { document in
+            let (document, scope) = try await IconToolSupport.resolveDocument(arguments, kernel: kernel)
+            let updated = try await MainActor.run {
+                try IconDocumentStore.shared.updateDocument(id: document.id, scope: scope) { document in
                     document.background = paint
                 }
             }
+            await IconToolSupport.notify(scope: scope, documentId: document.id)
             return IconToolSupport.localized(
                 language,
                 en: """
                 Updated icon background.
-                documentId: \(document.id)
+                scope=\(scope.rawValue)
+                documentId: \(updated.id)
                 """,
                 zh: """
                 已更新图标背景。
-                文档ID: \(document.id)
+                作用域: \(scope.rawValue)
+                文档ID: \(updated.id)
                 """
             )
         } catch {

@@ -11,24 +11,20 @@ public struct UpdateIconLayerTool: LumiAgentTool {
     public init() {}
 
     public var inputSchema: LumiJSONValue {
-        [
-            "type": "object",
-            "properties": [
-                "layerId": ["type": "string", "description": "Layer id returned by add_icon_shape."],
-                "fill": ["type": "string", "description": "New fill color."],
-                "opacity": ["type": "number", "description": "New opacity from 0 to 1."],
-                "translateX": ["type": "number", "description": "Layer x translation."],
-                "translateY": ["type": "number", "description": "Layer y translation."],
-                "scale": ["type": "number", "description": "Layer scale."],
-                "rotationDegrees": ["type": "number", "description": "Layer rotation in degrees around the canvas center."],
-                "shadowColor": ["type": "string", "description": "Set or update layer shadow color."],
-                "shadowRadius": ["type": "number", "description": "Set or update layer shadow radius."],
-                "shadowX": ["type": "number", "description": "Set or update layer shadow x offset."],
-                "shadowY": ["type": "number", "description": "Set or update layer shadow y offset."],
-                "blurRadius": ["type": "number", "description": "Set layer blur radius."],
-            ],
-            "required": ["layerId"],
-        ]
+        var properties = IconToolSupport.baseProperties()
+        properties["layerId"] = ["type": "string", "description": "Layer id returned by add_icon_shape."]
+        properties["fill"] = ["type": "string", "description": "New fill color."]
+        properties["opacity"] = ["type": "number", "description": "New opacity from 0 to 1."]
+        properties["translateX"] = ["type": "number", "description": "Layer x translation."]
+        properties["translateY"] = ["type": "number", "description": "Layer y translation."]
+        properties["scale"] = ["type": "number", "description": "Layer scale."]
+        properties["rotationDegrees"] = ["type": "number", "description": "Layer rotation in degrees around the canvas center."]
+        properties["shadowColor"] = ["type": "string", "description": "Set or update layer shadow color."]
+        properties["shadowRadius"] = ["type": "number", "description": "Set or update layer shadow radius."]
+        properties["shadowX"] = ["type": "number", "description": "Set or update layer shadow x offset."]
+        properties["shadowY"] = ["type": "number", "description": "Set or update layer shadow y offset."]
+        properties["blurRadius"] = ["type": "number", "description": "Set layer blur radius."]
+        return ["type": "object", "properties": .object(properties), "required": ["layerId"]]
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
@@ -46,8 +42,9 @@ public struct UpdateIconLayerTool: LumiAgentTool {
         }
 
         do {
-            let document = try await MainActor.run {
-                try IconDocumentStore.shared.updateLayer(id: layerId) { layer in
+            let (document, scope) = try await IconToolSupport.resolveDocument(arguments, kernel: kernel)
+            let updated = try await MainActor.run {
+                try IconDocumentStore.shared.updateLayer(id: layerId, documentId: document.id, scope: scope) { layer in
                     if let fill = IconToolSupport.string(arguments, "fill") {
                         layer.fill = .color(fill)
                     }
@@ -90,16 +87,19 @@ public struct UpdateIconLayerTool: LumiAgentTool {
                     }
                 }
             }
+            await IconToolSupport.notify(scope: scope, documentId: document.id)
             return IconToolSupport.localized(
                 language,
                 en: """
                 Updated icon layer.
-                documentId: \(document.id)
+                scope=\(scope.rawValue)
+                documentId: \(updated.id)
                 layerId: \(layerId)
                 """,
                 zh: """
                 已更新图标图层。
-                文档ID: \(document.id)
+                作用域: \(scope.rawValue)
+                文档ID: \(updated.id)
                 图层ID: \(layerId)
                 """
             )
