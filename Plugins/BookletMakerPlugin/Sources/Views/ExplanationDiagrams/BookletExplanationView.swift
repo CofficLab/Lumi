@@ -424,28 +424,3 @@ struct BookletExplanationView: View {
         }
     }
 }
-
-// MARK: - Preview
-
-#Preview("Default Settings") {
-    BookletExplanationView(
-        document: try! DemoPDFProvider.makeDocument(),
-        settings: BookletSettings()
-    )
-        .frame(width: 600, height: 480)
-        .padding()
-}
-
-#Preview("Simple Pair") {
-    BookletExplanationView(
-        document: try! DemoPDFProvider.makeDocument(),
-        settings: BookletSettings(
-            outputPaper: .a5,
-            layout: .simplePair,
-            marginMM: 15,
-            gutterMM: 10
-        )
-    )
-    .frame(width: 600, height: 480)
-    .padding()
-}
