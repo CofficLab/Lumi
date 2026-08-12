@@ -33,7 +33,13 @@
         }
       }
     },
+    "%lld structure changes" : {
+
+    },
     "+" : {
+
+    },
+    "Add Column" : {
 
     },
     "Add Connection" : {
@@ -69,6 +75,15 @@
           }
         }
       }
+    },
+    "Add Index" : {
+
+    },
+    "Allow NULL" : {
+
+    },
+    "Apply Structure Changes" : {
+
     },
     "Click + to add a new connection." : {
       "extractionState" : "manual",
@@ -175,6 +190,9 @@
         }
       }
     },
+    "Columns" : {
+
+    },
     "Connections" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -279,6 +297,9 @@
           }
         }
       }
+    },
+    "Data Type" : {
+
     },
     "Database" : {
       "localizations" : {
@@ -386,6 +407,9 @@
     "DDL is not available for this object." : {
 
     },
+    "Default SQL Expression" : {
+
+    },
     "Delete" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -454,6 +478,15 @@
           }
         }
       }
+    },
+    "Drop Column…" : {
+
+    },
+    "Drop Index…" : {
+
+    },
+    "Index Name" : {
+
     },
     "Keys" : {
       "extractionState" : "stale",
@@ -526,6 +559,9 @@
           }
         }
       }
+    },
+    "Name" : {
+
     },
     "No database connected" : {
       "extractionState" : "stale",
@@ -703,6 +739,9 @@
         }
       }
     },
+    "OK" : {
+
+    },
     "Open a table or view to inspect its structure." : {
 
     },
@@ -739,6 +778,15 @@
           }
         }
       }
+    },
+    "Rename Column" : {
+
+    },
+    "Rename…" : {
+
+    },
+    "Review the generated DDL before changing the database." : {
+
     },
     "Select a database to connect" : {
       "extractionState" : "stale",
@@ -845,6 +893,9 @@
         }
       }
     },
+    "Some database engines auto-commit DDL statements." : {
+
+    },
     "SQLite, MySQL, PostgreSQL, and Redis" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -881,6 +932,9 @@
       }
     },
     "SSL / TLS" : {
+
+    },
+    "Structure Change Error" : {
 
     },
     "Structure Section" : {
@@ -956,6 +1010,9 @@
         }
       }
     },
+    "This change drops data and cannot be undone by Lumi." : {
+
+    },
     "Toggle" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -990,6 +1047,9 @@
           }
         }
       }
+    },
+    "Unique Index" : {
+
     }
   },
   "version" : "1.1"

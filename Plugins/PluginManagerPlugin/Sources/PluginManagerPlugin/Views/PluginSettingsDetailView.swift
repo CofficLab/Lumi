@@ -56,7 +56,8 @@ struct PluginSettingsDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             // 启用/关闭开关置于右上角
-            enableControl
+            PluginEnableControl(kernel: kernel, plugin: plugin)
+                .id(plugin.id)
                 .fixedSize()
         }
     }
@@ -71,38 +72,6 @@ struct PluginSettingsDetailView: View {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(theme.appAccentSoftFill)
             )
-    }
-
-    // MARK: - Enable Control
-
-    @ViewBuilder
-    private var enableControl: some View {
-        let isEnabled = kernel.pluginManager.effectiveEnabled(for: plugin)
-        if plugin.policy.isConfigurable {
-            Toggle(isOn: Binding(
-                get: { isEnabled },
-                set: { newValue in
-                    Task { @MainActor in
-                        await kernel.pluginManager.plugin(ofType: PluginManagerPlugin.self)?
-                            .setPluginEnabled(kernel: kernel, id: plugin.id, enabled: newValue)
-                    }
-                }
-            )) {
-                Text(PluginManagerText.string(PluginManagerText.enable))
-                    .font(.appBody)
-                    .foregroundStyle(theme.textPrimary)
-            }
-            .toggleStyle(.switch)
-        } else {
-            switch plugin.policy {
-            case .alwaysOn:
-                AppTag(PluginManagerText.string(PluginManagerText.alwaysOn), systemImage: "lock.fill", style: .accent)
-            case .disabled:
-                AppTag(PluginManagerText.string(PluginManagerText.disabled), systemImage: "minus.circle")
-            default:
-                EmptyView()
-            }
-        }
     }
 
     // MARK: - Content
