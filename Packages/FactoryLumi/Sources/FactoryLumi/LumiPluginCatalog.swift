@@ -16,6 +16,7 @@ import CADDesignerPlugin
 import StoryWriterPlugin
 import StateMonitorPlugin
 import CaffeinatePlugin
+import DebugBadgePlugin
 import ConversationAttachmentPlugin
 import ConversationPendingMessagePlugin
 import ChatFileAttachmentPlugin
@@ -272,6 +273,7 @@ public enum LumiPluginCatalog {
             MenuBarManagerPlugin(),
             MenuBarHelperPlugin(),
             CaffeinatePlugin(),
+            DebugBadgePlugin(),
             AgentTempStoragePlugin(),
             AppIconDesignerPlugin(),
             PromoDesignerPlugin(),
