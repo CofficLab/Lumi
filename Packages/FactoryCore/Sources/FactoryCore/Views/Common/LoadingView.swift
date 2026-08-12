@@ -1,3 +1,4 @@
+import AppKit
 import LumiKernel
 import LumiUI
 import SwiftUI
@@ -48,23 +49,13 @@ struct LoadingView: View {
                 .frame(width: 92, height: 92)
                 .scaleEffect(isBreathing ? 1.08 : 0.94)
 
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [primaryColor, primaryColor.opacity(0.58)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 54, height: 54)
+            Image(nsImage: NSApplication.shared.applicationIconImage)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(width: 72, height: 72)
                 .shadow(color: primaryColor.opacity(isBreathing ? 0.42 : 0.28), radius: isBreathing ? 18 : 11)
                 .scaleEffect(isBreathing ? 1.05 : 0.96)
-
-            Circle()
-                .fill(Color.white.opacity(isDark ? 0.36 : 0.62))
-                .frame(width: 12, height: 12)
-                .offset(x: -10, y: -11)
-                .blur(radius: 0.5)
         }
         .frame(width: 140, height: 140)
         .accessibilityHidden(true)

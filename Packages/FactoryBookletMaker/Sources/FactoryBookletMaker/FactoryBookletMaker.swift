@@ -23,7 +23,9 @@ public enum FactoryBookletMaker {
 
     /// 创建主窗口视图。
     public static func makeMainWindow() -> some View {
-        FactoryCore.makeMainWindow(configuration: configuration)
+        FactoryCore.makeMainWindow(configuration: configuration) {
+            BookletMakerLoadingView()
+        }
     }
 
     /// 创建设置窗口视图。
