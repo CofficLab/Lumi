@@ -1,5 +1,4 @@
 import Foundation
-import HttpKit
 import LLMKit
 import LumiKernel
 
@@ -11,6 +10,10 @@ enum QuotaService {
 
     /// 获取配额信息
     static func fetchQuota(network: (any NetworkProviding)? = nil) async -> QuotaStatus {
+        guard let network else {
+            return .unavailable
+        }
+
         // 获取 API Key
         let apiKey = LumiAPIKeyTools.get(storageKey: ZhipuProvider.info._apiKeyStorageKey)
         guard !apiKey.isEmpty else {
@@ -30,18 +33,12 @@ enum QuotaService {
         request.timeoutInterval = timeout
 
         do {
-            let data: Data
-            if let network {
-                data = try await network.request(HTTPRequest(
-                    url: url,
-                    method: .get,
-                    headers: request.allHTTPHeaderFields ?? [:],
-                    timeout: timeout
-                )).body
-            } else {
-                let client = HTTPClient(timeoutIntervalForRequest: timeout, timeoutIntervalForResource: timeout)
-                data = try await client.sendRequest(request: request)
-            }
+            let data = try await network.request(HTTPRequest(
+                url: url,
+                method: .get,
+                headers: request.allHTTPHeaderFields ?? [:],
+                timeout: timeout
+            )).body
 
             // 解析 JSON
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -125,11 +122,9 @@ enum QuotaService {
 
             return .unavailable
 
-        } catch let error as HTTPClientError {
-            if case let .httpError(statusCode, _) = error {
-                if statusCode == 401 || statusCode == 1001 {
-                    return .authError
-                }
+        } catch let error as HTTPNetworkError {
+            if error.statusCode == 401 || error.statusCode == 1001 {
+                return .authError
             }
             return .unavailable
         } catch {
