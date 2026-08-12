@@ -381,6 +381,7 @@
 				F5FC000000000000000001 /* FactoryCore */,
 				F5FL000000000000000001 /* FactoryLumi */,
 				F5CBA1A13020000000425FF6 /* AppUpdatePlugin */,
+				F5DBBA0000000000DBGP0004 /* DebugBadgePlugin */,
 				F5CBA1A53020000000425FF6 /* ProjectRAGPlugin */,
 			);
 			productName = Lumi;
@@ -460,6 +461,7 @@
 				LF000000000000000017 /* XCLocalSwiftPackageReference "SuperLogKit" */,
 				LF000000000000000018 /* XCLocalSwiftPackageReference "LocalizationKit" */,
 				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "AppUpdatePlugin" */,
+				F5DBBA0000000000DBGP0001 /* XCLocalSwiftPackageReference "DebugBadgePlugin" */,
 				F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "ProjectRAGPlugin" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -792,6 +794,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/AppUpdatePlugin;
 		};
+		F5DBBA0000000000DBGP0001 /* XCLocalSwiftPackageReference "DebugBadgePlugin" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Plugins/DebugBadgePlugin;
+		};
 		F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "ProjectRAGPlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/ProjectRAGPlugin;
@@ -862,6 +868,10 @@
 		F5CBA1A13020000000425FF6 /* AppUpdatePlugin */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppUpdatePlugin;
+		};
+		F5DBBA0000000000DBGP0004 /* DebugBadgePlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DebugBadgePlugin;
 		};
 		F5CBA1A53020000000425FF6 /* ProjectRAGPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
