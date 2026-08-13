@@ -70,6 +70,7 @@
       }
     },
     "Adjust brightness for external displays via DDC/CI protocol" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -138,6 +139,7 @@
       }
     },
     "Brightness Control" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -308,6 +310,7 @@
       }
     },
     "Contrast Adjustment" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -342,6 +345,7 @@
       }
     },
     "Control audio volume directly from your menu bar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -376,6 +380,7 @@
       }
     },
     "Detects connected displays with DDC/CI support" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -512,6 +517,7 @@
       }
     },
     "External displays with DDC/CI support" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -546,6 +552,7 @@
       }
     },
     "Fine-tune display contrast for optimal viewing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -580,6 +587,7 @@
       }
     },
     "macOS 14.0 or later" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -614,6 +622,7 @@
       }
     },
     "Manage multiple displays with individual controls" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -648,6 +657,7 @@
       }
     },
     "Multi-Display Support" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -716,6 +726,7 @@
       }
     },
     "Provides brightness, volume, and contrast sliders" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -750,6 +761,7 @@
       }
     },
     "Requirements" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -852,6 +864,7 @@
       }
     },
     "Stores preferences for each display" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -886,6 +899,7 @@
       }
     },
     "Updates display settings in real-time" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -920,6 +934,7 @@
       }
     },
     "USB-C or DisplayPort connection (recommended)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -988,6 +1003,7 @@
       }
     },
     "Volume Control" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
