@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     " (%@)" : {
       "localizations" : {
         "en" : {
@@ -34,6 +37,9 @@
           }
         }
       }
+    },
+    ":" : {
+
     },
     "·" : {
       "localizations" : {
@@ -511,6 +517,9 @@
         }
       }
     },
+    "not selected" : {
+
+    },
     "Pretty" : {
       "localizations" : {
         "en" : {
@@ -613,6 +622,9 @@
         }
       }
     },
+    "selected" : {
+
+    },
     "v%@" : {
       "localizations" : {
         "en" : {
@@ -646,6 +658,13 @@
           }
         }
       }
-    }  },
+    },
+    "X: %@" : {
+
+    },
+    "Y: %@" : {
+
+    }
+  },
   "version" : "1.0"
 }

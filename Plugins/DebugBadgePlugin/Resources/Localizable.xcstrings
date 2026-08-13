@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "DEBUG" : {
+
+    },
     "Debug Badge" : {
       "localizations" : {
         "en" : {
@@ -16,6 +19,7 @@
           }
         }
       }
-    }  },
+    }
+  },
   "version" : "1.0"
 }

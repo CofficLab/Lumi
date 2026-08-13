@@ -11,6 +11,9 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "%lld %@ · %@" : {
       "localizations" : {
         "en" : {
@@ -81,6 +84,9 @@
         }
       }
     },
+    "Display" : {
+
+    },
     "Export" : {
       "localizations" : {
         "zh-Hans" : {
@@ -143,6 +149,9 @@
         }
       }
     },
+    "Mode" : {
+
+    },
     "No images yet" : {
       "localizations" : {
         "zh-Hans" : {
@@ -152,6 +161,9 @@
           }
         }
       }
+    },
+    "OK" : {
+
     },
     "Open a project to enable project-local storage." : {
       "localizations" : {

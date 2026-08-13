@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
+    ".pdf" : {
+
+    },
     "%@ · %lld pages · %lld×%lld pt" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29,6 +35,9 @@
           }
         }
       }
+    },
+    "%lld" : {
+
     },
     "%lld mm" : {
       "extractionState" : "manual",
@@ -249,6 +258,12 @@
           }
         }
       }
+    },
+    "%lld." : {
+
+    },
+    "%lld%%" : {
+
     },
     "2 Original Pages" : {
       "extractionState" : "manual",

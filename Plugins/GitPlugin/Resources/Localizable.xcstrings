@@ -69,6 +69,12 @@
         }
       }
     },
+    "· running" : {
+
+    },
+    "(%lld)" : {
+
+    },
     "(missing)" : {
       "localizations" : {
         "en" : {
@@ -102,6 +108,9 @@
           }
         }
       }
+    },
+    "*.psd, *.zip, ..." : {
+
     },
     "#%lld · %lld file(s) · %@" : {
       "localizations" : {
@@ -317,6 +326,9 @@
         }
       }
     },
+    "%lld rules" : {
+
+    },
     "%lld years ago" : {
       "localizations" : {
         "en" : {
@@ -350,6 +362,9 @@
           }
         }
       }
+    },
+    "%llds" : {
+
     },
     "Abort merge" : {
       "localizations" : {
@@ -588,6 +603,9 @@
           }
         }
       }
+    },
+    "Auto" : {
+
     },
     "Auto Push" : {
       "localizations" : {
@@ -1847,6 +1865,9 @@
         }
       }
     },
+    "Last run: %@ ago" : {
+
+    },
     "Latest Commit" : {
       "localizations" : {
         "en" : {
@@ -1880,6 +1901,12 @@
           }
         }
       }
+    },
+    "LFS" : {
+
+    },
+    "LFS %lld" : {
+
     },
     "LLM not configured" : {
       "localizations" : {
@@ -2391,6 +2418,9 @@
         }
       }
     },
+    "Off" : {
+
+    },
     "Only push when working tree is clean" : {
       "localizations" : {
         "en" : {
@@ -2458,6 +2488,9 @@
           }
         }
       }
+    },
+    "Ours" : {
+
     },
     "Please select a commit from the sidebar" : {
       "localizations" : {
@@ -2969,6 +3002,9 @@
         }
       }
     },
+    "Theirs" : {
+
+    },
     "Tools" : {
       "localizations" : {
         "en" : {
@@ -3342,6 +3378,7 @@
           }
         }
       }
-    }  },
+    }
+  },
   "version" : "1.1"
 }

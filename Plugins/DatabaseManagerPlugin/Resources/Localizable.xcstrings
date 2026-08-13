@@ -1,6 +1,15 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
+    "·" : {
+
+    },
+    "#" : {
+
+    },
     "%@ %@" : {
       "localizations" : {
         "en" : {
@@ -11,6 +20,9 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "%lld %@" : {
       "localizations" : {
         "en" : {
@@ -20,6 +32,15 @@
           }
         }
       }
+    },
+    "%lld structure changes" : {
+
+    },
+    "+" : {
+
+    },
+    "Add Column" : {
+
     },
     "Add Connection" : {
       "localizations" : {
@@ -55,6 +76,15 @@
         }
       }
     },
+    "Add Index" : {
+
+    },
+    "Allow NULL" : {
+
+    },
+    "Apply Structure Changes" : {
+
+    },
     "Click + to add a new connection." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -89,6 +119,12 @@
           }
         }
       }
+    },
+    "Columns" : {
+
+    },
+    "Data Type" : {
+
     },
     "Database" : {
       "localizations" : {
@@ -157,6 +193,12 @@
           }
         }
       }
+    },
+    "DDL is not available for this object." : {
+
+    },
+    "Default SQL Expression" : {
+
     },
     "Delete" : {
       "extractionState" : "manual",
@@ -227,6 +269,18 @@
         }
       }
     },
+    "Drop Column…" : {
+
+    },
+    "Drop Index…" : {
+
+    },
+    "Index Name" : {
+
+    },
+    "Loading structure…" : {
+
+    },
     "Multi-Database Support" : {
       "localizations" : {
         "en" : {
@@ -260,6 +314,12 @@
           }
         }
       }
+    },
+    "Name" : {
+
+    },
+    "No items" : {
+
     },
     "No results" : {
       "localizations" : {
@@ -329,6 +389,12 @@
         }
       }
     },
+    "OK" : {
+
+    },
+    "Open a table or view to inspect its structure." : {
+
+    },
     "Reload" : {
       "localizations" : {
         "en" : {
@@ -362,6 +428,15 @@
           }
         }
       }
+    },
+    "Rename Column" : {
+
+    },
+    "Rename…" : {
+
+    },
+    "Review the generated DDL before changing the database." : {
+
     },
     "Show Connections" : {
       "extractionState" : "manual",
@@ -433,6 +508,18 @@
         }
       }
     },
+    "Some database engines auto-commit DDL statements." : {
+
+    },
+    "SSL / TLS" : {
+
+    },
+    "Structure Change Error" : {
+
+    },
+    "Structure Section" : {
+
+    },
     "Switch to Connections above to add or pick a database." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -468,6 +555,9 @@
         }
       }
     },
+    "This change drops data and cannot be undone by Lumi." : {
+
+    },
     "Toggle" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -502,6 +592,10 @@
           }
         }
       }
-    }  },
+    },
+    "Unique Index" : {
+
+    }
+  },
   "version" : "1.1"
 }

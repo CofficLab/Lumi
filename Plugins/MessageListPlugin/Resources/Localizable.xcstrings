@@ -174,6 +174,28 @@
           }
         }
       }
-    }  },
+    },
+    "开始和 Lumi 对话" : {
+
+    },
+    "当前 Provider：(providerInfo.displayName)" : {
+
+    },
+    "打开 Provider 官网获取 API Key" : {
+
+    },
+    "聊天请求需要 API Key，请在设置中配置后再开始对话。" : {
+
+    },
+    "还没有可用的 AI Provider，请先在设置中启用一个 Provider。" : {
+
+    },
+    "选择一个示例，或直接在下方输入你的问题。" : {
+
+    },
+    "配置 API Key 开始聊天" : {
+
+    }
+  },
   "version" : "1.1"
 }
