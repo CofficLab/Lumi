@@ -27,27 +27,16 @@ public final class SkillPlugin: LumiPlugin, SuperLog {
 
     public func onReady(kernel: KernelLumi) async throws {}
 
-    // MARK: - Status Bar
+    // MARK: - Chat Toolbar
 
-    /// 当前活跃的 View Container 支持项目时，状态栏才显示 Skills 按钮；
-    /// 否则返回空数组，从源头避免出现"无项目可操作"的按钮。
-    public func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] {
-        guard kernel.workspace?.currentViewContainer?.supportsProject == true else {
-            return []
-        }
+    /// 将 Skills 入口放在 Chat 工具栏右侧。
+    /// 视图自身会在「无项目 / 无 Skill」时隐藏，因此这里无需再做项目门控。
+    public func chatSectionToolbarItems(kernel: KernelLumi) -> [ChatSectionToolbarItem] {
+        guard let project = kernel.project else { return [] }
         return [
-            StatusBarItem(
-                id: id,
-                title: name,
-                systemImage: "sparkles",
-                placement: .trailing,
-                order: order,
-                statusBarView: {
-                    SkillStatusBarView(
-                        projectPath: kernel.project?.currentProject?.path ?? ""
-                    )
-                }
-            ),
+            ChatSectionToolbarItem(id: "\(id).toolbar", placement: .trailing) {
+                SkillChatToolbarView(project: project)
+            },
         ]
     }
 
@@ -88,7 +77,7 @@ public final class SkillPlugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] { [] }
     public func viewContainers(kernel: KernelLumi) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: KernelLumi) -> [ChatSectionItem] { [] }
-    public func chatSectionToolbarItems(kernel: KernelLumi) -> [ChatSectionToolbarItem] { [] }
+    public func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] { [] }
     public func chatSectionToolbarBarItems(kernel: KernelLumi) -> [ChatSectionToolbarBarItem] { [] }
     public func chatSectionHeaderItems(kernel: KernelLumi) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: KernelLumi) -> [ChatSectionActionBarItem] { [] }

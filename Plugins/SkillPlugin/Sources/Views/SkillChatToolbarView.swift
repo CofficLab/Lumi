@@ -4,20 +4,24 @@ import KernelLumi
 import SuperLogKit
 import SwiftUI
 
-/// Skill 状态栏视图
+/// Skill 聊天工具栏视图
 ///
-/// 在 Agent 模式底部状态栏显示当前项目的可用 Skill 数量。
+/// 在 Chat 工具栏显示当前项目的可用 Skill 数量。
 /// 点击弹出 Skill 列表面板。
 /// 当 Skill 数量为 0 时自动隐藏。
-public struct SkillStatusBarView: View, SuperLog {
+public struct SkillChatToolbarView: View, SuperLog {
     public nonisolated static let emoji = "📊"
 
-    private let projectPath: String
+    private let project: any ProjectProviding
     @State private var skills: [SkillMetadata] = []
     @State private var refreshTask: Task<Void, Never>?
 
-    public init(projectPath: String) {
-        self.projectPath = projectPath
+    public init(project: any ProjectProviding) {
+        self.project = project
+    }
+
+    private var projectPath: String {
+        project.currentProject?.path ?? ""
     }
 
     public var body: some View {
@@ -27,7 +31,7 @@ public struct SkillStatusBarView: View, SuperLog {
                 StatusBarHoverContainer(
                     detailView: SkillListPopover(skills: skills),
                     popoverWidth: 360,
-                    id: "skill-status"
+                    id: "skill-toolbar"
                 ) {
                     HStack(spacing: 4) {
                         Image(systemName: "sparkles")
@@ -59,11 +63,11 @@ public struct SkillStatusBarView: View, SuperLog {
     // MARK: - 私有方法
 
     private func refreshSkills(reason: String) {
-        let projectPath = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let path = projectPath.trimmingCharacters(in: .whitespacesAndNewlines)
         if SkillPlugin.verbose {
-            SkillPlugin.logger.info("\(Self.t)刷新 Skill 列表，原因：\(reason)，项目路径：\(projectPath.isEmpty ? "<未选择>" : projectPath)")
+            SkillPlugin.logger.info("\(Self.t)刷新 Skill 列表，原因：\(reason)，项目路径：\(path.isEmpty ? "<未选择>" : path)")
         }
-        guard !projectPath.isEmpty else {
+        guard !path.isEmpty else {
             if SkillPlugin.verbose {
                 SkillPlugin.logger.info("\(Self.t)项目路径为空，清空 Skill 列表")
             }
@@ -75,7 +79,7 @@ public struct SkillStatusBarView: View, SuperLog {
 
         refreshTask?.cancel()
         refreshTask = Task.detached(priority: .utility) {
-            let loaded = await SkillService.shared.listSkills(projectPath: projectPath)
+            let loaded = await SkillService.shared.listSkills(projectPath: path)
             guard !Task.isCancelled else { return }
 
             await MainActor.run {
@@ -83,14 +87,8 @@ public struct SkillStatusBarView: View, SuperLog {
                 skills = loaded
             }
             if SkillPlugin.verbose {
-                SkillPlugin.logger.info("\(SkillStatusBarView.t)刷新完成，找到 \(loaded.count) 个 Skill")
+                SkillPlugin.logger.info("\(SkillChatToolbarView.t)刷新完成，找到 \(loaded.count) 个 Skill")
             }
         }
     }
-}
-
-// MARK: - Preview
-
-#Preview("SkillStatusBarView") {
-    SkillStatusBarView(projectPath: "/tmp/lumi")
 }
