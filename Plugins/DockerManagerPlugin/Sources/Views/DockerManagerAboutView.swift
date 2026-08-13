@@ -1,183 +1,83 @@
 import LumiUI
 import SwiftUI
 
-// MARK: - About View
-
+/// Docker 管理插件关于视图 —— 以「镜像管理 + 命令清单」为主轴的落地页。
 struct DockerManagerAboutView: View {
-    @Environment(\.locale) private var locale
     @LumiTheme private var theme
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Feature Highlights
-                FeatureHighlight(
-                    icon: "shippingbox",
-                    title: L("Image Management"),
-                    description: L("Browse, inspect, and manage local Docker images")
-                )
-
-                FeatureHighlight(
-                    icon: "square.stack.3d.up",
-                    title: L("Layer Inspection"),
-                    description: L("View detailed image layers and their sizes")
-                )
-
-                FeatureHighlight(
-                    icon: "tag",
-                    title: L("Tag Management"),
-                    description: L("Manage image tags and versions")
-                )
-
-                FeatureHighlight(
-                    icon: "trash",
-                    title: L("Image Cleanup"),
-                    description: L("Remove unused images to free up disk space")
-                )
-
-                // How It Works
-                HowItWorksCard(
-                    title: coreL("about.section.howItWorks"),
-                    steps: [
-                        L("Connects to local Docker daemon via socket"),
-                        L("Fetches image list and metadata"),
-                        L("Displays image layers and sizes"),
-                        L("Provides management actions")
-                    ]
-                )
-
-                // Tips
-                TipsCard(
-                    title: coreL("about.section.tips"),
-                    tips: [
-                        L("Ensure Docker Desktop is running before use"),
-                        L("Regular cleanup helps reclaim disk space"),
-                        L("Click an image to view layer details")
-                    ]
-                )
-            }
-            .padding()
+        VStack(alignment: .leading, spacing: 22) {
+            hero
+            capabilitiesSection
+            commandsSection
         }
     }
+
+    // MARK: - Hero
+
+    private var hero: some View {
+        LandingHero(
+            icon: "cylinder.split.1x2",
+            accent: theme.info,
+            tagline: L("图形化管理本地 Docker 镜像:浏览、分层查看、打标签、清理闲置镜像,释放磁盘空间。"),
+            chips: [L("镜像管理"), L("分层查看"), L("标签"), L("清理")],
+            metrics: [
+                .init(value: "4", label: L("核心能力")),
+                .init(value: "镜像", label: L("管理对象")),
+                .init(value: "1键", label: L("清理闲置"))
+            ]
+        )
+        .landingAppear()
+    }
+
+    // MARK: - 镜像能力
+
+    private var capabilitiesSection: some View {
+        LandingSection(title: L("镜像能力"), icon: "square.stack.3d.up") {
+            LandingFeatureGrid(items: [
+                .init(icon: "shippingbox", tint: theme.info,
+                      title: L("镜像管理"),
+                      description: L("浏览、查看详情并管理本地 Docker 镜像。")),
+                .init(icon: "rectangle.split.3x1", tint: theme.primary,
+                      title: L("分层查看"),
+                      description: L("查看镜像各分层及其占用大小。")),
+                .init(icon: "tag", tint: theme.warning,
+                      title: L("标签管理"),
+                      description: L("管理镜像的标签与版本。")),
+                .init(icon: "trash", tint: theme.error,
+                      title: L("镜像清理"),
+                      description: L("移除未使用的镜像,释放磁盘空间。"))
+            ])
+        }
+        .landingAppear(delay: 0.05)
+    }
+
+    // MARK: - 覆盖命令
+
+    private var commandsSection: some View {
+        LandingSection(title: L("图形化覆盖的常用命令"), icon: "terminal") {
+            LandingInventory(tint: theme.info, items: [
+                .init(icon: "square.grid.2x2", title: "docker images", description: L("镜像清单"), mono: true),
+                .init(icon: "rectangle.stack", title: "docker ps", description: L("运行中容器"), mono: true),
+                .init(icon: "play", title: "docker run", description: L("启动容器"), mono: true),
+                .init(icon: "trash", title: "docker rmi", description: L("删除镜像"), mono: true),
+                .init(icon: "sparkles", title: "docker image prune", description: L("清理闲置镜像"), mono: true)
+            ])
+        }
+        .landingAppear(delay: 0.1)
+    }
+
+    // MARK: - Localization
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
-    }
-
-    private func coreL(_ key: String) -> String {
-        switch key {
-        case "about.section.howItWorks": return L("How It Works")
-        case "about.section.tips": return L("Tips")
-        default: return key
-        }
+        LumiPluginLocalization.string(key, bundle: .module)
     }
 }
 
-// MARK: - Feature Highlight
-
-private struct FeatureHighlight: View {
-    @LumiTheme private var theme
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
+#Preview {
+    ScrollView {
+        DockerManagerAboutView()
+            .padding(22)
     }
-}
-
-// MARK: - How It Works Card
-
-private struct HowItWorksCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let steps: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("\(index + 1)")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 22, height: 22)
-                            .background(
-                                Circle()
-                                    .fill(theme.primary.opacity(0.15))
-                            )
-
-                        Text(step)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Tips Card
-
-private struct TipsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let tips: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(tips, id: \.self) { tip in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 16)
-
-                        Text(tip)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
+    .frame(width: 560, height: 900)
 }
