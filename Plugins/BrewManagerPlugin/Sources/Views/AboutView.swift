@@ -1,262 +1,102 @@
 import LumiUI
-import KernelLumi
 import SwiftUI
 
-// MARK: - About View
-
-/// Plugin about view for Brew Manager.
-/// Introduces the plugin's Homebrew package management capabilities.
+/// Homebrew 管理插件关于视图 —— 以「命令清单」为主轴的落地页。
 struct AboutView: View {
-    @Environment(\.locale) private var locale
     @LumiTheme private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            hero
+            commandsSection
+            capabilitiesSection
+            packageTypesSection
+        }
+    }
+
+    // MARK: - Hero
+
+    private var hero: some View {
+        LandingHero(
+            icon: "mug.fill",
+            accent: theme.info,
+            tagline: L("在应用里管理 Homebrew:查看已装包、检查更新、搜索安装、批量升级,图形化完成。"),
+            chips: [L("Formula"), L("Cask"), L("批量升级")],
+            metrics: [
+                .init(value: "6", label: L("核心能力")),
+                .init(value: "2", label: L("包类型")),
+                .init(value: "gh", label: L("命令行内核"))
+            ]
+        )
+        .landingAppear()
+    }
+
+    // MARK: - 常用命令
+
+    private var commandsSection: some View {
+        LandingSection(title: L("图形化覆盖的常用命令"), icon: "terminal") {
+            LandingInventory(tint: theme.info, items: [
+                .init(icon: "arrow.down.circle", title: "brew install", description: L("安装软件包"), mono: true),
+                .init(icon: "magnifyingglass", title: "brew search", description: L("搜索可用包"), mono: true),
+                .init(icon: "arrow.up.circle", title: "brew upgrade", description: L("批量 / 单包升级"), mono: true),
+                .init(icon: "trash", title: "brew uninstall", description: L("卸载软件包"), mono: true),
+                .init(icon: "info.circle", title: "brew info", description: L("查看包详情"), mono: true),
+                .init(icon: "list.bullet", title: "brew list", description: L("已装包清单"), mono: true)
+            ])
+        }
+        .landingAppear(delay: 0.05)
+    }
+
+    // MARK: - 核心能力
+
+    private var capabilitiesSection: some View {
+        LandingSection(title: L("核心能力"), icon: "square.grid.2x2") {
+            LandingFeatureGrid(items: [
+                .init(icon: "square.grid.2x2", tint: theme.info,
+                      title: L("已装包浏览"),
+                      description: L("查看所有已安装的 formula 与 cask,含版本、安装时间、依赖。")),
+                .init(icon: "arrow.up.circle.badge.clock", tint: theme.warning,
+                      title: L("更新检查"),
+                      description: L("一眼对比当前与最新版本,规划升级策略。")),
+                .init(icon: "magnifyingglass", title: L("包搜索"),
+                      description: L("在 Homebrew 仓库中检索新包,浏览说明与主页。")),
+                .init(icon: "arrow.down.arrow.up", tint: theme.success,
+                      title: L("安装与卸载"),
+                      description: L("安装新包或卸载已有包,跟踪进度并妥善处理错误。")),
+                .init(icon: "arrow.up.square", tint: theme.primary,
+                      title: L("批量升级"),
+                      description: L("一次升级全部过期包,也可只升级指定的包。")),
+                .init(icon: "checkmark.shield", tint: theme.warning,
+                      title: L("环境检测"),
+                      description: L("自动识别 Homebrew 是否安装,缺失时给出清晰指引。"))
+            ])
+        }
+        .landingAppear(delay: 0.1)
+    }
+
+    // MARK: - 包类型
+
+    private var packageTypesSection: some View {
+        LandingSection(title: L("支持的包类型"), icon: "shippingbox") {
+            LandingInventory(tint: theme.info, items: [
+                .init(icon: "terminal", title: "Formula", description: L("命令行工具与库")),
+                .init(icon: "app", title: "Cask", description: L("macOS 图形应用"))
+            ])
+        }
+        .landingAppear(delay: 0.15)
+    }
+
+    // MARK: - Localization
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Feature Highlights
-                FeatureHighlight(
-                    icon: "list.bullet.rectangle.fill",
-                    title: L("Installed Packages"),
-                    description: L("Browse all installed Homebrew formulae and casks. View package details including version, installation date, and dependencies.")
-                )
-
-                FeatureHighlight(
-                    icon: "arrow.up.circle.fill",
-                    title: L("Update Checker"),
-                    description: L("Identify packages with available updates. See current vs. latest version at a glance to plan your upgrade strategy.")
-                )
-
-                FeatureHighlight(
-                    icon: "magnifyingglass",
-                    title: L("Package Search"),
-                    description: L("Search Homebrew repository for new packages. Browse descriptions, homepages, and installation instructions.")
-                )
-
-                FeatureHighlight(
-                    icon: "arrow.down.circle.fill",
-                    title: L("Install & Uninstall"),
-                    description: L("Install new packages or uninstall existing ones. Monitor installation progress and handle errors gracefully.")
-                )
-
-                FeatureHighlight(
-                    icon: "arrow.clockwise.circle.fill",
-                    title: L("Batch Upgrade"),
-                    description: L("Upgrade all outdated packages at once, or selectively upgrade individual packages. Keep your system fresh.")
-                )
-
-                FeatureHighlight(
-                    icon: "checkmark.shield.fill",
-                    title: L("Environment Check"),
-                    description: L("Automatically detects Homebrew installation status. Shows clear guidance when Homebrew is not installed.")
-                )
-
-                // Package Types
-                PackageTypesCard(
-                    title: L("Supported Package Types"),
-                    types: [
-                        (L("Formulae"), L("Command-line tools and libraries")),
-                        (L("Casks"), L("macOS GUI applications")),
-                        (L("Fonts"), L("System fonts")),
-                        (L("Services"), L("Background services"))
-                    ]
-                )
-
-                // Quick Actions
-                QuickActionsCard(
-                    title: L("Quick Actions"),
-                    actions: [
-                        (L("Install"), L("Download and install a package")),
-                        (L("Uninstall"), L("Remove a package from your system")),
-                        (L("Upgrade"), L("Update to the latest version")),
-                        (L("Upgrade All"), L("Update all outdated packages")),
-                        (L("Search"), L("Find packages in Homebrew")),
-                        (L("Info"), L("View package details and dependencies"))
-                    ]
-                )
-
-                // Requirements
-                RequirementsCard(
-                    title: L("Requirements"),
-                    items: [
-                        L("macOS 14.0 or later"),
-                        L("Swift 6.0 or later"),
-                        L("Homebrew installed (/opt/homebrew)")
-                    ]
-                )
-            }
-            .padding()
-        }
-    }
-}
-
-// MARK: - Feature Highlight
-
-private struct FeatureHighlight: View {
-    @LumiTheme private var theme
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Package Types Card
-
-private struct PackageTypesCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let types: [(String, String)]
-
-    private let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(types, id: \.0) { type in
-                    HStack(spacing: 10) {
-                        Image(systemName: "shippingbox.fill")
-                            .font(.system(size: 14))
-                            .foregroundStyle(theme.primary)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(type.0)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(theme.textPrimary)
-
-                            Text(type.1)
-                                .font(.system(size: 10))
-                                .foregroundColor(theme.textSecondary)
-                                .lineLimit(1)
-                        }
-
-                        Spacer()
-                    }
-                    .padding(10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(theme.overlay)
-                    )
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Quick Actions Card
-
-private struct QuickActionsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let actions: [(String, String)]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(actions, id: \.0) { action in
-                    HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: "arrow.right.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 16)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(action.0)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(theme.textPrimary)
-
-                            Text(action.1)
-                                .font(.system(size: 11))
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Requirements Card
-
-private struct RequirementsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let items: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(items, id: \.self) { item in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.success)
-                            .frame(width: 16)
-
-                        Text(item)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
+        LumiPluginLocalization.string(key, bundle: .module)
     }
 }
 
 #Preview {
-    AboutView()
-        .frame(width: 400, height: 800)
+    ScrollView {
+        AboutView()
+            .padding(22)
+    }
+    .frame(width: 560, height: 900)
 }
