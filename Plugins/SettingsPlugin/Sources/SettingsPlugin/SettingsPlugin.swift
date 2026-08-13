@@ -46,6 +46,32 @@ public final class SettingsPlugin: LumiPlugin, SuperLog {
         try SettingsOnReadyHook().execute(kernel)
     }
 
+    // MARK: - Command Menu
+
+    public func commandMenuGroups(kernel: KernelLumi) -> [CommandMenuGroup] {
+        // 在应用菜单（Lumi 菜单，紧跟 "About"）中贡献 "Settings..." 命令，
+        // 并绑定 macOS 约定快捷键 ⌘,。动作只发出 `.lumiOpenSettings` 通知，
+        // 由主窗口根视图监听并打开设置窗口——这样命令闭包（非视图上下文）
+        // 无需直接依赖 SwiftUI 的 `openWindow` 环境值。
+        return [
+            CommandMenuGroup(
+                id: "\(id).commands",
+                name: name,
+                items: [
+                    CommandItem(
+                        id: "\(id).openSettings",
+                        title: LumiPluginLocalization.string("Settings...", bundle: .module),
+                        shortcut: ",",
+                        modifiers: .command
+                    ) {
+                        NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
+                    },
+                ],
+                placement: .appMenu
+            ),
+        ]
+    }
+
     // MARK: - Settings Contributions
 
     public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] {
