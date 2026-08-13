@@ -43,14 +43,7 @@ public final class AgentOpenInGitOKPlugin: LumiPlugin {
 
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(LumiPluginLocalization.string("Open in GitOK", bundle: .module))
-                    .font(.title2.weight(.semibold))
-                Text(LumiPluginLocalization.string("Open current project in GitOK", bundle: .module))
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            OpenInLandingPage(displayName: LumiPluginLocalization.string("Open in GitOK", bundle: .module), icon: "network", appDescription: LumiPluginLocalization.string("Open current project in GitOK", bundle: .module))
         )
     }
 

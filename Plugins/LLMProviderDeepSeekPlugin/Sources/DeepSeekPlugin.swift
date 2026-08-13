@@ -57,15 +57,7 @@ public final class DeepSeekPlugin: LumiPlugin {
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                Label(LumiPluginLocalization.string("DeepSeek", bundle: .module),
-                      systemImage: "brain")
-                    .font(.headline)
-                Text(LumiPluginLocalization.string("LLM provider for chat and agent conversations.", bundle: .module))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            LLMProviderLandingPage(displayName: LumiPluginLocalization.string("DeepSeek", bundle: .module), icon: "brain")
         )
     }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
