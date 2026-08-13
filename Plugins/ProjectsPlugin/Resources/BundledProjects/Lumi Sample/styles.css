@@ -1,0 +1,86 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: #0d0f14;
+  color: #f6f2ff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(141, 95, 255, 0.24), transparent 32rem),
+    radial-gradient(circle at 100% 80%, rgba(39, 208, 180, 0.14), transparent 28rem),
+    #0d0f14;
+}
+
+.shell {
+  width: min(960px, calc(100% - 40px));
+  padding: 72px 0;
+}
+
+.eyebrow {
+  color: #a98aff;
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.18em;
+}
+
+h1 {
+  max-width: 720px;
+  margin: 16px 0;
+  font-size: clamp(3rem, 8vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.055em;
+}
+
+.intro {
+  max-width: 620px;
+  color: #aaa6b5;
+  font-size: 1.15rem;
+  line-height: 1.65;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 48px 0 32px;
+}
+
+article {
+  min-height: 190px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(14px);
+}
+
+article span { color: #7c7888; font-size: 0.8rem; }
+article h2 { margin: 42px 0 8px; font-size: 1.15rem; }
+article p { margin: 0; color: #918d9c; line-height: 1.5; }
+
+button {
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #a98aff;
+  color: #17121f;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover { background: #bda5ff; transform: translateY(-1px); }
+#message { min-height: 1.5em; color: #71dfc9; }
+
+@media (max-width: 680px) {
+  .cards { grid-template-columns: 1fr; }
+  article { min-height: 150px; }
+  article h2 { margin-top: 24px; }
+}

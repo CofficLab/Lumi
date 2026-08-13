@@ -33,12 +33,14 @@ public final class ProjectsStore: SuperLog {
 
     // MARK: - Properties
 
+    public let pluginDirectory: URL
     public let settingsDirectory: URL
 
     // MARK: - Init
 
     public init(pluginDirectory: URL? = nil) {
         let directory = pluginDirectory ?? ProjectsStore.defaultPluginDirectory
+        self.pluginDirectory = directory
         self.settingsDirectory = directory
             .appendingPathComponent(Self.settingsDirectoryName, isDirectory: true)
 
@@ -62,6 +64,13 @@ public final class ProjectsStore: SuperLog {
     /// 加载当前项目路径
     public func loadCurrentProjectPath() -> String? {
         Self.loadCurrentProjectPath(from: settingsDirectory)
+    }
+
+    /// 是否已经写入过项目列表。
+    ///
+    /// 该状态用于区分「首次初始化」和「用户主动清空项目列表」。
+    public func hasPersistedProjects() -> Bool {
+        FileManager.default.fileExists(atPath: projectsFileURL.path)
     }
 
     /// 加载当前项目（从项目列表中查找）

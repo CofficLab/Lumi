@@ -1,0 +1,6 @@
+{
+  "name": "lumi-sample",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A dependency-free sample project included with Lumi"
+}

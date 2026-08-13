@@ -1,0 +1,16 @@
+"Configure AI" = "設定 AI";
+"Add a provider API key to start your first conversation. You can also do this later in Settings." = "加入供應商 API 金鑰，即可開始第一次對話。你也可以稍後在設定中完成。";
+"No providers are available yet. You can configure one later in Settings." = "目前沒有可用的供應商。你可以稍後在設定中進行設定。";
+"Provider" = "供應商";
+"API Key" = "API 金鑰";
+"Save API Key" = "儲存 API 金鑰";
+"Get a key" = "取得金鑰";
+"Saved" = "已儲存";
+"A quick tour" = "快速導覽";
+"Lumi brings conversations, coding, and desktop tools together in one workspace." = "Lumi 將對話、程式開發和桌面工具整合在同一個工作區。";
+"Chat" = "對話";
+"Ask questions, write drafts, and run agent tasks from the chat workspace." = "在對話工作區中提問、撰寫草稿並執行 Agent 任務。";
+"Editor" = "編輯器";
+"Open a project and work with files alongside your conversations." = "開啟專案，在對話的同時處理專案檔案。";
+"Desktop tools" = "桌面工具";
+"Discover system tools and plugins from the ActivityBar and settings." = "透過活動列和設定探索系統工具與外掛。";

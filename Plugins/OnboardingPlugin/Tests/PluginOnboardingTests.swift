@@ -24,6 +24,14 @@ import Testing
     }
 }
 
+@Test func onboardingSecondAndThirdPagesUsePluginChineseLocalizations() {
+    let simplifiedChinese = Locale(identifier: "zh-Hans")
+
+    #expect(OnboardingPageLocalization.string("Configure AI", locale: simplifiedChinese) == "配置 AI")
+    #expect(OnboardingPageLocalization.string("A quick tour", locale: simplifiedChinese) == "快速导览")
+    #expect(OnboardingPageLocalization.string("Desktop tools", locale: simplifiedChinese) == "桌面工具")
+}
+
 @Test func onboardingStoreReportsSaveResultAndReloadsCompletion() {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("OnboardingStore-\(UUID().uuidString)", isDirectory: true)
