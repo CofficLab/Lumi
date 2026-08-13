@@ -17,10 +17,8 @@ public final class DebugBadgePlugin: LumiPlugin {
         LumiPluginLocalization.string("Debug Badge", bundle: .module)
     }
     public let order = 900
-    // Debug 构建默认开启（徽标自动显示，可手动关闭）；
-    // Release 构建硬禁用（且徽标本就已被 #if DEBUG 编译剔除）。
     #if DEBUG
-    public let policy: LumiPluginPolicy = .optOut
+    public let policy: LumiPluginPolicy = .alwaysOn
     #else
     public let policy: LumiPluginPolicy = .disabled
     #endif
