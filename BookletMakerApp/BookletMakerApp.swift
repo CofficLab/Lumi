@@ -1,6 +1,8 @@
+import SwiftUI
+
+#if os(macOS)
 import FactoryBookletMaker
 import FactoryCore
-import SwiftUI
 
 @main
 struct BookletMakerApp: App {
@@ -8,8 +10,6 @@ struct BookletMakerApp: App {
 
     var body: some Scene {
         WindowGroup("BookletMaker", id: "booklet-maker.main") {
-            // FactoryBookletMaker 在编译期确定 16 个插件的最小目录，
-            // 不再链接 MLX / 数据库 / 全量 LLM Provider。
             FactoryBookletMaker.makeMainWindow()
                 .environmentObject(appDelegate)
                 .onReceive(appDelegate.$pendingOpenPath.compactMap { $0 }) { path in
@@ -39,3 +39,17 @@ struct BookletMakerApp: App {
         .defaultSize(width: 780, height: 600)
     }
 }
+#elseif os(iOS)
+import FactoryBookletMakerMobile
+
+@main
+struct BookletMakerApp: App {
+    @UIApplicationDelegateAdaptor(MobileAgent.self) private var appDelegate
+
+    var body: some Scene {
+        WindowGroup {
+            FactoryBookletMakerMobile.makeMainScene()
+        }
+    }
+}
+#endif

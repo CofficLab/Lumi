@@ -9,8 +9,9 @@
 /* Begin PBXBuildFile section */
 		AIFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = AIFC000000000000000001 /* FactoryCore */; };
 		AIFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = AIFL000000000000000001 /* FactoryLumi */; };
-		BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; productRef = BMFB000000000000000001 /* FactoryBookletMaker */; };
-		BMFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = BMFC000000000000000001 /* FactoryCore */; };
+		BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFB000000000000000001 /* FactoryBookletMaker */; };
+		BMFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFC000000000000000001 /* FactoryCore */; };
+		FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = FBMIOD000000000000000001 /* FactoryBookletMakerMobile */; };
 		CDFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = CDFC000000000000000001 /* FactoryCore */; };
 		CDFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = CDFL000000000000000001 /* FactoryLumi */; };
 		DBFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = DBFC000000000000000001 /* FactoryCore */; };
@@ -21,7 +22,6 @@
 		LF000000000000000014 /* LumiFinder.appex in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = LF000000000000000001 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		LF000000000000000015 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* SuperLogKit */; };
 		LF00000000000000001A /* LocalizationKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000019 /* LocalizationKit */; };
-		FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */ = {isa = PBXBuildFile; productRef = FBMIOD000000000000000001 /* FactoryBookletMakerMobile */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,8 +66,6 @@
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		LF000000000000000001 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		BI0000000000000000000002 /* BookletMaker-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "BookletMaker-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		BI0000000000000000000F02 /* BookletMaker-iOS.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "BookletMaker-iOS.xcconfig"; path = "Config/BookletMaker-iOS.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -148,11 +146,6 @@
 			path = DatabaseManagerApp;
 			sourceTree = "<group>";
 		};
-		BI0000000000000000000004 /* BookletMakeriOSApp */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = BookletMakeriOSApp;
-			sourceTree = "<group>";
-		};
 		F5F4DFD42F3ACC5100C76EA0 /* LumiApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -187,6 +180,7 @@
 			files = (
 				BMFC00000000000000B001 /* FactoryCore in Frameworks */,
 				BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */,
+				FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -226,21 +220,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		BI0000000000000000000005 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BI0000000000000000000005 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -261,11 +240,9 @@
 				CD0000000000000000000004 /* CADDesignerApp */,
 				DB0000000000000000000004 /* DatabaseManagerApp */,
 				LF000000000000000009 /* Plugins/RClickPlugin/FinderExtension */,
-				BI0000000000000000000004 /* BookletMakeriOSApp */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				AI0000000000000000000002 /* AppIconDesigner.app */,
 				BM0000000000000000000002 /* BookletMaker.app */,
-				BI0000000000000000000002 /* BookletMaker-iOS.app */,
 				CD0000000000000000000002 /* CADDesigner.app */,
 				DB0000000000000000000002 /* DatabaseManager.app */,
 				LF000000000000000001 /* LumiFinder.appex */,
@@ -274,7 +251,6 @@
 				AE205FD720E849E1FFA4D49C /* Project-Release.xcconfig */,
 				10DD2383E811EBAC5B6264D5 /* AppIconDesigner.xcconfig */,
 				DD36141333F791471BC94F98 /* BookletMaker.xcconfig */,
-				BI0000000000000000000F02 /* BookletMaker-iOS.xcconfig */,
 				70E0C23EA196F323323F057B /* CADDesigner.xcconfig */,
 				08B37721AB3348660D4B2D5E /* DatabaseManager.xcconfig */,
 				4991976404FE2623D0C4E068 /* Lumi-Debug.xcconfig */,
@@ -330,6 +306,7 @@
 			packageProductDependencies = (
 				BMFC000000000000000001 /* FactoryCore */,
 				BMFB000000000000000001 /* FactoryBookletMaker */,
+				FBMIOD000000000000000001 /* FactoryBookletMakerMobile */,
 			);
 			productName = BookletMaker;
 			productReference = BM0000000000000000000002 /* BookletMaker.app */;
@@ -381,33 +358,6 @@
 			);
 			productName = DatabaseManager;
 			productReference = DB0000000000000000000002 /* DatabaseManager.app */;
-			productType = "com.apple.product-type.application";
-		};
-		BI0000000000000000000009 /* BookletMaker-iOS */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = BI000000000000000000000F /* Build configuration list for PBXNativeTarget "BookletMaker-iOS" */;
-			buildPhases = (
-				BI0000000000000000000007 /* Sources */,
-				BI0000000000000000000005 /* Frameworks */,
-				BI0000000000000000000006 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				BI0000000000000000000004 /* BookletMakeriOSApp */,
-			);
-			packageProductDependencies = (
-				FBMIOD000000000000000001 /* FactoryBookletMakerMobile */,
-			);
-			name = "BookletMaker-iOS";
-			fileSystemSynchronizedGroups = (
-				BI0000000000000000000004 /* BookletMakeriOSApp */,
-			);
-			name = "BookletMaker-iOS";
-			productName = "BookletMaker-iOS";
-			productReference = BI0000000000000000000002 /* BookletMaker-iOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 		F54F8C7D2F1A3B6500AABB2A /* Lumi */ = {
@@ -487,9 +437,6 @@
 					DB0000000000000000000009 = {
 						CreatedOnToolsVersion = 16.4;
 					};
-					BI0000000000000000000009 = {
-						CreatedOnToolsVersion = 26.2;
-					};
 					F54F8C7D2F1A3B6500AABB2A = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -528,7 +475,6 @@
 			targets = (
 				F54F8C7D2F1A3B6500AABB2A /* Lumi */,
 				BM0000000000000000000009 /* BookletMaker */,
-				BI0000000000000000000009 /* BookletMaker-iOS */,
 				AI0000000000000000000009 /* AppIconDesigner */,
 				CD0000000000000000000009 /* CADDesigner */,
 				DB0000000000000000000009 /* DatabaseManager */,
@@ -575,13 +521,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		LF000000000000000005 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BI0000000000000000000006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -677,13 +616,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		BI0000000000000000000007 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -719,20 +651,6 @@
 		BM000000000000000000000E /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = DD36141333F791471BC94F98 /* BookletMaker.xcconfig */;
-			buildSettings = {
-			};
-			name = Release;
-		};
-		BI000000000000000000000D /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = BI0000000000000000000F02 /* BookletMaker-iOS.xcconfig */;
-			buildSettings = {
-			};
-			name = Debug;
-		};
-		BI000000000000000000000E /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = BI0000000000000000000F02 /* BookletMaker-iOS.xcconfig */;
 			buildSettings = {
 			};
 			name = Release;
@@ -824,15 +742,6 @@
 			buildConfigurations = (
 				BM000000000000000000000D /* Debug */,
 				BM000000000000000000000E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		BI000000000000000000000F /* Build configuration list for PBXNativeTarget "BookletMaker-iOS" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				BI000000000000000000000D /* Debug */,
-				BI000000000000000000000E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
