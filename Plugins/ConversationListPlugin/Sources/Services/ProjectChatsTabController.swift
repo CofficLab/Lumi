@@ -84,10 +84,17 @@ final class ProjectChatsTabController {
     private func refresh() async {
         guard let kernel, let workspace = kernel.workspace else { return }
 
+        // 「当前项目」筛选入口仅在两种条件同时满足时才有意义：
+        // 1) 全库顶层对话来自 ≥2 个不同项目——单一项目时「全部对话」已等同该项目，入口冗余；
+        // 2) 当前项目确有对话——否则该入口为空。
         let desiredVisible: Bool
         if let path = kernel.project?.currentProject?.path {
-            let count = await kernel.conversations?.conversationCount(projectPath: path) ?? 0
-            desiredVisible = count > 0
+            let projectCount = await kernel.conversations?.conversationProjectCount() ?? 0
+            // 项目数 <2 时无需再查当前项目对话数，直接隐藏。
+            let currentCount = projectCount >= 2
+                ? (await kernel.conversations?.conversationCount(projectPath: path) ?? 0)
+                : 0
+            desiredVisible = currentCount > 0
         } else {
             desiredVisible = false
         }

@@ -8,8 +8,8 @@ import SwiftUI
 /// - "All Projects":所有项目的对话
 /// - "Current Project":当前项目的对话
 ///
-/// 仅当当前项目存在对话时才展示 "Current Project" 分段；当前项目无对话
-/// （或未选中项目）时该分段连同分段栏一并隐藏，只保留 "All Projects"。
+/// 「Current Project」分段仅在「全库对话来自 ≥2 个项目」且「当前项目有对话」时才展示；
+/// 否则该分段连同分段栏一并隐藏，只保留 "All Projects"（单一项目时二者视图相同，入口冗余）。
 ///
 /// 切换 Tab 时通过 `if` 分支保留两个 `ListView` 的视图身份,
 /// 让各自的滚动位置、分页状态和加载任务互不干扰。
@@ -24,7 +24,10 @@ struct ToolbarPopoverContent: View {
     }
 
     @State private var selectedScope: Scope = .allProjects
-    /// 当前项目的对话数是否 >0；决定是否展示 "Current Project" 分段。
+    /// 全库顶层对话是否来自 ≥2 个不同项目；决定按项目筛选是否有意义。
+    /// 默认 false（先隐藏），异步查得后再决定，避免短暂展示冗余入口。
+    @State private var hasMultipleProjects = false
+    /// 当前项目的对话数是否 >0。
     /// 默认 false（先隐藏），异步查得数量后再决定，避免短暂展示一个空入口。
     @State private var currentProjectHasConversations = false
 
@@ -47,9 +50,9 @@ struct ToolbarPopoverContent: View {
             ?? currentProjectPath
     }
 
-    /// 是否展示 "Current Project" 分段：已选中项目且该项目有对话。
+    /// 是否展示 "Current Project" 分段：已选中项目、全库 ≥2 个项目、且当前项目有对话。
     private var showsCurrentProjectScope: Bool {
-        currentProjectPath != nil && currentProjectHasConversations
+        currentProjectPath != nil && hasMultipleProjects && currentProjectHasConversations
     }
 
     var body: some View {
@@ -64,10 +67,10 @@ struct ToolbarPopoverContent: View {
         }
         .frame(width: 300, height: 480)
         .task(id: currentProjectPath) {
-            await refreshCurrentProjectHasConversations()
+            await refreshProjectScopeVisibility()
         }
         .onLumiConversationsDidChange {
-            Task { await refreshCurrentProjectHasConversations() }
+            Task { await refreshProjectScopeVisibility() }
         }
         .onChange(of: showsCurrentProjectScope) { _, visible in
             // 「当前项目」分段消失时，若选中态残留在其上则回退到 "All Projects"。
@@ -77,11 +80,18 @@ struct ToolbarPopoverContent: View {
         }
     }
 
-    /// 查询当前项目的对话数，更新 `currentProjectHasConversations`。
+    /// 查询全库项目多样性 + 当前项目对话数，更新分段可见性相关状态。
     /// 仅在查询期间未发生项目切换时才写入结果，避免旧查询覆盖新状态。
-    private func refreshCurrentProjectHasConversations() async {
+    private func refreshProjectScopeVisibility() async {
         let path = currentProjectPath
-        guard let path else {
+
+        // 全库顶层对话是否来自 ≥2 个项目：单一项目时「全部对话」已等同该项目，
+        // 「当前项目」分段冗余，直接隐藏，无需再查当前项目对话数。
+        let projectCount = await kernel.conversations?.conversationProjectCount() ?? 0
+        guard currentProjectPath == path else { return }
+        hasMultipleProjects = projectCount >= 2
+
+        guard let path, hasMultipleProjects else {
             currentProjectHasConversations = false
             return
         }
