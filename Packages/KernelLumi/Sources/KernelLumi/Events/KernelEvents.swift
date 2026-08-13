@@ -57,6 +57,13 @@ public extension Notification.Name {
 
     static let lumiShowOnboarding = Notification.Name("Onboarding.Show")
 
+    /// 请求打开设置窗口。
+    ///
+    /// 由"应用菜单"中的"Settings..."命令发出（`SettingsPlugin`），
+    /// 由主窗口根视图（`WindowMain`）监听并调用 `openWindow(id:)` 打开设置窗口。
+    /// 这样菜单命令闭包（非视图上下文）可以与 SwiftUI 的开窗动作解耦。
+    static let lumiOpenSettings = Notification.Name("lumi.openSettings")
+
     static let lumiFocusChatInput = Notification.Name("lumi.focusChatInput")
     static let lumiSendChatMessage = Notification.Name("lumi.sendChatMessage")
     static let lumiStopChatGeneration = Notification.Name("lumi.stopChatGeneration")

@@ -60,6 +60,12 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     /// Count conversations, optionally including conversations created by sub-agents.
     func conversationCount(projectPath: String?, includingChildConversations: Bool) async -> Int
 
+    /// 全库中「不同项目路径」的数量（仅统计 projectPath 非空、顶层对话）。
+    ///
+    /// 用于判断按项目筛选是否有意义：当数量 ≤1 时，所有顶层对话都来自同一个项目，
+    /// 「全部对话」视图已等同于该项目，「当前项目」筛选入口冗余，应隐藏。
+    func conversationProjectCount() async -> Int
+
     /// 数据存储目录
     var dataDirectory: URL { get }
 
@@ -213,6 +219,11 @@ public extension ConversationManaging {
 
     func conversationCount(projectPath: String?, includingChildConversations: Bool) async -> Int {
         await conversationCount(projectPath: projectPath)
+    }
+
+    /// 默认实现：返回 0（视为无项目多样性），测试 mock 可不实现。
+    func conversationProjectCount() async -> Int {
+        0
     }
 
     func createConversation(
