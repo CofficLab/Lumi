@@ -61,18 +61,7 @@ public final class WorkspacePlugin: LumiPlugin, SuperLog {
     public func chatSectionHeaderItems(kernel: KernelLumi) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: KernelLumi) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] {
-        [
-            SettingsTabItem(
-                id: "\(id).settings",
-                title: LumiPluginLocalization.string("Layout"),
-                systemImage: "sidebar.leading",
-                order: order
-            ) {
-                LayoutSettingsView(kernel: kernel)
-            },
-        ]
-    }
+    public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? { nil }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
