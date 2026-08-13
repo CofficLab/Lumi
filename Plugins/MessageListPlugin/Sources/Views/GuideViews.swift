@@ -13,6 +13,7 @@ struct NoConversationSelectedView: View {
     @LumiTheme private var theme
     let kernel: KernelLumi
     @StateObject private var projectObserver: NoConversationProjectObserver
+    @StateObject private var promptObserver: PromptSuggestionsObserver
 
     /// 控制「添加项目」文件夹选择器的显隐。
     @State private var isImporterPresented = false
@@ -21,6 +22,9 @@ struct NoConversationSelectedView: View {
         self.kernel = kernel
         _projectObserver = StateObject(
             wrappedValue: NoConversationProjectObserver(project: kernel.project)
+        )
+        _promptObserver = StateObject(
+            wrappedValue: PromptSuggestionsObserver(service: kernel.promptSuggestions)
         )
     }
 
@@ -37,6 +41,11 @@ struct NoConversationSelectedView: View {
 
     private var titleFont: Font { .system(size: 18, weight: .semibold) }
 
+    /// 内核聚合后的全部提示词（来自各启用插件，按 order 排序）。
+    private var promptSuggestions: [LumiPromptSuggestion] {
+        kernel.promptSuggestions?.allPromptSuggestions ?? []
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "square.and.pencil")
@@ -44,6 +53,10 @@ struct NoConversationSelectedView: View {
                 .foregroundColor(theme.textSecondary.opacity(0.5))
 
             titleView
+
+            if !promptSuggestions.isEmpty {
+                promptChips
+            }
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -80,6 +93,28 @@ struct NoConversationSelectedView: View {
                 .foregroundColor(theme.textPrimary)
         }
         .multilineTextAlignment(.center)
+    }
+
+    /// 标题下方的提示词芯片：点击把提示词写入输入框并聚焦，便于直接开始对话。
+    private var promptChips: some View {
+        FlowLayout(spacing: 8) {
+            ForEach(promptSuggestions) { suggestion in
+                Button {
+                    kernel.conversationInput?.text = suggestion.prompt
+                    kernel.conversationInput?.isInputFocused = true
+                } label: {
+                    HStack(spacing: 6) {
+                        if let image = suggestion.systemImage {
+                            Image(systemName: image)
+                        }
+                        Text(suggestion.title)
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
+        .frame(maxWidth: 480)
     }
 
     /// 项目名下拉菜单：列出全部项目（当前项打勾）可切换，并提供「添加项目…」。
@@ -143,6 +178,20 @@ private final class NoConversationProjectObserver: ObservableObject {
     init(project: (any ProjectProviding)?) {
         self.project = project
         cancellable = project?.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+    }
+}
+
+/// 将 `PromptSuggestionProviding` 的更新桥接给 SwiftUI（插件启停时提示词列表变化）。
+@MainActor
+private final class PromptSuggestionsObserver: ObservableObject {
+    let service: (any PromptSuggestionProviding)?
+    private var cancellable: AnyCancellable?
+
+    init(service: (any PromptSuggestionProviding)?) {
+        self.service = service
+        cancellable = service?.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }
     }
