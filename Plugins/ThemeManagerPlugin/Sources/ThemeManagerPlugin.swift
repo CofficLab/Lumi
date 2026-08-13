@@ -42,29 +42,7 @@ public final class ThemeManagerPlugin: LumiPlugin {
     public func messageRenderers(kernel: KernelLumi) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: KernelLumi) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: KernelLumi) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: KernelLumi) -> [LumiTitleToolbarItem] {
-        #if canImport(AppKit)
-        // 主题切换器位于标题工具栏右上方。
-        let themeAvailable = kernel.theme != nil
-        return [
-            LumiTitleToolbarItem(
-                id: themeAvailable ? "\(id).switcher" : "\(id).error",
-                title: LumiPluginLocalization.string("Theme", bundle: .module),
-                placement: .trailing,
-                order: 950
-            ) {
-                if themeAvailable {
-                    ThemeToolbarView(kernel: kernel)
-                } else {
-                    ThemeToolbarErrorView(pluginName: self.name)
-                }
-            },
-        ]
-        #else
-        // iOS 无标题工具栏：不贡献主题切换器。
-        return []
-        #endif
-    }
+    public func titleToolbarItems(kernel: KernelLumi) -> [LumiTitleToolbarItem] { [] }
     public func commandMenuGroups(kernel: KernelLumi) -> [CommandMenuGroup] {
         guard let themeService else { return [] }
         return [themeService.commandMenuGroup()]
@@ -96,8 +74,5 @@ public final class ThemeManagerPlugin: LumiPlugin {
     public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
     public func configureEditorRuntime(kernel: KernelLumi) async {}
 
-    public func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] {
-        // 主题切换器已移至标题工具栏右上方（见 titleToolbarItems）。
-        return []
-    }
+    public func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] { [] }
 }
