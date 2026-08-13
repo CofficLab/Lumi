@@ -3,7 +3,7 @@ import SwiftUI
 import KernelLumi
 import LumiUI
 
-struct ThemeStatusBarView: View {
+struct ThemeToolbarView: View {
     private let kernel: KernelLumi
     private var themeService: (any UIThemeProviding)? {
         kernel.theme
@@ -20,7 +20,8 @@ struct ThemeStatusBarView: View {
         StatusBarHoverContainer(
             detailView: ThemePickerDetailView(kernel: kernel),
             popoverWidth: 320,
-            id: "lumi-theme-picker"
+            id: "lumi-theme-picker",
+            chrome: .titleToolbar
         ) {
             HStack(spacing: 4) {
                 Image(systemName: "paintbrush")

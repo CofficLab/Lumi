@@ -311,6 +311,7 @@
       }
     },
     "Theme Status Bar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

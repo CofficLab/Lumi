@@ -2,15 +2,15 @@ import LumiUI
 import SwiftUI
 import KernelLumi
 
-/// 主题服务不可用时的状态栏错误视图
-struct ThemeStatusBarErrorView: View {
+/// 主题服务不可用时的标题工具栏错误视图
+struct ThemeToolbarErrorView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    var pluginName: String = "Theme Status Bar"
+    var pluginName: String = "Theme Toolbar"
 
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: "exclamationmark.circle.fill")
-                .font(.system(size: 8))
+                .font(.appMicro)
                 .foregroundColor(.red)
 
             Text("\(pluginName): \(LumiPluginLocalization.string("Service unavailable", bundle: .module))")
@@ -23,7 +23,7 @@ struct ThemeStatusBarErrorView: View {
 }
 
 #if DEBUG
-#Preview("Theme Status Bar Error") {
-    ThemeStatusBarErrorView()
+#Preview("Theme Toolbar Error") {
+    ThemeToolbarErrorView()
 }
 #endif
