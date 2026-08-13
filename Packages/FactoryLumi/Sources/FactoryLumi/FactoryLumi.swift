@@ -17,7 +17,8 @@ public enum FactoryLumi {
         // 初始化负责校验 ID 唯一性。这里捕获失败意味着内置目录本身有缺陷，
         // 属于编译期/开发期错误，直接 fatalError 让问题尽早暴露。
         try! FactoryConfiguration(
-            plugins: LumiPluginCatalog.plugins + additionalPlugins
+            plugins: LumiPluginCatalog.plugins + additionalPlugins,
+            initialContainerID: "com.coffic.lumi.plugin.chat-panel"
         )
     }
 
