@@ -4,15 +4,14 @@ import SwiftUI
 /// Chat Panel 插件
 ///
 /// 注册 Chat 视图容器的 ActivityBar 图标。
-/// 当图标激活时，通过 `onContainerActivated` 调整工作区状态：
-/// 显示 Rail、不需要 main content 区域、显示 Chat。
+/// ChatPanel 负责提供聊天工作区的 ActivityBar 入口。
 @MainActor
 public final class ChatPanelPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.chat-panel"
     public var name: String {
         LumiPluginLocalization.string("Chat", bundle: .module)
     }
-    public let order = 278
+    public let order = 20
     public let policy: LumiPluginPolicy = .alwaysOn
     public let stage: LumiPluginStage = .beta
 
