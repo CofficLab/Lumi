@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.11.1</title>
-            <pubDate>Wed, 12 Aug 2026 11:33:46 +0000</pubDate>
-            <sparkle:version>605</sparkle:version>
-            <sparkle:shortVersionString>5.11.1</sparkle:shortVersionString>
+            <title>5.12.0</title>
+            <pubDate>Thu, 13 Aug 2026 11:02:50 +0000</pubDate>
+            <sparkle:version>606</sparkle:version>
+            <sparkle:shortVersionString>5.12.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.11.1</h2>
-<h3>Changes since v5.11.0</h3>
+            <description><![CDATA[<h2>Release v5.12.0</h2>
+<h3>Changes since v5.11.1</h3>
 <ul>
-<li>feat(AppIconDesignerPlugin): export Icon Composer packages</li>
-<li>feat(database): add localization keys for structure editing UI</li>
-<li>feat(database): add SQL source editor with syntax highlighting</li>
-<li>feat(database): add staged column schema editing</li>
-<li>feat(database): add staged index schema editing</li>
-<li>feat(database): add table structure inspector</li>
-<li>feat(database): multi-statement execution and query history</li>
-<li>feat(DatabaseManager): add unified table browser with pagination, inline editing and change tracking</li>
-<li>feat(DatabaseManagerPlugin): add localization strings for structure inspector</li>
-<li>feat(debug-badge): move Debug badge to leading toolbar position</li>
-<li>feat(factory): support custom loading view from host app</li>
-<li>feat(GitPlugin): add GitStatusBarVisibilityGate to control status bar item visibility</li>
-<li>feat(MessageList): add real-time elapsed timer for process disclosure</li>
-<li>feat(workspace): conditionally show layout menu based on view container visibility overrides</li>
-<li>fix(AppStoreConnectPlugin): remove invalid limit on to-one preReleaseVersion relationship</li>
-<li>fix(booklet): use leading padding instead of horizontal in explanation view</li>
-<li>fix(ci): make app version injection location-independent</li>
-<li>fix(WorkspacePlugin): split chat section divider key at last dot on restore</li>
-<li>refactor(app-store-connect): route HTTP through kernel network</li>
-<li>refactor(app-update): route feed requests through kernel network</li>
+<li>docs(BookletMaker): document mobile and multiplatform plans</li>
+<li>docs(KernelHosting): add README</li>
+<li>feat: enhance API key management in provider access failed view</li>
+<li>feat(AppIconDesignerPlugin): add dual-scope storage and LLM icon review</li>
+<li>feat(BookletMakerPlugin): finish cross-platform adaptation</li>
+<li>feat(BookletMakerPlugin): localize mobile UI and add zh-Hant translations</li>
+<li>feat(BookletMakerPlugin): make PDF page rendering cross-platform</li>
+<li>feat(BookletMakerPlugin): support export cancellation and richer progress UI</li>
+<li>feat(ConversationInputPlugin): add native placeholder support for chat input</li>
+<li>feat(FactoryLumi): set initialContainerID to chat-panel plugin</li>
+<li>feat(foundation): add iOS platform support</li>
+<li>feat(iOS): add BookletMaker-iOS canary target</li>
+<li>feat(iOS): add FactoryCoreMobile host engine; widen WorkspacePlugin</li>
+<li>feat(iOS): add native BookletMaker mobile workspace</li>
+<li>feat(iOS): real BookletMaker-iOS app (kernel boot + PDF import/export)</li>
+<li>feat(LocalizationKit): fall back across Chinese script variants</li>
+<li>feat(MessageListPlugin): smart empty state with API key setup and suggestions</li>
+<li>feat(OnboardingPlugin): add multi-step onboarding with AI setup and features tour</li>
+<li>fix(BookletMaker-iOS): declare supported localizations in app plist</li>
+<li>refactor(BookletMaker): merge app targets across platforms</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.11.1</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.11.1/Lumi_5.11.1_x86_64.dmg" length="49891849" type="application/octet-stream" sparkle:edSignature="CLZ329uOd6NVBSlEdfaJKfjM6b2MQq7NKVEc2CET7T1DeAiQmsbishELOA0sTDyAbWsLXx+WlFKS7WoClxNVAQ=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.12.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.12.0/Lumi_5.12.0_x86_64.dmg" length="48495597" type="application/octet-stream" sparkle:edSignature="RTMV7fN72i3D52SbSbcpguB+n5MuQ7B9QgLs0EBW6rPGoZQEulI0pe4I7+3ZgioZu1FDHNIn5nmB8W6Hft8sAg=="/>
         </item>
     </channel>
 </rss>
