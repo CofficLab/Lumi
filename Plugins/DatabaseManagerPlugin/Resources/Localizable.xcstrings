@@ -282,6 +282,7 @@
 
     },
     "Multi-Database Support" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
