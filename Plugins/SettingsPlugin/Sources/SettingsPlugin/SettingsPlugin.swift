@@ -1,5 +1,6 @@
 import Foundation
 import KernelLumi
+import LumiUI
 import SuperLogKit
 import SwiftUI
 import os
@@ -117,7 +118,31 @@ public final class SettingsPlugin: LumiPlugin, SuperLog {
     public func messageRenderers(kernel: KernelLumi) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: KernelLumi) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: KernelLumi) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: KernelLumi) -> [LumiTitleToolbarItem] { [] }
+    public func titleToolbarItems(kernel: KernelLumi) -> [LumiTitleToolbarItem] {
+        #if canImport(AppKit)
+        // 设置入口位于标题工具栏最右侧；点击发出 `.lumiOpenSettings` 通知，
+        // 由主窗口根视图监听并打开设置窗口——与上方 ⌘, 菜单命令走同一条链路，
+        // 闭包无需依赖 SwiftUI 的 `openWindow` 环境值。
+        return [
+            LumiTitleToolbarItem(
+                id: "\(id).openSettings",
+                title: LumiPluginLocalization.string("Settings", bundle: .module),
+                placement: .trailing,
+                order: 1000
+            ) {
+                AppIconButton(
+                    systemImage: "gearshape",
+                    size: .regular
+                ) {
+                    NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
+                }
+            },
+        ]
+        #else
+        // iOS 无标题工具栏：不贡献设置入口。
+        return []
+        #endif
+    }
     public func panelHeaderItems(kernel: KernelLumi) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: KernelLumi) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] { [] }

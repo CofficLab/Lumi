@@ -18,7 +18,6 @@ struct ActivityBar: View, SuperLog {
     nonisolated static let verbose = true
 
     @LumiTheme private var theme
-    @Environment(\.openWindow) private var openWindow
     let kernel: KernelLumi
 
     @State private var containers: [ViewContainerItem] = []
@@ -39,14 +38,6 @@ struct ActivityBar: View, SuperLog {
             }
 
             Spacer()
-
-            AppIconButton(
-                systemImage: "gearshape",
-                size: .regular
-            ) {
-                openWindow(id: AppBootstrap.settingsWindowID)
-            }
-            .help("Settings")
         }
         .padding(.vertical, 8)
         .frame(width: 48)
