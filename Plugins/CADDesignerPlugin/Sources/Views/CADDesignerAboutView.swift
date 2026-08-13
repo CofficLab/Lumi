@@ -1,258 +1,127 @@
 import LumiUI
-import KernelLumi
 import SwiftUI
 
 // MARK: - About View
 
-/// Plugin about view for CAD Designer.
-/// Introduces the plugin's aluminum profile CAD design capabilities.
+/// CAD 设计器插件关于视图 —— 以产品落地页的形式介绍功能。
 struct CADDesignerAboutView: View {
     @Environment(\.locale) private var locale
     @LumiTheme private var theme
 
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            hero
+            capabilitiesSection
+            aiToolsSection
+            technicalSection
+        }
+    }
+
+    // MARK: - Hero
+
+    private var hero: some View {
+        LandingHero(
+            icon: "cube.transparent",
+            accent: theme.primary,
+            tagline: L("用 AI 辅助搭建铝型材结构:3D 视口拼装、自动生成 BOM、优化下料,从设计到出料一站完成。"),
+            chips: [L("3D 视口"), L("铝型材库"), L("AI 设计")],
+            metrics: [
+                .init(value: "12", label: L("型材规格")),
+                .init(value: "9", label: L("AI 工具")),
+                .init(value: "PDF", label: L("导出格式"))
+            ]
+        )
+        .landingAppear(delay: 0)
+    }
+
+    // MARK: - 设计能力
+
+    private var capabilitiesSection: some View {
+        LandingSection(title: L("设计能力"), icon: "square.stack.3d.up", subtitle: L("从拼装到出料的完整链路")) {
+            LandingFeatureGrid(items: [
+                .init(icon: "square.stack.3d.up", tint: theme.primary,
+                      title: L("3D 视口"),
+                      description: L("原生 3D 视口实时拼装与预览结构。")),
+                .init(icon: "shippingbox", tint: theme.info,
+                      title: L("元件库"),
+                      description: L("内置欧标 20/30/40 系列铝型材(12 种规格)与支架、螺栓、滑块螺母、端盖、合页等连接件。")),
+                .init(icon: "link", tint: theme.warning,
+                      title: L("装配关系"),
+                      description: L("以刚性、合页或螺栓连接定义元件关系,构建精确的装配结构。")),
+                .init(icon: "list.clipboard", tint: theme.success,
+                      title: L("BOM 生成"),
+                      description: L("自动汇总相同型材与连接件,生成带数量与规格的物料清单。")),
+                .init(icon: "scissors", tint: theme.error,
+                      title: L("下料优化"),
+                      description: L("采用首次适应递减算法优化切割方案,减少浪费与余料。")),
+                .init(icon: "square.and.arrow.up", tint: theme.primary,
+                      title: L("导入导出"),
+                      description: L("视口渲染导出为 PNG 或 PDF,项目存取为 .cadproj(JSON)。"))
+            ])
+        }
+        .landingAppear(delay: 0.05)
+    }
+
+    // MARK: - AI 工具
+
+    private var aiToolsSection: some View {
+        LandingSection(title: L("可用的 AI 工具"), icon: "wand.and.stars", subtitle: L("由 Agent 调用,对话即可驱动设计")) {
+            LandingFeatureGrid(items: [
+                .init(icon: "folder.badge.plus", title: L("新建项目"), description: "cad_create_project"),
+                .init(icon: "rectangle.on.rectangle", title: L("放置型材"), description: "cad_place_profile"),
+                .init(icon: "slider.horizontal.3", title: L("更新属性"), description: "cad_update_profile"),
+                .init(icon: "bolt", title: L("放置连接件"), description: "cad_place_connector"),
+                .init(icon: "link", title: L("定义连接"), description: "cad_connect_components"),
+                .init(icon: "list.clipboard", title: L("生成 BOM"), description: "cad_generate_bom"),
+                .init(icon: "scissors", title: L("优化下料"), description: "cad_optimize_cutting"),
+                .init(icon: "tray.and.arrow.down", title: L("保存项目"), description: "cad_save_project"),
+                .init(icon: "tray.and.arrow.up", title: L("加载项目"), description: "cad_load_project")
+            ], minColumnWidth: 170)
+        }
+        .landingAppear(delay: 0.1)
+    }
+
+    // MARK: - 技术细节
+
+    private var technicalSection: some View {
+        LandingSection(title: L("技术细节"), icon: "wrench.and.screwdriver") {
+            AppCard(style: .subtle, cornerRadius: 12) {
+                VStack(alignment: .leading, spacing: 0) {
+                    techRow(L("3D 引擎"), L("SceneKit(macOS 原生)"))
+                    AppDivider()
+                    techRow(L("项目格式"), ".cadproj (JSON)")
+                    AppDivider()
+                    techRow(L("型材标准"), L("欧标 20/30/40 系列"))
+                }
+            }
+        }
+        .landingAppear(delay: 0.15)
+    }
+
+    private func techRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+            Spacer()
+            Text(value)
+                .font(.appCaptionEmphasized)
+                .foregroundColor(theme.textPrimary)
+        }
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - Localization
+
     private func L(_ key: String) -> String {
         CADDesignerLocalization.string(key, locale: locale)
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Feature Highlights
-                FeatureHighlight(
-                    icon: "cube.fill",
-                    title: L("3D Viewport"),
-                    description: L("Design aluminum profile frames in an interactive 3D viewport with orbit camera, reference grid, and XYZ axis guides.")
-                )
-
-                FeatureHighlight(
-                    icon: "square.stack.3d.up.fill",
-                    title: L("Component Library"),
-                    description: L("Access European standard 20/30/40 series aluminum profiles (12 specifications) plus connectors: brackets, bolts, sliding nuts, end caps, and hinges.")
-                )
-
-                FeatureHighlight(
-                    icon: "link",
-                    title: L("Assembly Relationships"),
-                    description: L("Define connections between components with rigid, hinge, or bolt joint types to build accurate assembly structures.")
-                )
-
-                FeatureHighlight(
-                    icon: "list.clipboard.fill",
-                    title: L("BOM Generation"),
-                    description: L("Automatically aggregate identical profiles and connectors into a bill of materials with quantities and specifications.")
-                )
-
-                FeatureHighlight(
-                    icon: "scissors",
-                    title: L("Cutting Optimization"),
-                    description: L("Optimize cutting plans using First Fit Decreasing algorithm to minimize material waste and leftover scraps.")
-                )
-
-                FeatureHighlight(
-                    icon: "camera.fill",
-                    title: L("Export Options"),
-                    description: L("Export viewport renders as PNG or PDF. Save and load projects in .cadproj JSON format.")
-                )
-
-                FeatureHighlight(
-                    icon: "wand.and.stars",
-                    title: L("AI-Powered Design"),
-                    description: L("Natural language commands like 'build a 1m × 0.5m workbench' to automatically create frames with optimal component placement.")
-                )
-
-                // AI Tools
-                AIToolsCard(
-                    title: L("Available AI Tools"),
-                    tools: [
-                        ("cad_create_project", L("Create new CAD project")),
-                        ("cad_place_profile", L("Place aluminum profile")),
-                        ("cad_update_profile", L("Update component properties")),
-                        ("cad_place_connector", L("Place connector")),
-                        ("cad_connect_components", L("Define connections")),
-                        ("cad_build_frame", L("Auto-generate rectangular frame")),
-                        ("cad_generate_bom", L("Generate bill of materials")),
-                        ("cad_optimize_cutting", L("Optimize cutting plan")),
-                        ("cad_save_project", L("Save project to file")),
-                        ("cad_load_project", L("Load project from file"))
-                    ]
-                )
-
-                // Technical Details
-                TechnicalDetailsCard(
-                    title: L("Technical Details"),
-                    details: [
-                        (L("3D Engine"), L("SceneKit (native macOS)")),
-                        (L("UI Framework"), L("SwiftUI + NSViewRepresentable")),
-                        (L("Project Format"), L(".cadproj (JSON)")),
-                        (L("Profile Standards"), L("EU 20/30/40 series"))
-                    ]
-                )
-
-                // Requirements
-                RequirementsCard(
-                    title: L("Requirements"),
-                    items: [
-                        L("macOS 14.0 or later"),
-                        L("Swift 6.0 or later"),
-                        L("SceneKit-capable GPU")
-                    ]
-                )
-            }
-            .padding()
-        }
-    }
-}
-
-// MARK: - Feature Highlight
-
-private struct FeatureHighlight: View {
-    @LumiTheme private var theme
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - AI Tools Card
-
-private struct AIToolsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let tools: [(String, String)]
-
-    private let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(tools, id: \.0) { tool in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(tool.0)
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .foregroundStyle(theme.primary)
-
-                        Text(tool.1)
-                            .font(.system(size: 11))
-                            .foregroundColor(theme.textSecondary)
-                            .lineLimit(2)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(theme.overlay)
-                    )
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Technical Details Card
-
-private struct TechnicalDetailsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let details: [(String, String)]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(details, id: \.0) { detail in
-                    HStack {
-                        Text(detail.0)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-
-                        Spacer()
-
-                        Text(detail.1)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(theme.textPrimary)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Requirements Card
-
-private struct RequirementsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let items: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(items, id: \.self) { item in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.success)
-                            .frame(width: 16)
-
-                        Text(item)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
     }
 }
 
 #Preview {
-    CADDesignerAboutView()
-        .frame(width: 400, height: 800)
+    ScrollView {
+        CADDesignerAboutView()
+            .padding(22)
+    }
+    .frame(width: 560, height: 900)
 }
