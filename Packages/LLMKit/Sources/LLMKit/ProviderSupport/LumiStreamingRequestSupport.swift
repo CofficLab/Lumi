@@ -1,6 +1,6 @@
 import Foundation
 import HttpKit
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 

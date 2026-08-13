@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// .gitignore 状态磁贴：仅在 .gitignore 缺失时高亮提示。
 public struct GitIgnoreStatusTile: View {

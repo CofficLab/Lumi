@@ -1,6 +1,6 @@
 import AppStorePromoKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct ReadPromoHTMLTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -12,7 +12,7 @@ public struct ReadPromoHTMLTool: LumiAgentTool {
     public var inputSchema: LumiJSONValue {
         ["type": "object", "properties": .object(PromoToolSupport.baseProperties(includeImage: true)), "required": ["taskId", "imageId"]]
     }
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let image = try PromoToolSupport.store.readImage(
             storagePath: try await PromoToolSupport.storagePath(for: scope),

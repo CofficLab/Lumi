@@ -1,8 +1,8 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 struct PendingMessageResolverView: View {
-    @ObservedObject var kernel: LumiKernel
+    @ObservedObject var kernel: KernelLumi
     @StateObject private var boxHolder = PendingMessageBoxHolder()
 
     var body: some View {

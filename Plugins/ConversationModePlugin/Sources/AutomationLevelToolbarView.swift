@@ -1,8 +1,8 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 struct AutomationLevelToolbarView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     // automationLevel 随当前会话切换变化。用事件 + @State 缓存，不挂 kernel 全局总线。
     @State private var selectedConversationID: UUID?

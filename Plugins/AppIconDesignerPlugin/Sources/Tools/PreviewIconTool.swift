@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Renders the selected vector document and returns the PNG as a tool-result
 /// image attachment, allowing the model to inspect its own generated icon.
@@ -25,11 +25,11 @@ public struct PreviewIconTool: LumiAgentTool {
         "Preview icon"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = IconToolSupport.language(kernel)
 
         do {

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -22,7 +22,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
     public nonisolated(unsafe) static var verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
 
-    private weak var kernel: LumiKernel?
+    private weak var kernel: KernelLumi?
 
     /// 内存中的"已通知 UI、尚未落盘"消息缓冲(write-behind 的脏数据)。
     ///
@@ -40,7 +40,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog, 
     /// 后台落盘串行队列,保证同一会话内消息落盘顺序与插入顺序一致。
     private nonisolated let persistQueue = DispatchQueue(label: "com.coffic.lumi.message.persist")
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self.kernel = kernel
         if Self.verbose {
             Self.logger.info("\(Self.t)MessageManager initialized")

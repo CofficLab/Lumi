@@ -1,7 +1,7 @@
 import Foundation
-import LumiKernel
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
+import KernelLumi
 
 public final class CodexLumiProvider: LumiLLMProvider, @unchecked Sendable {
     public static let info = LumiLLMProviderInfo(

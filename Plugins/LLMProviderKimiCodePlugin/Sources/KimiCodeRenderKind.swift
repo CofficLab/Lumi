@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 
 enum KimiCodeRenderKind {
     static let apiKeyMissing = "kimi-code-api-key-missing"

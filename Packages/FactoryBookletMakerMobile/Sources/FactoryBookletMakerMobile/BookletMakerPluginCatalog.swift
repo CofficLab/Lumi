@@ -1,5 +1,5 @@
 import BookletMakerPlugin
-import LumiKernel
+import KernelLumi
 import LogoPlugin
 import SettingsPlugin
 import StoragePlugin

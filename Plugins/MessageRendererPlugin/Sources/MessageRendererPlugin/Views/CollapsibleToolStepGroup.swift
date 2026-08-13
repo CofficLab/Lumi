@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import AgentToolKit
 import LumiUI
 import SwiftUI
@@ -14,7 +14,7 @@ import SwiftUI
 /// 展开态复用既有 `ToolCallRowView`(经 `ToolCallRowRendererRegistry` 优先走自定义渲染器),
 /// 传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮,保持 V1 的 inline 极简风格。
 struct CollapsibleToolStepGroup: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @LumiTheme private var theme
     @Environment(\.lumiTurnActivitySummaries) private var turnActivitySummaries
 

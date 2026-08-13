@@ -1,17 +1,17 @@
 #if canImport(AppKit)
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 
 struct ThemeStatusBarView: View {
-    private let kernel: LumiKernel
+    private let kernel: KernelLumi
     private var themeService: (any UIThemeProviding)? {
         kernel.theme
     }
 
     @State private var selectedContribution: LumiUIThemeContribution?
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         self._selectedContribution = State(initialValue: kernel.theme?.selectedContribution)
     }

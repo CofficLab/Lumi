@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Probe whether a single URL is reachable.
 ///

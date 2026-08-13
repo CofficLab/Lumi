@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// 工具管理器设置视图
 ///
@@ -10,7 +10,7 @@ import LumiKernel
 /// - 顶部左侧 AppTabBar：Tools(工具列表) / Execution Log(双栏日志，跟 NetworkManager 的 HTTP 日志对齐) / Usage Statistics(工具调用统计)
 /// - 右上角有「Open Data Directory」按钮可打开存储目录
 public struct ToolManagerSettingsView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let toolCallRecordStore: ToolCallRecordStore?
 
     @State private var selectedTabID: ToolSettingsTab = .tools
@@ -48,7 +48,7 @@ public struct ToolManagerSettingsView: View {
     }
 
     public init(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         toolCallRecordStore: ToolCallRecordStore? = nil
     ) {
         self.kernel = kernel

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// 激活防休眠工具
@@ -34,12 +34,12 @@ struct CaffeinateActivateTool: LumiAgentTool, SuperLog {
     }
 
     func displayDescription(arguments: [String: LumiJSONValue]) -> String { "阻止系统睡眠" }
-    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
     @MainActor
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let modeString = arguments.string("mode") ?? "systemAndDisplay"
         let duration = arguments.double("duration") ?? 0
 

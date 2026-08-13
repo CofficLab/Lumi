@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "AgentTurnRunnerPlugin", targets: ["AgentTurnRunnerPlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -19,7 +19,7 @@ let package = Package(
         .target(
             name: "AgentTurnRunnerPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

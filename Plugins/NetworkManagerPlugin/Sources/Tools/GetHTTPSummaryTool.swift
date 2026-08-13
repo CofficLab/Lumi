@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// 获取 HTTP 日志统计摘要的 Agent 工具。
@@ -32,11 +32,11 @@ public struct GetHTTPSummaryTool: LumiAgentTool, SuperLog {
         "HTTP 日志统计"
     }
 
-    public nonisolated func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public nonisolated func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let hours = min(arguments.int("hours") ?? 24, 720)
 
         let result = await MainActor.run { () -> String in

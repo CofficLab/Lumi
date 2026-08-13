@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// Toolbar title view that reflects the currently selected PDF tool.
@@ -13,12 +13,12 @@ import SwiftUI
 ///    图标也使用与侧边栏 `PDFTool.systemImage` 一致的 SF Symbol，保持视觉一致。
 struct BookletMakerToolbarTitleView: View {
     let containerID: String
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @ObservedObject var viewModel: BookletMakerViewModel
 
     @State private var activeContainerID: String?
 
-    init(containerID: String, kernel: LumiKernel, viewModel: BookletMakerViewModel) {
+    init(containerID: String, kernel: KernelLumi, viewModel: BookletMakerViewModel) {
         self.containerID = containerID
         self.kernel = kernel
         self.viewModel = viewModel

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Read-only companion to `UpdateAppStoreConnectLocalizationTool`. Required so
 /// agents can safely plan a partial edit (diff, length check, escape-only
@@ -25,11 +25,11 @@ struct ReadAppStoreConnectLocalizationTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let localizationID = arguments["localizationID"]?.stringValue,
               !localizationID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return "Missing or empty localizationID. Pass a valid appStoreVersionLocalization identifier from list-localizations."

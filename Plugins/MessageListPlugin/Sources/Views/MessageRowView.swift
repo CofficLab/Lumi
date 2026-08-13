@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 import LumiUI
 
@@ -12,7 +12,7 @@ import LumiUI
 /// `renderer.id` 徽章,便于调试时一眼分辨当前生效的具体渲染器
 /// (包括第三方插件贡献的)。Release 构建下不显示。
 struct MessageRowView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let message: LumiChatMessage
     let verbosity: LumiResponseVerbosity
 

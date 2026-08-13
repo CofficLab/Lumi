@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 
 // MARK: - Attachment 挂起池

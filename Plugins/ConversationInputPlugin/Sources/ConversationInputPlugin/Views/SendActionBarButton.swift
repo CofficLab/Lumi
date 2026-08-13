@@ -1,10 +1,10 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 /// Action Bar 上的发送/停止按钮
 struct SendActionBarButton: View {
-    @ObservedObject var kernel: LumiKernel
+    @ObservedObject var kernel: KernelLumi
     @ObservedObject var inputState: InputState
 
     var body: some View {

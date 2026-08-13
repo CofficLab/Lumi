@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// 默认命令服务实现

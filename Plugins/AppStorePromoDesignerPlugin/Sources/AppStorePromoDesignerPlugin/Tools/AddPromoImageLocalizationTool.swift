@@ -1,5 +1,5 @@
 import AppStorePromoKit
-import LumiKernel
+import KernelLumi
 
 public struct AddPromoImageLocalizationTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -27,9 +27,9 @@ public struct AddPromoImageLocalizationTool: LumiAgentTool {
         ]
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .medium }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .medium }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let imageID = try PromoToolSupport.required("imageId", arguments)

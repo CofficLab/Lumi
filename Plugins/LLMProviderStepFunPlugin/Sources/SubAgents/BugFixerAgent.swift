@@ -1,6 +1,6 @@
 import Foundation
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
 
 /// Bug修复子Agent
 ///

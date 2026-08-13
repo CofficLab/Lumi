@@ -1,6 +1,6 @@
 import Foundation
 import HttpKit
-import LumiKernel
+import KernelLumi
 
 /// Video generation result asset.
 public struct MiniMaxVideoGeneratedAsset: Equatable, Sendable {

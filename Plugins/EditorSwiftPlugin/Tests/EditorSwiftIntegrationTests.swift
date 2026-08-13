@@ -1,6 +1,6 @@
 @testable import EditorSwiftPlugin
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 
 @Test func filterXcodeProjectsKeepsOnlyXcodeRoots() async throws {

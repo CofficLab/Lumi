@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import ProjectOverviewPlugin
 
@@ -48,7 +48,7 @@ struct PluginProjectOverviewTests {
     @Test("tool risk level is low")
     func toolRiskLevel() {
         let tool = ProjectOverviewTool()
-        #expect(tool.riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(tool.riskLevel(arguments: [:], kernel: KernelLumi()) == .low)
     }
 
     @Test("ProjectTypeSection detects Swift project")

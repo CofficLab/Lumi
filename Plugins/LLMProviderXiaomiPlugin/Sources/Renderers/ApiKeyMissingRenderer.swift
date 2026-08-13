@@ -1,5 +1,5 @@
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
 
 /// 「未配置 API Key」错误渲染器。
 enum ApiKeyMissingRenderer {

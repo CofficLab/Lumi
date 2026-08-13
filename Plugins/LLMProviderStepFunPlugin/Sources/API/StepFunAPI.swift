@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// StepFun API 传输层：请求编码、SSE 流式传输、事件解析。
 ///

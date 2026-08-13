@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct ListV1Presentation: Equatable {
     var agentTurns: [AgentTurnPresentationItem] = []

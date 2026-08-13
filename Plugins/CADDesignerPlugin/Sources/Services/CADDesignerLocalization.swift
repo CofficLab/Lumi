@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// CAD Designer 本地化 helper（复用 LumiPluginLocalization）。
 enum CADDesignerLocalization {

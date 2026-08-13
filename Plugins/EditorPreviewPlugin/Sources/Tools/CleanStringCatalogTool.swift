@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import StringCatalogKit
 import SuperLogKit
 import os
@@ -42,11 +42,11 @@ public struct CleanStringCatalogTool: LumiAgentTool, SuperLog {
         return "清理 \(fileName) 中的废弃 key"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
 
         guard let filePath = arguments["file_path"]?.stringValue else {

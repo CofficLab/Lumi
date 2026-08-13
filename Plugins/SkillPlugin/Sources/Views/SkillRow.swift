@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 // MARK: - Skill 行视图
 

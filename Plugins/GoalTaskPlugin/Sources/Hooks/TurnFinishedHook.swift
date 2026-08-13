@@ -1,12 +1,12 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Turn 结束后检查未完成的目标和任务，并在需要时无感地自动续聊。
 @MainActor
 enum TurnFinishedHook {
     /// 插件钩子入口：当 agent turn 结束时被内核调用
     static func handle(
-        lumiCore: LumiKernel,
+        lumiCore: KernelLumi,
         conversationID: UUID,
         reason: LumiTurnEndReason
     ) async {

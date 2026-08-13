@@ -1,6 +1,6 @@
 import AppStorePromoKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct LintPromoTaskTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -12,7 +12,7 @@ public struct LintPromoTaskTool: LumiAgentTool {
     public var inputSchema: LumiJSONValue {
         ["type": "object", "properties": .object(PromoToolSupport.baseProperties()), "required": ["taskId"]]
     }
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let storagePath = try await PromoToolSupport.storagePath(for: scope)
         let taskID = try PromoToolSupport.required("taskId", arguments)

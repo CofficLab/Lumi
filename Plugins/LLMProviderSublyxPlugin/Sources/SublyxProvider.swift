@@ -1,9 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiKernel
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -47,11 +47,11 @@ private struct SublyxMappedTool: LumiAgentTool {
     var toolDescription: String { wrapped.toolDescription }
     var inputSchema: LumiJSONValue { wrapped.inputSchema }
     
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try await wrapped.execute(arguments: arguments, kernel: kernel)
     }
     
-    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         wrapped.riskLevel(arguments: arguments, kernel: kernel)
     }
     

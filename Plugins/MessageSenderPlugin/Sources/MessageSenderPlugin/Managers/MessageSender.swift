@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -10,7 +10,7 @@ import SuperLogKit
 /// 2. Resolve the target conversation:
 ///    - `conversationID` if non-nil,
 ///    - else `kernel.conversations?.selectedConversationID`,
-///    - else throw `LumiKernelError.noActiveConversation`.
+///    - else throw `KernelLumiError.noActiveConversation`.
 /// 3. Insert a `LumiChatMessage(role: .user, ...)` via
 ///    `kernel.messageManager?.insertMessage(_:to:)`.
 /// 4. Hand the full conversation history to the first registered
@@ -43,10 +43,10 @@ public final class MessageSender: MessageSending, SuperLog {
     /// `addFileAttachment / removeFileAttachment / clearFileAttachments` 维护此集合。
     @Published public internal(set) var pendingFileAttachments: [LumiFileAttachment] = []
 
-    private weak var kernel: LumiKernel?
+    private weak var kernel: KernelLumi?
     private var resendObserver: NotificationObserverToken?
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self.kernel = kernel
         installResendObserver()
     }
@@ -134,7 +134,7 @@ public final class MessageSender: MessageSending, SuperLog {
             }
             guard let newID = try? kernel?.conversations?.createConversation(title: initialTitle, projectPath: nil, providerID: nil, modelName: nil) else {
                 Self.logger.error("\(Self.t)sendMessage 失败 ➡️ 创建对话失败")
-                throw LumiKernelError.noActiveConversation
+                throw KernelLumiError.noActiveConversation
             }
             targetID = newID
         }

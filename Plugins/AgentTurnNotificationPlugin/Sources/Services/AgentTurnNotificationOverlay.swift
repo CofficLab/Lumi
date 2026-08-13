@@ -1,6 +1,6 @@
 import AppKit
 import SuperLogKit
-import LumiKernel
+import KernelLumi
 import SwiftUI
 import UserNotifications
 

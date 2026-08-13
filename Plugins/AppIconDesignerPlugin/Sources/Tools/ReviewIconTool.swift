@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 // MARK: - Review (sub-agent 视角审核)
 
@@ -37,11 +37,11 @@ public struct ReviewIconTool: LumiAgentTool {
         "Review icon"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = IconToolSupport.language(kernel)
 
         // 1. 解析文档（可选 documentId + scope，回退选中）。
@@ -112,7 +112,7 @@ public struct ReviewIconTool: LumiAgentTool {
 
     /// 在 MainActor 上解析 provider 并发起一次性 LLM 调用，返回审核正文。
     @MainActor
-    private static func runDesignReview(request: LumiLLMRequest, kernel: LumiKernel) async throws -> String {
+    private static func runDesignReview(request: LumiLLMRequest, kernel: KernelLumi) async throws -> String {
         guard let providerManager = kernel.llmProvider else {
             throw ReviewAborted.noProvider
         }

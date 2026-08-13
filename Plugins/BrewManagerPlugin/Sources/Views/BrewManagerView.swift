@@ -2,7 +2,7 @@ import os
 import SwiftUI
 import LumiUI
 import SuperLogKit
-import LumiKernel
+import KernelLumi
 
 struct BrewManagerView: View {
     @StateObject private var viewModel = BrewManagerViewModel()

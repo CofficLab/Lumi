@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// 对话列表顶部标题栏：根据 scopeToCurrentProject 与当前项目动态显示。
@@ -6,7 +6,7 @@ struct HeaderBarView: View {
     /// 是否仅展示当前项目下的会话。
     let scopeToCurrentProject: Bool
     /// 用于解析当前项目名称（当 `scopeToCurrentProject == true` 时使用）。
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     var body: some View {
         HStack(spacing: 6) {

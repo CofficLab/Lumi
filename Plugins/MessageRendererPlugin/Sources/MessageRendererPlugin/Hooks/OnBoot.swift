@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -14,7 +14,7 @@ public struct MessageRendererOnBootHook {
     public init() {}
 
     /// 执行 boot
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         // 注册 Manager
         try kernel.registerMessageRendererManagerService(MessageRendererManager.shared)
 

@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// LFS 状态磁贴：显示当前仓库是否启用了 LFS。
 public struct GitLFSStatusTile: View {

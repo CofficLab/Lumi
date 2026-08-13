@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct ExportAppIconTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -31,11 +31,11 @@ public struct ExportAppIconTool: LumiAgentTool {
         "Export Xcode app icon"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = IconToolSupport.language(kernel)
         guard let outputDirectory = arguments["outputDirectory"]?.anyValue as? String, !outputDirectory.isEmpty else {
             return IconToolSupport.missingParameter("outputDirectory", language: language)

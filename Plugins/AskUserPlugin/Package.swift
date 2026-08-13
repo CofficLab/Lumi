@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/LumiUI"),
@@ -23,7 +23,7 @@ let package = Package(
         .target(
             name: "AskUserPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

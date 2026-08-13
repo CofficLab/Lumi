@@ -1,6 +1,6 @@
 import Foundation
 import HTMLPreviewKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import os
 import SuperLogKit

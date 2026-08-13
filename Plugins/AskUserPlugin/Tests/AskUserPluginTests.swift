@@ -1,6 +1,6 @@
 import AgentToolKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import AskUserPlugin
 
@@ -36,7 +36,7 @@ struct AskUserPluginTests {
     @Test("agentTools returns one tool named ask_user")
     func agentToolsReturnsAskUserTool() {
         let plugin = AskUserPlugin()
-        let tools = plugin.agentTools(kernel: LumiKernel())
+        let tools = plugin.agentTools(kernel: KernelLumi())
         #expect(tools.count == 1)
         #expect(tools.first?.name == "ask_user")
     }
@@ -61,7 +61,7 @@ struct AskUserToolTests {
 
     @Test("tool risk level is low")
     func riskLevelIsLow() {
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         #expect(tool.riskLevel(arguments: [:], kernel: kernel) == .low)
     }
 
@@ -228,7 +228,7 @@ struct AskUserToolTests {
 
     @Test("execute rejects missing mode")
     func executeRejectsMissingMode() async throws {
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let args: [String: LumiJSONValue] = ["question": .string("继续？")]
         let result = try await tool.execute(arguments: args, kernel: kernel)
         #expect(result.hasPrefix("__ASK_USER_ERROR__"))
@@ -237,7 +237,7 @@ struct AskUserToolTests {
 
     @Test("execute rejects unknown mode value")
     func executeRejectsUnknownMode() async throws {
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let args: [String: LumiJSONValue] = ["question": .string("继续？"), "mode": .string("maybe")]
         let result = try await tool.execute(arguments: args, kernel: kernel)
         #expect(result.hasPrefix("__ASK_USER_ERROR__"))
@@ -246,7 +246,7 @@ struct AskUserToolTests {
 
     @Test("execute rejects choice mode without options")
     func executeRejectsChoiceWithoutOptions() async throws {
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let args: [String: LumiJSONValue] = ["question": .string("选哪个？"), "mode": .string("choice")]
         let result = try await tool.execute(arguments: args, kernel: kernel)
         #expect(result.hasPrefix("__ASK_USER_ERROR__"))
@@ -256,7 +256,7 @@ struct AskUserToolTests {
     @Test("execute rejects choice when all options are unparseable")
     func executeRejectsChoiceWithOnlyBadOptions() async throws {
         // 选项存在但全部无法解析（无 label/description）→ 报错给 LLM 重试，不偷换是/否。
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let args: [String: LumiJSONValue] = [
             "question": .string("怎么提交？"),
             "mode": .string("choice"),
@@ -269,7 +269,7 @@ struct AskUserToolTests {
 
     @Test("execute rejects yes_no for open-ended question")
     func executeRejectsYesNoForOpenEnded() async throws {
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let args: [String: LumiJSONValue] = ["question": .string("冲突如何处理？"), "mode": .string("yes_no")]
         let result = try await tool.execute(arguments: args, kernel: kernel)
         #expect(result.hasPrefix("__ASK_USER_ERROR__"))
@@ -278,7 +278,7 @@ struct AskUserToolTests {
 
     @Test("execute accepts yes_no for a real yes/no question")
     func executeAcceptsYesNoQuestion() async throws {
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let state = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "call-1",
@@ -295,7 +295,7 @@ struct AskUserToolTests {
 
     @Test("execute accepts free_text mode")
     func executeAcceptsFreeText() async throws {
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let state = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "call-2",

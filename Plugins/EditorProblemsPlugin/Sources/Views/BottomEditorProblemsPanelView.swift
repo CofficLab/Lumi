@@ -2,7 +2,7 @@ import EditorService
 import LanguageServerProtocol
 import LumiUI
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 public struct BottomEditorProblemsPanelView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme

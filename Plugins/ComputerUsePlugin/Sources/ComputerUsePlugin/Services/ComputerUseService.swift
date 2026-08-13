@@ -1,7 +1,7 @@
 import AppKit
 import CoreGraphics
 import Foundation
-import LumiKernel
+import KernelLumi
 import ScreenCaptureKit
 
 actor ComputerUseActionGate {

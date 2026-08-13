@@ -1,6 +1,6 @@
 # KernelHosting
 
-平台中性的 `LumiKernel` 生命周期宿主，负责内核实例的创建、注册与销毁。
+平台中性的 `KernelLumi` 生命周期宿主，负责内核实例的创建、注册与销毁。
 
 ## 设计理念
 
@@ -8,7 +8,7 @@
 变成一个同时编译到 macOS 与 iOS 的中立层。macOS 宿主（`FactoryCore`）与未来的
 iOS 宿主（`FactoryCoreMobile`）共用这一份实现，避免双宿主各自维护导致漂移。
 
-它只依赖 `LumiKernel` 与日志，**不涉及任何平台 chrome**（窗口、工具栏、菜单栏、
+它只依赖 `KernelLumi` 与日志，**不涉及任何平台 chrome**（窗口、工具栏、菜单栏、
 应用代理等）。这让它可以在两个平台之间无差别复用。
 
 ## 平台支持
@@ -37,7 +37,7 @@ KernelHosting.destroyKernel(kernel)
 KernelHosting.destroyAllKernels()
 ```
 
-`createKernel` 内部依次完成：实例化 `LumiKernel` → 初始化插件 → 应用启用覆盖 →
+`createKernel` 内部依次完成：实例化 `KernelLumi` → 初始化插件 → 应用启用覆盖 →
 订阅插件变更通知 → `kernel.startup()` → 登记到注册表。
 
 ## 职责边界
@@ -64,7 +64,7 @@ iOS:    App → FactoryBookletMakerMobile → FactoryCoreMobile┘
                                               ↓
                                          KernelHosting
                                               ↓
-                                          LumiKernel
+                                          KernelLumi
 ```
 
 - macOS：`FactoryCore.createKernel` / `mainKernel` / `destroy*` 等是转发到
@@ -74,5 +74,5 @@ iOS:    App → FactoryBookletMakerMobile → FactoryCoreMobile┘
 
 ## 依赖
 
-- `LumiKernel`
+- `KernelLumi`
 - `SuperLogKit`

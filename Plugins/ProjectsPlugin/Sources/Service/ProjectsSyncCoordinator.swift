@@ -1,10 +1,10 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
-/// 协调 `ProjectsViewModel` 与 `LumiKernel.project` 之间的同步。
+/// 协调 `ProjectsViewModel` 与 `KernelLumi.project` 之间的同步。
 @MainActor
 public final class ProjectsSyncCoordinator: SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.sync")
@@ -17,8 +17,8 @@ public final class ProjectsSyncCoordinator: SuperLog {
     private var cancellables = Set<AnyCancellable>()
     private var isSyncingFromCoordinator = false
 
-    /// LumiKernel 实例，用于同步项目状态。
-    public weak var kernel: LumiKernel? {
+    /// KernelLumi 实例，用于同步项目状态。
+    public weak var kernel: KernelLumi? {
         didSet {
             guard kernel != nil, oldValue == nil else { return }
             observeKernelChanges()

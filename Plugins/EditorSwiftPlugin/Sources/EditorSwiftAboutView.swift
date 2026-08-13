@@ -1,7 +1,7 @@
 import LocalizationKit
 import LumiUI
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 /// Swift Editor plugin about view.
 /// Introduces the plugin's Swift language support and tree-sitter highlighting capabilities.

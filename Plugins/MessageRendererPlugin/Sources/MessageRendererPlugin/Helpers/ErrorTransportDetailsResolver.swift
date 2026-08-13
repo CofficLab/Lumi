@@ -1,5 +1,5 @@
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
 
 enum ErrorTransportDetailsResolver {
     private static let summarySeparator = "\n\n--- Request / Response Details ---\n"

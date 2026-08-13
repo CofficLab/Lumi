@@ -1,8 +1,8 @@
 import AgentToolKit
 import Foundation
-import LumiKernel
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
+import KernelLumi
 
 extension LumiToolCall {
     /// Bridges `LumiToolCall` to AgentToolKit's registry-facing `ToolCall` model.

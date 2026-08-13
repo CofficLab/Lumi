@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import LumiKernel
+import KernelLumi
 @testable import MessageListPlugin
 
 /// `ActiveStepGroupResolver` 的单元测试 —— V1「可折叠工具步骤组」的默认展开规则。

@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// Toolbar title view that only displays when this plugin's container is active.
@@ -8,11 +8,11 @@ import SwiftUI
 /// 监听 `.activeViewContainerIDDidChange` 事件更新。
 struct ImageToPDFToolbarTitleView: View {
     let containerID: String
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var activeContainerID: String?
 
-    init(containerID: String, kernel: LumiKernel) {
+    init(containerID: String, kernel: KernelLumi) {
         self.containerID = containerID
         self.kernel = kernel
         _activeContainerID = State(initialValue: kernel.workspace?.activeViewContainerID)

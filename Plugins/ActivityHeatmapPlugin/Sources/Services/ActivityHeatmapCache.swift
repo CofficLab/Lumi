@@ -1,6 +1,6 @@
 import Foundation
 import SwiftData
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 

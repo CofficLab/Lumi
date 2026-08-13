@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct DeleteAppStoreConnectScreenshotTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
@@ -21,11 +21,11 @@ struct DeleteAppStoreConnectScreenshotTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .high
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let screenshotID = arguments["screenshotID"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !screenshotID.isEmpty else {
             return "Missing or empty screenshotID."

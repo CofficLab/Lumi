@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 /// 把 `LumiLLMRequest` 编码为 Anthropic Messages API 请求体。
 ///

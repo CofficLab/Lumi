@@ -1,9 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiKernel
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
+import KernelLumi
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderXybbzPlugin")

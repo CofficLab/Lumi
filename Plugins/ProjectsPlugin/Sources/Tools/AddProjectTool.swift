@@ -1,7 +1,7 @@
 import Foundation
-import LumiKernel
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
+import KernelLumi
 import SuperLogKit
 
 /// Add Project Tool
@@ -28,7 +28,7 @@ struct AddProjectTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let viewModel = await MainActor.run(body: { RuntimeBridge.viewModel }) else {
             return "Error: Projects view model is not available."
         }

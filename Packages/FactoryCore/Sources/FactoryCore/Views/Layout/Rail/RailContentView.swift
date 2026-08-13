@@ -1,10 +1,10 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 // MARK: - Rail Content View
 
 struct RailContentView: View {
-    @ObservedObject var kernel: LumiKernel
+    @ObservedObject var kernel: KernelLumi
 
     private var tabs: [PanelRailTabItem] {
         guard let workspace = kernel.workspace else { return [] }

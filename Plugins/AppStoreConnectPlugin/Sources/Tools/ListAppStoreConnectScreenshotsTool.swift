@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct ListAppStoreConnectScreenshotsTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
@@ -21,7 +21,7 @@ struct ListAppStoreConnectScreenshotsTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let screenshotSetID = arguments["screenshotSetID"]?.stringValue, !screenshotSetID.isEmpty else {
             return "Missing or empty screenshotSetID."
         }

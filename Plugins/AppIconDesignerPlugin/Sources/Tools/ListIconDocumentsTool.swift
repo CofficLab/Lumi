@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 列出插件管理的图标文档，跨 project / app 两个作用域。
 public struct ListIconDocumentsTool: LumiAgentTool {
@@ -28,11 +28,11 @@ public struct ListIconDocumentsTool: LumiAgentTool {
         "List icon documents"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let scopeFilter = (arguments.string("scope") ?? "all").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
         let snapshot = await MainActor.run { () -> [(IconScope, [IconDocument])] in

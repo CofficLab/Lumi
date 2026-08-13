@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import XcodeKit
 import XcodeProj
@@ -62,7 +62,7 @@ public struct AddSwiftPackageTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         let baseRisk: LumiCommandRiskLevel = .medium
 
         guard let kernel, !kernel.allowedDirectories.isEmpty else {
@@ -84,7 +84,7 @@ public struct AddSwiftPackageTool: LumiAgentTool, SuperLog {
         return "添加 Swift Package \(productName) 到 \(targetName)"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
 
         guard let projectPath = arguments["project_path"]?.stringValue, !projectPath.isEmpty else {

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 代码系列（Code models）MLX Provider
 ///

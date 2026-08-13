@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -10,7 +10,7 @@ struct ConversationAgentTurnCountToolbarView: View {
     // .lumiTurnStarted/.lumiTurnFinished 事件广播），用 refreshID token 驱动重算；
     // selectedConversationID 由 .onLumiSelectedConversationDidChange 事件更新。
     // 不挂 kernel 全局总线。
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @State private var selectedConversationID: UUID?
     @State private var refreshID = UUID()
     @State private var isPopoverPresented = false

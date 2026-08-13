@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import LumiKernel
+import KernelLumi
 @testable import FileLogPlugin
 
 @MainActor

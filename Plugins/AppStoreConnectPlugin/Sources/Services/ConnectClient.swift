@@ -1,6 +1,6 @@
 import CryptoKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 

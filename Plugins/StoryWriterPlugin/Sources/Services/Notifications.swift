@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Notifications broadcast by Agent tools when they mutate story/chapter data,
 /// so the rail tab (and any other observer) can refresh itself.
@@ -16,7 +16,7 @@ enum StoryWriterStorage {
 
     /// Returns the on-disk directory for the story store, or nil if the
     /// kernel's storage service is not available.
-    static func directory(kernel: LumiKernel) async -> URL? {
+    static func directory(kernel: KernelLumi) async -> URL? {
         await MainActor.run {
             kernel.storage?.pluginDataDirectory(for: pluginID)
         }

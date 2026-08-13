@@ -1,6 +1,6 @@
 import DownloadKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// 列出下载任务工具
@@ -37,11 +37,11 @@ public struct ListDownloadsTool: LumiAgentTool, SuperLog {
         "列出所有下载任务"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let states = await manager.allTaskStates()
 
         if states.isEmpty {

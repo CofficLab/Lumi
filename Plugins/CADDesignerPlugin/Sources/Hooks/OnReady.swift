@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -14,7 +14,7 @@ public struct CADDesignerOnReadyHook: SuperLog {
     public init() {}
 
     /// 执行 onReady
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         // CADDocumentStore 已经是单例,无需额外注册
         if Self.verbose {
             Self.logger.info("\(Self.t)CAD Designer 插件已就绪")

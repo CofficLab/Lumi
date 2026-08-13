@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -15,7 +15,7 @@ public struct LayoutKernelOnBootHook: SuperLog {
     public init() {}
 
     /// 执行 boot
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         let store = LayoutStore(pluginDirectory: kernel.storage?.pluginDataDirectory(for: "LayoutKernel"))
         let manager = LayoutManager(store: store)
         manager.kernel = kernel

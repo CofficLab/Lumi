@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// DeepSeek (OpenAI-compatible flavor) transport, request encoding, SSE parsing, and usage parsing.
 ///

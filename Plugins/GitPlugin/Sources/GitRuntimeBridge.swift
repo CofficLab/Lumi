@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 
 @MainActor
 enum GitRuntimeBridge {

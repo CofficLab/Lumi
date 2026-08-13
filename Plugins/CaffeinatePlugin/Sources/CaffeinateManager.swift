@@ -1,7 +1,7 @@
 import Foundation
 import IOKit.pwr_mgt
 import LocalizationKit
-import LumiKernel
+import KernelLumi
 import Observation
 import SuperLogKit
 
@@ -46,7 +46,7 @@ final class CaffeinateManager: SuperLog {
     /// Timer (used for timed mode)
     private var timer: Timer?
 
-    private weak var kernel: LumiKernel?
+    private weak var kernel: KernelLumi?
 
     // MARK: - Initialization
 
@@ -56,7 +56,7 @@ final class CaffeinateManager: SuperLog {
         }
     }
 
-    func configure(kernel: LumiKernel) {
+    func configure(kernel: KernelLumi) {
         self.kernel = kernel
         CaffeinateLocalStore.shared.configure(kernel: kernel)
         reloadPersistedDefaultMode()

@@ -2,7 +2,7 @@ import AppKit
 import EditorLanguageRuntime
 import EditorService
 import EditorSource
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 

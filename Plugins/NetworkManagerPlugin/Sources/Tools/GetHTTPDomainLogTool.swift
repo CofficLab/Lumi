@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// 查询特定域名或路径的 HTTP 日志的 Agent 工具。
@@ -46,11 +46,11 @@ public struct GetHTTPDomainLogTool: LumiAgentTool, SuperLog {
         "查询域名日志"
     }
 
-    public nonisolated func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public nonisolated func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let domain = arguments.string("domain") ?? ""
         let pathPrefix = arguments.string("path_prefix")
         let limit = min(arguments.int("limit") ?? 50, 200)

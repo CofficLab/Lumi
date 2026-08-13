@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 import os
-import LumiKernel
+import KernelLumi
 
 /// Cache cleaner service - performs cache scanning and cleaning in the background.
 public final class CacheCleanerService: @unchecked Sendable {

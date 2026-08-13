@@ -1,14 +1,14 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 public struct ProjectFilesHeaderView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @EnvironmentObject private var themeVM: AppThemeVM
     @StateObject private var projectObserver: ProjectFilesProjectObserver
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self.kernel = kernel
         _projectObserver = StateObject(
             wrappedValue: ProjectFilesProjectObserver(project: kernel.project)

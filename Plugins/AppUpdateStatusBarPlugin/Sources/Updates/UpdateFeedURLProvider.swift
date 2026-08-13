@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 
 /// Provides the update feed URL, with reachability checking and fallback.

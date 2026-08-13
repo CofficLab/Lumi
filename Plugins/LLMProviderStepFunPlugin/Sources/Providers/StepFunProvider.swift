@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 

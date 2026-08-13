@@ -1,5 +1,5 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SuperLogKit
 import HTMLPreviewKit
@@ -27,7 +27,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
     public nonisolated static let verbose: Bool = false
 
     // 使用 kernel.project 替代已移除的 WindowProjectVM
-    private let kernel: LumiKernel
+    private let kernel: KernelLumi
     @EnvironmentObject private var themeVM: AppThemeVM
     @ObservedObject private var viewModel: EditorPreviewViewModel
     @State private var isCleaningCurrentStringCatalog = false
@@ -39,7 +39,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
     @State private var docPreviewWebView: WKWebView?
 
     @MainActor
-    public init(kernel: LumiKernel, viewModel: EditorPreviewViewModel? = nil) {
+    public init(kernel: KernelLumi, viewModel: EditorPreviewViewModel? = nil) {
         self.kernel = kernel
         self.viewModel = viewModel ?? EditorPreviewRuntimeBridge.previewViewModel()
     }

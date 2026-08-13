@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -15,7 +15,7 @@ final class RAGIndexScheduler: SuperLog {
     nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag.scheduler")
 
-    private let kernel: LumiKernel
+    private let kernel: KernelLumi
     private let service: RAGService
     private let configuration: RAGIndexSchedulingConfiguration
     private var retryStates: [String: RAGIndexRetryState] = [:]
@@ -24,7 +24,7 @@ final class RAGIndexScheduler: SuperLog {
     private var observers: [NSObjectProtocol] = []
 
     init(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         service: RAGService,
         configuration: RAGIndexSchedulingConfiguration = .init()
     ) {

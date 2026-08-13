@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LLMKit"),
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),
     ],
     targets: [
@@ -23,7 +23,7 @@ let package = Package(
             name: "LLMProviderHyperAPIPlugin",
             dependencies: [
                 .product(name: "LLMKit", package: "LLMKit"),
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources",

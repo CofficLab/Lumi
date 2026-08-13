@@ -1009,36 +1009,36 @@
         }
       }
     },
-    "LumiKernel with MessageManaging service": {
+    "KernelLumi with MessageManaging service": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "LumiKernel with MessageManaging service"
+            "value": "KernelLumi with MessageManaging service"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "带有 MessageManaging 服务的 LumiKernel"
+            "value": "带有 MessageManaging 服务的 KernelLumi"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "帶有 MessageManaging 服務的 LumiKernel"
+            "value": "帶有 MessageManaging 服務的 KernelLumi"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "帶有 MessageManaging 服務的 LumiKernel"
+            "value": "帶有 MessageManaging 服務的 KernelLumi"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "帶有 MessageManaging 服務的 LumiKernel"
+            "value": "帶有 MessageManaging 服務的 KernelLumi"
           }
         }
       }

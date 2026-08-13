@@ -1,6 +1,6 @@
 import AgentToolKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import WebSearchPlugin
 
@@ -57,7 +57,7 @@ struct PluginWebSearchTests {
                 )
             ]
         }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let result = try await tool.execute(
             arguments: ["query": .string(" \nLumi release notes\t")],
             kernel: kernel
@@ -73,7 +73,7 @@ struct PluginWebSearchTests {
         let tool = WebSearchTool()
         let result = try await tool.execute(
             arguments: ["query": .string(" \n\t ")],
-            kernel: LumiKernel()
+            kernel: KernelLumi()
         )
 
         #expect(result == "Error: Missing required 'query' parameter")
@@ -84,7 +84,7 @@ struct PluginWebSearchTests {
         let tool = WebSearchTool { _ in [] }
         let result = try await tool.execute(
             arguments: ["query": .string("unknown term")],
-            kernel: LumiKernel()
+            kernel: KernelLumi()
         )
 
         #expect(result.contains("**Status**: No results found."))

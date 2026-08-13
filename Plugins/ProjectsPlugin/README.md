@@ -48,7 +48,7 @@ ProjectsPlugin
 
 ## 依赖
 
-- LumiKernel
+- KernelLumi
 - LumiUI
 - LocalizationKit
 - SuperLogKit

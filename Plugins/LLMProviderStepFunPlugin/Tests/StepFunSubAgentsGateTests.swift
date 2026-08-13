@@ -1,5 +1,5 @@
 import Testing
-import LumiKernel
+import KernelLumi
 @testable import LLMProviderStepFunPlugin
 
 /// `StepFunSubAgentsGate` 的状态机契约测试。
@@ -9,7 +9,7 @@ import LumiKernel
 /// - `evaluate(kernel:)` 同步读 `phase`:仅 `ready` 返回全部 7 个 sub-agent。
 ///
 /// 因此测试聚焦状态机:用 `apply` / `setPhaseForTesting` 注入确定性状态,
-/// 不依赖真实网络或 LumiKernel 运行时(kernel 仅在「进入 ready 触发 rebuild」时用到,
+/// 不依赖真实网络或 KernelLumi 运行时(kernel 仅在「进入 ready 触发 rebuild」时用到,
 /// 该副作用不在本套件验证范围 —— `unknown` → `ready` 不会在此触发,因为测试不构造 kernel)。
 @MainActor
 @Suite struct StepFunSubAgentsGateTests {
@@ -20,7 +20,7 @@ import LumiKernel
 
     /// 空内核:`toolManager` 为 nil,故 `rebuildAllContributions` 是 no-op,
     /// 可安全用于触发「unknown → ready」的重建路径,无需真实服务装配。
-    private let kernel = LumiKernel()
+    private let kernel = KernelLumi()
 
     // MARK: - evaluate:默认 / gate 行为
 

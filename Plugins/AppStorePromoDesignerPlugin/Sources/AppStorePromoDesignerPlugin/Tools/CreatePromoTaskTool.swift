@@ -1,6 +1,6 @@
 import AppStorePromoKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct CreatePromoTaskTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -18,8 +18,8 @@ public struct CreatePromoTaskTool: LumiAgentTool {
         properties["localeIdentifier"] = ["type": "string", "description": "Locale such as en-US or zh-Hans."]
         return ["type": "object", "properties": .object(properties), "required": ["slug", "title", "appName", "deviceFamily"]]
     }
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .medium }
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .medium }
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let slug = try PromoToolSupport.required("slug", arguments)
         let familyRaw = try PromoToolSupport.required("deviceFamily", arguments)

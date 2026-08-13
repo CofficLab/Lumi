@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import LumiKernel
+import KernelLumi
 @testable import MessageListPlugin
 
 /// `MessageListRowBuilder` 工具消息合并逻辑的单元测试。

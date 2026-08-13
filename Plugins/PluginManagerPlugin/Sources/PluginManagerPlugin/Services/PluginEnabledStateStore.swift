@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Persists plugin enablement overrides inside PluginManagerPlugin's own data directory.
 @MainActor

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// V1「可折叠工具步骤组」折叠态摘要的纯逻辑(便于单元测试)。
 ///

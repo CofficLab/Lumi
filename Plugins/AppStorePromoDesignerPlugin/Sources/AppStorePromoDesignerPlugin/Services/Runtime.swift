@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 存储作用域：APP 内（应用数据目录）vs 项目内（当前项目 .lumi 目录）。
 enum Scope: String, CaseIterable, Sendable {
@@ -31,11 +31,11 @@ enum Runtime {
     static private(set) var currentProjectPath: String?
 
     /// 内核实例（在 `onBoot` 时注入），供视图层访问 `conversationInput` 等服务。
-    static private(set) var kernel: LumiKernel?
+    static private(set) var kernel: KernelLumi?
 
     private static var projectCancellable: AnyCancellable?
 
-    static func configure(kernel: LumiKernel) {
+    static func configure(kernel: KernelLumi) {
         Runtime.kernel = kernel
         configure(appStorageDirectory: kernel.storage?.pluginDataDirectory(for: "AppStorePromoDesigner"))
         installProjectObserver(kernel: kernel)
@@ -49,7 +49,7 @@ enum Runtime {
     }
 
     /// 安装对 `kernel.project` 变化的监听，自动刷新项目内存储路径。
-    private static func installProjectObserver(kernel: LumiKernel) {
+    private static func installProjectObserver(kernel: KernelLumi) {
         projectCancellable = nil
         guard let project = kernel.project else {
             updateProjectStorageDirectory(projectPath: nil)

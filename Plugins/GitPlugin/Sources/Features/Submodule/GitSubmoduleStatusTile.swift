@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// Submodule 状态磁贴：显示子模块数量，状态颜色反映是否有未初始化项。
 public struct GitSubmoduleStatusTile: View {

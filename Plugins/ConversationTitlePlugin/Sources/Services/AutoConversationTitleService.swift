@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -9,11 +9,11 @@ final class AutoConversationTitleService: SuperLog {
     nonisolated static let emoji = "✏️"
     nonisolated static let verbose = false
 
-    private weak var kernel: LumiKernel?
+    private weak var kernel: KernelLumi?
     private var messageSavedObserver: NotificationObserverToken?
     private var runningConversationIDs: Set<UUID> = []
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         installMessageSavedObserver()
     }

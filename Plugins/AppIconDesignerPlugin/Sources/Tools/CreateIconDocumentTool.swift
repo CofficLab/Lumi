@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct CreateIconDocumentTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -23,11 +23,11 @@ public struct CreateIconDocumentTool: LumiAgentTool {
         "Create icon document"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = IconToolSupport.language(kernel)
         let scope = try await IconToolSupport.resolveScope(arguments, kernel: kernel)
         let title = IconToolSupport.string(arguments, "title")

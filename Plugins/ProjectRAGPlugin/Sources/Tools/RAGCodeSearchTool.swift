@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
@@ -87,11 +87,11 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
         return "Search code: \(preview)"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let rawQuery = arguments.string("query") else {
             return "## Code Search\n\nMissing required `query` parameter."
         }
@@ -197,7 +197,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
         projectPath: String,
         pathFilter: String?,
         limit: Int,
-        kernel: LumiKernel
+        kernel: KernelLumi
     ) async -> [CodeSearchResult] {
         let keywordStart = CFAbsoluteTimeGetCurrent()
         // 优先使用 grep，失败时回退到 Swift 逐文件搜索
@@ -393,7 +393,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
         projectPath: String,
         pathFilter: String?,
         limit: Int,
-        kernel: LumiKernel?
+        kernel: KernelLumi?
     ) -> [CodeSearchResult] {
         let lowerQuery = query.lowercased()
         let files = RAGFileScanner.discoverFilesCached(in: projectPath)
@@ -468,7 +468,7 @@ public struct RAGCodeSearchTool: LumiAgentTool, SuperLog {
 
     // MARK: - Helpers
 
-    private func resolveProjectPath(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> String? {
+    private func resolveProjectPath(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> String? {
         let explicit = trimmedNonEmpty(arguments.string("projectPath"))
         let current = trimmedNonEmpty(kernel.currentProjectPath)
 

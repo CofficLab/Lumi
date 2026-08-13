@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Three-tier cache for App Store Connect REST JSON responses.
 ///

@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 /// DeepSeek 的 Anthropic-compatible 协议实现，作为 `DeepSeekOpenAIProvider` 的兄弟 provider。
 ///

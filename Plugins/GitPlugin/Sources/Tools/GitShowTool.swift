@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// Git 查看 Commit 详情工具
@@ -37,11 +37,11 @@ public struct GitShowTool: LumiAgentTool, SuperLog {
         "查看提交详情"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let path = arguments.string("path")
         guard let hash = arguments.string("hash") else {
             throw NSError(domain: "GitShowTool", code: -1,

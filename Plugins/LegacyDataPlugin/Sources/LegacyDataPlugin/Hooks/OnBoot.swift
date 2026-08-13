@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -16,7 +16,7 @@ public struct LegacyDataOnBootHook: SuperLog {
     public init() {}
 
     /// 执行 boot
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         let v4Root = resolveV4DataRootDirectory(kernel: kernel)
 
         let service = LegacyDataService(v4DataRootDirectory: v4Root)
@@ -36,7 +36,7 @@ public struct LegacyDataOnBootHook: SuperLog {
     /// 策略:当前版本数据目录形如 `<AppSupport>/<bundleID>/db_production_v5`,
     /// 取其父目录,查找兄弟目录 `db_production_v4`。Release 构建找 production,
     /// Debug 找 debug(与版本化目录命名一致)。
-    private func resolveV4DataRootDirectory(kernel: LumiKernel) -> URL? {
+    private func resolveV4DataRootDirectory(kernel: KernelLumi) -> URL? {
         guard let currentRoot = kernel.storage?.dataRootDirectory else { return nil }
         let parent = currentRoot.deletingLastPathComponent()
 

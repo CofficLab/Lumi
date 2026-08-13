@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 
 /// V1(brief)模式下工具调用列表的纯文本摘要格式化。
 enum ToolCallBriefSummaryFormatter {

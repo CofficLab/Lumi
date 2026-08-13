@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import MemoryPlugin
 
@@ -16,7 +16,7 @@ struct PluginMemoryTests {
 
     @Test("plugin registers four memory tools")
     func pluginRegistersTools() {
-        let tools = MemoryPlugin().agentTools(kernel: LumiKernel())
+        let tools = MemoryPlugin().agentTools(kernel: KernelLumi())
 
         #expect(tools.count == 4)
         let names = tools.map(\.name)
@@ -62,10 +62,10 @@ struct PluginMemoryTests {
 
     @Test("all tools have low risk level")
     func allToolsLowRisk() {
-        #expect(SaveMemoryTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
-        #expect(RecallMemoryTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
-        #expect(ListMemoriesTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
-        #expect(DeleteMemoryTool().riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(SaveMemoryTool().riskLevel(arguments: [:], kernel: KernelLumi()) == .low)
+        #expect(RecallMemoryTool().riskLevel(arguments: [:], kernel: KernelLumi()) == .low)
+        #expect(ListMemoriesTool().riskLevel(arguments: [:], kernel: KernelLumi()) == .low)
+        #expect(DeleteMemoryTool().riskLevel(arguments: [:], kernel: KernelLumi()) == .low)
     }
 
     // MARK: - LumiJSONValue schema helpers

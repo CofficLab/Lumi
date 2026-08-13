@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 import LibGit2Swift
 
 /// Submodule 面板。

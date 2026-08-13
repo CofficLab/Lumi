@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 创建 Agent 规则文档工具
 ///
@@ -39,9 +39,9 @@ public struct CreateAgentRuleTool: LumiAgentTool {
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "创建规则" }
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .medium }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .medium }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         // 优先使用显式参数，fallback 到当前项目
         let projectPath = arguments.string("project_path")?.trimmingCharacters(in: .whitespacesAndNewlines)
             ?? kernel.currentProjectPath

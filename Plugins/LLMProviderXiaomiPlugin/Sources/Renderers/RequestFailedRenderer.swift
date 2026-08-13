@@ -1,5 +1,5 @@
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
 
 /// 请求失败（网络错误等，无 HTTP 状态码）。
 enum RequestFailedRenderer {

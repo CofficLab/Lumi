@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Microsoft 系列（Phi）MLX Provider
 ///

@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// 整合 6 个新增 Git 工具的宿主视图（Stash / .gitignore / LFS / Submodule / Conflict / AutoPush）。
 ///

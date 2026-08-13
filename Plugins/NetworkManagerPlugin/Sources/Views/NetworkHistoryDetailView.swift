@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 public struct NetworkHistoryDetailView: View {
     @ObservedObject private var historyService = NetworkHistoryService.shared

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct ComputerActTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -51,7 +51,7 @@ public struct ComputerActTool: LumiAgentTool {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         guard let id = arguments.string("observation_id"),
               let observationID = UUID(uuidString: id),
               service.isApplicationAllowed(for: observationID),
@@ -70,7 +70,7 @@ public struct ComputerActTool: LumiAgentTool {
         return "执行 \(count) 个界面操作"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
         guard let rawID = arguments.string("observation_id"),
               let observationID = UUID(uuidString: rawID)

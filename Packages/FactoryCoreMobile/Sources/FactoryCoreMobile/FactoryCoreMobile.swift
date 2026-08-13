@@ -1,5 +1,5 @@
 import KernelHosting
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// iOS 宿主引擎门面。
@@ -33,7 +33,7 @@ private struct MobileHostRoot: View {
     let enabledPluginIDs: Set<String>
     let initialContainerID: String?
     let requiresAllCoreServices: Bool
-    @State private var kernel: LumiKernel?
+    @State private var kernel: KernelLumi?
     @State private var bootError: String?
 
     var body: some View {

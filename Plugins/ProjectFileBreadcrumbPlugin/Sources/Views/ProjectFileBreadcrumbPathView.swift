@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -7,7 +7,7 @@ import SwiftUI
 /// 面包屑路径视图
 public struct ProjectFileBreadcrumbPathView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     public let fileURL: URL
 
@@ -15,7 +15,7 @@ public struct ProjectFileBreadcrumbPathView: View {
         kernel.project?.currentProject?.path ?? ""
     }
 
-    public init(fileURL: URL, kernel: LumiKernel) {
+    public init(fileURL: URL, kernel: KernelLumi) {
         self.fileURL = fileURL
         self.kernel = kernel
     }

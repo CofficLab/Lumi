@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LocalizationKit"),
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -19,7 +19,7 @@ let package = Package(
             name: "LLMProviderManagerPlugin",
             dependencies: [
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

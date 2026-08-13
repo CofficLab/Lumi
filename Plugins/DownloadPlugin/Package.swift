@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/DownloadKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -22,7 +22,7 @@ let package = Package(
         .target(
             name: "DownloadPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "DownloadKit", package: "DownloadKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

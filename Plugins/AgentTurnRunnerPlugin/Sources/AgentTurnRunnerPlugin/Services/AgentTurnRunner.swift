@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -28,7 +28,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
     // MARK: - Properties
 
-    weak var kernel: LumiKernel?
+    weak var kernel: KernelLumi?
     var activeTurnTasks: [UUID: Task<Void, Never>] = [:]
     var cancelledConversations: Set<UUID> = []
     /// 因工具请求用户交互而暂停的对话。
@@ -49,7 +49,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
     // MARK: - Initialization
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self.kernel = kernel
     }
 
@@ -61,10 +61,10 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             throw AgentTurnManagingError.invalidCreationRequest
         }
         guard let conversations = kernel.conversations else {
-            throw LumiKernelError.serviceNotAvailable(service: "Conversation")
+            throw KernelLumiError.serviceNotAvailable(service: "Conversation")
         }
         guard let messageManager = kernel.messageManager else {
-            throw LumiKernelError.serviceNotAvailable(service: "Message")
+            throw KernelLumiError.serviceNotAvailable(service: "Message")
         }
 
         let conversationID = try conversations.createConversation(
@@ -562,7 +562,7 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
                 ?? type(of: targetProvider).info.defaultModel
 
             // 抽取最近一条 user message 的图片附件(由 MessageSender 写入 metadata["imageAttachments"])。
-            // 实现细节见 LumiKernel.LumiImageAttachmentMetadata.extract。
+            // 实现细节见 KernelLumi.LumiImageAttachmentMetadata.extract。
             let pendingImages = LumiImageAttachmentMetadata.extract(from: history)
 
             // 抽取最近一条 user message 的文件附件(由 MessageSender 写入 metadata["fileAttachments"])。

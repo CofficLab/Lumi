@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import SkillPlugin
 

@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 enum StepFunRequestBuilder {
     static func body(for request: LumiLLMRequest) -> [String: Any] {

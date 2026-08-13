@@ -1,6 +1,6 @@
 import Foundation
 import SwiftData
-import LumiKernel
+import KernelLumi
 
 /// 每次发出的 LLM 请求记录的纯数据副本,用于在 SwiftUI 视图中展示,
 /// 与 SwiftData actor 隔离,避免跨 actor 传递 managed 对象。

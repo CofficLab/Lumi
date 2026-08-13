@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 import Testing
-import LumiKernel
+import KernelLumi
 import LumiUI
 @testable import ThemeMountainPlugin
 

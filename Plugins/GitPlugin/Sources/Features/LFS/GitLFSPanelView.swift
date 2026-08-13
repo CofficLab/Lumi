@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// LFS 面板：显示跟踪文件数量、远程对象大小并提供 install / fetch / prune。
 public struct GitLFSPanelView: View {

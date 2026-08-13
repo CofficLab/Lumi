@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// Git 提交工具
@@ -46,11 +46,11 @@ public struct GitCommitTool: LumiAgentTool, SuperLog {
         "提交变更"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .medium // 提交会修改代码库，风险中等
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let path = arguments.string("path")
         guard let message = arguments.string("message") else {
             throw NSError(domain: "GitCommitTool", code: -1,

@@ -47,7 +47,7 @@ Expected: compilation fails because FactoryConfiguration does not exist.
 
 The manifest should directly depend only on:
 
-- `../LumiKernel`
+- `../KernelLumi`
 - `../LumiUI`
 - `../LumiLocalizationKit`
 - `../SuperLogKit`
@@ -314,7 +314,7 @@ git commit -m "refactor(factory): migrate app entry points"
 **Files:**
 
 - Delete: `Packages/LumiFactory/`
-- Modify: comments mentioning `LumiFactory` under `Packages/LumiKernel` and `Plugins/GitPlugin`
+- Modify: comments mentioning `LumiFactory` under `Packages/KernelLumi` and `Plugins/GitPlugin`
 - Modify: any README or developer documentation found by search
 
 **Step 1: Find remaining references**
@@ -336,7 +336,7 @@ Use `FactoryCore` when referring to lifecycle ownership and the appropriate host
 **Step 4: Commit checkpoint**
 
 ```bash
-git add -A Packages/LumiFactory Packages/FactoryCore Packages/FactoryLumi Packages/FactoryBookletMaker Packages/LumiKernel Plugins/GitPlugin docs
+git add -A Packages/LumiFactory Packages/FactoryCore Packages/FactoryLumi Packages/FactoryBookletMaker Packages/KernelLumi Plugins/GitPlugin docs
 git commit -m "refactor(factory): remove legacy LumiFactory package"
 ```
 
@@ -409,7 +409,7 @@ Expected: only intended changes plus the user's pre-existing AppStoreConnectPlug
 **Step 8: Final commit**
 
 ```bash
-git add Packages/FactoryCore Packages/FactoryLumi Packages/FactoryBookletMaker Lumi.xcodeproj LumiApp BookletMakerApp AppIconDesignerApp CADDesignerApp DatabaseManagerApp Packages/LumiKernel Plugins/GitPlugin docs
+git add Packages/FactoryCore Packages/FactoryLumi Packages/FactoryBookletMaker Lumi.xcodeproj LumiApp BookletMakerApp AppIconDesignerApp CADDesignerApp DatabaseManagerApp Packages/KernelLumi Plugins/GitPlugin docs
 git commit -m "refactor(factory): split host composition by application"
 ```
 

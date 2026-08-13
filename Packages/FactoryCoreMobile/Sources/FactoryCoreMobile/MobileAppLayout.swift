@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// iOS 主布局：把 `kernel.workspace` 注册的面板渲染成 iOS 原生界面。
@@ -10,7 +10,7 @@ import SwiftUI
 ///
 /// 与 macOS `AppLayoutView` 读同一个注册表，只是渲染方式不同。
 struct MobileAppLayout: View {
-    @ObservedObject var kernel: LumiKernel
+    @ObservedObject var kernel: KernelLumi
     @State private var refreshTick: Int = 0
     @State private var isRailPresented = false
 

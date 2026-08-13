@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 /// 插件 Root 视图
 ///

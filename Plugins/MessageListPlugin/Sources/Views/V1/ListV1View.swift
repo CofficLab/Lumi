@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import os
 import SuperLogKit
@@ -15,7 +15,7 @@ struct ListV1View: View, SuperLog {
     nonisolated static let emoji = "📃"
     nonisolated static let verbose: Bool = true
 
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @StateObject private var turnViewModel: ListV1ViewModel
 
     @LumiTheme private var theme
@@ -34,7 +34,7 @@ struct ListV1View: View, SuperLog {
 
     private let scrollCoordinator = MessageListScrollCoordinator()
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         _turnViewModel = StateObject(wrappedValue: ListV1ViewModel(kernel: kernel))
         _verbosity = State(

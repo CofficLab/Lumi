@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import LLMKit
 
 /// 音乐生成工具：通过 MiniMax API 生成音乐，并把音频下载链接（24 小时有效）返回给调用方。
@@ -115,7 +115,7 @@ public struct MiniMaxMusicTool: LumiAgentTool {
 
     public func execute(
         arguments: [String: LumiJSONValue],
-        kernel: LumiKernel
+        kernel: KernelLumi
     ) async throws -> String {
         try kernel.checkCancellation()
 

@@ -1,7 +1,7 @@
 import Combine
 import CoreGraphics
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 import SwiftUI
@@ -30,7 +30,7 @@ public final class LayoutManager: WorkspaceProviding, SuperLog {
 
     /// Kernel 引用：所有布局事件统一经 `kernel.eventManager` 发射。
     /// 由插件 OnBoot 阶段注入（在 `registerWorkspace` 之前赋值）。
-    public weak var kernel: LumiKernel?
+    public weak var kernel: KernelLumi?
 
     /// 持久化数据目录（`layout-info.json` 所在的 settings 子目录）。
     /// 供设置视图等外部消费者展示/打开数据目录用。

@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// 智谱 GLM 配额详情视图（在 popover 中显示）
 struct QuotaDetailView: View {

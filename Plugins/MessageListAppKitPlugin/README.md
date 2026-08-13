@@ -25,7 +25,7 @@ native implementation that:
 
 - Does not remove or modify `MessageListPlugin` or `MessageRendererPlugin`.
 - Does not change the existing message-list policy.
-- Does not add runtime feature flags to `LumiKernel`.
+- Does not add runtime feature flags to `KernelLumi`.
 - Does not embed SwiftUI provider renderers as a fallback.
 - Does not introduce WebKit or JavaScript for Markdown/Mermaid.
 

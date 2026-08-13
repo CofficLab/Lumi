@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 阿里云侧聊天消息结构。
 struct AliyunChatMessage: Sendable {

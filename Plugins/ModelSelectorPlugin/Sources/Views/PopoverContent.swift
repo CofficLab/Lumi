@@ -1,11 +1,11 @@
 import Foundation
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 
 struct PopoverContent: View {
     @LumiTheme private var theme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @Binding var isPresented: Bool
 
     /// 从 kernel 获取服务

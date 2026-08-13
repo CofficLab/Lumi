@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -31,7 +31,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     /// Notification posted when conversations list changes
     static let conversationsDidChangeNotification = Notification.Name.lumiConversationsDidChange
 
-    private weak var kernel: LumiKernel?
+    private weak var kernel: KernelLumi?
 
     /// 项目变更订阅，用于在切换当前项目时把空对话迁移到新项目。
     private var projectChangeCancellable: AnyCancellable?
@@ -44,7 +44,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
     // MARK: - Initialization
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self.kernel = kernel
         if Self.verbose {
             Self.logger.info("\(Self.t)ConversationManager initialized")

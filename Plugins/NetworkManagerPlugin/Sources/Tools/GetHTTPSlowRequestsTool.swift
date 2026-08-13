@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// 查询慢请求的 Agent 工具。
@@ -42,11 +42,11 @@ public struct GetHTTPSlowRequestsTool: LumiAgentTool, SuperLog {
         "查询慢请求"
     }
 
-    public nonisolated func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public nonisolated func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let threshold = arguments.double("threshold_seconds") ?? 1.0
         let limit = min(arguments.int("limit") ?? 20, 100)
         let hours = min(arguments.int("hours") ?? 24, 720)

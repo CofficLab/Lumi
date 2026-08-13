@@ -1,7 +1,7 @@
 import Foundation
 import os
 
-/// 运行时桥接：把 `LumiKernel` 提供的插件数据目录传给底层存储服务。
+/// 运行时桥接：把 `KernelLumi` 提供的插件数据目录传给底层存储服务。
 ///
 /// - `IdleTimePlugin.onBoot` 在首次记录事件前写入 `directoryURL`（来自
 ///   `kernel.storage?.pluginDataDirectory(for: "IdleTime")`）。

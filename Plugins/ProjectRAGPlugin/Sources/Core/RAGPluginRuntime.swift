@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public enum RAGPluginRuntime {
     nonisolated(unsafe) public static var databaseDirectoryProvider: @Sendable () -> URL = {
@@ -8,7 +8,7 @@ public enum RAGPluginRuntime {
 
     /// 内核引用，由 `ProjectRAGPlugin.onReady(kernel:)` 设置。
     @MainActor
-    public static var kernel: LumiKernel?
+    public static var kernel: KernelLumi?
 
     /// 当前项目路径，优先从 kernel 读取。
     @MainActor

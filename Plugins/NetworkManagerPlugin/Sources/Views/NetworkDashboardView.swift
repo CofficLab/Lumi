@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 public struct NetworkDashboardView: View {
     @ObservedObject private var viewModel = NetworkManagerViewModel.shared

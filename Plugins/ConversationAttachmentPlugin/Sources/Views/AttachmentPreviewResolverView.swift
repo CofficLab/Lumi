@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// 服务解析层 + 桥接层
@@ -10,7 +10,7 @@ import SwiftUI
 /// 桥接原理:`ObservableMessageSendingBox` 把 service 的 `objectWillChange`
 /// 转发到自己的 publisher,这样内层 view 可以正常接收 `@Published` 更新。
 struct AttachmentPreviewResolverView: View {
-    @ObservedObject var kernel: LumiKernel
+    @ObservedObject var kernel: KernelLumi
     @StateObject private var boxHolder = BoxHolder()
 
     var body: some View {

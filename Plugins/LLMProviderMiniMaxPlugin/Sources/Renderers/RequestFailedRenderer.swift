@@ -1,5 +1,5 @@
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
 
 enum RequestFailedRenderer {
     private static let pluginOrder = 104 // MiniMaxPlugin.order

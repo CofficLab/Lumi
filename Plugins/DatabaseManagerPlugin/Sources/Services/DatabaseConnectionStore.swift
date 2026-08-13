@@ -1,6 +1,6 @@
 import Foundation
 import KeychainKit
-import LumiKernel
+import KernelLumi
 
 /// 数据库连接配置的持久化存储。
 ///

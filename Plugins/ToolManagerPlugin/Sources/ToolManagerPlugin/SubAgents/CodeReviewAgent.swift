@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 代码审查子 Agent（继承当前选中供应商/模型）。
 ///

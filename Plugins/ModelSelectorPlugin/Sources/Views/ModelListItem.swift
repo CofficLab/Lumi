@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// 模型列表中的单行视图
 struct ModelListItem: View {

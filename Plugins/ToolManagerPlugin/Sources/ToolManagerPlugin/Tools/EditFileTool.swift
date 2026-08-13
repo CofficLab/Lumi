@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import FileSystemKit
 
 public struct EditFileTool: LumiAgentTool {
@@ -43,7 +43,7 @@ public struct EditFileTool: LumiAgentTool {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .high
     }
 
@@ -54,7 +54,7 @@ public struct EditFileTool: LumiAgentTool {
         return "编辑 \(URL(fileURLWithPath: filePath).lastPathComponent)"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let filePath = arguments["file_path"]?.stringValue,
               let oldString = arguments["old_string"]?.stringValue,
               let newString = arguments["new_string"]?.stringValue

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct ListAppStoreConnectAppsTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
@@ -24,7 +24,7 @@ struct ListAppStoreConnectAppsTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let search = arguments["search"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines)
         let rawLimit = AppStoreConnectToolSupport.parseInt(arguments["limit"])
         let limit = min(max(rawLimit ?? 20, 1), 100)

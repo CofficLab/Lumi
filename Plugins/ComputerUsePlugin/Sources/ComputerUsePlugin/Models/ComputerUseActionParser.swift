@@ -1,6 +1,6 @@
 import CoreGraphics
 import Foundation
-import LumiKernel
+import KernelLumi
 
 enum ComputerUseActionParser {
     static func parse(_ value: LumiJSONValue?) throws -> [ComputerUseAction] {

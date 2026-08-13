@@ -2,7 +2,7 @@ import Foundation
 import SuperLogKit
 import Combine
 import DownloadKit
-import LumiKernel
+import KernelLumi
 import HttpKit
 import os
 

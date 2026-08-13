@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -19,7 +19,7 @@ public struct StorageOnReadyHook {
     }
 
     /// 执行 onReady
-    public func execute(_ kernel: LumiKernel) throws {
+    public func execute(_ kernel: KernelLumi) throws {
         if Self.verbose {
             Self.logger.info("Storage onReady (no-op, 服务已在 OnBoot 注册)")
         }

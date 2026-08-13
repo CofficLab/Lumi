@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/EditorService"),
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),
     ],
     targets: [
@@ -23,7 +23,7 @@ let package = Package(
             name: "EditorChatPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: "Sources",

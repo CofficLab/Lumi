@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Coordinates the native message list: narrow service subscriptions,
 /// pagination, snapshot building, and stale-result rejection.
@@ -21,7 +21,7 @@ public final class AppKitMessageListCoordinator {
         /// Kernel used for live service resolution (production). Services are
         /// resolved on every access, so late-registering services (e.g. the
         /// kernel finishing boot after the view appeared) are picked up.
-        public let kernel: LumiKernel?
+        public let kernel: KernelLumi?
 
         private let conversationsOverride: (any ConversationManaging)?
         private let messageManagerOverride: (any MessageManaging)?
@@ -30,7 +30,7 @@ public final class AppKitMessageListCoordinator {
         private let messageSenderOverride: (any MessageSending)?
 
         public init(
-            kernel: LumiKernel? = nil,
+            kernel: KernelLumi? = nil,
             conversations: (any ConversationManaging)? = nil,
             messageManager: (any MessageManaging)? = nil,
             agentTurnManager: (any AgentTurnManaging)? = nil,

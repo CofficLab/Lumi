@@ -1,5 +1,5 @@
 import LocalizationKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -14,7 +14,7 @@ import SwiftUI
 struct PluginSettingsDetailView: View {
     @LumiTheme private var theme
 
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let plugin: LumiPlugin
 
     var body: some View {

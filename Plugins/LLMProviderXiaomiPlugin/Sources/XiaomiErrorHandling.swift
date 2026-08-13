@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 enum XiaomiErrorHandling {
     static func renderKind(for error: Error) -> String {

@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -8,7 +8,7 @@ import SwiftUI
 /// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
 /// 重新拉取两个清单（toolbar items + toolbar bar items）。
 struct ChatToolbarView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var toolbarItems: [ChatSectionToolbarItem] = []
     @State private var toolbarBarItems: [ChatSectionToolbarBarItem] = []
@@ -21,7 +21,7 @@ struct ChatToolbarView: View {
         toolbarItems.filter { $0.placement == .trailing }
     }
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         _toolbarItems = State(initialValue: kernel.workspace?.allChatSectionToolbarItems ?? [])
         _toolbarBarItems = State(initialValue: kernel.workspace?.allChatSectionToolbarBarItems ?? [])

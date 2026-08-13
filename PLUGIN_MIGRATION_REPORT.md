@@ -98,13 +98,13 @@ public final class SomePlugin: LumiPlugin {
 
     public init() {}
 
-    public func register(kernel: LumiKernel) throws { }
-    public func boot(kernel: LumiKernel) async throws { }
+    public func register(kernel: KernelLumi) throws { }
+    public func boot(kernel: KernelLumi) async throws { }
 }
 ```
 
 ### 依赖更新
-- 所有插件的 `Package.swift` 已从 `LumiCoreKit` 更新为 `LumiKernel`
+- 所有插件的 `Package.swift` 已从 `LumiCoreKit` 更新为 `KernelLumi`
 - 添加了必要的 `LumiUI` 依赖
 - 保持了其他依赖包的兼容性
 
@@ -133,7 +133,7 @@ public final class SomePlugin: LumiPlugin {
 - **状态**: ✅ 实际已正确迁移
 
 ### 3. ModelSelectorPlugin (误报)
-- **问题**: 验证脚本提示Package.swift缺少LumiKernel
+- **问题**: 验证脚本提示Package.swift缺少KernelLumi
 - **实际情况**: 已通过sed命令修复
 - **状态**: ✅ 已修复
 

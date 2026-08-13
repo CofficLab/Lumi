@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct ReadAppStoreConnectVersionTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
@@ -21,7 +21,7 @@ struct ReadAppStoreConnectVersionTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let versionID = arguments["versionID"]?.stringValue, !versionID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return "Missing or empty versionID. Pass a valid App Store Connect appStoreVersion identifier."
         }

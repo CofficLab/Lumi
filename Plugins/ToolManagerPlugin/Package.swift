@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "ToolManagerPlugin", targets: ["ToolManagerPlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/ShellKit"),
@@ -19,7 +19,7 @@ let package = Package(
         .target(
             name: "ToolManagerPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "ShellKit", package: "ShellKit"),

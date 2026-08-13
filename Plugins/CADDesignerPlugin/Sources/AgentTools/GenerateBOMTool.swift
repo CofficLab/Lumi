@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 生成当前项目的物料清单。
 public struct GenerateBOMTool: LumiAgentTool {
@@ -19,11 +19,11 @@ public struct GenerateBOMTool: LumiAgentTool {
         "Generate BOM"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = CADToolSupport.language(kernel)
 
         let report = await MainActor.run {

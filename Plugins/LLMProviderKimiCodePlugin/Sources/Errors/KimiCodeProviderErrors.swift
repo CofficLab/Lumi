@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 enum KimiCodeOpenAIProviderError: LocalizedError, LumiLLMErrorDispositionProviding {
     case invalidRequest(String)

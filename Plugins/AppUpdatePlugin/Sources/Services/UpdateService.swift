@@ -1,5 +1,5 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 import Sparkle
 import SuperLogKit
 import os

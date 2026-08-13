@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Xiaomi (OpenAI-compatible flavor) transport, request encoding, SSE parsing, and usage parsing.
 ///

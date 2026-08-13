@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import ShowImagePlugin
 
@@ -69,7 +69,7 @@ struct PluginShowImageTests {
     func toolRiskLevel() {
         let tool = ShowImageTool()
 
-        #expect(tool.riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(tool.riskLevel(arguments: [:], kernel: KernelLumi()) == .low)
     }
 
     @Test("max width is clamped to supported range")
@@ -88,7 +88,7 @@ struct PluginShowImageTests {
     func toolTrimsCopiedRemoteSourceWhitespace() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call_1", toolName: tool.name)
 
         let result = try await kernel.withToolExecutionContextState(context) {
@@ -120,7 +120,7 @@ struct PluginShowImageTests {
     func toolAcceptsUppercaseHTTPSRemoteSource() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call_upper_https", toolName: tool.name)
 
         let result = try await kernel.withToolExecutionContextState(context) {
@@ -139,7 +139,7 @@ struct PluginShowImageTests {
     func toolReportsUnsupportedRemoteURLScheme() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call_ftp", toolName: tool.name)
 
         let result = try await kernel.withToolExecutionContextState(context) {
@@ -157,7 +157,7 @@ struct PluginShowImageTests {
     func toolClampsDisplayedRemoteMaxWidth() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call_2", toolName: tool.name)
 
         _ = try await kernel.withToolExecutionContextState(context) {
@@ -178,7 +178,7 @@ struct PluginShowImageTests {
     func toolAcceptsJSONStyleMaxWidthValues() async throws {
         ShowImageState.shared.clear()
         let tool = ShowImageTool()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call_3", toolName: tool.name)
 
         _ = try await kernel.withToolExecutionContextState(context) {

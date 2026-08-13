@@ -1,8 +1,8 @@
 import Foundation
 import LLMKit
-import LumiKernel
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
+import KernelLumi
 
 final class ChunkCounter: @unchecked Sendable {
     private var value = 0

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// AgentTurnRunner-owned bridge from its approval renderer back to the
 /// suspended turn. AskUserPlugin is deliberately not involved.
@@ -11,7 +11,7 @@ final class ToolApprovalBridge: Sendable {
 
     private init() {}
 
-    func start(kernel: LumiKernel) {
+    func start(kernel: KernelLumi) {
         messageSender = kernel.messageSender
     }
 

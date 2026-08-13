@@ -1,5 +1,5 @@
 import Combine
-import LumiKernel
+import KernelLumi
 
 /// 面包屑导航对 `ProjectProviding` 的订阅适配器。
 ///

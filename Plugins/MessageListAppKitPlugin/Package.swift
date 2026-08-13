@@ -3,7 +3,7 @@ import PackageDescription
 
 // MARK: - Notes on declared dependencies
 //
-// `LumiKernel` and `LocalizationKit` are used today by the plugin entry
+// `KernelLumi` and `LocalizationKit` are used today by the plugin entry
 // point (LumiPlugin conformance, LumiPluginLocalization helper).
 //
 // The remaining four packages are forward-looking and are intentionally
@@ -33,7 +33,7 @@ let package = Package(
     ],
     dependencies: [
         // Core kit packages (sibling under Packages/).
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -48,7 +48,7 @@ let package = Package(
         .target(
             name: "MessageListAppKitPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

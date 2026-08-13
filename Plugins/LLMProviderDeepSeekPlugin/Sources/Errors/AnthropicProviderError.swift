@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// DeepSeek Anthropic 协议的 provider 错误。
 ///

@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 enum ToolCallResultVisualState: Equatable {
     case loading

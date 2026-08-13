@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 import ImageIO
-import LumiKernel
+import KernelLumi
 import UniformTypeIdentifiers
 
 /// 截图编码工具:CGImage → 长边缩放 → JPEG → base64 → LumiImageAttachment

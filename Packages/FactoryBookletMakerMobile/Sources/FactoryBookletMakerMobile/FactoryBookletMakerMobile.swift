@@ -1,5 +1,5 @@
 import FactoryCoreMobile
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// iOS 版 BookletMaker 组合门面。

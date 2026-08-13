@@ -1,5 +1,5 @@
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 private let rendererOrder = 305
 

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Qwen 系列（阿里通义千问）MLX Provider
 ///

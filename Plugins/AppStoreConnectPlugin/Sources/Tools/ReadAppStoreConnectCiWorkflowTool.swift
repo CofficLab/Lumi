@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct ReadAppStoreConnectCiWorkflowTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
@@ -21,7 +21,7 @@ struct ReadAppStoreConnectCiWorkflowTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let workflowID = arguments["workflowID"]?.stringValue, !workflowID.isEmpty else {
             return "Missing or empty workflowID."
         }

@@ -4,7 +4,7 @@ import AppKit
 import UIKit
 #endif
 import LocalizationKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 

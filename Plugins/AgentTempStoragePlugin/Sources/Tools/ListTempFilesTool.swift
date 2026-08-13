@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import LocalizationKit
 
 struct ListTempFilesTool: LumiAgentTool {
@@ -21,7 +21,7 @@ struct ListTempFilesTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let files = try await TempFileStorageService.shared.listFiles()
         let directory = await TempFileStorageService.shared.storageDirectoryPath
         let retentionDays = AgentTempStoragePluginLocalStore.shared.retentionDays

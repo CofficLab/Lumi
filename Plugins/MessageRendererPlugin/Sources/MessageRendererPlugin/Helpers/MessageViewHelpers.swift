@@ -1,6 +1,6 @@
-import LumiKernel
+import KernelLumi
 import AppKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 
 enum MessageViewHelpers {

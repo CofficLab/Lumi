@@ -1,9 +1,9 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiKernel
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
+import KernelLumi
 
 /// 智谱 API（OpenAI 兼容协议）
 public final class ZhipuAPIProvider: LumiLLMProvider, @unchecked Sendable {

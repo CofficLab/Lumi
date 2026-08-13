@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct ComputerObserveTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -32,7 +32,7 @@ public struct ComputerObserveTool: LumiAgentTool {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .safe
     }
 
@@ -43,7 +43,7 @@ public struct ComputerObserveTool: LumiAgentTool {
         return "观察当前应用窗口"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
         guard await Self.selectedModelSupportsComputerUse(
             kernel: kernel,
@@ -61,7 +61,7 @@ public struct ComputerObserveTool: LumiAgentTool {
 
     @MainActor
     static func selectedModelSupportsComputerUse(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         conversationID: UUID
     ) -> Bool {
         guard let providerManager = kernel.llmProvider else { return false }

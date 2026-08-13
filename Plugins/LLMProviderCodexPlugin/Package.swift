@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/LLMKit"),
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/HttpKit"),
         .package(path: "../../Packages/LocalizationKit"),
@@ -27,7 +27,7 @@ let package = Package(
             name: "LLMProviderCodexPlugin",
             dependencies: [
                 .product(name: "LLMKit", package: "LLMKit"),
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "HttpKit", package: "HttpKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),

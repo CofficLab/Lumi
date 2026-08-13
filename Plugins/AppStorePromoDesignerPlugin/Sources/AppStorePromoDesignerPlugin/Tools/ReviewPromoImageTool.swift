@@ -1,6 +1,6 @@
 import AppStorePromoKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 // MARK: - Review (sub-agent 视角审核)
 
@@ -24,7 +24,7 @@ public struct ReviewPromoImageTool: LumiAgentTool {
         properties["focus"] = ["type": "string", "description": "Optional area to focus the critique (e.g. 'typography', 'hierarchy', 'color'). Omit for a full review."]
         return ["type": "object", "properties": .object(properties), "required": ["taskId", "imageId"]]
     }
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         // 1. 解析 scope + 读图 + lint（与 PreviewPromoImageTool 一致）。
         let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let storagePath = try await PromoToolSupport.storagePath(for: scope)
@@ -97,7 +97,7 @@ public struct ReviewPromoImageTool: LumiAgentTool {
     /// 单独成方法是为了让 `any LLMProviderManaging` 引用始终留在 MainActor 侧，
     /// 不经 `MainActor.run` 闭包返回值跨隔离边界（该类型非 Sendable）。
     @MainActor
-    private static func runDesignReview(request: LumiLLMRequest, kernel: LumiKernel) async throws -> String {
+    private static func runDesignReview(request: LumiLLMRequest, kernel: KernelLumi) async throws -> String {
         guard let providerManager = kernel.llmProvider else {
             throw ReviewAborted.noProvider
         }

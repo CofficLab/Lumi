@@ -2,7 +2,7 @@ import Foundation
 import Combine
 import SwiftUI
 import SuperLogKit
-import LumiKernel
+import KernelLumi
 
 protocol BrewManagerServicing: Sendable {
     func checkInstalled() async -> Bool

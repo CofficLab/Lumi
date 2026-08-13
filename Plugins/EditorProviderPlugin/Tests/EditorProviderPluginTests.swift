@@ -1,7 +1,7 @@
 import Combine
 import EditorService
 import Foundation
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 import Testing
@@ -12,7 +12,7 @@ import Testing
 struct EditorProviderPluginTests {
     @Test
     func currentProjectFileOpensInEditor() async throws {
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let project = MockProjectService()
         try kernel.registerProject(project)
 
@@ -36,7 +36,7 @@ struct EditorProviderPluginTests {
             EditorSettingsLifecycle.registerEditorThemeContributors = previousRegistration
         }
 
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let themeRegistry = LumiUIThemeRegistry()
         try themeRegistry.replaceAll([
             LumiUIThemeContribution(

@@ -1,12 +1,12 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 struct MessageViewChrome<Content: View>: View {
     @LumiTheme private var theme
 
-    var kernel: LumiKernel? = nil
+    var kernel: KernelLumi? = nil
     let message: LumiChatMessage
     var showsResendButton = false
     var showsHeader = true

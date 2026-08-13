@@ -1,11 +1,11 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 struct AppTitleToolbar: View {
     @LumiTheme private var theme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     // 不订阅 workspace 服务的 `objectWillChange`，
     // 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
@@ -15,7 +15,7 @@ struct AppTitleToolbar: View {
     private let height: CGFloat = 44
     private let trafficLightReserveWidth: CGFloat = 76
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         _items = State(initialValue: kernel.workspace?.allTitleToolbarItems ?? [])
     }

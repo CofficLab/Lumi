@@ -1,15 +1,15 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 enum IconToolSupport {
-    static func language(_ kernel: LumiKernel?) -> LumiLanguagePreference {
+    static func language(_ kernel: KernelLumi?) -> LumiLanguagePreference {
         kernel?.language ?? .english
     }
 
     // MARK: - Scope & document resolution
 
     /// 当前已打开项目的路径（来自工具执行上下文，回退到 Runtime 缓存）。
-    static func currentProjectPath(kernel: LumiKernel) async -> String? {
+    static func currentProjectPath(kernel: KernelLumi) async -> String? {
         if let fromContext = kernel.currentProjectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
            !fromContext.isEmpty {
             return fromContext
@@ -18,7 +18,7 @@ enum IconToolSupport {
     }
 
     /// 解析工具入参中的 scope：未指定时按是否有打开项目自动选择 project / app。
-    static func resolveScope(_ arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> IconScope {
+    static func resolveScope(_ arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> IconScope {
         if let raw = arguments.string("scope")?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
            !raw.isEmpty {
             guard let scope = IconScope(rawValue: raw) else {
@@ -43,7 +43,7 @@ enum IconToolSupport {
     /// 返回文档快照（值类型）与其作用域。
     static func resolveDocument(
         _ arguments: [String: LumiJSONValue],
-        kernel: LumiKernel
+        kernel: KernelLumi
     ) async throws -> (IconDocument, IconScope) {
         let scope = try await resolveScope(arguments, kernel: kernel)
         let explicitId = arguments.string("documentId")?.trimmingCharacters(in: .whitespacesAndNewlines)

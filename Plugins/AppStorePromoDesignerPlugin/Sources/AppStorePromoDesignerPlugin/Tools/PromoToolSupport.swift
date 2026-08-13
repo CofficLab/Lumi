@@ -1,13 +1,13 @@
 import AppStorePromoKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 共享给所有宣传图工具的辅助逻辑：存储、scope 解析、参数校验、通知与摘要。
 enum PromoToolSupport {
     static let store = AppStorePromoDocumentStore()
 
     /// 当前已打开项目的路径（来自工具执行上下文，回退到 Runtime 缓存）。
-    static func currentProjectPath(kernel: LumiKernel) async -> String? {
+    static func currentProjectPath(kernel: KernelLumi) async -> String? {
         if let fromContext = kernel.currentProjectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
            !fromContext.isEmpty {
             return fromContext
@@ -16,7 +16,7 @@ enum PromoToolSupport {
     }
 
     /// 解析工具入参中的 scope：未指定时按是否有打开项目自动选择 project / app。
-    static func resolveScope(_ arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> Scope {
+    static func resolveScope(_ arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> Scope {
         if let raw = arguments.string("scope")?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
            !raw.isEmpty {
             guard let scope = Scope(rawValue: raw) else {

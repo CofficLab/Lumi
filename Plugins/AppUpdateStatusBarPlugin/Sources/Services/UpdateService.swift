@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 
 /// App update service.

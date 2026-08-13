@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// EditorSwiftPlugin 的运行时桥接:持有 Storage service 解析出的插件目录,
 /// 供 `EditorSwiftBuildServerStore` 读取。
@@ -18,7 +18,7 @@ enum EditorSwiftPluginRuntimeBridge {
 
 @MainActor
 public extension EditorSwiftPlugin {
-    static func bootstrapFromLumiCoreIfNeeded(kernel: LumiKernel) {
+    static func bootstrapFromLumiCoreIfNeeded(kernel: KernelLumi) {
         guard !didBootstrapFromLumiCore else { return }
         if let storage = kernel.storage {
             EditorSwiftPluginRuntimeBridge.pluginSubdirectory =

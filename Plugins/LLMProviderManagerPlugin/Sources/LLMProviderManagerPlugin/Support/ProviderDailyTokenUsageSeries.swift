@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct ProviderDailyTokenUsagePoint: Equatable, Sendable, Identifiable {
     let day: Date

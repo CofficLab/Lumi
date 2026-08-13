@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import os
 
 /// Memory 插件 OnReady 阶段钩子：绑定插件数据目录并加载本地设置。
@@ -8,7 +8,7 @@ public struct MemoryOnReadyHook {
 
     public init() {}
 
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         guard let storage = kernel.storage else {
             Self.logger.error("🧠 Storage service not available")
             return

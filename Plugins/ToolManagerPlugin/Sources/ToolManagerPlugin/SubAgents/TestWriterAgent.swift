@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 写测试子 Agent（继承当前选中供应商/模型）。
 ///

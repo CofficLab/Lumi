@@ -1,5 +1,5 @@
 @testable import EditorSwiftPlugin
-import LumiKernel
+import KernelLumi
 import Testing
 
 @Test func editorSwiftPluginMetadata() {
@@ -15,7 +15,7 @@ import Testing
 
 @Test func editorSwiftPluginContributesKernelEditorPlugin() {
     let plugin = EditorSwiftPlugin()
-    let kernel = LumiKernel()
+    let kernel = KernelLumi()
     let editorPlugins = plugin.editorPlugins(kernel: kernel)
 
     #expect(editorPlugins.count == 1)

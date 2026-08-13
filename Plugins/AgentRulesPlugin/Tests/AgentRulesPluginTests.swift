@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import LumiKernel
+import KernelLumi
 @testable import AgentRulesPlugin
 
 @MainActor
@@ -17,7 +17,7 @@ import LumiKernel
     #expect(plugin.policy == .alwaysOn)
     #expect(plugin.category == .general)
     #expect(plugin.stage == .beta)
-    #expect(plugin.settingsTabItems(kernel: LumiKernel()).count == 1)
+    #expect(plugin.settingsTabItems(kernel: KernelLumi()).count == 1)
 }
 
 @MainActor

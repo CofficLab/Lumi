@@ -1,9 +1,9 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 struct VerbosityToolbarView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var selectedLevel: LumiResponseVerbosity = .defaultVerbosity
     @LumiUI.LumiTheme private var theme: any LumiUITheme

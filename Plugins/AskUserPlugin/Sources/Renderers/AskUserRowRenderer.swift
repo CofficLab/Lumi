@@ -1,6 +1,6 @@
 import AgentToolKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// AskUser 的 ToolCall 行级渲染器

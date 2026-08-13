@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 

@@ -1,7 +1,7 @@
 import Foundation
 import KeychainKit
 import LLMKit
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import LLMProviderDeepSeekPlugin
 

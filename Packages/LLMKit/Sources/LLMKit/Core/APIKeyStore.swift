@@ -1,6 +1,6 @@
 import Foundation
 import KeychainKit
-import LumiKernel
+import KernelLumi
 import Security
 import os
 

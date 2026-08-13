@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiLocalizationKit
 import LumiUI
 import SwiftUI
@@ -144,7 +144,7 @@ public struct ErrorView: View {
 
     #Preview("ErrorView - Kernel Error") {
         ErrorView(
-            error: LumiKernelError.serviceNotAvailable(service: "LayoutManager")
+            error: KernelLumiError.serviceNotAvailable(service: "LayoutManager")
         )
     }
 #endif

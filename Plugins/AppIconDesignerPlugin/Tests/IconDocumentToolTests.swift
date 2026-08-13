@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import AppIconDesignerPlugin
 
@@ -23,7 +23,7 @@ struct IconDocumentToolTests {
     func createsAndEditsVectorIconDocuments() async throws {
         let root = try resetWithTempAppStorage()
         defer { try? FileManager.default.removeItem(at: root) }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         _ = try await CreateIconDocumentTool().execute(
             arguments: [
@@ -67,7 +67,7 @@ struct IconDocumentToolTests {
     func rendersSVGOutput() async throws {
         let root = try resetWithTempAppStorage()
         defer { try? FileManager.default.removeItem(at: root) }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         _ = try await CreateIconDocumentTool().execute(
             arguments: [
@@ -102,7 +102,7 @@ struct IconDocumentToolTests {
     func createsGradientSymbolDocument() async throws {
         let root = try resetWithTempAppStorage()
         defer { try? FileManager.default.removeItem(at: root) }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         _ = try await CreateIconDocumentTool().execute(
             arguments: ["title": .string("Symbol")],
@@ -144,7 +144,7 @@ struct IconDocumentToolTests {
     func appliesBuiltInIconPreset() async throws {
         let root = try resetWithTempAppStorage()
         defer { try? FileManager.default.removeItem(at: root) }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let result = try await ApplyIconPresetTool().execute(
             arguments: [
@@ -298,7 +298,7 @@ struct IconDocumentToolTests {
     func exportsSVGFile() async throws {
         let root = try resetWithTempAppStorage()
         defer { try? FileManager.default.removeItem(at: root) }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let tempRoot = FileManager.default.temporaryDirectory
             .appendingPathComponent("PluginAppIconDesignerSVGTests-\(UUID().uuidString)", isDirectory: true)
@@ -327,7 +327,7 @@ struct IconDocumentToolTests {
     func updatesLintsSavesAndLoadsDocumentThroughAgentTools() async throws {
         let root = try resetWithTempAppStorage()
         defer { try? FileManager.default.removeItem(at: root) }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let tempRoot = FileManager.default.temporaryDirectory
             .appendingPathComponent("PluginAppIconDesignerAgentDocumentTests-\(UUID().uuidString)", isDirectory: true)
@@ -411,7 +411,7 @@ struct IconDocumentToolTests {
             try? FileManager.default.removeItem(at: appRoot)
             try? FileManager.default.removeItem(at: projectRoot)
         }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         IconDesignerRuntime.setAppStorage(appRoot)
         IconDesignerRuntime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: projectRoot)
 
@@ -455,7 +455,7 @@ struct IconDocumentToolTests {
         let appRoot = FileManager.default.temporaryDirectory.appendingPathComponent("icon-fallback-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: appRoot, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: appRoot) }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         IconDesignerRuntime.setAppStorage(appRoot)
         // 不设置 project，模拟无打开项目。
 
@@ -473,7 +473,7 @@ struct IconDocumentToolTests {
     func reviewWithoutProvider() async throws {
         let root = try resetWithTempAppStorage()
         defer { try? FileManager.default.removeItem(at: root) }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         _ = try await CreateIconDocumentTool().execute(
             arguments: ["title": .string("Review Me"), "background": .string("#111827")],

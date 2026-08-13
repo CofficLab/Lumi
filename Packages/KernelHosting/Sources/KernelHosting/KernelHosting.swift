@@ -1,12 +1,12 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
 /// 内核生命周期宿主
 ///
-/// 维护 `LumiKernel` 实例注册表，提供创建 / 销毁 / 主内核访问。
-/// 这一层是**平台中性**的（同时编译到 macOS 与 iOS）：它只依赖 `LumiKernel`
+/// 维护 `KernelLumi` 实例注册表，提供创建 / 销毁 / 主内核访问。
+/// 这一层是**平台中性**的（同时编译到 macOS 与 iOS）：它只依赖 `KernelLumi`
 /// 与日志，不涉及窗口 / 工具栏 / 菜单栏等任何 chrome。
 ///
 /// macOS 宿主 `FactoryCore` 与未来的 iOS 宿主 `FactoryCoreMobile` 都复用
@@ -22,10 +22,10 @@ public enum KernelHosting: SuperLog {
     // MARK: - Kernel Registry
 
     /// 已创建的内核实例
-    public private(set) static var kernels: [LumiKernel] = []
+    public private(set) static var kernels: [KernelLumi] = []
 
     /// 主内核（第一个创建的）
-    public static var mainKernel: LumiKernel? {
+    public static var mainKernel: KernelLumi? {
         kernels.first
     }
 
@@ -33,7 +33,7 @@ public enum KernelHosting: SuperLog {
 
     /// 创建并初始化新内核
     ///
-    /// 创建 `LumiKernel` 实例，注册 `plugins`，并调用 bootstrap。
+    /// 创建 `KernelLumi` 实例，注册 `plugins`，并调用 bootstrap。
     /// - Parameters:
     ///   - plugins: 宿主在编译期确定的最终插件列表（顺序敏感）。
     ///   - enabledPluginIDs: 希望默认启用的 opt-in 插件 ID（`plugins.map(\.id)` 的子集）。
@@ -43,13 +43,13 @@ public enum KernelHosting: SuperLog {
         plugins: [any LumiPlugin],
         enabledPluginIDs: Set<String> = [],
         requiresAllCoreServices: Bool = true
-    ) async throws -> LumiKernel {
+    ) async throws -> KernelLumi {
         if verbose {
             logger.info("\(t)创建新内核实例")
         }
 
         // 1. 创建内核
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         // 2. 初始化插件（存储插件实例）。插件列表由宿主在编译期确定，
         //    这里不再做任何 ID 过滤或白名单补齐。
@@ -96,7 +96,7 @@ public enum KernelHosting: SuperLog {
     public static func createMainKernel(
         plugins: [any LumiPlugin],
         enabledPluginIDs: Set<String> = []
-    ) async throws -> LumiKernel {
+    ) async throws -> KernelLumi {
         if let existing = mainKernel {
             if verbose {
                 logger.info("\(t)返回已存在的主内核")
@@ -108,7 +108,7 @@ public enum KernelHosting: SuperLog {
 
     /// 订阅 `.lumiEnabledPluginsDidChange` 通知，
     /// 在运行期插件启用/禁用时全量重建插件贡献(UI + LLM Provider)。
-    private static func subscribeToPluginChanges(kernel: LumiKernel) {
+    private static func subscribeToPluginChanges(kernel: KernelLumi) {
         NotificationCenter.default.addObserver(
             forName: .lumiEnabledPluginsDidChange,
             object: nil,
@@ -124,7 +124,7 @@ public enum KernelHosting: SuperLog {
     /// 销毁指定内核
     ///
     /// - Parameter kernel: 要销毁的内核
-    public static func destroyKernel(_ kernel: LumiKernel) {
+    public static func destroyKernel(_ kernel: KernelLumi) {
         kernels.removeAll { $0 === kernel }
         if verbose {
             logger.info("\(t)内核已销毁，剩余 \(kernels.count) 个")

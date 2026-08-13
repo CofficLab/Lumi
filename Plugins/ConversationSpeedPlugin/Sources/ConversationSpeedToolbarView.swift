@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 import LocalizationKit
 
@@ -6,7 +6,7 @@ struct ConversationSpeedToolbarView: View {
     // selectedConversationID 由 .onLumiSelectedConversationDidChange 事件更新；
     // 消息变更由 .onLumiMessagesDidChange 精确覆盖。
     // 不挂 kernel 全局总线，project/settings 等无关服务变更不会触发这里刷新。
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @State private var selectedConversationID: UUID?
 
     @State private var cachedTPS: Double?

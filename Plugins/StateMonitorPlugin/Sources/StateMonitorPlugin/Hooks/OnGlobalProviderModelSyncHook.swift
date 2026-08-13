@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -41,7 +41,7 @@ final class OnGlobalProviderModelSyncHook: SuperLog {
 
     // MARK: - State
 
-    private weak var kernel: LumiKernel?
+    private weak var kernel: KernelLumi?
     private var observers: [NSObjectProtocol] = []
 
     // MARK: - Lifecycle
@@ -51,7 +51,7 @@ final class OnGlobalProviderModelSyncHook: SuperLog {
     /// 必须在所有 service 都已注册后调用（建议在插件的 `onReady` 阶段）；
     /// 提前调用可能 `kernel.conversations` 或 `kernel.llmProvider` 仍为 `nil`，
     /// 本方法会直接 `return`。
-    func attach(kernel: LumiKernel) {
+    func attach(kernel: KernelLumi) {
         self.kernel = kernel
         guard kernel.conversations != nil,
               kernel.llmProvider != nil

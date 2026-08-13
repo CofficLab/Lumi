@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// AgentTempStoragePlugin 本地存储配置
 final class AgentTempStoragePluginLocalStore: @unchecked Sendable {

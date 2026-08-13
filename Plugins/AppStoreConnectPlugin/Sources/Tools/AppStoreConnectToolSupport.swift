@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 enum AppStoreConnectToolSupport {
     private static let networkHolder = AppStoreConnectNetworkHolder()
@@ -8,7 +8,7 @@ enum AppStoreConnectToolSupport {
         networkHolder.set(network)
     }
 
-    static func makeClient(kernel _: LumiKernel) -> (client: ConnectClient?, errorMessage: String?) {
+    static func makeClient(kernel _: KernelLumi) -> (client: ConnectClient?, errorMessage: String?) {
         let credentialStore = CredentialStore.shared
         let credentials = credentialStore.load()
         guard credentials.isComplete else {

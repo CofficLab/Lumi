@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 
 /// Idle-time settings and inference details live with the activity heatmap.

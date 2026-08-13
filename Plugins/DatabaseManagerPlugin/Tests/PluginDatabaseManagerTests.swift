@@ -1,11 +1,11 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import DatabaseManagerPlugin
 
 @MainActor
 @Test func databasePluginContributesSQLLanguageSupport() {
-    let editorPlugins = DatabaseManagerPlugin().editorPlugins(kernel: LumiKernel())
+    let editorPlugins = DatabaseManagerPlugin().editorPlugins(kernel: KernelLumi())
 
     #expect(editorPlugins.count == 1)
     #expect(editorPlugins[0].id == "DatabaseManager.sql-language")

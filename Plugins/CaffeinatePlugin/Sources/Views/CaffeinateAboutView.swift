@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LocalizationKit
 
 /// 防休眠插件关于视图 - 展示插件的功能介绍和说明
@@ -89,7 +89,7 @@ struct CaffeinateAboutView: View {
     }
 
     private func coreL(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: LumiKernelResources.bundle, locale: locale)
+        LumiPluginLocalization.string(key, bundle: KernelLumiResources.bundle, locale: locale)
     }
 }
 

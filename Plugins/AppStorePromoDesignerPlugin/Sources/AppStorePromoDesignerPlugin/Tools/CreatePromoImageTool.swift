@@ -1,6 +1,6 @@
 import AppStorePromoKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct CreatePromoImageTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -16,8 +16,8 @@ public struct CreatePromoImageTool: LumiAgentTool {
         properties["html"] = ["type": "string", "description": "Optional complete HTML document. Never pass a fragment."]
         return ["type": "object", "properties": .object(properties), "required": ["taskId", "imageId", "title"]]
     }
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .medium }
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .medium }
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let imageID = try PromoToolSupport.required("imageId", arguments)

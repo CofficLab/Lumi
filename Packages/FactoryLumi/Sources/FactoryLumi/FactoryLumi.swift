@@ -1,5 +1,5 @@
 import FactoryCore
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// FactoryLumi 门面

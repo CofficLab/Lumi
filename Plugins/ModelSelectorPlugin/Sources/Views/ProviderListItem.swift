@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 
 struct ProviderListItem: View {

@@ -1,5 +1,5 @@
 import XCTest
-import LumiKernel
+import KernelLumi
 @testable import ConversationSpeedPlugin
 
 final class ConversationSpeedPluginTests: XCTestCase {

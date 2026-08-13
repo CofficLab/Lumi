@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 import ImageIO
-import LumiKernel
+import KernelLumi
 import UniformTypeIdentifiers
 
 enum ComputerUseImageEncoder {

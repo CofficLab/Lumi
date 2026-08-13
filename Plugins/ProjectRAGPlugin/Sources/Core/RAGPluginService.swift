@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -26,7 +26,7 @@ enum RAGPluginService: SuperLog {
         return service
     }
 
-    static func configure(kernel: LumiKernel) async {
+    static func configure(kernel: KernelLumi) async {
         await service.cancelBackgroundIndexing()
         lifecycleTask?.cancel()
         lifecycleTask = nil

@@ -6,7 +6,7 @@
 
 在面板 Header 顶部展示当前文件的路径面包屑，支持点击跳转。
 
-**它只对 `LumiKernel` 负责，对任何编辑器细节都不知情，仅关心当前文件的路径：**
+**它只对 `KernelLumi` 负责，对任何编辑器细节都不知情，仅关心当前文件的路径：**
 
 - 当前文件路径取自 `kernel.project?.currentFileURL`（`ProjectProviding`，`@Published`）。
 - 项目根取自 `kernel.project?.currentProject?.path`。
@@ -28,7 +28,7 @@
 
 ## 依赖
 
-- `LumiKernel` — 内核契约层（`ProjectProviding`、`EditorProviding`、`PanelHeaderItem`、`LumiPlugin`）
+- `KernelLumi` — 内核契约层（`ProjectProviding`、`EditorProviding`、`PanelHeaderItem`、`LumiPlugin`）
 - `LumiUI` — 主题与面板 chrome 组件（`LumiTheme`、`AppToolbarContainer`、`AppPanelChromeMetrics`）
 - `LocalizationKit` — 本地化
 

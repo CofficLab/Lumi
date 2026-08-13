@@ -11,14 +11,14 @@ let package = Package(
         .library(name: "KernelHosting", targets: ["KernelHosting"]),
     ],
     dependencies: [
-        .package(path: "../LumiKernel"),
+        .package(path: "../KernelLumi"),
         .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
             name: "KernelHosting",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ]
         )

@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 存储作用域：APP 内（应用数据目录）vs 项目内（当前项目 `.lumi` 目录）。
 public enum IconScope: String, CaseIterable, Sendable {
@@ -31,14 +31,14 @@ enum IconDesignerRuntime {
     static private(set) var currentProjectPath: String?
 
     /// 内核实例（在 `onBoot` 时注入）。
-    static private(set) var kernel: LumiKernel?
+    static private(set) var kernel: KernelLumi?
 
     private static var projectCancellable: AnyCancellable?
 
     /// 项目内存储目录的末段名称（`<project>/.lumi/app-icon-designer`）。
     static let projectFolderName = "app-icon-designer"
 
-    static func configure(kernel: LumiKernel) {
+    static func configure(kernel: KernelLumi) {
         IconDesignerRuntime.kernel = kernel
         configure(appStorageDirectory: kernel.storage?.pluginDataDirectory(for: "AppIconDesigner"))
         installProjectObserver(kernel: kernel)
@@ -52,7 +52,7 @@ enum IconDesignerRuntime {
     }
 
     /// 安装对 `kernel.project` 变化的监听，自动刷新项目内存储路径。
-    private static func installProjectObserver(kernel: LumiKernel) {
+    private static func installProjectObserver(kernel: KernelLumi) {
         projectCancellable = nil
         guard let project = kernel.project else {
             updateProjectStorageDirectory(projectPath: nil)

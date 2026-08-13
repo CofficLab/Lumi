@@ -1,7 +1,7 @@
 import SwiftUI
 import LibGit2Swift
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// 暂存面板视图：列出所有 stash 条目并提供 push / pop / apply / drop / clear。
 public struct GitStashPanelView: View {

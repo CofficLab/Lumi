@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/EditorService"),
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
@@ -23,7 +23,7 @@ let package = Package(
             name: "EditorStickySymbolBarPlugin",
             dependencies: [
                 .product(name: "EditorService", package: "EditorService"),
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             path: "Sources",

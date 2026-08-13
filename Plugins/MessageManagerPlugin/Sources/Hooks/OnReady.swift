@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 
 /// MessageStore 插件 OnReady 阶段钩子
@@ -14,7 +14,7 @@ public struct MessageStoreOnReadyHook {
     public init() {}
 
     /// 执行 onReady
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         let manager = MessageManager(kernel: kernel)
         try kernel.registerMessageManager(manager)
 

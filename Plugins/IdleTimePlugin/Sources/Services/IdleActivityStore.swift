@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public actor IdleActivityStore {
     public static let shared = IdleActivityStore()

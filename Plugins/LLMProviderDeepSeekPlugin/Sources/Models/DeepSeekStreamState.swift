@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 actor DeepSeekStreamState {
     var content = ""

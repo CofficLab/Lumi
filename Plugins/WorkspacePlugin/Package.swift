@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "WorkspacePlugin", targets: ["WorkspacePlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/LocalizationKit"),
     ],
@@ -17,7 +17,7 @@ let package = Package(
         .target(
             name: "WorkspacePlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],

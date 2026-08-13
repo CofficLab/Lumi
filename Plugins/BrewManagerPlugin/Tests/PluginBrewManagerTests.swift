@@ -1,5 +1,5 @@
 import Testing
-import LumiKernel
+import KernelLumi
 @testable import BrewManagerPlugin
 
 @MainActor

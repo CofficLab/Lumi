@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 /// 智谱配额查询辅助工具
 @MainActor

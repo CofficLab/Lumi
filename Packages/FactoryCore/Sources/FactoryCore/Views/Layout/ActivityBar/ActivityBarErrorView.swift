@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -17,7 +17,7 @@ struct ActivityBarErrorView: View {
 
     private let error: Error
 
-    init(error: Error = LumiKernelError.serviceNotAvailable(service: "Workspace")) {
+    init(error: Error = KernelLumiError.serviceNotAvailable(service: "Workspace")) {
         self.error = error
     }
 
@@ -79,7 +79,7 @@ struct ActivityBarErrorView: View {
 
     #Preview("ActivityBarErrorView - Custom Error") {
         ActivityBarErrorView(
-            error: LumiKernelError.serviceNotAvailable(service: "LayoutManager")
+            error: KernelLumiError.serviceNotAvailable(service: "LayoutManager")
         )
         .frame(width: 48)
         .padding(.vertical, 8)

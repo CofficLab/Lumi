@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 负责把相关记忆转换成受控的上下文注入(user 角色,置于 messages 尾部)。
 public enum MemoryContextService {

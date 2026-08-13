@@ -1,6 +1,6 @@
 import Foundation
 import Darwin
-import LumiKernel
+import KernelLumi
 
 /// MLX 推荐模型列表
 ///
@@ -13,7 +13,7 @@ public enum MLXModels {
     ///
     /// 把"系列名"和"对外暴露的 Provider id"解耦：
     /// - `seriesName` 用于从 `LocalModelInfo.series` 中匹配模型
-    /// - `providerID` 是注册到 LumiKernel 的供应商 id（如 `mlx-qwen`）
+    /// - `providerID` 是注册到 KernelLumi 的供应商 id（如 `mlx-qwen`）
     /// - `providerSlug` 是用作 displayName 的品牌短名（如 "Qwen"）
     public struct SeriesRegistration: Equatable, Sendable {
         public let seriesName: String

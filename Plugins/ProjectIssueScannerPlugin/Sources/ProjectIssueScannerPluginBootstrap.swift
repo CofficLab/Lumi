@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 enum ProjectIssueScannerRuntimeBridge {
     nonisolated(unsafe) static var dataDirectory: URL?

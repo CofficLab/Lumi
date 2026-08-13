@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import os
 import SuperLogKit
@@ -19,12 +19,12 @@ struct ActivityBar: View, SuperLog {
 
     @LumiTheme private var theme
     @Environment(\.openWindow) private var openWindow
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var containers: [ViewContainerItem] = []
     @State private var highlightedContainerID: String?
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         _containers = State(initialValue: kernel.workspace?.allViewContainers ?? [])
         _highlightedContainerID = State(initialValue: kernel.workspace?.activeViewContainerID)

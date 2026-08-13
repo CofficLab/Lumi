@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// Git 提交面板视图：左侧历史列表 + 右侧详情
 ///

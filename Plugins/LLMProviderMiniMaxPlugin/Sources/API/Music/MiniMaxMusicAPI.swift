@@ -1,6 +1,6 @@
 import Foundation
 import HttpKit
-import LumiKernel
+import KernelLumi
 
 /// Music generation result asset.
 public struct MiniMaxMusicGeneratedAsset: Equatable, Sendable {

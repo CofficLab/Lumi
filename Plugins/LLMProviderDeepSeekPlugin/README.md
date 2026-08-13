@@ -18,7 +18,7 @@ LLM provider plugin for Lumi. Integrates **DeepSeek** — DeepSeek AI.
 
 | Package | Description |
 |---------|-------------|
-| [LumiKernel](../../Packages/LumiKernel) | Core framework and provider protocol |
+| [KernelLumi](../../Packages/KernelLumi) | Core framework and provider protocol |
 | [HttpKit](../../Packages/HttpKit) | HTTP and SSE transport |
 | [KeychainKit](../../Packages/KeychainKit) | API key storage |
 | [LocalizationKit](../../Packages/LocalizationKit) | Localization support |

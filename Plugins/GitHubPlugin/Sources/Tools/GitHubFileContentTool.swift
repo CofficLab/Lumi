@@ -1,6 +1,6 @@
 import Foundation
 import GitHubKit
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// GitHub 文件内容获取工具
@@ -21,11 +21,11 @@ public struct GitHubFileContentTool: LumiAgentTool, SuperLog {
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {        "查看文件内容"    }
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let owner = arguments["owner"]?.anyValue as? String,
               let repo = arguments["repo"]?.anyValue as? String,
               let path = arguments["path"]?.anyValue as? String else {

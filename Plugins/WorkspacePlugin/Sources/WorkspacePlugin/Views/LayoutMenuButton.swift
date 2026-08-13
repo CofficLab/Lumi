@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -9,10 +9,10 @@ import SwiftUI
 /// 点击后弹出 Popover，用于切换「右侧栏」「底部面板」的显隐。
 public struct LayoutMenuButton: View {
     @LumiTheme private var theme
-    @ObservedObject private var kernel: LumiKernel
+    @ObservedObject private var kernel: KernelLumi
     @State private var isPopoverPresented = false
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self._kernel = ObservedObject(wrappedValue: kernel)
     }
 

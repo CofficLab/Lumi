@@ -1,12 +1,12 @@
 import Foundation
 import AppKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 @MainActor
 public struct ConversationStoreSettingsView: View {
-    @ObservedObject private var kernel: LumiKernel
+    @ObservedObject private var kernel: KernelLumi
     @ObservedObject private var conversationManager: ConversationManager
     @LumiTheme private var theme
 
@@ -27,7 +27,7 @@ public struct ConversationStoreSettingsView: View {
     private let conversationPageSize = 40
     private let messagePageSize = 40
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self._kernel = ObservedObject(wrappedValue: kernel)
         guard let manager = kernel.conversations as? ConversationManager else {
             preconditionFailure("ConversationStoreSettingsView requires ConversationManager")

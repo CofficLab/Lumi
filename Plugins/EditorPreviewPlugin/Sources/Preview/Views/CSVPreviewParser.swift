@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 enum CSVPreviewParser {
     struct ParsedTable: Equatable {

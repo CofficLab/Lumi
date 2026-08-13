@@ -8,13 +8,13 @@ let package = Package(
         .library(name: "StateMonitorPlugin", targets: ["StateMonitorPlugin"])
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
     ],
     targets: [
         .target(
             name: "StateMonitorPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
             ],
             path: "Sources"
         ),

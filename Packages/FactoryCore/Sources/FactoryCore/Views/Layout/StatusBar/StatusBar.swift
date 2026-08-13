@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -12,11 +12,11 @@ import SwiftUI
 /// 重新拉取三个位置的 status bar items。
 struct StatusBar: View {
     @ObservedObject private var themeRegistry = LumiUIThemeRegistry.shared
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var statusBarResult: Result<StatusBarItems, Error>
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         _statusBarResult = State(initialValue: Self.makeStatusBarResult(workspace: kernel.workspace))
     }
@@ -44,7 +44,7 @@ struct StatusBar: View {
 
     private static func makeStatusBarResult(workspace: (any WorkspaceProviding)?) -> Result<StatusBarItems, Error> {
         guard let workspace else {
-            return .failure(LumiKernelError.serviceNotAvailable(service: "Workspace"))
+            return .failure(KernelLumiError.serviceNotAvailable(service: "Workspace"))
         }
         let leading = workspace.statusBarItems(placement: .leading)
         let center = workspace.statusBarItems(placement: .center)

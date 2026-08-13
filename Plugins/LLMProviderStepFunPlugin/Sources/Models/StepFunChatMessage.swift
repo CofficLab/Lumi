@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// StepFun 侧的聊天消息结构。
 ///

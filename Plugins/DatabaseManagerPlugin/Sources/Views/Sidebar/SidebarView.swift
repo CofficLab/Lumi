@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// Database 侧边栏：可切换的「数据浏览（Tables / Keys）」与「连接管理」面板。
 ///

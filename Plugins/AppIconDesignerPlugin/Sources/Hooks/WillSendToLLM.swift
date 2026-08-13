@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// AppIconDesigner 插件 willSendToLLM 钩子
 ///
@@ -12,7 +12,7 @@ public struct IconDesignerWillSendToLLMHook {
 
     /// 执行 willSendToLLM 钩子
     public func execute(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         messages: [LumiChatMessage]
     ) async -> [LumiChatMessage] {
         guard let conversationID = messages.last?.conversationID else { return messages }

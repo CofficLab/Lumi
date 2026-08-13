@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import Foundation
 import Testing
 @testable import AppStorePromoDesignerPlugin
@@ -17,7 +17,7 @@ struct PromoDesignerPluginTests {
 
     @Test func contributesOptInWorkspaceAndCompleteToolSet() {
         let plugin = PromoDesignerPlugin()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         #expect(plugin.id == "com.coffic.lumi.plugin.app-store-promo-designer")
         #expect(plugin.policy == .optIn)
         #expect(plugin.viewContainers(kernel: kernel).count == 1)
@@ -42,7 +42,7 @@ struct PromoDesignerPluginTests {
 
     @Test func overwriteExportIsHighRisk() {
         let tool = ExportPromoTaskTool()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         #expect(tool.riskLevel(arguments: ["overwrite": .bool(false)], kernel: kernel) == .medium)
         #expect(tool.riskLevel(arguments: ["overwrite": .bool(true)], kernel: kernel) == .high)
     }
@@ -52,7 +52,7 @@ struct PromoDesignerPluginTests {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         Runtime.configure(appStorageDirectory: root)
 
         // 没有打开项目时,默认走 app scope。
@@ -152,7 +152,7 @@ struct PromoDesignerPluginTests {
             try? FileManager.default.removeItem(at: appRoot)
             try? FileManager.default.removeItem(at: projectRoot)
         }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         Runtime.configure(appStorageDirectory: appRoot)
         Runtime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: projectRoot)
 
@@ -234,7 +234,7 @@ struct PromoDesignerPluginTests {
         let appRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: appRoot, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: appRoot) }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         Runtime.configure(appStorageDirectory: appRoot)
         // 不调用 setProjectStorage,模拟无打开项目。
 

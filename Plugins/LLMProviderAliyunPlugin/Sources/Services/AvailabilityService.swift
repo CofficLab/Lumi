@@ -1,7 +1,7 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 // MARK: - AliyunAvailabilityService
 

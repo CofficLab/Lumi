@@ -1,7 +1,7 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import LLMProviderAliyunPlugin
 
@@ -28,8 +28,8 @@ private final class StubTool: LumiAgentTool, @unchecked Sendable {
     var inputSchema: LumiJSONValue { stubSchema }
     var tags: Set<LumiToolTag> { [] }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String { "" }
-    func executeResult(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> LumiToolExecutionResult {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String { "" }
+    func executeResult(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> LumiToolExecutionResult {
         LumiToolExecutionResult(content: "")
     }
 }

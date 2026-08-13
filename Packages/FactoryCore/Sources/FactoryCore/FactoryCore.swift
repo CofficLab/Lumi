@@ -1,5 +1,5 @@
 import KernelHosting
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import SwiftUI
 import os
@@ -22,16 +22,16 @@ public enum FactoryCore: SuperLog {
     // MARK: - Kernel Registry (delegates to KernelHosting)
 
     /// 已创建的内核实例
-    public static var kernels: [LumiKernel] { KernelHosting.kernels }
+    public static var kernels: [KernelLumi] { KernelHosting.kernels }
 
     /// 主内核（第一个创建的）
-    public static var mainKernel: LumiKernel? { KernelHosting.mainKernel }
+    public static var mainKernel: KernelLumi? { KernelHosting.mainKernel }
 
     // MARK: - Kernel Factory (delegates to KernelHosting)
 
     /// 创建并初始化新内核
     ///
-    /// 创建 LumiKernel 实例，注册 `configuration.plugins`，并调用 bootstrap。
+    /// 创建 KernelLumi 实例，注册 `configuration.plugins`，并调用 bootstrap。
     /// 实际生命周期由平台中性的 `KernelHosting` 承载，本门面仅负责解包配置，
     /// 让 macOS 现有调用方签名保持不变。
     /// - Parameter configuration: 宿主 Factory 组装好的最终配置。
@@ -39,7 +39,7 @@ public enum FactoryCore: SuperLog {
     /// - Throws: 初始化过程中的错误
     public static func createKernel(
         configuration: FactoryConfiguration
-    ) async throws -> LumiKernel {
+    ) async throws -> KernelLumi {
         try await KernelHosting.createKernel(
             plugins: configuration.plugins,
             enabledPluginIDs: configuration.enabledPluginIDs
@@ -54,7 +54,7 @@ public enum FactoryCore: SuperLog {
     /// - Throws: 初始化过程中的错误
     public static func createMainKernel(
         configuration: FactoryConfiguration
-    ) async throws -> LumiKernel {
+    ) async throws -> KernelLumi {
         try await KernelHosting.createMainKernel(
             plugins: configuration.plugins,
             enabledPluginIDs: configuration.enabledPluginIDs
@@ -64,7 +64,7 @@ public enum FactoryCore: SuperLog {
     /// 销毁指定内核
     ///
     /// - Parameter kernel: 要销毁的内核
-    public static func destroyKernel(_ kernel: LumiKernel) {
+    public static func destroyKernel(_ kernel: KernelLumi) {
         KernelHosting.destroyKernel(kernel)
     }
 

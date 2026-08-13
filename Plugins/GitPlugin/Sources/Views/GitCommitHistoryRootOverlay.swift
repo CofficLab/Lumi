@@ -1,6 +1,6 @@
 import SwiftUI
 import SuperLogKit
-import LumiKernel
+import KernelLumi
 
 /// Git Commit 根视图覆盖层
 ///

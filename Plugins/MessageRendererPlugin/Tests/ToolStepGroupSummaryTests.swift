@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import LumiKernel
+import KernelLumi
 @testable import MessageRendererPlugin
 
 /// `ToolStepGroupSummary` 的单元测试 —— V1「可折叠工具步骤组」折叠态摘要文案。

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 查询视频生成历史记录详情。
 ///
@@ -43,7 +43,7 @@ public struct MiniMaxGetVideoTool: LumiAgentTool {
 
     public func execute(
         arguments: [String: LumiJSONValue],
-        kernel: LumiKernel
+        kernel: KernelLumi
     ) async throws -> String {
         guard let recordID = arguments["recordID"]?.stringValue, !recordID.isEmpty else {
             return "**Error:** `recordID` is required. Use minimax_list_videos to get available record IDs."

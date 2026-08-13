@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 
 /// Database Sidebar 顶部标题栏。

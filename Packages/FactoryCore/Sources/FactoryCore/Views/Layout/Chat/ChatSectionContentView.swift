@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -8,7 +8,7 @@ import SwiftUI
 /// 改为「快照 + 事件刷新」：init 读一次初值，监听 `.workspaceContributionsDidChange`
 /// 重新拉取 chatSectionItems。
 struct ChatSectionContentView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var allItems: [ChatSectionItem] = []
 
@@ -20,7 +20,7 @@ struct ChatSectionContentView: View {
         allItems.filter { $0.placement == .bottomFixed }
     }
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         _allItems = State(initialValue: kernel.workspace?.allChatSectionItems ?? [])
     }

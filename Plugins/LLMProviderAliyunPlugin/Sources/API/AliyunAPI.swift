@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 阿里云 Anthropic 协议 API 服务层。
 final class AliyunAnthropicService: @unchecked Sendable {

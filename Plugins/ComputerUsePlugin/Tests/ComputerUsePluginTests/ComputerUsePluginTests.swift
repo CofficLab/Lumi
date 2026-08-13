@@ -1,6 +1,6 @@
 import CoreGraphics
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import ComputerUsePlugin
 
@@ -12,8 +12,8 @@ struct ComputerUsePluginTests {
         let plugin = ComputerUsePlugin()
         #expect(plugin.policy == .alwaysOn)
         #expect(plugin.category == .agent)
-        #expect(Set(plugin.agentTools(kernel: LumiKernel()).map(\.name)) == ["computer_observe", "computer_act"])
-        #expect(plugin.settingsTabItems(kernel: LumiKernel()).count == 1)
+        #expect(Set(plugin.agentTools(kernel: KernelLumi()).map(\.name)) == ["computer_observe", "computer_act"])
+        #expect(plugin.settingsTabItems(kernel: KernelLumi()).count == 1)
     }
 
     @Test("action parser accepts a complete batch")

@@ -1,7 +1,7 @@
 import Foundation
 import SwiftTerm
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 import TerminalCoreKit
 

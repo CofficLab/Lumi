@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// ``MainView`` 的查询/数据结果展示区。
 ///

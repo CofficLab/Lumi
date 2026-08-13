@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import LumiKernel
+import KernelLumi
 @testable import DiskManagerPlugin
 
 @MainActor
@@ -16,7 +16,7 @@ struct PluginDiskManagerTests {
 
     @Test
     func viewContainerContributionIsAvailable() throws {
-        let items = DiskManagerPlugin().viewContainers(kernel: LumiKernel())
+        let items = DiskManagerPlugin().viewContainers(kernel: KernelLumi())
         let item = try #require(items.first)
         #expect(item.id == DiskManagerPlugin().id)
         #expect(item.title == DiskManagerPlugin().name)

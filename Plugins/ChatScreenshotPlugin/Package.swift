@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -23,7 +23,7 @@ let package = Package(
         .target(
             name: "ChatScreenshotPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
@@ -37,7 +37,7 @@ let package = Package(
             name: "ChatScreenshotPluginTests",
             dependencies: [
                 "ChatScreenshotPlugin",
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
             ],
             path: "Tests/ChatScreenshotPlugin"
         ),

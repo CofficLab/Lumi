@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 @testable import AppStoreConnectPlugin
 
 /// Keeps URLProtocol-based transport mocking in the test target while production

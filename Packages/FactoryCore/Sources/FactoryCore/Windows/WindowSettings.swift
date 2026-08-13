@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// 不在构造期快照内核,而是运行期从 `FactoryCore.mainKernel` 解析。
 /// 这样即便设置窗口的 SwiftUI Scene 在主窗口内核初始化完成前被求值,
-/// 也不会被 `mainKernel ?? LumiKernel()` 锁死成一个空内核实例
+/// 也不会被 `mainKernel ?? KernelLumi()` 锁死成一个空内核实例
 /// (空内核没有 settings/theme 等服务,会导致设置界面显示错误界面)。
 ///
 /// 当主内核尚未就绪时显示加载占位,并通过轮询驱动切换到真实设置界面。

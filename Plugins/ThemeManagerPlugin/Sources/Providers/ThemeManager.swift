@@ -1,11 +1,11 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import LumiUI
 import os
 
 /// Default theme service implementation
 ///
-/// Implements LumiKernel.UIThemeProviding protocol.
+/// Implements KernelLumi.UIThemeProviding protocol.
 /// Responsible for managing theme contributions from plugins and persisting theme selection.
 /// Theme changes are broadcast via the kernel event dispatcher; subscribers (e.g. the editor
 /// service) react on their own without ThemeManager knowing about them.
@@ -28,7 +28,7 @@ public final class ThemeManager: UIThemeProviding {
     private weak var eventManager: EventManager?
 
     /// Kernel reference, used to request a rebuild of declarative command contributions.
-    private weak var kernel: LumiKernel?
+    private weak var kernel: KernelLumi?
 
     public var themes: [LumiUIThemeContribution] {
         themeRegistry.themes
@@ -86,7 +86,7 @@ public final class ThemeManager: UIThemeProviding {
         }
     }
 
-    /// Inject the plugin manager after `LumiKernel.pluginManager` becomes available.
+    /// Inject the plugin manager after `KernelLumi.pluginManager` becomes available.
     ///
     /// `ThemeManager.init` runs during `ThemeManagerPlugin.onBoot(kernel:)`,
     /// but the plugin manager may not be fully initialized at that point.
@@ -115,7 +115,7 @@ public final class ThemeManager: UIThemeProviding {
     }
 
     /// Inject the kernel reference used to refresh declarative command contributions.
-    public func setKernel(_ kernel: LumiKernel) {
+    public func setKernel(_ kernel: KernelLumi) {
         self.kernel = kernel
     }
 
@@ -189,7 +189,7 @@ public final class ThemeManager: UIThemeProviding {
 
     /// 将内核持有的主题贡献同步到 LumiUI 的主题注册中心。
     ///
-    /// 在 `LumiKernel.startup()` 末尾调用,确保所有插件的 `onReady` 已执行完毕。
+    /// 在 `KernelLumi.startup()` 末尾调用,确保所有插件的 `onReady` 已执行完毕。
     public func syncToLumiUI() {
         reloadThemes()
     }

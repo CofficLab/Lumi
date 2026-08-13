@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import HttpKit
 import XCTest
 @testable import LLMKit

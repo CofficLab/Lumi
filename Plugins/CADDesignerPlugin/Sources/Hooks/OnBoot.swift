@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -14,7 +14,7 @@ public struct CADDesignerOnBootHook: SuperLog {
     public init() {}
 
     /// 执行 boot
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         // 设置数据目录
         if let storage = kernel.storage {
             CADDesignerRuntimeBridge.dataRootDirectory = storage.dataRootDirectory

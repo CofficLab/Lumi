@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -14,7 +14,7 @@ import SwiftUI
 /// 注意：body 用 `if !actionBarItems.isEmpty` 条件渲染。事件修饰符挂在 Group 外层
 /// 而非 if 内，保证分支未渲染时仍能收到事件、下次 items 非空时能正确出现。
 struct ChatActionBar: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var actionBarItems: [ChatSectionActionBarItem] = []
 
@@ -26,7 +26,7 @@ struct ChatActionBar: View {
         actionBarItems.filter { $0.placement == .trailing }
     }
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         _actionBarItems = State(initialValue: kernel.workspace?.allChatSectionActionBarItems ?? [])
     }

@@ -1,7 +1,7 @@
 @testable import EditorSwiftPlugin
 import AgentToolKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 
 @Test func addSwiftPackageToolMetadata() {
@@ -27,7 +27,7 @@ import Testing
     let args: [String: LumiJSONValue] = [
         "project_root": .string("/tmp/LumiProject/NewApp"),
     ]
-    let allowedKernel = LumiKernel()
+    let allowedKernel = KernelLumi()
     let allowedState = LumiToolExecutionContextState(
         conversationID: UUID(),
         toolCallID: "call_1",
@@ -38,7 +38,7 @@ import Testing
         tool.riskLevel(arguments: args, kernel: allowedKernel)
     } == .medium)
 
-    let blockedKernel = LumiKernel()
+    let blockedKernel = KernelLumi()
     let blockedState = LumiToolExecutionContextState(
         conversationID: UUID(),
         toolCallID: "call_2",
@@ -67,7 +67,7 @@ import Testing
 @Test func listSwiftPackagesToolRequiresProjectPath() async {
     let tool = ListSwiftPackagesTool()
     let context = LumiToolExecutionContextState(conversationID: UUID(), toolCallID: "call", toolName: tool.name)
-    let kernel = LumiKernel()
+    let kernel = KernelLumi()
     await #expect(throws: Error.self) {
         _ = try await kernel.withToolExecutionContextState(context) {
             try await tool.execute(arguments: [:], kernel: kernel)

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import LocalizationKit
 
 struct WriteTempFileTool: LumiAgentTool {
@@ -31,7 +31,7 @@ struct WriteTempFileTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
@@ -42,7 +42,7 @@ struct WriteTempFileTool: LumiAgentTool {
         return "Write temp file \(filename)"
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let filename = arguments["filename"]?.stringValue,
               let content = arguments["content"]?.stringValue
         else {

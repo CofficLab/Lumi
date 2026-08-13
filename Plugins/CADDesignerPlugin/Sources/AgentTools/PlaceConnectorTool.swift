@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 放置连接件到当前项目。
 public struct PlaceConnectorTool: LumiAgentTool {
@@ -29,11 +29,11 @@ public struct PlaceConnectorTool: LumiAgentTool {
         "Place connector \(CADToolSupport.string(arguments, "connectorId") ?? "?")"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = CADToolSupport.language(kernel)
         guard let connectorId = CADToolSupport.string(arguments, "connectorId") else {
             return CADToolSupport.missingParameter("connectorId", language: language)

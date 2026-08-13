@@ -1,6 +1,6 @@
 import SwiftUI
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 /// 项目问题扫描器模型选择视图
 ///

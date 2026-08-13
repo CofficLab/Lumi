@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import MessageListPlugin
 
@@ -20,8 +20,8 @@ struct MessageListV1SwitchBlankReproTests {
         messages: MockMessageManager,
         conversations: MockConversationManager,
         turnManager: MockAgentTurnManager
-    ) throws -> LumiKernel {
-        let kernel = LumiKernel()
+    ) throws -> KernelLumi {
+        let kernel = KernelLumi()
         try kernel.registerService(MessageManaging.self, messages)
         try kernel.registerService(ConversationManaging.self, conversations)
         try kernel.registerService(MessageStreaming.self, MockMessageStreaming())
@@ -216,7 +216,7 @@ struct MessageListV1SwitchBlankReproTests {
             ),
         ], conversationID: conversationID)
 
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         try kernel.registerService(MessageManaging.self, messages)
         try kernel.registerService(ConversationManaging.self, conversations)
         try kernel.registerService(MessageStreaming.self, streaming)

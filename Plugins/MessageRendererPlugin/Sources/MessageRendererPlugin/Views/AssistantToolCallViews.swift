@@ -1,6 +1,6 @@
-import LumiKernel
+import KernelLumi
 import AgentToolKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -9,7 +9,7 @@ import SwiftUI
 /// V2/V3 模式：带图标/背景/边框/按钮的卡片行。
 
 struct ToolCallRowsView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let message: LumiChatMessage
     let verbosity: LumiResponseVerbosity
 
@@ -95,7 +95,7 @@ struct ToolCallRowsView: View {
 struct ToolCallRowView: View {
     @LumiTheme private var theme
 
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let message: LumiChatMessage
     let toolCall: LumiToolCall
     let verbosity: LumiResponseVerbosity
@@ -427,7 +427,7 @@ private struct ToolCallResultView: View {
 /// `fallbackResult` 仅用于在 kernel 查询返回 nil(如结果尚未持久化、store 不可用)时,
 /// 复用行内已解析的结果作为兜底,避免空面板。
 private struct ToolCallResultLazyPopover: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let toolCallID: String
     let fallbackResult: LumiToolResult?
 

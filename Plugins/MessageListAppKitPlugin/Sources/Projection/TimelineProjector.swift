@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// V2 (standard/detailed) projector: full message history with streaming and
 /// status merging.

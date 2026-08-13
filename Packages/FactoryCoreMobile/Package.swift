@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelHosting"),
-        .package(path: "../LumiKernel"),
+        .package(path: "../KernelLumi"),
         .package(path: "../LumiUI"),
         .package(path: "../LocalizationKit"),
         .package(path: "../SuperLogKit"),
@@ -19,7 +19,7 @@ let package = Package(
             name: "FactoryCoreMobile",
             dependencies: [
                 .product(name: "KernelHosting", package: "KernelHosting"),
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),

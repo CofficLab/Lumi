@@ -14,14 +14,14 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI")
     ],
     targets: [
         .target(
             name: "ThemeRiverPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI")
             ],
             path: "Sources",

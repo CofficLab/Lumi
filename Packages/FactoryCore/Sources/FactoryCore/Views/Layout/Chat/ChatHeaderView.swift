@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -11,11 +11,11 @@ import SwiftUI
 /// - 监听 `.workspaceContributionsDidChange`：任一 UI 贡献清单（含 chat section
 ///   header items）注册/注销/全量重建完成后由 workspace 服务广播，此处重新拉取。
 struct ChatHeaderView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var items: [ChatSectionHeaderItem] = []
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         _items = State(initialValue: kernel.workspace?.allChatSectionHeaderItems ?? [])
     }

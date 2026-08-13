@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import LocalizationKit
 
 struct ReadTempFileTool: LumiAgentTool {
@@ -34,7 +34,7 @@ struct ReadTempFileTool: LumiAgentTool {
         return "Read temp file \(filename)"
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let filename = arguments["filename"]?.stringValue else {
             throw NSError(
                 domain: "ReadTempFileTool",

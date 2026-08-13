@@ -1,7 +1,7 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 /// OpenAI 兼容供应商可用性检查工具
 public enum LumiOpenAICompatibleAvailability {

@@ -1,5 +1,5 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 import SwiftUI
 import os
 import SuperLogKit
@@ -12,7 +12,7 @@ struct FileTreeNSViewBridge: NSViewRepresentable, SuperLog {
     private static let verbose = ProjectFileTreePlugin.verbose
     public nonisolated static let emoji: String = ""
 
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let projectRootPath: String
     let onExpansionChange: ((String, Bool) -> Void)?
     let onTreeMutation: (() -> Void)?

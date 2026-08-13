@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Projects the verbose message timeline into one user-facing row per
 /// AgentTurn for the brief (V1) presentation.

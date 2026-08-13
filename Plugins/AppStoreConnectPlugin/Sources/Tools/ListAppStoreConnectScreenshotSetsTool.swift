@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct ListAppStoreConnectScreenshotSetsTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
@@ -21,7 +21,7 @@ struct ListAppStoreConnectScreenshotSetsTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let localizationID = arguments["localizationID"]?.stringValue, !localizationID.isEmpty else {
             return "Missing or empty localizationID."
         }

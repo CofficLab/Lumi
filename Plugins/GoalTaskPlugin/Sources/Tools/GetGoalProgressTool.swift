@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// 查询 Goal 进度工具
@@ -34,9 +34,9 @@ public struct GetGoalProgressTool: LumiAgentTool, SuperLog {
     }
     
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "Get goal progress" }
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .low }
     
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
         
         guard let goalId = arguments["goal_id"]?.anyValue as? String else {
