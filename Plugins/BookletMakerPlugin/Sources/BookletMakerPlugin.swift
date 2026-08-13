@@ -155,7 +155,7 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
         [
             LumiTitleToolbarItem(
                 id: "\(id).title",
-                title: BookletLocalization.string("拆分PDF或者小册子生成"),
+                title: BookletLocalization.string("Split PDF or Booklet Maker"),
                 placement: .center,
                 order: 200
             ) {

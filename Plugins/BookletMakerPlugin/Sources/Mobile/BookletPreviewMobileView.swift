@@ -7,6 +7,9 @@ struct BookletPreviewMobileView: View {
         case imposed = "Print Layout"
 
         var id: String { rawValue }
+
+        /// rawValue 只作为稳定标识，展示文案必须走本地化目录。
+        var title: String { BookletLocalization.string(rawValue) }
     }
 
     @ObservedObject var viewModel: BookletMakerViewModel
@@ -14,8 +17,8 @@ struct BookletPreviewMobileView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("Preview", selection: $stage) {
-                ForEach(Stage.allCases) { Text($0.rawValue).tag($0) }
+            Picker(BookletLocalization.string("Preview"), selection: $stage) {
+                ForEach(Stage.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 20)
@@ -55,9 +58,15 @@ struct BookletPreviewMobileView: View {
     private var imposedSheets: some View {
         VStack(spacing: 0) {
             HStack {
-                Label("\(viewModel.expectedSheetCount) sheets", systemImage: "rectangle.stack")
+                Label(
+                    BookletLocalization.string("%lld sheets", Int64(viewModel.expectedSheetCount)),
+                    systemImage: "rectangle.stack"
+                )
                 Spacer()
-                Text("\(viewModel.expectedOutputPageCount) print sides")
+                Text(BookletLocalization.string(
+                    "%lld print sides",
+                    Int64(viewModel.expectedOutputPageCount)
+                ))
             }
             .font(.subheadline.weight(.medium))
             .foregroundStyle(.secondary)

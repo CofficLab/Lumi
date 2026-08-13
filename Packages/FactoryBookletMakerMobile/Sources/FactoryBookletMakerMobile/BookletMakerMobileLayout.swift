@@ -53,7 +53,8 @@ struct BookletMakerMobileLayout: View {
                 Button {
                     isSettingsPresented = true
                 } label: {
-                    Label("Settings", systemImage: "slider.horizontal.3")
+                    Label(BookletLocalization.string("Settings"),
+                          systemImage: "slider.horizontal.3")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -76,11 +77,11 @@ struct BookletMakerMobileLayout: View {
                     .padding(16)
             }
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Settings")
+            .navigationTitle(BookletLocalization.string("Settings"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { isSettingsPresented = false }
+                    Button(BookletLocalization.string("Done")) { isSettingsPresented = false }
                 }
             }
         }
@@ -96,7 +97,7 @@ struct BookletMakerMobileLayout: View {
                 Section {
                     documentCard
                 }
-                Section("PDF Tools") {
+                Section(BookletLocalization.string("PDF Tools")) {
                     ForEach(BookletMakerMobileFeature.Tool.allCases) { tool in
                         Button {
                             feature.selectedTool = tool
@@ -116,7 +117,7 @@ struct BookletMakerMobileLayout: View {
                     }
                 }
             }
-            .navigationTitle("Booklet Maker")
+            .navigationTitle(BookletLocalization.string("Booklet Maker"))
             .toolbar { documentToolbar }
             .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 300)
         } content: {
@@ -134,7 +135,7 @@ struct BookletMakerMobileLayout: View {
                         .padding(16)
                 }
                 .background(Color(uiColor: .systemGroupedBackground))
-                .navigationTitle("Settings")
+                .navigationTitle(BookletLocalization.string("Settings"))
                 .navigationBarTitleDisplayMode(.inline)
             }
             .navigationSplitViewColumnWidth(min: 280, ideal: 330, max: 390)
@@ -147,10 +148,10 @@ struct BookletMakerMobileLayout: View {
             Label(feature.documentName, systemImage: "doc.fill")
                 .font(.headline)
                 .lineLimit(2)
-            Text("\(feature.pageCount) pages")
+            Text(BookletLocalization.string("%lld pages", Int64(feature.pageCount)))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            Button("Choose Another PDF") { isImporterPresented = true }
+            Button(BookletLocalization.string("Choose Another PDF")) { isImporterPresented = true }
                 .font(.subheadline.weight(.semibold))
         }
         .padding(.vertical, 4)
@@ -172,7 +173,7 @@ struct BookletMakerMobileLayout: View {
     // MARK: - Shared controls
 
     private var toolPicker: some View {
-        Picker("PDF Tool", selection: toolBinding) {
+        Picker(BookletLocalization.string("PDF Tools"), selection: toolBinding) {
             ForEach(BookletMakerMobileFeature.Tool.allCases) { tool in
                 Label(tool.title, systemImage: tool.systemImage).tag(tool)
             }
@@ -188,18 +189,19 @@ struct BookletMakerMobileLayout: View {
     private var documentToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
-                Button("Choose PDF", systemImage: "doc.badge.plus") {
+                Button(BookletLocalization.string("Choose PDF"), systemImage: "doc.badge.plus") {
                     isImporterPresented = true
                 }
                 if !feature.isDemo {
-                    Button("Return to Sample", systemImage: "arrow.uturn.backward") {
+                    Button(BookletLocalization.string("Return to Sample"),
+                           systemImage: "arrow.uturn.backward") {
                         feature.clearDocument()
                     }
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
-            .accessibilityLabel("Document Actions")
+            .accessibilityLabel(BookletLocalization.string("Document Actions"))
         }
     }
 
@@ -209,8 +211,8 @@ struct BookletMakerMobileLayout: View {
                 HStack(spacing: 8) {
                     ProgressView(value: feature.progress)
                         .frame(maxWidth: 120)
-                    Text("\(Int(feature.progress * 100))%")
-                    Button("Cancel") { feature.cancel() }
+                    Text(BookletLocalization.string("Progress percent %lld", Int64(feature.progress * 100)))
+                    Button(BookletLocalization.string("Cancel")) { feature.cancel() }
                 }
             } else if let error = feature.errorMessage {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
@@ -239,8 +241,8 @@ struct BookletMakerMobileLayout: View {
 
     private var exportTitle: String {
         switch feature.selectedTool {
-        case .split: "Export PDFs"
-        case .booklet: "Export Booklet"
+        case .split: BookletLocalization.string("Export PDFs")
+        case .booklet: BookletLocalization.string("Export Booklet")
         }
     }
 }

@@ -8,25 +8,30 @@ struct PDFSplitMobileView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Choose where to split")
+                    Text(BookletLocalization.string("Choose where to split"))
                         .font(.title2.bold())
-                    Text("Tap a gap between pages. Blue scissors mark a split point.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    Text(BookletLocalization.string(
+                        "Tap a gap between pages. Blue scissors mark a split point."
+                    ))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 }
 
                 pageStrip
 
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Output")
+                        Text(BookletLocalization.string("Output"))
                             .font(.headline)
-                        Text("\(viewModel.splitSegments.count) PDF files")
-                            .foregroundStyle(.secondary)
+                        Text(BookletLocalization.string(
+                            "%lld PDF files",
+                            Int64(viewModel.splitSegments.count)
+                        ))
+                        .foregroundStyle(.secondary)
                     }
                     Spacer()
                     if viewModel.splitCutPoints.isEmpty {
-                        Label("Add a split", systemImage: "info.circle")
+                        Label(BookletLocalization.string("Add a split"), systemImage: "info.circle")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -74,7 +79,7 @@ struct PDFSplitMobileView: View {
                 .background(.black.opacity(0.7), in: Capsule())
                 .padding(7)
         }
-        .accessibilityLabel("Page \(page)")
+        .accessibilityLabel(BookletLocalization.string("Page %lld", Int64(page)))
     }
 
     private func splitButton(after page: Int) -> some View {
@@ -97,24 +102,31 @@ struct PDFSplitMobileView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Split after page \(page)")
-        .accessibilityValue(selected ? "Selected" : "Not selected")
+        .accessibilityLabel(BookletLocalization.string("Split after page %lld", Int64(page)))
+        .accessibilityValue(BookletLocalization.string(selected ? "Selected" : "Not selected"))
     }
 
     private func resultCard(_ segment: PDFSplitSegment) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Label("Pages \(segment.startPage)–\(segment.endPage)", systemImage: "doc.richtext")
-                    .font(.headline)
+                Label(
+                    BookletLocalization.string(
+                        "Pages range %lld–%lld",
+                        Int64(segment.startPage),
+                        Int64(segment.endPage)
+                    ),
+                    systemImage: "doc.richtext"
+                )
+                .font(.headline)
                 Spacer()
-                Text("\(segment.pageCount) pages")
+                Text(BookletLocalization.string("%lld pages", Int64(segment.pageCount)))
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
             }
 
             HStack(spacing: 6) {
                 TextField(
-                    "File name",
+                    BookletLocalization.string("File name"),
                     text: Binding(
                         get: { viewModel.splitFileNameStem(for: segment) },
                         set: { viewModel.renameSplitOutputStem(segment, to: $0) }

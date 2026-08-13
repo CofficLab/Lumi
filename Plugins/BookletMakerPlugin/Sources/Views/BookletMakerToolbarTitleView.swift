@@ -44,9 +44,9 @@ struct BookletMakerToolbarTitleView: View {
     private func title(for tool: PDFTool) -> String {
         switch tool {
         case .booklet:
-            BookletLocalization.string("小册子生成")
+            BookletLocalization.string("Booklet Maker")
         case .split:
-            BookletLocalization.string("拆分PDF")
+            BookletLocalization.string("Split PDF")
         }
     }
 }

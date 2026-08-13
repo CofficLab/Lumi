@@ -65,7 +65,7 @@ private struct ThumbnailCard: View {
                             lineWidth: isSelected ? 2 : 1)
             )
 
-            Text(BookletLocalization.string("Sheet %lld", thumbnail.sheetIndex + 1))
+            Text(BookletLocalization.string("Sheet number %lld", thumbnail.sheetIndex + 1))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

@@ -13,8 +13,8 @@ public final class BookletMakerMobileFeature: ObservableObject {
         public var id: String { rawValue }
         public var title: String {
             switch self {
-            case .split: "Split PDF"
-            case .booklet: "Booklet"
+            case .split: BookletLocalization.string("Split PDF")
+            case .booklet: BookletLocalization.string("Booklet")
             }
         }
         public var systemImage: String {
@@ -47,7 +47,7 @@ public final class BookletMakerMobileFeature: ObservableObject {
 
     public var documentName: String {
         viewModel.currentDocument.isDemo
-            ? "Sample PDF"
+            ? BookletLocalization.string("Sample PDF")
             : viewModel.currentDocument.url.lastPathComponent
     }
     public var pageCount: Int { viewModel.currentDocument.pageCount }
@@ -58,8 +58,10 @@ public final class BookletMakerMobileFeature: ObservableObject {
     public var errorMessage: String? { viewModel.errorMessage }
     public var outputSummary: String {
         switch selectedTool {
-        case .split: "\(viewModel.splitSegments.count) PDF files"
-        case .booklet: "\(viewModel.expectedSheetCount) sheets"
+        case .split:
+            BookletLocalization.string("%lld PDF files", Int64(viewModel.splitSegments.count))
+        case .booklet:
+            BookletLocalization.string("%lld sheets", Int64(viewModel.expectedSheetCount))
         }
     }
 

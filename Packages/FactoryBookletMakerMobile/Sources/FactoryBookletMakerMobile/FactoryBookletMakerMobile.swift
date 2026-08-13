@@ -1,3 +1,4 @@
+import BookletMakerPlugin
 import KernelHosting
 import KernelLumi
 import SwiftUI
@@ -28,14 +29,15 @@ private struct BookletMakerMobileHost: View {
                 BookletMakerMobileLayout(kernel: kernel)
             } else if let bootError {
                 ContentUnavailableView {
-                    Label("Unable to Open PDF Tools", systemImage: "exclamationmark.triangle")
+                    Label(BookletLocalization.string("Unable to Open PDF Tools"),
+                          systemImage: "exclamationmark.triangle")
                 } description: {
                     Text(bootError)
                 } actions: {
-                    Button("Try Again") { start() }
+                    Button(BookletLocalization.string("Try Again")) { start() }
                 }
             } else {
-                ProgressView("Opening PDF Tools…")
+                ProgressView(BookletLocalization.string("Opening PDF Tools…"))
             }
         }
         .task { start() }

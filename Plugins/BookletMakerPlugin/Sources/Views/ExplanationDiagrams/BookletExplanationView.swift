@@ -82,7 +82,7 @@ struct BookletExplanationView: View {
         case .original:
             stageSummary(
                 BookletLocalization.string(
-                    "%@ · %lld pages",
+                    "Item %@ %lld pages",
                     settings.outputPaper.displayName,
                     Int64(document.pageCount)
                 )
@@ -215,7 +215,7 @@ struct BookletExplanationView: View {
             }
         } label: {
             VStack(alignment: .leading, spacing: 2) {
-                Text(BookletLocalization.string("Sheet %lld", Int64(index + 1)))
+                Text(BookletLocalization.string("Sheet number %lld", Int64(index + 1)))
                     .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
 
                 Text(physicalSheetPageCaption(physicalSheet))
@@ -340,7 +340,7 @@ struct BookletExplanationView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 4))
 
             Text(BookletLocalization.string(
-                "Sheet %lld · %@",
+                "Sheet number name %lld %@",
                 Int64(outputSide.physicalSheetIndex + 1),
                 sideDisplayName(outputSide.side)
             ))
@@ -373,7 +373,7 @@ struct BookletExplanationView: View {
     }
 
     private func pairCaption(_ sheet: OutputSheet) -> String {
-        BookletLocalization.string("Pages %lld + %lld",
+        BookletLocalization.string("Pages plus %lld %lld",
                                    Int64(sheet.leftPage),
                                    Int64(sheet.rightPage))
     }

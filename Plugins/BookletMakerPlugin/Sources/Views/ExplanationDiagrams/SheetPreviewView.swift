@@ -71,7 +71,7 @@ struct SheetPreviewView: View {
     }
 
     private func sheetTitle(_ index: Int) -> String {
-        BookletLocalization.string("Sheet %lld", Int64(index + 1))
+        BookletLocalization.string("Sheet number %lld", Int64(index + 1))
     }
 
     // MARK: - Sheet Content
@@ -92,7 +92,7 @@ struct SheetPreviewView: View {
     }
 
     private func pairCaption(_ sheet: OutputSheet) -> String {
-        BookletLocalization.string("Pages %lld + %lld",
+        BookletLocalization.string("Pages plus %lld %lld",
                                    Int64(sheet.leftPage),
                                    Int64(sheet.rightPage))
     }

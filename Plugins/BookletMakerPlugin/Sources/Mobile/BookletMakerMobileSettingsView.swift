@@ -16,39 +16,44 @@ struct BookletMakerMobileSettingsView: View {
 
     private var bookletSettings: some View {
         Group {
-            settingSection("Output") {
-                Picker("Paper Size", selection: $viewModel.settings.outputPaper) {
+            settingSection(BookletLocalization.string("Output")) {
+                Picker(BookletLocalization.string("Output paper"),
+                       selection: $viewModel.settings.outputPaper) {
                     ForEach(PaperSize.allCases) { Text($0.displayName).tag($0) }
                 }
                 .pickerStyle(.segmented)
 
-                Picker("Layout", selection: $viewModel.settings.layout) {
-                    Text("Booklet Fold").tag(LayoutMode.bookletFold)
-                    Text("Simple Pair").tag(LayoutMode.simplePair)
+                Picker(BookletLocalization.string("Layout"), selection: $viewModel.settings.layout) {
+                    Text(BookletLocalization.string("Booklet Fold")).tag(LayoutMode.bookletFold)
+                    Text(BookletLocalization.string("Simple Pair")).tag(LayoutMode.simplePair)
                 }
                 .pickerStyle(.segmented)
             }
 
-            settingSection("Spacing") {
-                measurementSlider("Margin", value: $viewModel.settings.marginMM)
-                measurementSlider("Gutter", value: $viewModel.settings.gutterMM)
+            settingSection(BookletLocalization.string("Spacing")) {
+                measurementSlider(BookletLocalization.string("Margin"),
+                                  value: $viewModel.settings.marginMM)
+                measurementSlider(BookletLocalization.string("Gutter"),
+                                  value: $viewModel.settings.gutterMM)
             }
 
-            settingSection("Print Options") {
-                Toggle("Pad with Blank Page", isOn: paddingBinding)
+            settingSection(BookletLocalization.string("Print Options")) {
+                Toggle(BookletLocalization.string("Pad with blank page"), isOn: paddingBinding)
                     .disabled(viewModel.settings.layout == .bookletFold)
-                Toggle("Add Cut Marks", isOn: $viewModel.settings.addCutMarks)
+                Toggle(BookletLocalization.string("Add cut marks"),
+                       isOn: $viewModel.settings.addCutMarks)
             }
         }
     }
 
     private var splitSettings: some View {
         Group {
-            settingSection("Cut Points") {
-                TextField("For example: 20, 50, 80", text: $viewModel.splitCutPointsText)
+            settingSection(BookletLocalization.string("Cut Points")) {
+                TextField(BookletLocalization.string("For example: 20, 50, 80"),
+                          text: $viewModel.splitCutPointsText)
                     .textFieldStyle(.roundedBorder)
                     .keyboardType(.numbersAndPunctuation)
-                Text("You can also tap the gaps between page previews.")
+                Text(BookletLocalization.string("You can also tap the gaps between page previews."))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 if let message = viewModel.splitValidationMessage {
@@ -58,9 +63,11 @@ struct BookletMakerMobileSettingsView: View {
                 }
             }
 
-            settingSection("Result") {
-                LabeledContent("Files", value: "\(viewModel.splitSegments.count)")
-                LabeledContent("Pages", value: "\(viewModel.currentDocument.pageCount)")
+            settingSection(BookletLocalization.string("Result")) {
+                LabeledContent(BookletLocalization.string("Files"),
+                               value: "\(viewModel.splitSegments.count)")
+                LabeledContent(BookletLocalization.string("Pages"),
+                               value: "\(viewModel.currentDocument.pageCount)")
             }
         }
     }
@@ -79,7 +86,10 @@ struct BookletMakerMobileSettingsView: View {
 
     private func measurementSlider(_ title: String, value: Binding<Double>) -> some View {
         VStack(spacing: 8) {
-            LabeledContent(title, value: "\(Int(value.wrappedValue)) mm")
+            LabeledContent(
+                title,
+                value: BookletLocalization.string("%lld mm", Int64(value.wrappedValue))
+            )
             Slider(value: value, in: 0 ... 30, step: 1)
         }
     }
