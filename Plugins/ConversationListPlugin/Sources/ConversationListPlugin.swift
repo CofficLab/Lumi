@@ -19,15 +19,27 @@ public final class ConversationListPlugin: LumiPlugin {
     public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-list")
     public let attentionStore: ConversationAttentionStore
     public let sortStabilizer: ConversationSortStabilizer
+    private let projectChatsTabController: ProjectChatsTabController
 
     public init() {
-        attentionStore = ConversationAttentionStore()
-        sortStabilizer = ConversationSortStabilizer()
+        let attentionStore = ConversationAttentionStore()
+        let sortStabilizer = ConversationSortStabilizer()
+        self.attentionStore = attentionStore
+        self.sortStabilizer = sortStabilizer
+        // `project-chats` 不再静态注册：由控制器按「当前项目是否有对话」动态注册/注销，
+        // 当前项目 0 对话时彻底隐藏入口。`order` 与插件一致以保持与 `chats` 同序。
+        projectChatsTabController = ProjectChatsTabController(
+            attentionStore: attentionStore,
+            sortStabilizer: sortStabilizer,
+            order: order
+        )
     }
 
     public func onBoot(kernel: KernelLumi) async throws {}
 
-    public func onReady(kernel: KernelLumi) async throws {}
+    public func onReady(kernel: KernelLumi) async throws {
+        projectChatsTabController.start(kernel: kernel)
+    }
 
     public func agentTools(kernel: KernelLumi) -> [any LumiAgentTool] {
         [
@@ -38,6 +50,8 @@ public final class ConversationListPlugin: LumiPlugin {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         let attentionStore = self.attentionStore
         let sortStabilizer = self.sortStabilizer
+        // `project-chats` 已改为由 `ProjectChatsTabController` 动态注册，
+        // 此处仅保留始终可见的 `chats`。
         return [
             PanelRailTabItem(
                 id: "chats",
@@ -46,15 +60,6 @@ public final class ConversationListPlugin: LumiPlugin {
                 requiresChatSupport: true
             ) {
                 RailView(kernel: kernel, attentionStore: attentionStore, sortStabilizer: sortStabilizer)
-            },
-            PanelRailTabItem(
-                id: "project-chats",
-                title: "Project",
-                systemImage: "folder.fill",
-                requiresProjectSupport: true,
-                requiresChatSupport: true
-            ) {
-                RailView(kernel: kernel, attentionStore: attentionStore, sortStabilizer: sortStabilizer, scopeToCurrentProject: true)
             },
         ]
     }
