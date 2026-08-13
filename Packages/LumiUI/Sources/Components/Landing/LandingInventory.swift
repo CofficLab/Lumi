@@ -28,9 +28,9 @@ public struct LandingInventory: View {
 
     private var accent: Color { tint ?? theme.primary }
 
-    public init(items: [LandingInventoryItem], tint: Color? = nil) {
-        self.items = items
+    public init(tint: Color? = nil, items: [LandingInventoryItem]) {
         self.tint = tint
+        self.items = items
     }
 
     public var body: some View {

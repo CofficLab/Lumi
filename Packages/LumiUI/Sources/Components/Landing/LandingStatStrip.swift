@@ -13,9 +13,9 @@ public struct LandingStatStrip: View {
     /// 强调色。默认跟随主题 `primary`。
     private var accent: Color { tint ?? theme.primary }
 
-    public init(metrics: [AppPluginPosterMetric], accent: Color? = nil) {
-        self.metrics = metrics
+    public init(accent: Color? = nil, metrics: [AppPluginPosterMetric]) {
         self.tint = accent
+        self.metrics = metrics
     }
 
     public var body: some View {

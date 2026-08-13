@@ -25,9 +25,9 @@ public struct LandingPipeline: View {
 
     private var accent: Color { tint ?? theme.primary }
 
-    public init(stages: [LandingStage], tint: Color? = nil) {
-        self.stages = stages
+    public init(tint: Color? = nil, stages: [LandingStage]) {
         self.tint = tint
+        self.stages = stages
     }
 
     public var body: some View {
