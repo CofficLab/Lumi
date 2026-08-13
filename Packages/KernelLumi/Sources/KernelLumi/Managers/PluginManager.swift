@@ -427,6 +427,33 @@ public final class PluginManager: ObservableObject {
         kernel.editorProvider?.replaceEditorPlugins(collectEditorPlugins(in: kernel))
     }
 
+    /// 收集所有插件贡献的聊天起始提示词，并注册到内核的 `PromptSuggestionProviding` 服务。
+    ///
+    /// 调用时机：在 `KernelLumi.startup()` 的收集阶段，以及 `rebuildAllContributions`
+    /// 中（插件启用/禁用后）。每个插件只需实现 `LumiPlugin.promptSuggestions(kernel:)`
+    /// 返回其提示词，内核会按插件 `order` 盖戳并聚合。服务未注册时为 no-op。
+    public func registerPromptSuggestions(in kernel: KernelLumi) {
+        self.kernel = kernel
+        guard let manager = kernel.promptSuggestions else { return }
+
+        // 先清空再按"有效启用"状态重新注册，使被禁用插件的提示词即时撤回。
+        manager.clearAllContributions()
+        for plugin in allPlugins {
+            guard effectiveEnabled(for: plugin) else { continue }
+            let pluginOrder = plugin.order
+            for suggestion in plugin.promptSuggestions(kernel: kernel) {
+                var item = LumiPromptSuggestion(
+                    id: suggestion.id,
+                    title: suggestion.title,
+                    prompt: suggestion.prompt,
+                    systemImage: suggestion.systemImage
+                )
+                item.order = pluginOrder
+                manager.registerPromptSuggestion(item)
+            }
+        }
+    }
+
     /// 全量重建所有插件贡献(Agent Tools + UI + Commands + LLM Provider + Editor Plugins)。
     ///
     /// 在插件启用/禁用后由宿主(`FactoryCore.subscribeToPluginChanges`)调用,
@@ -454,6 +481,9 @@ public final class PluginManager: ObservableObject {
 
         // 2. UI 贡献重建
         registerPluginUIContributions(in: kernel)
+
+        // 2.5 提示词贡献重建（撤回已禁用插件、加入新启用插件的提示词）
+        registerPromptSuggestions(in: kernel)
 
         // 3. Command 菜单贡献重建
         registerPluginCommandContributions(in: kernel)
