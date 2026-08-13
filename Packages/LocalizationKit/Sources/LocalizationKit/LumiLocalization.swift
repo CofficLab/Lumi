@@ -108,9 +108,10 @@ public enum LumiLocalization {
 
         func append(_ raw: String?) {
             guard let raw, !raw.isEmpty else { return }
-            let normalized = normalizeLanguageID(raw)
-            guard !candidates.contains(normalized) else { return }
-            candidates.append(normalized)
+            for id in variantFallbacks(for: normalizeLanguageID(raw))
+                where !candidates.contains(id) {
+                candidates.append(id)
+            }
         }
 
         for preferred in Locale.preferredLanguages {
@@ -119,6 +120,19 @@ public enum LumiLocalization {
         append(locale.identifier)
         append("en")
         return candidates
+    }
+
+    /// 同一书写系统内的回退顺序。
+    ///
+    /// 系统给出的偏好语言可能是 `zh-Hant-TW`，而 catalog 里只翻译了 `zh-TW`
+    /// （反之亦然）。没有这层回退时，繁体用户会直接掉到 `en`。
+    private static func variantFallbacks(for languageID: String) -> [String] {
+        switch languageID {
+        case "zh-Hant": ["zh-Hant", "zh-TW", "zh-HK"]
+        case "zh-TW": ["zh-TW", "zh-Hant", "zh-HK"]
+        case "zh-HK": ["zh-HK", "zh-Hant", "zh-TW"]
+        default: [languageID]
+        }
     }
 
     private static func normalizeLanguageID(_ raw: String) -> String {
