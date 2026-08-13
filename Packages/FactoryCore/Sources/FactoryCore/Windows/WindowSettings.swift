@@ -1,3 +1,4 @@
+import KernelHosting
 import KernelLumi
 import LumiUI
 import SwiftUI
@@ -9,30 +10,32 @@ import SwiftUI
 /// 也不会被 `mainKernel ?? KernelLumi()` 锁死成一个空内核实例
 /// (空内核没有 settings/theme 等服务,会导致设置界面显示错误界面)。
 ///
-/// 当主内核尚未就绪时显示加载占位,并通过轮询驱动切换到真实设置界面。
+/// 当主内核尚未就绪时显示加载占位;通过 `KernelBootstrapStatus` 观察启动相位:
+/// 成功即切到真实设置界面,失败则直接展示错误,而不会无限轮询卡在「Loading…」。
 public struct WindowSettings: View {
-    @State private var kernelResolved = false
+    /// 观察内核启动相位,替代无限轮询 `mainKernel`。
+    /// 主窗口是独立场景,其启动成功 / 失败会翻转该相位;
+    /// 失败时这里能展示真正的错误,而非永远卡在「Loading…」。
+    @ObservedObject private var bootStatus = KernelBootstrapStatus.shared
 
     public init() {}
 
     public var body: some View {
         Group {
-            if let kernel = FactoryCore.mainKernel {
-                SettingsView(kernel: kernel)
-            } else {
+            switch bootStatus.phase {
+            case .booting:
                 SettingsLoadingView()
+            case .ready:
+                if let kernel = FactoryCore.mainKernel {
+                    SettingsView(kernel: kernel)
+                } else {
+                    // 相位已就绪但 mainKernel 解析为空:理论上不应发生,
+                    // 降级显示加载占位,避免空内核撑起设置界面。
+                    SettingsLoadingView()
+                }
+            case .failed(let error):
+                CrashedView(error: error)
             }
-        }
-        .task {
-            // 主内核通常先于设置窗口就绪,此循环几乎立即退出;
-            // 仅在设置窗口早于主窗口初始化的极端时序下起作用。
-            while FactoryCore.mainKernel == nil {
-                if Task.isCancelled { return }
-                try? await Task.sleep(nanoseconds: 100_000_000)
-            }
-            // 翻转该 state 以驱动 body 重新求值,
-            // 使上述 `if let` 切换到已就绪的 mainKernel。
-            kernelResolved = true
         }
     }
 }

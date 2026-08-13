@@ -1,230 +1,97 @@
 import LumiUI
 import SwiftUI
-import KernelLumi
 
-/// 网络监控插件关于视图 - 展示插件的功能介绍和说明
+/// 网络管理插件关于视图 —— 以「实时仪表盘」为主轴的落地页。
 struct NetworkManagerAboutView: View {
-    @Environment(\.locale) private var locale
     @LumiTheme private var theme
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Feature Highlights
-                FeatureHighlight(
-                    icon: "gauge.with.dots.needle.bottom.50percent",
-                    title: L("Live Speed Monitor"),
-                    description: L("Real-time upload and download speed tracking with detailed statistics")
-                )
-
-                FeatureHighlight(
-                    icon: "chart.bar.fill",
-                    title: L("Traffic Statistics"),
-                    description: L("Track total data usage over time with historical charts")
-                )
-
-                FeatureHighlight(
-                    icon: "list.bullet.rectangle",
-                    title: L("Process Monitoring"),
-                    description: L("See which applications are using network bandwidth")
-                )
-
-                FeatureHighlight(
-                    icon: "menubar.rectangle",
-                    title: L("Menu Bar Integration"),
-                    description: L("Quick access to network status from the menu bar")
-                )
-
-                // How It Works
-                HowItWorksCard(
-                    title: coreL("about.section.howItWorks"),
-                    steps: [
-                        L("Monitors system network interfaces in real-time"),
-                        L("Calculates upload and download speeds continuously"),
-                        L("Tracks per-process network activity"),
-                        L("Displays current speed in menu bar for quick reference")
-                    ]
-                )
-
-                // Features
-                FeaturesCard(
-                    title: L("Key Features"),
-                    items: [
-                        L("Real-time speed monitoring with live updates"),
-                        L("Historical traffic data visualization"),
-                        L("Per-process network usage breakdown"),
-                        L("Customizable menu bar display options"),
-                        L("Low system resource consumption")
-                    ]
-                )
-
-                // Requirements
-                RequirementsCard(
-                    title: L("Requirements"),
-                    items: [
-                        L("macOS 14.0 or later"),
-                        L("Network access permission (automatically requested)"),
-                        L("Active internet connection for monitoring")
-                    ]
-                )
-            }
-            .padding()
+        VStack(alignment: .leading, spacing: 22) {
+            hero
+            statsSection
+            capabilitiesSection
+            howItWorksSection
         }
     }
+
+    // MARK: - Hero
+
+    private var hero: some View {
+        LandingHero(
+            icon: "wifi",
+            accent: theme.success,
+            tagline: L("实时监控上传下载速度、流量统计与进程占用,菜单栏即可一览网络状态。"),
+            chips: [L("实时测速"), L("流量统计"), L("进程监控"), L("菜单栏")],
+            metrics: [
+                .init(value: "↑↓", label: L("实时速率")),
+                .init(value: "图表", label: L("历史流量")),
+                .init(value: "进程", label: L("按应用归集"))
+            ]
+        )
+        .landingAppear()
+    }
+
+    // MARK: - 实时状态
+
+    private var statsSection: some View {
+        LandingSection(title: L("一眼掌握的网络状态"), icon: "chart.bar.fill") {
+            LandingStatStrip(accent: theme.success, metrics: [
+                .init(value: "↑↓", label: L("上传 / 下载")),
+                .init(value: "GB", label: L("累计流量")),
+                .init(value: "Top", label: L("耗流进程")),
+                .init(value: "菜单栏", label: L("常驻显示"))
+            ])
+        }
+        .landingAppear(delay: 0.05)
+    }
+
+    // MARK: - 核心能力
+
+    private var capabilitiesSection: some View {
+        LandingSection(title: L("核心能力"), icon: "square.grid.2x2") {
+            LandingFeatureGrid(items: [
+                .init(icon: "speedometer", tint: theme.success,
+                      title: L("实时测速"),
+                      description: L("实时跟踪上传与下载速度,附带详细统计。")),
+                .init(icon: "chart.xyaxis.line", tint: theme.info,
+                      title: L("流量统计"),
+                      description: L("按时间累计数据用量,以历史图表呈现。")),
+                .init(icon: "app.dashed", tint: theme.warning,
+                      title: L("进程监控"),
+                      description: L("查看哪些应用正在占用网络带宽。")),
+                .init(icon: "menubar.rectangle", tint: theme.primary,
+                      title: L("菜单栏集成"),
+                      description: L("从菜单栏快速查看网络状态。"))
+            ])
+        }
+        .landingAppear(delay: 0.1)
+    }
+
+    // MARK: - 工作原理
+
+    private var howItWorksSection: some View {
+        LandingSection(title: L("工作原理"), icon: "gearshape.2") {
+            LandingStepFlow(steps: [
+                .init(title: L("采集数据"), description: L("读取网卡的上传与下载流量。"), icon: "antenna.radiowaves.left.and.right"),
+                .init(title: L("按进程归集"), description: L("把带宽占用归到对应应用。")),
+                .init(title: L("绘制图表"), description: L("生成实时曲线与历史统计。")),
+                .init(title: L("菜单栏展示"), description: L("常驻菜单栏,随时一览。"))
+            ])
+        }
+        .landingAppear(delay: 0.15)
+    }
+
+    // MARK: - Localization
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
-    }
-
-    private func coreL(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: KernelLumiResources.bundle, locale: locale)
-    }
-}
-
-// MARK: - Feature Highlight
-
-private struct FeatureHighlight: View {
-    @LumiTheme private var theme
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - How It Works Card
-
-private struct HowItWorksCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let steps: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("\(index + 1)")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 22, height: 22)
-                            .background(
-                                Circle()
-                                    .fill(theme.primary.opacity(0.15))
-                            )
-
-                        Text(step)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Features Card
-
-private struct FeaturesCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let items: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(items, id: \.self) { item in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.success)
-                            .frame(width: 16)
-
-                        Text(item)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Requirements Card
-
-private struct RequirementsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let items: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(items, id: \.self) { item in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.success)
-                            .frame(width: 16)
-
-                        Text(item)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
+        LumiPluginLocalization.string(key, bundle: .module)
     }
 }
 
 #Preview {
-    NetworkManagerAboutView()
-        .frame(width: 500, height: 700)
+    ScrollView {
+        NetworkManagerAboutView()
+            .padding(22)
+    }
+    .frame(width: 560, height: 900)
 }

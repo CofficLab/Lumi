@@ -29,15 +29,15 @@ struct AISetupPage: View {
             PageHeader(
                 icon: "key.fill",
                 gradient: [.orange, .pink],
-                title: "Configure AI",
-                subtitle: "Add a provider API key to start your first conversation. You can also do this later in Settings."
+                title: OnboardingPageLocalization.string("Configure AI"),
+                subtitle: OnboardingPageLocalization.string("Add a provider API key to start your first conversation. You can also do this later in Settings.")
             )
 
             if providers.isEmpty {
-                Text("No providers are available yet. You can configure one later in Settings.")
+                Text(OnboardingPageLocalization.string("No providers are available yet. You can configure one later in Settings."))
                     .foregroundStyle(.secondary)
             } else {
-                Picker("Provider", selection: $selectedProviderID) {
+                Picker(OnboardingPageLocalization.string("Provider"), selection: $selectedProviderID) {
                     ForEach(providers) { provider in
                         Text(provider.displayName).tag(provider.id)
                     }
@@ -54,18 +54,22 @@ struct AISetupPage: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    AppInputField("API Key", text: $apiKey, fieldType: .secure)
+                    AppInputField(
+                        LocalizedStringKey(OnboardingPageLocalization.string("API Key")),
+                        text: $apiKey,
+                        fieldType: .secure
+                    )
 
                     HStack(spacing: 10) {
-                        Button("Save API Key") { save(provider) }
+                        Button(OnboardingPageLocalization.string("Save API Key")) { save(provider) }
                             .buttonStyle(.borderedProminent)
                             .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                        Link("Get a key", destination: info.websiteURL)
+                        Link(OnboardingPageLocalization.string("Get a key"), destination: info.websiteURL)
                             .font(.subheadline)
 
                         if didSave {
-                            Label("Saved", systemImage: "checkmark.circle.fill")
+                            Label(OnboardingPageLocalization.string("Saved"), systemImage: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
                                 .font(.subheadline)
                         }

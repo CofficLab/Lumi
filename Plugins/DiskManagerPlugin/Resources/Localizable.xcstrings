@@ -277,6 +277,7 @@
       }
     },
     "Application cache data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -311,6 +312,7 @@
       }
     },
     "Archived builds" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -515,6 +517,7 @@
       }
     },
     "Build folders and artifacts" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -549,6 +552,7 @@
       }
     },
     "Build intermediates" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -583,6 +587,7 @@
       }
     },
     "Cache Cleanup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -617,6 +622,7 @@
       }
     },
     "Cache cleanup only removes safe, regenerable files. System files and user documents are never affected." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -719,6 +725,7 @@
       }
     },
     "Clean up system caches to free up disk space. Safely remove temporary files without affecting system stability." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -753,6 +760,7 @@
       }
     },
     "Cleanup Categories" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1195,6 +1203,7 @@
       }
     },
     "Discover large files consuming your disk space. Scan any directory to find files sorted by size for easy cleanup." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1297,6 +1306,7 @@
       }
     },
     "Disk Usage Overview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1399,6 +1409,7 @@
       }
     },
     "Finder Integration" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1433,6 +1444,7 @@
       }
     },
     "Free up significant space by removing Xcode-derived data, old simulators, build products, and archives." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1467,6 +1479,7 @@
       }
     },
     "Full disk access permission (for full scan)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1637,6 +1650,7 @@
       }
     },
     "Large File Scanner" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1773,6 +1787,7 @@
       }
     },
     "macOS 14.0 or later" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1909,6 +1924,7 @@
       }
     },
     "Old device simulators" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1977,6 +1993,7 @@
       }
     },
     "Pod caches and builds" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2011,6 +2028,7 @@
       }
     },
     "Project Build" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2113,6 +2131,7 @@
       }
     },
     "Quickly reveal scanned files in Finder for easy inspection. Navigate to any discovered file or folder with one click." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2147,6 +2166,7 @@
       }
     },
     "Requirements" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2283,6 +2303,7 @@
       }
     },
     "Safety First" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2317,6 +2338,7 @@
       }
     },
     "Scan project directories for removable build artifacts like DerivedData, build folders, and CocoaPods caches." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2419,6 +2441,7 @@
       }
     },
     "SPM build caches" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2521,6 +2544,7 @@
       }
     },
     "Swift 6.0 or later" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2555,6 +2579,7 @@
       }
     },
     "Swift Package" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2657,6 +2682,7 @@
       }
     },
     "System Cache" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2759,6 +2785,7 @@
       }
     },
     "Temporary system files" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2861,6 +2888,7 @@
       }
     },
     "User Cache" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2895,6 +2923,7 @@
       }
     },
     "View total, used, and available disk space at a glance. Monitor storage health and identify space consumption patterns." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2929,6 +2958,7 @@
       }
     },
     "Visualize directory size breakdowns with interactive tree views. Identify which folders are taking up the most space." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2997,6 +3027,7 @@
       }
     },
     "Xcode Archives" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3133,6 +3164,7 @@
       }
     },
     "Xcode Simulators" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

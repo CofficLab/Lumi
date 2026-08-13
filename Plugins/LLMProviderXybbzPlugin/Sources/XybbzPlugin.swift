@@ -51,15 +51,7 @@ public final class XybbzPlugin: LumiPlugin {
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                Label(LumiPluginLocalization.string("Xybbz", bundle: .module),
-                      systemImage: "moon")
-                    .font(.headline)
-                Text(LumiPluginLocalization.string("LLM provider for chat and agent conversations.", bundle: .module))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            LLMProviderLandingPage(displayName: LumiPluginLocalization.string("Xybbz", bundle: .module), icon: "moon")
         )
     }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }

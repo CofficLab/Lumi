@@ -129,6 +129,14 @@ extension KernelLumiContainer {
         try registerService(OnboardingProviding.self, onboarding)
     }
 
+    /// Register prompt suggestion aggregation service.
+    ///
+    /// 内核在 `startup()` 中注册默认实现 `PromptSuggestionManager`；插件也可在
+    /// `onBoot` 中调用此方法注册自定义实现以覆盖默认。
+    public func registerPromptSuggestionService(_ service: any PromptSuggestionProviding) throws {
+        try registerService(PromptSuggestionProviding.self, service)
+    }
+
     /// Register message renderer management service
     public func registerMessageRendererManagerService(_ manager: any MessageRendering) throws {
         try registerService(MessageRendering.self, manager)

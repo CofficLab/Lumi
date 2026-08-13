@@ -134,6 +134,15 @@ public protocol LumiPlugin: AnyObject {
     /// 聊天分区根视图包装器
     func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView
 
+    // MARK: - Prompt Suggestions
+
+    /// 贡献聊天起始提示词。
+    ///
+    /// 插件返回的提示词由内核聚合（按插件 `order` 排序，同插件内保持返回顺序），
+    /// 供空态等 UI 展示。点击提示词时通常把 `prompt` 写入输入框。
+    /// `id` 需稳定唯一（建议带插件前缀，如 `"icon-designer.design"`）。
+    func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion]
+
     // MARK: - Settings Contributions
 
     /// 设置标签项。已接入宿主 UI;插件可注册任意数量,会平铺显示在设置
@@ -254,4 +263,7 @@ public extension LumiPlugin {
 
     /// 默认不贡献任何设置 section。
     func settingsSections(kernel: KernelLumi) -> [SettingsSection] { [] }
+
+    /// 默认不贡献任何聊天起始提示词。
+    func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] { [] }
 }

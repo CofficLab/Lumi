@@ -40,14 +40,7 @@ public final class AgentOpenInGitHubDesktopPlugin: LumiPlugin {
 
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(LumiPluginLocalization.string("Open in GitHub Desktop", bundle: .module))
-                    .font(.title2.weight(.semibold))
-                Text(LumiPluginLocalization.string("Open current project in GitHub Desktop", bundle: .module))
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            OpenInLandingPage(displayName: LumiPluginLocalization.string("Open in GitHub Desktop", bundle: .module), icon: "macwindow", appDescription: LumiPluginLocalization.string("Open current project in GitHub Desktop", bundle: .module))
         )
     }
 

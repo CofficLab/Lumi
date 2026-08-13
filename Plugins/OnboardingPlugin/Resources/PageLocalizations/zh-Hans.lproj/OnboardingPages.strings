@@ -1,0 +1,16 @@
+"Configure AI" = "配置 AI";
+"Add a provider API key to start your first conversation. You can also do this later in Settings." = "添加服务商 API 密钥，即可开始第一次对话。你也可以稍后在设置中完成配置。";
+"No providers are available yet. You can configure one later in Settings." = "目前没有可用的服务商。你可以稍后在设置中配置。";
+"Provider" = "服务商";
+"API Key" = "API 密钥";
+"Save API Key" = "保存 API 密钥";
+"Get a key" = "获取密钥";
+"Saved" = "已保存";
+"A quick tour" = "快速导览";
+"Lumi brings conversations, coding, and desktop tools together in one workspace." = "Lumi 将对话、编程和桌面工具汇集在同一个工作区中。";
+"Chat" = "对话";
+"Ask questions, write drafts, and run agent tasks from the chat workspace." = "在对话工作区中提问、撰写草稿并运行 Agent 任务。";
+"Editor" = "编辑器";
+"Open a project and work with files alongside your conversations." = "打开项目，在对话的同时处理项目文件。";
+"Desktop tools" = "桌面工具";
+"Discover system tools and plugins from the ActivityBar and settings." = "通过活动栏和设置发现系统工具与插件。";

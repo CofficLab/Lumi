@@ -1,282 +1,125 @@
 import LumiUI
 import SwiftUI
-import KernelLumi
-import LocalizationKit
 
-/// 防休眠插件关于视图 - 展示插件的功能介绍和说明
+/// 防休眠插件关于视图 —— 以产品落地页的形式介绍功能。
 struct CaffeinateAboutView: View {
-    @Environment(\.locale) private var locale
     @LumiTheme private var theme
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Feature Highlights
-                FeatureHighlight(
-                    icon: "bolt.fill",
-                    title: L("Prevent System Sleep"),
-                    description: L("Keep your Mac awake during long-running tasks like downloads or renders")
-                )
-
-                FeatureHighlight(
-                    icon: "timer",
-                    title: L("Timer Mode"),
-                    description: L("Set a specific duration to prevent sleep, then automatically deactivate")
-                )
-
-                FeatureHighlight(
-                    icon: "moon.zzz",
-                    title: L("Display Control"),
-                    description: L("Optionally turn off display while keeping system awake to save power")
-                )
-
-                FeatureHighlight(
-                    icon: "menubar.rectangle",
-                    title: L("Menu Bar Integration"),
-                    description: L("Quick access to activate/deactivate from the menu bar")
-                )
-
-                // How It Works
-                HowItWorksCard(
-                    title: coreL("about.section.howItWorks"),
-                    steps: [
-                        L("Uses IOKit power assertions to prevent system sleep"),
-                        L("Supports both indefinite and timed activation modes"),
-                        L("Can optionally turn off display while system stays awake"),
-                        L("Provides status indicator in menu bar for quick control")
-                    ]
-                )
-
-                // Features
-                FeaturesCard(
-                    title: L("Key Features"),
-                    items: [
-                        L("Indefinite mode: Keep system awake until manually deactivated"),
-                        L("Timed mode: Set duration from minutes to hours"),
-                        L("Display-off mode: Save power while system runs"),
-                        L("Agent tools for automated workflows"),
-                        L("Real-time status monitoring and elapsed time display")
-                    ]
-                )
-
-                // Use Cases
-                UseCasesCard(
-                    title: L("Common Use Cases"),
-                    cases: [
-                        (icon: "arrow.down.circle", title: L("Downloads"), desc: L("Prevent sleep during large file downloads")),
-                        (icon: "video.fill", title: L("Video Processing"), desc: L("Keep system awake during encoding or rendering")),
-                        (icon: "server.rack", title: L("Server Tasks"), desc: L("Run background services without interruption")),
-                        (icon: "clock", title: L("Presentations"), desc: L("Prevent display sleep during presentations"))
-                    ]
-                )
-
-                // Requirements
-                RequirementsCard(
-                    title: L("Requirements"),
-                    items: [
-                        L("macOS 14.0 or later"),
-                        L("System permission for power management"),
-                        L("No additional configuration required")
-                    ]
-                )
-            }
-            .padding()
+        VStack(alignment: .leading, spacing: 22) {
+            hero
+            modesSection
+            howItWorksSection
+            useCasesSection
+            requirementsSection
         }
     }
+
+    // MARK: - Hero
+
+    private var hero: some View {
+        LandingHero(
+            icon: "bolt.fill",
+            tagline: L("让 Mac 在长时间任务中保持唤醒——下载、渲染、演示都不再被打断。"),
+            chips: [L("无限模式"), L("定时模式"), L("息屏运行")],
+            metrics: [
+                .init(value: "3", label: L("运行模式")),
+                .init(value: "1", label: L("一键切换")),
+                .init(value: "0", label: L("额外配置"))
+            ]
+        )
+        .landingAppear(delay: 0)
+    }
+
+    // MARK: - 运行模式
+
+    private var modesSection: some View {
+        LandingSection(title: L("三种运行模式"), icon: "switch.2", subtitle: L("按场景选择最适合的唤醒方式")) {
+            LandingFeatureGrid(items: [
+                .init(icon: "infinity", tint: theme.primary,
+                      title: L("无限模式"),
+                      description: L("一直保持唤醒,直到你手动关闭。适合不确定时长的长任务。")),
+                .init(icon: "timer", tint: theme.info,
+                      title: L("定时模式"),
+                      description: L("设定几分钟到几小时,到点自动解除唤醒。")),
+                .init(icon: "moon.zzz", tint: theme.warning,
+                      title: L("息屏运行"),
+                      description: L("系统保持唤醒的同时关闭屏幕,兼顾任务与省电。"))
+            ])
+        }
+        .landingAppear(delay: 0.05)
+    }
+
+    // MARK: - 工作原理
+
+    private var howItWorksSection: some View {
+        LandingSection(title: L("工作原理"), icon: "gearshape.2", subtitle: L("底层基于系统电源断言,安全且无副作用")) {
+            LandingStepFlow(steps: [
+                .init(title: L("创建电源断言"), description: L("通过 IOKit 向系统注册 power assertion,阻止进入睡眠。"), icon: "bolt.fill"),
+                .init(title: L("运行你的任务"), description: L("下载、编译、渲染或演示,系统始终保持唤醒。")),
+                .init(title: L("可选关闭屏幕"), description: L("息屏模式下显示休眠,但系统继续运行。")),
+                .init(title: L("自动收尾"), description: L("定时模式到点自动释放断言;无限模式由你手动解除。"))
+            ])
+        }
+        .landingAppear(delay: 0.1)
+    }
+
+    // MARK: - 常见场景
+
+    private var useCasesSection: some View {
+        LandingSection(title: L("常见场景"), icon: "sparkles", subtitle: L("任何时候你都不希望 Mac 突然睡去")) {
+            LandingFeatureGrid(items: [
+                .init(icon: "arrow.down.circle", tint: theme.info,
+                      title: L("大文件下载"), description: L("下载期间保持唤醒,避免中断重试。")),
+                .init(icon: "video.fill", tint: theme.warning,
+                      title: L("视频处理"), description: L("编码、渲染耗时漫长,全程不掉线。")),
+                .init(icon: "server.rack", tint: theme.success,
+                      title: L("后台服务"), description: L("运行本地服务或长任务不被打断。")),
+                .init(icon: "rectangle.on.rectangle.angled", tint: theme.primary,
+                      title: L("演示与会议"), description: L("投屏或演示时屏幕不熄灭。"))
+            ])
+        }
+        .landingAppear(delay: 0.15)
+    }
+
+    // MARK: - 要求
+
+    private var requirementsSection: some View {
+        LandingSection(title: L("环境要求"), icon: "checkmark.seal") {
+            AppCard(style: .subtle, cornerRadius: 12) {
+                VStack(alignment: .leading, spacing: 10) {
+                    requirementRow(L("macOS 14.0 或更高版本"))
+                    requirementRow(L("系统电源管理权限(无需额外授权)"))
+                    requirementRow(L("无需安装任何附加组件"))
+                }
+            }
+        }
+        .landingAppear(delay: 0.2)
+    }
+
+    private func requirementRow(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 14))
+                .foregroundStyle(theme.success)
+            Text(text)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    // MARK: - Localization
 
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
     }
-
-    private func coreL(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: KernelLumiResources.bundle, locale: locale)
-    }
-}
-
-// MARK: - Feature Highlight
-
-private struct FeatureHighlight: View {
-    @LumiTheme private var theme
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - How It Works Card
-
-private struct HowItWorksCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let steps: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("\(index + 1)")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 22, height: 22)
-                            .background(
-                                Circle()
-                                    .fill(theme.primary.opacity(0.15))
-                            )
-
-                        Text(step)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Features Card
-
-private struct FeaturesCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let items: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(items, id: \.self) { item in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.success)
-                            .frame(width: 16)
-
-                        Text(item)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Use Cases Card
-
-private struct UseCasesCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let cases: [(icon: String, title: String, desc: String)]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(cases, id: \.title) { useCase in
-                    HStack(alignment: .top, spacing: 12) {
-                        Image(systemName: useCase.icon)
-                            .font(.system(size: 16))
-                            .foregroundStyle(theme.info)
-                            .frame(width: 24)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(useCase.title)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(theme.textPrimary)
-                            Text(useCase.desc)
-                                .font(.system(size: 12))
-                                .foregroundColor(theme.textSecondary)
-                        }
-
-                        Spacer()
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Requirements Card
-
-private struct RequirementsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let items: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(items, id: \.self) { item in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.success)
-                            .frame(width: 16)
-
-                        Text(item)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
 }
 
 #Preview {
-    CaffeinateAboutView()
-        .frame(width: 500, height: 700)
+    ScrollView {
+        CaffeinateAboutView()
+            .padding(22)
+    }
+    .frame(width: 560, height: 900)
 }

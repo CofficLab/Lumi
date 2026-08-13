@@ -49,15 +49,7 @@ public final class ThemeAutumnPlugin: LumiPlugin {
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                Label(LumiPluginLocalization.string("Autumn Theme", bundle: .module),
-                      systemImage: "leaf")
-                    .font(.headline)
-                Text(LumiPluginLocalization.string("Provides a built-in color theme for the app and editor.", bundle: .module))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            ThemeLandingPage(displayName: LumiPluginLocalization.string("Autumn Theme", bundle: .module), icon: "leaf")
         )
     }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }

@@ -593,6 +593,7 @@
       }
     },
     "Allow editing and screenshot upload" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -627,6 +628,7 @@
       }
     },
     "App Management" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1341,6 +1343,7 @@
       }
     },
     "Changes are submitted directly to App Store Connect" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1511,6 +1514,7 @@
       }
     },
     "Configure API key in plugin settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1545,6 +1549,7 @@
       }
     },
     "Connect to App Store Connect API" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1919,6 +1924,7 @@
       }
     },
     "Create and manage app versions for submission" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2531,6 +2537,7 @@
       }
     },
     "Edit app information, descriptions, and keywords" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2735,6 +2742,7 @@
       }
     },
     "Fetch app information and metadata" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3687,6 +3695,7 @@
       }
     },
     "Manage your App Store Connect apps, metadata, and screenshots" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3857,6 +3866,7 @@
       }
     },
     "Metadata Editing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5795,6 +5805,7 @@
       }
     },
     "Screenshot Management" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6033,6 +6044,7 @@
       }
     },
     "Select an app from the toolbar to manage" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6271,6 +6283,7 @@
       }
     },
     "Submit changes to App Store Connect" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7121,6 +7134,7 @@
       }
     },
     "Upload, preview, and organize app screenshots" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7393,6 +7407,7 @@
       }
     },
     "Version Management" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

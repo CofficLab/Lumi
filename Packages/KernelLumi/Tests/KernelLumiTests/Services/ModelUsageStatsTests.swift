@@ -41,7 +41,7 @@ struct ModelUsageStatsTests {
         let today = calendar.startOfDay(for: now)
         let provider = LumiLLMProviderInfo(
             id: "openai", displayName: "OpenAI", description: "",
-            defaultModel: "gpt", availableModels: ["gpt"],
+            defaultModel: "gpt", availableModels: [LumiModelInfo(id: "gpt")],
             websiteURL: URL(string: "https://example.com")!
         )
 
@@ -73,7 +73,7 @@ struct ModelUsageStatsTests {
         let today = calendar.startOfDay(for: now)
         let provider = LumiLLMProviderInfo(
             id: "openai", displayName: "OpenAI", description: "",
-            defaultModel: "gpt", availableModels: ["gpt"],
+            defaultModel: "gpt", availableModels: [LumiModelInfo(id: "gpt")],
             websiteURL: URL(string: "https://example.com")!
         )
 
@@ -103,7 +103,7 @@ struct ModelUsageStatsTests {
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
         let provider = LumiLLMProviderInfo(
             id: "openai", displayName: "OpenAI", description: "",
-            defaultModel: "gpt", availableModels: ["gpt"],
+            defaultModel: "gpt", availableModels: [LumiModelInfo(id: "gpt")],
             websiteURL: URL(string: "https://example.com")!
         )
 
@@ -133,7 +133,7 @@ struct ModelUsageStatsTests {
         let now = calendar(from: DateComponents(year: 2026, month: 6, day: 26, hour: 12))
         let provider = LumiLLMProviderInfo(
             id: "openai", displayName: "OpenAI", description: "",
-            defaultModel: "gpt", availableModels: ["gpt"],
+            defaultModel: "gpt", availableModels: [LumiModelInfo(id: "gpt")],
             websiteURL: URL(string: "https://example.com")!
         )
 
@@ -160,7 +160,7 @@ struct ModelUsageStatsTests {
         let today = calendar.startOfDay(for: now)
         let provider = LumiLLMProviderInfo(
             id: "openai", displayName: "OpenAI", description: "",
-            defaultModel: "gpt", availableModels: ["gpt", "gpt-mini"],
+            defaultModel: "gpt", availableModels: [LumiModelInfo(id: "gpt"), LumiModelInfo(id: "gpt-mini")],
             websiteURL: URL(string: "https://example.com")!
         )
 
@@ -185,7 +185,7 @@ struct ModelUsageStatsTests {
         let now = calendar(from: DateComponents(year: 2026, month: 6, day: 26, hour: 12))
         let provider = LumiLLMProviderInfo(
             id: "openai", displayName: "OpenAI", description: "",
-            defaultModel: "gpt", availableModels: ["gpt"],
+            defaultModel: "gpt", availableModels: [LumiModelInfo(id: "gpt")],
             websiteURL: URL(string: "https://example.com")!
         )
 
@@ -219,7 +219,7 @@ struct ModelUsageStatsTests {
             displayName: "OpenAI",
             description: "Test",
             defaultModel: "gpt-fast",
-            availableModels: ["gpt-fast", "gpt-slow"],
+            availableModels: [LumiModelInfo(id: "gpt-fast"), LumiModelInfo(id: "gpt-slow")],
             websiteURL: URL(string: "https://example.com")!
         )
 

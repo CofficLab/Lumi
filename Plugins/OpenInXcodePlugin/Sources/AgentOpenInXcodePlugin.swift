@@ -40,14 +40,7 @@ public final class AgentOpenInXcodePlugin: LumiPlugin {
 
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(LumiPluginLocalization.string("Open in Xcode", bundle: .module))
-                    .font(.title2.weight(.semibold))
-                Text(LumiPluginLocalization.string("Displays a button in the header to open the current project in Xcode", bundle: .module))
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            OpenInLandingPage(displayName: LumiPluginLocalization.string("Open in Xcode", bundle: .module), icon: "hammer", appDescription: LumiPluginLocalization.string("Displays a button in the header to open the current project in Xcode", bundle: .module))
         )
     }
 

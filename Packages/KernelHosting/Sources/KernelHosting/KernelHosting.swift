@@ -51,38 +51,47 @@ public enum KernelHosting: SuperLog {
         // 1. 创建内核
         let kernel = KernelLumi()
 
-        // 2. 初始化插件（存储插件实例）。插件列表由宿主在编译期确定，
-        //    这里不再做任何 ID 过滤或白名单补齐。
-        if verbose {
-            logger.info("\(t)初始化 \(plugins.count) 个插件")
+        // 启动过程中任一步抛错都会导致 `mainKernel` 永不为非空。
+        // 把结果回填到共享的 `KernelBootstrapStatus`,使设置窗口等独立场景
+        // 能停止「Loading…」转而展示真正的错误,而非无限轮询。
+        do {
+            // 2. 初始化插件（存储插件实例）。插件列表由宿主在编译期确定，
+            //    这里不再做任何 ID 过滤或白名单补齐。
+            if verbose {
+                logger.info("\(t)初始化 \(plugins.count) 个插件")
+            }
+            try await kernel.pluginManager.initializePlugins(plugins, kernel: kernel)
+
+            // 宿主可显式启用 opt-in 插件。这里不补齐任何依赖；
+            // 插件集合不足时仍由内核启动自检或插件生命周期明确报错。
+            if !enabledPluginIDs.isEmpty {
+                let overrides = Dictionary(
+                    uniqueKeysWithValues: enabledPluginIDs.map { ($0, true) }
+                )
+                kernel.pluginManager.applyPersistedPluginStates(overrides)
+            }
+
+            // 3. 订阅插件变更通知，当插件启用/禁用时重新注册 UI 贡献
+            subscribeToPluginChanges(kernel: kernel)
+
+            // 是否强制要求全部核心服务（macOS 宿主默认 true；单用途 iOS app 可 false）
+            kernel.requiresAllCoreServices = requiresAllCoreServices
+
+            // 4. 启动内核（调用插件生命周期 + 服务校验 + UI/LLM/Tool 收集）
+            try await kernel.startup()
+
+            // 5. 保存到内核列表
+            kernels.append(kernel)
+            KernelBootstrapStatus.shared.markReady()
+
+            if verbose {
+                Self.logger.info("\(Self.t)内核创建完成，已注册 \(kernel.pluginManager.allPlugins.count) 个插件")
+            }
+            return kernel
+        } catch {
+            KernelBootstrapStatus.shared.markFailed(error)
+            throw error
         }
-        try await kernel.pluginManager.initializePlugins(plugins, kernel: kernel)
-
-        // 宿主可显式启用 opt-in 插件。这里不补齐任何依赖；
-        // 插件集合不足时仍由内核启动自检或插件生命周期明确报错。
-        if !enabledPluginIDs.isEmpty {
-            let overrides = Dictionary(
-                uniqueKeysWithValues: enabledPluginIDs.map { ($0, true) }
-            )
-            kernel.pluginManager.applyPersistedPluginStates(overrides)
-        }
-
-        // 3. 订阅插件变更通知，当插件启用/禁用时重新注册 UI 贡献
-        subscribeToPluginChanges(kernel: kernel)
-
-        // 是否强制要求全部核心服务（macOS 宿主默认 true；单用途 iOS app 可 false）
-        kernel.requiresAllCoreServices = requiresAllCoreServices
-
-        // 4. 启动内核（调用插件生命周期 + 服务校验 + UI/LLM/Tool 收集）
-        try await kernel.startup()
-
-        // 5. 保存到内核列表
-        kernels.append(kernel)
-
-        if verbose {
-            Self.logger.info("\(Self.t)内核创建完成，已注册 \(kernel.pluginManager.allPlugins.count) 个插件")
-        }
-        return kernel
     }
 
     /// 创建主内核（如果尚未创建）
@@ -98,6 +107,7 @@ public enum KernelHosting: SuperLog {
         enabledPluginIDs: Set<String> = []
     ) async throws -> KernelLumi {
         if let existing = mainKernel {
+            KernelBootstrapStatus.shared.markReady()
             if verbose {
                 logger.info("\(t)返回已存在的主内核")
             }

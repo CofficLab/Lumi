@@ -3,185 +3,110 @@ import SwiftUI
 
 // MARK: - About View
 
+/// 终端插件关于视图 —— 以产品落地页的形式介绍功能。
 struct TerminalAboutView: View {
-    @Environment(\.locale) private var locale
     @LumiTheme private var theme
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Feature Highlights
-                FeatureHighlight(
-                    icon: "terminal",
-                    title: L("Multi-Tab Terminal"),
-                    description: L("Open multiple terminal tabs for parallel command execution")
-                )
-
-                FeatureHighlight(
-                    icon: "wand.and.stars",
-                    title: L("Shell Integration"),
-                    description: L("Support for zsh, bash, and other popular shells")
-                )
-
-                FeatureHighlight(
-                    icon: "paintbrush",
-                    title: L("Theme Matching"),
-                    description: L("Automatically matches your editor theme for consistent appearance")
-                )
-
-                FeatureHighlight(
-                    icon: "folder",
-                    title: L("Project Directory"),
-                    description: L("Each tab starts in your project root directory")
-                )
-
-                // How It Works
-                HowItWorksCard(
-                    title: coreL("about.section.howItWorks"),
-                    steps: [
-                        L("Click the terminal icon in the panel to open"),
-                        L("Create new tabs for different tasks"),
-                        L("Each tab maintains its own shell session"),
-                        L("Sessions persist across panel switches")
-                    ]
-                )
-
-                // Tips
-                TipsCard(
-                    title: coreL("about.section.tips"),
-                    tips: [
-                        L("Use Cmd+T to create a new tab"),
-                        L("Use Cmd+W to close the current tab"),
-                        L("Right-click on tab bar for more options"),
-                        L("Theme automatically syncs with editor")
-                    ]
-                )
-            }
-            .padding()
+        VStack(alignment: .leading, spacing: 22) {
+            hero
+            featuresSection
+            shortcutsSection
+            tipsSection
         }
     }
+
+    // MARK: - Hero
+
+    private var hero: some View {
+        LandingHero(
+            icon: "terminal",
+            accent: theme.primary,
+            tagline: L("应用内置的原生交互式终端,多标签并行、跟随主题,随时随手执行命令。"),
+            chips: [L("多标签"), L("Shell 集成"), L("主题同步")],
+            metrics: [
+                .init(value: "4", label: L("核心能力")),
+                .init(value: "∞", label: L("标签页")),
+                .init(value: "0", label: L("额外配置"))
+            ]
+        )
+        .landingAppear(delay: 0)
+    }
+
+    // MARK: - 核心能力
+
+    private var featuresSection: some View {
+        LandingSection(title: L("核心能力"), icon: "square.grid.2x2", subtitle: L("为开发者打造的终端体验")) {
+            LandingFeatureGrid(items: [
+                .init(icon: "rectangle.on.rectangle", tint: theme.primary,
+                      title: L("多标签终端"),
+                      description: L("并行打开多个终端标签,各自独立的会话同时运行。")),
+                .init(icon: "wand.and.stars", tint: theme.info,
+                      title: L("Shell 集成"),
+                      description: L("支持 zsh、bash 等主流 Shell,完整的转义序列与按键。")),
+                .init(icon: "paintbrush", tint: theme.warning,
+                      title: L("主题匹配"),
+                      description: L("自动跟随当前编辑器主题,视觉与整体保持一致。")),
+                .init(icon: "folder", tint: theme.success,
+                      title: L("项目目录"),
+                      description: L("每个标签默认在当前项目根目录下启动。"))
+            ])
+        }
+        .landingAppear(delay: 0.05)
+    }
+
+    // MARK: - 快捷键
+
+    private var shortcutsSection: some View {
+        LandingSection(title: L("快捷键"), icon: "keyboard", subtitle: L("高效管理你的标签页")) {
+            LandingShortcutList(shortcuts: [
+                .init(keys: "⌘T", description: L("新建标签页")),
+                .init(keys: "⌘W", description: L("关闭当前标签页")),
+                .init(keys: "⌘1…9", description: L("切换到第 N 个标签页")),
+                .init(keys: "⌃ + 点击", description: L("右键标签栏查看更多操作"))
+            ])
+        }
+        .landingAppear(delay: 0.1)
+    }
+
+    // MARK: - 使用提示
+
+    private var tipsSection: some View {
+        LandingSection(title: L("使用提示"), icon: "lightbulb") {
+            AppCard(style: .subtle, cornerRadius: 12) {
+                VStack(alignment: .leading, spacing: 10) {
+                    tipRow(L("从侧边栏的终端图标随时打开面板。"))
+                    tipRow(L("为不同任务建立独立标签,互不干扰。"))
+                    tipRow(L("主题会自动与编辑器同步,无需手动设置。"))
+                }
+            }
+        }
+        .landingAppear(delay: 0.15)
+    }
+
+    private func tipRow(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "lightbulb.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(theme.warning)
+            Text(text)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    // MARK: - Localization
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
-    }
-
-    private func coreL(_ key: String) -> String {
-        switch key {
-        case "about.section.howItWorks":
-            return LumiPluginLocalization.string("How It Works", bundle: .module, locale: locale)
-        case "about.section.tips":
-            return LumiPluginLocalization.string("Tips", bundle: .module, locale: locale)
-        default:
-            return key
-        }
+        LumiPluginLocalization.string(key, bundle: .module)
     }
 }
 
-// MARK: - Feature Highlight
-
-private struct FeatureHighlight: View {
-    @LumiTheme private var theme
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
+#Preview {
+    ScrollView {
+        TerminalAboutView()
+            .padding(22)
     }
-}
-
-// MARK: - How It Works Card
-
-private struct HowItWorksCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let steps: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("\(index + 1)")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 22, height: 22)
-                            .background(
-                                Circle()
-                                    .fill(theme.primary.opacity(0.15))
-                            )
-
-                        Text(step)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Tips Card
-
-private struct TipsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let tips: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(tips, id: \.self) { tip in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 16)
-
-                        Text(tip)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
+    .frame(width: 560, height: 900)
 }

@@ -126,6 +126,14 @@ extension KernelLumiContainer {
         resolveService(OnboardingProviding.self)
     }
 
+    /// Prompt suggestion aggregation service (chat starter prompts contributed by plugins).
+    ///
+    /// 内核提供默认实现 `PromptSuggestionManager`（在 `startup()` 中注册）。
+    /// 消费方读取 `allPromptSuggestions` 即可拿到所有插件聚合后的提示词。
+    public var promptSuggestions: (any PromptSuggestionProviding)? {
+        resolveService(PromptSuggestionProviding.self)
+    }
+
     /// Message renderer management service
     public var messageRendererManager: (any MessageRendering)? {
         resolveService(MessageRendering.self)

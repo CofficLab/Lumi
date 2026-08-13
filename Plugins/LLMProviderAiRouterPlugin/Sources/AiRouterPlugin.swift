@@ -49,15 +49,7 @@ public final class AiRouterPlugin: LumiPlugin {
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                Label(LumiPluginLocalization.string("AiRouter", bundle: .module),
-                      systemImage: "network")
-                    .font(.headline)
-                Text(LumiPluginLocalization.string("LLM provider for chat and agent conversations.", bundle: .module))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            LLMProviderLandingPage(displayName: LumiPluginLocalization.string("AiRouter", bundle: .module), icon: "network")
         )
     }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }

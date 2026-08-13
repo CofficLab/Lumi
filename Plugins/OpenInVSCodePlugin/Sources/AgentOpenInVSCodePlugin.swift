@@ -40,14 +40,7 @@ public final class AgentOpenInVSCodePlugin: LumiPlugin {
 
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(LumiPluginLocalization.string("Open in VSCode", bundle: .module))
-                    .font(.title2.weight(.semibold))
-                Text(LumiPluginLocalization.string("Open current project in Visual Studio Code", bundle: .module))
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            OpenInLandingPage(displayName: LumiPluginLocalization.string("Open in VSCode", bundle: .module), icon: "chevron.left.forwardslash.chevron.right", appDescription: LumiPluginLocalization.string("Open current project in Visual Studio Code", bundle: .module))
         )
     }
 

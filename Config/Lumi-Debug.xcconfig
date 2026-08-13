@@ -10,7 +10,7 @@
 PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.debug
 INFOPLIST_KEY_CFBundleDisplayName = "Lumi (Debug)"
 INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.utilities
-INFOPLIST_KEY_NSHumanReadableCopyright = ""
+INFOPLIST_KEY_NSHumanReadableCopyright = © 2026 Coffic
 INFOPLIST_FILE = LumiApp/Lumi-Info.plist
 
 // 图标

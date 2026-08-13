@@ -147,20 +147,23 @@ extension Color {
     }
 
     /// 基于字符串（如人名）生成固定的自适应颜色，同一输入始终映射到同一色板项。
+    ///
+    /// 色板为「森林墨」风格：以墨翠打头，整体偏自然/泥土色调（青、赭、苔、莓），
+    /// 兼顾与品牌主题的协调与头像之间的可辨识度。
     public static func adaptive(from source: String) -> Color {
         let palette: [Color] = [
-            Color(hex: "7C6FFF"),
-            Color(hex: "FF6B6B"),
-            Color(hex: "4ECDC4"),
-            Color(hex: "FFB347"),
-            Color(hex: "45B7D1"),
-            Color(hex: "96CEB4"),
-            Color(hex: "DDA0DD"),
-            Color(hex: "F7DC6F"),
-            Color(hex: "BB8FCE"),
-            Color(hex: "85C1E9"),
-            Color(hex: "F1948A"),
-            Color(hex: "82E0AA"),
+            Color(hex: "059669"),  // 墨翠（品牌主色）
+            Color(hex: "FF6B6B"),  // 珊瑚
+            Color(hex: "4ECDC4"),  // 薄荷青
+            Color(hex: "FFB347"),  // 橙
+            Color(hex: "45B7D1"),  // 湖蓝
+            Color(hex: "96CEB4"),  // 苔
+            Color(hex: "DDA0DD"),  // 梅
+            Color(hex: "F7DC6F"),  // 柠黄
+            Color(hex: "0D9488"),  // 松青
+            Color(hex: "85C1E9"),  // 天蓝
+            Color(hex: "F1948A"),  // 鲑
+            Color(hex: "A0522D"),  // 赭棕
         ]
 
         var hash: UInt64 = 5381

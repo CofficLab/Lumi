@@ -311,6 +311,7 @@
       }
     },
     "3D Engine" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -345,6 +346,7 @@
       }
     },
     "3D Viewport" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -379,6 +381,7 @@
       }
     },
     "Access European standard 20/30/40 series aluminum profiles (12 specifications) plus connectors: brackets, bolts, sliding nuts, end caps, and hinges." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -429,6 +432,7 @@
       }
     },
     "AI-Powered Design" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -463,6 +467,7 @@
       }
     },
     "Assembly Relationships" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -497,6 +502,7 @@
       }
     },
     "Auto-generate rectangular frame" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -531,6 +537,7 @@
       }
     },
     "Automatically aggregate identical profiles and connectors into a bill of materials with quantities and specifications." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -565,6 +572,7 @@
       }
     },
     "Available AI Tools" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -615,6 +623,7 @@
       }
     },
     "BOM Generation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -665,6 +674,7 @@
       }
     },
     "Component Library" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -731,6 +741,7 @@
       }
     },
     "Create new CAD project" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -781,6 +792,7 @@
       }
     },
     "Cutting Optimization" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -815,6 +827,7 @@
       }
     },
     "Define connections" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -849,6 +862,7 @@
       }
     },
     "Define connections between components with rigid, hinge, or bolt joint types to build accurate assembly structures." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -915,6 +929,7 @@
       }
     },
     "Design aluminum profile frames in an interactive 3D viewport with orbit camera, reference grid, and XYZ axis guides." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -981,6 +996,7 @@
       }
     },
     "EU 20/30/40 series" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1015,6 +1031,7 @@
       }
     },
     "Export Options" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1065,6 +1082,7 @@
       }
     },
     "Export viewport renders as PNG or PDF. Save and load projects in .cadproj JSON format." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1099,6 +1117,7 @@
       }
     },
     "Generate bill of materials" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1181,6 +1200,7 @@
       }
     },
     "Load project from file" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1215,6 +1235,7 @@
       }
     },
     "macOS 14.0 or later" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1281,6 +1302,7 @@
       }
     },
     "Natural language commands like 'build a 1m × 0.5m workbench' to automatically create frames with optimal component placement." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1363,6 +1385,7 @@
       }
     },
     "Optimize cutting plan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1397,6 +1420,7 @@
       }
     },
     "Optimize cutting plans using First Fit Decreasing algorithm to minimize material waste and leftover scraps." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1447,6 +1471,7 @@
       }
     },
     "Place aluminum profile" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1481,6 +1506,7 @@
       }
     },
     "Place connector" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1597,6 +1623,7 @@
       }
     },
     "Profile Standards" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1681,6 +1708,7 @@
       }
     },
     "Project Format" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1747,6 +1775,7 @@
       }
     },
     "Requirements" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1863,6 +1892,7 @@
       }
     },
     "Save project to file" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1897,6 +1927,7 @@
       }
     },
     "SceneKit (native macOS)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1931,6 +1962,7 @@
       }
     },
     "SceneKit-capable GPU" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2029,6 +2061,7 @@
       }
     },
     "Swift 6.0 or later" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2063,6 +2096,7 @@
       }
     },
     "SwiftUI + NSViewRepresentable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2097,6 +2131,7 @@
       }
     },
     "Technical Details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2131,6 +2166,7 @@
       }
     },
     "UI Framework" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2197,6 +2233,7 @@
       }
     },
     "Update component properties" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

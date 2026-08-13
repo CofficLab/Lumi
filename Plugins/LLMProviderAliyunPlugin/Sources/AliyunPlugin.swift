@@ -64,15 +64,7 @@ public final class AliyunPlugin: LumiPlugin {
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                Label(LumiPluginLocalization.string("阿里云 CodingPlan", bundle: .module),
-                      systemImage: "cloud")
-                    .font(.headline)
-                Text(LumiPluginLocalization.string("LLM provider for chat and agent conversations.", bundle: .module))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            LLMProviderLandingPage(displayName: LumiPluginLocalization.string("阿里云 CodingPlan", bundle: .module), icon: "cloud")
         )
     }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }

@@ -61,15 +61,7 @@ public final class ThemeManagerPlugin: LumiPlugin {
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                Label(LumiPluginLocalization.string("Theme Manager", bundle: .module),
-                      systemImage: "paintpalette")
-                    .font(.headline)
-                Text(LumiPluginLocalization.string("Provides a built-in color theme for the app and editor.", bundle: .module))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            ThemeLandingPage(displayName: LumiPluginLocalization.string("Theme Manager", bundle: .module), icon: "paintpalette")
         )
     }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
@@ -82,34 +74,5 @@ public final class ThemeManagerPlugin: LumiPlugin {
     public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
     public func configureEditorRuntime(kernel: KernelLumi) async {}
 
-    public func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] {
-        guard let themeService = kernel.theme else {
-            return [
-                StatusBarItem(
-                    id: "\(id).error",
-                    title: LumiPluginLocalization.string("Theme", bundle: .module),
-                    systemImage: "exclamationmark.triangle.fill",
-                    placement: .trailing,
-                    statusBarView: { ThemeStatusBarErrorView(pluginName: self.name) }
-                ),
-            ]
-        }
-
-        #if canImport(AppKit)
-        return [
-            StatusBarItem(
-                id: "\(id).switcher",
-                title: LumiPluginLocalization.string("Theme", bundle: .module),
-                systemImage: "paintbrush",
-                placement: .trailing,
-                statusBarView: {
-                    ThemeStatusBarView(kernel: kernel)
-                }
-            ),
-        ]
-        #else
-        // iOS 无状态栏：不贡献主题切换器。
-        return []
-        #endif
-    }
+    public func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] { [] }
 }

@@ -6,6 +6,13 @@ import Testing
 @MainActor
 @Suite("ChatInputEditorView")
 struct ChatInputEditorViewTests {
+    @Test("placeholder does not intercept editor clicks")
+    func placeholderAllowsClickThrough() {
+        let placeholderLabel = ChatInputPlaceholderLabel(labelWithString: "Placeholder")
+
+        #expect(placeholderLabel.hitTest(.zero) == nil)
+    }
+
     @Test("marked text stays inside the editor until IME commit")
     func markedTextIsNotPublishedUntilCommit() {
         var draft = ""
@@ -24,6 +31,9 @@ struct ChatInputEditorViewTests {
         )
         let coordinator = view.makeCoordinator()
         let textView = MarkedTextTestView()
+        let placeholderLabel = NSTextField(labelWithString: "Placeholder")
+        placeholderLabel.tag = ChatInputEditorView.placeholderLabelTag
+        textView.addSubview(placeholderLabel)
         textView.string = "ni"
         textView.isMarked = true
 
@@ -31,6 +41,7 @@ struct ChatInputEditorViewTests {
 
         #expect(draft.isEmpty)
         #expect(cursor == 0)
+        #expect(placeholderLabel.isHidden)
 
         textView.string = "你"
         textView.isMarked = false
@@ -43,6 +54,12 @@ struct ChatInputEditorViewTests {
     @Test("native editor clears its composition guard when the candidate is committed")
     func editorClearsCompositionOnInsert() {
         let textView = EditorTextView(frame: .zero)
+        let placeholderLabel = NSTextField(labelWithString: "Placeholder")
+        textView.addSubview(placeholderLabel)
+        textView.placeholderLabel = placeholderLabel
+
+        #expect(!placeholderLabel.isHidden)
+
         textView.setMarkedText(
             "ni",
             selectedRange: NSRange(location: 2, length: 0),
@@ -50,6 +67,7 @@ struct ChatInputEditorViewTests {
         )
 
         #expect(textView.isIMEComposing)
+        #expect(placeholderLabel.isHidden)
 
         textView.insertText("你", replacementRange: textView.selectedRange())
 

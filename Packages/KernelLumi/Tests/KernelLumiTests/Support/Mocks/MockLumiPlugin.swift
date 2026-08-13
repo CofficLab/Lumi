@@ -10,8 +10,10 @@ final class MockLumiPlugin: LumiPlugin {
     let name: String
     let order: Int
     let policy: LumiPluginPolicy
+    let stage: LumiPluginStage
     private let editorRuntimePlugins: [any EditorPlugin]
     private let commandGroups: [CommandMenuGroup]
+    private let promptSuggestionItems: [LumiPromptSuggestion]
 
     init(
         id: String,
@@ -19,14 +21,17 @@ final class MockLumiPlugin: LumiPlugin {
         order: Int,
         policy: LumiPluginPolicy = .alwaysOn,
         editorRuntimePlugins: [any EditorPlugin] = [],
-        commandGroups: [CommandMenuGroup] = []
+        commandGroups: [CommandMenuGroup] = [],
+        promptSuggestions: [LumiPromptSuggestion] = []
     ) {
         self.id = id
         self.name = name ?? id
         self.order = order
         self.policy = policy
+        self.stage = .stable
         self.editorRuntimePlugins = editorRuntimePlugins
         self.commandGroups = commandGroups
+        self.promptSuggestionItems = promptSuggestions
     }
 
     func onBoot(kernel: KernelLumi) async throws {}
@@ -56,6 +61,7 @@ final class MockLumiPlugin: LumiPlugin {
     func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }
     func onboardingPages(kernel: KernelLumi) -> [OnboardingPageItem] { [] }
     func logoItems(kernel: KernelLumi) -> [LogoItem] { [] }
+    func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] { promptSuggestionItems }
     func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
     func onContainerActivated(kernel: KernelLumi, containerID: String) {}
     func editorPlugins(kernel: KernelLumi) -> [any EditorPlugin] { editorRuntimePlugins }

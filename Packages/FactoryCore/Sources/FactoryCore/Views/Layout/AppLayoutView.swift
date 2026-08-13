@@ -18,6 +18,8 @@ struct AppLayoutView: View {
 
     @State private var isRailVisible: Bool = true
     @State private var isChatVisible: Bool = true
+    @State private var activityBarContainerCount: Int
+    @State private var statusBarItemCount: Int
 
     init(
         kernel: KernelLumi,
@@ -28,6 +30,12 @@ struct AppLayoutView: View {
         self.layoutManager = kernel.workspace
         self.showsStatusBar = showsStatusBar
         self.showsActivityBar = showsActivityBar
+        _activityBarContainerCount = State(
+            initialValue: kernel.workspace?.allViewContainers.count ?? 0
+        )
+        _statusBarItemCount = State(
+            initialValue: kernel.workspace?.allStatusBarItems.count ?? 0
+        )
     }
 
     var body: some View {
@@ -47,7 +55,7 @@ struct AppLayoutView: View {
             AppDivider()
 
             HStack(spacing: 0) {
-                if showsActivityBar {
+                if showsActivityBar, activityBarContainerCount > 1 {
                     ActivityBar(kernel: kernel)
                         .frame(maxHeight: .infinity)
                     AppDivider(.vertical)
@@ -64,9 +72,10 @@ struct AppLayoutView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            if showsStatusBar {
-                AppDivider()
-                StatusBar(kernel: kernel)
+            // 没有任何插件注入状态栏项时，整个状态栏（含分隔线）不显示。
+            if showsStatusBar, statusBarItemCount > 0 {
+//                AppDivider()
+//                StatusBar(kernel: kernel)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -86,6 +95,12 @@ struct AppLayoutView: View {
         .onAppear {
             isRailVisible = layoutManager.isRailVisible
             isChatVisible = layoutManager.isChatVisible
+            activityBarContainerCount = layoutManager.allViewContainers.count
+            statusBarItemCount = layoutManager.allStatusBarItems.count
+        }
+        .onWorkspaceContributionsDidChange {
+            activityBarContainerCount = layoutManager.allViewContainers.count
+            statusBarItemCount = layoutManager.allStatusBarItems.count
         }
     }
 

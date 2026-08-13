@@ -1,180 +1,82 @@
-import KernelLumi
 import LumiUI
 import SwiftUI
 
-// MARK: - About View
-
+/// 项目问题扫描插件关于视图 —— 以「后台工作流」为主轴的落地页。
 struct ProjectIssueScannerAboutView: View {
-    @Environment(\.locale) private var locale
     @LumiTheme private var theme
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Feature Highlights
-                FeatureHighlight(
-                    icon: "scope",
-                    title: L("Idle-Time Scanning"),
-                    description: L("Automatically scans for project issues when the system is idle")
-                )
-
-                FeatureHighlight(
-                    icon: "brain",
-                    title: L("AI-Powered Hints"),
-                    description: L("Provides contextual hints to the LLM about known issues")
-                )
-
-                FeatureHighlight(
-                    icon: "list.bullet.rectangle.portrait",
-                    title: L("Issue Tracking"),
-                    description: L("Maintains a list of detected issues for reference")
-                )
-
-                FeatureHighlight(
-                    icon: "arrow.clockwise",
-                    title: L("Background Processing"),
-                    description: L("Runs scans in the background without disrupting your workflow")
-                )
-
-                // How It Works
-                HowItWorksCard(
-                    title: coreL("about.section.howItWorks"),
-                    steps: [
-                        L("Monitors system idle time to trigger scans"),
-                        L("Analyzes project files for common issues"),
-                        L("Stores detected issues in a local database"),
-                        L("Provides hints to LLM during chat sessions")
-                    ]
-                )
-
-                // Tips
-                TipsCard(
-                    title: coreL("about.section.tips"),
-                    tips: [
-                        L("Enable during development for proactive issue detection"),
-                        L("Review detected issues regularly"),
-                        L("Configure scan sensitivity in plugin settings")
-                    ]
-                )
-            }
-            .padding()
+        VStack(alignment: .leading, spacing: 22) {
+            hero
+            workflowSection
+            capabilitiesSection
         }
     }
+
+    // MARK: - Hero
+
+    private var hero: some View {
+        LandingHero(
+            icon: "viewfinder",
+            accent: theme.error,
+            tagline: L("在系统空闲时自动扫描项目已知问题,把上下文提示给 LLM,让助手更懂你的项目——全程后台静默。"),
+            chips: [L("空闲扫描"), L("AI 提示"), L("问题追踪"), L("后台运行")],
+            metrics: [
+                .init(value: "空闲", label: L("触发时机")),
+                .init(value: "AI", label: L("上下文提示")),
+                .init(value: "静默", label: L("不打扰"))
+            ]
+        )
+        .landingAppear()
+    }
+
+    // MARK: - 工作流
+
+    private var workflowSection: some View {
+        LandingSection(title: L("后台工作流"), icon: "arrow.triangle.branch.and.merge", subtitle: L("你不打扰它,它不打扰你")) {
+            LandingStepFlow(steps: [
+                .init(title: L("空闲触发"), description: L("系统空闲时自动开始扫描项目问题。"), icon: "moon.zzz"),
+                .init(title: L("汇总问题"), description: L("维护一份已检测问题的清单备用。")),
+                .init(title: L("提示 LLM"), description: L("把已知问题的上下文作为提示提供给模型。")),
+                .init(title: L("静默运行"), description: L("全程后台执行,不打断你的工作流。"))
+            ])
+        }
+        .landingAppear(delay: 0.05)
+    }
+
+    // MARK: - 核心能力
+
+    private var capabilitiesSection: some View {
+        LandingSection(title: L("核心能力"), icon: "square.grid.2x2") {
+            LandingFeatureGrid(items: [
+                .init(icon: "moon.zzz", tint: theme.warning,
+                      title: L("空闲时扫描"),
+                      description: L("系统空闲时自动扫描项目问题。")),
+                .init(icon: "sparkles", tint: theme.primary,
+                      title: L("AI 提示"),
+                      description: L("向 LLM 提供关于已知问题的上下文提示。")),
+                .init(icon: "list.bullet.rectangle", tint: theme.info,
+                      title: L("问题追踪"),
+                      description: L("维护已检测到的问题清单供参考。")),
+                .init(icon: "gearshape.2", tint: theme.success,
+                      title: L("后台处理"),
+                      description: L("后台运行扫描,不干扰你的工作流。"))
+            ])
+        }
+        .landingAppear(delay: 0.1)
+    }
+
+    // MARK: - Localization
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
-    }
-
-    private func coreL(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: KernelLumiResources.bundle, locale: locale)
+        LumiPluginLocalization.string(key, bundle: .module)
     }
 }
 
-// MARK: - Feature Highlight
-
-private struct FeatureHighlight: View {
-    @LumiTheme private var theme
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
+#Preview {
+    ScrollView {
+        ProjectIssueScannerAboutView()
+            .padding(22)
     }
-}
-
-// MARK: - How It Works Card
-
-private struct HowItWorksCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let steps: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("\(index + 1)")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 22, height: 22)
-                            .background(
-                                Circle()
-                                    .fill(theme.primary.opacity(0.15))
-                            )
-
-                        Text(step)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Tips Card
-
-private struct TipsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let tips: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(tips, id: \.self) { tip in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 16)
-
-                        Text(tip)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
+    .frame(width: 560, height: 900)
 }

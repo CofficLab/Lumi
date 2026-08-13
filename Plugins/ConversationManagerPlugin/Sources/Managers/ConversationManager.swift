@@ -191,6 +191,11 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         ) ?? 0
     }
 
+    /// 不同项目路径的数量（仅统计 projectPath 非空、顶层对话）。
+    public func conversationProjectCount() async -> Int {
+        await store?.conversationProjectCount() ?? 0
+    }
+
     /// Fetch daily conversation counts without loading conversation summaries.
     func fetchDailyCountSeries() async -> ConversationDailyCountSeries {
         await store?.fetchDailyCountSeries() ?? ConversationDailyCountSeries(points: [])

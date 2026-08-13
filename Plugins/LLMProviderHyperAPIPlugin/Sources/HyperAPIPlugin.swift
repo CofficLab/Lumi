@@ -50,15 +50,7 @@ public final class HyperAPIPlugin: LumiPlugin {
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                Label(LumiPluginLocalization.string("HyperAPI", bundle: .module),
-                      systemImage: "bolt.horizontal")
-                    .font(.headline)
-                Text(LumiPluginLocalization.string("LLM provider for chat and agent conversations.", bundle: .module))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            LLMProviderLandingPage(displayName: LumiPluginLocalization.string("HyperAPI", bundle: .module), icon: "bolt.horizontal")
         )
     }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }

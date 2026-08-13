@@ -1,254 +1,105 @@
 import LumiUI
-import KernelLumi
 import SwiftUI
 
-// MARK: - About View
-
-/// Plugin about view for Disk Manager.
-/// Introduces the plugin's disk analysis and cleanup capabilities.
+/// 磁盘管理插件关于视图 —— 以「仪表盘」式概览为主轴的落地页。
 struct DiskManagerAboutView: View {
-    @Environment(\.locale) private var locale
     @LumiTheme private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            hero
+            statsSection
+            capabilitiesSection
+            cleanupSection
+        }
+    }
+
+    // MARK: - Hero
+
+    private var hero: some View {
+        LandingHero(
+            icon: "internaldrive",
+            accent: theme.warning,
+            tagline: L("看清磁盘占用、揪出大文件、一键清理缓存与构建产物,把空间找回来。"),
+            chips: [L("用量概览"), L("大文件扫描"), L("缓存清理")],
+            metrics: [
+                .init(value: "1键", label: L("Finder 定位")),
+                .init(value: "多类", label: L("清理项")),
+                .init(value: "可视", label: L("目录树"))
+            ]
+        )
+        .landingAppear()
+    }
+
+    // MARK: - 关键指标
+
+    private var statsSection: some View {
+        LandingSection(title: L("一眼掌握的磁盘状态"), icon: "chart.pie") {
+            LandingStatStrip(accent: theme.warning, metrics: [
+                .init(value: "总/已用", label: L("磁盘概览")),
+                .init(value: "Top N", label: L("大文件排序")),
+                .init(value: "树状", label: L("目录占比")),
+                .init(value: "安全", label: L("清理策略"))
+            ])
+        }
+        .landingAppear(delay: 0.05)
+    }
+
+    // MARK: - 核心能力
+
+    private var capabilitiesSection: some View {
+        LandingSection(title: L("核心能力"), icon: "square.grid.2x2") {
+            LandingFeatureGrid(items: [
+                .init(icon: "chart.pie", tint: theme.warning,
+                      title: L("用量概览"),
+                      description: L("一眼查看总容量、已用与可用,掌握空间消耗趋势。")),
+                .init(icon: "doc.fill", tint: theme.info,
+                      title: L("大文件扫描"),
+                      description: L("按大小排序找出占地方的文件,便于清理。")),
+                .init(icon: "rectangle.3.group", tint: theme.primary,
+                      title: L("目录分析"),
+                      description: L("以可交互的树状视图查看各文件夹的占用占比。")),
+                .init(icon: "sparkles", tint: theme.success,
+                      title: L("缓存与构建清理"),
+                      description: L("安全清理 Xcode DerivedData、模拟器、归档等构建产物。")),
+                .init(icon: "folder.badge.gearshape", tint: theme.warning,
+                      title: L("项目清理"),
+                      description: L("扫描项目里的 DerivedData、build、CocoaPods 缓存等可删项。")),
+                .init(icon: "magnifyingglass.circle", tint: theme.info,
+                      title: L("Finder 集成"),
+                      description: L("对任意扫描结果一键在 Finder 中定位。"))
+            ])
+        }
+        .landingAppear(delay: 0.1)
+    }
+
+    // MARK: - 可清理类别
+
+    private var cleanupSection: some View {
+        LandingSection(title: L("可清理的类别"), icon: "trash.circle") {
+            LandingInventory(tint: theme.warning, items: [
+                .init(icon: "server.rack", title: L("系统缓存"), description: L("临时文件")),
+                .init(icon: "hammer", title: "Xcode DerivedData", description: L("构建产物")),
+                .init(icon: "rectangle.stack.badge.play", title: L("旧模拟器"), description: L("iOS Simulator")),
+                .init(icon: "archivebox", title: L("归档"), description: L("Archives")),
+                .init(icon: "shippingbox", title: "CocoaPods", description: L("缓存")),
+                .init(icon: "folder.fill.badge.plus", title: "build", description: L("构建目录"))
+            ])
+        }
+        .landingAppear(delay: 0.15)
+    }
+
+    // MARK: - Localization
 
     private func L(_ key: String) -> String {
-        PluginDiskManagerLocalization.string(key, locale: locale)
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Feature Highlights
-                FeatureHighlight(
-                    icon: "chart.pie.fill",
-                    title: L("Disk Usage Overview"),
-                    description: L("View total, used, and available disk space at a glance. Monitor storage health and identify space consumption patterns.")
-                )
-
-                FeatureHighlight(
-                    icon: "doc.fill",
-                    title: L("Large File Scanner"),
-                    description: L("Discover large files consuming your disk space. Scan any directory to find files sorted by size for easy cleanup.")
-                )
-
-                FeatureHighlight(
-                    icon: "folder.fill",
-                    title: L("Directory Analysis"),
-                    description: L("Visualize directory size breakdowns with interactive tree views. Identify which folders are taking up the most space.")
-                )
-
-                FeatureHighlight(
-                    icon: "trash.fill",
-                    title: L("Cache Cleanup"),
-                    description: L("Clean up system caches to free up disk space. Safely remove temporary files without affecting system stability.")
-                )
-
-                FeatureHighlight(
-                    icon: "hammer.fill",
-                    title: L("Xcode Cleanup"),
-                    description: L("Free up significant space by removing Xcode-derived data, old simulators, build products, and archives.")
-                )
-
-                FeatureHighlight(
-                    icon: "folder.badge.gearshape",
-                    title: L("Project Cleanup"),
-                    description: L("Scan project directories for removable build artifacts like DerivedData, build folders, and CocoaPods caches.")
-                )
-
-                FeatureHighlight(
-                    icon: "magnifyingglass",
-                    title: L("Finder Integration"),
-                    description: L("Quickly reveal scanned files in Finder for easy inspection. Navigate to any discovered file or folder with one click.")
-                )
-
-                // Cleanup Categories
-                CleanupCategoriesCard(
-                    title: L("Cleanup Categories"),
-                    categories: [
-                        (L("System Cache"), L("Temporary system files")),
-                        (L("User Cache"), L("Application cache data")),
-                        (L("Xcode DerivedData"), L("Build intermediates")),
-                        (L("Xcode Archives"), L("Archived builds")),
-                        (L("Xcode Simulators"), L("Old device simulators")),
-                        (L("Project Build"), L("Build folders and artifacts")),
-                        (L("CocoaPods"), L("Pod caches and builds")),
-                        (L("Swift Package"), L("SPM build caches"))
-                    ]
-                )
-
-                // Requirements
-                RequirementsCard(
-                    title: L("Requirements"),
-                    items: [
-                        L("macOS 14.0 or later"),
-                        L("Swift 6.0 or later"),
-                        L("Full disk access permission (for full scan)")
-                    ]
-                )
-
-                // Safety Note
-                SafetyNoteCard()
-            }
-            .padding()
-        }
-    }
-}
-
-// MARK: - Feature Highlight
-
-private struct FeatureHighlight: View {
-    @LumiTheme private var theme
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Cleanup Categories Card
-
-private struct CleanupCategoriesCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let categories: [(String, String)]
-
-    private let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(categories, id: \.0) { category in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(category.0)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(theme.textPrimary)
-                            .lineLimit(1)
-
-                        Text(category.1)
-                            .font(.system(size: 11))
-                            .foregroundColor(theme.textSecondary)
-                            .lineLimit(2)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(theme.overlay)
-                    )
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Requirements Card
-
-private struct RequirementsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let items: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(items, id: \.self) { item in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.success)
-                            .frame(width: 16)
-
-                        Text(item)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Safety Note Card
-
-private struct SafetyNoteCard: View {
-    @Environment(\.locale) private var locale
-    @LumiTheme private var theme
-
-    private func L(_ key: String) -> String {
-        PluginDiskManagerLocalization.string(key, locale: locale)
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "shield.checkered")
-                .font(.system(size: 18))
-                .foregroundStyle(theme.primary)
-                .frame(width: 36, height: 36)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(L("Safety First"))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(L("Cache cleanup only removes safe, regenerable files. System files and user documents are never affected."))
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
+        LumiPluginLocalization.string(key, bundle: .module)
     }
 }
 
 #Preview {
-    DiskManagerAboutView()
-        .frame(width: 400, height: 900)
+    ScrollView {
+        DiskManagerAboutView()
+            .padding(22)
+    }
+    .frame(width: 560, height: 900)
 }

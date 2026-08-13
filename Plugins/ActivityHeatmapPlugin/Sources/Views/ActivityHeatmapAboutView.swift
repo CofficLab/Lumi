@@ -1,215 +1,102 @@
 import LumiUI
-import KernelLumi
 import SwiftUI
 
-// MARK: - About View
-
-/// Plugin about view for Activity Heatmap.
-/// Introduces the plugin's heatmap and token tracking capabilities.
+/// 活动热力图插件关于视图 —— 以「可视化 + 数据洞察」为主轴的落地页。
 struct ActivityHeatmapAboutView: View {
     @LumiTheme private var theme
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Feature Highlights
-                FeatureHighlight(
-                    icon: "chart.bar.xaxis",
-                    title: LumiPluginLocalization.string("Activity Heatmap", bundle: .module),
-                    description: LumiPluginLocalization.string("Visualize your conversation activity with a GitHub-style calendar heatmap. Color intensity reflects daily message volume.", bundle: .module)
-                )
-
-                FeatureHighlight(
-                    icon: "arrow.up.right.line",
-                    title: LumiPluginLocalization.string("Token Consumption Tracking", bundle: .module),
-                    description: LumiPluginLocalization.string("Monitor daily token usage through an interactive line chart. Identify high-usage days and optimize your prompts.", bundle: .module)
-                )
-
-                FeatureHighlight(
-                    icon: "chart.pie.fill",
-                    title: LumiPluginLocalization.string("Statistics Dashboard", bundle: .module),
-                    description: LumiPluginLocalization.string("Get instant insights: total messages, active days, current/longest streaks, weekday distribution, and peak activity days.", bundle: .module)
-                )
-
-                FeatureHighlight(
-                    icon: "cylinder.split.1x2.fill",
-                    title: LumiPluginLocalization.string("Efficient Caching", bundle: .module),
-                    description: LumiPluginLocalization.string("Historical data is cached locally for instant loading. Today's activity is always fetched in real-time for accuracy.", bundle: .module)
-                )
-
-                // How It Works
-                HowItWorksCard(
-                    title: LumiPluginLocalization.string("How It Works", bundle: .module),
-                    steps: [
-                        LumiPluginLocalization.string("Tracks every message sent through Lumi conversations", bundle: .module),
-                        LumiPluginLocalization.string("Aggregates daily message counts and token usage", bundle: .module),
-                        LumiPluginLocalization.string("Caches historical data for fast subsequent loads", bundle: .module),
-                        LumiPluginLocalization.string("Displays data in interactive heatmap and line chart", bundle: .module)
-                    ]
-                )
-
-                // Requirements
-                RequirementsCard(
-                    title: LumiPluginLocalization.string("Requirements", bundle: .module),
-                    items: [
-                        LumiPluginLocalization.string("macOS 14.0 or later", bundle: .module),
-                        LumiPluginLocalization.string("Swift 6.0 or later", bundle: .module),
-                        LumiPluginLocalization.string("KernelLumi with MessageManaging service", bundle: .module),
-                    ]
-                )
-
-                // Data Privacy Note
-                DataPrivacyCard()
-            }
-            .padding()
+        VStack(alignment: .leading, spacing: 22) {
+            hero
+            spotlightSection
+            capabilitiesSection
+            insightsSection
         }
     }
-}
 
-// MARK: - Feature Highlight
+    // MARK: - Hero
 
-private struct FeatureHighlight: View {
-    @LumiTheme private var theme
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
+    private var hero: some View {
+        LandingHero(
+            icon: "calendar",
+            accent: theme.success,
+            tagline: L("把你的对话活动可视化为 GitHub 风格的热力图,颜色深浅反映每日消息量,一眼看全年。"),
+            chips: [L("热力图"), L("Token 追踪"), L("统计看板"), L("本地缓存")],
+            metrics: [
+                .init(value: "365", label: L("天视图")),
+                .init(value: "逐日", label: L("消息统计")),
+                .init(value: "本地", label: L("即时加载"))
+            ]
+        )
+        .landingAppear()
     }
-}
 
-// MARK: - How It Works Card
+    // MARK: - 签名特性
 
-private struct HowItWorksCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let steps: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("\(index + 1)")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 22, height: 22)
-                            .background(
-                                Circle()
-                                    .fill(theme.primary.opacity(0.15))
-                            )
-
-                        Text(step)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
+    private var spotlightSection: some View {
+        LandingSpotlight(
+            icon: "square.grid.3x3.fill",
+            tint: theme.success,
+            title: L("GitHub 风格的活动热力图"),
+            message: L("以日历热力图呈现每日对话量,颜色越深代表越活跃,长期趋势一目了然。")
+        ) {
+            HStack(spacing: 6) {
+                AppTag(L("全年"), style: .subtle)
+                AppTag(L("逐日"), style: .subtle)
+                AppTag(L("颜色映射"), style: .subtle)
             }
+            .padding(.top, 4)
         }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
+        .landingAppear(delay: 0.05)
     }
-}
 
-// MARK: - Requirements Card
+    // MARK: - 核心能力
 
-private struct RequirementsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let items: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(items, id: \.self) { item in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.success)
-                            .frame(width: 16)
-
-                        Text(item)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
+    private var capabilitiesSection: some View {
+        LandingSection(title: L("核心能力"), icon: "square.grid.2x2") {
+            LandingFeatureGrid(items: [
+                .init(icon: "calendar", tint: theme.success,
+                      title: L("活动热力图"),
+                      description: L("用热力图可视化对话活动,颜色反映每日消息量。")),
+                .init(icon: "chart.line.uptrend.xyaxis", tint: theme.info,
+                      title: L("Token 消耗追踪"),
+                      description: L("交互式折线图监控每日 Token 用量,发现高消耗日。")),
+                .init(icon: "chart.bar.fill", tint: theme.warning,
+                      title: L("统计看板"),
+                      description: L("总消息数、活跃天、当前 / 最长连续天数、工作日分布等。")),
+                .init(icon: "internaldrive", tint: theme.primary,
+                      title: L("高效缓存"),
+                      description: L("历史数据本地缓存即时加载,今日数据实时获取。"))
+            ])
         }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
+        .landingAppear(delay: 0.1)
     }
-}
 
-// MARK: - Data Privacy Card
+    // MARK: - 统计洞察
 
-private struct DataPrivacyCard: View {
-    @LumiTheme private var theme
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "lock.shield.fill")
-                .font(.system(size: 18))
-                .foregroundStyle(theme.primary)
-                .frame(width: 36, height: 36)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(LumiPluginLocalization.string("Data Privacy", bundle: .module))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(LumiPluginLocalization.string("All activity data is stored locally on your device. No data is sent to external servers.", bundle: .module))
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
+    private var insightsSection: some View {
+        LandingSection(title: L("一眼看到的洞察"), icon: "chart.pie") {
+            LandingStatStrip(accent: theme.success, metrics: [
+                .init(value: "总消息", label: L("累计计数")),
+                .init(value: "活跃天", label: L("有活动的天")),
+                .init(value: "连续", label: L("当前 / 最长 streak")),
+                .init(value: "工作日", label: L("分布占比"))
+            ])
         }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
+        .landingAppear(delay: 0.15)
+    }
+
+    // MARK: - Localization
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
     }
 }
 
 #Preview {
-    ActivityHeatmapAboutView()
-        .frame(width: 400, height: 600)
+    ScrollView {
+        ActivityHeatmapAboutView()
+            .padding(22)
+    }
+    .frame(width: 560, height: 900)
 }

@@ -122,6 +122,11 @@ public final class KernelLumiContainer: ObservableObject {
         // 1. 插件系统 On Boot — 阶段 1:注册内核服务与 UI 贡献
         try await pluginManager.onBoot(kernel: self)
 
+        // 1.5 提示词聚合服务:内核提供默认实现（插件可在 onBoot 中覆盖）。
+        if promptSuggestions == nil {
+            try registerPromptSuggestionService(PromptSuggestionManager())
+        }
+
         if requiresAllCoreServices {
             // 2. 服务校验 — 完整内核必须在 OnBoot 阶段注册全部 13 个核心服务。
             guard storage != nil,
@@ -174,6 +179,9 @@ public final class KernelLumiContainer: ObservableObject {
 
         // 6. 收集所有插件贡献的 UI 视图,并注册到内核的共享 UI 服务
         pluginManager.registerPluginUIContributions(in: self)
+
+        // 6.5 收集所有插件贡献的聊天起始提示词,并注册到内核 PromptSuggestionProviding。
+        pluginManager.registerPromptSuggestions(in: self)
 
         // 7. 收集所有插件贡献的 Command 菜单组,并注册到内核 CommandProviding
         pluginManager.registerPluginCommandContributions(in: self)
