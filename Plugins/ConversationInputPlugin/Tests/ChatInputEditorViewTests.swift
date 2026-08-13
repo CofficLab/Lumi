@@ -6,6 +6,13 @@ import Testing
 @MainActor
 @Suite("ChatInputEditorView")
 struct ChatInputEditorViewTests {
+    @Test("placeholder does not intercept editor clicks")
+    func placeholderAllowsClickThrough() {
+        let placeholderLabel = ChatInputPlaceholderLabel(labelWithString: "Placeholder")
+
+        #expect(placeholderLabel.hitTest(.zero) == nil)
+    }
+
     @Test("marked text stays inside the editor until IME commit")
     func markedTextIsNotPublishedUntilCommit() {
         var draft = ""

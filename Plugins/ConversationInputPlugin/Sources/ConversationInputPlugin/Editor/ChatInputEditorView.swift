@@ -118,7 +118,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         scrollView.documentView = textView
 
-        let placeholderLabel = NSTextField(labelWithString: placeholder)
+        let placeholderLabel = ChatInputPlaceholderLabel(labelWithString: placeholder)
         placeholderLabel.tag = Self.placeholderLabelTag
         placeholderLabel.font = font
         placeholderLabel.textColor = .secondaryLabelColor
@@ -430,6 +430,13 @@ extension ChatInputEditorView {
             parent.onSubmit()
             return true
         }
+    }
+}
+
+/// Purely visual placeholder that lets clicks reach the editor underneath.
+final class ChatInputPlaceholderLabel: NSTextField {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
     }
 }
 
