@@ -18,6 +18,8 @@ struct RailView: View {
 
             RailContentView(kernel: kernel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            RailBottomView()
         }
         .frame(minWidth: Self.minWidth, maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.surface)
