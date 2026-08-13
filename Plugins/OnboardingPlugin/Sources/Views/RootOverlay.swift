@@ -7,9 +7,9 @@ public struct RootOverlay<Content: View>: View {
     public let content: Content
 
     /// Aggregated onboarding pages from all enabled plugins, injected via
-    /// `RootView`'s environment. Falls back to OnboardingPlugin's own pages
-    /// when the environment value is empty (e.g., in previews).
+    /// `RootView`'s environment.
     @Environment(\.onboardingPages) private var environmentPages
+    let kernel: KernelLumi
 
     // MARK: - ViewModel
 
@@ -24,12 +24,16 @@ public struct RootOverlay<Content: View>: View {
     // MARK: - 页面聚合
 
     private var pages: [OnboardingPageView] {
-        guard !environmentPages.isEmpty else {
-            return [
-                OnboardingPageView(order: 0, view: AnyView(PluginManagementPage()))
-            ]
-        }
-        return environmentPages
+        if !environmentPages.isEmpty { return environmentPages }
+
+        // Keep previews and partially initialized windows on the current flow.
+        // Never fall back to the retired one-page plugin-management guide.
+        return OnboardingPlugin()
+            .onboardingPages(kernel: kernel)
+            .enumerated()
+            .map { index, page in
+                OnboardingPageView(order: index, view: page.makeView())
+            }
     }
 
     public var body: some View {
@@ -299,5 +303,5 @@ private struct SheetView: View {
 // MARK: - 预览
 
 #Preview("新手引导") {
-    RootOverlay(content: EmptyView())
+    RootOverlay(content: EmptyView(), kernel: KernelLumi())
 }

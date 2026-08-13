@@ -23,11 +23,13 @@ public final class PluginViewModel: ObservableObject, SuperLog {
     @Published var persistenceErrorMessage: String?
 
     private let store: PluginStore
+    private weak var kernel: KernelLumi?
 
     // MARK: - 初始化
 
-    public init(store: PluginStore = .init(pluginId: "Onboarding")) {
+    public init(store: PluginStore = .init(pluginId: "Onboarding"), kernel: KernelLumi? = nil) {
         self.store = store
+        self.kernel = kernel
     }
 
     // MARK: - 计算属性
@@ -70,6 +72,7 @@ public final class PluginViewModel: ObservableObject, SuperLog {
         }
         isPresentingOnboarding = false
         currentStep = 0
+        kernel?.workspace?.activateContainer(id: "com.coffic.lumi.plugin.chat-panel")
     }
 
     public func nextStep(totalSteps: Int) {

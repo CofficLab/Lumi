@@ -39,7 +39,7 @@ public extension OnboardingPlugin {
         } else {
             store = PluginStore(pluginId: RuntimeBridge.pluginName)
         }
-        RuntimeBridge.viewModel = PluginViewModel(store: store)
+        RuntimeBridge.viewModel = PluginViewModel(store: store, kernel: kernel)
     }
 }
 

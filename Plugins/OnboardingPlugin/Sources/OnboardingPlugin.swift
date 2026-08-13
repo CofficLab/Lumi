@@ -24,7 +24,13 @@ public final class OnboardingPlugin: LumiPlugin {
     public func onboardingPages(kernel: KernelLumi) -> [OnboardingPageItem] {
         [
             OnboardingPageItem(id: "onboarding-welcome") {
-                PluginManagementPage()
+                WelcomePage()
+            },
+            OnboardingPageItem(id: "onboarding-ai-setup") {
+                AISetupPage(kernel: kernel)
+            },
+            OnboardingPageItem(id: "onboarding-features") {
+                FeaturesPage()
             },
         ]
     }
@@ -35,7 +41,7 @@ public final class OnboardingPlugin: LumiPlugin {
                 id: "onboarding-root-overlay",
                 order: 10,
                 wrap: { content in
-                    AnyView(RootOverlay(content: content))
+                    AnyView(RootOverlay(content: content, kernel: kernel))
                 }
             ),
         ]

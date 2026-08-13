@@ -3,55 +3,25 @@ import KernelLumi
 import Testing
 @testable import OnboardingPlugin
 
-@Test func packageLoads() async throws {
+@Test @MainActor func packageLoads() throws {
     #expect(OnboardingPlugin().id == "com.coffic.lumi.plugin.onboarding")
     #expect(OnboardingPlugin().policy == .alwaysOn)
     #expect(OnboardingPlugin().policy.shouldRegister)
 }
 
-@Test func onboardingPluginProvidesPages() throws {
-    let context = LumiPluginContext(
-        activeSectionID: "test",
-        activeSectionTitle: "Test"
-    )
-    let pages = OnboardingPlugin.onboardingPages(context: context)
+@Test @MainActor func onboardingPluginProvidesPages() throws {
+    let pages = OnboardingPlugin().onboardingPages(kernel: KernelLumi())
 
-    #expect(pages.count == 2)
+    #expect(pages.count == 3)
 }
 
-@Test func onboardingPageMakesContent() throws {
-    let context = LumiPluginContext(
-        activeSectionID: "test",
-        activeSectionTitle: "Test"
-    )
-    let pages = OnboardingPlugin.onboardingPages(context: context)
+@Test @MainActor func onboardingPageMakesContent() throws {
+    let pages = OnboardingPlugin().onboardingPages(kernel: KernelLumi())
 
     for page in pages {
         let content = page
         #expect("\(content)" != "")
     }
-}
-
-@Test func defaultOnboardingPagesReturnsEmpty() throws {
-@MainActor
-    struct DummyPlugin: LumiPlugin {
-        static let info = LumiPluginInfo(
-            id: "test.dummy",
-            displayName: "Dummy",
-            description: "A test plugin",
-            order: 0,
-            policy: .alwaysOn,
-            category: .general,
-            iconName: "star"
-        )
-    }
-
-    let context = LumiPluginContext(
-        activeSectionID: "test",
-        activeSectionTitle: "Test"
-    )
-    let pages = DummyPlugin.onboardingPages(context: context)
-    #expect(pages.isEmpty)
 }
 
 @Test func onboardingStoreReportsSaveResultAndReloadsCompletion() {
@@ -110,7 +80,7 @@ import Testing
     #expect(PageIndexing.clampedIndex(7, pageCount: 0) == 0)
 }
 
-@Test func onboardingViewModelKeepsOnboardingVisibleWhenCompletionCannotBeSaved() throws {
+@Test @MainActor func onboardingViewModelKeepsOnboardingVisibleWhenCompletionCannotBeSaved() throws {
     let tempRoot = FileManager.default.temporaryDirectory
         .appendingPathComponent("OnboardingViewModel-Blocked-\(UUID().uuidString)", isDirectory: true)
     let blockedDirectory = tempRoot.appendingPathComponent("settings", isDirectory: true)
@@ -127,7 +97,7 @@ import Testing
     #expect(viewModel.persistenceErrorMessage?.isEmpty == false)
 }
 
-@Test func onboardingViewModelIgnoresRepeatedNextStepDuringTransition() async throws {
+@Test @MainActor func onboardingViewModelIgnoresRepeatedNextStepDuringTransition() async throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("OnboardingViewModel-RepeatedNext-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
