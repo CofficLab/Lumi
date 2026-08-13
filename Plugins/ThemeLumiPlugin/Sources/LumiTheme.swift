@@ -1,15 +1,16 @@
 import SwiftUI
 import LumiUI
 
-// MARK: - Lumi 默认主题
+// MARK: - Lumi 默认主题（森林墨 Forest Ink）
 ///
-/// 中性、低饱和的 IDE 配色，浅色/深色均参考系统风格，适合作为默认主题。
+/// 低饱和、内敛的编辑设计感配色：暖中性纸墨底 + 墨翠主色 + 天青/赭石点缀。
+/// 浅色/深色均参考纸本书房的温润质感，随系统明暗自动适配。
 ///
 struct LumiTheme: LumiAppChromeTheme {
     let identifier = "lumi"
     let displayName = "Lumi"
     let compactName = "Lumi"
-    let description = "均衡默认主题，随系统明暗自动适配"
+    let description = "森林墨 · 低饱和暖底，随系统明暗自动适配"
     let iconName = "circle.hexagonpath.fill"
     let appearanceKind: ThemeAppearanceKind = .system
 
@@ -18,30 +19,33 @@ struct LumiTheme: LumiAppChromeTheme {
     }
 
     var iconColor: SwiftUI.Color {
-        SwiftUI.Color.adaptive(light: "007AFF", dark: "0A84FF")
+        SwiftUI.Color.adaptive(light: "059669", dark: "34D399")
     }
 
     func accentColors() -> (primary: SwiftUI.Color, secondary: SwiftUI.Color, tertiary: SwiftUI.Color) {
         (
-            primary: SwiftUI.Color.adaptive(light: "007AFF", dark: "0A84FF"),
-            secondary: SwiftUI.Color.adaptive(light: "5856D6", dark: "5E5CE6"),
-            tertiary: SwiftUI.Color.adaptive(light: "34C759", dark: "30D158")
+            // primary = 墨翠（主强调 / 选中 / 主按钮）
+            primary: SwiftUI.Color.adaptive(light: "059669", dark: "34D399"),
+            // secondary = 赭石（暖色渐变伙伴，经 adapter 映射为 primarySecondary）
+            secondary: SwiftUI.Color.adaptive(light: "D97706", dark: "F59E0B"),
+            // tertiary = 天青（经 adapter 映射为 info，避免与 warning 橙撞色）
+            tertiary: SwiftUI.Color.adaptive(light: "0EA5E9", dark: "38BDF8")
         )
     }
 
     func atmosphereColors() -> (deep: SwiftUI.Color, medium: SwiftUI.Color, light: SwiftUI.Color) {
         (
-            deep: SwiftUI.Color.adaptive(light: "F2F2F7", dark: "000000"),
-            medium: SwiftUI.Color.adaptive(light: "FFFFFF", dark: "1C1C1E"),
-            light: SwiftUI.Color.adaptive(light: "E5E5EA", dark: "2C2C2E")
+            deep: SwiftUI.Color.adaptive(light: "FAFAF9", dark: "1C1C1A"), // 暖纸 / 暖墨
+            medium: SwiftUI.Color.adaptive(light: "FFFFFF", dark: "262624"),
+            light: SwiftUI.Color.adaptive(light: "E7E5E4", dark: "30302E")
         )
     }
 
     func glowColors() -> (subtle: SwiftUI.Color, medium: SwiftUI.Color, intense: SwiftUI.Color) {
         (
-            subtle: SwiftUI.Color.adaptive(light: "007AFF", dark: "0A84FF").opacity(0.12),
-            medium: SwiftUI.Color.adaptive(light: "007AFF", dark: "0A84FF").opacity(0.22),
-            intense: SwiftUI.Color.adaptive(light: "5856D6", dark: "5E5CE6").opacity(0.35)
+            subtle: SwiftUI.Color.adaptive(light: "059669", dark: "34D399").opacity(0.10),
+            medium: SwiftUI.Color.adaptive(light: "059669", dark: "34D399").opacity(0.16),
+            intense: SwiftUI.Color.adaptive(light: "0EA5E9", dark: "38BDF8").opacity(0.22)
         )
     }
 
@@ -54,15 +58,15 @@ struct LumiTheme: LumiAppChromeTheme {
     }
 
     func workspaceTextColor() -> SwiftUI.Color {
-        SwiftUI.Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
+        SwiftUI.Color.adaptive(light: "1C1917", dark: "FAFAF9")
     }
 
     func workspaceSecondaryTextColor() -> SwiftUI.Color {
-        SwiftUI.Color.adaptive(light: "6B6B7B", dark: "EBEBF5").opacity(0.85)
+        SwiftUI.Color.adaptive(light: "57534E", dark: "D6D3D1").opacity(0.85)
     }
 
     func workspaceTertiaryTextColor() -> SwiftUI.Color {
-        SwiftUI.Color.adaptive(light: "98989E", dark: "98989E")
+        SwiftUI.Color.adaptive(light: "A8A29E", dark: "A8A29E")
     }
 
     func sidebarSelectionTextColor() -> SwiftUI.Color {
@@ -72,20 +76,23 @@ struct LumiTheme: LumiAppChromeTheme {
     func makeGlobalBackground(proxy: GeometryProxy) -> AnyView {
         AnyView(
             ZStack {
+                // 暖底渐变
                 backgroundGradient()
                     .ignoresSafeArea()
 
-                Circle()
-                    .fill(glowColors().subtle)
-                    .frame(width: 520, height: 520)
-                    .blur(radius: 100)
-                    .offset(x: -proxy.size.width * 0.25, y: -proxy.size.height * 0.2)
-
+                // 树影透光：左上柔和墨翠光晕
                 Circle()
                     .fill(glowColors().medium)
+                    .frame(width: 560, height: 560)
+                    .blur(radius: 120)
+                    .offset(x: -proxy.size.width * 0.22, y: -proxy.size.height * 0.35)
+
+                // 右下天青微光，形成纵深层次
+                Circle()
+                    .fill(glowColors().subtle)
                     .frame(width: 420, height: 420)
-                    .blur(radius: 90)
-                    .position(x: proxy.size.width * 0.85, y: proxy.size.height * 0.75)
+                    .blur(radius: 110)
+                    .position(x: proxy.size.width * 0.85, y: proxy.size.height * 0.8)
             }
         )
     }
