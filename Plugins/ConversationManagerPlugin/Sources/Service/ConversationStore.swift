@@ -352,6 +352,29 @@ public actor ConversationStore: SuperLog {
         }
     }
 
+    /// 不同项目路径的数量（仅统计 projectPath 非空、顶层对话）。
+    ///
+    /// 用于判断「当前项目」筛选入口是否有意义：当全库顶层对话只来自 ≤1 个项目时，
+    /// 「全部对话」即等于该项目，筛选冗余。SwiftData 无原生 DISTINCT，
+    /// 故用单属性扫描 + 内存去重（仅取 projectPath 字段，开销低）。
+    func conversationProjectCount() -> Int {
+        let context = ModelContext(container)
+        normalizeEmptyParentConversationIDs(in: context)
+        var descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> {
+                $0.projectPath != nil && $0.parentConversationID == nil
+            }
+        )
+        descriptor.propertiesToFetch = [\.projectPath]
+        do {
+            let models = try context.fetch(descriptor)
+            return Set(models.compactMap { $0.projectPath }).count
+        } catch {
+            Self.logger.error("\(Self.t)统计不同项目数失败：\(error.localizedDescription)")
+            return 0
+        }
+    }
+
     /// Build a recent daily conversation-count series with bounded count queries.
     func fetchDailyCountSeries(days: Int = 14, endingAt date: Date = Date()) -> ConversationDailyCountSeries {
         guard days > 0 else { return ConversationDailyCountSeries(points: []) }
