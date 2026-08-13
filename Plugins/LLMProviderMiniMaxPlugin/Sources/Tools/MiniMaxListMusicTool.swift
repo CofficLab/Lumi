@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 查询音乐生成历史记录列表。
 ///
@@ -50,7 +50,7 @@ public struct MiniMaxListMusicTool: LumiAgentTool {
 
     public func execute(
         arguments: [String: LumiJSONValue],
-        kernel: LumiKernel
+        kernel: KernelLumi
     ) async throws -> String {
         let limit = intArgument(arguments["limit"]) ?? 10
         let clampedLimit = min(max(limit, 1), 50)

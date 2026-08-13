@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -8,7 +8,7 @@ import SwiftUI
 struct ChatFileAttachmentButton: View {
     // 仅在 fileImporter 回调里用 kernel.messageSender 写附件；body 不读 kernel，
     // 故用 let 而非 @ObservedObject——避免无谓挂上 kernel 全局总线。
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @LumiTheme private var theme
 
     /// 控制 `.fileImporter` 显隐

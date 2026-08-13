@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import XcodeKit
 import os

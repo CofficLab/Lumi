@@ -107,17 +107,6 @@
         }
       }
     },
-    "HTML Source" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTML 源码"
-          }
-        }
-      }
-    },
     "images" : {
       "localizations" : {
         "zh-Hans" : {
@@ -198,17 +187,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "插件存储不可用。"
-          }
-        }
-      }
-    },
-    "Preview" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "预览"
           }
         }
       }

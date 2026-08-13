@@ -1,9 +1,111 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 enum IconToolSupport {
-    static func language(_ kernel: LumiKernel?) -> LumiLanguagePreference {
+    static func language(_ kernel: KernelLumi?) -> LumiLanguagePreference {
         kernel?.language ?? .english
+    }
+
+    // MARK: - Scope & document resolution
+
+    /// 当前已打开项目的路径（来自工具执行上下文，回退到 Runtime 缓存）。
+    static func currentProjectPath(kernel: KernelLumi) async -> String? {
+        if let fromContext = kernel.currentProjectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !fromContext.isEmpty {
+            return fromContext
+        }
+        return await MainActor.run { IconDesignerRuntime.currentProjectPath }
+    }
+
+    /// 解析工具入参中的 scope：未指定时按是否有打开项目自动选择 project / app。
+    static func resolveScope(_ arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> IconScope {
+        if let raw = arguments.string("scope")?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+           !raw.isEmpty {
+            guard let scope = IconScope(rawValue: raw) else {
+                throw ToolArgumentError.invalid("scope")
+            }
+            return scope
+        }
+        let hasProject = await (currentProjectPath(kernel: kernel) != nil)
+        return await MainActor.run { IconDesignerRuntime.defaultScope(hasOpenProject: hasProject) }
+    }
+
+    /// 指定 scope 的存储路径。无路径时抛 invalidStorageScope。
+    static func storagePath(for scope: IconScope) async throws -> String {
+        try await MainActor.run {
+            let path = IconDocumentStore.shared.storagePath(for: scope)
+            guard !path.isEmpty else { throw IconDocumentStoreError.invalidStorageScope }
+            return path
+        }
+    }
+
+    /// 解析工具要操作的文档：优先读可选 `documentId`+`scope`，缺省回退到选中文档。
+    /// 返回文档快照（值类型）与其作用域。
+    static func resolveDocument(
+        _ arguments: [String: LumiJSONValue],
+        kernel: KernelLumi
+    ) async throws -> (IconDocument, IconScope) {
+        let scope = try await resolveScope(arguments, kernel: kernel)
+        let explicitId = arguments.string("documentId")?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return try await MainActor.run {
+            let store = IconDocumentStore.shared
+            if let explicitId, !explicitId.isEmpty {
+                if let match = store.documents(for: scope).first(where: { $0.id == explicitId }) {
+                    return (match, scope)
+                }
+                // 内存未命中：尝试从该作用域磁盘加载（文档可能尚未载入列表）。
+                let path = store.storagePath(for: scope)
+                if !path.isEmpty,
+                   let match = IconDocumentFileStore.loadAll(storagePath: path).first(where: { $0.id == explicitId }) {
+                    return (match, scope)
+                }
+                throw IconDocumentStoreError.documentNotFound(explicitId)
+            }
+            guard let selected = store.selectedDocument else {
+                throw IconDocumentStoreError.noSelectedDocument
+            }
+            return (selected, store.selectedScope)
+        }
+    }
+
+    /// 写操作完成后刷新 UI（按作用域重载并保持/切换选中）。
+    static func notify(scope: IconScope, documentId: String?) async {
+        await MainActor.run {
+            IconDocumentStore.shared.reload(scope: scope, selectDocumentId: documentId)
+        }
+    }
+
+    // MARK: - Schema helpers
+
+    /// 给工具 inputSchema 注入通用可选字段：scope（+ 可选 documentId）。
+    static func baseProperties(includeScope: Bool = true, includeDocumentId: Bool = true) -> [String: LumiJSONValue] {
+        var result: [String: LumiJSONValue] = [:]
+        if includeScope {
+            result["scope"] = [
+                "type": "string",
+                "enum": .array(IconScope.allCases.map { .string($0.rawValue) }),
+                "description": "Storage scope: 'project' (current project .lumi folder) or 'app' (application data directory). Defaults to 'project' when a project is open, else 'app'.",
+            ]
+        }
+        if includeDocumentId {
+            result["documentId"] = [
+                "type": "string",
+                "description": "Optional icon document id to target. If omitted, the currently selected document is used."
+            ]
+        }
+        return result
+    }
+
+    enum ToolArgumentError: LocalizedError {
+        case missing(String)
+        case invalid(String)
+        var errorDescription: String? {
+            switch self {
+            case .missing(let key): "Missing required argument: \(key)"
+            case .invalid(let key): "Invalid argument: \(key)"
+            }
+        }
     }
 
     static func localized(_ language: LumiLanguagePreference, en: String, zh: String) -> String {

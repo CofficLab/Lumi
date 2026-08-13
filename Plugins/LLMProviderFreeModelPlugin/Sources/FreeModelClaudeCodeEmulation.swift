@@ -1,7 +1,7 @@
 import CryptoKit
 import Foundation
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
 
 /// 按 Claude Code 源码模拟 Anthropic 网关请求（独立实现，不与 Zhipu 共享）。
 enum FreeModelClaudeCodeEmulation {

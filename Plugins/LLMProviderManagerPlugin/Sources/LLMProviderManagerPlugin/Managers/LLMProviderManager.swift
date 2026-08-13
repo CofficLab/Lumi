@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -22,7 +22,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
 
     /// Kernel 引用：provider/model 选中事件统一经 `kernel.eventManager` 发射。
     /// 由插件 OnBoot 阶段注入（在 `registerLLMProviderService` 之前赋值）。
-    public weak var kernel: LumiKernel?
+    public weak var kernel: KernelLumi?
 
     /// 共享的 provider 可用性状态。ModelSelector / Settings 页面都引用同一个实例。
     public let providerAvailabilityState = ModelAvailabilityState()
@@ -56,7 +56,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
     public func registerLLMProvider(_ provider: any LumiLLMProvider) throws {
         let id = type(of: provider).info.id
         guard !id.isEmpty else {
-            throw LumiKernelError.llmProviderRegistrationFailed(
+            throw KernelLumiError.llmProviderRegistrationFailed(
                 providerType: String(describing: type(of: provider)),
                 reason: "provider 声明的 info.id 为空"
             )
@@ -75,7 +75,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
         for provider in providers {
             let id = type(of: provider).info.id
             guard !id.isEmpty else {
-                throw LumiKernelError.llmProviderRegistrationFailed(
+                throw KernelLumiError.llmProviderRegistrationFailed(
                     providerType: String(describing: type(of: provider)),
                     reason: "provider 声明的 info.id 为空"
                 )
@@ -172,7 +172,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             if Self.verbose {
                 Self.logger.error("\(Self.t)sendToFirstProvider ➡️ 没有可用的 LLM provider, 抛 llmProviderUnavailable")
             }
-            throw LumiKernelError.llmProviderUnavailable
+            throw KernelLumiError.llmProviderUnavailable
         }
         let providerID = type(of: provider).info.id
         if Self.verbose {
@@ -187,7 +187,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             if Self.verbose {
                 Self.logger.error("\(Self.t)sendToSelectedProvider ➡️ 没有选中的 provider, 抛 invalidProviderOrModel")
             }
-            throw LumiKernelError.invalidProviderOrModel
+            throw KernelLumiError.invalidProviderOrModel
         }
         let model = _selectedModel ?? type(of: provider).info.defaultModel
         if Self.verbose {
@@ -250,7 +250,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
                 if Self.verbose {
                     Self.logger.error("\(Self.t)sendDirect ➡️ 指定 provider 不存在 id=\(normalizedProviderID)")
                 }
-                throw LumiKernelError.invalidProviderOrModel
+                throw KernelLumiError.invalidProviderOrModel
             }
             return (normalizedProviderID, provider)
         }
@@ -265,7 +265,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             if Self.verbose {
                 Self.logger.error("\(Self.t)sendDirect ➡️ 没有可用的 LLM provider")
             }
-            throw LumiKernelError.llmProviderUnavailable
+            throw KernelLumiError.llmProviderUnavailable
         }
         return (firstProviderID, provider)
     }

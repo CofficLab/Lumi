@@ -19,22 +19,6 @@
           }
         }
       }
-    },
-    "Running a Debug build" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Running a Debug build"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前正在运行 Debug 构建"
-          }
-        }
-      }
     }
   },
   "version" : "1.0"

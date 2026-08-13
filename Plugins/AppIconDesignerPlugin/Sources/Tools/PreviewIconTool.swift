@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Renders the selected vector document and returns the PNG as a tool-result
 /// image attachment, allowing the model to inspect its own generated icon.
@@ -13,35 +13,27 @@ public struct PreviewIconTool: LumiAgentTool {
     public init() {}
 
     public var inputSchema: LumiJSONValue {
-        [
-            "type": "object",
-            "properties": [
-                "pixelSize": [
-                    "type": "integer",
-                    "description": "Optional square preview size in pixels. Defaults to 1024 and is capped at 2048."
-                ],
-            ],
+        var properties = IconToolSupport.baseProperties()
+        properties["pixelSize"] = [
+            "type": "integer",
+            "description": "Optional square preview size in pixels. Defaults to 1024 and is capped at 2048."
         ]
+        return ["type": "object", "properties": .object(properties)]
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Preview icon"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = IconToolSupport.language(kernel)
 
         do {
-            let document = try await MainActor.run {
-                guard let document = IconDocumentStore.shared.selectedDocument else {
-                    throw IconDocumentStoreError.noSelectedDocument
-                }
-                return document
-            }
+            let (document, _) = try await IconToolSupport.resolveDocument(arguments, kernel: kernel)
 
             let requestedSize = arguments.int("pixelSize") ?? 1024
             let pixelSize = min(max(requestedSize, 64), 2048)
@@ -53,7 +45,7 @@ public struct PreviewIconTool: LumiAgentTool {
                 LumiImageAttachment(
                     mimeType: "image/png",
                     base64Data: pngData.base64EncodedString(),
-                    fileName: "(document.title)-preview.png"
+                    fileName: "\(document.fileSafeName)-preview.png"
                 )
             )
 

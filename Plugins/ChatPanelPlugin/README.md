@@ -27,9 +27,9 @@ Chat workspace panel plugin for Lumi. Provides a dedicated activity-bar entry fo
 
 ### As a Lumi Plugin
 
-This plugin integrates with the Lumi application. It provides:
-
-- **Chat Panel View** — main chat workspace interface
+This plugin integrates with the Lumi application by registering the Chat workspace
+container. The workspace UI is composed by the always-on conversation, message,
+input, and model-selector plugins.
 
 ### Project Structure
 
@@ -37,11 +37,10 @@ This plugin integrates with the Lumi application. It provides:
 Resources/                                 # Localizable strings
 Sources/
 ├── ChatPanelPlugin.swift                  # Plugin entry point
-├── ChatPanelView.swift                    # Main chat panel view
-├── LocalStore.swift                       # Plugin settings persistence
-└── SplitWidthPersistence.swift            # Split view width persistence
+└── LumiPluginLocalization.swift           # Localized plugin strings
 Tests/
-└── ChatPanelPluginTests/                  # Unit tests
+├── ChatPanelLogicTests.swift              # Plugin logic tests
+└── ChatSectionPluginTests.swift           # Chat section tests
 ```
 
 ## License

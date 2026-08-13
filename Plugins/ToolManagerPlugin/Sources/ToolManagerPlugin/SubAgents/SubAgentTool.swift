@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Runs one of ToolManagerPlugin's built-in specialist agents in an
 /// independent conversation managed by Kernel's AgentTurnManaging service.
@@ -59,20 +59,20 @@ public struct SubAgentTool: LumiAgentTool, @unchecked Sendable {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
     public func execute(
         arguments: [String: LumiJSONValue],
-        kernel: LumiKernel
+        kernel: KernelLumi
     ) async throws -> String {
         try await executeResult(arguments: arguments, kernel: kernel).content
     }
 
     public func executeResult(
         arguments: [String: LumiJSONValue],
-        kernel: LumiKernel
+        kernel: KernelLumi
     ) async throws -> LumiToolExecutionResult {
         try kernel.checkCancellation()
         guard let task = arguments["task"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -107,10 +107,10 @@ public struct SubAgentTool: LumiAgentTool, @unchecked Sendable {
     @MainActor
     private func runTurn(
         request: AgentTurnCreationRequest,
-        kernel: LumiKernel
+        kernel: KernelLumi
     ) async throws -> String {
         guard let manager = kernel.agentTurnManager else {
-            throw LumiKernelError.serviceNotAvailable(service: "AgentTurn")
+            throw KernelLumiError.serviceNotAvailable(service: "AgentTurn")
         }
         let handle = try await manager.createTurn(request)
         let messages = kernel.messageManager?.messages(for: handle.conversationID) ?? []

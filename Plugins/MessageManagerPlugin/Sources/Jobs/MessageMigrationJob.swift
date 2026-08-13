@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -30,13 +30,13 @@ public struct MessageMigrationJob: SuperLog {
 
     public static var policy: MigrationPolicy = .once
 
-    private let kernel: LumiKernel
+    private let kernel: KernelLumi
     private let store: MessageStore
     private let progress: MessageMigrationProgressStore
     private let migrationMarkerURL: URL
 
     public init(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         store: MessageStore,
         progress: MessageMigrationProgressStore,
         databaseRootURL: URL

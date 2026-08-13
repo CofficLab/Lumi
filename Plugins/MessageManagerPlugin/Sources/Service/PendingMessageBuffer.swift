@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 final class PendingMessageBuffer: @unchecked Sendable {
     private let lock = NSLock()

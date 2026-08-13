@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "GoalTaskPlugin", targets: ["GoalTaskPlugin"])
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/LumiUI")
@@ -20,7 +20,7 @@ let package = Package(
         .target(
             name: "GoalTaskPlugin",
             dependencies: [
-                "LumiKernel",
+                "KernelLumi",
                 "SuperLogKit",
                 "LumiUI",
                 .product(name: "LocalizationKit", package: "LocalizationKit"),

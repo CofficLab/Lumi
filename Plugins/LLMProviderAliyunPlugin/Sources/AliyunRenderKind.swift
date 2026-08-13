@@ -1,6 +1,6 @@
 import LLMKit
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
 
 enum AliyunRenderKind {
     static let prefix = "aliyun-"

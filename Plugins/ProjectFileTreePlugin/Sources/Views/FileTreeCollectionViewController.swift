@@ -1,5 +1,5 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 import SwiftUI
 import LumiUI
 import MagicAlert
@@ -30,7 +30,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     private var trackingArea: NSTrackingArea?
     private var appearanceSyncObserver: NSObjectProtocol?
     private let theme: any LumiAppChromeTheme = LumiFallbackChromeTheme()
-    var kernel: LumiKernel?
+    var kernel: KernelLumi?
 
     /// 展开状态变化回调
     var onExpansionChange: ((String, Bool) -> Void)?

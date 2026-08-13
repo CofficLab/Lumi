@@ -1,12 +1,12 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Agent 工具服务实现
 @MainActor
 public final class ToolManagerService: ToolManaging {
 
     /// Kernel 引用，用于在执行工具时直接传递给工具
-    public weak var kernel: LumiKernel?
+    public weak var kernel: KernelLumi?
 
     /// 工具调用记录存储(后台异步写入，不影响主流程)。
     /// 由 OnBoot 钩子初始化。

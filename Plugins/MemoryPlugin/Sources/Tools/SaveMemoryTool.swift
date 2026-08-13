@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 保存记忆工具。
 ///
@@ -57,11 +57,11 @@ public struct SaveMemoryTool: LumiAgentTool {
         "保存记忆"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let id = MemoryToolInput.string(arguments["id"]?.anyValue) else {
             throw MemoryToolError.missingArgument("id")
         }

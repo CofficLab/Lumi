@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 /// Menu bar popup view for Network Manager plugin
 public struct NetworkMenuBarPopupView: View {

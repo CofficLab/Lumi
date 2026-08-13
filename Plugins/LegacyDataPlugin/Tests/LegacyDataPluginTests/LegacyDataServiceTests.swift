@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SwiftData
 import Testing
 @testable import LegacyDataPlugin
@@ -183,7 +183,7 @@ struct LegacyDataServiceTests {
         _ = try createV4Store(at: v4Root, conversations: [], messages: [])
 
         // 用 kernel.storage 指向 v5 目录
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         try kernel.registerService(StorageProviding.self, FakeStorage(dataRootDirectory: v5Root))
 
         try await LegacyDataOnBootHook().execute(kernel)
@@ -200,7 +200,7 @@ struct LegacyDataServiceTests {
         try FileManager.default.createDirectory(at: v5Root, withIntermediateDirectories: true)
         // 不创建 v4 目录
 
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         try kernel.registerService(StorageProviding.self, FakeStorage(dataRootDirectory: v5Root))
 
         try await LegacyDataOnBootHook().execute(kernel)

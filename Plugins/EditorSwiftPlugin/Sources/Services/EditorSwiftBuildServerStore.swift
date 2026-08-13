@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import XcodeKit
 
 /// Resolves the EditorSwiftPlugin storage directory per plugin-storage-rules.

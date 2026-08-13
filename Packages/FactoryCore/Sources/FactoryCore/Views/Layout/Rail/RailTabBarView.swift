@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -12,7 +12,7 @@ import SwiftUI
 /// - `.activeViewContainerIDDidChange`：切换容器后过滤条件（supportsProject / chatVisibility）变化；
 /// - `.activeRailTabIDDidChange`：其他路径（如恢复、命令）修改选中 tab 时同步快照。
 struct RailTabBarView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var allRailTabs: [PanelRailTabItem] = []
     @State private var viewContainerID: String
@@ -21,7 +21,7 @@ struct RailTabBarView: View {
 
     @LumiTheme private var theme
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         let workspace = kernel.workspace
         _allRailTabs = State(initialValue: workspace?.allPanelRailTabItems ?? [])

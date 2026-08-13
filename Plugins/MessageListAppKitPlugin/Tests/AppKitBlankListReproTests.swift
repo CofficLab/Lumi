@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 import Testing
-import LumiKernel
+import KernelLumi
 @testable import MessageListAppKitPlugin
 
 /// Regression tests for the blank message list: recent SDKs moved
@@ -58,7 +58,7 @@ struct AppKitBlankListReproTests {
 
     @MainActor
     private struct WindowHarness {
-        let kernel: LumiKernel
+        let kernel: KernelLumi
         let conversation = UUID()
         let messages = MockMessageManager()
         let conversations = MockConversationManager()
@@ -66,7 +66,7 @@ struct AppKitBlankListReproTests {
         let window: NSWindow
 
         init(messageCount: Int = 8) throws {
-            kernel = LumiKernel()
+            kernel = KernelLumi()
             for i in 0..<messageCount {
                 let message = LumiChatMessage(
                     id: UUID(uuidString: String(format: "%08X-0000-0000-0000-0000000000%02d", i, i % 100)) ?? UUID(),

@@ -4,7 +4,7 @@ import EditorLanguageRuntime
 import EditorTextView
 import XCTest
 @testable import EditorService
-import LumiKernel
+import KernelLumi
 
 @MainActor
 private final class MockHighlightProvider: HighlightProviding {

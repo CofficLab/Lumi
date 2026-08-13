@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -9,13 +9,13 @@ import SwiftUI
 struct PluginEnableControl: View {
     @LumiTheme private var theme
 
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let plugin: LumiPlugin
 
     @State private var displayedEnabled: Bool
     @State private var isApplying = false
 
-    init(kernel: LumiKernel, plugin: LumiPlugin) {
+    init(kernel: KernelLumi, plugin: LumiPlugin) {
         self.kernel = kernel
         self.plugin = plugin
         _displayedEnabled = State(initialValue: kernel.pluginManager.effectiveEnabled(for: plugin))

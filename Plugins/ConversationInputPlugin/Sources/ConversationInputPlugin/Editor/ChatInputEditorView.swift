@@ -23,6 +23,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
     private let font: NSFont
     private let textColor: NSColor
+    private let placeholder: String
     private let isVerbose: Bool
     private let log: (String) -> Void
     private let onSubmit: () -> Void
@@ -37,6 +38,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         height: Binding<CGFloat>,
         font: NSFont = .systemFont(ofSize: 15),
         textColor: NSColor = .textColor,
+        placeholder: String = "",
         isVerbose: Bool = false,
         log: @escaping (String) -> Void = { _ in },
         onSubmit: @escaping () -> Void,
@@ -56,6 +58,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         self._isImageDragHovering = isImageDragHovering
         self.font = font
         self.textColor = textColor
+        self.placeholder = placeholder
         self.isVerbose = isVerbose
         self.log = log
         self.onSubmit = onSubmit
@@ -114,6 +117,18 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         scrollView.documentView = textView
 
+        let placeholderLabel = NSTextField(labelWithString: placeholder)
+        placeholderLabel.tag = 18_013
+        placeholderLabel.font = font
+        placeholderLabel.textColor = .secondaryLabelColor
+        placeholderLabel.isHidden = !textView.string.isEmpty
+        placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
+        textView.addSubview(placeholderLabel)
+        NSLayoutConstraint.activate([
+            placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: 8),
+            placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: 7),
+        ])
+
         DispatchQueue.main.async {
             updateHeight(for: textView)
         }
@@ -142,6 +157,11 @@ public struct ChatInputEditorView: NSViewRepresentable {
             textView.hasPastePreviewAttachments = false
             textView.string = text
             textView.delegate = context.coordinator
+        }
+
+        if let placeholderLabel = textView.viewWithTag(18_013) as? NSTextField {
+            placeholderLabel.stringValue = placeholder
+            placeholderLabel.isHidden = !text.isEmpty
         }
 
         let cursorBindingChanged = context.coordinator.lastSyncedCursorPosition != cursorPosition

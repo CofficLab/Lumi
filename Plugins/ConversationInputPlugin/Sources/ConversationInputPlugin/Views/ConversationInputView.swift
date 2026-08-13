@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SuperLogKit
 import SwiftUI
@@ -10,10 +10,10 @@ struct ConversationInputView: View, SuperLog {
     nonisolated static let verbose = false
 
     @LumiTheme private var theme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @ObservedObject var inputState: InputState
 
-    init(kernel: LumiKernel, inputState: InputState) {
+    init(kernel: KernelLumi, inputState: InputState) {
         self.kernel = kernel
         self._inputState = ObservedObject(wrappedValue: inputState)
     }

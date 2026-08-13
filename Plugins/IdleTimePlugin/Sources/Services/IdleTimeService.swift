@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 public actor IdleTimeService: SuperLog, IdleTimeProviding {

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// AppStoreConnectPlugin 的运行时桥接:持有 plugin 专属子目录,
 /// 供 `AppStoreConnectPluginLocalStore` / `ScreenshotImageCache` / `ConnectAPICache`
@@ -20,7 +20,7 @@ enum AppStoreConnectPluginRuntimeBridge {
 
 @MainActor
 public extension AppStoreConnectPlugin {
-    static func bootstrapFromLumiCoreIfNeeded(kernel: LumiKernel) {
+    static func bootstrapFromLumiCoreIfNeeded(kernel: KernelLumi) {
         guard !didBootstrapFromLumiCore else { return }
         if let storage = kernel.storage {
             AppStoreConnectPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory

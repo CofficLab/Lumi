@@ -1,5 +1,5 @@
 import LumiUI
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// 快速文件搜索设置视图

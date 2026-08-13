@@ -159,41 +159,6 @@
         }
       }
     },
-    "Activity": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Activity"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "活跃度"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "活躍度"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "活躍度"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "活躍度"
-          }
-        }
-      }
-    },
     "Activity Heatmap": {
       "localizations": {
         "en": {
@@ -426,76 +391,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "對話活躍度隨時間變化"
-          }
-        }
-      }
-    },
-    "Daily message activity over time": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Daily message activity over time"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日消息活跃度随时间变化"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日消息活躍度隨時間變化"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日消息活躍度隨時間變化"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日訊息活躍度隨時間變化"
-          }
-        }
-      }
-    },
-    "Daily token consumption over time": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Daily token consumption over time"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日 Token 消耗随时间变化"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日 Token 消耗隨時間變化"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日 Token 消耗隨時間變化"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日 Token 消耗隨時間變化"
           }
         }
       }
@@ -940,41 +835,6 @@
         }
       }
     },
-    "Loading activity data…": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loading activity data…"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在加载活跃度数据…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在加載活躍度數據…"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在加載活躍度數據…"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在載入活躍度資料…"
-          }
-        }
-      }
-    },
     "Loading token data…": {
       "localizations": {
         "en": {
@@ -1009,36 +869,36 @@
         }
       }
     },
-    "LumiKernel with MessageManaging service": {
+    "KernelLumi with MessageManaging service": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "LumiKernel with MessageManaging service"
+            "value": "KernelLumi with MessageManaging service"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "带有 MessageManaging 服务的 LumiKernel"
+            "value": "带有 MessageManaging 服务的 KernelLumi"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "帶有 MessageManaging 服務的 LumiKernel"
+            "value": "帶有 MessageManaging 服務的 KernelLumi"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "帶有 MessageManaging 服務的 LumiKernel"
+            "value": "帶有 MessageManaging 服務的 KernelLumi"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "帶有 MessageManaging 服務的 LumiKernel"
+            "value": "帶有 MessageManaging 服務的 KernelLumi"
           }
         }
       }
@@ -1355,41 +1215,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "統計面板"
-          }
-        }
-      }
-    },
-    "Statistics Period": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Statistics Period"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "统计周期"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "統計週期"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "統計週期"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "統計週期"
           }
         }
       }

@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// Auto Push 状态磁贴：开关 + 当前运行状态。
 public struct AutoPushStatusTile: View {

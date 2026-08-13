@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "LegacyDataPlugin", targets: ["LegacyDataPlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -16,7 +16,7 @@ let package = Package(
         .target(
             name: "LegacyDataPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
@@ -26,7 +26,7 @@ let package = Package(
         ),
         .testTarget(
             name: "LegacyDataPluginTests",
-            dependencies: ["LegacyDataPlugin", "LumiKernel"],
+            dependencies: ["LegacyDataPlugin", "KernelLumi"],
             path: "Tests/LegacyDataPluginTests"
         ),
     ]

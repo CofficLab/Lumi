@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Compact message header: timestamp, token usage, copy button, optional
 /// resend button (wired through the registry environment).

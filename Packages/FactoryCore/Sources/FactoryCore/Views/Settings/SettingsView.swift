@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiLocalizationKit
 import LumiUI
 import SwiftUI
@@ -7,12 +7,12 @@ struct SettingsView: View {
     @LumiTheme private var theme
 
     /// 观察 kernel 以便 `kernel.settings?.allSettingsTabItems` 在插件注册/
-    /// 注销时驱动 UI 重渲染(LumiKernelContainer 转发服务的 objectWillChange)。
+    /// 注销时驱动 UI 重渲染(KernelLumiContainer 转发服务的 objectWillChange)。
     ///
     /// 此处刻意不窄播（未改用 Observable*Box）：设置页的刷新触发语义与插件
     /// 生命周期（注册/注销）紧密绑定，依赖 kernel 转发层的全局变更通知；
     /// 且本窗口打开频率低，全局总线的重算代价可接受。其他高频工具栏视图已窄播。
-    @ObservedObject var kernel: LumiKernel
+    @ObservedObject var kernel: KernelLumi
 
     @State private var selectedTab: SettingsTabID?
 

@@ -1,7 +1,7 @@
 import Foundation
-import LumiKernel
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
+import KernelLumi
 import SuperLogKit
 
 /// List Projects Tool
@@ -29,7 +29,7 @@ struct ListProjectsTool: LumiAgentTool, SuperLog {
 
     private let maxLimit = 500
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let limit = min(arguments.int("limit") ?? 5, maxLimit)
 
         guard let viewModel = await MainActor.run(body: { RuntimeBridge.viewModel }) else {

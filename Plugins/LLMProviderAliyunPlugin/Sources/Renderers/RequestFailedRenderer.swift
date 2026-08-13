@@ -1,5 +1,5 @@
 import LLMKit
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 private let rendererOrder = 305

@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "ConversationManagerPlugin", targets: ["ConversationManagerPlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
         .package(path: "../../Packages/LocalizationKit"),
@@ -17,7 +17,7 @@ let package = Package(
         .target(
             name: "ConversationManagerPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
@@ -31,7 +31,7 @@ let package = Package(
             name: "ConversationManagerPluginTests",
             dependencies: [
                 "ConversationManagerPlugin",
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
             ],
             path: "Tests"
         ),

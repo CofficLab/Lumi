@@ -69,41 +69,6 @@
         }
       }
     },
-    "Context window: %@ tokens": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Context window: %@ tokens"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "new",
-            "value": "上下文窗口：%@ tokens"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "new",
-            "value": "上下文窗口：%@ tokens"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "new",
-            "value": "上下文窗口：%@ tokens"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "new",
-            "value": "上下文窗口：%@ tokens"
-          }
-        }
-      }
-    },
     "Conversation Context Size": {
       "localizations": {
         "en": {

@@ -1,5 +1,5 @@
 @preconcurrency import Foundation
-import LumiKernel
+import KernelLumi
 
 public protocol WebFetchFetching: Sendable {
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse)

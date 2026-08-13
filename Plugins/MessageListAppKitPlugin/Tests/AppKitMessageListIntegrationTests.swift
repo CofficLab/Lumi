@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import LumiKernel
+import KernelLumi
 @testable import MessageListAppKitPlugin
 
 /// Serialized: these tests rely on MainActor-scheduled subscription work and

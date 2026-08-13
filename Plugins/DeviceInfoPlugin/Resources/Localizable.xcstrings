@@ -1089,41 +1089,6 @@
         }
       }
     },
-    "CPU, memory, and uptime at a glance": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CPU, memory, and uptime at a glance"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一览 CPU、内存和运行时间"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一覽 CPU、記憶體和運行時間"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一覽 CPU、記憶體和運行時間"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一覽 CPU、記憶體和運行時間"
-          }
-        }
-      }
-    },
     "Collecting...": {
       "localizations": {
         "en": {
@@ -1154,41 +1119,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "收集中..."
-          }
-        }
-      }
-    },
-    "Current Usage": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current Usage"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前使用"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前使用"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前使用"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前使用"
           }
         }
       }
@@ -1499,41 +1429,6 @@
         }
       }
     },
-    "Idle %.0f%%": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Idle %.0f%%"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "空闲 %.0f%%"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "空閒 %.0f%%"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "空閒 %.0f%%"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "空閒 %.0f%%"
-          }
-        }
-      }
-    },
     "Last 60 Seconds": {
       "localizations": {
         "en": {
@@ -1564,41 +1459,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "最近 60 秒"
-          }
-        }
-      }
-    },
-    "Live metrics in the menu bar": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Live metrics in the menu bar"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "菜单栏中的实时指标"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選單列中的即時指標"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選單列中的即時指標"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選單列中的即時指標"
           }
         }
       }
@@ -1875,41 +1735,6 @@
         }
       }
     },
-    "Menu bar": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Menu bar"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "菜单栏"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選單列"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選單列"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選單列"
-          }
-        }
-      }
-    },
     "Minimum": {
       "localizations": {
         "en": {
@@ -2008,41 +1833,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "網路"
-          }
-        }
-      }
-    },
-    "Open Device Info from the sidebar to see full details.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Device Info from the sidebar to see full details."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "从侧边栏打开设备信息来查看完整详情。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "從側邊欄開啟裝置資訊來檢視完整詳情。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "從側邊欄開啟裝置資訊來檢視完整詳情。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "從側邊欄開啟裝置資訊來檢視完整詳情。"
           }
         }
       }
@@ -2251,41 +2041,6 @@
         }
       }
     },
-    "Shows basic device and system information.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shows basic device and system information."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "显示基本设备和系统信息。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示基本設備和系統資訊。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示基本設備和系統資訊。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "顯示基本設備和系統資訊。"
-          }
-        }
-      }
-    },
     "Statistics": {
       "localizations": {
         "en": {
@@ -2320,41 +2075,6 @@
         }
       }
     },
-    "Sys %.0f%%": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sys %.0f%%"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系统 %.0f%%"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系統 %.0f%%"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系統 %.0f%%"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系統 %.0f%%"
-          }
-        }
-      }
-    },
     "System Memory": {
       "localizations": {
         "en": {
@@ -2385,41 +2105,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "系統記憶體"
-          }
-        }
-      }
-    },
-    "System metrics": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System metrics"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系统指标"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系統指標"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系統指標"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "系統指標"
           }
         }
       }
@@ -2658,41 +2343,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "使用率"
-          }
-        }
-      }
-    },
-    "User %.0f%%": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "User %.0f%%"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用户 %.0f%%"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用戶 %.0f%%"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用戶 %.0f%%"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用戶 %.0f%%"
           }
         }
       }

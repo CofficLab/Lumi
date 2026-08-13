@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 
 /// PromoDesigner 插件 OnReady 阶段钩子
@@ -13,5 +13,5 @@ public struct PromoDesignerOnReadyHook {
     public init() {}
 
     /// 执行 onReady
-    public func execute(_ kernel: LumiKernel) async throws {}
+    public func execute(_ kernel: KernelLumi) async throws {}
 }

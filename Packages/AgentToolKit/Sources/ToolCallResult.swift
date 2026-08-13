@@ -29,7 +29,7 @@ public struct ToolCallResult: Codable, Sendable, Equatable {
 
     /// 工具正在等待用户回答，Agent 循环应暂停。
     ///
-    /// 由 LumiKernel 的结构化 `AgentTurnControl.suspend` 转换而来。
+    /// 由 KernelLumi 的结构化 `AgentTurnControl.suspend` 转换而来。
     public var awaitingUserResponse: Bool
 
     /// Preserves a custom interaction renderer after the interaction is answered.

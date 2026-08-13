@@ -2,9 +2,9 @@ import AgentToolKit
 import Foundation
 import HttpKit
 import LLMKit
-import LumiKernel
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
+import KernelLumi
 import SuperLogKit
 import os
 

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 
 /// PromoDesigner 插件 OnBoot 阶段钩子
@@ -14,7 +14,7 @@ public struct PromoDesignerOnBootHook {
     public init() {}
 
     /// 执行 boot
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         Runtime.configure(kernel: kernel)
         WorkspaceStore.shared.reload()
     }

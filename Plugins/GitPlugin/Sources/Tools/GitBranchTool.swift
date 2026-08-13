@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// Git 分支管理工具
@@ -50,7 +50,7 @@ public struct GitBranchTool: LumiAgentTool, SuperLog {
         }
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         guard let action = arguments.string("action") else { return .low }
         switch action {
         case "list": return .low
@@ -59,7 +59,7 @@ public struct GitBranchTool: LumiAgentTool, SuperLog {
         }
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let path = arguments.string("path")
         let action = arguments.string("action") ?? "list"
         let name = arguments.string("name")

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 保存当前项目为 .cadproj 文件。
 public struct SaveCADProjectTool: LumiAgentTool {
@@ -25,11 +25,11 @@ public struct SaveCADProjectTool: LumiAgentTool {
         "Save CAD project"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = CADToolSupport.language(kernel)
         guard let path = CADToolSupport.string(arguments, "path") else {
             return CADToolSupport.missingParameter("path", language: language)

@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 enum MiniMaxResponsesBuilder {
     static func reasoningEffort(_ effort: LumiReasoningEffort?) -> MiniMaxResponsesReasoning? {

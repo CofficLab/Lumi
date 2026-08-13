@@ -3,12 +3,12 @@ import PackageDescription
 
 let package = Package(
     name: "EditorProviderPlugin",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "EditorProviderPlugin", targets: ["EditorProviderPlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/EditorService"),
@@ -20,7 +20,7 @@ let package = Package(
         .target(
             name: "EditorProviderPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "EditorSource", package: "EditorSource"),

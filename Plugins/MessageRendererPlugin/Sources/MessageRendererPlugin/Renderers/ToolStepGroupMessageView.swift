@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// 工具步骤组合成消息的渲染分发。
@@ -10,7 +10,7 @@ import SwiftUI
 /// - **V2/V3**:复用现有 `AssistantMessageView` —— 多个工具卡片聚合在同一个助手气泡里,
 ///   只剩一个消息头(而非之前的 N 个独立气泡)。
 struct ToolStepGroupMessageView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let message: LumiChatMessage
     let verbosity: LumiResponseVerbosity
 

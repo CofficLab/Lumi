@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -11,7 +11,7 @@ import SwiftUI
 /// 切换 Tab 时通过 `if` 分支保留两个 `ListView` 的视图身份,
 /// 让各自的滚动位置、分页状态和加载任务互不干扰。
 struct ToolbarPopoverContent: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let attentionStore: ConversationAttentionStore
     @ObservedObject var sortStabilizer: ConversationSortStabilizer
 

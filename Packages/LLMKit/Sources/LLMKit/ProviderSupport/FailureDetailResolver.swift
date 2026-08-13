@@ -1,6 +1,6 @@
 import Foundation
 import HttpKit
-import LumiKernel
+import KernelLumi
 
 public enum LumiLLMFailureDetailResolver {
     public static func resolve(from error: Error, locale: Locale = .current) -> LumiLLMFailureDetail {

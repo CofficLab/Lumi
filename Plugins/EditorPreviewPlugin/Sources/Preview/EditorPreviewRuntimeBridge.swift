@@ -1,11 +1,11 @@
 import EditorService
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Runtime hooks supplied by the host app for package-isolated preview views.
 @MainActor
 public enum EditorPreviewRuntimeBridge {
-    nonisolated(unsafe) public static var kernel: LumiKernel?
+    nonisolated(unsafe) public static var kernel: KernelLumi?
     public static var addToChatHandler: ((String) -> Void)?
     public static var editorServiceProvider: (() -> EditorService?)?
 

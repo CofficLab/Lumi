@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct ConversationTitleUpdateTool: LumiAgentTool, @unchecked Sendable {
     public static let info = LumiAgentToolInfo(
@@ -37,11 +37,11 @@ public struct ConversationTitleUpdateTool: LumiAgentTool, @unchecked Sendable {
         return "Update conversation title to \"\(title)\""
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let title = arguments["title"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !title.isEmpty else {
             throw NSError(

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct UpdateAppStoreConnectLocalizationTool: LumiAgentTool {
     static let info = LumiAgentToolInfo(
@@ -24,11 +24,11 @@ struct UpdateAppStoreConnectLocalizationTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String : LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String : LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .high
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let localizationID = arguments["localizationID"]?.stringValue, !localizationID.isEmpty else {
             return "Missing or empty localizationID."
         }

@@ -1,5 +1,5 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 
 /// Native message-list view controller: an `NSScrollView` + view-based
 /// `NSTableView` driven by immutable snapshots from the coordinator.
@@ -10,7 +10,7 @@ import LumiKernel
 /// and manages empty/loading overlays.
 @MainActor
 final class AppKitMessageListViewController: NSViewController {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     private var coordinator: AppKitMessageListCoordinator!
     private var scrollView: NSScrollView!
@@ -31,7 +31,7 @@ final class AppKitMessageListViewController: NSViewController {
         AppKitMessageTheme.systemDefault(revision: themeRevision)
     }
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         super.init(nibName: nil, bundle: nil)
     }

@@ -18,24 +18,6 @@
         }
       }
     },
-    "Copy": {
-      "comment": "Copy button on message rows.",
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "复制"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "複製"
-          }
-        }
-      }
-    },
     "Done": {
       "comment": "Tool call success status.",
       "localizations": {
@@ -117,24 +99,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "輸入你的回答…"
-          }
-        }
-      }
-    },
-    "Load Earlier": {
-      "comment": "Button shown above the list when an earlier page exists.",
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "加载更早消息"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "載入更早訊息"
           }
         }
       }
@@ -221,24 +185,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "暫無訊息"
-          }
-        }
-      }
-    },
-    "Processing": {
-      "comment": "Status row placeholder.",
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "处理中…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "處理中…"
           }
         }
       }

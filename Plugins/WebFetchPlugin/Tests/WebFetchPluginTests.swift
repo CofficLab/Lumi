@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import WebFetchPlugin
 
@@ -56,7 +56,7 @@ struct PluginWebFetchTests {
     func toolRiskLevel() {
         let tool = WebFetchTool()
 
-        #expect(tool.riskLevel(arguments: [:], kernel: LumiKernel()) == .medium)
+        #expect(tool.riskLevel(arguments: [:], kernel: KernelLumi()) == .medium)
     }
 
     @Test("localization catalog is packaged")

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -41,13 +41,13 @@ public struct ConversationLegacyMigration: SuperLog {
     /// - 上线前:改回 `.once`,生产环境只迁一次。
     public static var policy: MigrationPolicy = .once
 
-    private let kernel: LumiKernel
+    private let kernel: KernelLumi
     private let store: ConversationStore
     private let progress: ConversationMigrationProgressStore
     private let migrationMarkerURL: URL
 
     public init(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         store: ConversationStore,
         progress: ConversationMigrationProgressStore,
         destinationRootURL: URL

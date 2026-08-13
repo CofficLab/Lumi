@@ -1,7 +1,7 @@
 import Foundation
 import os
 
-/// Runtime bridge that hands the LumiKernel-provided plugin data directory
+/// Runtime bridge that hands the KernelLumi-provided plugin data directory
 /// down to the `ImageToPDFViewModel`.
 ///
 /// - `ImageToPDFPlugin.onBoot` writes `directoryURL` (from

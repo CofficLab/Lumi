@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// 状态栏磁贴：在工具栏显示当前 stash 数量。
 /// 点击后通过回调打开暂存面板（由宿主 ViewContainer 决定如何呈现）。

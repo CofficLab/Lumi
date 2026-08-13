@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 /// 输入状态（插件内部共享）
 @MainActor
@@ -42,12 +42,12 @@ final class InputState: ObservableObject, ConversationInputProviding {
     // MARK: - Sending
 
     /// 当前是否在向内核发送中
-    func isSending(kernel: LumiKernel) -> Bool {
+    func isSending(kernel: KernelLumi) -> Bool {
         kernel.messageSender?.isSending(for: kernel.conversations?.selectedConversationID) ?? false
     }
 
     /// 是否满足发送条件（文本非空且未在发送中）
-    func canSend(kernel: LumiKernel) -> Bool {
+    func canSend(kernel: KernelLumi) -> Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -55,7 +55,7 @@ final class InputState: ObservableObject, ConversationInputProviding {
     ///
     /// 编辑器的回车提交（`onSubmit`/`onEnter`）与 Action Bar 上的发送按钮共用此入口，
     /// 保证两处行为一致。
-    func send(kernel: LumiKernel) {
+    func send(kernel: KernelLumi) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         guard let messageSend = kernel.messageSender else {
@@ -76,7 +76,7 @@ final class InputState: ObservableObject, ConversationInputProviding {
     }
 
     /// 取消当前发送请求。
-    func stop(kernel: LumiKernel) {
+    func stop(kernel: KernelLumi) {
         kernel.messageSender?.cancelCurrentRequest()
     }
 

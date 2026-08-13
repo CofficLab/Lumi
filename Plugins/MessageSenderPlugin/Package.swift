@@ -3,12 +3,12 @@ import PackageDescription
 
 let package = Package(
     name: "MessageSenderPlugin",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "MessageSenderPlugin", targets: ["MessageSenderPlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -16,7 +16,7 @@ let package = Package(
         .target(
             name: "MessageSenderPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                         .product(name: "LocalizationKit", package: "LocalizationKit"),
 ],

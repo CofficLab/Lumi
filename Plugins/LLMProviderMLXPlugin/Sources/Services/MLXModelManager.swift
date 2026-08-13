@@ -1,7 +1,7 @@
 import Foundation
 import SuperLogKit
 import Combine
-import LumiKernel
+import KernelLumi
 import os
 
 // Forward reference to MLXModels from MLXModels.swift

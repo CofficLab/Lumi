@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -6,7 +6,7 @@ import SwiftUI
 @MainActor
 struct ConversationContextSizeToolbarView: View {
     @LumiTheme private var theme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     // 上下文窗口大小同时依赖「当前对话选中的 provider/model」（随会话切换变化，
     // 由 .onLumiSelectedConversationDidChange 事件驱动）与「provider 注册表」

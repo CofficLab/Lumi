@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -6,14 +6,14 @@ import SwiftUI
 ///
 /// 只负责组合 Header / Body / Bottom 三个子视图。
 struct PanelView: View {
-    @ObservedObject var kernel: LumiKernel
+    @ObservedObject var kernel: KernelLumi
     private let layoutManager: WorkspaceProviding
 
     @State private var isPanelHeaderVisible: Bool = true
     @State private var isPanelBodyVisible: Bool = true
     @State private var isPanelBottomVisible: Bool = true
 
-    init(kernel: LumiKernel, layoutManager: WorkspaceProviding) {
+    init(kernel: KernelLumi, layoutManager: WorkspaceProviding) {
         self.kernel = kernel
         self.layoutManager = layoutManager
     }

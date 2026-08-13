@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -15,7 +15,7 @@ public struct DebugCommands {
     public init() {}
 
     /// 创建 Debug 菜单命令组。
-    public func commandMenuGroup(kernel: LumiKernel) -> CommandMenuGroup {
+    public func commandMenuGroup(kernel: KernelLumi) -> CommandMenuGroup {
         CommandMenuGroup(
             id: "com.coffic.lumi.plugin.command.debug",
             name: LumiPluginLocalization.string("Debug", bundle: .module),
@@ -95,7 +95,7 @@ public struct DebugCommands {
         NSWorkspace.shared.activateFileViewerSelecting([directory])
     }
 
-    private static func openDatabaseDirectory(kernel: LumiKernel) {
+    private static func openDatabaseDirectory(kernel: KernelLumi) {
         if Self.verbose {
             Self.logger.info("Open Database Directory")
         }

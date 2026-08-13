@@ -1,41 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "AI response language in header": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI response language in header"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "聊天顶部的语言选择器"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "聊天頂部的語言選擇器"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "聊天頂部的語言選擇器"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "聊天頂部的語言選擇器"
-          }
-        }
-      }
-    },
     "Chinese": {
       "localizations": {
         "en": {
@@ -341,42 +306,6 @@
           }
         }
       }
-    },
-    "Response Language": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Response Language"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "回复语言"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "回覆語言"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "回覆語言"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "回覆語言"
-          }
-        }
-      }
-    }
-  },
+    }  },
   "version": "1.1"
 }

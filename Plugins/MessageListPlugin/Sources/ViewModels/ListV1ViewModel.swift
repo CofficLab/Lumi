@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -22,7 +22,7 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
     private var pendingUserSnapshot: [LumiChatMessage] = []
     private var pendingStatusSnapshot: LumiChatMessage?
 
-    private let kernel: LumiKernel
+    private let kernel: KernelLumi
     private let builder = AgentTurnSummaryBuilder()
     private let refreshGate = MessageListTailRefreshGate()
     private let pageSize: Int
@@ -35,7 +35,7 @@ final class ListV1ViewModel: ObservableObject, SuperLog {
     private var didBindMessageNotifications = false
     private var didBindServices = false
 
-    init(kernel: LumiKernel, pageSize: Int = 40) {
+    init(kernel: KernelLumi, pageSize: Int = 40) {
         self.kernel = kernel
         self.pageSize = pageSize
     }

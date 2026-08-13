@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import StringCatalogKit
 import SuperLogKit
 import os
@@ -46,11 +46,11 @@ public struct InspectStringCatalogTool: LumiAgentTool, SuperLog {
         return "检查 \(fileName) 中的翻译问题"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
 
         guard let filePath = arguments["file_path"]?.stringValue else {

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Immutable snapshot of the native message list for one conversation.
 ///

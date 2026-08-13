@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -16,7 +16,7 @@ public struct AgentTurnRunnerOnReadyHook {
     public init() {}
 
     /// 执行 onReady
-    public func execute(_ kernel: LumiKernel) throws {
+    public func execute(_ kernel: KernelLumi) throws {
         guard let storage = kernel.storage else {
             if Self.verbose {
                 Self.logger.warning("AgentTurnRunner onReady: kernel.storage 不可用,跳过请求记录存储初始化")

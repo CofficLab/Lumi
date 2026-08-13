@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// 查询最近 HTTP 交换记录的 Agent 工具。
@@ -58,11 +58,11 @@ public struct ListHTTPExchangesTool: LumiAgentTool, SuperLog {
         "查询 HTTP 日志"
     }
 
-    public nonisolated func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public nonisolated func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let limit = min(arguments.int("limit") ?? 20, 100)
         let method = arguments.string("method")?.uppercased()
         let urlContains = arguments.string("url_contains")

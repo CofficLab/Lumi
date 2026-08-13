@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct WriteFileTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -28,7 +28,7 @@ public struct WriteFileTool: LumiAgentTool {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .medium
     }
 
@@ -39,7 +39,7 @@ public struct WriteFileTool: LumiAgentTool {
         return "写入 \(URL(fileURLWithPath: path).lastPathComponent)"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let path = arguments["path"]?.stringValue,
               let content = arguments["content"]?.stringValue
         else {

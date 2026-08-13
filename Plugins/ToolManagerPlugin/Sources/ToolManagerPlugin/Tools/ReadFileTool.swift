@@ -1,7 +1,7 @@
 import AppKit
 import SuperLogKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import FileSystemKit
 import os
 
@@ -52,7 +52,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
@@ -70,7 +70,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
         return "读取 \(fileName)"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let path = arguments["path"]?.stringValue else {
             throw NSError(
                 domain: "ReadFileTool",
@@ -156,7 +156,7 @@ public struct ReadFileTool: LumiAgentTool, SuperLog {
         data: Data,
         url: URL,
         mimeType: String,
-        kernel: LumiKernel
+        kernel: KernelLumi
     ) -> String? {
         // NSImage(data:) 与 representations 读取在后台线程安全可用。
         guard let image = NSImage(data: data), image.isValid else {

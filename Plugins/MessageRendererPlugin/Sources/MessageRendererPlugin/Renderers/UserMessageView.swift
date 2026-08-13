@@ -1,9 +1,9 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 struct UserMessageView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let message: LumiChatMessage
     let verbosity: LumiResponseVerbosity
 

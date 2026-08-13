@@ -1,15 +1,15 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// 对话列表侧栏视图：组合 HeaderBarView 与 ListView。
 struct RailView: View {
-    @ObservedObject private var kernel: LumiKernel
+    @ObservedObject private var kernel: KernelLumi
     private let attentionStore: ConversationAttentionStore
     @ObservedObject private var sortStabilizer: ConversationSortStabilizer
     private let scopeToCurrentProject: Bool
 
     init(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         attentionStore: ConversationAttentionStore,
         sortStabilizer: ConversationSortStabilizer,
         scopeToCurrentProject: Bool = false

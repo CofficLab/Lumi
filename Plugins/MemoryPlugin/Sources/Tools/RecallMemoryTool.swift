@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 检索记忆工具。
 ///
@@ -45,11 +45,11 @@ public struct RecallMemoryTool: LumiAgentTool {
         "检索记忆"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let query = MemoryToolInput.string(arguments["query"]?.anyValue) else {
             throw MemoryToolError.missingArgument("query")
         }

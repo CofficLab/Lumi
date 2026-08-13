@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// 工具栏居中标题视图：仅在该插件对应的视图容器激活时显示。
@@ -9,12 +9,12 @@ import SwiftUI
 /// 避免切换容器后在其它容器中残留标题。
 struct AppStoreConnectToolbarTitleView: View {
     let containerID: String
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let title: String
 
     @State private var activeContainerID: String?
 
-    init(containerID: String, kernel: LumiKernel, title: String) {
+    init(containerID: String, kernel: KernelLumi, title: String) {
         self.containerID = containerID
         self.kernel = kernel
         self.title = title

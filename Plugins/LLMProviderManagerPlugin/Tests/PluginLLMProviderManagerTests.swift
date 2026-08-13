@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import LLMProviderManagerPlugin
 
@@ -8,7 +8,7 @@ import Testing
 @MainActor
 @Test func providerAPIKeyRendererMatchesMissingKeyMessages() {
     let plugin = LLMProviderManagerPlugin()
-    let renderer = plugin.messageRenderers(kernel: LumiKernel()).first {
+    let renderer = plugin.messageRenderers(kernel: KernelLumi()).first {
         $0.id == LumiLLMProviderAPIKeyMessage.renderKind
     }
     let conversationID = UUID()
@@ -47,7 +47,7 @@ import Testing
 @MainActor
 @Test func providerAPIKeyAccessFailedRendererOnlyMatchesAccessFailures() {
     let plugin = LLMProviderManagerPlugin()
-    let renderer = plugin.messageRenderers(kernel: LumiKernel()).first {
+    let renderer = plugin.messageRenderers(kernel: KernelLumi()).first {
         $0.id == LumiLLMProviderAPIKeyMessage.accessFailedRenderKind
     }
     let conversationID = UUID()

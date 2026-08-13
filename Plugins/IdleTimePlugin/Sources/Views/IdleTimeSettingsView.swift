@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 import AppKit
 
 /// Idle Time 设置页:展示推断出的“休息窗口”与活动热度。
@@ -11,11 +11,11 @@ import AppKit
 /// 与 Project RAG 插件的设置页行为一致。
 @MainActor
 public struct IdleTimeSettingsView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @StateObject private var vm = AppIdleTimeVM()
     @LumiTheme private var theme
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self.kernel = kernel
     }
 

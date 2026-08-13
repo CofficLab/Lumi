@@ -1,5 +1,5 @@
 import LumiUI
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 // MARK: - About View
@@ -54,7 +54,7 @@ struct ActivityHeatmapAboutView: View {
                     items: [
                         LumiPluginLocalization.string("macOS 14.0 or later", bundle: .module),
                         LumiPluginLocalization.string("Swift 6.0 or later", bundle: .module),
-                        LumiPluginLocalization.string("LumiKernel with MessageManaging service", bundle: .module),
+                        LumiPluginLocalization.string("KernelLumi with MessageManaging service", bundle: .module),
                     ]
                 )
 

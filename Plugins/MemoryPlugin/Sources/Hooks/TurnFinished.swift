@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Memory 插件 turn finished 钩子：保存用户明确表达的长期偏好和纠正。
 @MainActor
@@ -7,7 +7,7 @@ public struct MemoryTurnFinishedHook {
     public init() {}
 
     public func execute(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         conversationID: UUID,
         reason: LumiTurnEndReason
     ) async {

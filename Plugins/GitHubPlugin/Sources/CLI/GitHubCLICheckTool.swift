@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// GitHub CLI 安装检测工具
@@ -27,11 +27,11 @@ public struct GitHubCLICheckTool: LumiAgentTool, SuperLog {
         "检测 GitHub CLI"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         if Self.verbose {
             if GitHubPlugin.verbose {
                 GitHubPlugin.logger.info("\(Self.t)检测 GitHub CLI 安装状态")

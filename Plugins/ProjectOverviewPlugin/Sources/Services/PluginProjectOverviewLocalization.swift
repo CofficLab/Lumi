@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 enum PluginProjectOverviewLocalization {
     static let table = "Localizable"

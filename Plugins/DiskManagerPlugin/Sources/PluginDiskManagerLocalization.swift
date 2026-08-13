@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 enum PluginDiskManagerLocalization {
     static let table = "Localizable"

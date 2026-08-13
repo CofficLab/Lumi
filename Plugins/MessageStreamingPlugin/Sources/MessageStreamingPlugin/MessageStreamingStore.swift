@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 流式输出状态的持有者（runner 写、UI 读）。
 ///
@@ -27,7 +27,7 @@ public final class MessageStreamingStore: MessageStreaming {
     /// 每帧(~16ms)最多一次 UI 刷新,因此逐 token 广播的成本是可接受的。
     private var states: [UUID: StreamingState] = [:]
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         // 保留 kernel 引用位:未来若需查询落库状态等可复用,当前不持有(避免循环引用)。
         // 不需 weak:插件与 kernel 生命周期一致,且本类不反向持有 kernel。
     }

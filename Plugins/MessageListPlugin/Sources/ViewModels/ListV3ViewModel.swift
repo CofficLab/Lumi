@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -95,7 +95,7 @@ final class ListV3ViewModel: ObservableObject, SuperLog {
 
     // MARK: - Dependencies & Internal State
 
-    private let kernel: LumiKernel
+    private let kernel: KernelLumi
     private let pagination = MessageListPaginationService()
     private let rowBuilder = MessageListRowBuilder()
     private let tailRefreshGate = MessageListTailRefreshGate()
@@ -117,7 +117,7 @@ final class ListV3ViewModel: ObservableObject, SuperLog {
     /// O(rows × content) memberwise) array comparison is skipped entirely.
     private var lastHistoryBuildSignature: HistoryBuildSignatureV3?
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
     }
 

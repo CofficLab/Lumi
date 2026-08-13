@@ -103,41 +103,6 @@
         }
       }
     },
-    "Browse and remove local Docker images": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Browse and remove local Docker images"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "浏览和删除本地 Docker 镜像"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "瀏覽和刪除本地 Docker 映像檔"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "瀏覽和刪除本地 Docker 映像檔"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "瀏覽和刪除本地 Docker 映像檔"
-          }
-        }
-      }
-    },
     "Browse, inspect, and manage local Docker images": {
       "localizations": {
         "en": {
@@ -852,41 +817,6 @@
         }
       }
     },
-    "Images": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Images"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "镜像"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "映像檔"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "映像檔"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "映像檔"
-          }
-        }
-      }
-    },
     "Import": {
       "localizations": {
         "en": {
@@ -955,41 +885,6 @@
         }
       }
     },
-    "Keep an eye on disk usage and status": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keep an eye on disk usage and status"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "监控磁盘使用情况和状态"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "監控磁碟使用情況和狀態"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "監控磁碟使用情況和狀態"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "監控磁碟使用情況和狀態"
-          }
-        }
-      }
-    },
     "Layer Inspection": {
       "localizations": {
         "en": {
@@ -1024,76 +919,6 @@
         }
       }
     },
-    "Local Docker image management and monitoring": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Local Docker image management and monitoring"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本地 Docker 镜像管理和监控"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本地 Docker 映像管理和監控"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本地 Docker 映像管理和監控"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本地 Docker 映像管理和監控"
-          }
-        }
-      }
-    },
-    "Make sure Docker is running, then open Docker from the sidebar.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Make sure Docker is running, then open Docker from the sidebar."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "确保 Docker 正在运行，然后从侧边栏打开 Docker。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "確保 Docker 正在執行，然後從側邊欄開啟 Docker。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "確保 Docker 正在執行，然後從側邊欄開啟 Docker。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "確保 Docker 正在執行，然後從側邊欄開啟 Docker。"
-          }
-        }
-      }
-    },
     "Manage image tags and versions": {
       "localizations": {
         "en": {
@@ -1124,41 +949,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "管理映像標籤和版本"
-          }
-        }
-      }
-    },
-    "Monitoring": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Monitoring"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "监控"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "監控"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "監控"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "監控"
           }
         }
       }

@@ -1,10 +1,10 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 /// Header view displaying the current conversation title
 struct ConversationTitleHeaderView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     // 标题随当前选中会话变化。用事件 + @State 缓存，不挂 kernel 全局总线。

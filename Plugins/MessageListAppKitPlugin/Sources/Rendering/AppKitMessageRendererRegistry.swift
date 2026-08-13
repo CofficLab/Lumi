@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Resolves the native renderer for a message row.
 ///

@@ -1,7 +1,7 @@
 import Foundation
 import HttpKit
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 // Type aliases to disambiguate between LumiCoreMessage and LumiCoreLLMProvider types
 typealias F = LumiLLMFailureDetail

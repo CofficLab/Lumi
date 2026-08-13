@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import EditorService
 import LumiUI
 import SuperLogKit
@@ -15,7 +15,7 @@ public final class EditorProvider: EditorProviding, SuperLog {
     private weak var editorService: EditorService?
 
     /// 内核引用,用于在主题变更时解析当前编辑器主题。弱引用避免循环。
-    private weak var kernel: LumiKernel?
+    private weak var kernel: KernelLumi?
 
     /// `.themeDidChange` 订阅令牌,重复绑定时会先移除旧令牌。
     private var themeObserver: NSObjectProtocol?
@@ -152,7 +152,7 @@ public final class EditorProvider: EditorProviding, SuperLog {
 
     public func setCurrentTheme(_ themeId: String) throws {
         guard themes[themeId] != nil else {
-            throw LumiKernelError.serviceNotAvailable(service: "Editor theme '\(themeId)' not found")
+            throw KernelLumiError.serviceNotAvailable(service: "Editor theme '\(themeId)' not found")
         }
         currentThemeId = themeId
     }
@@ -169,7 +169,7 @@ public final class EditorProvider: EditorProviding, SuperLog {
 
     /// 订阅内核 `.themeDidChange` 事件,并在订阅时立即应用一次当前编辑器主题。
     /// ThemeManager 不知道编辑器的存在,只广播事件;这里自行解析并应用。
-    func bindThemeSync(kernel: LumiKernel) {
+    func bindThemeSync(kernel: KernelLumi) {
         self.kernel = kernel
         configureEditorThemeContributorRegistration(kernel: kernel)
         applyThemeFromKernel()
@@ -191,7 +191,7 @@ public final class EditorProvider: EditorProviding, SuperLog {
     /// EditorState 只认识 EditorService 内部的 `SuperEditorThemeContributor`；
     /// ThemeManagerPlugin 切换的是 LumiUI 的 app theme。这里在边界处注册 lifecycle 钩子，
     /// 让每次编辑器主题通知到达时都能用最新 Lumi 主题目录重建 editor syntax 主题。
-    private func configureEditorThemeContributorRegistration(kernel: LumiKernel) {
+    private func configureEditorThemeContributorRegistration(kernel: KernelLumi) {
         EditorSettingsLifecycle.registerEditorThemeContributors = { [weak kernel] registry in
             EditorBuiltinSyntaxThemes.registerFallbacks(into: registry)
             guard let themes = kernel?.theme?.themes else { return }

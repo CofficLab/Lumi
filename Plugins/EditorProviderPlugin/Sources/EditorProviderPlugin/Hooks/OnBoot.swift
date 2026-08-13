@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -15,7 +15,7 @@ public struct EditorProviderOnBootHook: SuperLog {
 
     /// 注册调用方已创建的 provider 到内核。
     /// provider 的创建由 plugin 负责,以便其在 OnReady 阶段注入 EditorService。
-    public func execute(_ provider: EditorProvider, kernel: LumiKernel) async throws {
+    public func execute(_ provider: EditorProvider, kernel: KernelLumi) async throws {
         try kernel.registerEditor(provider)
 
         if Self.verbose {

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -18,7 +18,7 @@ enum ProviderScope: String, CaseIterable {
 /// 从 kernel 自动获取 LLMProviderManaging 服务。
 struct ProviderListView: View {
     @LumiTheme private var theme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @Binding var selectedProviderID: String?
     var onClose: (() -> Void)? = nil
 

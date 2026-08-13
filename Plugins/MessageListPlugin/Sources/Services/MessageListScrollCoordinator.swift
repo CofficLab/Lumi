@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// Message List Scroll Coordinator

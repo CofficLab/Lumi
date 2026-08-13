@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import ShellKit
 
 public struct ShellTool: LumiAgentTool {
@@ -36,7 +36,7 @@ public struct ShellTool: LumiAgentTool {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         guard let command = arguments["command"]?.stringValue else {
             return .high
         }
@@ -57,7 +57,7 @@ public struct ShellTool: LumiAgentTool {
         return "运行 \(preview)"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let command = arguments["command"]?.stringValue,
               !command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else {

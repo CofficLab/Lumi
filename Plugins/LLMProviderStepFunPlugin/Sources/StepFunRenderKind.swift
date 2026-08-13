@@ -1,5 +1,5 @@
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
 
 enum StepFunRenderKind {
     static let apiKeyMissing = "stepfun-api-key-missing"

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import LumiUI
 import os
 import SuperLogKit
@@ -45,7 +45,7 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
 
     // MARK: - Lifecycle
 
-    public func onBoot(kernel: LumiKernel) async throws {
+    public func onBoot(kernel: KernelLumi) async throws {
         BookletMakerRuntimeBridge.directoryURL = kernel.storage?
             .pluginDataDirectory(for: "BookletMaker")
         if Self.verbose {
@@ -55,12 +55,12 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
         }
     }
 
-    public func onReady(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: KernelLumi) async throws {}
 
     // MARK: - View Container
 
     /// Contribute one view container that fills the entire workspace.
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] {
+    public func viewContainers(kernel: KernelLumi) -> [ViewContainerItem] {
         [
             ViewContainerItem(
                 id: id,
@@ -78,13 +78,14 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
 
     // MARK: - About
 
-    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
+    public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(BookletMakerAboutView())
     }
 
     // MARK: - Save Panel
 
     private func presentSavePanel() {
+        #if os(macOS)
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.pdf]
         panel.nameFieldStringValue = suggestedFileName()
@@ -93,6 +94,16 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
         if panel.runModal() == .OK, let url = panel.url {
             Task { await sharedViewModel.export(to: url) }
         }
+        #else
+        // iOS: 生成到临时文件后弹出系统分享面板（保存到「文件」/ 分享）。
+        Task { @MainActor in
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent(suggestedFileName())
+            try? FileManager.default.removeItem(at: url)
+            await sharedViewModel.export(to: url)
+            SharePresenter.share(fileURL: url)
+        }
+        #endif
     }
 
     private func suggestedFileName() -> String {
@@ -101,6 +112,7 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     }
 
     private func presentSplitDirectoryPanel() {
+        #if os(macOS)
         let panel = NSOpenPanel()
         panel.title = BookletLocalization.string("Choose Split PDF Output Folder")
         panel.message = BookletLocalization.string(
@@ -121,19 +133,29 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
                 }
             }
         }
+        #else
+        // iOS: 拆分到临时目录后用分享面板导出。
+        Task { @MainActor in
+            let dir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("booklet-split-\(UUID().uuidString)", isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            await sharedViewModel.exportSplit(to: dir)
+            SharePresenter.share(fileURL: dir)
+        }
+        #endif
     }
 
     // MARK: - LumiPlugin Stubs
 
-    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
-    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
-    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
-    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] {
+    public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }
+    public func messageRenderers(kernel: KernelLumi) -> [LumiMessageRendererItem] { [] }
+    public func menuBarContentItems(kernel: KernelLumi) -> [LumiMenuBarContentItem] { [] }
+    public func menuBarPopupItems(kernel: KernelLumi) -> [LumiMenuBarPopupItem] { [] }
+    public func titleToolbarItems(kernel: KernelLumi) -> [LumiTitleToolbarItem] {
         [
             LumiTitleToolbarItem(
                 id: "\(id).title",
-                title: BookletLocalization.string("拆分PDF或者小册子生成"),
+                title: BookletLocalization.string("Split PDF or Booklet Maker"),
                 placement: .center,
                 order: 200
             ) {
@@ -145,9 +167,9 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
             },
         ]
     }
-    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
-    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] {
+    public func panelHeaderItems(kernel: KernelLumi) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: KernelLumi) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
                 id: "booklet-maker.sidebar",
@@ -163,23 +185,23 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
             },
         ]
     }
-    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
-    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
-    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
-    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
-    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
-    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
-    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
-    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
-    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
-    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
-    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
-    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
-    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
-    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
-    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
-    public func configureEditorRuntime(kernel: LumiKernel) async {}
-    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] { [] }
+    public func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] { [] }
+    public func chatSectionItems(kernel: KernelLumi) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: KernelLumi) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: KernelLumi) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: KernelLumi) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: KernelLumi) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] { [] }
+    public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
+    public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: KernelLumi) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: KernelLumi) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: KernelLumi, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
+    public func configureEditorRuntime(kernel: KernelLumi) async {}
+    public func agentTools(kernel: KernelLumi) -> [any LumiAgentTool] { [] }
 }

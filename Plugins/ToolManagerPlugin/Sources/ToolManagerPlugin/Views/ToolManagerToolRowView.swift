@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 
 /// 单个工具的展示行:图标 + 名称 + 描述,右侧显示参数数量。

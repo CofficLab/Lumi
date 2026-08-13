@@ -26,7 +26,7 @@
 ### 非目标
 
 - 本次不重写插件协议或插件生命周期。
-- 本次不拆分 `LumiKernel`、`LumiUI`、`EditorService`。
+- 本次不拆分 `KernelLumi`、`LumiUI`、`EditorService`。
 - 本次不为 AppIconDesigner、CADDesigner、DatabaseManager 各建专属 Factory Package。
 - 本次不承诺一个固定的最终 MB 数；体积验收以相同架构、相同压缩口径的前后对比为准。
 
@@ -41,7 +41,7 @@ flowchart TD
     FL --> FC["FactoryCore"]
     FB --> FC
 
-    FC --> Kernel["LumiKernel"]
+    FC --> Kernel["KernelLumi"]
     FC --> UI["LumiUI"]
     FC --> Editor["EditorService"]
     FC --> Localization["LumiLocalizationKit"]
@@ -67,7 +67,7 @@ flowchart TD
 
 直接依赖仅限公共宿主实现实际使用的基础包：
 
-- `LumiKernel`
+- `KernelLumi`
 - `LumiUI`
 - `LumiLocalizationKit`
 - `SuperLogKit`

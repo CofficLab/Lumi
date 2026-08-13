@@ -1,5 +1,9 @@
+#if canImport(AppKit)
 import AppKit
-import LumiKernel
+#elseif canImport(UIKit)
+import UIKit
+#endif
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -12,13 +16,13 @@ import SwiftUI
 /// 不在此页面做任何写入。
 @MainActor
 public struct LayoutSettingsView: View {
-    @ObservedObject private var kernel: LumiKernel
+    @ObservedObject private var kernel: KernelLumi
     @LumiTheme private var theme
 
     @State private var selectedContainerID: String?
     @State private var didSeedSelection = false
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self._kernel = ObservedObject(wrappedValue: kernel)
     }
 
@@ -346,6 +350,10 @@ public struct LayoutSettingsView: View {
     private func openDataDirectory() {
         guard let url = kernel.workspace?.settingsDirectory else { return }
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        #if canImport(AppKit)
         _ = NSWorkspace.shared.open(url)
+        #elseif canImport(UIKit)
+        _ = UIApplication.shared.open(url)
+        #endif
     }
 }

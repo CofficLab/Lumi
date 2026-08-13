@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -15,5 +15,5 @@ public struct LayoutKernelOnReadyHook {
     public init() {}
 
     /// 执行 onReady
-    public func execute(_ kernel: LumiKernel) throws {}
+    public func execute(_ kernel: KernelLumi) throws {}
 }

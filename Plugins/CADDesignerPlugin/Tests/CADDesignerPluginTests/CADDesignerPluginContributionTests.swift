@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 @testable import CADDesignerPlugin
 import XCTest
 
@@ -7,7 +7,7 @@ final class CADDesignerPluginContributionTests: XCTestCase {
     func testPluginRegistersItsHostedAppContainer() {
         let plugin = CADDesignerPlugin()
 
-        let containers = plugin.viewContainers(kernel: LumiKernel())
+        let containers = plugin.viewContainers(kernel: KernelLumi())
 
         XCTAssertEqual(containers.map(\.id), [plugin.id])
         XCTAssertNotNil(containers.first?.makeView)

@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 public struct NetworkHistoryGraphView: View {
     public let dataPoints: [NetworkDataPoint]

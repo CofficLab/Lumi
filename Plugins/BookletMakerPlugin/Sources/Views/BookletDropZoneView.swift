@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -8,6 +9,9 @@ struct BookletDropZoneView: View {
     @ObservedObject var viewModel: BookletMakerViewModel
 
     @State private var isTargeted: Bool = false
+    #if os(iOS)
+    @State private var isPresentingImporter = false
+    #endif
 
     var body: some View {
         VStack(spacing: 12) {
@@ -28,7 +32,7 @@ struct BookletDropZoneView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(nsColor: .controlBackgroundColor))
+                .fill(Color.lumiControlBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
@@ -37,6 +41,13 @@ struct BookletDropZoneView: View {
         .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
             handleDrop(providers: providers)
         }
+        #if os(iOS)
+        .fileImporter(isPresented: $isPresentingImporter, allowedContentTypes: [.pdf]) { result in
+            if case .success(let url) = result {
+                Task { await viewModel.loadPDF(url) }
+            }
+        }
+        #endif
     }
 
     // MARK: - Sub Views
@@ -99,13 +110,14 @@ struct BookletDropZoneView: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .textBackgroundColor))
+                .fill(Color.lumiTextBackground)
         )
     }
 
     // MARK: - Actions
 
     private func selectPDFFile() {
+        #if os(macOS)
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.pdf]
         panel.allowsMultipleSelection = false
@@ -114,6 +126,9 @@ struct BookletDropZoneView: View {
         if panel.runModal() == .OK, let url = panel.url {
             Task { await viewModel.loadPDF(url) }
         }
+        #else
+        isPresentingImporter = true
+        #endif
     }
 
     private func handleDrop(providers: [NSItemProvider]) -> Bool {

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Loads the JSON/Markdown fixtures under `Tests/Fixtures/` into typed models.
 ///

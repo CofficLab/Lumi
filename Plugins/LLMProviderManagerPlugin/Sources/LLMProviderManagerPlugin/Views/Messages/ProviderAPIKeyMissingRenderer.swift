@@ -1,10 +1,10 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 private let providerAPIKeyRendererOrder = 350
 
 enum ProviderAPIKeyMissingRenderer {
-    static func item(kernel: LumiKernel) -> LumiMessageRendererItem {
+    static func item(kernel: KernelLumi) -> LumiMessageRendererItem {
         LumiMessageRendererItem(
             id: LumiLLMProviderAPIKeyMessage.renderKind,
             order: providerAPIKeyRendererOrder,
@@ -21,7 +21,7 @@ enum ProviderAPIKeyMissingRenderer {
     }
 
     @MainActor
-    private static func provider(for message: LumiChatMessage, kernel: LumiKernel) -> (any LumiLLMProvider)? {
+    private static func provider(for message: LumiChatMessage, kernel: KernelLumi) -> (any LumiLLMProvider)? {
         guard let providerID = message.providerID else { return nil }
         return kernel.llmProvider?.llmProvider(id: providerID)
     }

@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// 自己从 kernel 获取 tabs 和状态，AppLayoutView 不需要了解其内部细节。
 struct RailView: View {
-    @ObservedObject var kernel: LumiKernel
+    @ObservedObject var kernel: KernelLumi
 
     @LumiTheme private var theme
 

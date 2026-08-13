@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// .gitignore 编辑面板。
 public struct GitIgnorePanelView: View {

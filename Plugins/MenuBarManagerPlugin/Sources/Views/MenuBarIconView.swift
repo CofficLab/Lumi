@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// 状态栏中渲染所有 `LumiMenuBarContentItem` 的水平排布视图。

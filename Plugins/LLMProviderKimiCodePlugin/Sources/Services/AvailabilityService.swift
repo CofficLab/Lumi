@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 enum AvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderKimiCodePlugin")

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import ShellKit
 import SuperLogKit
 import os
@@ -49,18 +49,18 @@ public struct BrowserAgentTool: LumiAgentTool, SuperLog {
         "浏览器自动化"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
         return try await executeCommand(arguments: arguments, kernel: kernel)
     }
 
     // MARK: - Implementation
 
-    private func executeCommand(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    private func executeCommand(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let command = arguments["command"]?.stringValue else {
             return "Error: Missing required 'command' parameter"
         }

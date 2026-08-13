@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -8,7 +8,7 @@ import SwiftUI
 /// 都在这里完成组合与阶段切换。pending Turn 使用用户消息 ID，真实 Turn 使用
 /// turnID，确保多个历史/子 Turn 在列表中始终拥有唯一身份。
 struct AgentTurnView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let item: AgentTurnPresentationItem
     let lastAgentTurnID: UUID?
     let verbosity: LumiResponseVerbosity
@@ -17,7 +17,7 @@ struct AgentTurnView: View {
     @State private var isProcessExpanded = false
 
     init(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         item: AgentTurnPresentationItem,
         lastAgentTurnID: UUID?,
         verbosity: LumiResponseVerbosity

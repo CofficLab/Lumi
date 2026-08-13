@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Native renderer for one tool call row: description, status, duration,
 /// expandable result, and image attachments.

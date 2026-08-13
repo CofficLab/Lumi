@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -17,7 +17,7 @@ import SwiftUI
 ///   保证 SwiftUI 因其它原因未重算 body 时仍能触发刷新（切到其它容器再切回仍可见）。
 public struct DatabaseToolbarButton: View {
     @LumiTheme private var theme
-    @ObservedObject private var kernel: LumiKernel
+    @ObservedObject private var kernel: KernelLumi
 
     /// 仅当 `kernel.workspace.activeViewContainerID == containerID` 时显示按钮。
     let containerID: String
@@ -32,7 +32,7 @@ public struct DatabaseToolbarButton: View {
 
     @State private var isPopoverPresented: Bool = false
 
-    public init(kernel: LumiKernel, containerID: String, viewModel: DatabaseViewModel) {
+    public init(kernel: KernelLumi, containerID: String, viewModel: DatabaseViewModel) {
         self._kernel = ObservedObject(wrappedValue: kernel)
         self.containerID = containerID
         self.viewModel = viewModel

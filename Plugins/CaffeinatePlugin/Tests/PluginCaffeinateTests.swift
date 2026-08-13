@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import CaffeinatePlugin
 
@@ -27,7 +27,7 @@ struct PluginCaffeinateTests {
     @Test
     func pluginExposesMenuBarPopupItem() {
         let plugin = CaffeinatePlugin()
-        let popups = plugin.menuBarPopupItems(kernel: LumiKernel())
+        let popups = plugin.menuBarPopupItems(kernel: KernelLumi())
 
         #expect(popups.count == 1)
         #expect(popups.first?.id == "Caffeinate.popup")
@@ -36,7 +36,7 @@ struct PluginCaffeinateTests {
     @Test
     func pluginExposesViewContainer() {
         let plugin = CaffeinatePlugin()
-        let containers = plugin.viewContainers(kernel: LumiKernel())
+        let containers = plugin.viewContainers(kernel: KernelLumi())
 
         #expect(containers.count == 1)
         #expect(containers.first?.id == "Caffeinate.container")
@@ -47,7 +47,7 @@ struct PluginCaffeinateTests {
     func pluginProvidesAboutView() {
         let plugin = CaffeinatePlugin()
 
-        #expect(plugin.pluginAboutView(kernel: LumiKernel()) != nil)
+        #expect(plugin.pluginAboutView(kernel: KernelLumi()) != nil)
     }
 
     @Test
@@ -63,7 +63,7 @@ struct PluginCaffeinateTests {
         #expect(turnOffDisplayProperties?["duration"] != nil)
 
         // Risk level assertions use the modern `riskLevel(arguments:kernel:)` signature.
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         #expect(CaffeinateActivateTool().riskLevel(arguments: [:], kernel: kernel) == .low)
         #expect(CaffeinateDeactivateTool().riskLevel(arguments: [:], kernel: kernel) == .low)
         #expect(CaffeinateStatusTool().riskLevel(arguments: [:], kernel: kernel) == .low)
@@ -72,7 +72,7 @@ struct PluginCaffeinateTests {
 
     @Test
     func pluginRegistersAgentTools() {
-        let tools = CaffeinatePlugin().agentTools(kernel: LumiKernel())
+        let tools = CaffeinatePlugin().agentTools(kernel: KernelLumi())
 
         #expect(tools.count == 4)
         #expect(tools.map(\.name) == [

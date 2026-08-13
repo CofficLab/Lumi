@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import LumiUI
 import MarkdownKit
 import SwiftUI
@@ -95,7 +95,7 @@ import Testing
 
 @MainActor
 private func bootedRenderers() async throws -> [LumiMessageRendererItem] {
-    let kernel = LumiKernel()
+    let kernel = KernelLumi()
     try await MessageRendererOnBootHook().execute(kernel)
     return kernel.messageRendererManager?.allMessageRenderers() ?? []
 }

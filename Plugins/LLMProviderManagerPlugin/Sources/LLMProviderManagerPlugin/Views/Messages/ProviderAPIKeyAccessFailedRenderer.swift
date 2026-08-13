@@ -1,9 +1,9 @@
-import LumiKernel
+import KernelLumi
 
 private let providerAPIKeyAccessFailedRendererOrder = 351
 
 enum ProviderAPIKeyAccessFailedRenderer {
-    static func item(kernel: LumiKernel) -> LumiMessageRendererItem {
+    static func item(kernel: KernelLumi) -> LumiMessageRendererItem {
         LumiMessageRendererItem(
             id: LumiLLMProviderAPIKeyMessage.accessFailedRenderKind,
             order: providerAPIKeyAccessFailedRendererOrder,
@@ -20,7 +20,7 @@ enum ProviderAPIKeyAccessFailedRenderer {
     }
 
     @MainActor
-    private static func provider(for message: LumiChatMessage, kernel: LumiKernel) -> (any LumiLLMProvider)? {
+    private static func provider(for message: LumiChatMessage, kernel: KernelLumi) -> (any LumiLLMProvider)? {
         guard let providerID = message.providerID else { return nil }
         return kernel.llmProvider?.llmProvider(id: providerID)
     }

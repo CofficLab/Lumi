@@ -1,6 +1,6 @@
 import AppKit
 import Combine
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 @MainActor
@@ -33,10 +33,10 @@ private final class MenuBarLogoObserver: ObservableObject {
 
 /// 状态栏最左侧的 Logo 视图:优先展示最高优先级插件 Logo,回退到应用图标。
 struct MenuBarLogoView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @StateObject private var logoObserver: MenuBarLogoObserver
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         _logoObserver = StateObject(wrappedValue: MenuBarLogoObserver(logo: kernel.logo))
     }

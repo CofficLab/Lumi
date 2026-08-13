@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import MessageListPlugin
 
@@ -21,8 +21,8 @@ struct StreamingDisplayTests {
         messages: MockMessageManager,
         conversations: MockConversationManager,
         streaming: MockMessageStreaming
-    ) throws -> LumiKernel {
-        let kernel = LumiKernel()
+    ) throws -> KernelLumi {
+        let kernel = KernelLumi()
         try kernel.registerService(MessageManaging.self, messages)
         try kernel.registerService(ConversationManaging.self, conversations)
         try kernel.registerService(MessageStreaming.self, streaming)

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import ToolManagerPlugin
 
@@ -117,14 +117,14 @@ struct ToolManagerPluginTests {
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
         let tool = ReadFileTool()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let result = try await tool.execute(
             arguments: ["path": .string(fileURL.path), "offset": .int(2), "limit": .int(1)],
             kernel: kernel
         )
         #expect(result.contains("2|beta"))
 
-        let blocked = LumiKernel()
+        let blocked = KernelLumi()
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "call",
@@ -145,14 +145,14 @@ struct ToolManagerPluginTests {
         #expect(tool.displayDescription(arguments: ["path": .string("/tmp/example.txt")]) == "读取 example.txt")
         #expect(tool.displayDescription(arguments: ["path": .string("/tmp/example.txt"), "offset": .int(2)]) == "读取 example.txt（从第 2 行起）")
         #expect(tool.displayDescription(arguments: ["path": .string("/tmp/example.txt"), "offset": .int(2), "limit": .int(3)]) == "读取 example.txt（第 2 行起，最多 3 行）")
-        #expect(tool.riskLevel(arguments: [:], kernel: LumiKernel()) == .low)
+        #expect(tool.riskLevel(arguments: [:], kernel: KernelLumi()) == .low)
 
         let imageURL = try temporaryFile(
             named: "large.png",
             contents: Data(repeating: 0x01, count: 10 * 1024 * 1024 + 1)
         )
         defer { try? FileManager.default.removeItem(at: imageURL) }
-        let result = try await tool.execute(arguments: ["path": .string(imageURL.path)], kernel: LumiKernel())
+        let result = try await tool.execute(arguments: ["path": .string(imageURL.path)], kernel: KernelLumi())
         #expect(result.contains("too large") || result.contains("太大"))
 
         let validImageURL = try temporaryFile(
@@ -160,19 +160,19 @@ struct ToolManagerPluginTests {
             contents: Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")!
         )
         defer { try? FileManager.default.removeItem(at: validImageURL) }
-        let imageKernel = LumiKernel()
+        let imageKernel = KernelLumi()
         let imageResult = try await tool.execute(arguments: ["path": .string(validImageURL.path)], kernel: imageKernel)
         #expect(imageResult.contains("已加载图片"))
     }
 
     @Test("file tools reject missing and disallowed arguments")
     func fileToolArgumentErrors() async throws {
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         await #expect(throws: Error.self) { try await ReadFileTool().execute(arguments: [:], kernel: kernel) }
         await #expect(throws: Error.self) { try await WriteFileTool().execute(arguments: [:], kernel: kernel) }
         await #expect(throws: Error.self) { try await EditFileTool().execute(arguments: [:], kernel: kernel) }
 
-        let denied = LumiKernel()
+        let denied = KernelLumi()
         let context = LumiToolExecutionContextState(
             conversationID: UUID(), toolCallID: "denied", toolName: "write_file",
             allowedDirectories: ["/definitely/not/allowed"]
@@ -190,7 +190,7 @@ struct ToolManagerPluginTests {
     func writeAndEditTools() async throws {
         let fileURL = temporaryURL(named: "nested/write.txt")
         defer { try? FileManager.default.removeItem(at: fileURL.deletingLastPathComponent().deletingLastPathComponent()) }
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let writeResult = try await WriteFileTool().execute(
             arguments: ["path": .string(fileURL.path), "content": .string("hello hello")],
@@ -236,18 +236,18 @@ struct ToolManagerPluginTests {
 
         let result = try await ListDirectoryTool().execute(
             arguments: ["path": .string(directoryURL.path)],
-            kernel: LumiKernel()
+            kernel: KernelLumi()
         )
         #expect(result.split(separator: "\n").first == "a.txt")
         #expect(result.contains("folder/"))
 
         let recursive = try await ListDirectoryTool().execute(
-            arguments: ["path": .string(directoryURL.path), "recursive": .bool(true)], kernel: LumiKernel()
+            arguments: ["path": .string(directoryURL.path), "recursive": .bool(true)], kernel: KernelLumi()
         )
         #expect(recursive.contains("folder/"))
 
         let missing = try await ListDirectoryTool().execute(
-            arguments: ["path": .string(directoryURL.appendingPathComponent("missing").path)], kernel: LumiKernel()
+            arguments: ["path": .string(directoryURL.appendingPathComponent("missing").path)], kernel: KernelLumi()
         )
         #expect(missing.contains("Directory does not exist"))
     }
@@ -263,7 +263,7 @@ struct ToolManagerPluginTests {
 
         let result = try await GlobTool().execute(
             arguments: ["path": .string(directoryURL.path), "pattern": .string("**/*.swift")],
-            kernel: LumiKernel()
+            kernel: KernelLumi()
         )
         #expect(result.contains("Sources/Nested/Feature.swift"))
         #expect(!result.contains("Feature.txt"))
@@ -272,7 +272,7 @@ struct ToolManagerPluginTests {
     @Test("shell tool returns command output and validates arguments")
     func shellTool() async throws {
         let tool = ShellTool()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let result = try await tool.execute(
             arguments: ["command": .string("printf 'hello'")],
             kernel: kernel
@@ -332,7 +332,7 @@ struct ToolManagerPluginTests {
         )
         #expect(noKernel.isError)
 
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         service.kernel = kernel
         let invalid = await service.execute(
             LumiToolCall(id: "invalid", name: "echo", arguments: "not-json"),
@@ -372,7 +372,7 @@ struct ToolManagerPluginTests {
     func servicePreservesImages() async {
         let service = ToolManagerService()
         service.add(TestTool(name: "image", attachesImage: true), pluginID: "tests")
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         service.kernel = kernel
 
         let result = await service.execute(
@@ -395,7 +395,7 @@ struct ToolManagerPluginTests {
             payload: "{}"
         )
         service.add(SuspendingTool(suspension: suspension), pluginID: "tests")
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         service.kernel = kernel
 
         let result = await service.execute(
@@ -409,7 +409,7 @@ struct ToolManagerPluginTests {
     @Test("plugin exposes core tools and registers its service")
     func pluginContributions() async throws {
         let plugin = ToolManagerPlugin()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         #expect(plugin.id == "com.coffic.lumi.plugin.tool-manager")
         #expect(plugin.policy == .alwaysOn)
         #expect(plugin.agentTools(kernel: kernel).map(\.name) == ["ls", "glob", "read_file", "write_file", "edit_file", "run_command", "run_subagent"])
@@ -576,7 +576,7 @@ private struct TestTool: LumiAgentTool {
     var toolDescription: String { "Test tool" }
     var inputSchema: LumiJSONValue { .object(["type": .string("object")]) }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         if let error { throw error }
         if attachesImage {
             kernel.attachImage(
@@ -602,13 +602,13 @@ private struct SuspendingTool: LumiAgentTool {
 
     var inputSchema: LumiJSONValue { .object(["type": .string("object")]) }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         "suspended"
     }
 
     func executeResult(
         arguments: [String: LumiJSONValue],
-        kernel: LumiKernel
+        kernel: KernelLumi
     ) async throws -> LumiToolExecutionResult {
         LumiToolExecutionResult(content: "suspended", turnControl: .suspend(suspension))
     }

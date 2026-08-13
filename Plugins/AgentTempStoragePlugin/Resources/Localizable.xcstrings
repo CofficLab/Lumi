@@ -103,41 +103,6 @@
         }
       }
     },
-    "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为 Agent 提供隔离的临时文件目录，超过 7 天自动清理。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days."
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days."
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Provides a sandboxed temp file directory for the agent, with automatic cleanup after 7 days."
-          }
-        }
-      }
-    },
     "Read Temp File": {
       "localizations": {
         "en": {

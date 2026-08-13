@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct GetRecentConversationsTool: LumiAgentTool, @unchecked Sendable {
     static let info = LumiAgentToolInfo(
@@ -41,7 +41,7 @@ struct GetRecentConversationsTool: LumiAgentTool, @unchecked Sendable {
         let created: String
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let limit = min(max(arguments["limit"]?.intValue ?? 5, 1), 20)
 
         let recent = await Task { @MainActor in

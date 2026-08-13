@@ -1,5 +1,5 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SuperLogKit
 import os
@@ -17,7 +17,7 @@ struct RAGProjectDetailSectionView: View, SuperLog {
     nonisolated static let logger = ProjectRAGPlugin.logger
 
     private let projectPath: String
-    private let kernel: LumiKernel
+    private let kernel: KernelLumi
 
     @LumiTheme private var theme
     @State private var status: RAGIndexStatus?
@@ -26,7 +26,7 @@ struct RAGProjectDetailSectionView: View, SuperLog {
     @State private var isLoading = false
     @State private var isIndexingPaused = false
 
-    init(projectPath: String, kernel: LumiKernel) {
+    init(projectPath: String, kernel: KernelLumi) {
         self.projectPath = projectPath
         self.kernel = kernel
     }

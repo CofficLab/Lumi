@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -14,6 +14,6 @@ public struct EditorProviderOnReadyHook: SuperLog {
 
     public init() {}
 
-    public func execute(_ kernel: LumiKernel) throws {
+    public func execute(_ kernel: KernelLumi) throws {
     }
 }

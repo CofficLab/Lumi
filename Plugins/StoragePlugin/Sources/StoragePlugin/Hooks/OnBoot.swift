@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -18,7 +18,7 @@ public struct StorageOnBootHook {
     }
 
     /// 执行 boot
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         let storage = StorageService(dataRootDirectory: dataRootDirectory)
         try kernel.registerStorage(storage)
         if Self.verbose {

@@ -1,5 +1,5 @@
 import EditorService
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 

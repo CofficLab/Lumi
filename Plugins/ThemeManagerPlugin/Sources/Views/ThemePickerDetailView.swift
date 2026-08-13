@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 private enum ThemeAppearanceFilter: String, CaseIterable, Identifiable {
     case all
@@ -31,11 +31,11 @@ private enum ThemeAppearanceFilter: String, CaseIterable, Identifiable {
 
 struct ThemePickerDetailView: View {
     @LumiTheme private var uiTheme: any LumiUITheme
-    private let kernel: LumiKernel
+    private let kernel: KernelLumi
     @ObservedObject private var registry: LumiUIThemeRegistry
     @State private var appearanceFilter: ThemeAppearanceFilter = .all
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         self.registry = kernel.theme?.themeRegistry ?? .shared
     }

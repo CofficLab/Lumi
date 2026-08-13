@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 只读探索子 Agent，负责定位文件、阅读实现并压缩成可交接的结论。
 enum ExploreAgent {

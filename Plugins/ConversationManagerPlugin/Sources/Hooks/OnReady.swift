@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -15,7 +15,7 @@ public struct ConversationStoreOnReadyHook: SuperLog {
     public init() {}
 
     /// 执行 onReady
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         let manager = ConversationManager(kernel: kernel)
         try kernel.registerConversations(manager)
 

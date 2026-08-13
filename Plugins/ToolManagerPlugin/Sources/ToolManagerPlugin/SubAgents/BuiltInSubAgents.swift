@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 
 enum BuiltInSubAgents {
     static let definitions: [LumiSubAgentDefinition] = [

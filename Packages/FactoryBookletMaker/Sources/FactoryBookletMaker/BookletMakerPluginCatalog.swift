@@ -4,7 +4,7 @@ import CommandPlugin
 import EditorKernelPlugin
 import EditorProviderPlugin
 import LLMProviderManagerPlugin
-import LumiKernel
+import KernelLumi
 import LogoPlugin
 import MessageRendererPlugin
 import MessageSenderPlugin

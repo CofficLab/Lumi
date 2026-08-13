@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -54,7 +54,7 @@ public final class CaffeinateLocalStore: SuperLog, @unchecked Sendable {
     /// 使用 kernel 提供的存储目录完成懒加载。
     ///
     /// 必须在第一次写入/读取前调用一次。可以重复调用以更换目录（仅用于测试）。
-    func configure(kernel: LumiKernel) {
+    func configure(kernel: KernelLumi) {
         guard let storage = kernel.storage else {
             Self.logger.error("\(self.t)kernel.storage is nil; caffeinate local store stays unconfigured")
             return

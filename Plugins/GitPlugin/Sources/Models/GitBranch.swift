@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Git 操作错误类型
 public enum GitError: LocalizedError {

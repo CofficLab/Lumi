@@ -1,7 +1,7 @@
 import EditorService
 import LumiUI
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 public struct BottomEditorCallHierarchyPanelView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme

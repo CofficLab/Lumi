@@ -1,11 +1,11 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 /// 工具栏视图：显示当前对话的消息数量
 struct MessageCountToolbarView: View {
     @LumiTheme private var theme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     // selectedConversationID 由 .onLumiSelectedConversationDidChange 事件更新；
     // 消息增删由 .onLumiMessagesDidChange 精确覆盖。count 缓存进 @State。

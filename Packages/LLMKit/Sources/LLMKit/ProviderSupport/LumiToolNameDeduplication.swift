@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public enum LumiToolNameDeduplication {
     public static func validateUnique(tools: [any LumiAgentTool]) throws {

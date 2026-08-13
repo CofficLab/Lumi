@@ -9,8 +9,9 @@
 /* Begin PBXBuildFile section */
 		AIFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = AIFC000000000000000001 /* FactoryCore */; };
 		AIFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = AIFL000000000000000001 /* FactoryLumi */; };
-		BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; productRef = BMFB000000000000000001 /* FactoryBookletMaker */; };
-		BMFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = BMFC000000000000000001 /* FactoryCore */; };
+		BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFB000000000000000001 /* FactoryBookletMaker */; };
+		BMFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFC000000000000000001 /* FactoryCore */; };
+		FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = FBMIOD000000000000000001 /* FactoryBookletMakerMobile */; };
 		CDFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = CDFC000000000000000001 /* FactoryCore */; };
 		CDFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = CDFL000000000000000001 /* FactoryLumi */; };
 		DBFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = DBFC000000000000000001 /* FactoryCore */; };
@@ -179,6 +180,7 @@
 			files = (
 				BMFC00000000000000B001 /* FactoryCore in Frameworks */,
 				BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */,
+				FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -304,6 +306,7 @@
 			packageProductDependencies = (
 				BMFC000000000000000001 /* FactoryCore */,
 				BMFB000000000000000001 /* FactoryBookletMaker */,
+				FBMIOD000000000000000001 /* FactoryBookletMakerMobile */,
 			);
 			productName = BookletMaker;
 			productReference = BM0000000000000000000002 /* BookletMaker.app */;
@@ -463,6 +466,7 @@
 				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "AppUpdatePlugin" */,
 				F5DBBA0000000000DBGP0001 /* XCLocalSwiftPackageReference "DebugBadgePlugin" */,
 				F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "ProjectRAGPlugin" */,
+			FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "FactoryBookletMakerMobile" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -822,6 +826,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LocalizationKit;
 		};
+		FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "FactoryBookletMakerMobile" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FactoryBookletMakerMobile;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -894,6 +902,11 @@
 		LF000000000000000019 /* LocalizationKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LocalizationKit;
+		};
+		FBMIOD000000000000000001 /* FactoryBookletMakerMobile */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "FactoryBookletMakerMobile" */;
+			productName = FactoryBookletMakerMobile;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

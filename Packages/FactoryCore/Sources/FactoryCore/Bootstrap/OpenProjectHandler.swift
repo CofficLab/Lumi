@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -12,15 +12,15 @@ public final class OpenProjectHandler: SuperLog {
     public static let shared = OpenProjectHandler()
 
     /// Injected after `WindowMain` initializes the kernel. Kept optional because
-    /// `OpenProjectHandler` is a singleton while `LumiKernel` is created late in
+    /// `OpenProjectHandler` is a singleton while `KernelLumi` is created late in
     /// the app launch sequence.
-    private weak var kernel: LumiKernel?
+    private weak var kernel: KernelLumi?
     private var pendingPaths: [String] = []
 
     private init() {}
 
-    /// Called by `WindowMain.initializeContainer` after obtaining the `LumiKernel`.
-    public func configure(kernel: LumiKernel) {
+    /// Called by `WindowMain.initializeContainer` after obtaining the `KernelLumi`.
+    public func configure(kernel: KernelLumi) {
         self.kernel = kernel
 
         // Dock drops can arrive before WindowMain has finished creating the
@@ -47,7 +47,7 @@ public final class OpenProjectHandler: SuperLog {
 
         guard let kernel else {
             pendingPaths.append(normalized)
-            Self.logger.info("\(Self.t)LumiKernel not ready, queued external project: \(normalized)")
+            Self.logger.info("\(Self.t)KernelLumi not ready, queued external project: \(normalized)")
             return
         }
 
@@ -57,7 +57,7 @@ public final class OpenProjectHandler: SuperLog {
     /// 外部打开请求的统一路由：
     /// - 目录：沿用原有语义，作为项目目录打开。
     /// - 文件：分发给已启用的插件（如 DatabaseManager 接管 .sqlite），无插件接管时记日志忽略。
-    private func routeOpen(path: String, using kernel: LumiKernel) {
+    private func routeOpen(path: String, using kernel: KernelLumi) {
         var isDirectory: ObjCBool = false
         FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
 
@@ -68,7 +68,7 @@ public final class OpenProjectHandler: SuperLog {
         }
     }
 
-    private func openFile(path: String, using kernel: LumiKernel) {
+    private func openFile(path: String, using kernel: KernelLumi) {
         let url = URL(fileURLWithPath: path)
         Self.logger.info("\(Self.t)Dispatching external file to plugins: \(path)")
         let handled = kernel.pluginManager.dispatchOpenFile(url, kernel: kernel)
@@ -77,7 +77,7 @@ public final class OpenProjectHandler: SuperLog {
         }
     }
 
-    private func openProject(path: String, using kernel: LumiKernel) {
+    private func openProject(path: String, using kernel: KernelLumi) {
         guard let projectComponent = kernel.project else {
             Self.logger.warning("\(Self.t)Project service not ready, cannot switch project: \(path)")
             return

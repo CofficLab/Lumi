@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 import Testing
-import LumiKernel
+import KernelLumi
 @testable import MessageListAppKitPlugin
 
 /// Test renderer with a distinct reuse identifier.

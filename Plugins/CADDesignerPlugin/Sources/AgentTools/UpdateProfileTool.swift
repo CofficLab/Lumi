@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 修改现有型材或组件的长度/位置/旋转。
 public struct UpdateProfileTool: LumiAgentTool {
@@ -30,11 +30,11 @@ public struct UpdateProfileTool: LumiAgentTool {
         "Update component \(CADToolSupport.string(arguments, "componentId") ?? "?")"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = CADToolSupport.language(kernel)
         guard let componentId = CADToolSupport.string(arguments, "componentId") else {
             return CADToolSupport.missingParameter("componentId", language: language)

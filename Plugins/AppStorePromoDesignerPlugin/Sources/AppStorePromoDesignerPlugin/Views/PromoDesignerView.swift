@@ -1,7 +1,7 @@
 import AppKit
 import AppStorePromoKit
 import HTMLPreviewKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct CacheCleanupError: LocalizedError, Sendable {
     public let path: String

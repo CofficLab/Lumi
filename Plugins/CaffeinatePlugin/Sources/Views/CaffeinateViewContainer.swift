@@ -1,7 +1,7 @@
 import LumiUI
 import SwiftUI
 import LocalizationKit
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// Caffeinate 插件的 ActivityBar 视图容器
@@ -13,7 +13,7 @@ import SuperLogKit
 ///
 /// 详细的「时长 / 快捷操作」仍在 `CaffeinateMenuBarPopupView`（状态栏弹窗）里提供。
 struct CaffeinateViewContainer: View, SuperLog {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     // MARK: - Constants
 
@@ -223,12 +223,12 @@ struct CaffeinateViewContainer: View, SuperLog {
 // MARK: - Preview
 
 #Preview("Idle") {
-    CaffeinateViewContainer(kernel: LumiKernel())
+    CaffeinateViewContainer(kernel: KernelLumi())
         .frame(width: 520, height: 360)
 }
 
 #Preview("With Default Mode Enabled") {
-    CaffeinateViewContainer(kernel: LumiKernel())
+    CaffeinateViewContainer(kernel: KernelLumi())
         .frame(width: 520, height: 360)
         .onAppear {
             CaffeinateLocalStore.shared.setDefaultModeRaw(

@@ -1,5 +1,5 @@
 import LocalizationKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -7,7 +7,7 @@ import SwiftUI
 /// 依赖 `kernel.theme` 服务展示与切换主题。
 struct AppearanceSettingsView: View {
     @LumiTheme private var theme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @State private var selectedThemeID: String?
     @State private var searchText = ""
 

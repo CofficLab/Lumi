@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -10,7 +10,7 @@ import SwiftUI
 /// 数据来自 `AgentTurnRecordStore`(SwiftData 持久化)。
 @MainActor
 public struct AgentTurnRunnerSettingsView: View {
-    @ObservedObject private var kernel: LumiKernel
+    @ObservedObject private var kernel: KernelLumi
     @LumiTheme private var theme
 
     @State private var records: [AgentTurnRecordDTO] = []
@@ -28,7 +28,7 @@ public struct AgentTurnRunnerSettingsView: View {
 
     private let pageSize = 40
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self._kernel = ObservedObject(wrappedValue: kernel)
     }
 

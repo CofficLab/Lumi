@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Model Selector 内部对单个模型检查进度的快照。
 public struct ModelCheckState: Equatable, Sendable {

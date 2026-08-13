@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 public struct IdlePopoverView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct ApplyIconPresetTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -11,32 +11,28 @@ public struct ApplyIconPresetTool: LumiAgentTool {
     public init() {}
 
     public var inputSchema: LumiJSONValue {
-        [
-            "type": "object",
-            "properties": [
-                "presetId": [
-                    "type": "string",
-                    "enum": .array(IconPresetLibrary.all.map { .string($0.id) }),
-                    "description": "Preset id."
-                ],
-                "title": [
-                    "type": "string",
-                    "description": "Optional document title."
-                ],
-            ],
-            "required": ["presetId"],
+        var properties = IconToolSupport.baseProperties(includeDocumentId: false)
+        properties["presetId"] = [
+            "type": "string",
+            "enum": .array(IconPresetLibrary.all.map { .string($0.id) }),
+            "description": "Preset id."
         ]
+        properties["title"] = [
+            "type": "string",
+            "description": "Optional document title."
+        ]
+        return ["type": "object", "properties": .object(properties), "required": ["presetId"]]
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Apply icon preset"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = IconToolSupport.language(kernel)
         guard let presetId = IconToolSupport.string(arguments, "presetId"), !presetId.isEmpty else {
             return IconToolSupport.missingParameter("presetId", language: language)
@@ -51,15 +47,18 @@ public struct ApplyIconPresetTool: LumiAgentTool {
             )
         }
 
+        let scope = try await IconToolSupport.resolveScope(arguments, kernel: kernel)
         let title = IconToolSupport.string(arguments, "title")
         let document = await MainActor.run {
-            IconDocumentStore.shared.createDocument(from: preset, title: title)
+            IconDocumentStore.shared.createDocument(from: preset, title: title, scope: scope)
         }
+        await IconToolSupport.notify(scope: scope, documentId: document.id)
 
         switch language {
         case .chinese:
             return """
             已应用图标预设。
+            作用域: \(scope.rawValue)
             预设ID: \(preset.id)
             文档ID: \(document.id)
             标题: \(document.title)
@@ -68,6 +67,7 @@ public struct ApplyIconPresetTool: LumiAgentTool {
         case .english:
             return """
             Applied icon preset.
+            scope=\(scope.rawValue)
             presetId: \(preset.id)
             documentId: \(document.id)
             title: \(document.title)

@@ -1,6 +1,6 @@
 import Foundation
 import HttpKit
-import LumiKernel
+import KernelLumi
 
 /// LLM API 服务
 ///
@@ -23,7 +23,7 @@ public class LLMAPIService: @unchecked Sendable {
     }
 
     @MainActor
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         if let network = kernel.network {
             self.client = nil
             self.network = network

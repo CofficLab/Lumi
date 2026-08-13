@@ -1,5 +1,5 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 public struct XcodeFileNotInTargetWarning: View {

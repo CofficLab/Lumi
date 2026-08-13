@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import os
 
 /// Swift 插件日志辅助（插件内共享）
@@ -7,7 +7,7 @@ public enum SwiftPluginLog {
     nonisolated(unsafe) static var verbose: Bool = false
 }
 
-/// Swift editor runtime contribution exposed through LumiKernel's typed editor plugin API.
+/// Swift editor runtime contribution exposed through KernelLumi's typed editor plugin API.
 @MainActor
 public final class EditorSwiftEditorPlugin: EditorPlugin {
     public let id = "EditorSwift.language"

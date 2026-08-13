@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct CodexCLI: Sendable {
     public let executablePath: String

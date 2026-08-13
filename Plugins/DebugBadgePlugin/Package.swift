@@ -7,7 +7,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.library(name: "DebugBadgePlugin", targets: ["DebugBadgePlugin"])],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit")
     ],
@@ -15,7 +15,7 @@ let package = Package(
         .target(
             name: "DebugBadgePlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit")
             ],

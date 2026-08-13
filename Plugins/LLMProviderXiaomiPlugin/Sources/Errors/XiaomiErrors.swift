@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Xiaomi provider 在请求/响应/远端 API 失败时抛出的领域错误。
 ///

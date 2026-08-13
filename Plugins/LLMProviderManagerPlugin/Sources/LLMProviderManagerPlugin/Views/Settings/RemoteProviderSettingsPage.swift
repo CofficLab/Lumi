@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 import LocalizationKit
@@ -11,7 +11,7 @@ import LocalizationKit
 struct RemoteProviderSettingsPage: View {
     @LumiTheme private var theme
     @Environment(\.locale) private var locale
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var selectedProviderID: String = ""
     @State private var apiKey: String = ""
@@ -35,7 +35,7 @@ struct RemoteProviderSettingsPage: View {
         (llmProvider as? LLMProviderManager)?.providerAvailabilityState ?? ModelAvailabilityState()
     }
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
     }
 

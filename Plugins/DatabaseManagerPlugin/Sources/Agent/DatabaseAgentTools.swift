@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 public struct DatabaseListConnectionsTool: LumiAgentTool, SuperLog {
@@ -23,9 +23,9 @@ public struct DatabaseListConnectionsTool: LumiAgentTool, SuperLog {
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "列出数据库连接" }
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .low }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try await DatabaseAgentToolService.shared.listConnections()
     }
 }
@@ -59,11 +59,11 @@ public struct DatabaseDescribeSchemaTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .low }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "查看数据库结构" }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.anyValue)
         let limit = try DatabaseAgentToolService.normalizedLimit(arguments["limit"]?.anyValue)
         return try await DatabaseAgentToolService.shared.describeSchema(connectionId: id, limit: limit)
@@ -103,11 +103,11 @@ public struct DatabaseReadonlyQueryTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .low }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "执行只读数据库查询" }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.anyValue)
         guard let sql = arguments["sql"]?.stringValue, !sql.isEmpty else {
             throw DatabaseAgentToolError.missingArgument("sql")
@@ -150,11 +150,11 @@ public struct DatabaseSampleTableTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .low }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String { "查看数据库表样本" }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let id = try DatabaseAgentToolService.connectionId(from: arguments["connection_id"]?.anyValue)
         guard let table = arguments["table"]?.stringValue, !table.isEmpty else {
             throw DatabaseAgentToolError.missingArgument("table")

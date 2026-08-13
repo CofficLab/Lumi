@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 public struct ProcessRow: View {
     public let process: NetworkProcess

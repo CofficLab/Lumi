@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// AskUser 插件桥接器
 ///
@@ -22,7 +22,7 @@ public final class AskUserBridge: Sendable {
 
     private init() {}
 
-    public func start(kernel: LumiKernel) {
+    public func start(kernel: KernelLumi) {
         messageSender = kernel.messageSender
     }
 

@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 
 enum DeepSeekRenderKind {
     static let apiKeyMissing = "deepseek-api-key-missing"

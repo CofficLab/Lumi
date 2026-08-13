@@ -1,5 +1,5 @@
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
 
 /// 小米供应商错误消息的渲染类型判定。
 ///

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 只提取高置信度的长期信息，不把普通任务内容写入记忆。
 public enum MemoryCandidateExtractor {

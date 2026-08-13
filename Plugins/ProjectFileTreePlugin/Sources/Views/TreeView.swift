@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -18,7 +18,7 @@ public struct TreeView: View, SuperLog {
     // 故 kernel 上其他服务的变更不会触发 body 重算。
     // 未采用 ObservableProjectBox 是因为本视图刷新链路较复杂（NSCollectionView 桥接），
     // 当前手写去重已足够；如需统一风格可后续迁移。
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     /// 当前项目路径缓存，用于驱动 SwiftUI 刷新。
     @State private var projectPath: String
@@ -37,7 +37,7 @@ public struct TreeView: View, SuperLog {
     /// Swift Package Dependencies 数据源
     @StateObject private var packageStore = PackageDependencyStore()
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self.kernel = kernel
         _projectPath = State(initialValue: kernel.project?.currentProject?.path ?? "")
     }

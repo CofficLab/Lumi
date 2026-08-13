@@ -1,6 +1,6 @@
 import MagicDiffView
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 /// Shared diff panel for Git changed files.
 public struct GitDiffPanelView: View {

@@ -5,7 +5,7 @@ import SuperLogKit
 import SwiftUI
 import XcodeKit
 import os
-import LumiKernel
+import KernelLumi
 
 // MARK: - XcodeProjectStatusBarViewModel
 

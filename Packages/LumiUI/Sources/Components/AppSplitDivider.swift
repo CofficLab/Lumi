@@ -1,3 +1,4 @@
+#if canImport(AppKit)
 import AppKit
 import OSLog
 import SwiftUI
@@ -631,3 +632,4 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
         }
     }
 }
+#endif

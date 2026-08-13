@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// EditorPreviewBottomPanelPlugin 的运行时桥接:持有 plugin 专属数据目录,
 /// 供 `EditorPreviewStorage` 读取(替代旧的 nonisolated 镜像变量)。
@@ -19,7 +19,7 @@ enum EditorPreviewPluginRuntimeBridge {
 
 @MainActor
 public extension EditorPreviewBottomPanelPlugin {
-    static func bootstrapFromLumiCoreIfNeeded(kernel: LumiKernel) {
+    static func bootstrapFromLumiCoreIfNeeded(kernel: KernelLumi) {
         EditorPreviewPluginRuntimeBridge.pluginDirectory =
             kernel.storage?.pluginDataDirectory(for: EditorPreviewPluginRuntimeBridge.pluginName)
     }

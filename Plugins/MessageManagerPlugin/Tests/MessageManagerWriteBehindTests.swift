@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import MessageManagerPlugin
 
@@ -22,8 +22,8 @@ struct MessageManagerWriteBehindTests {
         return (store, directory)
     }
 
-    private func makeManager() -> (MessageManager, LumiKernel) {
-        let kernel = LumiKernel()
+    private func makeManager() -> (MessageManager, KernelLumi) {
+        let kernel = KernelLumi()
         let manager = MessageManager(kernel: kernel)
         return (manager, kernel)
     }
@@ -173,7 +173,7 @@ struct MessageManagerStatusMessageTests {
     }
 
     private func makeManager() -> MessageManager {
-        MessageManager(kernel: LumiKernel())
+        MessageManager(kernel: KernelLumi())
     }
 
     @Test("status 不落盘:磁盘查不到,但读路径可见")

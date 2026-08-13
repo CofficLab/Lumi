@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct SetCurrentFileTool: LumiAgentTool {
     public nonisolated static let emoji = "📄"
@@ -30,11 +30,11 @@ public struct SetCurrentFileTool: LumiAgentTool {
         "Set current file"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let path = arguments["path"]?.stringValue else {
             return "❌ Error: Missing required parameter 'path'"
         }

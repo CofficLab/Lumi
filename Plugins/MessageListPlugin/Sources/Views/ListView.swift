@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import os
 import SuperLogKit
@@ -18,7 +18,7 @@ struct ListView: View, SuperLog {
     nonisolated static let emoji = "📋"
     nonisolated static let verbose: Bool = false
 
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @LumiTheme private var theme
 
@@ -27,7 +27,7 @@ struct ListView: View, SuperLog {
     @State private var selectedConversationID: UUID?
     @State private var verbosity: LumiResponseVerbosity = .defaultVerbosity
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         let selectedID = kernel.conversations?.selectedConversationID
         _selectedConversationID = State(initialValue: selectedID)

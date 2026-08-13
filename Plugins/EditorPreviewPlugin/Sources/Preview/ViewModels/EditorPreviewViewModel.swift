@@ -1,7 +1,7 @@
 import Combine
 import EditorService
 import Foundation
-import LumiKernel
+import KernelLumi
 import LumiPreviewKit
 import os
 import StringCatalogKit

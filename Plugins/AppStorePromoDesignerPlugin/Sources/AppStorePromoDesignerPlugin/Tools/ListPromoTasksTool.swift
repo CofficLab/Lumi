@@ -1,6 +1,6 @@
 import AppStorePromoKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct ListPromoTasksTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -21,7 +21,7 @@ public struct ListPromoTasksTool: LumiAgentTool {
             ],
         ]
     }
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let scopeFilter = (arguments.string("scope") ?? "all").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let snapshot = await MainActor.run { () -> [(Scope, [AppStorePromoTask])] in
             let store = WorkspaceStore.shared

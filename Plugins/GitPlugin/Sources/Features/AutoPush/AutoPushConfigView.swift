@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// Auto Push 配置与监控面板。
 public struct AutoPushConfigView: View {

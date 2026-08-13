@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import EditorService
 import SuperLogKit
 import os
@@ -22,7 +22,7 @@ public struct EditorKernelOnBootHook: SuperLog {
     public init() {}
 
     /// 执行 boot
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         if Self.verbose {
             Self.logger.info("\(Self.t)registering EditorService...")
         }

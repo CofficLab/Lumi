@@ -1,17 +1,17 @@
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// Keeps Git-specific status bar content scoped to the Git view container.
 struct GitStatusBarVisibilityGate<Content: View>: View {
     let containerID: String
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @ViewBuilder let content: () -> Content
 
     @State private var activeContainerID: String?
 
     init(
         containerID: String,
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.containerID = containerID

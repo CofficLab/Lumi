@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// ``MainView`` 空状态时的顶部 Header。
 ///

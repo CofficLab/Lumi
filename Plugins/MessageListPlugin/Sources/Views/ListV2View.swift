@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import os
 import SuperLogKit
@@ -10,7 +10,7 @@ struct ListV2View: View, SuperLog {
     nonisolated static let emoji = "📄"
     nonisolated static let verbose: Bool = false
 
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @StateObject private var viewModel: ListV2ViewModel
 
     @LumiTheme private var theme
@@ -23,7 +23,7 @@ struct ListV2View: View, SuperLog {
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
     @State private var scrollTick: Int = 0
 
-    init(kernel: LumiKernel) {
+    init(kernel: KernelLumi) {
         self.kernel = kernel
         _viewModel = StateObject(wrappedValue: ListV2ViewModel(kernel: kernel))
     }
@@ -33,7 +33,7 @@ struct ListV2View: View, SuperLog {
             if viewModel.hasPersistedMessages {
                 messageScrollView
             } else {
-                MessageEmptyStateView()
+                MessageEmptyStateView(kernel: kernel)
             }
             if viewModel.isLoading {
                 MessageLoadingView()

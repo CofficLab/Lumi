@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Reads a local image and returns it as a visual attachment to the Agent.
 public struct ReadImageTool: LumiAgentTool {
@@ -28,7 +28,7 @@ public struct ReadImageTool: LumiAgentTool {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
@@ -37,7 +37,7 @@ public struct ReadImageTool: LumiAgentTool {
         return "查看图片 " + URL(fileURLWithPath: path).lastPathComponent
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let rawPath = arguments["path"]?.stringValue, !rawPath.isEmpty else {
             return "Error: Missing 'path' argument"
         }

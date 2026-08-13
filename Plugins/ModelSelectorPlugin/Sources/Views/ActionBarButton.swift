@@ -1,11 +1,11 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 /// Action Bar 上的模型选择按钮
 struct ActionBarButton: View {
     @LumiTheme private var theme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var isPopoverPresented = false
     @State private var selectedProviderID: String?

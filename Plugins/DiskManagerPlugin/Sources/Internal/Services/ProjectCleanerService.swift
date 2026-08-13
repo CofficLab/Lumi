@@ -1,6 +1,6 @@
 import Foundation
 import os
-import LumiKernel
+import KernelLumi
 
 /// Project cleaner service - scans development directories for cleanable project dependencies.
 public final class ProjectCleanerService: @unchecked Sendable {

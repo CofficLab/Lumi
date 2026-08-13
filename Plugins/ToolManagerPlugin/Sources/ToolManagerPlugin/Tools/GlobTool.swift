@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Read-only compatibility tool for models that use the conventional Glob name.
 public struct GlobTool: LumiAgentTool {
@@ -23,9 +23,9 @@ public struct GlobTool: LumiAgentTool {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel { .low }
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .low }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let pattern = arguments["pattern"]?.stringValue, !pattern.isEmpty else {
             return "Error: Missing 'pattern' argument"
         }

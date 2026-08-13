@@ -1,6 +1,6 @@
 import EditorService
 import LanguageServerProtocol
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 

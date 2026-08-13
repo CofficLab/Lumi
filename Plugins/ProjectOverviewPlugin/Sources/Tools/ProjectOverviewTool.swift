@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// 项目概览工具。
@@ -33,11 +33,11 @@ public struct ProjectOverviewTool: LumiAgentTool, SuperLog {
         "查看项目概览"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let path = arguments["path"]?.stringValue ?? FileManager.default.currentDirectoryPath
         let root = URL(fileURLWithPath: path).standardizedFileURL
 

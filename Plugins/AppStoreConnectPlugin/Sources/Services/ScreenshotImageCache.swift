@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 enum ScreenshotImageCacheError: LocalizedError {
     case invalidResponse

@@ -1,6 +1,6 @@
 import EditorLanguageRuntime
 import Foundation
-import LumiKernel
+import KernelLumi
 import TreeSitterSQL
 
 enum DatabaseSQLLanguageSupport {

@@ -1,6 +1,6 @@
 import AppStorePromoKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct PreviewPromoImageTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -14,7 +14,7 @@ public struct PreviewPromoImageTool: LumiAgentTool {
         properties["displayType"] = ["type": "string", "description": "Exact App Store display type. Defaults to the first preset for the task family."]
         return ["type": "object", "properties": .object(properties), "required": ["taskId", "imageId"]]
     }
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let storagePath = try await PromoToolSupport.storagePath(for: scope)
         let image = try PromoToolSupport.store.readImage(

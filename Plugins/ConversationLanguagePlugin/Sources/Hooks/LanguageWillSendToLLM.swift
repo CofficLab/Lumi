@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Language willSendToLLM hook.
 ///
@@ -13,7 +13,7 @@ public struct LanguageWillSendToLLMHook {
     public init() {}
 
     public func execute(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         messages: [LumiChatMessage]
     ) async -> [LumiChatMessage] {
         let conversationID = messages.first?.conversationID

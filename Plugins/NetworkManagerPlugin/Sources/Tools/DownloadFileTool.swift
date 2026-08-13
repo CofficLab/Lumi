@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// 下载文件工具
@@ -52,12 +52,12 @@ public struct DownloadFileTool: LumiAgentTool, SuperLog {
         return "下载文件"
     }
 
-    public nonisolated func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public nonisolated func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .medium
     }
 
     @MainActor
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let urlString = arguments["url"]?.stringValue,
               let url = URL(string: urlString) else {
             return "❌ 错误：无效的 URL"

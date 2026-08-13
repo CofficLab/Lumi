@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// DeepSeek 系列 MLX Provider
 ///

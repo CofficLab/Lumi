@@ -1,6 +1,6 @@
 import AppStorePromoKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct ExportPromoTaskTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -16,10 +16,10 @@ public struct ExportPromoTaskTool: LumiAgentTool {
         properties["overwrite"] = ["type": "boolean", "description": "Allow replacing existing PNG files. Defaults to false."]
         return ["type": "object", "properties": .object(properties), "required": ["taskId", "outputDirectory"]]
     }
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         arguments.bool("overwrite") == true ? .high : .medium
     }
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let scope = try await PromoToolSupport.resolveScope(arguments, kernel: kernel)
         let storagePath = try await PromoToolSupport.storagePath(for: scope)
         let taskID = try PromoToolSupport.required("taskId", arguments)

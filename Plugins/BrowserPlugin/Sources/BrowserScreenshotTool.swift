@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import WebKit
 import os
@@ -56,16 +56,16 @@ public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
         "网页截图"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
         return try await executeScreenshot(arguments: arguments, kernel: kernel)
     }
 
-    private func executeScreenshot(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    private func executeScreenshot(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let rawURLString = arguments["url"]?.stringValue else {
             return "Error: Missing required 'url' parameter"
         }
@@ -182,7 +182,7 @@ public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
         url: URL,
         width: Int,
         waitSeconds: Double,
-        kernel: LumiKernel?
+        kernel: KernelLumi?
     ) async throws -> String {
         try kernel?.checkCancellation()
         let config = WKWebViewConfiguration()
@@ -244,7 +244,7 @@ public struct BrowserScreenshotTool: LumiAgentTool, SuperLog {
 
 extension WKWebView {
     /// 加载请求并等待页面加载完成
-    func loadAndWait(_ request: URLRequest, timeout: TimeInterval = 30, kernel: LumiKernel?) async throws {
+    func loadAndWait(_ request: URLRequest, timeout: TimeInterval = 30, kernel: KernelLumi?) async throws {
         try kernel?.checkCancellation()
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in

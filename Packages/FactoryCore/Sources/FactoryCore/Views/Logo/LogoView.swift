@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -11,9 +11,9 @@ struct LogoView: View {
     @LumiTheme private var theme
 
     let scene: LogoScene
-    let kernel: LumiKernel?
+    let kernel: KernelLumi?
 
-    init(scene: LogoScene = .general, kernel: LumiKernel? = nil) {
+    init(scene: LogoScene = .general, kernel: KernelLumi? = nil) {
         self.scene = scene
         self.kernel = kernel
     }

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import LumiKernel
+import KernelLumi
 @testable import LLMProviderDeepSeekPlugin
 
 @MainActor
@@ -10,7 +10,7 @@ struct PluginLLMProviderDeepSeekTests {
         #expect(plugin.id.isEmpty == false)
         #expect(plugin.name.isEmpty == false)
         #expect(plugin.category == .llmProvider)
-        #expect(plugin.llmProviders(kernel: LumiKernel()).first is DeepSeekOpenAIProvider)
+        #expect(plugin.llmProviders(kernel: KernelLumi()).first is DeepSeekOpenAIProvider)
     }
 
     @Test func providerMetadata() {

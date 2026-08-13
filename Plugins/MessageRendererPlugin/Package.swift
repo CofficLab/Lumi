@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "MessageRendererPlugin",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(
             name: "MessageRendererPlugin",
@@ -13,7 +13,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/AgentToolKit"),
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/MarkdownKit"),
@@ -23,7 +23,7 @@ let package = Package(
             name: "MessageRendererPlugin",
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MarkdownKit", package: "MarkdownKit"),
@@ -37,7 +37,7 @@ let package = Package(
             name: "MessageRendererPluginTests",
             dependencies: [
                 "MessageRendererPlugin",
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MarkdownKit", package: "MarkdownKit"),

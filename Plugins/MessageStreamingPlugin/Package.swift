@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "MessageStreamingPlugin", targets: ["MessageStreamingPlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -16,7 +16,7 @@ let package = Package(
         .target(
             name: "MessageStreamingPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                         .product(name: "LocalizationKit", package: "LocalizationKit"),
 ],

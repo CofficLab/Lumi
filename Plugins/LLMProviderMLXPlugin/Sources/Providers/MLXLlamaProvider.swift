@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Llama 系列（Meta）MLX Provider
 ///

@@ -1,6 +1,6 @@
 import Foundation
 import HttpKit
-import LumiKernel
+import KernelLumi
 
 public enum ErrorDispositionResolver {
     public static func disposition(for error: Error, context: LumiLLMRetryContext) -> LumiLLMErrorDisposition {

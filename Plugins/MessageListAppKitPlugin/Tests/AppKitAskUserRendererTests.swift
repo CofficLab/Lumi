@@ -2,7 +2,7 @@ import AppKit
 import Combine
 import Foundation
 import Testing
-import LumiKernel
+import KernelLumi
 @testable import MessageListAppKitPlugin
 
 /// Minimal MessageSending mock recording resume calls.

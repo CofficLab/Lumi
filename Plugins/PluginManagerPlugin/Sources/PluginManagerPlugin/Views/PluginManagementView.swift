@@ -1,5 +1,5 @@
 import LocalizationKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -19,7 +19,7 @@ import SwiftUI
 /// - `PluginSettingsDetailView`:右侧详情面板
 struct PluginManagementView: View {
     @LumiTheme private var theme
-    @ObservedObject var kernel: LumiKernel
+    @ObservedObject var kernel: KernelLumi
 
     @State private var selectedPluginID: String?
     @State private var searchText = ""

@@ -1,7 +1,7 @@
 import SwiftUI
 import SuperLogKit
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 public struct HostsManagerView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme

@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import ConversationReasoningPlugin
 
@@ -8,7 +8,7 @@ struct ConversationReasoningPluginTests {
     @Test("contributes chat action bar item")
     func contributesActionBarItem() {
         let plugin = ConversationReasoningPlugin()
-        let items = plugin.chatSectionActionBarItems(kernel: LumiKernel())
+        let items = plugin.chatSectionActionBarItems(kernel: KernelLumi())
 
         #expect(plugin.id == "com.coffic.lumi.plugin.conversation-reasoning")
         #expect(plugin.policy == .alwaysOn)

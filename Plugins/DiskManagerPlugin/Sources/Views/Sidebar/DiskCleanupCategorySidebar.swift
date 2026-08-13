@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// 磁盘清理类型侧边栏（RailView 架构）。
 ///

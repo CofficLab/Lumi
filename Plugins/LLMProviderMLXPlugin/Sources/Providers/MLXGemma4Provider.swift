@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Gemma 4 系列（Google）MLX Provider
 ///

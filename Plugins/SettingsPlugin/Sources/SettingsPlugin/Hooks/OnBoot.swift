@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -14,7 +14,7 @@ public struct SettingsOnBootHook {
     public init() {}
 
     /// 执行 boot
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         // 1. 注册 SettingsService（内核服务）
         let settingsServiceInstance = DefaultSettingsProviding()
         try kernel.registerSettingsService(settingsServiceInstance)

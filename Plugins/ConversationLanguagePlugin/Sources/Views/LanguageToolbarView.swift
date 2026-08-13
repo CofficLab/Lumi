@@ -1,9 +1,9 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 struct LanguageToolbarView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     @State private var selectedLanguage: LumiConversationLanguage = .chinese
     @LumiUI.LumiTheme private var theme: any LumiUITheme

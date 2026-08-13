@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 观察内核 `ProjectProviding` 当前项目路径变化的轻量适配器。
 ///

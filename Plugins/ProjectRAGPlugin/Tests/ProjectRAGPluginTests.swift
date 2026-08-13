@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import ProjectRAGPlugin
 
@@ -54,7 +54,7 @@ private final class RecordingRAGStore: RAGStore, @unchecked Sendable {
 }
 
 @Test @MainActor func pluginExposesCodeSearchAgentTool() {
-    let tools = ProjectRAGPlugin().agentTools(kernel: LumiKernel())
+    let tools = ProjectRAGPlugin().agentTools(kernel: KernelLumi())
     #expect(tools.map(\.name).contains(RAGCodeSearchTool.info.id))
 }
 
@@ -144,7 +144,7 @@ private final class RecordingRAGStore: RAGStore, @unchecked Sendable {
         currentProjectPath: projectURL.path,
         allowedDirectories: [projectURL.path]
     )
-    let kernel = await MainActor.run { LumiKernel() }
+    let kernel = await MainActor.run { KernelLumi() }
     let output = try await kernel.withToolExecutionContextState(context) {
         try await RAGCodeSearchTool().execute(
             arguments: [
@@ -185,7 +185,7 @@ private final class RecordingRAGStore: RAGStore, @unchecked Sendable {
         currentProjectPath: projectURL.path,
         allowedDirectories: [projectURL.path]
     )
-    let kernel = await MainActor.run { LumiKernel() }
+    let kernel = await MainActor.run { KernelLumi() }
     let output = try await kernel.withToolExecutionContextState(context) {
         try await RAGCodeSearchTool().execute(
             arguments: [

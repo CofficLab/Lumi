@@ -1,15 +1,15 @@
 import LumiUI
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 struct ControlView: View {
     @LumiTheme private var theme: any LumiUITheme
     @ObservedObject private var viewModel: ProjectsViewModel
-    @ObservedObject private var kernel: LumiKernel
+    @ObservedObject private var kernel: KernelLumi
     @State private var isPopoverPresented = false
     @State private var activeContainerRevision = 0
 
-    init(viewModel: ProjectsViewModel, kernel: LumiKernel) {
+    init(viewModel: ProjectsViewModel, kernel: KernelLumi) {
         self.viewModel = viewModel
         self.kernel = kernel
     }

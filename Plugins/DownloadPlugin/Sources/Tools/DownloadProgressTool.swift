@@ -1,6 +1,6 @@
 import DownloadKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 
 /// 下载进度查询工具
@@ -45,11 +45,11 @@ public struct DownloadProgressTool: LumiAgentTool, SuperLog {
         return "查询下载进度"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let taskId = arguments["task_id"]?.stringValue else {
             return "❌ 错误：task_id 参数必需"
         }

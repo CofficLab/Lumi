@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// One immutable, display-ready row of the native message list.
 ///

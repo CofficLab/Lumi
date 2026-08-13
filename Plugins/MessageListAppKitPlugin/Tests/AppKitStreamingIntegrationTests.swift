@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import LumiKernel
+import KernelLumi
 @testable import MessageListAppKitPlugin
 
 /// Streaming integration tests: V1 never updates the table on token chunks,

@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 /// Git 分支详情视图（在 popover 中显示）
 public struct GitBranchDetailView: View {

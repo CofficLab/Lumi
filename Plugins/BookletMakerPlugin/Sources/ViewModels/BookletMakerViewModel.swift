@@ -1,10 +1,13 @@
-import AppKit
 import Combine
 import CoreGraphics
 import Foundation
 import os
 import SuperLogKit
 import SwiftUI
+
+#if canImport(AppKit)
+import AppKit
+#endif
 
 // MARK: - Booklet Maker View Model
 
@@ -70,6 +73,9 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     /// True while a render is in flight.
     @Published private(set) var isRendering: Bool = false
 
+    /// True while the exported PDF is being prepared for preview.
+    @Published private(set) var isPreparingPreview: Bool = false
+
     /// URL of the most recent successful export.
     @Published private(set) var lastOutputURL: URL?
 
@@ -113,8 +119,9 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     }
 
     var hasUserInput: Bool { !currentDocument.isDemo }
+    var isBusy: Bool { isRendering || isPreparingPreview }
     var canExportBooklet: Bool {
-        !isRendering
+        !isBusy
             && FileManager.default.fileExists(atPath: currentDocument.url.path)
     }
 
@@ -154,7 +161,7 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     }
 
     var canExportSplit: Bool {
-        !isRendering
+        !isBusy
             && !splitCutPoints.isEmpty
             && splitValidationMessage == nil
             && splitFileNameValidationMessage == nil
@@ -233,6 +240,7 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
 
         cancel()
         isRendering = true
+        isPreparingPreview = false
         progress = 0
         thumbnails = []
         lastOutputURL = nil
@@ -267,7 +275,9 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         // Wait for the task to finish before kicking off thumbnails.
         await renderTask?.value
         if let _ = lastOutputURL {
+            isPreparingPreview = true
             await refreshThumbnails(for: outputURL)
+            isPreparingPreview = false
         }
     }
 
@@ -279,26 +289,37 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
 
         cancel()
         isRendering = true
+        isPreparingPreview = false
         progress = 0
         lastOutputURL = nil
         lastSplitOutputURLs = []
         errorMessage = nil
 
+        let splitter = self.splitter
+        let progressStream = AsyncStream<Double>.makeStream()
+        let progressTask = Task { [weak self] in
+            for await value in progressStream.stream {
+                guard let self else { return }
+                self.progress = value
+            }
+        }
         let task = Task {
             try await splitter.split(
                 sourceURL: sourceURL,
                 outputDirectory: outputDirectory,
-                outputs: outputs
+                outputs: outputs,
+                progress: { progressStream.continuation.yield($0) }
             )
         }
         splitTask = task
 
         do {
             let urls = try await task.value
-            guard !Task.isCancelled else { return }
-            lastSplitOutputURLs = urls
-            progress = 1
-            Self.logger.info("\(Self.t)Split export complete: \(urls.count) files")
+            if !Task.isCancelled {
+                lastSplitOutputURLs = urls
+                progress = 1
+                Self.logger.info("\(Self.t)Split export complete: \(urls.count) files")
+            }
         } catch is CancellationError {
             // Cancellation is an expected result when switching documents/tools.
         } catch {
@@ -306,8 +327,11 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
                 ?? error.localizedDescription
             Self.logger.error("\(Self.t)Split export failed: \(self.errorMessage ?? "unknown error")")
         }
+        progressStream.continuation.finish()
+        await progressTask.value
         splitTask = nil
         isRendering = false
+        isPreparingPreview = false
     }
 
     /// Add or remove a split immediately after `pageNumber`.
@@ -393,6 +417,7 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         splitTask?.cancel()
         splitTask = nil
         isRendering = false
+        isPreparingPreview = false
     }
 
     // MARK: - Thumbnails
@@ -412,8 +437,11 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     // MARK: - Finder helper
 
     /// Reveal a file in Finder. Silently no-ops if Finder can't be reached.
+    /// macOS-only; iOS has no Finder.
     func revealInFinder(_ url: URL) {
+        #if os(macOS)
         NSWorkspace.shared.activateFileViewerSelecting([url])
+        #endif
     }
 
     private func releaseSecurityScope() {

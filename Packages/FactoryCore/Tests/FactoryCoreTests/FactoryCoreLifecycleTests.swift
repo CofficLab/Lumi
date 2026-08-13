@@ -1,5 +1,5 @@
 import FactoryCore
-import LumiKernel
+import KernelLumi
 import SwiftUI
 import XCTest
 
@@ -19,37 +19,37 @@ final class FactoryCoreLifecycleTests: XCTestCase {
 
         init(id: String) { self.id = id }
 
-        func onBoot(kernel: LumiKernel) async throws {}
+        func onBoot(kernel: KernelLumi) async throws {}
 
 
-        func onReady(kernel: LumiKernel) async throws {}
-        func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
-        func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
-        func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] { [] }
-        func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] { [] }
-        func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
-        func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
-        func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-        func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
-        func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] { [] }
-        func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
-        func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
-        func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
-        func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
-        func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
-        func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
-        func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-        func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] { [] }
-        func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
-        func pluginAboutView(kernel: LumiKernel) -> AnyView? { nil }
-        func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
-        func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
-        func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
-        func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
-        func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
-        func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
-        func onContainerActivated(kernel: LumiKernel, containerID: String) {}
-        func editorPlugins(kernel: LumiKernel) -> [any EditorPlugin] { [] }
+        func onReady(kernel: KernelLumi) async throws {}
+        func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }
+        func messageRenderers(kernel: KernelLumi) -> [LumiMessageRendererItem] { [] }
+        func menuBarContentItems(kernel: KernelLumi) -> [LumiMenuBarContentItem] { [] }
+        func menuBarPopupItems(kernel: KernelLumi) -> [LumiMenuBarPopupItem] { [] }
+        func titleToolbarItems(kernel: KernelLumi) -> [LumiTitleToolbarItem] { [] }
+        func panelHeaderItems(kernel: KernelLumi) -> [PanelHeaderItem] { [] }
+        func panelBottomTabItems(kernel: KernelLumi) -> [PanelBottomTabItem] { [] }
+        func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] { [] }
+        func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] { [] }
+        func viewContainers(kernel: KernelLumi) -> [ViewContainerItem] { [] }
+        func chatSectionItems(kernel: KernelLumi) -> [ChatSectionItem] { [] }
+        func chatSectionToolbarItems(kernel: KernelLumi) -> [ChatSectionToolbarItem] { [] }
+        func chatSectionToolbarBarItems(kernel: KernelLumi) -> [ChatSectionToolbarBarItem] { [] }
+        func chatSectionHeaderItems(kernel: KernelLumi) -> [ChatSectionHeaderItem] { [] }
+        func chatSectionActionBarItems(kernel: KernelLumi) -> [ChatSectionActionBarItem] { [] }
+        func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView { content }
+        func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] { [] }
+        func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
+        func pluginAboutView(kernel: KernelLumi) -> AnyView? { nil }
+        func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
+        func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
+        func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }
+        func onboardingPages(kernel: KernelLumi) -> [OnboardingPageItem] { [] }
+        func logoItems(kernel: KernelLumi) -> [LogoItem] { [] }
+        func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
+        func onContainerActivated(kernel: KernelLumi, containerID: String) {}
+        func editorPlugins(kernel: KernelLumi) -> [any EditorPlugin] { [] }
     }
 
     override func tearDown() async throws {

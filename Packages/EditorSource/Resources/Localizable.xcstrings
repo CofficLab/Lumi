@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
     "All" : {
       "localizations" : {
         "en" : {
@@ -343,9 +340,6 @@
           }
         }
       }
-    },
-    "Replace All" : {
-
     },
     "Starts With" : {
       "localizations" : {

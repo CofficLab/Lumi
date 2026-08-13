@@ -1,11 +1,11 @@
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
 import LumiUI
 import MarkdownKit
 import SwiftUI
 
 struct AssistantMessageView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let message: LumiChatMessage
     let verbosity: LumiResponseVerbosity
 
@@ -20,7 +20,7 @@ private struct AssistantMessageBody: View {
     @LumiTheme private var theme
     @State private var isReasoningExpanded = false
 
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let message: LumiChatMessage
     let shouldHideAssistantBody: Bool
     let verbosity: LumiResponseVerbosity

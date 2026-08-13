@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// A display-ready snapshot of one agent turn's tool activity.
 ///

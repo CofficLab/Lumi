@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import LumiKernel
+import KernelLumi
 @testable import DisplayControlPlugin
 
 @Test("Plugin info has correct identifier")

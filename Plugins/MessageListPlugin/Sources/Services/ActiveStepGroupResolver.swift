@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 纯函数:计算 V1 (brief) 模式下应**默认展开**的工具步骤组(助手消息 id)集合。
 ///

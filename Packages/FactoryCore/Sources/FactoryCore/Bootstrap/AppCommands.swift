@@ -1,5 +1,5 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// Application command menu.

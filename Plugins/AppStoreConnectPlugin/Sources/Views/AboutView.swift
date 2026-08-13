@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -66,7 +66,7 @@ struct AboutView: View {
     }
 
     private func coreL(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: LumiKernelResources.bundle, locale: locale)
+        LumiPluginLocalization.string(key, bundle: KernelLumiResources.bundle, locale: locale)
     }
 }
 

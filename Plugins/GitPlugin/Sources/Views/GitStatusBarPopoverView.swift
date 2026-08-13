@@ -1,6 +1,6 @@
 import LibGit2Swift
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 import MagicDiffView
 

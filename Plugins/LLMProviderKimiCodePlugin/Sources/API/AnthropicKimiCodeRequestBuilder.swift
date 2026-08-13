@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 enum AnthropicKimiCodeRequestBuilder {
     static let defaultMaxTokens = 8192

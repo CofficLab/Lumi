@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Compression
 
 /// 基于 URLSession 的 NetworkProviding 实现

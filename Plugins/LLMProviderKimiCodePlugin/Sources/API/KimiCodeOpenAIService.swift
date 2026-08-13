@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Kimi Code (OpenAI-compatible flavor) transport, request encoding, SSE parsing.
 final class KimiCodeOpenAIService: @unchecked Sendable {

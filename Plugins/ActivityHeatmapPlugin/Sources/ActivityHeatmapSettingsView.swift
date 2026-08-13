@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 
 /// Settings page for the Activity Heatmap plugin.

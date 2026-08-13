@@ -1,5 +1,5 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 import UniformTypeIdentifiers
@@ -8,7 +8,7 @@ struct ComposerView: View {
     @LumiTheme private var theme
 
     let inputState: any ConversationInputProviding
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     /// 回车提交时触发的发送（与 Action Bar 发送按钮共用同一入口）
     let onSend: () -> Void
@@ -24,6 +24,7 @@ struct ComposerView: View {
                 set: { inputState.inputHeight = $0 }
             ),
             textColor: NSColor(theme.textPrimary),
+            placeholder: "输入消息，按 Return 发送…",
             onSubmit: onSend,
             onEnter: onSend,
             onFileDrop: { url in

@@ -1,11 +1,11 @@
 import LumiUI
 import SwiftUI
 import LocalizationKit
-import LumiKernel
+import KernelLumi
 
 /// 防休眠插件的菜单栏弹窗视图
 struct CaffeinateMenuBarPopupView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @State private var manager = CaffeinateManager.shared
     @State private var selectedDuration: TimeInterval = 0
 

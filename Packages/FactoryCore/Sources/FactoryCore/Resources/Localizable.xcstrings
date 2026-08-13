@@ -645,35 +645,6 @@
         }
       }
     },
-    "MLX local models require macOS 14 or later.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MLX local models require macOS 14 or later."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MLX 本地模型需要 macOS 14 或更高版本。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MLX 本地模型需要 macOS 14 或更高版本。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MLX 本地模型需要 macOS 14 或更高版本。"
-          }
-        }
-      }
-    },
     "Missing services:": {
       "localizations": {
         "en": {
@@ -720,35 +691,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "名稱"
-          }
-        }
-      }
-    },
-    "No local providers available": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No local providers available"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前没有可用的本地供应商"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前沒有可用的本地供應商"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "當前沒有可用的本地供應商"
           }
         }
       }
@@ -861,35 +803,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "請退出並重新打開應用，或查看日誌獲取更多詳情。"
-          }
-        }
-      }
-    },
-    "Plugin Description": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plugin Description"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "插件说明"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "插件說明"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "插件說明"
           }
         }
       }
@@ -1030,66 +943,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "重新查看新手引導"
-          }
-        }
-      }
-    },
-    "Replay the first-run onboarding flow.": {},
-    "Save": {},
-    "Saved": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Saved"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已保存"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已儲存"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已儲存"
-          }
-        }
-      }
-    },
-    "Search Plugins": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Search Plugins"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜索插件"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜尋插件"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜尋插件"
           }
         }
       }
@@ -2118,37 +1971,6 @@
         }
       }
     },
-    "正在初始化": {},
-    "正在初始化...": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Initializing..."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在初始化..."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在初始化..."
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在初始化..."
-          }
-        }
-      }
-    },
-    "正在加载组件和插件...": {},
     "浅色主题": {
       "localizations": {
         "en": {
@@ -2313,35 +2135,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "設定..."
-          }
-        }
-      }
-    },
-    "该插件暂未提供设置页面。": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This plugin does not provide a settings page."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "该插件暂未提供设置页面。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "該插件尚未提供設定頁面。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "該插件尚未提供設定頁面。"
           }
         }
       }

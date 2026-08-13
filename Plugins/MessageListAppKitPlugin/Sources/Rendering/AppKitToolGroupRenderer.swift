@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Native renderer for a V2 tool-step group row: a collapsed summary of the
 /// consecutive tool executions that belong to one assistant step.

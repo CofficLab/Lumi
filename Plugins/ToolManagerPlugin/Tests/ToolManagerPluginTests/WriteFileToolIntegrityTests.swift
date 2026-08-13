@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import ToolManagerPlugin
 
@@ -30,8 +30,8 @@ struct WriteFileToolIntegrityTests {
 
     // MARK: - Helpers
 
-    private func makeKernel(allowedRoot: URL) -> (LumiKernel, LumiToolExecutionContextState) {
-        let kernel = LumiKernel()
+    private func makeKernel(allowedRoot: URL) -> (KernelLumi, LumiToolExecutionContextState) {
+        let kernel = KernelLumi()
         let state = LumiToolExecutionContextState(
             conversationID: UUID(),
             toolCallID: "test-\(UUID().uuidString)",
@@ -83,7 +83,7 @@ struct WriteFileToolIntegrityTests {
         // bug reporter said failed: a literal Lumi source path with slashes
         // and trailing `print(...)` call site.
         let payload = String(
-            repeating: "/Users/angel/Code/Coffic/Lumi/Packages/LumiKernel/Sources/LumiKernel/Types/Chat/LumiChatMessage.swift\n",
+            repeating: "/Users/angel/Code/Coffic/Lumi/Packages/KernelLumi/Sources/KernelLumi/Types/Chat/LumiChatMessage.swift\n",
             count: 5
         ) + "print('OK, new length:', len(src))"
 
@@ -106,7 +106,7 @@ struct WriteFileToolIntegrityTests {
         // status string) under-reports the true file size, which is one
         // possible source of the "looks like bytes were lost" perception.
         let payload = """
-        /Users/angel/Code/Coffic/Lumi/Packages/LumiKernel/Sources/LumiKernel/Types/Chat/LumiChatMessage.swift
+        /Users/angel/Code/Coffic/Lumi/Packages/KernelLumi/Sources/KernelLumi/Types/Chat/LumiChatMessage.swift
         // 这是中文行点:「引号」、，；。
         // httpStatusCode, httpResponseBody, httpResponseHeaders are captured alongside httpResponseBody
         # httpResponseBody 行末

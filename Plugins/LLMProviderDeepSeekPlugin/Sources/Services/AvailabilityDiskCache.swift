@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// `AvailabilityDiskCache` 的目录解析器。
 ///

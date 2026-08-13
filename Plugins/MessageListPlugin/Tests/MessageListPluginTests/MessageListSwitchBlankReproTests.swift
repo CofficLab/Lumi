@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import Testing
 @testable import MessageListPlugin
 
@@ -27,8 +27,8 @@ struct MessageListSwitchBlankReproTests {
     private func makeKernel(
         messages: MockMessageManager,
         conversations: MockConversationManager
-    ) throws -> LumiKernel {
-        let kernel = LumiKernel()
+    ) throws -> KernelLumi {
+        let kernel = KernelLumi()
         try kernel.registerService(MessageManaging.self, messages)
         try kernel.registerService(ConversationManaging.self, conversations)
         try kernel.registerService(MessageStreaming.self, MockMessageStreaming())

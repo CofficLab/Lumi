@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 // MARK: - Tool Support
 
@@ -28,7 +28,7 @@ enum DiskManagerToolSupport {
     /// Resolve a user-supplied scan path against the home directory and verify it
     /// is within the kernel's allowed directories. Returns the home directory when
     /// the input is missing/empty so the tool always has a usable root.
-    static func resolveScanPath(_ raw: String?, kernel: LumiKernel) -> String {
+    static func resolveScanPath(_ raw: String?, kernel: KernelLumi) -> String {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let candidate: String
@@ -70,7 +70,7 @@ struct DiskUsageTool: LumiAgentTool {
         .object(["type": .string("object"), "properties": .object([:])])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
         guard let usage = await DiskService.shared.getDiskUsage() else {
             return "Failed to read disk usage."
@@ -117,7 +117,7 @@ struct ScanLargeFilesTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let path = DiskManagerToolSupport.resolveScanPath(arguments.string("path"), kernel: kernel)
         let limit = min(max(arguments.int("limit") ?? 20, 1), 100)
         try kernel.checkCancellation()
@@ -172,7 +172,7 @@ struct ScanDirectoryTreeTool: LumiAgentTool {
         ])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let path = DiskManagerToolSupport.resolveScanPath(arguments.string("path"), kernel: kernel)
         let limit = min(max(arguments.int("limit") ?? 20, 1), 100)
         try kernel.checkCancellation()
@@ -212,7 +212,7 @@ struct ScanCachesTool: LumiAgentTool {
         .object(["type": .string("object"), "properties": .object([:])])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
         let categories = await CacheCleanerService.shared.scanCaches()
         guard !categories.isEmpty else {
@@ -263,7 +263,7 @@ struct CleanCachesTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .high
     }
 
@@ -272,7 +272,7 @@ struct CleanCachesTool: LumiAgentTool {
         return PluginDiskManagerLocalization.string("Delete \(count) cache path(s)")
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let paths = arguments.stringArray("paths")?.map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).filter({ !$0.isEmpty }) else {
             return "Missing or invalid 'paths'. Provide an array of cache directory paths."
         }
@@ -322,7 +322,7 @@ struct ScanXcodeCachesTool: LumiAgentTool {
         .object(["type": .string("object"), "properties": .object([:])])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
         let (_, itemsByCategory) = await XcodeCleanService.shared.scanAllCategories()
         let total = itemsByCategory.values.flatMap { $0 }.reduce(Int64(0)) { $0 + $1.size }
@@ -374,7 +374,7 @@ struct CleanXcodeCachesTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .high
     }
 
@@ -383,7 +383,7 @@ struct CleanXcodeCachesTool: LumiAgentTool {
         return PluginDiskManagerLocalization.string("Delete \(count) Xcode cache path(s)")
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let paths = arguments.stringArray("paths")?.map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).filter({ !$0.isEmpty }) else {
             return "Missing or invalid 'paths'. Provide an array of Xcode cache paths."
         }
@@ -434,7 +434,7 @@ struct ScanProjectsTool: LumiAgentTool {
         .object(["type": .string("object"), "properties": .object([:])])
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
         let projects = await ProjectCleanerService.shared.scanProjects()
         guard !projects.isEmpty else {
@@ -482,7 +482,7 @@ struct CleanProjectsTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .high
     }
 
@@ -491,7 +491,7 @@ struct CleanProjectsTool: LumiAgentTool {
         return PluginDiskManagerLocalization.string("Delete \(count) project dependency path(s)")
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let paths = arguments.stringArray("paths")?.map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).filter({ !$0.isEmpty }) else {
             return "Missing or invalid 'paths'. Provide an array of project dependency paths."
         }
@@ -546,7 +546,7 @@ struct DeleteFilesTool: LumiAgentTool {
         ])
     }
 
-    func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .high
     }
 
@@ -555,7 +555,7 @@ struct DeleteFilesTool: LumiAgentTool {
         return PluginDiskManagerLocalization.string("Delete \(count) file(s)")
     }
 
-    func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let paths = arguments.stringArray("paths")?.map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).filter({ !$0.isEmpty }) else {
             return "Missing or invalid 'paths'. Provide an array of absolute paths."
         }

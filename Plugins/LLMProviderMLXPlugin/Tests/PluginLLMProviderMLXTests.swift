@@ -3,7 +3,7 @@ import Testing
 @testable import LLMProviderMLXPlugin
 import Combine
 import AgentToolKit
-import LumiKernel
+import KernelLumi
 
 // MARK: - Test Helpers
 
@@ -110,7 +110,7 @@ final class MLXTestHelper {
 
 @Test @MainActor
 func mlxPluginRegistersTheLocalModelSettingsView() {
-    let items = MLXLumiPlugin().llmProviderSettingsItems(kernel: LumiKernel())
+    let items = MLXLumiPlugin().llmProviderSettingsItems(kernel: KernelLumi())
 
     #expect(items.count == 1)
     #expect(items.first?.providerID == "mlx")

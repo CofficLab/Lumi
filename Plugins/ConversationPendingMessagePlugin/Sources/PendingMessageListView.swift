@@ -1,9 +1,9 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 struct PendingMessageListView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @ObservedObject var box: ObservableMessageSendingBox
     @LumiTheme private var theme
 

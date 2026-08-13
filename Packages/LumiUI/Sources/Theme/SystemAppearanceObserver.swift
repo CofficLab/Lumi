@@ -1,3 +1,4 @@
+#if canImport(AppKit)
 import AppKit
 import Foundation
 
@@ -35,3 +36,4 @@ public final class SystemAppearanceObserver {
         }
     }
 }
+#endif

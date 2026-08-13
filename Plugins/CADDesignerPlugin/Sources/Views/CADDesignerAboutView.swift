@@ -1,5 +1,5 @@
 import LumiUI
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 // MARK: - About View

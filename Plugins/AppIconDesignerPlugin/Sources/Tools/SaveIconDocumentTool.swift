@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct SaveIconDocumentTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -11,31 +11,23 @@ public struct SaveIconDocumentTool: LumiAgentTool {
     public init() {}
 
     public var inputSchema: LumiJSONValue {
-        [
-            "type": "object",
-            "properties": [
-                "outputPath": ["type": "string", "description": "Absolute JSON output path. If omitted, a file is written to the temporary directory."],
-            ],
-        ]
+        var properties = IconToolSupport.baseProperties()
+        properties["outputPath"] = ["type": "string", "description": "Absolute JSON output path. If omitted, a file is written to the temporary directory."]
+        return ["type": "object", "properties": .object(properties)]
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Save icon document"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .medium
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = IconToolSupport.language(kernel)
         do {
-            let document = try await MainActor.run {
-                guard let document = IconDocumentStore.shared.selectedDocument else {
-                    throw IconDocumentStoreError.noSelectedDocument
-                }
-                return document
-            }
+            let (document, _) = try await IconToolSupport.resolveDocument(arguments, kernel: kernel)
 
             let outputURL = outputURL(arguments: arguments, document: document)
             try FileManager.default.createDirectory(

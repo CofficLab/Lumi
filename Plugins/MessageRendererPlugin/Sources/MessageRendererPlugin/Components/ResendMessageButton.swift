@@ -1,11 +1,11 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 struct ResendMessageButton: View {
     @LumiTheme private var theme
 
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let message: LumiChatMessage
 
     var body: some View {

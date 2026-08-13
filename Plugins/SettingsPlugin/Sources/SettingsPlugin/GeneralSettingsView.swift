@@ -1,6 +1,10 @@
+#if canImport(AppKit)
 import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
 import LocalizationKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -91,7 +95,11 @@ struct GeneralSettingsView: View {
                             size: .small
                         ) {
                             if let url = URL(string: "https://coffic.cn/lumi") {
+                                #if canImport(AppKit)
                                 NSWorkspace.shared.open(url)
+                                #elseif canImport(UIKit)
+                                UIApplication.shared.open(url)
+                                #endif
                             }
                         }
                     }

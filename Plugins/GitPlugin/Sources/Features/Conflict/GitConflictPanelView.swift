@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// 冲突解决面板：列出未合并文件，并提供 ours / theirs / mark resolved 操作。
 public struct GitConflictPanelView: View {

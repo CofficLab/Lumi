@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct AddIconShapeTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -11,54 +11,50 @@ public struct AddIconShapeTool: LumiAgentTool {
     public init() {}
 
     public var inputSchema: LumiJSONValue {
-        [
-            "type": "object",
-            "properties": [
-                "shape": [
-                    "type": "string",
-                    "enum": ["rectangle", "circle", "capsule", "triangle", "line", "symbol", "text"],
-                    "description": "Shape type."
-                ],
-                "name": ["type": "string", "description": "Layer name."],
-                "fill": ["type": "string", "description": "Fill color, for example #38bdf8."],
-                "x": ["type": "number", "description": "Rectangle/capsule/triangle x position."],
-                "y": ["type": "number", "description": "Rectangle/capsule/triangle y position."],
-                "width": ["type": "number", "description": "Rectangle/capsule/triangle width."],
-                "height": ["type": "number", "description": "Rectangle/capsule/triangle height."],
-                "cornerRadius": ["type": "number", "description": "Rectangle corner radius."],
-                "cx": ["type": "number", "description": "Circle center x."],
-                "cy": ["type": "number", "description": "Circle center y."],
-                "radius": ["type": "number", "description": "Circle radius."],
-                "x1": ["type": "number", "description": "Line start x."],
-                "y1": ["type": "number", "description": "Line start y."],
-                "x2": ["type": "number", "description": "Line end x."],
-                "y2": ["type": "number", "description": "Line end y."],
-                "stroke": ["type": "string", "description": "Optional stroke color."],
-                "strokeWidth": ["type": "number", "description": "Optional stroke width."],
-                "opacity": ["type": "number", "description": "Layer opacity from 0 to 1."],
-                "symbolName": ["type": "string", "description": "SF Symbol name for symbol layers."],
-                "text": ["type": "string", "description": "Text value for text layers."],
-                "size": ["type": "number", "description": "Symbol or text size."],
-                "weight": ["type": "string", "description": "Font/SF Symbol weight."],
-                "shadowColor": ["type": "string", "description": "Optional shadow color."],
-                "shadowRadius": ["type": "number", "description": "Optional shadow radius."],
-                "shadowX": ["type": "number", "description": "Optional shadow x offset."],
-                "shadowY": ["type": "number", "description": "Optional shadow y offset."],
-                "blurRadius": ["type": "number", "description": "Optional layer blur radius."],
-            ],
-            "required": ["shape"],
+        var properties = IconToolSupport.baseProperties()
+        properties["shape"] = [
+            "type": "string",
+            "enum": ["rectangle", "circle", "capsule", "triangle", "line", "symbol", "text"],
+            "description": "Shape type."
         ]
+        properties["name"] = ["type": "string", "description": "Layer name."]
+        properties["fill"] = ["type": "string", "description": "Fill color, for example #38bdf8."]
+        properties["x"] = ["type": "number", "description": "Rectangle/capsule/triangle x position."]
+        properties["y"] = ["type": "number", "description": "Rectangle/capsule/triangle y position."]
+        properties["width"] = ["type": "number", "description": "Rectangle/capsule/triangle width."]
+        properties["height"] = ["type": "number", "description": "Rectangle/capsule/triangle height."]
+        properties["cornerRadius"] = ["type": "number", "description": "Rectangle corner radius."]
+        properties["cx"] = ["type": "number", "description": "Circle center x."]
+        properties["cy"] = ["type": "number", "description": "Circle center y."]
+        properties["radius"] = ["type": "number", "description": "Circle radius."]
+        properties["x1"] = ["type": "number", "description": "Line start x."]
+        properties["y1"] = ["type": "number", "description": "Line start y."]
+        properties["x2"] = ["type": "number", "description": "Line end x."]
+        properties["y2"] = ["type": "number", "description": "Line end y."]
+        properties["stroke"] = ["type": "string", "description": "Optional stroke color."]
+        properties["strokeWidth"] = ["type": "number", "description": "Optional stroke width."]
+        properties["opacity"] = ["type": "number", "description": "Layer opacity from 0 to 1."]
+        properties["symbolName"] = ["type": "string", "description": "SF Symbol name for symbol layers."]
+        properties["text"] = ["type": "string", "description": "Text value for text layers."]
+        properties["size"] = ["type": "number", "description": "Symbol or text size."]
+        properties["weight"] = ["type": "string", "description": "Font/SF Symbol weight."]
+        properties["shadowColor"] = ["type": "string", "description": "Optional shadow color."]
+        properties["shadowRadius"] = ["type": "number", "description": "Optional shadow radius."]
+        properties["shadowX"] = ["type": "number", "description": "Optional shadow x offset."]
+        properties["shadowY"] = ["type": "number", "description": "Optional shadow y offset."]
+        properties["blurRadius"] = ["type": "number", "description": "Optional layer blur radius."]
+        return ["type": "object", "properties": .object(properties), "required": ["shape"]]
     }
 
     public func displayDescription(arguments: [String: LumiJSONValue]) -> String {
         "Add icon shape"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = IconToolSupport.language(kernel)
         guard let shapeName = IconToolSupport.string(arguments, "shape") else {
             return IconToolSupport.missingParameter("shape", language: language)
@@ -66,23 +62,27 @@ public struct AddIconShapeTool: LumiAgentTool {
 
         do {
             let layer = try makeLayer(shapeName: shapeName, arguments: arguments)
-            let document = try await MainActor.run {
-                try IconDocumentStore.shared.addLayer(layer)
+            let (document, scope) = try await IconToolSupport.resolveDocument(arguments, kernel: kernel)
+            let updated = try await MainActor.run {
+                try IconDocumentStore.shared.addLayer(layer, documentId: document.id, scope: scope)
             }
+            await IconToolSupport.notify(scope: scope, documentId: document.id)
             switch language {
             case .chinese:
                 return """
                 已添加图标形状。
-                文档ID: \(document.id)
+                作用域: \(scope.rawValue)
+                文档ID: \(updated.id)
                 \(IconToolSupport.layerSummary(layer, language: language))
-                图层数: \(document.layers.count)
+                图层数: \(updated.layers.count)
                 """
             case .english:
                 return """
                 Added icon shape.
-                documentId: \(document.id)
+                scope=\(scope.rawValue)
+                documentId: \(updated.id)
                 \(IconToolSupport.layerSummary(layer, language: language))
-                layerCount: \(document.layers.count)
+                layerCount: \(updated.layers.count)
                 """
             }
         } catch {

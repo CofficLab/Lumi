@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -7,10 +7,10 @@ import SwiftUI
 /// 在面板顶部显示当前文件的路径面包屑导航。
 /// 仅显示文件路径段，符号面包屑由 EditorStickySymbolBarPlugin 负责。
 ///
-/// 数据来源是 `LumiKernel`：当前文件路径取自 `kernel.project?.currentFileURL`，
+/// 数据来源是 `KernelLumi`：当前文件路径取自 `kernel.project?.currentFileURL`，
 /// 项目根取自 `kernel.project?.currentProject?.path`。对任何编辑器细节都不知情。
 public struct ProjectFileBreadcrumbHeaderView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     @StateObject private var observer: ProjectFileBreadcrumbObserver
 
@@ -26,7 +26,7 @@ public struct ProjectFileBreadcrumbHeaderView: View {
         project?.currentProject?.path ?? ""
     }
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self.kernel = kernel
         _observer = StateObject(
             wrappedValue: ProjectFileBreadcrumbObserver(project: kernel.project)

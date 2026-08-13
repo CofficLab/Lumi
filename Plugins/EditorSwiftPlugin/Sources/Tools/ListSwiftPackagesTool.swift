@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import XcodeKit
 
@@ -31,7 +31,7 @@ public struct ListSwiftPackagesTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
@@ -39,7 +39,7 @@ public struct ListSwiftPackagesTool: LumiAgentTool, SuperLog {
         "列出 Swift Package 依赖"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
 
         guard let projectPath = arguments["project_path"]?.stringValue, !projectPath.isEmpty else {

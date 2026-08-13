@@ -1,14 +1,14 @@
 import SwiftUI
 import AppKit
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// 工具调用统计设置视图
 ///
 /// 作为 `ToolManagerSettingsView` 下的一个独立 tab，展示每个工具的累计调用次数、
 /// 失败次数与平均耗时。数据来自 `ToolCallRecordStore.fetchToolStats()`。
 public struct ToolCallStatsSettingsView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let toolCallRecordStore: ToolCallRecordStore?
 
     @State private var toolStats: [ToolStats] = []
@@ -16,7 +16,7 @@ public struct ToolCallStatsSettingsView: View {
     @State private var isReloading = false
 
     public init(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         toolCallRecordStore: ToolCallRecordStore?
     ) {
         self.kernel = kernel

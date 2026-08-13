@@ -1,21 +1,45 @@
 //
 // BookletMaker.xcconfig
-// BookletMaker target（Debug 与 Release 共用）。
+// BookletMaker multiplatform target（Debug 与 Release 共用）。
 // 版本号由 CI（set-booklet-version.sh）通过 tag 注入，此处为默认值。
 //
 
 #include "App-Shared.xcconfig"
 
-// 产物
+// 同一 target 原生支持 macOS、iPhone 和 iPad。
+SUPPORTED_PLATFORMS = macosx iphoneos iphonesimulator
+SUPPORTS_MACCATALYST = NO
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+TARGETED_DEVICE_FAMILY = 1,2
+ENABLE_HARDENED_RUNTIME[sdk=iphoneos*] = NO
+ENABLE_HARDENED_RUNTIME[sdk=iphonesimulator*] = NO
+COMBINE_HIDPI_IMAGES[sdk=iphoneos*] = NO
+COMBINE_HIDPI_IMAGES[sdk=iphonesimulator*] = NO
+
+// 所有平台共用同一产品身份，用于 App Store universal purchase。
 PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker
 INFOPLIST_KEY_CFBundleDisplayName = BookletMaker
-INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.utilities
-INFOPLIST_FILE = BookletMakerApp/BookletMaker-Info.plist
+PRODUCT_NAME = BookletMaker
+
+// 平台专用 Info.plist 配置。
+// iOS 必须有自己的 plist：应用支持的语言（CFBundleLocalizations）只能由主 bundle 声明。
+// 缺失时系统会把进程语言协商成开发语言 en，Locale.preferredLanguages 也随之只剩 en，
+// 导致 SPM 插件 bundle 里的中文资源永远不会被选中（中文系统下界面仍是英文）。
+INFOPLIST_FILE[sdk=macosx*] = BookletMakerApp/BookletMaker-Info.plist
+INFOPLIST_FILE[sdk=iphoneos*] = BookletMakeriOSApp/BookletMaker-iOS-Info.plist
+INFOPLIST_FILE[sdk=iphonesimulator*] = BookletMakeriOSApp/BookletMaker-iOS-Info.plist
+INFOPLIST_KEY_LSApplicationCategoryType[sdk=macosx*] = public.app-category.utilities
+INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*] = YES
+INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*] = YES
+INFOPLIST_KEY_UISupportedInterfaceOrientations[sdk=iphoneos*] = UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+INFOPLIST_KEY_UISupportedInterfaceOrientations[sdk=iphonesimulator*] = UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad[sdk=iphoneos*] = UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad[sdk=iphonesimulator*] = UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
 
 // 图标
 ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
 
-// 沙盒：开启（唯一开沙盒的 app）
+// macOS 沙盒。iOS 自身始终运行在沙盒中。
 ENABLE_APP_SANDBOX = YES
 ENABLE_USER_SELECTED_FILES = readwrite
 
@@ -33,6 +57,11 @@ ENABLE_RESOURCE_ACCESS_USB = NO
 
 // 权限
 CODE_SIGN_ENTITLEMENTS = BookletMakerApp/App.entitlements
+
+// 平台运行时路径。
+LD_RUNPATH_SEARCH_PATHS[sdk=macosx*] = $(inherited) @executable_path/../Frameworks
+LD_RUNPATH_SEARCH_PATHS[sdk=iphoneos*] = $(inherited) @executable_path/Frameworks
+LD_RUNPATH_SEARCH_PATHS[sdk=iphonesimulator*] = $(inherited) @executable_path/Frameworks
 
 // 版本号（由 CI set-booklet-version.sh 按 booklet-v* tag 写入）
 MARKETING_VERSION = 1.0.0

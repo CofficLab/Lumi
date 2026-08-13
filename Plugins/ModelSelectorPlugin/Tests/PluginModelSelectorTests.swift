@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import LumiKernel
+import KernelLumi
 @testable import ModelSelectorPlugin
 
 @Suite("Provider scope")

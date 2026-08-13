@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 描述一个使用 `FactoryCore` 的宿主应用应加载哪些插件。
 ///

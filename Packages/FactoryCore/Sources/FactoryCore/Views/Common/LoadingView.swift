@@ -1,5 +1,5 @@
 import AppKit
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -44,16 +44,11 @@ struct LoadingView: View {
                 .blur(radius: isBreathing ? 22 : 15)
                 .scaleEffect(isBreathing ? 1.12 : 0.92)
 
-            Circle()
-                .stroke(primaryColor.opacity(isBreathing ? 0.22 : 0.38), lineWidth: 1)
-                .frame(width: 92, height: 92)
-                .scaleEffect(isBreathing ? 1.08 : 0.94)
-
             Image(nsImage: NSApplication.shared.applicationIconImage)
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()
-                .frame(width: 72, height: 72)
+                .frame(width: 88, height: 88)
                 .shadow(color: primaryColor.opacity(isBreathing ? 0.42 : 0.28), radius: isBreathing ? 18 : 11)
                 .scaleEffect(isBreathing ? 1.05 : 0.96)
         }

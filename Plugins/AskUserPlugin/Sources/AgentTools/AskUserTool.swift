@@ -1,6 +1,6 @@
 import AgentToolKit
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
@@ -78,7 +78,7 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         guard let question = arguments.string("question"), !question.isEmpty else {
             return Self.errorResult(message: "question is required and cannot be empty")
         }
@@ -130,7 +130,7 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
 
     public func executeResult(
         arguments: [String: LumiJSONValue],
-        kernel: LumiKernel
+        kernel: KernelLumi
     ) async throws -> LumiToolExecutionResult {
         let content = try await execute(arguments: arguments, kernel: kernel)
         guard let data = content.data(using: .utf8),
@@ -220,7 +220,7 @@ public struct AskUserTool: LumiAgentTool, SuperLog {
 
     /// 构建 `AskUserPendingResponse`，集中所有字段归一化逻辑。
     static func buildPendingResponse(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         question: String,
         options: [AskUserOption],
         mode: String

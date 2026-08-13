@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// StepFun 子 Agent 的可用性 gate。
 ///
@@ -80,7 +80,7 @@ final class StepFunSubAgentsGate {
     /// - 探测结果仅在与上次不同时更新 `phase`,并在 `unknown → ready` 时触发一次
     ///   `rebuildAllContributions`,让框架重新收集此时已就绪的 sub-agent。
     /// - 通过 `probe(result:)` 注入点解耦网络,便于测试。
-    func refresh(kernel: LumiKernel) async {
+    func refresh(kernel: KernelLumi) async {
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
@@ -94,7 +94,7 @@ final class StepFunSubAgentsGate {
     /// 仅当状态发生变化、或从 `unknown` 首次进入 `ready` 时才推进:
     /// - `available` → `ready`(若此前非 ready,触发一次 rebuild)
     /// - `unavailable` → `unavailable`
-    func apply(result: LumiModelAvailabilityResult, kernel: LumiKernel) {
+    func apply(result: LumiModelAvailabilityResult, kernel: KernelLumi) {
         let next: Phase
         switch result {
         case .available:

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -9,7 +9,7 @@ import SwiftUI
 /// `selectedProviderID` 通过 Binding 暴露给父视图。
 struct ProviderSettingsPage<DetailContent: View>: View {
     @LumiTheme private var theme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     let title: String
     let systemIcon: String

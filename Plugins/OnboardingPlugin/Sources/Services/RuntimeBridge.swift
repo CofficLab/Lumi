@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 /// OnboardingPlugin 的运行时桥接:持有 Storage service 解析出的插件目录,
@@ -20,7 +20,7 @@ enum RuntimeBridge {
 
 @MainActor
 public extension OnboardingPlugin {
-    static func bootstrapFromLumiCoreIfNeeded(kernel: LumiKernel) {
+    static func bootstrapFromLumiCoreIfNeeded(kernel: KernelLumi) {
         guard !didBootstrapFromLumiCore else { return }
         if let storage = kernel.storage {
             RuntimeBridge.pluginDirectory =
@@ -29,7 +29,7 @@ public extension OnboardingPlugin {
         didBootstrapFromLumiCore = true
     }
 
-    static func initializeViewModel(kernel: LumiKernel) {
+    static func initializeViewModel(kernel: KernelLumi) {
         guard RuntimeBridge.viewModel == nil else { return }
         let store: PluginStore
         if let storage = kernel.storage {
@@ -39,7 +39,7 @@ public extension OnboardingPlugin {
         } else {
             store = PluginStore(pluginId: RuntimeBridge.pluginName)
         }
-        RuntimeBridge.viewModel = PluginViewModel(store: store)
+        RuntimeBridge.viewModel = PluginViewModel(store: store, kernel: kernel)
     }
 }
 

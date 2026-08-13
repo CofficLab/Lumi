@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Preview-time stub for `ProjectProviding` and `AppGitVM`.
 ///

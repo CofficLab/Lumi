@@ -1,15 +1,15 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 /// 新会话按钮视图组件
 public struct NewChatButton: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     /// ChatSection 是否可见；不可见时整个按钮不渲染。
     @State private var isChatSectionVisible: Bool = true
 
-    public init(kernel: LumiKernel) {
+    public init(kernel: KernelLumi) {
         self.kernel = kernel
     }
 

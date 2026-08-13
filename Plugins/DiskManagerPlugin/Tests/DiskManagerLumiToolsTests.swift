@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import LumiKernel
+import KernelLumi
 @testable import DiskManagerPlugin
 
 /// Pure-logic tests for the Disk Manager agent-tool support helpers.
@@ -33,7 +33,7 @@ import LumiKernel
 
     @MainActor
     @Test func resolveScanPathFallsBackToHomeWhenEmpty() {
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         #expect(DiskManagerToolSupport.resolveScanPath(nil, kernel: kernel) == home)
         #expect(DiskManagerToolSupport.resolveScanPath("", kernel: kernel) == home)
@@ -42,7 +42,7 @@ import LumiKernel
 
     @MainActor
     @Test func resolveScanPathExpandsTilde() {
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         #expect(DiskManagerToolSupport.resolveScanPath("~", kernel: kernel) == home)
         #expect(DiskManagerToolSupport.resolveScanPath("~/Downloads", kernel: kernel) == "\(home)/Downloads")
@@ -54,7 +54,7 @@ import LumiKernel
 
     @Test func pluginRegistersAllDiskManagerTools() {
         let plugin = DiskManagerPlugin()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let ids = Set(plugin.agentTools(kernel: kernel).map { $0.name })
         let expected: Set<String> = [
             "disk-manager.disk-usage",
@@ -73,7 +73,7 @@ import LumiKernel
 
     @Test func destructiveToolsAreHighRisk() {
         let plugin = DiskManagerPlugin()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let destructiveIDs: Set<String> = [
             "disk-manager.clean-caches",
             "disk-manager.clean-xcode-caches",
@@ -88,7 +88,7 @@ import LumiKernel
 
     @Test func readToolsAreLowRiskAndReadOnly() {
         let plugin = DiskManagerPlugin()
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
         let readIDs: Set<String> = [
             "disk-manager.disk-usage",
             "disk-manager.scan-large-files",

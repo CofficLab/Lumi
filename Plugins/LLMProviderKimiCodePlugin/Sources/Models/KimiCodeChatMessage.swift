@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct KimiCodeChatMessage: Sendable {
     static let thinkingSignatureKey = "thinkingSignature"

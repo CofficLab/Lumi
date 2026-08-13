@@ -1,5 +1,5 @@
-import LumiKernel
-import LumiKernel
+import KernelLumi
+import KernelLumi
 
 /// 「模型未下载」错误渲染器：在内联消息气泡上直接提供下载入口。
 ///

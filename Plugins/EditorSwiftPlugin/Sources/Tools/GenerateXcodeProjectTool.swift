@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import XcodeProjectGen
 
@@ -69,7 +69,7 @@ public struct GenerateXcodeProjectTool: LumiAgentTool, SuperLog {
         ])
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         let baseRisk: LumiCommandRiskLevel = .high
 
         guard let kernel, !kernel.allowedDirectories.isEmpty else {
@@ -97,7 +97,7 @@ public struct GenerateXcodeProjectTool: LumiAgentTool, SuperLog {
         return "生成 Xcode 项目 \(name)（\(targetCount) 个 Target）"
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         try kernel.checkCancellation()
 
         guard let projectRoot = arguments["project_root"]?.stringValue, !projectRoot.isEmpty else {

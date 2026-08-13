@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SwiftUI
 
 // MARK: - Default Settings Provider
@@ -8,9 +8,9 @@ import SwiftUI
 ///
 /// 负责管理所有插件的设置标签项和 LLM 提供商设置项的注册和查询。
 ///
-/// 已发布 (`@Published`) — `LumiKernelContainer.subscribeToObjectWillChange`
+/// 已发布 (`@Published`) — `KernelLumiContainer.subscribeToObjectWillChange`
 /// 会把本服务的 `objectWillChange` 转发到 kernel,从而让
-/// `@ObservedObject var kernel: LumiKernel` 的宿主 UI 在 register/unregister
+/// `@ObservedObject var kernel: KernelLumi` 的宿主 UI 在 register/unregister
 /// 后自动重渲染。
 @MainActor
 public final class DefaultSettingsProviding: SettingsProviding {

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// V1 (brief) projector: collapses every AgentTurn into exactly one
 /// user-facing conclusion row, plus at most one trailing status row.

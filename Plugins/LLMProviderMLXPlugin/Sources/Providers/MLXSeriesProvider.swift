@@ -1,7 +1,7 @@
 import Foundation
 import AgentToolKit
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 // MARK: - Platform Detection
 

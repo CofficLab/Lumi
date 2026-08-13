@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Builds the UI snapshot for one AgentTurn from ToolManaging records.
 enum TurnActivityBuilder {

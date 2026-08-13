@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 
 /// Redis Key 列表项。

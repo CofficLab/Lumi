@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 
 struct AgentTurnMessageProjection: Equatable {
     var userMessages: [LumiChatMessage] = []
@@ -15,14 +15,14 @@ struct AgentTurnMessageProjection: Equatable {
 final class AgentTurnViewModel: ObservableObject {
     @Published private(set) var projection = AgentTurnMessageProjection()
 
-    private let kernel: LumiKernel
+    private let kernel: KernelLumi
     private var item: AgentTurnPresentationItem
     private var cancellables: Set<AnyCancellable> = []
     private var didBindStreaming = false
     private var streamingRefreshTask: Task<Void, Never>?
     private var refreshSequence: UInt64 = 0
 
-    init(kernel: LumiKernel, item: AgentTurnPresentationItem) {
+    init(kernel: KernelLumi, item: AgentTurnPresentationItem) {
         self.kernel = kernel
         self.item = item
         bindNotifications()

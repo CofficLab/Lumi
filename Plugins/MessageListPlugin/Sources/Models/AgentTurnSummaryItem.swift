@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// One V1 AgentTurn presentation: its triggering user message, chronological
 /// live process, and the terminal result selected for the collapsed state.

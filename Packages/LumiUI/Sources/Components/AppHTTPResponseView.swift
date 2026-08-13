@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 public struct AppHTTPResponseView: View {
@@ -216,8 +215,7 @@ public struct AppHTTPResponseView: View {
 
     private func copyResponse() {
         let text = response.copyText.trimmingCharacters(in: .whitespacesAndNewlines)
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text.isEmpty ? "-" : text, forType: .string)
+        LumiPasteboard.copyString(text.isEmpty ? "-" : text)
 
         AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
             showCopyFeedback = true

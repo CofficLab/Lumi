@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 public struct CopyMessageButton: View {
@@ -78,8 +77,7 @@ public struct CopyMessageButton: View {
     }
 
     private func copyToClipboard() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(content, forType: .string)
+        LumiPasteboard.copyString(content)
 
         AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
             showFeedback = true

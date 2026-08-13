@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import LumiKernel
+import KernelLumi
 import LumiUI
 
 /// Bridges editor file-tree and chrome views to the active `EditorService`.
@@ -15,7 +15,7 @@ public final class EditorContext: ObservableObject {
     @Published public private(set) var fileTreeHighlightedFileURL: URL?
 
     private let service: EditorService
-    private weak var kernel: LumiKernel?
+    private weak var kernel: KernelLumi?
     private let themeVM: AppThemeVM
     private var cancellables = Set<AnyCancellable>()
 
@@ -23,7 +23,7 @@ public final class EditorContext: ObservableObject {
     public var activeChromeTheme: (any LumiAppChromeTheme)? { themeVM.activeChromeTheme }
     public var activeFileIconTheme: LumiFileIconThemeContributor? { LumiDefaultFileIconThemeContributor() }
 
-    public init(service: EditorService, kernel: LumiKernel? = nil, themeVM: AppThemeVM = .shared) {
+    public init(service: EditorService, kernel: KernelLumi? = nil, themeVM: AppThemeVM = .shared) {
         self.service = service
         self.kernel = kernel
         self.themeVM = themeVM

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 public struct RegisterAppIconArtifactTool: LumiAgentTool {
     public static let info = LumiAgentToolInfo(
@@ -35,11 +35,11 @@ public struct RegisterAppIconArtifactTool: LumiAgentTool {
         "Register app icon candidate"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = IconToolSupport.language(kernel)
         guard let path = arguments["path"]?.anyValue as? String, !path.isEmpty else {
             return IconToolSupport.missingParameter("path", language: language)

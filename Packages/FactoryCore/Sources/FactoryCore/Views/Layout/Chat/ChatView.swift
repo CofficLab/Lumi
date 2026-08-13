@@ -1,10 +1,10 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 /// Chat 总视图，作为 ChatHeader / ChatToolbar / ChatSectionContent / ChatActionBar 的组合入口
 struct ChatView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     @State private var isVisible: Bool = true
 
     var body: some View {

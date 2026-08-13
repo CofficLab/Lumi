@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 
 /// 模型列表视图
@@ -9,7 +9,7 @@ import LumiUI
 /// 从 kernel 自动获取 LLMProviderManaging 服务。
 struct ModelListView: View {
     @LumiTheme private var theme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     let selectedProviderID: String?
     let initialModel: String?
     var onSelect: ((_ providerID: String, _ model: String) -> Void)? = nil

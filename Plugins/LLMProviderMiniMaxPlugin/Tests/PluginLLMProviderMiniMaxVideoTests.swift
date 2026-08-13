@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 @testable import LLMProviderMiniMaxPlugin
-import LumiKernel
+import KernelLumi
 
 // MARK: - Mock Client
 
@@ -70,7 +70,7 @@ struct MiniMaxVideoToolTests {
     func testEmptyPrompt() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
@@ -101,7 +101,7 @@ struct MiniMaxVideoToolTests {
     func testMissingPrompt() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
@@ -131,7 +131,7 @@ struct MiniMaxVideoToolTests {
     func testSuccessfulGenerationWithDefaults() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
@@ -171,7 +171,7 @@ struct MiniMaxVideoToolTests {
     func testCustomParameters() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
@@ -210,7 +210,7 @@ struct MiniMaxVideoToolTests {
         mockClient.failAtStep = .submit
 
         let tool = MiniMaxVideoTool(client: mockClient)
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
@@ -243,7 +243,7 @@ struct MiniMaxVideoToolTests {
         mockClient.failAtStep = .poll
 
         let tool = MiniMaxVideoTool(client: mockClient)
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
@@ -273,7 +273,7 @@ struct MiniMaxVideoToolTests {
     func testCancellation() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
@@ -312,7 +312,7 @@ struct MiniMaxVideoToolTests {
     func testByteCountFormatting() async throws {
         let mockClient = MockMiniMaxVideoClient()
         let tool = MiniMaxVideoTool(client: mockClient)
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),
@@ -342,7 +342,7 @@ struct MiniMaxVideoToolTests {
         let mockClient = MockMiniMaxVideoClient()
         mockClient.byteCount = nil
         let tool = MiniMaxVideoTool(client: mockClient)
-        let kernel = LumiKernel()
+        let kernel = KernelLumi()
 
         let context = LumiToolExecutionContextState(
             conversationID: UUID(),

@@ -1,4 +1,4 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -11,7 +11,7 @@ enum LayoutDividerSyncConfiguration {
 /// 应用主布局
 struct AppLayoutView: View {
     @LumiTheme private var theme
-    @ObservedObject var kernel: LumiKernel
+    @ObservedObject var kernel: KernelLumi
     private let layoutManager: (any WorkspaceProviding)?
     private let showsStatusBar: Bool
     private let showsActivityBar: Bool
@@ -20,7 +20,7 @@ struct AppLayoutView: View {
     @State private var isChatVisible: Bool = true
 
     init(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         showsStatusBar: Bool = true,
         showsActivityBar: Bool = true
     ) {
@@ -34,7 +34,7 @@ struct AppLayoutView: View {
         if let layoutManager {
             mainLayout(layoutManager)
         } else {
-            ErrorView(error: LumiKernelError.serviceNotAvailable(service: "LayoutManager"))
+            ErrorView(error: KernelLumiError.serviceNotAvailable(service: "LayoutManager"))
         }
     }
 

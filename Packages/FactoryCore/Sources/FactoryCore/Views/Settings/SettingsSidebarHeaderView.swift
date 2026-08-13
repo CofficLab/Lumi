@@ -1,9 +1,9 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 struct SettingsSidebarHeaderView: View {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
     private let appInfo = AppBundleInfo()
 
     var body: some View {

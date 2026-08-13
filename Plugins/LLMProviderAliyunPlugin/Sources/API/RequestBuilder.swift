@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 /// Anthropic Messages API 请求构建器。
 enum AliyunAnthropicRequestBuilder {

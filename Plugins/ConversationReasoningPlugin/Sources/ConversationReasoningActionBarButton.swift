@@ -1,10 +1,10 @@
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
 struct ConversationReasoningActionBarButton: View {
     @LumiTheme private var theme
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     // 推理强度的能力判定跟随全局模型选择（与 ModelSelectorPlugin 一致），
     // 持久化按对话维度存储。

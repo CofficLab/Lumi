@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiKernel
+import KernelLumi
 import LumiUI
 import os
 
@@ -25,7 +25,7 @@ public final class NetworkManagerPlugin: LumiPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: LumiKernel) async throws {
+    public func onBoot(kernel: KernelLumi) async throws {
         let exchangeStore = kernel.storage.map {
             HTTPExchangeStore(directory: $0.pluginDataDirectory(for: "NetworkManager"))
         }
@@ -34,11 +34,11 @@ public final class NetworkManagerPlugin: LumiPlugin {
         try kernel.registerService(NetworkProviding.self, NetworkProvider(exchangeStore: exchangeStore))
     }
 
-    public func onReady(kernel: LumiKernel) async throws {}
+    public func onReady(kernel: KernelLumi) async throws {}
 
     // MARK: - Menu Bar
 
-    public func menuBarContentItems(kernel: LumiKernel) -> [LumiMenuBarContentItem] {
+    public func menuBarContentItems(kernel: KernelLumi) -> [LumiMenuBarContentItem] {
         [
             MenuBarContentItem(id: "\(id).speed", order: order) {
                 NetworkMenuBarContentView()
@@ -46,7 +46,7 @@ public final class NetworkManagerPlugin: LumiPlugin {
         ]
     }
 
-    public func menuBarPopupItems(kernel: LumiKernel) -> [LumiMenuBarPopupItem] {
+    public func menuBarPopupItems(kernel: KernelLumi) -> [LumiMenuBarPopupItem] {
         [
             MenuBarPopupItem(id: "\(id).popup", order: order) {
                 NetworkMenuBarPopupView()
@@ -56,17 +56,17 @@ public final class NetworkManagerPlugin: LumiPlugin {
 
     // MARK: - About
 
-    public func pluginAboutView(kernel: LumiKernel) -> AnyView? {
+    public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(NetworkManagerAboutView())
     }
 
     // MARK: - LumiPlugin stubs
 
-    public func llmProviders(kernel: LumiKernel) -> [any LumiLLMProvider] { [] }
+    public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }
 
     // MARK: - Agent Tools
 
-    public func agentTools(kernel: LumiKernel) -> [any LumiAgentTool] {
+    public func agentTools(kernel: KernelLumi) -> [any LumiAgentTool] {
         [
             ListHTTPExchangesTool(),
             GetHTTPSummaryTool(),
@@ -77,12 +77,12 @@ public final class NetworkManagerPlugin: LumiPlugin {
             DownloadFileTool(),
         ]
     }
-    public func messageRenderers(kernel: LumiKernel) -> [LumiMessageRendererItem] { [] }
-    public func titleToolbarItems(kernel: LumiKernel) -> [LumiTitleToolbarItem] { [] }
-    public func panelHeaderItems(kernel: LumiKernel) -> [PanelHeaderItem] { [] }
-    public func panelBottomTabItems(kernel: LumiKernel) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: LumiKernel) -> [PanelRailTabItem] { [] }
-    public func statusBarItems(kernel: LumiKernel) -> [StatusBarItem] {
+    public func messageRenderers(kernel: KernelLumi) -> [LumiMessageRendererItem] { [] }
+    public func titleToolbarItems(kernel: KernelLumi) -> [LumiTitleToolbarItem] { [] }
+    public func panelHeaderItems(kernel: KernelLumi) -> [PanelHeaderItem] { [] }
+    public func panelBottomTabItems(kernel: KernelLumi) -> [PanelBottomTabItem] { [] }
+    public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] { [] }
+    public func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] {
         [
             StatusBarItem(
                 id: "\(id).export-progress",
@@ -95,14 +95,14 @@ public final class NetworkManagerPlugin: LumiPlugin {
             ),
         ]
     }
-    public func viewContainers(kernel: LumiKernel) -> [ViewContainerItem] { [] }
-    public func chatSectionItems(kernel: LumiKernel) -> [ChatSectionItem] { [] }
-    public func chatSectionToolbarItems(kernel: LumiKernel) -> [ChatSectionToolbarItem] { [] }
-    public func chatSectionToolbarBarItems(kernel: LumiKernel) -> [ChatSectionToolbarBarItem] { [] }
-    public func chatSectionHeaderItems(kernel: LumiKernel) -> [ChatSectionHeaderItem] { [] }
-    public func chatSectionActionBarItems(kernel: LumiKernel) -> [ChatSectionActionBarItem] { [] }
-    public func chatSectionRootWrapper(kernel: LumiKernel, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+    public func viewContainers(kernel: KernelLumi) -> [ViewContainerItem] { [] }
+    public func chatSectionItems(kernel: KernelLumi) -> [ChatSectionItem] { [] }
+    public func chatSectionToolbarItems(kernel: KernelLumi) -> [ChatSectionToolbarItem] { [] }
+    public func chatSectionToolbarBarItems(kernel: KernelLumi) -> [ChatSectionToolbarBarItem] { [] }
+    public func chatSectionHeaderItems(kernel: KernelLumi) -> [ChatSectionHeaderItem] { [] }
+    public func chatSectionActionBarItems(kernel: KernelLumi) -> [ChatSectionActionBarItem] { [] }
+    public func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView { content }
+    public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] {
         guard let httpExchangeStore else { return [] }
         return [
             SettingsTabItem(
@@ -115,14 +115,14 @@ public final class NetworkManagerPlugin: LumiPlugin {
             },
         ]
     }
-    public func addSettingsView(kernel: LumiKernel) -> [AnyView] { [] }
-    public func llmProviderSettingsItems(kernel: LumiKernel) -> [LLMProviderSettingsItem] { [] }
-    public func llmProviderSettingsViews(kernel: LumiKernel) -> [LumiLLMProviderSettingsViewItem] { [] }
-    public func rootOverlays(kernel: LumiKernel) -> [LumiRootOverlayItem] { [] }
-    public func onboardingPages(kernel: LumiKernel) -> [OnboardingPageItem] { [] }
-    public func logoItems(kernel: LumiKernel) -> [LogoItem] { [] }
-    public func onTurnFinished(kernel: LumiKernel, conversationID: UUID, reason: LumiTurnEndReason) async {}
-    public func onContainerActivated(kernel: LumiKernel, containerID: String) {}
-    public func registerEditorExtensions(into registry: AnyObject, kernel: LumiKernel) async {}
-    public func configureEditorRuntime(kernel: LumiKernel) async {}
+    public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
+    public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
+    public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
+    public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }
+    public func onboardingPages(kernel: KernelLumi) -> [OnboardingPageItem] { [] }
+    public func logoItems(kernel: KernelLumi) -> [LogoItem] { [] }
+    public func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
+    public func onContainerActivated(kernel: KernelLumi, containerID: String) {}
+    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
+    public func configureEditorRuntime(kernel: KernelLumi) async {}
 }

@@ -90,7 +90,7 @@ final class ThemeSelectionStore: ObservableObject {
 
     /// Mirrors `StorageService.makeDefaultDataRootDirectory()` in spirit but
     /// without depending on `StoragePlugin` (so this file remains free of the
-    /// `LumiKernel` import). Resolves to:
+    /// `KernelLumi` import). Resolves to:
     ///
     ///     <Application Support>/<bundleID>/db_<debug|production>_v<major>/ThemeManager
     private static var defaultPluginDataDirectory: URL {

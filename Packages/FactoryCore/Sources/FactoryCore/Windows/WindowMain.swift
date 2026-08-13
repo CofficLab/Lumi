@@ -1,5 +1,5 @@
 import EditorService
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import SwiftUI
 import os
@@ -13,7 +13,7 @@ public struct WindowMain: View, SuperLog {
     nonisolated public static let emoji = "🪟"
     nonisolated static let verbose = false
 
-    @State private var kernel: LumiKernel?
+    @State private var kernel: KernelLumi?
     @State private var initializationError: Error?
     @State private var isInitializing = true
     @State private var windowSaveDelegate: EditorWindowSaveDelegate?
@@ -108,7 +108,7 @@ public struct WindowMain: View, SuperLog {
 
     /// 按 order 依次把 rootOverlays 包裹到内容视图外层
     @ViewBuilder
-    private func applyRootOverlays<V: View>(_ content: V, kernel: LumiKernel) -> some View {
+    private func applyRootOverlays<V: View>(_ content: V, kernel: KernelLumi) -> some View {
         let overlays = kernel.workspace?.allRootOverlays ?? []
         let onboardingPages = (kernel.onboarding?.allOnboardingPages ?? [])
             .sorted { lhs, rhs in

@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SwiftUI
 import SuperLogKit
 import os
@@ -27,7 +27,7 @@ public struct ProjectsOnReadyHook {
     }
 
     /// 执行 onReady
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         // 1. 初始化存储
         guard let storage = kernel.storage else {
             Self.logger.error("📂 Storage service not available，跳过 Projects 插件初始化")

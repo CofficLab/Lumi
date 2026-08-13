@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import SuperLogKit
 import os
 
@@ -15,7 +15,7 @@ public struct ProjectRAGOnReadyHook: SuperLog {
     public init() {}
 
     /// 执行 onReady。
-    public func execute(_ kernel: LumiKernel) async throws {
+    public func execute(_ kernel: KernelLumi) async throws {
         if Self.verbose {
             Self.logger.info("\(Self.t)onReady")
         }
@@ -31,13 +31,13 @@ public struct ProjectRAGOnReadyHook: SuperLog {
         }
     }
 
-    private func bootstrapRuntime(kernel: LumiKernel) {
+    private func bootstrapRuntime(kernel: KernelLumi) {
         let ragDirectory = kernel.storage?.pluginDataDirectory(for: "RAG")
             ?? URL(fileURLWithPath: NSTemporaryDirectory())
         RAGPluginRuntime.databaseDirectoryProvider = { ragDirectory }
     }
 
-    func startBackgroundIndexing(kernel: LumiKernel) {
+    func startBackgroundIndexing(kernel: KernelLumi) {
         let service = RAGPluginService.getService()
         if Self.verbose {
             Self.logger.info("\(Self.t)background indexing scheduled")
@@ -85,14 +85,14 @@ public struct ProjectRAGOnReadyHook: SuperLog {
         RAGPluginService.replaceLifecycleTask(task)
     }
 
-    public func setIndexingPaused(_ paused: Bool, kernel: LumiKernel) async {
+    public func setIndexingPaused(_ paused: Bool, kernel: KernelLumi) async {
         await RAGPluginService.setIndexingPaused(paused)
 
         guard !paused else { return }
         startBackgroundIndexing(kernel: kernel)
     }
 
-    private func waitForCurrentProjectPath(kernel: LumiKernel) async -> String? {
+    private func waitForCurrentProjectPath(kernel: KernelLumi) async -> String? {
         for attempt in 1...10 {
             let currentPath = kernel.project?.currentProject?.path ?? ""
             let candidatePath = Self.uniqueExistingProjectPaths([currentPath]).first

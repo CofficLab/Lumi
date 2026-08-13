@@ -1,7 +1,7 @@
 import LumiUI
 import SwiftUI
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 智谱 GLM 配额状态栏视图
 ///

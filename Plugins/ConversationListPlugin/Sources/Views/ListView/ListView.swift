@@ -1,5 +1,5 @@
 import Combine
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -20,7 +20,7 @@ public struct ListView: View {
     /// conversationManager 是协议存在类型，无法直接 @ObservedObject；
     /// 通过 onReceive(objectWillChange) 递增它来强制 body 重新求值。
     @State private var managerRevision = 0
-    @ObservedObject private var kernel: LumiKernel
+    @ObservedObject private var kernel: KernelLumi
     @ObservedObject private var attentionStore: ConversationAttentionStore
     @ObservedObject private var sortStabilizer: ConversationSortStabilizer
     private let conversationManager: ConversationManaging
@@ -29,7 +29,7 @@ public struct ListView: View {
     private let projectPath: String?
 
     public init(
-        kernel: LumiKernel,
+        kernel: KernelLumi,
         conversationManager: ConversationManaging,
         attentionStore: ConversationAttentionStore,
         sortStabilizer: ConversationSortStabilizer,

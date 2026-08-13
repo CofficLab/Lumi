@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// Interactive native renderer for a suspended `ask_user` tool call.
 ///

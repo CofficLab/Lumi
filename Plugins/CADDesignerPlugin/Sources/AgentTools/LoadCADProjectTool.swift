@@ -1,5 +1,5 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 
 /// 从 .cadproj 文件加载项目。
 public struct LoadCADProjectTool: LumiAgentTool {
@@ -25,11 +25,11 @@ public struct LoadCADProjectTool: LumiAgentTool {
         "Load CAD project"
     }
 
-    public func riskLevel(arguments: [String: LumiJSONValue], kernel: LumiKernel) -> LumiCommandRiskLevel {
+    public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel {
         .low
     }
 
-    public func execute(arguments: [String: LumiJSONValue], kernel: LumiKernel) async throws -> String {
+    public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
         let language = CADToolSupport.language(kernel)
         guard let path = CADToolSupport.string(arguments, "path") else {
             return CADToolSupport.missingParameter("path", language: language)

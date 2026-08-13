@@ -1,5 +1,5 @@
 import SwiftUI
-import LumiKernel
+import KernelLumi
 
 /// Thin SwiftUI ↔ AppKit bridge for the native message-list view.
 ///
@@ -7,7 +7,7 @@ import LumiKernel
 /// allowed: everything below the bridge is AppKit. No message rendering
 /// happens here.
 struct MessageListAppKitBridge: NSViewControllerRepresentable {
-    let kernel: LumiKernel
+    let kernel: KernelLumi
 
     func makeNSViewController(context: Context) -> AppKitMessageListViewController {
         AppKitMessageListViewController(kernel: kernel)

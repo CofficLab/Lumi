@@ -1,11 +1,11 @@
 import Foundation
-import LumiKernel
+import KernelLumi
 import os
 import SuperLogKit
 
 // MARK: - LumiVisionMessageSupport
 
-/// Converts LumiKernel messages → LLMKit ChatMessage for provider consumption.
+/// Converts KernelLumi messages → LLMKit ChatMessage for provider consumption.
 ///
 /// LumiVisionMessageSupport.preparedMessages(for:) is the central entry-point used by
 /// LumiStreamingRequestSupport to transform a LumiLLMRequest into the provider-specific
@@ -186,7 +186,7 @@ public enum LumiLLMRequestMessages {
 
 // MARK: - LumiToolSchema
 
-/// Wraps a LumiAgentTool (LumiKernel) as LLMToolSchemaProviding (LLMKit).
+/// Wraps a LumiAgentTool (KernelLumi) as LLMToolSchemaProviding (LLMKit).
 public struct LumiToolSchema: LLMToolSchemaProviding {
     public let name: String
     public let toolDescription: String

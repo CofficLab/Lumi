@@ -1,6 +1,6 @@
 import SwiftUI
 import LumiUI
-import LumiKernel
+import KernelLumi
 
 /// 冲突状态磁贴：只在存在冲突时显示。
 public struct GitConflictStatusTile: View {

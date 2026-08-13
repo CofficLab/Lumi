@@ -1,6 +1,6 @@
 import Foundation
 import LLMKit
-import LumiKernel
+import KernelLumi
 
 public final class MiniMaxAnthropicProvider: LumiLLMProvider, @unchecked Sendable {
     public static let shortName = "MiniMax"

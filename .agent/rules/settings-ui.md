@@ -47,18 +47,18 @@ Do **not** use `AppToggleRow` on settings pages (use `AppSettingsToggleRow`).
 
 Plugins can extend the **Settings window sidebar** with their own tabs by returning `settingsTabItems(kernel:)` from the `LumiPlugin` protocol. Hosted at:
 
-`Packages/LumiKernel/Sources/LumiKernel/Contracts/LumiPlugin.swift`
+`Packages/KernelLumi/Sources/KernelLumi/Contracts/LumiPlugin.swift`
 
 Plugin-contributed tabs are **rendered flat after the four built-in tabs** (General / Appearance / Plugins / About) and registered through `kernel.settings?.registerSettingsTabItem(_:)`. The host view (`SettingsView`) re-renders on register/unregister via the kernel's observable forwarding.
 
 ### Template
 
 ```swift
-import LumiKernel
+import KernelLumi
 import LumiUI
 import SwiftUI
 
-public func settingsTabItems(kernel: LumiKernel) -> [SettingsTabItem] {
+public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] {
     [
         SettingsTabItem(
             id: "com.mycompany.myplugin.main",

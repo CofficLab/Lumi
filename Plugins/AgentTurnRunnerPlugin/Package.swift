@@ -4,12 +4,12 @@ import PackageDescription
 let package = Package(
     name: "AgentTurnRunnerPlugin",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "AgentTurnRunnerPlugin", targets: ["AgentTurnRunnerPlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/LumiKernel"),
+        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -19,7 +19,7 @@ let package = Package(
         .target(
             name: "AgentTurnRunnerPlugin",
             dependencies: [
-                .product(name: "LumiKernel", package: "LumiKernel"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
