@@ -103,23 +103,26 @@ public extension LumiUITheme {
     }
 }
 
+/// 启动兜底主题。镜像「森林墨」(`ThemeLumiPlugin.LumiTheme`) 的配色，
+/// 让首个视图渲染时即与最终主题一致，避免启动时的明暗/色相闪烁。
+/// 真实主题在插件注册后由 ``LumiUIThemeStore`` 替换。
 public struct LumiDefaultTheme: LumiUITheme {
     public let id = "lumi-default"
     public let name = "Lumi Default"
 
-    public let primary = Color.adaptive(light: "7C6FFF", dark: "7C6FFF")
-    public let primarySecondary = Color.adaptive(light: "A99CFF", dark: "A99CFF")
+    public let primary = Color.adaptive(light: "059669", dark: "34D399")
+    public let primarySecondary = Color.adaptive(light: "D97706", dark: "F59E0B")
 
-    public let textPrimary = Color.adaptive(light: "1C1C1E", dark: "FFFFFF")
-    public let textSecondary = Color.adaptive(light: "6B6B7B", dark: "EBEBF5")
-    public let textTertiary = Color.adaptive(light: "98989E", dark: "98989E")
+    public let textPrimary = Color.adaptive(light: "1C1917", dark: "FAFAF9")
+    public let textSecondary = Color.adaptive(light: "57534E", dark: "D6D3D1")
+    public let textTertiary = Color.adaptive(light: "A8A29E", dark: "A8A29E")
     public let textDisabled = Color.adaptive(light: "BDBDBD", dark: "48484F")
 
-    public let background = Color.adaptive(light: "F5F5F7", dark: "050508")
-    public let surface = Color.adaptive(light: "FFFFFF", dark: "0D0D12")
-    public let elevatedSurface = Color.adaptive(light: "FFFFFF", dark: "14141A")
-    public let overlay = Color.adaptive(light: "E5E5EA", dark: "1A1A22")
-    public let divider = Color.adaptive(light: "E5E5EA", dark: "FFFFFF").opacity(0.15)
+    public let background = Color.adaptive(light: "FAFAF9", dark: "1C1C1A")
+    public let surface = Color.adaptive(light: "FFFFFF", dark: "262624")
+    public let elevatedSurface = Color.adaptive(light: "E7E5E4", dark: "30302E")
+    public let overlay = Color.adaptive(light: "E7E5E4", dark: "383835")
+    public let divider = Color.adaptive(light: "E7E5E4", dark: "FFFFFF").opacity(0.15)
 
     public let success = Color.adaptive(light: "30D158", dark: "30D158")
     public let successGlow = Color.adaptive(light: "7CFFB5", dark: "7CFFB5")
@@ -127,10 +130,10 @@ public struct LumiDefaultTheme: LumiUITheme {
     public let warningGlow = Color.adaptive(light: "FFD57F", dark: "FFD57F")
     public let error = Color.adaptive(light: "FF453A", dark: "FF453A")
     public let errorGlow = Color.adaptive(light: "FF7A73", dark: "FF7A73")
-    public let info = Color.adaptive(light: "0A84FF", dark: "0A84FF")
-    public let infoGlow = Color.adaptive(light: "7AB8FF", dark: "7AB8FF")
+    public let info = Color.adaptive(light: "0EA5E9", dark: "38BDF8")
+    public let infoGlow = Color.adaptive(light: "7DD3FC", dark: "7DD3FC")
 
-    public let glowAccent = Color(hex: "6B5CE7")
+    public let glowAccent = Color(hex: "10B981")
 
     public init() {}
 }
