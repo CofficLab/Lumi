@@ -18,6 +18,7 @@ struct AppLayoutView: View {
 
     @State private var isRailVisible: Bool = true
     @State private var isChatVisible: Bool = true
+    @State private var activityBarContainerCount: Int
 
     init(
         kernel: KernelLumi,
@@ -28,6 +29,9 @@ struct AppLayoutView: View {
         self.layoutManager = kernel.workspace
         self.showsStatusBar = showsStatusBar
         self.showsActivityBar = showsActivityBar
+        _activityBarContainerCount = State(
+            initialValue: kernel.workspace?.allViewContainers.count ?? 0
+        )
     }
 
     var body: some View {
@@ -47,7 +51,7 @@ struct AppLayoutView: View {
             AppDivider()
 
             HStack(spacing: 0) {
-                if showsActivityBar {
+                if showsActivityBar, activityBarContainerCount > 1 {
                     ActivityBar(kernel: kernel)
                         .frame(maxHeight: .infinity)
                     AppDivider(.vertical)
@@ -86,6 +90,10 @@ struct AppLayoutView: View {
         .onAppear {
             isRailVisible = layoutManager.isRailVisible
             isChatVisible = layoutManager.isChatVisible
+            activityBarContainerCount = layoutManager.allViewContainers.count
+        }
+        .onWorkspaceContributionsDidChange {
+            activityBarContainerCount = layoutManager.allViewContainers.count
         }
     }
 
