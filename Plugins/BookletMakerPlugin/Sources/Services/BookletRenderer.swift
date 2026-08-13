@@ -115,7 +115,7 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
             // 4. Render every print side as one output PDF page.
             let total = outputSides.count
             for (i, outputSide) in outputSides.enumerated() {
-                if Task.isCancelled { break }
+                try Task.checkCancellation()
 
                 ctx.beginPDFPage(nil)
 
@@ -147,6 +147,7 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
                 continuation.yield(p)
             }
 
+            try Task.checkCancellation()
             ctx.closePDF()
 
             // 5. Write to disk.
@@ -169,6 +170,11 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
                 Self.logger.info("\(Self.t)Imposed \(rawCount) source pages → \(physicalSheets) physical sheets / \(total) print sides → \(outputURL.lastPathComponent)")
             }
         } catch {
+            try? FileManager.default.removeItem(at: outputURL)
+            if error is CancellationError {
+                continuation.finish()
+                return
+            }
             let message = (error as? LocalizedError)?.errorDescription
                 ?? error.localizedDescription
             Self.logger.error("\(Self.t)Render failed: \(message)")

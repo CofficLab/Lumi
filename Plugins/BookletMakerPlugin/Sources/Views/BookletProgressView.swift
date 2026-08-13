@@ -13,6 +13,14 @@ struct BookletProgressView: View {
                 if viewModel.isRendering {
                     ProgressView(value: viewModel.progress)
                         .progressViewStyle(.linear)
+                    Text("\(Int(viewModel.progress * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                } else if viewModel.isPreparingPreview {
+                    ProgressView()
+                    Text(BookletLocalization.string("Preparing preview…"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 } else if viewModel.lastOutputURL != nil {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
@@ -38,11 +46,6 @@ struct BookletProgressView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                 }
-            }
-            if viewModel.isRendering {
-                Text("\(Int(viewModel.progress * 100))%")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
         .padding(.horizontal, 4)

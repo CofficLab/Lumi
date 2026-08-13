@@ -32,6 +32,11 @@ struct BookletMakerRailView: View {
             }
 
             Divider()
+            if viewModel.isBusy {
+                BookletProgressView(viewModel: viewModel)
+                    .padding(.horizontal)
+                    .padding(.top, 10)
+            }
             primaryAction
                 .padding()
         }
@@ -230,9 +235,13 @@ struct BookletMakerRailView: View {
         Button(action: primaryActionHandler) {
             HStack {
                 Spacer()
-                Image(systemName: viewModel.selectedTool == .booklet
-                      ? "square.and.arrow.down"
-                      : "scissors")
+                if viewModel.isBusy {
+                    Image(systemName: "xmark.circle")
+                } else {
+                    Image(systemName: viewModel.selectedTool == .booklet
+                          ? "square.and.arrow.down"
+                          : "scissors")
+                }
                 Text(primaryActionTitle)
                     .fontWeight(.semibold)
                 Spacer()
@@ -240,15 +249,21 @@ struct BookletMakerRailView: View {
             .padding(.vertical, 6)
         }
         .buttonStyle(.borderedProminent)
-        .disabled(!viewModel.canExport)
+        .disabled(!viewModel.isBusy && !viewModel.canExport)
     }
 
     private var primaryActionTitle: String {
+        if viewModel.isPreparingPreview {
+            return BookletLocalization.string("Preparing preview…")
+        }
+        if viewModel.isRendering {
+            return BookletLocalization.string("Cancel Export")
+        }
         switch viewModel.selectedTool {
         case .booklet:
-            BookletLocalization.string("Export Booklet PDF")
+            return BookletLocalization.string("Export Booklet PDF")
         case .split:
-            BookletLocalization.string(
+            return BookletLocalization.string(
                 "Export %lld PDF files",
                 Int64(viewModel.splitSegments.count)
             )
@@ -256,6 +271,10 @@ struct BookletMakerRailView: View {
     }
 
     private func primaryActionHandler() {
+        if viewModel.isBusy {
+            viewModel.cancel()
+            return
+        }
         switch viewModel.selectedTool {
         case .booklet: onExportBooklet()
         case .split: onExportSplit()

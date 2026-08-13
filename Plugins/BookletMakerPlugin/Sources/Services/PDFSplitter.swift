@@ -25,19 +25,23 @@ final class PDFSplitter: @unchecked Sendable {
 
     func split(sourceURL: URL,
                outputDirectory: URL,
-               outputs: [PDFSplitOutput]) async throws -> [URL] {
+               outputs: [PDFSplitOutput],
+               progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws -> [URL] {
         try await Task.detached(priority: .userInitiated) {
             try Self.runSplit(
                 sourceURL: sourceURL,
                 outputDirectory: outputDirectory,
-                outputs: outputs
+                outputs: outputs,
+                progress: progress
             )
         }.value
     }
 
     private static func runSplit(sourceURL: URL,
                                  outputDirectory: URL,
-                                 outputs: [PDFSplitOutput]) throws -> [URL] {
+                                 outputs: [PDFSplitOutput],
+                                 progress: @escaping @Sendable (Double) -> Void) throws -> [URL] {
+        progress(0.05)
         guard let source = PDFDocument(url: sourceURL),
               !source.isLocked,
               source.pageCount > 0 else {
@@ -60,7 +64,9 @@ final class PDFSplitter: @unchecked Sendable {
 
         var completed: [URL] = []
         do {
-            for (plannedOutput, outputURL) in zip(outputs, outputURLs) {
+            for (index, pair) in zip(outputs, outputURLs).enumerated() {
+                if Task.isCancelled { throw CancellationError() }
+                let (plannedOutput, outputURL) = pair
                 let output = PDFDocument()
 
                 for pageNumber in plannedOutput.segment.startPage ... plannedOutput.segment.endPage {
@@ -79,7 +85,9 @@ final class PDFSplitter: @unchecked Sendable {
                     throw SplitError.writeFailed(outputURL)
                 }
                 completed.append(outputURL)
+                progress(0.05 + 0.90 * Double(index + 1) / Double(max(outputs.count, 1)))
             }
+            progress(1)
             return completed
         } catch {
             for url in completed {
