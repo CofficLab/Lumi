@@ -113,13 +113,8 @@ public struct TreeView: View, SuperLog {
     /// 重新计算当前项目是否需要展示 Swift Package 依赖区域。
     /// 仅在项目路径变化/视图出现时调用一次，避免在 body 中反复同步扫描磁盘。
     private func recomputeShowPackageDependencies() {
-        guard !projectPath.isEmpty else {
-            showPackageDependencies = false
-            return
-        }
-        showPackageDependencies = PackageDependencyResolver.shouldShowPackageDependencies(
-            projectRootURL: URL(fileURLWithPath: projectPath)
-        )
+        // 软件包依赖功能暂时隐藏，待后续完善后再启用。
+        showPackageDependencies = false
     }
 
     private func onDisappear() {

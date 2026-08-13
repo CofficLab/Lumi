@@ -235,6 +235,9 @@ final class FileTreeDataSource: SuperLog {
         isPackageExpanded: Bool,
         projectRootPath: String
     ) -> [CollectionItem] {
+        // 无依赖时不构建软件包区域（含表头），从 UI 上隐藏该功能。
+        guard !dependencies.isEmpty else { return [] }
+
         let header = PackageHeaderItem(
             isExpanded: isPackageExpanded,
             dependencyCount: dependencies.count,
