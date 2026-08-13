@@ -39,6 +39,7 @@
       }
     },
     "%lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -175,6 +176,7 @@
       }
     },
     "Allows adding, editing, and removing entries" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -209,6 +211,7 @@
       }
     },
     "Backup your hosts file before making changes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -277,6 +280,7 @@
       }
     },
     "Comments start with # and are ignored" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -311,6 +315,7 @@
       }
     },
     "Create and switch between different hosts profiles" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -345,6 +350,7 @@
       }
     },
     "Edit and manage the system hosts file with a user-friendly interface" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -379,6 +385,7 @@
       }
     },
     "Enable or disable hosts entries without deleting them" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -515,6 +522,7 @@
       }
     },
     "Hosts File Management" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -787,6 +795,7 @@
       }
     },
     "Parses and displays entries in an organized list" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -821,6 +830,7 @@
       }
     },
     "Profile Support" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -855,6 +865,7 @@
       }
     },
     "Quick Toggle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -889,6 +900,7 @@
       }
     },
     "Reads the system hosts file with proper permissions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1059,6 +1071,7 @@
       }
     },
     "Syntax Highlighting" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1093,6 +1106,7 @@
       }
     },
     "Syntax highlighting and validation for hosts entries" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1127,6 +1141,7 @@
       }
     },
     "Use profiles to switch between different configurations" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1161,6 +1176,7 @@
       }
     },
     "Writes changes back to the hosts file" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
