@@ -1,41 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Display images in the UI with support for local paths and remote URLs.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Display images in the UI with support for local paths and remote URLs."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在界面中显示图片，支持本地路径和远程 URL。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在界面中顯示圖片，支持本地路徑和遠程 URL。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在界面中顯示圖片，支持本地路徑和遠程 URL。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在界面中顯示圖片，支持本地路徑和遠程 URL。"
-          }
-        }
-      }
-    },
     "Show Image": {
       "localizations": {
         "en": {

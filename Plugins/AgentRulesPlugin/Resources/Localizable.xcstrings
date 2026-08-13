@@ -171,41 +171,6 @@
         }
       }
     },
-    "Create a new rule document in the .agent/rules directory.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Create a new rule document in the .agent/rules directory."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 .agent/rules 目录中创建新的规则文档。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 .agent/rules 目錄中建立新的規則文檔。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 .agent/rules 目錄中建立新的規則文檔。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 .agent/rules 目錄中建立新的規則文檔。"
-          }
-        }
-      }
-    },
     "List Agent Rules": {
       "localizations": {
         "en": {
@@ -270,76 +235,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "列出項目 .agent/rules 目錄中的所有規則文檔。返回每個規則文檔的元數據，包括檔案名、標題、描述、檔案大小和修改日期。"
-          }
-        }
-      }
-    },
-    "List rule documents in the .agent/rules directory.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "List rule documents in the .agent/rules directory."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "列出 .agent/rules 目录中的规则文档。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "列出 .agent/rules 目錄中的規則文檔。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "列出 .agent/rules 目錄中的規則文檔。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "列出 .agent/rules 目錄中的規則文檔。"
-          }
-        }
-      }
-    },
-    "Manage rule documents in .agent/rules directory": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage rule documents in .agent/rules directory"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 .agent/rules 目录中的规则文档"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 .agent/rules 目錄中的規則文檔"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 .agent/rules 目錄中的規則文檔"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 .agent/rules 目錄中的規則文檔"
           }
         }
       }

@@ -1,15 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
-    "·" : {
-
-    },
-    "#" : {
-
-    },
     "%@ %@" : {
       "localizations" : {
         "en" : {
@@ -20,9 +11,6 @@
         }
       }
     },
-    "%lld" : {
-
-    },
     "%lld %@" : {
       "localizations" : {
         "en" : {
@@ -32,15 +20,6 @@
           }
         }
       }
-    },
-    "%lld structure changes" : {
-
-    },
-    "+" : {
-
-    },
-    "Add Column" : {
-
     },
     "Add Connection" : {
       "localizations" : {
@@ -76,15 +55,6 @@
         }
       }
     },
-    "Add Index" : {
-
-    },
-    "Allow NULL" : {
-
-    },
-    "Apply Structure Changes" : {
-
-    },
     "Click + to add a new connection." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -119,187 +89,6 @@
           }
         }
       }
-    },
-    "Click Reload to refresh the key list." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click Reload to refresh the key list."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点击 Reload 刷新键列表。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊 Reload 重新整理鍵列表。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊 Reload 重新整理鍵列表。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊 Reload 重新整理鍵列表。"
-          }
-        }
-      }
-    },
-    "Click Reload to refresh the table list." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click Reload to refresh the table list."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点击 Reload 刷新表列表。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊 Reload 重新整理資料表列表。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊 Reload 重新整理資料表列表。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊 Reload 重新整理資料表列表。"
-          }
-        }
-      }
-    },
-    "Columns" : {
-
-    },
-    "Connections" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connections"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "连接"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "連接"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "連接"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "連線"
-          }
-        }
-      }
-    },
-    "Copy" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "复制"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
-          }
-        }
-      }
-    },
-    "Data Browser" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Data Browser"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "数据浏览器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料瀏覽器"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料瀏覽器"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料瀏覽器"
-          }
-        }
-      }
-    },
-    "Data Type" : {
-
     },
     "Database" : {
       "localizations" : {
@@ -368,47 +157,6 @@
           }
         }
       }
-    },
-    "Database Type" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Database Type"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "数据库类型"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料庫類型"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料庫類型"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料庫類型"
-          }
-        }
-      }
-    },
-    "DDL is not available for this object." : {
-
-    },
-    "Default SQL Expression" : {
-
     },
     "Delete" : {
       "extractionState" : "manual",
@@ -479,53 +227,6 @@
         }
       }
     },
-    "Drop Column…" : {
-
-    },
-    "Drop Index…" : {
-
-    },
-    "Index Name" : {
-
-    },
-    "Keys" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keys"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "键"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "鍵"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "鍵"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "鍵"
-          }
-        }
-      }
-    },
-    "Loading structure…" : {
-
-    },
     "Multi-Database Support" : {
       "localizations" : {
         "en" : {
@@ -556,82 +257,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "多資料庫支援"
-          }
-        }
-      }
-    },
-    "Name" : {
-
-    },
-    "No database connected" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No database connected"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未连接数据库"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未連線資料庫"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未連線資料庫"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未連線資料庫"
-          }
-        }
-      }
-    },
-    "No items" : {
-
-    },
-    "No keys" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No keys"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂无键"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無鍵"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無鍵"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無鍵"
           }
         }
       }
@@ -704,47 +329,6 @@
         }
       }
     },
-    "No tables" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No tables"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂无表"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無資料表"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無資料表"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無資料表"
-          }
-        }
-      }
-    },
-    "OK" : {
-
-    },
-    "Open a table or view to inspect its structure." : {
-
-    },
     "Reload" : {
       "localizations" : {
         "en" : {
@@ -775,50 +359,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新整理"
-          }
-        }
-      }
-    },
-    "Rename Column" : {
-
-    },
-    "Rename…" : {
-
-    },
-    "Review the generated DDL before changing the database." : {
-
-    },
-    "Select a database to connect" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select a database to connect"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择一个数据库进行连接"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個資料庫進行連接"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個資料庫進行連接"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個資料庫進行連線"
           }
         }
       }
@@ -893,53 +433,6 @@
         }
       }
     },
-    "Some database engines auto-commit DDL statements." : {
-
-    },
-    "SQLite, MySQL, PostgreSQL, and Redis" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SQLite, MySQL, PostgreSQL, and Redis"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SQLite、MySQL、PostgreSQL 和 Redis"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SQLite、MySQL、PostgreSQL 和 Redis"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SQLite、MySQL、PostgreSQL 和 Redis"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SQLite、MySQL、PostgreSQL 和 Redis"
-          }
-        }
-      }
-    },
-    "SSL / TLS" : {
-
-    },
-    "Structure Change Error" : {
-
-    },
-    "Structure Section" : {
-
-    },
     "Switch to Connections above to add or pick a database." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -975,44 +468,6 @@
         }
       }
     },
-    "Tables" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tables"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表"
-          }
-        }
-      }
-    },
-    "This change drops data and cannot be undone by Lumi." : {
-
-    },
     "Toggle" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1047,10 +502,6 @@
           }
         }
       }
-    },
-    "Unique Index" : {
-
-    }
-  },
+    }  },
   "version" : "1.1"
 }

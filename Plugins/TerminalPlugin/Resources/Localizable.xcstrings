@@ -101,41 +101,6 @@
         }
       }
     },
-    "Complete VT escapes and shell integration": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Complete VT escapes and shell integration"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完整的 VT 转义序列和 shell 集成"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完整的 VT 逸出序列和 shell 整合"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完整的 VT 逸出序列和 shell 整合"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完整的 VT 逸出序列和 shell 整合"
-          }
-        }
-      }
-    },
     "Create new tabs for different tasks": {
       "localizations": {
         "en": {
@@ -184,41 +149,6 @@
         }
       }
     },
-    "Full keyboard": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Full keyboard"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完整键盘"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完整鍵盤"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完整鍵盤"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完整鍵盤"
-          }
-        }
-      }
-    },
     "How It Works": {
       "localizations": {
         "en": {
@@ -235,41 +165,6 @@
         }
       }
     },
-    "Interactive terminal emulator": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Interactive terminal emulator"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "交互式终端模拟器"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "互動式終端機模擬器"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "互動式終端機模擬器"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "互動式終端機模擬器"
-          }
-        }
-      }
-    },
     "Multi-Tab Terminal": {
       "localizations": {
         "en": {
@@ -282,76 +177,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "多标签终端"
-          }
-        }
-      }
-    },
-    "Multiple sessions": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Multiple sessions"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "多个会话"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "多個會話"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "多個會話"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "多個會話"
-          }
-        }
-      }
-    },
-    "Native interactive terminal powered by SwiftTerm": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Native interactive terminal powered by SwiftTerm"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "由 SwiftTerm 驱动的原生交互式终端"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "由 SwiftTerm 驅動的原生互動式終端"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "由 SwiftTerm 驅動的原生互動式終端"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "由 SwiftTerm 驅動的原生互動式終端"
           }
         }
       }
@@ -390,41 +215,6 @@
         }
       }
     },
-    "Open Terminal from the sidebar at any time.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Terminal from the sidebar at any time."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "随时从侧边栏打开终端。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隨時從側邊欄開啟終端機。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隨時從側邊欄開啟終端機。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隨時從側邊欄開啟終端機。"
-          }
-        }
-      }
-    },
     "Open multiple terminal tabs for parallel command execution": {
       "localizations": {
         "en": {
@@ -437,41 +227,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开多个终端标签页，并行执行命令"
-          }
-        }
-      }
-    },
-    "Open several shells side by side": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open several shells side by side"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "并排打开多个 shell"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "並排開啟多個 shell"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "並排開啟多個 shell"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "並排開啟多個 shell"
           }
         }
       }

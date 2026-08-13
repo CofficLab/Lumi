@@ -103,41 +103,6 @@
         }
       }
     },
-    "Any format": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Any format"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "任意格式"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "任意格式"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "任意格式"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "任意格式"
-          }
-        }
-      }
-    },
     "Batch Processing": {
       "localizations": {
         "en": {
@@ -444,41 +409,6 @@
         }
       }
     },
-    "Convert clips between common formats": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Convert clips between common formats"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在常见格式之间转换片段"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在常見格式之間轉換片段"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在常見格式之間轉換片段"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在常見格式之間轉換片段"
-          }
-        }
-      }
-    },
     "Convert multiple files in a queue with progress tracking": {
       "localizations": {
         "en": {
@@ -543,41 +473,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 MP4、MOV、AVI、MKV 等流行格式之間轉換影片檔案"
-          }
-        }
-      }
-    },
-    "Convert video formats using FFmpeg": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Convert video formats using FFmpeg"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 FFmpeg 转换视频格式"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 FFmpeg 轉換影片格式"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 FFmpeg 轉換影片格式"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 FFmpeg 轉換影片格式"
           }
         }
       }
@@ -782,41 +677,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "FFmpeg 退出，錯誤代碼 %lld。"
-          }
-        }
-      }
-    },
-    "FFmpeg is required. Open Video Converter from the sidebar to start.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FFmpeg is required. Open Video Converter from the sidebar to start."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要 FFmpeg。从侧边栏打开视频转换器开始使用。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要 FFmpeg。從側邊欄開啟影片轉換器開始使用。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要 FFmpeg。從側邊欄開啟影片轉換器開始使用。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要 FFmpeg。從側邊欄開啟影片轉換器開始使用。"
           }
         }
       }
@@ -1059,41 +919,6 @@
         }
       }
     },
-    "Pick a target format and convert in bulk": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pick a target format and convert in bulk"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "选择目标格式并批量转换"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選擇目標格式並批量轉換"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選擇目標格式並批量轉換"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選擇目標格式並批量轉換"
-          }
-        }
-      }
-    },
     "Powered by FFmpeg for fast and reliable video processing": {
       "localizations": {
         "en": {
@@ -1124,41 +949,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "由 FFmpeg 提供快速可靠的影片處理能力"
-          }
-        }
-      }
-    },
-    "Presets": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Presets"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "预设"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "預設"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "預設"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "預設"
           }
         }
       }

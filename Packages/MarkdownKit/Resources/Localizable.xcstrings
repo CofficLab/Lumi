@@ -1,15 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%lld." : {
-
-    },
-    "•" : {
-
-    },
-    "Expand diagram" : {
-
-    },
     "Mermaid Diagram" : {
       "localizations" : {
         "en" : {

@@ -11,9 +11,6 @@
         }
       }
     },
-    "%lld" : {
-
-    },
     "%lld %@ · %@" : {
       "localizations" : {
         "en" : {
@@ -84,9 +81,6 @@
         }
       }
     },
-    "Display" : {
-
-    },
     "Export" : {
       "localizations" : {
         "zh-Hans" : {
@@ -103,17 +97,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "导出失败"
-          }
-        }
-      }
-    },
-    "HTML Source" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTML 源码"
           }
         }
       }
@@ -160,9 +143,6 @@
         }
       }
     },
-    "Mode" : {
-
-    },
     "No images yet" : {
       "localizations" : {
         "zh-Hans" : {
@@ -172,9 +152,6 @@
           }
         }
       }
-    },
-    "OK" : {
-
     },
     "Open a project to enable project-local storage." : {
       "localizations" : {
@@ -198,17 +175,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "插件存储不可用。"
-          }
-        }
-      }
-    },
-    "Preview" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "预览"
           }
         }
       }

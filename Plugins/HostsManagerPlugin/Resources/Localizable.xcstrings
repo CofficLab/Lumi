@@ -1,7 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "": {},
     "# %@": {
       "localizations": {
         "en": {
@@ -134,41 +133,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加主機條目"
-          }
-        }
-      }
-    },
-    "Add or remove entries with a live preview": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add or remove entries with a live preview"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "实时预览添加或删除条目"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "即時預覽新增或移除項目"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "即時預覽新增或移除項目"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "即時預覽新增或移除項目"
           }
         }
       }
@@ -411,76 +375,6 @@
         }
       }
     },
-    "Edit hosts": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit hosts"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "编辑 hosts"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯 hosts"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯 hosts"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯 hosts"
-          }
-        }
-      }
-    },
-    "Editing the hosts file requires administrator privileges.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Editing the hosts file requires administrator privileges."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "编辑 hosts 文件需要管理员权限。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯 hosts 檔案需要管理員權限。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯 hosts 檔案需要管理員權限。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯 hosts 檔案需要管理員權限。"
-          }
-        }
-      }
-    },
     "Enable or disable hosts entries without deleting them": {
       "localizations": {
         "en": {
@@ -511,41 +405,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "無需刪除即可啟用或停用 hosts 條目"
-          }
-        }
-      }
-    },
-    "Enable or disable mappings without deleting them": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enable or disable mappings without deleting them"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "启用或禁用映射，无需删除"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "啟用或停用映射，無需刪除"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "啟用或停用映射，無需刪除"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "啟用或停用映射，無需刪除"
           }
         }
       }
@@ -886,41 +745,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "加载 Hosts"
-          }
-        }
-      }
-    },
-    "Manage system hosts file configuration": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage system hosts file configuration"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理系统 hosts 文件配置"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理系統 hosts 檔案配置"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理系統 hosts 檔案配置"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理系統 hosts 檔案配置"
           }
         }
       }
@@ -1295,41 +1119,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "為 hosts 條目提供語法醒目提示和驗證"
-          }
-        }
-      }
-    },
-    "Toggle entries": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toggle entries"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "切换条目"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "切換項目"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "切換項目"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "切換項目"
           }
         }
       }

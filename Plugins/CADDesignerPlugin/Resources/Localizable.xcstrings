@@ -1,7 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "": {},
     ".cadproj (JSON)": {
       "localizations": {
         "en": {
@@ -1008,23 +1007,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "欧标 20/30/40 系列"
-          }
-        }
-      }
-    },
-    "Export": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Export"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "导出"
           }
         }
       }

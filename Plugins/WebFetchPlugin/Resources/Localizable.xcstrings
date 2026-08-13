@@ -68,42 +68,6 @@
           }
         }
       }
-    },
-    "提供网页抓取和内容提取功能，支持 HTML 转 Markdown。": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Provides web page fetching and content extraction, supports HTML to Markdown conversion."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供网页抓取和内容提取功能，支持 HTML 转 Markdown。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供網頁抓取和內容提取功能，支持 HTML 轉 Markdown。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供網頁抓取和內容提取功能，支持 HTML 轉 Markdown。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供網頁抓取和內容提取功能，支持 HTML 轉 Markdown。"
-          }
-        }
-      }
-    }
-  },
+    }  },
   "version": "1.0"
 }

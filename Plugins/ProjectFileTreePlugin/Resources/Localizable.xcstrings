@@ -147,64 +147,6 @@
         }
       }
     },
-    "Copy URL/path": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copy URL/path"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "复制 URL/路径"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "複製 URL/路徑"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "複製 URL/路徑"
-          }
-        }
-      }
-    },
-    "Copy diagnostic text": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copy diagnostic text"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "复制诊断信息"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "複製診斷資訊"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "複製診斷資訊"
-          }
-        }
-      }
-    },
     "Could not create the file. The name may be invalid or a file with that name already exists.": {
       "localizations": {
         "en": {
@@ -429,35 +371,6 @@
         }
       }
     },
-    "Explorer V2": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Explorer V2"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "资源管理器 V2"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "資源管理器 V2"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "資源管理器 V2"
-          }
-        }
-      }
-    },
     "Move to Trash": {
       "localizations": {
         "en": {
@@ -510,35 +423,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "已移到垃圾桶"
-          }
-        }
-      }
-    },
-    "Native rendering file tree using NSCollectionView for better performance.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Native rendering file tree using NSCollectionView for better performance."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 NSCollectionView 原生渲染文件树，性能更佳。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 NSCollectionView 原生渲染檔案樹，效能更佳。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 NSCollectionView 原生渲染檔案樹，效能更佳。"
           }
         }
       }
@@ -599,35 +483,6 @@
         }
       }
     },
-    "No package dependencies": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No package dependencies"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无软件包依赖"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "沒有軟體套件依賴"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "沒有軟體套件依賴"
-          }
-        }
-      }
-    },
     "No project": {
       "localizations": {
         "en": {
@@ -652,35 +507,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "暫無專案"
-          }
-        }
-      }
-    },
-    "Open Repository": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Repository"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开仓库"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打開倉庫"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打開倉庫"
           }
         }
       }
@@ -831,35 +657,6 @@
         }
       }
     },
-    "Project File Tree V2": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Project File Tree V2"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "项目文件树 V2"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "項目檔案樹 V2"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "項目檔案樹 V2"
-          }
-        }
-      }
-    },
     "Rename": {
       "localizations": {
         "en": {
@@ -888,35 +685,6 @@
         }
       }
     },
-    "Retry refresh": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retry refresh"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重新刷新"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重新整理"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重新整理"
-          }
-        }
-      }
-    },
     "Reveal in Finder": {
       "localizations": {
         "en": {
@@ -941,64 +709,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 Finder 中顯示"
-          }
-        }
-      }
-    },
-    "Send to Conversation": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Send to Conversation"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "发送到对话"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "傳送到對話"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "傳送到對話"
-          }
-        }
-      }
-    },
-    "Sent to Conversation": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sent to Conversation"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已发送到对话"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已傳送到對話"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已傳送到對話"
           }
         }
       }

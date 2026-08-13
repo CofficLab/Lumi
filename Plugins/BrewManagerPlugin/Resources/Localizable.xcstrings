@@ -477,41 +477,6 @@
         }
       }
     },
-    "Error": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Error"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "错误"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "錯誤"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "錯誤"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "錯誤"
-          }
-        }
-      }
-    },
     "Find packages in Homebrew": {
       "localizations": {
         "en": {
@@ -852,41 +817,6 @@
         }
       }
     },
-    "Install, upgrade, and remove Homebrew formulae": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Install, upgrade, and remove Homebrew formulae"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安装、升级和删除 Homebrew 软件包"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安裝、升級和刪除 Homebrew 軟體套件"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安裝、升級和刪除 Homebrew 軟體套件"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安裝、升級和刪除 Homebrew 軟體套件"
-          }
-        }
-      }
-    },
     "Installation failed: %@": {
       "localizations": {
         "en": {
@@ -1057,41 +987,6 @@
         }
       }
     },
-    "Manage Homebrew packages and casks": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage Homebrew packages and casks"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 Homebrew 包和 cask"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 Homebrew 套件和 cask"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 Homebrew 套件和 cask"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "管理 Homebrew 套件和 cask"
-          }
-        }
-      }
-    },
     "No packages installed": {
       "localizations": {
         "en": {
@@ -1160,76 +1055,6 @@
         }
       }
     },
-    "OK": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "OK"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "确定"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "確定"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "確定"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "確定"
-          }
-        }
-      }
-    },
-    "Open Package Management from the sidebar to manage brew.": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Package Management from the sidebar to manage brew."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "从侧边栏打开软件包管理来管理 brew。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "從側邊欄開啟軟體套件管理來管理 brew。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "從側邊欄開啟軟體套件管理來管理 brew。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "從側邊欄開啟軟體套件管理來管理 brew。"
-          }
-        }
-      }
-    },
     "Package Management": {
       "localizations": {
         "en": {
@@ -1294,41 +1119,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "包搜索"
-          }
-        }
-      }
-    },
-    "Packages & casks": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Packages & casks"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "软件包和 cask"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "軟體套件和 cask"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "軟體套件和 cask"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "軟體套件和 cask"
           }
         }
       }
@@ -1431,41 +1221,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "重新整理"
-          }
-        }
-      }
-    },
-    "Refresh and upgrade everything in one place": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Refresh and upgrade everything in one place"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在一个地方刷新和升级所有内容"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在一個地方重新整理和升級所有內容"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在一個地方重新整理和升級所有內容"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在一個地方重新整理和升級所有內容"
           }
         }
       }
@@ -1840,41 +1595,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "出错了"
-          }
-        }
-      }
-    },
-    "Stay up to date": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stay up to date"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保持更新"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保持更新"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保持更新"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保持更新"
           }
         }
       }

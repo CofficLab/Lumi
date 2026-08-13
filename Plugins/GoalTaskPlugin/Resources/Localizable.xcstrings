@@ -35,9 +35,6 @@
         }
       }
     },
-    "%lld" : {
-
-    },
     "%lld/%lld" : {
       "localizations" : {
         "en" : {
@@ -411,42 +408,6 @@
           }
         }
       }
-    },
-    "Refresh" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新"
-          }
-        }
-      }
-    }
-  },
+    }  },
   "version" : "1.0"
 }
