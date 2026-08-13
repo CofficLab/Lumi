@@ -19,6 +19,9 @@ public struct WindowMain: View, SuperLog {
     @State private var windowSaveDelegate: EditorWindowSaveDelegate?
     @State private var mainWindow: NSWindow?
     private let configuration: FactoryConfiguration
+
+    /// 主窗口始终处于活动场景中，可作为应用菜单"Settings..."命令的开窗落点。
+    @Environment(\.openWindow) private var openWindow
     private let loadingView: AnyView
 
     public init(configuration: FactoryConfiguration) {
@@ -51,6 +54,11 @@ public struct WindowMain: View, SuperLog {
         }
         .task {
             await initializeKernel()
+        }
+        // 应用菜单中的"Settings..."命令（SettingsPlugin）以通知方式请求开窗；
+        // 主窗口根视图持有 `openWindow` 环境值，在此桥接为打开设置窗口。
+        .onReceive(NotificationCenter.default.publisher(for: .lumiOpenSettings)) { _ in
+            openWindow(id: AppBootstrap.settingsWindowID)
         }
         .background {
             WindowAccessor { window in
