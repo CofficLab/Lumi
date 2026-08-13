@@ -1,8 +1,7 @@
 import UIKit
 
-/// iOS 应用代理，对应 macOS 的 `MacAgent`。
-///
-/// 当前为最小实现；后续可在此处理 URL Scheme、文件打开、生命周期事件等。
+/// BookletMaker iOS 宿主的应用代理。应用级 URL、文件打开和生命周期
+/// 行为在此处扩展，不进入通用工厂。
 @MainActor
 public final class MobileAgent: NSObject, UIApplicationDelegate {
     public func application(

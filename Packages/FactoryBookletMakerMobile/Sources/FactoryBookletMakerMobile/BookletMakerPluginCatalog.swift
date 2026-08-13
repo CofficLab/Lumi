@@ -19,6 +19,8 @@ public enum BookletMakerPluginCatalog {
     public static let bookletMakerPluginID = "com.coffic.lumi.plugin.booklet-maker"
 
     /// iOS 版所需的最小插件集（按依赖安全顺序）。
+    static let bookletMakerPlugin = BookletMakerPlugin()
+
     public static let plugins: [any LumiPlugin] = {
         var list: [any LumiPlugin] = [
             WorkspacePlugin(),
@@ -26,7 +28,7 @@ public enum BookletMakerPluginCatalog {
             LogoPlugin(),
             ThemeManagerPlugin(),
             ThemeLumiPlugin(),
-            BookletMakerPlugin(),
+            bookletMakerPlugin,
         ]
 
         // StoragePlugin 需要可抛错的初始化；失败时跳过。

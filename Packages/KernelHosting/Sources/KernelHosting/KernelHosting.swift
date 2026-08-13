@@ -9,7 +9,7 @@ import os
 /// 这一层是**平台中性**的（同时编译到 macOS 与 iOS）：它只依赖 `KernelLumi`
 /// 与日志，不涉及窗口 / 工具栏 / 菜单栏等任何 chrome。
 ///
-/// macOS 宿主 `FactoryCore` 与未来的 iOS 宿主 `FactoryCoreMobile` 都复用
+/// macOS 宿主 `FactoryCore` 与各 App 专属的 iOS Factory 都复用
 /// 这一份内核生命周期实现，避免双宿主之间漂移。
 ///
 /// 插件列表由宿主在编译期确定并显式传入，本类型不做任何 ID 过滤或白名单补齐。

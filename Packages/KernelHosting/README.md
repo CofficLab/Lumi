@@ -6,7 +6,7 @@
 
 `KernelHosting` 把"内核生命周期"从 macOS 专属的 `FactoryCore` 中剥离出来，
 变成一个同时编译到 macOS 与 iOS 的中立层。macOS 宿主（`FactoryCore`）与未来的
-iOS 宿主（`FactoryCoreMobile`）共用这一份实现，避免双宿主各自维护导致漂移。
+iOS 的 App 专属 Factory 共用这一份实现，避免内核生命周期漂移。
 
 它只依赖 `KernelLumi` 与日志，**不涉及任何平台 chrome**（窗口、工具栏、菜单栏、
 应用代理等）。这让它可以在两个平台之间无差别复用。
@@ -48,7 +48,7 @@ KernelHosting **只管**内核实例本身的生命周期。
 | --- | --- |
 | 内核创建 / 启动 / 销毁 / 注册表 | `KernelHosting` |
 | 插件列表的确定与组装 | 宿主 Factory（`FactoryLumi` / `FactoryBookletMaker` 等） |
-| 窗口、工具栏、菜单栏、设置面板等 chrome | `FactoryCore`（macOS）/ `FactoryCoreMobile`（iOS） |
+| 窗口、工具栏、菜单栏、设置面板等 chrome | `FactoryCore`（macOS）/ 各 App 的 Mobile Factory（iOS） |
 | 宿主偏好（是否显示状态栏、活动栏等） | `FactoryConfiguration`（留在 `FactoryCore`） |
 
 正因如此，`createKernel` 接收的是原始的 `plugins` / `enabledPluginIDs`，
@@ -60,7 +60,7 @@ KernelHosting **只管**内核实例本身的生命周期。
 ```
 macOS:  App → FactoryBookletMaker → FactoryCore ─────────┐
                                               ↓           ├── 共用
-iOS:    App → FactoryBookletMakerMobile → FactoryCoreMobile┘
+iOS:    App → FactoryBookletMakerMobile ───────────────┘
                                               ↓
                                          KernelHosting
                                               ↓
@@ -69,7 +69,7 @@ iOS:    App → FactoryBookletMakerMobile → FactoryCoreMobile┘
 
 - macOS：`FactoryCore.createKernel` / `mainKernel` / `destroy*` 等是转发到
   `KernelHosting` 的薄封装，保证现有调用方零改动。
-- iOS：`FactoryCoreMobile` 直接调用 `KernelHosting`，不依赖 macOS 专属的
+- iOS：每个 App 的 Mobile Factory 直接调用 `KernelHosting`，不依赖 macOS 专属的
   `FactoryCore`。
 
 ## 依赖

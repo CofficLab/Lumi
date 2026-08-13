@@ -8,7 +8,8 @@ let package = Package(
         .library(name: "FactoryBookletMakerMobile", targets: ["FactoryBookletMakerMobile"]),
     ],
     dependencies: [
-        .package(path: "../FactoryCoreMobile"),
+        .package(path: "../KernelHosting"),
+        .package(path: "../KernelLumi"),
         .package(path: "../../Plugins/StoragePlugin"),
         .package(path: "../../Plugins/WorkspacePlugin"),
         .package(path: "../../Plugins/SettingsPlugin"),
@@ -21,7 +22,8 @@ let package = Package(
         .target(
             name: "FactoryBookletMakerMobile",
             dependencies: [
-                .product(name: "FactoryCoreMobile", package: "FactoryCoreMobile"),
+                .product(name: "KernelHosting", package: "KernelHosting"),
+                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "StoragePlugin", package: "StoragePlugin"),
                 .product(name: "WorkspacePlugin", package: "WorkspacePlugin"),
                 .product(name: "SettingsPlugin", package: "SettingsPlugin"),
