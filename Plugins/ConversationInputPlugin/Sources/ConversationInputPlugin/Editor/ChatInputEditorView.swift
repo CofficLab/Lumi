@@ -14,6 +14,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
     public static let minHeight: CGFloat = 64
     public static let maxHeight: CGFloat = 300
     public static let collapsedPasteThreshold = 1200
+    static let placeholderLabelTag = 18_013
 
     @Binding private var text: String
     @Binding private var height: CGFloat
@@ -118,12 +119,13 @@ public struct ChatInputEditorView: NSViewRepresentable {
         scrollView.documentView = textView
 
         let placeholderLabel = NSTextField(labelWithString: placeholder)
-        placeholderLabel.tag = 18_013
+        placeholderLabel.tag = Self.placeholderLabelTag
         placeholderLabel.font = font
         placeholderLabel.textColor = .secondaryLabelColor
         placeholderLabel.isHidden = !textView.string.isEmpty
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         textView.addSubview(placeholderLabel)
+        textView.placeholderLabel = placeholderLabel
         NSLayoutConstraint.activate([
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: 8),
             placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: 7),
@@ -147,6 +149,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         }
 
         if textView.hasMarkedText() || textView.isIMEComposing {
+            updatePlaceholder(for: textView)
             return
         }
 
@@ -159,10 +162,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
             textView.delegate = context.coordinator
         }
 
-        if let placeholderLabel = textView.viewWithTag(18_013) as? NSTextField {
-            placeholderLabel.stringValue = placeholder
-            placeholderLabel.isHidden = !text.isEmpty
-        }
+        updatePlaceholder(for: textView)
 
         let cursorBindingChanged = context.coordinator.lastSyncedCursorPosition != cursorPosition
         context.coordinator.lastSyncedCursorPosition = cursorPosition
@@ -182,6 +182,18 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
     public func makeCoordinator() -> Coordinator {
         Coordinator(self)
+    }
+
+    private func updatePlaceholder(for textView: NSTextView) {
+        guard let placeholderLabel = textView.viewWithTag(Self.placeholderLabelTag) as? NSTextField else {
+            return
+        }
+        placeholderLabel.stringValue = placeholder
+        if let editorTextView = textView as? EditorTextView {
+            editorTextView.updatePlaceholderVisibility()
+            return
+        }
+        placeholderLabel.isHidden = !textView.string.isEmpty || textView.hasMarkedText()
     }
 
     private func updateHeight(for textView: NSTextView) {
@@ -290,6 +302,10 @@ extension ChatInputEditorView {
 
         public func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
+
+            // Marked text is intentionally kept out of the SwiftUI binding,
+            // but it still counts as visible editor content for the placeholder.
+            parent.updatePlaceholder(for: textView)
 
             // AppKit sends text changes for every intermediate IME update.
             // Keep marked text and its selection inside NSTextView until the
@@ -422,6 +438,7 @@ extension ChatInputEditorView {
 final class EditorTextView: NSTextView {
     var hasPastePreviewAttachments = false
     private(set) var isIMEComposing = false
+    weak var placeholderLabel: NSTextField?
     var pasteHandler: ((NSPasteboard) -> Bool)?
     var imageDragHoverHandler: ((Bool) -> Void)?
     var keyDownHandler: ((NSEvent) -> Bool)?
@@ -449,6 +466,7 @@ final class EditorTextView: NSTextView {
         replacementRange: NSRange
     ) {
         isIMEComposing = true
+        updatePlaceholderVisibility()
         super.setMarkedText(
             string,
             selectedRange: selectedRange,
@@ -459,10 +477,16 @@ final class EditorTextView: NSTextView {
     override func unmarkText() {
         super.unmarkText()
         isIMEComposing = false
+        updatePlaceholderVisibility()
     }
 
     func finishIMEComposition() {
         isIMEComposing = false
+        updatePlaceholderVisibility()
+    }
+
+    func updatePlaceholderVisibility() {
+        placeholderLabel?.isHidden = !string.isEmpty || hasMarkedText() || isIMEComposing
     }
 
     override func insertText(_ insertString: Any, replacementRange: NSRange) {
@@ -472,11 +496,13 @@ final class EditorTextView: NSTextView {
         // textDidChange publishes the committed draft to InputState.
         isIMEComposing = false
         super.insertText(insertString, replacementRange: replacementRange)
+        updatePlaceholderVisibility()
     }
 
     override func insertText(_ insertString: Any) {
         isIMEComposing = false
         super.insertText(insertString)
+        updatePlaceholderVisibility()
     }
 
     override func paste(_ sender: Any?) {
