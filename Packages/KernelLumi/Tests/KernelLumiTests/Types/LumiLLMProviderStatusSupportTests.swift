@@ -23,7 +23,7 @@ struct LumiLLMProviderStatusSupportTests {
             id: "mock-remote",
             displayName: "Mock Remote",
             defaultModel: "mock-model",
-            availableModels: ["mock-model"],
+            availableModels: [LumiModelInfo(id: "mock-model")],
             websiteURL: URL(string: "https://example.com")!
         )
 
