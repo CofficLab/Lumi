@@ -64,6 +64,34 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
         await IconDesignerWillSendToLLMHook().execute(kernel: kernel, messages: messages)
     }
 
+    // MARK: - Prompt Suggestions
+
+    /// 贡献聊天起始提示词，供消息列表空态展示，点击即把提示词写入输入框。
+    public func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] {
+        [
+            LumiPromptSuggestion(
+                id: "\(id).design",
+                title: AppIconDesignerLocalization.string("Prompt.Suggestion.Design"),
+                systemImage: "app.dashed"
+            ),
+            LumiPromptSuggestion(
+                id: "\(id).preset",
+                title: AppIconDesignerLocalization.string("Prompt.Suggestion.Preset"),
+                systemImage: "square.grid.2x2"
+            ),
+            LumiPromptSuggestion(
+                id: "\(id).export",
+                title: AppIconDesignerLocalization.string("Prompt.Suggestion.Export"),
+                systemImage: "square.and.arrow.up"
+            ),
+            LumiPromptSuggestion(
+                id: "\(id).review",
+                title: AppIconDesignerLocalization.string("Prompt.Suggestion.Review"),
+                systemImage: "checkmark.seal"
+            ),
+        ]
+    }
+
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }
