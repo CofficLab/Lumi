@@ -74,8 +74,8 @@ struct AppLayoutView: View {
 
             // 没有任何插件注入状态栏项时，整个状态栏（含分隔线）不显示。
             if showsStatusBar, statusBarItemCount > 0 {
-                AppDivider()
-                StatusBar(kernel: kernel)
+//                AppDivider()
+//                StatusBar(kernel: kernel)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
