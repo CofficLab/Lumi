@@ -3,185 +3,110 @@ import SwiftUI
 
 // MARK: - About View
 
+/// 剪贴板管理插件关于视图 —— 以产品落地页的形式介绍功能。
 struct ClipboardManagerAboutView: View {
-    @Environment(\.locale) private var locale
     @LumiTheme private var theme
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Feature Highlights
-                FeatureHighlight(
-                    icon: "square.on.square",
-                    title: L("Clipboard History"),
-                    description: L("Keep track of your clipboard history and access previous copies")
-                )
-
-                FeatureHighlight(
-                    icon: "scissors",
-                    title: L("Snippet Management"),
-                    description: L("Save frequently used text snippets for quick access")
-                )
-
-                FeatureHighlight(
-                    icon: "magnifyingglass",
-                    title: L("Quick Search"),
-                    description: L("Search through clipboard history to find what you need")
-                )
-
-                FeatureHighlight(
-                    icon: "trash",
-                    title: L("Auto Cleanup"),
-                    description: L("Automatically clean old clipboard items to save memory")
-                )
-
-                // How It Works
-                HowItWorksCard(
-                    title: coreL("about.section.howItWorks"),
-                    steps: [
-                        L("Monitors clipboard changes automatically"),
-                        L("Stores history in local database"),
-                        L("Provides search and filter capabilities"),
-                        L("Supports text, images, and rich content")
-                    ]
-                )
-
-                // Tips
-                TipsCard(
-                    title: coreL("about.section.tips"),
-                    tips: [
-                        L("Use keyboard shortcuts for quick access"),
-                        L("Pin important items to keep them accessible"),
-                        L("Configure auto-cleanup to manage storage")
-                    ]
-                )
-            }
-            .padding()
+        VStack(alignment: .leading, spacing: 22) {
+            hero
+            featuresSection
+            howItWorksSection
+            tipsSection
         }
     }
+
+    // MARK: - Hero
+
+    private var hero: some View {
+        LandingHero(
+            icon: "square.on.square",
+            accent: theme.info,
+            tagline: L("自动记录每一次复制,随时回溯、搜索、复用,让剪贴板不再「阅后即焚」。"),
+            chips: [L("历史记录"), L("文本片段"), L("全文搜索")],
+            metrics: [
+                .init(value: "4", label: L("核心功能")),
+                .init(value: "3", label: L("内容类型")),
+                .init(value: "∞", label: L("可回溯"))
+            ]
+        )
+        .landingAppear(delay: 0)
+    }
+
+    // MARK: - 核心功能
+
+    private var featuresSection: some View {
+        LandingSection(title: L("核心功能"), icon: "square.grid.2x2", subtitle: L("把剪贴板变成可检索的个人知识")) {
+            LandingFeatureGrid(items: [
+                .init(icon: "square.on.square", tint: theme.primary,
+                      title: L("剪贴板历史"),
+                      description: L("持续追踪剪贴板变化,随时访问之前的复制内容。")),
+                .init(icon: "scissors", tint: theme.warning,
+                      title: L("片段管理"),
+                      description: L("保存常用文本片段,一键插入,告别重复输入。")),
+                .init(icon: "magnifyingglass", tint: theme.info,
+                      title: L("快速搜索"),
+                      description: L("在历史记录中全文检索,瞬间定位需要的内容。")),
+                .init(icon: "trash", tint: theme.error,
+                      title: L("自动清理"),
+                      description: L("按策略自动回收过期条目,占用始终可控。"))
+            ])
+        }
+        .landingAppear(delay: 0.05)
+    }
+
+    // MARK: - 工作原理
+
+    private var howItWorksSection: some View {
+        LandingSection(title: L("工作原理"), icon: "gearshape.2", subtitle: L("本地存储、随用随取")) {
+            LandingStepFlow(steps: [
+                .init(title: L("自动监听"), description: L("后台静默监听剪贴板的变化。"), icon: "antenna.radiowaves.left.and.right"),
+                .init(title: L("本地入库"), description: L("历史安全保存在本地数据库,不上传任何服务器。")),
+                .init(title: L("检索过滤"), description: L("提供搜索与筛选,快速找到目标条目。")),
+                .init(title: L("多类型支持"), description: L("兼容文本、图片与富文本内容。"))
+            ])
+        }
+        .landingAppear(delay: 0.1)
+    }
+
+    // MARK: - 使用技巧
+
+    private var tipsSection: some View {
+        LandingSection(title: L("使用技巧"), icon: "lightbulb") {
+            AppCard(style: .subtle, cornerRadius: 12) {
+                VStack(alignment: .leading, spacing: 10) {
+                    tipRow(L("用快捷键快速唤出剪贴板面板。"))
+                    tipRow(L("把高频内容置顶,长期保持可用。"))
+                    tipRow(L("按需调整自动清理策略,平衡历史与存储。"))
+                }
+            }
+        }
+        .landingAppear(delay: 0.15)
+    }
+
+    private func tipRow(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "lightbulb.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(theme.warning)
+            Text(text)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    // MARK: - Localization
 
     private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module, locale: locale)
-    }
-
-    private func coreL(_ key: String) -> String {
-        // Fallback for core localization keys
-        switch key {
-        case "about.section.howItWorks":
-            return LumiPluginLocalization.string("How It Works", bundle: .module, locale: locale)
-        case "about.section.tips":
-            return LumiPluginLocalization.string("Tips", bundle: .module, locale: locale)
-        default:
-            return key
-        }
+        LumiPluginLocalization.string(key, bundle: .module)
     }
 }
 
-// MARK: - Feature Highlight
-
-private struct FeatureHighlight: View {
-    @LumiTheme private var theme
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(theme.primary)
-                .frame(width: 40, height: 40)
-                .background(
-                    Circle()
-                        .fill(theme.primary.opacity(0.1))
-                )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(theme.textPrimary)
-
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundColor(theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
+#Preview {
+    ScrollView {
+        ClipboardManagerAboutView()
+            .padding(22)
     }
-}
-
-// MARK: - How It Works Card
-
-private struct HowItWorksCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let steps: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("\(index + 1)")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 22, height: 22)
-                            .background(
-                                Circle()
-                                    .fill(theme.primary.opacity(0.15))
-                            )
-
-                        Text(step)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
-}
-
-// MARK: - Tips Card
-
-private struct TipsCard: View {
-    @LumiTheme private var theme
-    let title: String
-    let tips: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(tips, id: \.self) { tip in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.primary)
-                            .frame(width: 16)
-
-                        Text(tip)
-                            .font(.system(size: 13))
-                            .foregroundColor(theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .appSurface(style: .subtle, cornerRadius: 8)
-    }
+    .frame(width: 560, height: 900)
 }
