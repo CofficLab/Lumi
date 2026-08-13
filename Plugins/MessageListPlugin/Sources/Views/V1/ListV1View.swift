@@ -47,7 +47,7 @@ struct ListV1View: View, SuperLog {
             if turnViewModel.isLoading {
                 MessageLoadingView()
             } else if !turnViewModel.hasVisibleContent {
-                MessageEmptyStateView()
+                MessageEmptyStateView(kernel: kernel)
             } else {
                 messageScrollView
             }

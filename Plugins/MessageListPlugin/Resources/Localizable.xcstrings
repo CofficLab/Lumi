@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "API Key" : {
+
+    },
     "Load earlier messages" : {
       "localizations" : {
         "en" : {
@@ -175,10 +178,13 @@
         }
       }
     },
+    "保存 API Key" : {
+
+    },
     "开始和 Lumi 对话" : {
 
     },
-    "当前 Provider：(providerInfo.displayName)" : {
+    "当前 Provider：%@" : {
 
     },
     "打开 Provider 官网获取 API Key" : {
