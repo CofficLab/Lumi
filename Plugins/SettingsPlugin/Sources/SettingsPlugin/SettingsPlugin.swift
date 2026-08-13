@@ -131,8 +131,7 @@ public final class SettingsPlugin: LumiPlugin, SuperLog {
                 order: 1000
             ) {
                 AppIconButton(
-                    systemImage: "gearshape",
-                    size: .regular
+                    systemImage: "gearshape"
                 ) {
                     NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
                 }
