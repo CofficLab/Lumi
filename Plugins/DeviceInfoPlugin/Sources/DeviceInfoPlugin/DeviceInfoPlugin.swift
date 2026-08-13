@@ -18,7 +18,7 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
         LumiPluginLocalization.string("Device Info Plugin", bundle: .module)
     }
     public let order = 6
-    public let policy: LumiPluginPolicy = .alwaysOn // 功能插件
+    public let policy: LumiPluginPolicy = .optIn // 功能插件
     public let stage: LumiPluginStage = .beta
 
     public init() {}
