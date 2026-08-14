@@ -3,6 +3,23 @@ import KernelLumi
 import LumiUI
 import SwiftUI
 
+// MARK: - Web API 响应模型
+
+private struct ThemeListResponse: Encodable {
+    struct Item: Encodable {
+        let id: String
+        let name: String
+        let selected: Bool
+    }
+    let selectedThemeId: String?
+    let themes: [Item]
+}
+
+private struct ThemeSwitchResponse: Encodable {
+    let ok: Bool
+    let currentThemeId: String
+}
+
 @MainActor
 public final class ThemeManagerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.theme-manager"
@@ -46,6 +63,34 @@ public final class ThemeManagerPlugin: LumiPlugin {
     public func commandMenuGroups(kernel: KernelLumi) -> [CommandMenuGroup] {
         guard let themeService else { return [] }
         return [themeService.commandMenuGroup()]
+    }
+
+    public func webRoutes(kernel: KernelLumi) -> [WebRoute] {
+        // 主题服务在 onBoot 注册,webRoutes 收集时(startup step 13)已就绪。
+        // 仅捕获 Sendable 的主题服务引用(非整个 kernel),供 @MainActor handler 使用。
+        guard let theme = kernel.theme else { return [] }
+        return [
+            // GET /api/plugins/theme-manager/themes — 列出全部主题及当前选中。
+            WebRoute(id: "theme-manager.themes", method: .get, path: "/api/plugins/theme-manager/themes", description: "列出全部主题及当前选中") { _ in
+                let selected = theme.selectedThemeId
+                let items = theme.themes.map {
+                    ThemeListResponse.Item(id: $0.id, name: $0.displayName, selected: $0.id == selected)
+                }
+                return try .json(ThemeListResponse(selectedThemeId: selected, themes: items))
+            },
+            // POST /api/plugins/theme-manager/themes/:id/select — 切换到指定主题。
+            WebRoute(id: "theme-manager.select", method: .post, path: "/api/plugins/theme-manager/themes/:id/select", description: "切换到指定主题") { request in
+                guard let id = request.pathParameters["id"] else {
+                    return try .json(["error": "missing theme id"], statusCode: 400)
+                }
+                do {
+                    try theme.selectTheme(id: id)
+                } catch {
+                    return try .json(["error": error.localizedDescription], statusCode: 404)
+                }
+                return try .json(ThemeSwitchResponse(ok: true, currentThemeId: id))
+            },
+        ]
     }
     public func panelHeaderItems(kernel: KernelLumi) -> [PanelHeaderItem] { [] }
     public func panelBottomTabItems(kernel: KernelLumi) -> [PanelBottomTabItem] { [] }

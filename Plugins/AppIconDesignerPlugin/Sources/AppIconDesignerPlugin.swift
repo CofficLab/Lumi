@@ -66,28 +66,35 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
 
     // MARK: - Prompt Suggestions
 
-    /// 贡献聊天起始提示词，供消息列表空态展示，点击即把提示词写入输入框。
+    /// 贡献聊天起始提示词，供消息列表空态展示。
+    ///
+    /// 每条都声明 `.activateViewContainer(id)` 动作——点击时（必要时先启用本插件并重建
+    /// 贡献注册其容器）会自动激活图标设计面板，再发送提示词。
     public func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] {
         [
             LumiPromptSuggestion(
                 id: "\(id).design",
                 title: AppIconDesignerLocalization.string("Prompt.Suggestion.Design"),
-                systemImage: "app.dashed"
+                systemImage: "app.dashed",
+                action: .activateViewContainer(id)
             ),
             LumiPromptSuggestion(
                 id: "\(id).preset",
                 title: AppIconDesignerLocalization.string("Prompt.Suggestion.Preset"),
-                systemImage: "square.grid.2x2"
+                systemImage: "square.grid.2x2",
+                action: .activateViewContainer(id)
             ),
             LumiPromptSuggestion(
                 id: "\(id).export",
                 title: AppIconDesignerLocalization.string("Prompt.Suggestion.Export"),
-                systemImage: "square.and.arrow.up"
+                systemImage: "square.and.arrow.up",
+                action: .activateViewContainer(id)
             ),
             LumiPromptSuggestion(
                 id: "\(id).review",
                 title: AppIconDesignerLocalization.string("Prompt.Suggestion.Review"),
-                systemImage: "checkmark.seal"
+                systemImage: "checkmark.seal",
+                action: .activateViewContainer(id)
             ),
         ]
     }

@@ -49,6 +49,9 @@ public struct WindowMain: View, SuperLog {
                     ),
                     kernel: kernel
                 )
+                .overlay(alignment: .top) {
+                    WebRequestToastOverlay()
+                }
                 .frame(maxWidth: .infinity)
             }
         }

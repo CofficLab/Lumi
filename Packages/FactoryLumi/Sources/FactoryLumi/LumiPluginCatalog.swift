@@ -13,6 +13,7 @@ import BrewManagerPlugin
 import BrowserPlugin
 import ComputerUsePlugin
 import CADDesignerPlugin
+import MindMapPlugin
 import StoryWriterPlugin
 import StateMonitorPlugin
 import CaffeinatePlugin
@@ -148,6 +149,9 @@ import ConversationVerbosityPlugin
 import VideoConverterPlugin
 import WebFetchPlugin
 import WebSearchPlugin
+import WebServerPlugin
+import WhiteNoisePlugin
+import PrototypeDesignerPlugin
 
 /// Lumi 完整插件目录
 ///
@@ -250,6 +254,8 @@ public enum LumiPluginCatalog {
             ProjectFileTreePlugin(),
             ClipboardManagerPlugin(),
             BrewManagerPlugin(),
+            WhiteNoisePlugin(),
+            PrototypeDesignerPlugin(),
             DiskManagerPlugin(),
             HostsManagerPlugin(),
             ConversationReasoningPlugin(),
@@ -290,9 +296,12 @@ public enum LumiPluginCatalog {
             SkillPlugin(),
             DocxReadPlugin(),
             NetworkManagerPlugin(),
+            // 本地 Web 服务(127.0.0.1):聚合插件贡献的 webRoutes,默认启用(optOut)。
+            WebServerPlugin(),
             ProjectOverviewPlugin(),
             AppStoreConnectPlugin(),
             CADDesignerPlugin(),
+            MindMapPlugin(),
             StoryWriterPlugin(),
             ActivityHeatmapPlugin(),
             FileLogPlugin(),

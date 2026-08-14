@@ -28,7 +28,12 @@ public final class MessageRendererManager: MessageRendering {
 
     /// 按 (消息 id, content, role, renderKind, preferredRendererID) 缓存匹配到的
     /// renderer id;渲染器集合变化时整体清空。
+    ///
+    /// 带上限的 FIFO 缓存:流式期间 content 逐 token 增长,每个 token 都会产生
+    /// 一个新 key(含全文),无上限时内存随 token 数 × 文本长度单调增长。
     private var matchCache: [MatchKey: String] = [:]
+    private var matchCacheKeys: [MatchKey] = []
+    private let matchCacheLimit = 256
 
     public init() {}
 
@@ -67,6 +72,8 @@ public final class MessageRendererManager: MessageRendering {
             matched = sortedRenderers.first { $0.canRender(message) }
         }
         matchCache[key] = matched?.id
+        matchCacheKeys.append(key)
+        evictMatchCacheIfNeeded()
         return matched
     }
 
@@ -88,6 +95,17 @@ public final class MessageRendererManager: MessageRendering {
     private func invalidateCaches() {
         sortedRenderersCache = nil
         matchCache.removeAll()
+        matchCacheKeys.removeAll()
+    }
+
+    /// FIFO 驱逐最早的匹配缓存项,防止流式期间逐 token 产生的新 key 无限堆积。
+    private func evictMatchCacheIfNeeded() {
+        guard matchCacheKeys.count > matchCacheLimit else { return }
+        let overflow = matchCacheKeys.count - matchCacheLimit
+        for key in matchCacheKeys.prefix(overflow) {
+            matchCache.removeValue(forKey: key)
+        }
+        matchCacheKeys.removeFirst(overflow)
     }
 
     /// renderer 匹配的缓存键。

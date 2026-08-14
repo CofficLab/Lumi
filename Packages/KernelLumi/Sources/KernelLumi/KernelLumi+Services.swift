@@ -134,6 +134,14 @@ extension KernelLumiContainer {
         resolveService(PromptSuggestionProviding.self)
     }
 
+    /// Plugin control service (enable / disable plugins at runtime + persistence).
+    ///
+    /// 由 `PluginManagerPlugin` 注册实现 `PluginController`。消费方（如空态提示词视图）
+    /// 可调用 `enablePlugin(id:)` 在点击禁用插件的提示词时「启用并发送」。
+    public var pluginControl: (any PluginControlling)? {
+        resolveService(PluginControlling.self)
+    }
+
     /// Message renderer management service
     public var messageRendererManager: (any MessageRendering)? {
         resolveService(MessageRendering.self)
@@ -153,5 +161,14 @@ extension KernelLumiContainer {
     /// 消费插件应 `guard let network = kernel.network else { return }` 处理网络功能不可用的情况。
     public var network: (any NetworkProviding)? {
         resolveService(NetworkProviding.self)
+    }
+
+    /// Local web server service (inbound HTTP API for plugin-contributed routes).
+    ///
+    /// 可选服务:未注册时返回 nil。与 `network`(出站客户端)互补,本服务是入站
+    /// 服务端,聚合插件通过 `LumiPlugin.webRoutes(kernel:)` 贡献的路由。
+    /// 消费方应 `guard let webServer = kernel.webServer else { return }` 处理不可用情况。
+    public var webServer: (any WebServerProviding)? {
+        resolveService(WebServerProviding.self)
     }
 }

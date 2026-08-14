@@ -27,6 +27,9 @@ public enum KernelLumiEvent: String, CaseIterable, Sendable {
     /// 工具调用记录已写入 ToolManager 存储后触发。
     case toolActivityDidChange = "Lumi.ToolActivityDidChange"
 
+    /// 本地 Web 服务处理完一次请求后触发,携带 `WebRequestActivity`。
+    case webRequestReceived = "com.coffic.lumi.webRequestReceived"
+
     /// 工作区布局事件。rawValue 对齐既有 `Notification.Name` 常量，
     /// 订阅端不受影响；统一由 `EventManager` 发射。
     case activeViewContainerIDDidChange = "ActiveViewContainerIDDidChange"
@@ -54,6 +57,8 @@ public extension Notification.Name {
     static let lumiTurnStarted = KernelLumiEvent.turnStarted.notificationName
     static let lumiTurnCompleted = KernelLumiEvent.turnCompleted.notificationName
     static let lumiTurnFinished = KernelLumiEvent.turnFinished.notificationName
+
+    static let lumiWebRequestReceived = KernelLumiEvent.webRequestReceived.notificationName
 
     static let lumiShowOnboarding = Notification.Name("Onboarding.Show")
 
@@ -196,6 +201,15 @@ public extension View {
         self.onReceive(NotificationCenter.default.publisher(for: .lumiShowOnboarding)) { notification in
             let forceReset = notification.userInfo?[LumiOnboardingNotification.resetKey] as? Bool ?? false
             action(forceReset)
+        }
+    }
+
+    /// 监听 `.lumiWebRequestReceived` 通知,并传出该次请求的活动记录。
+    func onLumiWebRequestReceived(perform action: @escaping (WebRequestActivity) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiWebRequestReceived)) { notification in
+            if let activity = notification.lumiWebRequestActivity {
+                action(activity)
+            }
         }
     }
 }

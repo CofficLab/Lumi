@@ -137,6 +137,14 @@ extension KernelLumiContainer {
         try registerService(PromptSuggestionProviding.self, service)
     }
 
+    /// Register plugin control service (enable / disable plugins at runtime + persistence).
+    ///
+    /// 由 `PluginManagerPlugin` 在 `onBoot` 中注册实现 `PluginController`，
+    /// 供空态提示词等 UI 通过 `kernel.pluginControl` 启用插件。
+    public func registerPluginControlling(_ controller: any PluginControlling) throws {
+        try registerService(PluginControlling.self, controller)
+    }
+
     /// Register message renderer management service
     public func registerMessageRendererManagerService(_ manager: any MessageRendering) throws {
         try registerService(MessageRendering.self, manager)
@@ -147,5 +155,13 @@ extension KernelLumiContainer {
     /// 可选服务:仅在 v4→v5 迁移窗口期注册,迁移完成后可整体移除。
     public func registerLegacyDataService(_ legacyData: any LegacyDataProviding) throws {
         try registerService(LegacyDataProviding.self, legacyData)
+    }
+
+    /// Register local web server service (inbound HTTP API for plugin-contributed routes).
+    ///
+    /// 可选服务:由专门的 Web Server 插件在 `onBoot` 中注册实现。未注册时
+    /// `kernel.webServer` 为 nil,插件贡献的 `webRoutes` 不会被任何服务消费。
+    public func registerWebServer(_ webServer: any WebServerProviding) throws {
+        try registerService(WebServerProviding.self, webServer)
     }
 }

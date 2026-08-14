@@ -26,15 +26,27 @@ final class TextSelectionManager: ObservableObject {
     static let shared = TextSelectionManager()
 
     @Published private(set) var isPermissionGranted = false
+    private let eventMonitor: any TextEventMonitoring
+    private let selectedTextProvider: any SelectedTextProviding
+    private let permissionChecker: () -> Bool
     private var monitor: Any?
 
-    private init() {
+    init(
+        eventMonitor: any TextEventMonitoring = SystemTextEventMonitor(),
+        selectedTextProvider: any SelectedTextProviding = AccessibilitySelectedTextProvider(),
+        permissionChecker: @escaping () -> Bool = {
+            let options = ["AXTrustedCheckOptionPrompt": false] as CFDictionary
+            return AXIsProcessTrustedWithOptions(options)
+        }
+    ) {
+        self.eventMonitor = eventMonitor
+        self.selectedTextProvider = selectedTextProvider
+        self.permissionChecker = permissionChecker
         refreshPermission()
     }
 
     func refreshPermission() {
-        let options = ["AXTrustedCheckOptionPrompt": false] as CFDictionary
-        isPermissionGranted = AXIsProcessTrustedWithOptions(options)
+        isPermissionGranted = permissionChecker()
     }
 
     func requestPermission() {
@@ -44,43 +56,73 @@ final class TextSelectionManager: ObservableObject {
             NSWorkspace.shared.open(
                 URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
             )
+        } else if TextActionsSettings.isEnabled {
+            startMonitoring()
         }
     }
 
     func startMonitoring() {
         guard monitor == nil else { return }
         refreshPermission()
-        monitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] event in
+        guard isPermissionGranted else { return }
+        // A selection can be completed with a mouse drag or with Shift/keyboard
+        // navigation. Listening only for leftMouseUp misses the latter, and
+        // some applications update AXSelectedText only shortly after mouseUp.
+        monitor = eventMonitor.addGlobalMonitor(
+            matching: [.leftMouseUp, .rightMouseUp, .keyUp]
+        ) { [weak self] _ in
             let mouseLocation = NSEvent.mouseLocation
             Task { @MainActor [weak self] in
-                self?.handleMouseUp(event, mouseLocation: mouseLocation)
+                self?.scheduleSelectionRead(anchor: mouseLocation)
             }
         }
     }
 
     func stopMonitoring() {
         if let monitor {
-            NSEvent.removeMonitor(monitor)
+            eventMonitor.removeMonitor(monitor)
             self.monitor = nil
         }
         TextActionMenuController.shared.hide()
     }
 
-    private func handleMouseUp(_ event: NSEvent, mouseLocation: CGPoint) {
+    private func scheduleSelectionRead(anchor: CGPoint) {
         guard isPermissionGranted else { return }
-        Task.detached(priority: .userInitiated) {
-            let result = Self.readSelectedText(anchor: mouseLocation)
-            await MainActor.run {
-                if let result, !result.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        Task { @MainActor in
+            // AX clients such as browsers often publish the new selection on
+            // the next run-loop turn. A short retry makes selection detection
+            // reliable without polling continuously.
+            try? await Task.sleep(for: TextSelectionReadPolicy.initialDelay)
+            for attempt in 0..<TextSelectionReadPolicy.retryCount {
+                if let result = selectedTextProvider.readSelectedText(anchor: anchor),
+                   TextSelectionReadPolicy.shouldPresentMenu(for: result.text) {
                     TextActionMenuController.shared.show(text: result.text, at: result.anchor)
-                } else {
-                    TextActionMenuController.shared.hide()
+                    return
+                }
+                if attempt < TextSelectionReadPolicy.retryCount - 1 {
+                    try? await Task.sleep(for: TextSelectionReadPolicy.retryDelay)
                 }
             }
+
+            TextActionMenuController.shared.hide()
         }
     }
 
-    nonisolated private static func readSelectedText(anchor: CGPoint) -> SelectedText? {
+}
+
+struct SelectedText: Sendable, Equatable {
+    let text: String
+    let anchor: CGPoint
+}
+
+@MainActor
+protocol SelectedTextProviding {
+    func readSelectedText(anchor: CGPoint) -> SelectedText?
+}
+
+@MainActor
+struct AccessibilitySelectedTextProvider: SelectedTextProviding {
+    nonisolated func readSelectedText(anchor: CGPoint) -> SelectedText? {
         let systemWide = AXUIElementCreateSystemWide()
         var focusedValue: CFTypeRef?
         guard AXUIElementCopyAttributeValue(
@@ -88,7 +130,8 @@ final class TextSelectionManager: ObservableObject {
             kAXFocusedUIElementAttribute as CFString,
             &focusedValue
         ) == .success else { return nil }
-        guard let focusedValue else { return nil }
+        guard let focusedValue,
+              CFGetTypeID(focusedValue) == AXUIElementGetTypeID() else { return nil }
         let focused = focusedValue as! AXUIElement
 
         var selectedValue: CFTypeRef?
@@ -103,9 +146,27 @@ final class TextSelectionManager: ObservableObject {
     }
 }
 
-private struct SelectedText: Sendable {
-    let text: String
-    let anchor: CGPoint
+@MainActor
+protocol TextEventMonitoring {
+    func addGlobalMonitor(
+        matching mask: NSEvent.EventTypeMask,
+        handler: @escaping (NSEvent) -> Void
+    ) -> Any?
+    func removeMonitor(_ monitor: Any)
+}
+
+@MainActor
+private final class SystemTextEventMonitor: TextEventMonitoring {
+    func addGlobalMonitor(
+        matching mask: NSEvent.EventTypeMask,
+        handler: @escaping (NSEvent) -> Void
+    ) -> Any? {
+        NSEvent.addGlobalMonitorForEvents(matching: mask, handler: handler)
+    }
+
+    func removeMonitor(_ monitor: Any) {
+        NSEvent.removeMonitor(monitor)
+    }
 }
 
 @MainActor
@@ -140,13 +201,16 @@ final class TextActionMenuController {
 
         let size = window?.contentView?.fittingSize ?? CGSize(width: 180, height: 70)
         let screen = NSScreen.screens.first { $0.frame.contains(point) } ?? NSScreen.main
-        let maxX = (screen?.frame.maxX ?? point.x + size.width) - size.width - 8
-        let maxY = (screen?.frame.maxY ?? point.y + size.height) - size.height - 8
-        let frame = CGRect(
-            x: min(max(point.x - size.width / 2, screen?.frame.minX ?? point.x), maxX),
-            y: min(point.y + 18, maxY),
-            width: size.width,
-            height: size.height
+        let screenFrame = screen?.frame ?? CGRect(
+            x: point.x,
+            y: point.y,
+            width: size.width + 16,
+            height: size.height + 26
+        )
+        let frame = TextActionMenuLayout.frame(
+            for: point,
+            menuSize: size,
+            screenFrame: screenFrame
         )
         window?.setFrame(frame, display: true)
         window?.orderFrontRegardless()
@@ -154,37 +218,6 @@ final class TextActionMenuController {
 
     func hide() {
         window?.orderOut(nil)
-    }
-}
-
-enum TextAction: CaseIterable, Identifiable {
-    case copy
-    case search
-
-    var id: Self { self }
-    var title: String {
-        switch self {
-        case .copy: LumiPluginLocalization.string("Copy", bundle: .module)
-        case .search: LumiPluginLocalization.string("Search", bundle: .module)
-        }
-    }
-    var systemImage: String {
-        switch self {
-        case .copy: "doc.on.doc"
-        case .search: "magnifyingglass"
-        }
-    }
-
-    func perform(with text: String) {
-        switch self {
-        case .copy:
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(text, forType: .string)
-        case .search:
-            guard let encoded = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-                  let url = URL(string: "https://www.google.com/search?q=\(encoded)") else { return }
-            NSWorkspace.shared.open(url)
-        }
     }
 }
 
@@ -196,13 +229,18 @@ struct TextActionMenuView: View {
         AppCard(style: .glass, cornerRadius: 12, padding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)) {
             HStack(spacing: 6) {
                 ForEach(TextAction.allCases) { item in
-                    AppButton(item.title, systemImage: item.systemImage, style: .tonal, size: .small) {
+                    AppButton(item.title, systemImage: item.systemImage, style: .secondary, size: .small) {
                         action(item)
                     }
+                    // Keep the action cells stable for both English and
+                    // Chinese localization instead of letting the hosting
+                    // panel compress their labels.
+                    .frame(minWidth: 96)
+                    .layoutPriority(1)
                 }
             }
         }
-        .fixedSize()
+        .fixedSize(horizontal: true, vertical: true)
         .accessibilityLabel(Text(text.prefix(80)))
     }
 }
@@ -277,8 +315,22 @@ struct TextActionsSettingsView: View {
             .padding()
         }
         .onAppear {
-            manager.refreshPermission()
+            refreshPermissionAndMonitoring()
             isEnabled = TextActionsSettings.isEnabled
+        }
+        // System Settings is a separate app. Refresh when Lumi becomes
+        // active again so the permission card immediately reflects the
+        // user's choice without requiring a view reload.
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshPermissionAndMonitoring()
+            isEnabled = TextActionsSettings.isEnabled
+        }
+    }
+
+    private func refreshPermissionAndMonitoring() {
+        manager.refreshPermission()
+        if manager.isPermissionGranted && TextActionsSettings.isEnabled {
+            manager.startMonitoring()
         }
     }
 }

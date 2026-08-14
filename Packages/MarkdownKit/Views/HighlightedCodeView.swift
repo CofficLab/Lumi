@@ -19,21 +19,33 @@ struct HighlightedCodeView: View {
         Group {
             if let attributedCode {
                 codeScrollView(Text(attributedCode))
+            } else if let highlightProvider,
+                      let cached = CodeHighlightCache.shared.cached(
+                          code: code,
+                          language: language,
+                          provider: highlightProvider
+                      ) {
+                // 同步命中(历史行滚回视口的常见情况):首帧即高亮文本,
+                // 无"纯文本 → 高亮"的高度跳变,也不占异步任务。
+                codeScrollView(Text(cached))
             } else {
                 codeScrollView(Text(verbatim: code))
             }
         }
         .task(id: codeHighlightTaskId) {
+            guard attributedCode == nil else { return }
             guard let highlightProvider else {
-                attributedCode = nil
                 return
             }
 
-            attributedCode = await CodeHighlightCache.shared.highlight(
+            let highlighted = CodeHighlightCache.shared.highlight(
                 code: code,
                 language: language,
                 provider: highlightProvider
             )
+            if attributedCode != highlighted {
+                attributedCode = highlighted
+            }
         }
     }
 
@@ -69,28 +81,54 @@ struct HighlightedCodeView: View {
 
 // MARK: - CodeHighlightCache
 
-private actor CodeHighlightCache {
+/// 锁保护的同步缓存(与 `MarkdownBlockCache` 同构):缓存命中可在 `body` 求值
+/// 内同步返回,列表滚动使行重新物化时首帧即高亮,不再两阶段布局跳变;
+/// miss 时的全量高亮由调用方在 `.task`(后台线程)中完成。
+private final class CodeHighlightCache: @unchecked Sendable {
     static let shared = CodeHighlightCache()
 
-    private struct Entry: Sendable {
+    private struct Entry {
         let value: AttributedString?
     }
 
-    private let limit = 128
+    private let limit = 512
+    private let lock = NSLock()
     private var cache: [String: Entry] = [:]
     private var keys: [String] = []
 
+    /// 只返回缓存命中结果,不触发高亮计算。
+    /// 供 `HighlightedCodeView.body` 在视图求值路径上同步调用。
+    func cached(
+        code: String,
+        language: String?,
+        provider: any CodeHighlightProviding
+    ) -> AttributedString? {
+        let key = "\(provider.cacheIdentifier):\(language ?? ""):\(code)"
+        lock.lock()
+        defer { lock.unlock() }
+        return cache[key]?.value
+    }
+
+    /// 命中即返回;miss 时同步高亮并写入缓存。
+    /// 调用方应在后台线程(如 `.task`)调用,避免长代码高亮阻塞主线程。
+    /// 高亮计算在锁外执行,不阻塞并发的缓存查询。
     func highlight(
         code: String,
         language: String?,
         provider: any CodeHighlightProviding
     ) -> AttributedString? {
         let key = "\(provider.cacheIdentifier):\(language ?? ""):\(code)"
-        if let cached = cache[key] {
+        lock.lock()
+        let cached = cache[key]
+        lock.unlock()
+        if let cached {
             return cached.value
         }
 
         let highlighted = provider.highlight(code: code, language: language)
+
+        lock.lock()
+        defer { lock.unlock() }
         cache[key] = Entry(value: highlighted)
         keys.append(key)
 

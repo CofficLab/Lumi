@@ -78,6 +78,32 @@ struct ColorHexTests {
 
     @Test
     @MainActor
+    func systemAdaptiveColorIgnoresResidualWindowAppearance() {
+        let previousTheme = ActiveChromeTheme.current
+        let previousScheme = ResolvedSystemColorScheme.current
+        ActiveChromeTheme.current = LumiFallbackChromeTheme()
+        defer {
+            ActiveChromeTheme.current = previousTheme
+            ResolvedSystemColorScheme.current = previousScheme
+        }
+
+        ResolvedSystemColorScheme.current = .light
+        var lightColor = Color.clear
+        NSAppearance(named: .darkAqua)!.performAsCurrentDrawingAppearance {
+            lightColor = Color.adaptive(light: "FFFFFF", dark: "000000")
+        }
+        #expect(RGBA(lightColor).isApproximatelyEqual(to: RGBA(red: 1, green: 1, blue: 1)))
+
+        ResolvedSystemColorScheme.current = .dark
+        var darkColor = Color.clear
+        NSAppearance(named: .aqua)!.performAsCurrentDrawingAppearance {
+            darkColor = Color.adaptive(light: "FFFFFF", dark: "000000")
+        }
+        #expect(RGBA(darkColor).isApproximatelyEqual(to: RGBA(red: 0, green: 0, blue: 0)))
+    }
+
+    @Test
+    @MainActor
     func adaptiveColorFollowsFixedDarkThemeRegardlessOfSystemAppearance() {
         struct DarkChrome: LumiAppChromeTheme {
             let identifier = "test-dark"
@@ -142,6 +168,46 @@ struct ColorHexTests {
         ActiveChromeTheme.current = LightChrome()
         defer { ActiveChromeTheme.current = previous }
 
+        #expect(AppThemeAppearanceResolver.effectiveColorScheme == .light)
+    }
+
+    @Test
+    @MainActor
+    func appThemeAppearanceResolverUsesSharedResolvedSchemeForSystemTheme() {
+        struct SystemChrome: LumiAppChromeTheme {
+            let identifier = "test-system"
+            let displayName = "System"
+            let compactName = "System"
+            let description = "Test"
+            let iconName = "circle.lefthalf.filled"
+            let iconColor = Color.gray
+            let appearanceKind: ThemeAppearanceKind = .system
+
+            func accentColors() -> (primary: Color, secondary: Color, tertiary: Color) {
+                (.red, .green, .blue)
+            }
+
+            func atmosphereColors() -> (deep: Color, medium: Color, light: Color) {
+                (.black, .gray, .white)
+            }
+
+            func glowColors() -> (subtle: Color, medium: Color, intense: Color) {
+                (.red, .green, .blue)
+            }
+        }
+
+        let previousTheme = ActiveChromeTheme.current
+        let previousScheme = ResolvedSystemColorScheme.current
+        ActiveChromeTheme.current = SystemChrome()
+        defer {
+            ActiveChromeTheme.current = previousTheme
+            ResolvedSystemColorScheme.current = previousScheme
+        }
+
+        ResolvedSystemColorScheme.current = .dark
+        #expect(AppThemeAppearanceResolver.effectiveColorScheme == .dark)
+
+        ResolvedSystemColorScheme.current = .light
         #expect(AppThemeAppearanceResolver.effectiveColorScheme == .light)
     }
 }

@@ -32,13 +32,22 @@ private struct AssistantMessageBody: View {
         return reasoning
     }
 
+    /// 内容是否含可见字符。
+    ///
+    /// 不用 `trimmingCharacters(in:).isEmpty` —— 那会为每次 body 求值
+    /// 全串扫描并构造新字符串;`contains` 在首个非空白字符处即返回,
+    /// 正常内容下平均 O(1)(行在滚动/流式刷新中会被高频求值)。
+    private var hasVisibleContent: Bool {
+        message.content.contains { !$0.isWhitespace && !$0.isNewline }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let reasoningContent, self.verbosity == .detailed {
                 reasoningBlock(reasoningContent)
             }
 
-            if !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !shouldHideAssistantBody {
+            if hasVisibleContent && !shouldHideAssistantBody {
                 MarkdownBlockRenderer(
                     markdown: message.content,
                     theme: ChatMarkdownTheme.make(from: theme)

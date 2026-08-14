@@ -211,6 +211,10 @@ public final class KernelLumiContainer: ObservableObject {
         // 12. 将内核主题服务持有的主题贡献同步到 LumiUI 的主题注册中心
         //    此时所有插件的 onReady 已执行完毕,主题贡献已注册到内核
         theme?.syncToLumiUI()
+
+        // 13. 收集所有插件贡献的 Web 路由,并注册到内核 WebServerProviding。
+        //     Web 服务为可选增强:未注册任何实现时为 no-op,不影响其它贡献。
+        pluginManager.registerWebRoutes(in: self)
     }
 
     /// 让菜单栏展示层刷新为当前工作区服务收集到的内容。

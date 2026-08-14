@@ -32,18 +32,19 @@ public enum SystemAppearanceResolver {
         return nil
     }
 
-    /// 读取当前系统明暗；优先 UserDefaults，自动模式下回退到 NSApp 有效外观。
+    /// 读取当前系统明暗。
+    ///
+    /// macOS 在亮色外观下不会写入 `AppleInterfaceStyle`；暗色（包括自动外观
+    /// 当前处于暗色的时段）会写入 `Dark`。不能回退到 `NSApp.effectiveAppearance`，
+    /// 因为 Lumi 会为窗口强制主题外观，从固定暗色主题切回 `.system` 时该值可能
+    /// 仍是旧的 DarkAqua，反过来污染系统外观判断。
     @MainActor
     public static func currentSystemColorScheme() -> ColorScheme {
         if let style = globalInterfaceStyle {
             return style.lowercased().contains("dark") ? .dark : .light
         }
         #if canImport(AppKit)
-        guard NSApp != nil else {
-            return systemIsDarkByPreference ? .dark : .light
-        }
-        let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        return isDark ? .dark : .light
+        return .light
         #elseif canImport(UIKit)
         return UITraitCollection.current.userInterfaceStyle == .dark ? .dark : .light
         #endif
@@ -65,7 +66,9 @@ public enum AppThemeAppearanceResolver {
         case .light:
             return .light
         case .system:
-            return SystemAppearanceResolver.effectiveColorScheme
+            // 与 LumiUIThemeRegistry / Color.adaptive 共用同一份已解析状态，避免
+            // NSHostingView 与主 SwiftUI 视图在主题切换过程中分别得到不同分支。
+            return ResolvedSystemColorScheme.current
         }
     }
 
@@ -119,25 +122,16 @@ extension Color {
         switch ActiveChromeTheme.current.appearanceKind {
         case .system:
             #if canImport(AppKit)
-            // 用 NSColor 动态颜色让 AppKit/SwiftUI 在系统外观切换时自动重新解析，
-            // 避免返回静态 Color 导致已渲染视图（如 NSHostingView 承载的文件树 cell）
-            // 不随外观刷新、只能靠手动重建视图才更新颜色的问题。
-            let lightNSColor = NSColor(hex: light)
-            let darkNSColor = NSColor(hex: dark)
-            let dynamicNSColor = NSColor(name: nil) { appearance in
-                appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-                    ? darkNSColor
-                    : lightNSColor
-            }
-            self.init(dynamicNSColor)
+            // 使用主题注册中心已经解析好的系统明暗，避免颜色在 AppKit/SwiftUI
+            // 渲染阶段再次读取窗口 appearance。否则从固定暗色主题切回 `.system`
+            // 时，窗口残留的 DarkAqua 会让背景继续取暗色，而其它组件已取亮色。
+            self.init(hex: ResolvedSystemColorScheme.current == .dark ? dark : light)
             #elseif canImport(UIKit)
-            // iOS：用 UIColor 动态颜色，随 traitCollection.userInterfaceStyle 自动重解析。
             let lightUIColor = UIColor(hex: light)
             let darkUIColor = UIColor(hex: dark)
-            let dynamicUIColor = UIColor { trait in
+            self.init(UIColor { trait in
                 trait.userInterfaceStyle == .dark ? darkUIColor : lightUIColor
-            }
-            self.init(dynamicUIColor)
+            })
             #endif
         case .dark:
             self.init(hex: dark)
