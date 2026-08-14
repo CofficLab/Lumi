@@ -7,7 +7,7 @@ import SwiftUI
 struct ToolbarView: View {
     @LumiTheme private var theme
     let kernel: KernelLumi
-    
+
     @State private var maxContextSize: Int?
     @State private var usedTokens: Int?
     @State private var isPopoverPresented = false
@@ -117,5 +117,4 @@ struct ToolbarView: View {
         let lastMessageWithTokens = messages.last { $0.inputTokenCount != nil }
         usedTokens = lastMessageWithTokens?.inputTokenCount
     }
-
 }
