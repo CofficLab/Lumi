@@ -250,6 +250,25 @@ import KernelLumi
         )
     }
 
+    @Test func infoPopoverDoesNotTreatNormalAssistantContentAsRawError() {
+        let message = LumiChatMessage(
+            conversationID: UUID(),
+            role: .assistant,
+            content: "This is a normal model response."
+        )
+
+        #expect(ErrorTransportDetailsResolver.infoPopoverErrorSummary(for: message) == nil)
+    }
+
+    @Test func infoPopoverKeepsLegacyErrorContentFallback() {
+        let message = errorMessage(content: "Legacy request failed")
+
+        #expect(
+            ErrorTransportDetailsResolver.infoPopoverErrorSummary(for: message)
+                == "Legacy request failed"
+        )
+    }
+
     @Test func splitsEmbeddedTransportDetailsFromLongestField() {
         let summary = #"HTTP 错误 (429): { "error": { "code": "429" } }"#
         let request = "Request URL: https://example.com"

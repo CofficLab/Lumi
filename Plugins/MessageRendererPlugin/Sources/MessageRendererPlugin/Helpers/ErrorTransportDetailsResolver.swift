@@ -36,6 +36,18 @@ enum ErrorTransportDetailsResolver {
         )
     }
 
+    static func infoPopoverErrorSummary(for message: LumiChatMessage) -> String? {
+        let hasRawErrorDetail = message.rawErrorDetail?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty == false
+        guard message.isError || message.role == .error || hasRawErrorDetail else {
+            return nil
+        }
+
+        let summary = resolve(for: message).displaySummary
+        return summary.isEmpty ? nil : summary
+    }
+
     private static func preferredSummary(from message: LumiChatMessage) -> String {
         if let rawErrorDetail = message.rawErrorDetail,
            !rawErrorDetail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

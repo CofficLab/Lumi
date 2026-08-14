@@ -190,9 +190,7 @@ struct MessageInfoPopoverContent: View {
     }
 
     private func errorDetailSummary(for message: LumiChatMessage) -> String? {
-        let resolved = ErrorTransportDetailsResolver.resolve(for: message)
-        let summary = resolved.displaySummary
-        return summary.isEmpty ? nil : summary
+        ErrorTransportDetailsResolver.infoPopoverErrorSummary(for: message)
     }
 
     @ViewBuilder
