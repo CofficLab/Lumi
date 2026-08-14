@@ -135,4 +135,14 @@ public final class EventManager: ObservableObject, SuperLog {
         }
         post(.turnFinished, object: object, userInfo: userInfo)
     }
+
+    // MARK: - Web Server Notifications
+
+    /// 发送 `.lumiWebRequestReceived` 通知,携带一次 Web 请求的活动记录。
+    public func postWebRequestReceived(object: Any? = nil, activity: WebRequestActivity) {
+        let userInfo: [AnyHashable: Any] = [
+            WebRequestActivityNotification.activityKey: activity
+        ]
+        post(.webRequestReceived, object: object, userInfo: userInfo)
+    }
 }
