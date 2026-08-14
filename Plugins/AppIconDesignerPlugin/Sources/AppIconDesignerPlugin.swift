@@ -14,6 +14,10 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "com.coffic.lumi.plugin.app-icon-designer"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "app-icon-designer.documents"
+
     public var name: String {
         AppIconDesignerLocalization.string("AppIconDesigner Name")
     }
@@ -77,25 +81,7 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
                 title: AppIconDesignerLocalization.string("Prompt.Suggestion.Design"),
                 systemImage: "app.dashed",
                 action: .activateViewContainer(id)
-            ),
-            LumiPromptSuggestion(
-                id: "\(id).preset",
-                title: AppIconDesignerLocalization.string("Prompt.Suggestion.Preset"),
-                systemImage: "square.grid.2x2",
-                action: .activateViewContainer(id)
-            ),
-            LumiPromptSuggestion(
-                id: "\(id).export",
-                title: AppIconDesignerLocalization.string("Prompt.Suggestion.Export"),
-                systemImage: "square.and.arrow.up",
-                action: .activateViewContainer(id)
-            ),
-            LumiPromptSuggestion(
-                id: "\(id).review",
-                title: AppIconDesignerLocalization.string("Prompt.Suggestion.Review"),
-                systemImage: "checkmark.seal",
-                action: .activateViewContainer(id)
-            ),
+            )
         ]
     }
 
@@ -122,7 +108,7 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "app-icon-designer.documents",
+                id: Self.railTabID,
                 title: AppIconDesignerLocalization.string("Icon Documents"),
                 systemImage: "doc.text",
                 visibility: .viewContainer(id: id)
