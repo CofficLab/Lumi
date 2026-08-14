@@ -296,6 +296,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
                     reasoningEffort: effectiveReasoningEffort,
                     automationLevel: effectiveAutomationLevel
                 )
+                kernel?.eventManager.postConversationDidCreate(object: self, conversationID: id)
                 self.notifyConversationsChanged()
             } catch {
                 if Self.verbose {

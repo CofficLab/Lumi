@@ -5,6 +5,7 @@ import SwiftUI
 
 public extension Notification.Name {
     static let lumiConversationsDidChange = KernelLumiEvent.conversationsDidChange.notificationName
+    static let lumiConversationDidCreate = KernelLumiEvent.conversationDidCreate.notificationName
     static let lumiSelectedConversationDidChange = KernelLumiEvent.selectedConversationDidChange.notificationName
     static let lumiConversationTitleDidChange = KernelLumiEvent.conversationTitleDidChange.notificationName
     static let lumiConversationDidDelete = KernelLumiEvent.conversationDidDelete.notificationName
@@ -32,6 +33,18 @@ public extension NotificationCenter {
     func onLumiConversationsDidChange(_ handler: @escaping () -> Void) -> NSObjectProtocol {
         addObserver(forName: .lumiConversationsDidChange, object: nil, queue: .main) { _ in
             handler()
+        }
+    }
+
+    /// Subscribe to `.lumiConversationDidCreate`.
+    /// Handler receives the created conversation ID from userInfo.
+    /// Returns an opaque observer token that must be passed to `removeObserver(_:)` in `deinit`.
+    @MainActor
+    func onLumiConversationDidCreate(_ handler: @escaping (UUID) -> Void) -> NSObjectProtocol {
+        addObserver(forName: .lumiConversationDidCreate, object: nil, queue: .main) { notification in
+            if let conversationID = notification.lumiConversationID {
+                handler(conversationID)
+            }
         }
     }
 
@@ -79,6 +92,15 @@ public extension View {
     func onLumiConversationsDidChange(perform action: @escaping () -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
             action()
+        }
+    }
+
+    /// 监听 `.lumiConversationDidCreate` 通知，并传出新建的会话 ID。
+    func onLumiConversationDidCreate(perform action: @escaping (UUID) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiConversationDidCreate)) { notification in
+            if let conversationID = notification.lumiConversationID {
+                action(conversationID)
+            }
         }
     }
 

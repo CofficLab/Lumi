@@ -40,6 +40,13 @@ public final class EventManager: ObservableObject, SuperLog {
         post(.conversationsDidChange, object: object)
     }
 
+    public func postConversationDidCreate(object: Any? = nil, conversationID: UUID) {
+        let userInfo: [AnyHashable: Any] = [
+            LumiNotificationUserInfoKey.conversationID: conversationID,
+        ]
+        post(.conversationDidCreate, object: object, userInfo: userInfo)
+    }
+
     /// 发送 `.lumiSelectedConversationDidChange` 通知。
     ///
     /// 在 `selectedConversationID` 发生变化时调用（select/deselect/create 自动选中/

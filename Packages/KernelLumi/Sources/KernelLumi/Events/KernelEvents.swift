@@ -9,6 +9,7 @@ public enum KernelLumiEvent: String, CaseIterable, Sendable {
     case enabledPluginsDidChange = "com.coffic.lumi.enabledPluginsDidChange"
     case messagesDidChange = "com.coffic.lumi.messagesDidChange"
     case conversationsDidChange = "com.coffic.lumi.conversationsDidChange"
+    case conversationDidCreate = "com.coffic.lumi.conversationDidCreate"
     case selectedConversationDidChange = "com.coffic.lumi.selectedConversationDidChange"
     case conversationTitleDidChange = "com.coffic.lumi.conversationTitleDidChange"
     case conversationDidDelete = "com.coffic.lumi.conversationDidDelete"
@@ -199,6 +200,13 @@ public extension View {
     /// 监听 `.lumiSelectedModelsDidChange` 通知
     func onLumiSelectedModelsDidChange(perform action: @escaping () -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .lumiSelectedModelsDidChange)) { _ in
+            action()
+        }
+    }
+
+    /// 监听 `.lumiLLMProvidersDidChange` 通知
+    func onLumiLLMProvidersDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiLLMProvidersDidChange)) { _ in
             action()
         }
     }
