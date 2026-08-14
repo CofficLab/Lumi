@@ -21,8 +21,7 @@ public struct ExportResumeTool: LumiAgentTool {
         arguments.bool("overwrite") == true ? .high : .medium
     }
     public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
-        let scope = try await ResumeToolSupport.resolveScope(arguments, kernel: kernel)
-        let storagePath = try await ResumeToolSupport.storagePath(for: scope)
+        let storagePath = try await ResumeToolSupport.storagePath()
         let resumeID = try ResumeToolSupport.required("resumeId", arguments)
         let resume = try ResumeToolSupport.store.readResume(storagePath: storagePath, slug: resumeID)
         let report = try ResumeToolSupport.store.lintResume(storagePath: storagePath, slug: resumeID)
@@ -138,7 +137,7 @@ public struct ExportResumeTool: LumiAgentTool {
             throw error
         }
 
-        await ResumeToolSupport.notify(scope: scope, resumeID: resumeID)
-        return (["Exported \(stagedExports.count) file(s) (scope=\(scope.rawValue))."] + stagedExports.map(\.summary)).joined(separator: "\n")
+        await ResumeToolSupport.notify(resumeID: resumeID)
+        return (["Exported \(stagedExports.count) file(s)."] + stagedExports.map(\.summary)).joined(separator: "\n")
     }
 }

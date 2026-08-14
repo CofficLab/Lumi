@@ -15,13 +15,12 @@ public struct LintResumeTool: LumiAgentTool {
     }
     public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .low }
     public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
-        let scope = try await ResumeToolSupport.resolveScope(arguments, kernel: kernel)
-        let storagePath = try await ResumeToolSupport.storagePath(for: scope)
+        let storagePath = try await ResumeToolSupport.storagePath()
         let resumeID = try ResumeToolSupport.required("resumeId", arguments)
         let resume = try ResumeToolSupport.store.readResume(storagePath: storagePath, slug: resumeID)
         let report = try ResumeToolSupport.store.lintResume(storagePath: storagePath, slug: resumeID)
 
-        var lines: [String] = ["scope=\(scope.rawValue) resumeId=\(resumeID)"]
+        var lines: [String] = ["resumeId=\(resumeID)"]
         lines.append(report.errors.isEmpty ? "Static lint: PASS" : "Static lint: FAIL")
         lines.append(contentsOf: report.errors.map { "ERROR [\($0.code)] \($0.message)" })
         lines.append(contentsOf: report.warnings.map { "WARN [\($0.code)] \($0.message)" })

@@ -26,14 +26,13 @@ public struct PatchResumeHTMLTool: LumiAgentTool {
                   !oldText.isEmpty else { throw ResumeToolSupport.ToolArgumentError.invalid("operations") }
             return .init(oldText: oldText, newText: newText)
         }
-        let scope = try await ResumeToolSupport.resolveScope(arguments, kernel: kernel)
         let resumeID = try ResumeToolSupport.required("resumeId", arguments)
         _ = try ResumeToolSupport.store.patchHTML(
             operations: operations,
-            storagePath: try await ResumeToolSupport.storagePath(for: scope),
+            storagePath: try await ResumeToolSupport.storagePath(),
             slug: resumeID
         )
-        await ResumeToolSupport.notify(scope: scope, resumeID: resumeID)
-        return "Applied \(operations.count) HTML patches atomically (scope=\(scope.rawValue)).\nCall resume_preview_page to inspect the rendered result."
+        await ResumeToolSupport.notify(resumeID: resumeID)
+        return "Applied \(operations.count) HTML patches atomically.\nCall resume_preview_page to inspect the rendered result."
     }
 }

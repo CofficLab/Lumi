@@ -2,11 +2,10 @@ import LumiUI
 import ResumeKit
 import SwiftUI
 
-/// 简历 Rail 容器：列出 project / app 两个 scope 下的简历。
+/// 简历 Rail 容器：列出应用数据目录（app 存储）下的简历。
 public struct ResumeRailView: View {
     @ObservedObject private var workspace = WorkspaceStore.shared
     @LumiTheme private var theme
-    @State private var expandedScopes: Set<Scope> = [.project, .app]
 
     // MARK: - 初始化
 
@@ -19,7 +18,7 @@ public struct ResumeRailView: View {
             HStack {
                 Text(ResumeLocalization.string("Resumes")).font(.headline)
                 Spacer()
-                Text("\(totalResumeCount)")
+                Text("\(workspace.appResumes.count)")
                     .font(.footnote.monospacedDigit())
                     .foregroundStyle(theme.textTertiary)
                 Button { workspace.reload() } label: { Image(systemName: "arrow.clockwise") }
@@ -33,11 +32,14 @@ public struct ResumeRailView: View {
 
             if workspace.appStorageDirectory == nil {
                 ResumeEmptyStateView(message: ResumeLocalization.string("Plugin storage is unavailable."))
+            } else if workspace.appResumes.isEmpty {
+                ResumeEmptyStateView(message: ResumeLocalization.string("Ask the Agent to create a resume."))
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                        scopeSection(.project)
-                        scopeSection(.app)
+                        ForEach(workspace.appResumes) { document in
+                            resumeRow(document)
+                        }
                     }
                     .padding(.horizontal, DesignTokens.Spacing.sm)
                     .padding(.vertical, DesignTokens.Spacing.xs)
@@ -50,48 +52,10 @@ public struct ResumeRailView: View {
 
     // MARK: - 子视图
 
-    @ViewBuilder
-    private func scopeSection(_ scope: Scope) -> some View {
-        let resumes = workspace.resumes(for: scope)
-        let isUnavailable = (scope == .project && workspace.currentProjectPath == nil)
-        DisclosureGroup(isExpanded: scopeBinding(scope)) {
-            if resumes.isEmpty {
-                Text(isUnavailable
-                     ? ResumeLocalization.string("Open a project to enable project-local storage.")
-                     : ResumeLocalization.string("Ask the Agent to create a resume."))
-                    .font(.caption)
-                    .foregroundStyle(theme.textTertiary)
-                    .padding(.leading, DesignTokens.Spacing.md)
-                    .padding(.bottom, DesignTokens.Spacing.xs)
-            } else {
-                ForEach(resumes) { document in
-                    resumeRow(document, scope: scope)
-                }
-            }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: scope == .project ? "folder" : "app.badge")
-                    .font(.caption)
-                    .foregroundStyle(scope == .project ? theme.primary : theme.textTertiary)
-                Text(scope.displayName()).font(.subheadline.weight(.medium))
-                if scope == .project, let path = workspace.currentProjectPath {
-                    Text("· \(URL(fileURLWithPath: path).lastPathComponent)")
-                        .font(.caption)
-                        .foregroundStyle(theme.textTertiary)
-                }
-                Spacer()
-                Text("\(resumes.count)")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(theme.textTertiary)
-            }
-            .contentShape(Rectangle())
-        }
-    }
-
-    private func resumeRow(_ document: ResumeDocument, scope: Scope) -> some View {
-        let isSelected = workspace.selectedScope == scope && workspace.selectedResumeID == document.id
+    private func resumeRow(_ document: ResumeDocument) -> some View {
+        let isSelected = workspace.selectedResumeID == document.id
         return Button {
-            workspace.selectScope(scope, resumeID: document.id)
+            workspace.select(resumeID: document.id)
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "doc.text")
@@ -120,29 +84,11 @@ public struct ResumeRailView: View {
         .buttonStyle(.plain)
         .contextMenu {
             Button(role: .destructive) {
-                workspace.deleteResume(scope: scope, id: document.id)
+                workspace.deleteResume(id: document.id)
             } label: {
                 Label(ResumeLocalization.string("Delete"), systemImage: "trash")
             }
         }
-    }
-
-    // MARK: - 计算属性
-
-    private var totalResumeCount: Int {
-        workspace.projectResumes.count + workspace.appResumes.count
-    }
-
-    // MARK: - 私有方法
-
-    private func scopeBinding(_ scope: Scope) -> Binding<Bool> {
-        Binding(
-            get: { expandedScopes.contains(scope) },
-            set: { isExpanded in
-                if isExpanded { expandedScopes.insert(scope) }
-                else { expandedScopes.remove(scope) }
-            }
-        )
     }
 }
 

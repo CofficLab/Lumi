@@ -11,7 +11,6 @@ struct ResumeDesignerPluginTests {
         Runtime.reset()
         WorkspaceStore.shared.reload()
 
-        #expect(WorkspaceStore.shared.projectResumes.isEmpty)
         #expect(WorkspaceStore.shared.appResumes.isEmpty)
         #expect(WorkspaceStore.shared.lastError == nil)
     }
@@ -38,6 +37,26 @@ struct ResumeDesignerPluginTests {
         ])
     }
 
+    /// 运行时启用插件（onEnable）必须配置 app 存储目录，否则 rail 会误报
+    /// "插件存储不可用"。onBoot 只在启动时对已启用插件执行一次。
+    @Test func onEnableConfiguresAppStorageDirectory() async throws {
+        Runtime.reset()
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let kernel = KernelLumi()
+        try kernel.registerStorage(MockStorage(dataRootDirectory: root))
+
+        let plugin = ResumeDesignerPlugin()
+        try await plugin.onEnable(kernel: kernel)
+
+        #expect(WorkspaceStore.shared.appStorageDirectory != nil)
+        #expect(WorkspaceStore.shared.appStorageDirectory?.lastPathComponent == "ResumeDesigner")
+        #expect(WorkspaceStore.shared.appResumes.isEmpty)
+        #expect(WorkspaceStore.shared.lastError == nil)
+    }
+
     @Test func overwriteExportIsHighRisk() {
         let tool = ExportResumeTool()
         let kernel = KernelLumi()
@@ -53,7 +72,7 @@ struct ResumeDesignerPluginTests {
         let kernel = KernelLumi()
         Runtime.configure(appStorageDirectory: root)
 
-        // 没有打开项目时,默认走 app scope。
+        // 简历始终写入应用数据目录（app 存储）。
         let create = try await CreateResumeTool().execute(
             arguments: [
                 "slug": .string("my-resume"),
@@ -63,8 +82,8 @@ struct ResumeDesignerPluginTests {
             ],
             kernel: kernel
         )
-        #expect(create.contains("scope=app"))
         #expect(create.contains("Created resume"))
+        #expect(!create.contains("scope="))
         #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("resumes/my-resume/index.html").path))
         #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("resumes/my-resume/manifest.json").path))
 
@@ -125,38 +144,28 @@ struct ResumeDesignerPluginTests {
         #expect(html.contains("1056px"))
     }
 
-    @Test func explicitScopeRoutesWriteOperations() async throws {
+    @Test func toolsIgnoreLegacyScopeArgumentAndAlwaysUseAppStorage() async throws {
         Runtime.reset()
         let appRoot = FileManager.default.temporaryDirectory.appendingPathComponent("app-\(UUID().uuidString)", isDirectory: true)
-        let projectRoot = FileManager.default.temporaryDirectory.appendingPathComponent("project-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: appRoot, withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
-        defer {
-            try? FileManager.default.removeItem(at: appRoot)
-            try? FileManager.default.removeItem(at: projectRoot)
-        }
+        defer { try? FileManager.default.removeItem(at: appRoot) }
         let kernel = KernelLumi()
         Runtime.configure(appStorageDirectory: appRoot)
-        Runtime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: projectRoot)
 
+        // 即使显式传入 scope 参数（含 project），也只会写入 app 存储目录。
         let createArguments: [String: LumiJSONValue] = [
             "slug": .string("scoped"),
             "title": .string("Scoped"),
             "paper": .string("a4"),
             "template": .string("minimal"),
         ]
-        _ = try await CreateResumeTool().execute(
-            arguments: createArguments.merging(["scope": .string("app")]) { _, new in new },
-            kernel: kernel
-        )
-        _ = try await CreateResumeTool().execute(
+        let output = try await CreateResumeTool().execute(
             arguments: createArguments.merging(["scope": .string("project")]) { _, new in new },
             kernel: kernel
         )
-
-        // 文件系统隔离:每个 scope 各自存储。
+        #expect(output.contains("Created resume"))
+        #expect(!output.contains("scope="))
         #expect(FileManager.default.fileExists(atPath: appRoot.appendingPathComponent("resumes/scoped/manifest.json").path))
-        #expect(FileManager.default.fileExists(atPath: projectRoot.appendingPathComponent("resumes/scoped/manifest.json").path))
     }
 
     @Test func replaceHTMLRejectsInvalidDocuments() async throws {
@@ -186,5 +195,17 @@ struct ResumeDesignerPluginTests {
                 kernel: kernel
             )
         }
+    }
+}
+
+/// 测试用 StorageProviding：以临时目录为根，按插件 ID 划分子目录。
+private final class MockStorage: StorageProviding {
+    let dataRootDirectory: URL
+    init(dataRootDirectory: URL) { self.dataRootDirectory = dataRootDirectory }
+    func pluginDataDirectory(for pluginID: String) -> URL {
+        dataRootDirectory.appendingPathComponent(pluginID, isDirectory: true)
+    }
+    func coreDataDirectory() -> URL {
+        dataRootDirectory.appendingPathComponent("Core", isDirectory: true)
     }
 }

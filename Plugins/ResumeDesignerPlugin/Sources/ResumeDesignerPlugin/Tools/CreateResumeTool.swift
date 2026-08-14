@@ -20,7 +20,6 @@ public struct CreateResumeTool: LumiAgentTool {
     }
     public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .medium }
     public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
-        let scope = try await ResumeToolSupport.resolveScope(arguments, kernel: kernel)
         let paperRaw = try ResumeToolSupport.required("paper", arguments)
         guard let paper = ResumePaperKind(rawValue: paperRaw.lowercased()) else {
             throw ResumeToolSupport.ToolArgumentError.invalid("paper")
@@ -30,16 +29,16 @@ public struct CreateResumeTool: LumiAgentTool {
             throw ResumeToolSupport.ToolArgumentError.invalid("template")
         }
         let resolved = try ResumeToolSupport.store.createResume(
-            storagePath: try await ResumeToolSupport.storagePath(for: scope),
+            storagePath: try await ResumeToolSupport.storagePath(),
             slug: try ResumeToolSupport.required("slug", arguments),
             title: try ResumeToolSupport.required("title", arguments),
             paper: paper,
             template: template
         )
-        await ResumeToolSupport.notify(scope: scope, resumeID: resolved.document.id)
+        await ResumeToolSupport.notify(resumeID: resolved.document.id)
         return """
-        Created resume (scope=\(scope.rawValue)).
-        \(ResumeToolSupport.resumeSummary(resolved.document, scope: scope))
+        Created resume.
+        \(ResumeToolSupport.resumeSummary(resolved.document))
         Paper CSS size: \(ResumePaperSpec.preset(for: paper).cssWidth)x\(ResumePaperSpec.preset(for: paper).cssHeight) px.
         Next: edit the HTML with resume_replace_html or resume_patch_html, then run resume_lint and resume_preview_page.
         """

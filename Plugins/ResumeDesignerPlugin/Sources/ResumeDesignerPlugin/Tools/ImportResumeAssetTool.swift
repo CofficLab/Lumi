@@ -21,10 +21,9 @@ public struct ImportResumeAssetTool: LumiAgentTool {
         guard ResumeDocumentStore.isPathAllowed(sourcePath, allowedDirectories: kernel.allowedDirectories) else {
             throw ResumeStoreError.pathNotAllowed(sourcePath)
         }
-        let scope = try await ResumeToolSupport.resolveScope(arguments, kernel: kernel)
         let resumeID = try ResumeToolSupport.required("resumeId", arguments)
         let directory = try ResumeToolSupport.store.assetsDirectoryURL(
-            storagePath: try await ResumeToolSupport.storagePath(for: scope),
+            storagePath: try await ResumeToolSupport.storagePath(),
             slug: resumeID
         )
         let asset = try ResumeAssetImporter().importImage(
@@ -32,7 +31,7 @@ public struct ImportResumeAssetTool: LumiAgentTool {
             destinationDirectory: directory,
             preferredFileName: arguments.string("fileName")
         )
-        await ResumeToolSupport.notify(scope: scope, resumeID: resumeID)
-        return "Imported resume asset (scope=\(scope.rawValue)). relativePath=\(asset.relativePath) size=\(asset.pixelWidth)x\(asset.pixelHeight)"
+        await ResumeToolSupport.notify(resumeID: resumeID)
+        return "Imported resume asset. relativePath=\(asset.relativePath) size=\(asset.pixelWidth)x\(asset.pixelHeight)"
     }
 }

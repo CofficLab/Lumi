@@ -16,8 +16,7 @@ public struct PreviewResumePageTool: LumiAgentTool {
     }
     public func riskLevel(arguments: [String: LumiJSONValue], kernel: KernelLumi) -> LumiCommandRiskLevel { .low }
     public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
-        let scope = try await ResumeToolSupport.resolveScope(arguments, kernel: kernel)
-        let storagePath = try await ResumeToolSupport.storagePath(for: scope)
+        let storagePath = try await ResumeToolSupport.storagePath()
         let resume = try ResumeToolSupport.store.readResume(
             storagePath: storagePath,
             slug: try ResumeToolSupport.required("resumeId", arguments)
@@ -39,6 +38,6 @@ public struct PreviewResumePageTool: LumiAgentTool {
             base64Data: data.base64EncodedString(),
             fileName: "\(resume.document.id)-p\(String(format: "%02d", pageIndex + 1)).png"
         ))
-        return "Rendered resume page \(pageIndex + 1) at \(preset.cssWidth)x\(preset.cssHeight) (scope=\(scope.rawValue)). The PNG is attached for visual inspection."
+        return "Rendered resume page \(pageIndex + 1) at \(preset.cssWidth)x\(preset.cssHeight). The PNG is attached for visual inspection."
     }
 }

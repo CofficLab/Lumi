@@ -1,6 +1,22 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
     "Agent-built HTML resumes with print-optimized PDF and PNG export." : {
       "localizations" : {
         "en" : {
@@ -113,53 +129,8 @@
         }
       }
     },
-    "In App" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In App"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用内"
-          }
-        }
-      }
-    },
-    "In Project" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In Project"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "项目内"
-          }
-        }
-      }
-    },
-    "Open a project to enable project-local storage." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open a project to enable project-local storage."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开一个项目以启用项目内存储。"
-          }
-        }
-      }
+    "OK" : {
+
     },
     "Plugin storage is unavailable." : {
       "localizations" : {
@@ -241,22 +212,6 @@
         }
       }
     },
-    "Resumes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resumes"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简历"
-          }
-        }
-      }
-    },
     "Resume Designer" : {
       "localizations" : {
         "en" : {
@@ -269,6 +224,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "简历设计器"
+          }
+        }
+      }
+    },
+    "Resumes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "简历"
           }
         }
       }
@@ -288,6 +259,9 @@
           }
         }
       }
+    },
+    "· %@" : {
+
     }
   },
   "version" : "1.0"

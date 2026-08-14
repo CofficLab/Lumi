@@ -148,8 +148,7 @@ public struct ResumeDesignerView: View {
         guard panel.runModal() == .OK, let directory = panel.url else { return }
 
         isExporting = true
-        let scope = workspace.selectedScope
-        let storagePath = workspace.storagePath(for: scope)
+        let storagePath = workspace.appStoragePath
         Task { @MainActor in
             defer { isExporting = false }
             do {
