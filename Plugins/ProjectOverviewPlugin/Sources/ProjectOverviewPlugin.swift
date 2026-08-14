@@ -29,6 +29,22 @@ public final class ProjectOverviewPlugin: LumiPlugin, SuperLog {
         [ProjectOverviewTool()]
     }
 
+    // MARK: - Prompt Suggestions
+
+    /// 贡献聊天起始提示词，供消息列表空态展示。
+    ///
+    /// 本插件为 `alwaysOn` 且无独立视图容器，因此仅声明 `prompt`（不声明 `action`）：
+    /// 点击时直接将该提示词作为消息发送，由 LLM 调用 `project_overview` 工具生成概览。
+    public func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] {
+        [
+            LumiPromptSuggestion(
+                id: "\(id).overview",
+                title: PluginProjectOverviewLocalization.string("Prompt.Suggestion.Overview"),
+                systemImage: "doc.text.magnifyingglass"
+            )
+        ]
+    }
+
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }
