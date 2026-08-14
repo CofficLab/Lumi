@@ -150,6 +150,7 @@ import WebFetchPlugin
 import WebSearchPlugin
 import WebServerPlugin
 import WhiteNoisePlugin
+import PrototypeDesignerPlugin
 
 /// Lumi 完整插件目录
 ///
@@ -253,6 +254,7 @@ public enum LumiPluginCatalog {
             ClipboardManagerPlugin(),
             BrewManagerPlugin(),
             WhiteNoisePlugin(),
+            PrototypeDesignerPlugin(),
             DiskManagerPlugin(),
             HostsManagerPlugin(),
             ConversationReasoningPlugin(),
