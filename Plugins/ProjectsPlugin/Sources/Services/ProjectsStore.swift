@@ -66,13 +66,6 @@ public final class ProjectsStore: SuperLog {
         Self.loadCurrentProjectPath(from: settingsDirectory)
     }
 
-    /// 是否已经写入过项目列表。
-    ///
-    /// 该状态用于区分「首次初始化」和「用户主动清空项目列表」。
-    public func hasPersistedProjects() -> Bool {
-        FileManager.default.fileExists(atPath: projectsFileURL.path)
-    }
-
     /// 加载当前项目（从项目列表中查找）
     public func loadCurrentProject(from projects: [ProjectEntry]) -> ProjectEntry? {
         let currentPath = loadCurrentProjectPath()

@@ -28,14 +28,8 @@ let package = Package(
             ],
             path: "Sources",
             resources: [
-                .process("../Resources/Localizable.xcstrings"),
-                .copy("../Resources/BundledProjects")
+                .process("../Resources/Localizable.xcstrings")
             ]
-        ),
-        .testTarget(
-            name: "ProjectsPluginTests",
-            dependencies: ["ProjectsPlugin"],
-            path: "Tests"
         )
     ]
 )
