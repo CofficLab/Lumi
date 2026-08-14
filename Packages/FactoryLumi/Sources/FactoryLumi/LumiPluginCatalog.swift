@@ -149,6 +149,7 @@ import VideoConverterPlugin
 import WebFetchPlugin
 import WebSearchPlugin
 import WebServerPlugin
+import WhiteNoisePlugin
 
 /// Lumi 完整插件目录
 ///
@@ -251,6 +252,7 @@ public enum LumiPluginCatalog {
             ProjectFileTreePlugin(),
             ClipboardManagerPlugin(),
             BrewManagerPlugin(),
+            WhiteNoisePlugin(),
             DiskManagerPlugin(),
             HostsManagerPlugin(),
             ConversationReasoningPlugin(),
