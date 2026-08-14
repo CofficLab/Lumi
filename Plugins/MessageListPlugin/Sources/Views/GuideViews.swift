@@ -4,6 +4,45 @@ import LumiUI
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// 空态点击提示词的统一处理：
+/// 1. 若来源插件未启用，先启用它（含同步重建贡献——确保其视图容器等已注册）；
+/// 2. 执行提示词声明的动作（如激活来源插件的视图容器）；
+/// 3. 发送消息。
+///
+/// `conversationID` 传 `nil`，由 `MessageSender` 选取当前选中会话；
+/// 若当前未选中会话（`NoConversationSelectedView` 场景）则自动新建一个。
+@MainActor
+private func handlePromptSuggestionTap(
+    _ suggestion: LumiPromptSuggestion,
+    kernel: KernelLumi
+) {
+    let pluginID = suggestion.pluginID
+    let needsEnable = suggestion.requiresEnable
+    let prompt = suggestion.prompt
+    let action = suggestion.action
+    let control = kernel.pluginControl
+    let sender = kernel.messageSender
+    let workspace = kernel.workspace
+    Task { @MainActor in
+        if needsEnable, let pluginID, let control {
+            _ = await control.enablePlugin(id: pluginID)
+        }
+        // 动作在启用之后执行：禁用插件的视图容器要等重建后才注册。
+        performPromptAction(action, workspace: workspace)
+        try? await sender?.sendMessage(prompt, conversationID: nil)
+    }
+}
+
+/// 执行提示词声明的动作（声明式，由内核能力统一落地，无需回到插件代码）。
+@MainActor
+private func performPromptAction(_ action: LumiPromptAction?, workspace: (any WorkspaceProviding)?) {
+    guard let action else { return }
+    switch action {
+    case .activateViewContainer(let containerID):
+        workspace?.activateContainer(id: containerID)
+    }
+}
+
 /// 未选择对话时的占位视图，围绕当前项目引导用户开始提问。
 ///
 /// 标题中的项目名是一个可点击的下拉菜单：点击可切换到其它项目，
@@ -95,19 +134,22 @@ struct NoConversationSelectedView: View {
         .multilineTextAlignment(.center)
     }
 
-    /// 标题下方的提示词芯片：点击把提示词写入输入框并聚焦，便于直接开始对话。
+    /// 标题下方的提示词芯片：点击直接发送该提示词（新建对话）；若来源插件未启用，
+    /// 会先启用它。带 `+` 徽标的芯片表示其插件当前未启用。
     private var promptChips: some View {
         FlowLayout(spacing: 8) {
             ForEach(promptSuggestions) { suggestion in
                 Button {
-                    kernel.conversationInput?.text = suggestion.prompt
-                    kernel.conversationInput?.isInputFocused = true
+                    handlePromptSuggestionTap(suggestion, kernel: kernel)
                 } label: {
                     HStack(spacing: 6) {
                         if let image = suggestion.systemImage {
                             Image(systemName: image)
                         }
                         Text(suggestion.title)
+                        if suggestion.requiresEnable {
+                            Image(systemName: "plus.circle")
+                        }
                     }
                 }
                 .buttonStyle(.bordered)
@@ -201,9 +243,17 @@ private final class PromptSuggestionsObserver: ObservableObject {
 struct MessageEmptyStateView: View {
     @LumiTheme private var theme
     let kernel: KernelLumi
+    @StateObject private var promptObserver: PromptSuggestionsObserver
 
     @State private var apiKey = ""
     @State private var saveError: String?
+
+    init(kernel: KernelLumi) {
+        self.kernel = kernel
+        _promptObserver = StateObject(
+            wrappedValue: PromptSuggestionsObserver(service: kernel.promptSuggestions)
+        )
+    }
 
     private var providerManager: (any LLMProviderManaging)? {
         kernel.resolveService((any LLMProviderManaging).self)
@@ -226,9 +276,10 @@ struct MessageEmptyStateView: View {
         provider?.apiKeyDiagnostic() == .configured
     }
 
-    private let suggestions = [
-        "解释这段代码", "帮我写一个脚本", "总结这篇内容", "制定一个执行计划"
-    ]
+    /// 内核聚合后的全部提示词（来自各插件，按 order 排序）。
+    private var promptSuggestions: [LumiPromptSuggestion] {
+        kernel.promptSuggestions?.allPromptSuggestions ?? []
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -245,17 +296,28 @@ struct MessageEmptyStateView: View {
                     .font(.body)
                     .foregroundColor(theme.textSecondary)
                     .multilineTextAlignment(.center)
-                FlowLayout(spacing: 8) {
-                    ForEach(suggestions, id: \.self) { suggestion in
-                        Button(suggestion) {
-                            kernel.conversationInput?.text = suggestion
-                            kernel.conversationInput?.isInputFocused = true
+                if !promptSuggestions.isEmpty {
+                    FlowLayout(spacing: 8) {
+                        ForEach(promptSuggestions) { suggestion in
+                            Button {
+                                handlePromptSuggestionTap(suggestion, kernel: kernel)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    if let image = suggestion.systemImage {
+                                        Image(systemName: image)
+                                    }
+                                    Text(suggestion.title)
+                                    if suggestion.requiresEnable {
+                                        Image(systemName: "plus.circle")
+                                    }
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
                     }
+                    .frame(maxWidth: 520)
                 }
-                .frame(maxWidth: 520)
             } else if let providerInfo {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("当前 Provider：\(providerInfo.displayName)")
