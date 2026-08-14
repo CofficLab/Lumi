@@ -50,6 +50,23 @@ public final class PromoDesignerPlugin: LumiPlugin {
         await PromoDesignerWillSendToLLMHook().execute(kernel: kernel, messages: messages)
     }
 
+    // MARK: - Prompt Suggestions
+
+    /// 贡献聊天起始提示词，供消息列表空态展示。
+    ///
+    /// 每条都声明 `.activateRailTab` 动作——点击时（必要时先启用本插件并重建
+    /// 贡献注册其容器）会自动激活宣传图任务面板，再发送提示词。
+    public func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] {
+        [
+            LumiPromptSuggestion(
+                id: "\(id).create",
+                title: PromoLocalization.string("Prompt.Suggestion.Create"),
+                systemImage: "photo.artframe",
+                action: .activateRailTab(id: Self.railTabID, viewContainerID: self.id)
+            )
+        ]
+    }
+
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
