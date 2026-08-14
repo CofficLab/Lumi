@@ -3,7 +3,7 @@ import Testing
 import HttpKit
 import KernelLumi
 import LLMKit
-@testable import LLMProviderOpenCodeGoPlugin
+@testable import LLMProviderOpenCodePlugin
 
 // MARK: - Mock URLProtocol
 
@@ -43,8 +43,8 @@ private final class MockURLProtocol: URLProtocol {
 
 // MARK: - send 性能字段
 
-@Suite("OpenCodeGoProvider send 性能字段", .serialized)
-struct OpenCodeGoSendMetricsTests {
+@Suite("OpenCodeProvider send 性能字段", .serialized)
+struct OpenCodeSendMetricsTests {
 
     private func makeClient() -> HTTPClient {
         HTTPClient { config in
@@ -83,7 +83,7 @@ struct OpenCodeGoSendMetricsTests {
         }
         defer { MockURLProtocol.reset() }
 
-        let provider = OpenCodeGoProvider(apiService: LLMAPIService(client: makeClient()))
+        let provider = OpenCodeProvider(apiService: LLMAPIService(client: makeClient()))
         provider.setApiKey("test-key")
         defer { provider.removeApiKey() }
 
@@ -116,7 +116,7 @@ struct OpenCodeGoSendMetricsTests {
         }
         defer { MockURLProtocol.reset() }
 
-        let provider = OpenCodeGoProvider(apiService: LLMAPIService(client: makeClient()))
+        let provider = OpenCodeProvider(apiService: LLMAPIService(client: makeClient()))
         provider.setApiKey("test-key")
         defer { provider.removeApiKey() }
 

@@ -1,11 +1,11 @@
 import Foundation
 import Testing
-@testable import LLMProviderOpenCodeGoPlugin
+@testable import LLMProviderOpenCodePlugin
 
 // MARK: - tokenUsage 解析
 
-@Suite("OpenCodeGoProvider tokenUsage 解析")
-struct OpenCodeGoTokenUsageTests {
+@Suite("OpenCodeProvider tokenUsage 解析")
+struct OpenCodeTokenUsageTests {
     /// OpenAI-compatible：prompt_tokens + prompt_cache_hit/miss
     @Test("OpenAI 格式：解析 prompt/completion/缓存命中")
     func parsesOpenAIUsage() throws {
@@ -21,7 +21,7 @@ struct OpenCodeGoTokenUsageTests {
           }
         }
         """
-        let usage = OpenCodeGoProvider().tokenUsage(from: Data(json.utf8))
+        let usage = OpenCodeProvider().tokenUsage(from: Data(json.utf8))
         #expect(usage.inputTokens == 14534)
         #expect(usage.outputTokens == 562)
         #expect(usage.cachedInputTokens == 13952)
@@ -41,7 +41,7 @@ struct OpenCodeGoTokenUsageTests {
           }
         }
         """
-        let usage = OpenCodeGoProvider().tokenUsage(from: Data(json.utf8))
+        let usage = OpenCodeProvider().tokenUsage(from: Data(json.utf8))
         #expect(usage.inputTokens == 1000)
         #expect(usage.outputTokens == 50)
         #expect(usage.cachedInputTokens == 900)
@@ -62,7 +62,7 @@ struct OpenCodeGoTokenUsageTests {
           }
         }
         """
-        let usage = OpenCodeGoProvider().tokenUsage(from: Data(json.utf8))
+        let usage = OpenCodeProvider().tokenUsage(from: Data(json.utf8))
         #expect(usage.inputTokens == 68)
         #expect(usage.outputTokens == 120)
         #expect(usage.cachedInputTokens == 512)
@@ -85,7 +85,7 @@ struct OpenCodeGoTokenUsageTests {
           }
         }
         """
-        let usage = OpenCodeGoProvider().tokenUsage(from: Data(json.utf8))
+        let usage = OpenCodeProvider().tokenUsage(from: Data(json.utf8))
         #expect(usage.inputTokens == 2095)
         #expect(usage.outputTokens == 503)
         #expect(usage.cachedInputTokens == 192)
@@ -99,7 +99,7 @@ struct OpenCodeGoTokenUsageTests {
         let json = """
         {"choices": [{"message": {"role": "assistant", "content": "hi"}}]}
         """
-        let usage = OpenCodeGoProvider().tokenUsage(from: Data(json.utf8))
+        let usage = OpenCodeProvider().tokenUsage(from: Data(json.utf8))
         #expect(usage.inputTokens == nil)
         #expect(usage.outputTokens == nil)
         #expect(usage.cachedInputTokens == nil)

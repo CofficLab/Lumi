@@ -4,7 +4,7 @@ import LLMKit
 import SwiftUI
 
 @MainActor
-public final class OpenCodeGoPlugin: LumiPlugin {
+public final class OpenCodePlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.llm-provider-opencode-go"
     public let name = "OpenCode Go"
     public let order = 110
@@ -14,7 +14,7 @@ public final class OpenCodeGoPlugin: LumiPlugin {
     public init() {}
     public func onBoot(kernel: KernelLumi) async throws {}
     public func onReady(kernel: KernelLumi) async throws {}
-    public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [OpenCodeGoProvider(apiService: LLMAPIService(kernel: kernel))] }
+    public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [OpenCodeProvider(apiService: LLMAPIService(kernel: kernel))] }
     public func messageRenderers(kernel: KernelLumi) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: KernelLumi) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: KernelLumi) -> [LumiMenuBarPopupItem] { [] }

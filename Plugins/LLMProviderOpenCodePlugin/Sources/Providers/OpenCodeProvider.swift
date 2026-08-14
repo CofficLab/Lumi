@@ -2,7 +2,7 @@ import Foundation
 import KernelLumi
 import LLMKit
 
-public final class OpenCodeGoProvider: LumiLLMProvider, @unchecked Sendable {
+public final class OpenCodeProvider: LumiLLMProvider, @unchecked Sendable {
     /// API 协议类型，决定请求走哪个端点
     private enum Kind {
         case responses
