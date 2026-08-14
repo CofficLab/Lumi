@@ -68,23 +68,21 @@ public final class MiniMaxPlugin: LumiPlugin {
     public func panelBottomTabItems(kernel: KernelLumi) -> [PanelBottomTabItem] { [] }
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] { [] }
 
-    public func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] {
+    public func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] { [] }
+
+    public func chatSectionToolbarItems(kernel: KernelLumi) -> [ChatSectionToolbarItem] {
         [
-            StatusBarItem(
+            ChatSectionToolbarItem(
                 id: "\(id).token-plan",
-                title: LumiPluginLocalization.string("MiniMax Token Plan", bundle: .module),
-                systemImage: "chart.bar.fill",
-                placement: .trailing,
-                statusBarView: {
-                    StatusBarVisibilityView(kernel: kernel)
-                }
-            )
+                placement: .trailing
+            ) {
+                StatusBarVisibilityView(kernel: kernel)
+            },
         ]
     }
 
     public func viewContainers(kernel: KernelLumi) -> [ViewContainerItem] { [] }
     public func chatSectionItems(kernel: KernelLumi) -> [ChatSectionItem] { [] }
-    public func chatSectionToolbarItems(kernel: KernelLumi) -> [ChatSectionToolbarItem] { [] }
     public func chatSectionHeaderItems(kernel: KernelLumi) -> [ChatSectionHeaderItem] { [] }
     public func chatSectionActionBarItems(kernel: KernelLumi) -> [ChatSectionActionBarItem] { [] }
     public func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView { content }
