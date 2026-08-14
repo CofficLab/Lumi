@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.14.0</title>
-            <pubDate>Fri, 14 Aug 2026 08:50:40 +0000</pubDate>
-            <sparkle:version>609</sparkle:version>
-            <sparkle:shortVersionString>5.14.0</sparkle:shortVersionString>
+            <title>5.15.0</title>
+            <pubDate>Fri, 14 Aug 2026 15:16:54 +0000</pubDate>
+            <sparkle:version>610</sparkle:version>
+            <sparkle:shortVersionString>5.15.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.14.0</h2>
-<h3>Changes since v5.13.1</h3>
+            <description><![CDATA[<h2>Release v5.15.0</h2>
+<h3>Changes since v5.14.0</h3>
 <ul>
-<li>docs: add commit convention rules</li>
-<li>docs: add custom LLM providers planning document</li>
-<li>feat: add llmProvidersDidChange event and ensure valid selection on startup</li>
-<li>feat: Add Toast plugin and show toast when enabling plugins</li>
-<li>feat: support custom LLM providers with persistent configuration</li>
-<li>feat(ActivityBar): add context menu to open settings</li>
-<li>feat(AppStorePromoDesignerPlugin): add prompt suggestion with activateRailTab action</li>
-<li>feat(EditorSwiftPlugin): enable Swift editor by default</li>
-<li>feat(LumiUI): add shared toolbar title label component</li>
-<li>feat(OcrPlugin): add on-device OCR plugin with agent tool</li>
-<li>feat(ProjectOverviewPlugin): add project overview prompt suggestion</li>
-<li>feat(ScreenRecorderPlugin): add screen recorder plugin with agent tools</li>
-<li>feat(TextActions): add LLM translate action</li>
-<li>fix: observe conversation selection via ObservableObject to avoid stale state</li>
-<li>fix: resolve default model in context size view when no explicit selection</li>
-<li>fix(mind-map): only show toolbar title when Mind Map container is active</li>
-<li>fix(OnboardingPlugin): bundle Localizable.strings for all locales</li>
-<li>refactor: introduce providerInfo instance property on LumiLLMProvider</li>
-<li>refactor(AppIconDesignerPlugin): adopt AppToolbarTitleLabel in toolbar title</li>
-<li>refactor(AppIconDesignerPlugin): extract railTabID constant and remove unused prompt suggestions</li>
+<li>docs: add bug audit report (2026-08)</li>
+<li>docs: add UI performance audit report (2026-08)</li>
+<li>feat: add conversationDidCreate event for precise new conversation notifications</li>
+<li>feat: add standalone OpenCode Go provider plugin</li>
+<li>feat(context-size): refresh context size on conversation creation</li>
+<li>feat(conversation-speed): keep speed chip visible with unavailable state when no conversation selected</li>
+<li>feat(opencode-go): 支持注入 LLMAPIService 使请求进入 HTTP 交换记录</li>
+<li>feat(opencode-go): parse and persist token usage from non-streaming responses</li>
+<li>feat(quick-launcher): rebuild as Raycast-style global launcher with hotkey and federated search</li>
+<li>feat(rail): show exclusive rail tabs only when container owns one</li>
+<li>feat(resume-designer): add agent-built resume plugin with print-optimized PDF/PNG export</li>
+<li>fix(message-renderer): only show error summary in info popover for actual errors</li>
+<li>fix(opencode-go): fill latencyMs/TTFT metrics so ConversationSpeed works</li>
+<li>fix(promo-designer): configure storage when plugin is enabled at runtime</li>
+<li>refactor: extract token formatting utilities and simplify event observers in ConversationContextSizePlugin</li>
+<li>refactor: Migrate Add Custom Provider sheet to LumiUI components</li>
+<li>refactor(conversation-speed): shorten file names by dropping ConversationSpeed prefix</li>
+<li>refactor(conversation-speed): split toolbar view into models, extensions and views</li>
+<li>refactor(minimax): move token plan from status bar to chat toolbar</li>
+<li>refactor(opencode-go): reformat provider and set 1M context window for deepseek-v4-flash</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.14.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.15.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.14.0/Lumi_5.14.0_arm64.dmg" length="47276496" type="application/octet-stream" sparkle:edSignature="ftUibciXgWJGaFiJg66pso/AkA+Kkrf1/e0RFpLCxDkqZ9hHjXkIGaNytZ9bGDiCdchzYh7mTSfEysLaB2Y+BQ=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.15.0/Lumi_5.15.0_arm64.dmg" length="47916023" type="application/octet-stream" sparkle:edSignature="AqPkIGDrNs7K11WNXivM3AaTmFHz0RVC3jlfRfgMuucdhIU7k5BJtISs9kjYPu6g0Z9pE7tgug0JmmnrgcEiDA=="/>
         </item>
     </channel>
 </rss>
