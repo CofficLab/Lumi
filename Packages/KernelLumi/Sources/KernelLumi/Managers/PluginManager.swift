@@ -533,7 +533,7 @@ public final class PluginManager: ObservableObject {
                 .flatMap { $0.llmProviders(kernel: kernel).map { type(of: $0).info.id } }
         )
         for registered in manager.allLLMProviders() {
-            let id = type(of: registered).info.id
+            let id = registered.providerInfo.id
             if !effectiveIDs.contains(id) {
                 manager.unregisterLLMProvider(id: id)
             }

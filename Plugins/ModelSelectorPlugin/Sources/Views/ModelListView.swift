@@ -24,11 +24,11 @@ struct ModelListView: View {
     /// 当前选中供应商的显示名称
     private var selectedProviderDisplayName: String? {
         guard let providerID = selectedProviderID,
-              let provider = llmProvider?.allLLMProviders().first(where: { type(of: $0).info.id == providerID })
+              let provider = llmProvider?.allLLMProviders().first(where: { $0.providerInfo.id == providerID })
         else {
             return nil
         }
-        return type(of: provider).info.displayName
+        return provider.providerInfo.displayName
     }
 
     var body: some View {

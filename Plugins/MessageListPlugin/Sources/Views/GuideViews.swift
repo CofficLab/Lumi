@@ -429,7 +429,7 @@ struct MessageEmptyStateView: View {
         guard let provider else { return }
         do {
             try provider.saveAPIKey(apiKey)
-            providerManager?.selectProvider(id: type(of: provider).info.id)
+            providerManager?.selectProvider(id: provider.providerInfo.id)
             saveError = nil
         } catch {
             saveError = error.localizedDescription

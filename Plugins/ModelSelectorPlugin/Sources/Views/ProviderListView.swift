@@ -124,7 +124,7 @@ struct ProviderListView: View {
     }
 
     private func providers(in provider: any LLMProviderManaging) -> [LumiLLMProviderInfo] {
-        provider.allLLMProviders().map { type(of: $0).info }
+        provider.allLLMProviders().map { $0.providerInfo }
     }
 
     private func synchronizeScopeWithSelection() {

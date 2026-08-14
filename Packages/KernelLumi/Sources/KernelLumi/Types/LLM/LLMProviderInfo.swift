@@ -147,6 +147,30 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
             self.apiKeyStorageKey = apiKeyStorageKey ?? "DevAssistant_ApiKey_\(id)"
         }
     }
+
+    /// Compatibility convenience for lightweight providers and tests that only
+    /// need model IDs without capability metadata.
+    public init(
+        id: String,
+        displayName: String,
+        description: String = "",
+        defaultModel: String,
+        availableModels: [String],
+        isLocal: Bool = false,
+        websiteURL: URL,
+        apiKeyStorageKey: String? = nil
+    ) {
+        self.init(
+            id: id,
+            displayName: displayName,
+            description: description,
+            defaultModel: defaultModel,
+            availableModels: availableModels.map { LumiModelInfo(id: $0) },
+            isLocal: isLocal,
+            websiteURL: websiteURL,
+            apiKeyStorageKey: apiKeyStorageKey
+        )
+    }
 }
 
 extension LumiReasoningEffort {

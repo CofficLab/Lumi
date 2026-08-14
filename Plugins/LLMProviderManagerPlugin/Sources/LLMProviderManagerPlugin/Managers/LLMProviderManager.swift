@@ -17,6 +17,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
 
     private var llmProviders: [String: any LumiLLMProvider] = [:]
     private var llmProviderOrder: [String] = []
+    private var customProviderConfigurations: [String: CustomProviderConfiguration] = [:]
     @Published private var _selectedProviderID: String?
     @Published private var _selectedModel: String?
 
@@ -54,7 +55,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
     }
 
     public func registerLLMProvider(_ provider: any LumiLLMProvider) throws {
-        let id = type(of: provider).info.id
+        let id = provider.providerInfo.id
         guard !id.isEmpty else {
             throw KernelLumiError.llmProviderRegistrationFailed(
                 providerType: String(describing: type(of: provider)),
@@ -73,7 +74,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
 
     public func registerLLMProviders(_ providers: [any LumiLLMProvider]) throws {
         for provider in providers {
-            let id = type(of: provider).info.id
+            let id = provider.providerInfo.id
             guard !id.isEmpty else {
                 throw KernelLumiError.llmProviderRegistrationFailed(
                     providerType: String(describing: type(of: provider)),
@@ -91,6 +92,61 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
         }
         if Self.verbose {
             Self.logger.info("\(Self.t)registerLLMProviders ➡️ 批量完成, 总计 \(self.llmProviderOrder.count) 个 provider")
+        }
+        ensureValidSelection()
+        // Provider registration happens after plugin UI contributions during startup.
+        // Notify dependent views once the registry is ready so an initial refresh can
+        // resolve the restored provider/model selection.
+        kernel?.eventManager.post(.llmProvidersDidChange)
+    }
+
+    /// Ensure fresh installs and stale persisted selections resolve to the same
+    /// concrete provider/model pair used by the request path.
+    private func ensureValidSelection() {
+        let providerID: String
+        let provider: any LumiLLMProvider
+
+        if let selectedProviderID = _selectedProviderID,
+           let selectedProvider = llmProviders[selectedProviderID] {
+            providerID = selectedProviderID
+            provider = selectedProvider
+        } else {
+            guard let firstProviderID = llmProviderOrder.first,
+                  let firstProvider = llmProviders[firstProviderID] else {
+                return
+            }
+            providerID = firstProviderID
+            provider = firstProvider
+        }
+
+        let info = provider.providerInfo
+        let modelID: String?
+        if let selectedModel = _selectedModel,
+           info.modelIDs.contains(selectedModel) {
+            modelID = selectedModel
+        } else if !info.defaultModel.isEmpty {
+            modelID = info.defaultModel
+        } else {
+            modelID = info.modelIDs.first
+        }
+
+        let providerChanged = _selectedProviderID != providerID
+        let modelChanged = _selectedModel != modelID
+
+        if providerChanged {
+            _selectedProviderID = providerID
+            UserDefaults.standard.set(providerID, forKey: UserDefaultsKeys.selectedProviderID)
+            kernel?.eventManager.post(.selectedRemoteProviderIDDidChange)
+        }
+
+        if modelChanged {
+            _selectedModel = modelID
+            if let modelID {
+                UserDefaults.standard.set(modelID, forKey: UserDefaultsKeys.selectedModel)
+            } else {
+                UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedModel)
+            }
+            kernel?.eventManager.post(.selectedModelsDidChange)
         }
     }
 
@@ -117,7 +173,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             }
             return nil
         }
-        return type(of: provider).info
+        return provider.providerInfo
     }
 
     // MARK: - Provider Selection
@@ -149,7 +205,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             }
             return []
         }
-        return type(of: provider).info.modelIDs
+        return provider.providerInfo.modelIDs
     }
 
     public var selectedModel: String? { _selectedModel }
@@ -174,7 +230,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             }
             throw KernelLumiError.llmProviderUnavailable
         }
-        let providerID = type(of: provider).info.id
+        let providerID = provider.providerInfo.id
         if Self.verbose {
             Self.logger.info("\(Self.t)sendToFirstProvider ➡️ 选 provider id=\(providerID), model=\(request.model), messages=\(request.messages.count), tools=\(request.tools.count)")
         }
@@ -189,7 +245,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             }
             throw KernelLumiError.invalidProviderOrModel
         }
-        let model = _selectedModel ?? type(of: provider).info.defaultModel
+        let model = _selectedModel ?? provider.providerInfo.defaultModel
         if Self.verbose {
             Self.logger.info("\(Self.t)sendToSelectedProvider ➡️ 选 provider id=\(providerID), model=\(model), messages=\(request.messages.count), tools=\(request.tools.count)")
         }
@@ -284,7 +340,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
            !selectedModel.isEmpty {
             return selectedModel
         }
-        return type(of: provider).info.defaultModel
+        return provider.providerInfo.defaultModel
     }
 
     // MARK: - LumiLLMProviderSettingsContributing
@@ -298,5 +354,18 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
     public func registerProviderSettingsView(_ item: LumiLLMProviderSettingsViewItem) {
         providerSettingsViewItems.removeAll { $0.providerID == item.providerID }
         providerSettingsViewItems.append(item)
+    }
+
+    func registerCustomProvider(_ configuration: CustomProviderConfiguration) throws {
+        let provider = CustomLLMProvider(configuration: configuration)
+        try registerLLMProvider(provider)
+        customProviderConfigurations[configuration.id] = configuration
+        kernel?.eventManager.post(.llmProvidersDidChange)
+    }
+
+    func removeCustomProvider(id: String) {
+        guard customProviderConfigurations.removeValue(forKey: id) != nil else { return }
+        unregisterLLMProvider(id: id)
+        kernel?.eventManager.post(.llmProvidersDidChange)
     }
 }

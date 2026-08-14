@@ -72,7 +72,7 @@ public struct ComputerObserveTool: LumiAgentTool {
             provider = providerManager.allLLMProviders().first
         }
         guard let provider else { return false }
-        let info = type(of: provider).info
+        let info = provider.providerInfo
         let model = providerManager.selectedModel
             ?? kernel.conversations?.modelName(for: conversationID)
             ?? info.defaultModel
