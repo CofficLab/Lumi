@@ -28,6 +28,7 @@ struct ToolbarView: View {
             }
         }
         .task { await refreshSize() }
+        .onLumiConversationDidCreate { _ in Task { await self.refreshSize() } }
         .onLumiSelectedConversationDidChange { Task { await self.refreshSize() } }
         .onLumiSelectedRemoteProviderIDDidChange { Task { await self.refreshSize() } }
         .onLumiSelectedLocalProviderIDDidChange { Task { await self.refreshSize() } }
