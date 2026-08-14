@@ -203,6 +203,13 @@ public extension View {
         }
     }
 
+    /// 监听 `.lumiLLMProvidersDidChange` 通知
+    func onLumiLLMProvidersDidChange(perform action: @escaping () -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiLLMProvidersDidChange)) { _ in
+            action()
+        }
+    }
+
     /// 监听 `.lumiShowOnboarding` 通知，并传出是否要求强制重置（`userInfo["reset"]`）。
     func onLumiShowOnboarding(perform action: @escaping (Bool) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .lumiShowOnboarding)) { notification in

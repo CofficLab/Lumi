@@ -10,6 +10,7 @@ public final class ConversationContextSizePlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("Conversation Context Size", bundle: .module)
     }
+
     public let order = 85
     public let policy: LumiPluginPolicy = .alwaysOn
     public let stage: LumiPluginStage = .beta
@@ -26,8 +27,8 @@ public final class ConversationContextSizePlugin: LumiPlugin {
                 id: id,
                 placement: .leading
             ) {
-                ConversationContextSizeToolbarView(kernel: kernel)
-            }
+                ToolbarView(kernel: kernel)
+            },
         ]
     }
 
