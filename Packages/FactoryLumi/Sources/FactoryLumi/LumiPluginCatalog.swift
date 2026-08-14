@@ -13,6 +13,7 @@ import BrewManagerPlugin
 import BrowserPlugin
 import ComputerUsePlugin
 import CADDesignerPlugin
+import MindMapPlugin
 import StoryWriterPlugin
 import StateMonitorPlugin
 import CaffeinatePlugin
@@ -300,6 +301,7 @@ public enum LumiPluginCatalog {
             ProjectOverviewPlugin(),
             AppStoreConnectPlugin(),
             CADDesignerPlugin(),
+            MindMapPlugin(),
             StoryWriterPlugin(),
             ActivityHeatmapPlugin(),
             FileLogPlugin(),
