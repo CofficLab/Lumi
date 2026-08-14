@@ -29,7 +29,14 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     private var hoveredItemURL: URL?
     private var trackingArea: NSTrackingArea?
     private var appearanceSyncObserver: NSObjectProtocol?
-    private let theme: any LumiAppChromeTheme = LumiFallbackChromeTheme()
+    /// 当前激活的外壳主题。
+    ///
+    /// 不能在控制器创建时缓存主题：用户切换主题后，现有文件树控制器仍会继续
+    /// 使用旧主题，导致文件名颜色与背景外观不匹配。主题同步通知会触发可见 cell
+    /// 重载，此处动态读取即可让重载后的 cell 使用最新主题。
+    private var theme: any LumiAppChromeTheme {
+        ActiveChromeTheme.current
+    }
     var kernel: KernelLumi?
 
     /// 展开状态变化回调
@@ -110,6 +117,18 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         dataSource = FileTreeDiffableDataSource(collectionView: collectionView) { [weak self] _, indexPath, item in
             guard let self = self else { return nil }
 
+            // NSCollectionView 中的 NSHostingView 不继承外层 SwiftUI 环境；所有 cell
+            // 共用主题注册中心已经解析好的明暗状态，并同时注入 AppKit 与 SwiftUI。
+            let isDark = AppThemeAppearanceResolver.effectiveColorScheme == .dark
+            let colorScheme: ColorScheme = isDark ? .dark : .light
+            let appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)!
+            let appearanceID = isDark ? "dark" : "light"
+            let palette = FileTreeRowPalette(
+                theme: self.theme,
+                uiTheme: LumiUIThemeStore.shared.theme,
+                appearance: appearance
+            )
+
             switch item {
             case .file(let fileItem):
                 let cell = self.collectionView.makeItem(
@@ -121,19 +140,13 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
                 let isHovered = self.hoveredItemURL == fileItem.url
                 let gitStatus = self.gitStatus(for: fileItem.url)
 
-                // 用 AppThemeAppearanceResolver 而非 view.effectiveAppearance——后者在主题切换
-                // 过程中会多次变化（通知时 DarkAqua、viewDidChangeEffectiveAppearance 时又变 Aqua），
-                // 不可靠。AppThemeAppearanceResolver 基于 ActiveChromeTheme.current，由
-                // LumiUIThemeRegistry 在主题切换时同步更新，稳定可信。
-                let isDark = AppThemeAppearanceResolver.effectiveColorScheme == .dark
-                let appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)!
-                let appearanceID = isDark ? "dark" : "light"
                 cell.configure(
                     with: fileItem,
                     isSelected: isSelected,
                     isHovered: isHovered,
                     gitStatus: gitStatus,
-                    theme: self.theme,
+                    palette: palette,
+                    colorScheme: colorScheme,
                     appearance: appearance,
                     appearanceID: appearanceID
                 )
@@ -150,7 +163,10 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
                     with: item,
                     isSelected: false,
                     isHovered: false,
-                    theme: self.theme
+                    palette: palette,
+                    colorScheme: colorScheme,
+                    appearance: appearance,
+                    appearanceID: appearanceID
                 )
 
                 return cell

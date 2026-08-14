@@ -1,6 +1,41 @@
 import SwiftUI
 import LumiUI
 
+/// 文件树专用的已解析调色板。
+///
+/// `Color.adaptive` 在 AppKit 的独立 `NSHostingView` 中可能按窗口残留外观再次解析，
+/// 造成主题背景与文字走不同明暗分支。这里在 cell 配置时按目标 `NSAppearance`
+/// 将动态色转换为固定 sRGB 颜色，后续渲染不再受宿主外观变化影响。
+struct FileTreeRowPalette {
+    let textPrimary: Color
+    let textSecondary: Color
+    let textTertiary: Color
+    let accentPrimary: Color
+    let selectionBackground: Color
+    let hoverBackground: Color
+
+    init(
+        theme: any LumiAppChromeTheme,
+        uiTheme: any LumiUITheme,
+        appearance: NSAppearance
+    ) {
+        textPrimary = Self.resolve(theme.workspaceTextColor(), appearance: appearance)
+        textSecondary = Self.resolve(theme.workspaceSecondaryTextColor(), appearance: appearance)
+        textTertiary = Self.resolve(theme.workspaceTertiaryTextColor(), appearance: appearance)
+        accentPrimary = Self.resolve(uiTheme.primary, appearance: appearance)
+        selectionBackground = Self.resolve(theme.sidebarSelectionColor(), appearance: appearance)
+        hoverBackground = Self.resolve(theme.workspaceTextColor().opacity(0.06), appearance: appearance)
+    }
+
+    private static func resolve(_ color: Color, appearance: NSAppearance) -> Color {
+        var resolved = NSColor.clear
+        appearance.performAsCurrentDrawingAppearance {
+            resolved = NSColor(color).usingColorSpace(.sRGB) ?? NSColor(color)
+        }
+        return Color(resolved)
+    }
+}
+
 /// 文件树节点行视图（精简版）
 ///
 /// 仅负责视觉渲染，不包含任何交互修饰符。
@@ -10,7 +45,8 @@ struct NodeRowView: View {
     let isSelected: Bool
     let isHovered: Bool
     let gitStatus: GitStatus?
-    let theme: any LumiAppChromeTheme
+    let palette: FileTreeRowPalette
+    let colorScheme: ColorScheme
     /// 当前外观标识，变化时通过 .id 强制 SwiftUI 销毁重建视图树，绕过 diff 缓存
     let appearanceID: String
 
@@ -20,7 +56,7 @@ struct NodeRowView: View {
             if item.isDirectory {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(theme.workspaceTertiaryTextColor())
+                    .foregroundColor(palette.textTertiary)
                     .frame(width: 12)
                     .rotationEffect(.degrees(item.isExpanded ? 90 : 0))
             } else {
@@ -30,13 +66,13 @@ struct NodeRowView: View {
             // 文件图标
             fileIconView(item)
                 .font(.system(size: 12))
-                .foregroundColor(item.isDirectory ? theme.workspaceTextColor() : theme.workspaceSecondaryTextColor())
+                .foregroundColor(item.isDirectory ? palette.textPrimary : palette.textSecondary)
                 .frame(width: 16)
 
             // 文件名
             Text(item.fileName)
                 .font(.appCaption)
-                .foregroundColor(theme.workspaceTextColor())
+                .foregroundColor(palette.textPrimary)
                 .lineLimit(1)
 
             Spacer()
@@ -54,6 +90,8 @@ struct NodeRowView: View {
         .padding(.leading, CGFloat(item.depth) * 16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(rowBackground())
+        // NSHostingView 不会可靠继承外层 SwiftUI 的主题环境，必须显式注入。
+        .environment(\.colorScheme, colorScheme)
         .id(appearanceID)
     }
 
@@ -81,9 +119,9 @@ struct NodeRowView: View {
     private func rowBackground() -> some View {
         ZStack(alignment: .leading) {
             if isSelected {
-                theme.sidebarSelectionColor()
+                palette.selectionBackground
             } else if isHovered {
-                theme.workspaceTextColor().opacity(0.06)
+                palette.hoverBackground
             } else {
                 Color.clear
             }
@@ -113,7 +151,12 @@ extension NodeRowView {
             ),
             isSelected: false, isHovered: false,
             gitStatus: nil,
-            theme: LumiFallbackChromeTheme(),
+            palette: FileTreeRowPalette(
+                theme: LumiFallbackChromeTheme(),
+                uiTheme: LumiDefaultTheme(),
+                appearance: NSAppearance(named: .aqua)!
+            ),
+            colorScheme: .light,
             appearanceID: "placeholder"
         )
     }

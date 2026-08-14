@@ -14,7 +14,8 @@ final class FileTreeNodeCell: NSCollectionViewItem {
     private var cachedItem: FileTreeNodeItem?
     private var cachedIsSelected = false
     private var cachedGitStatus: GitStatus?
-    private var cachedTheme: (any LumiAppChromeTheme)?
+    private var cachedPalette: FileTreeRowPalette?
+    private var cachedColorScheme: ColorScheme = .light
     private var cachedAppearanceID: String = ""
 
     override func loadView() {
@@ -44,7 +45,8 @@ final class FileTreeNodeCell: NSCollectionViewItem {
         isSelected: Bool,
         isHovered: Bool,
         gitStatus: GitStatus?,
-        theme: any LumiAppChromeTheme,
+        palette: FileTreeRowPalette,
+        colorScheme: ColorScheme,
         appearance: NSAppearance,
         appearanceID: String
     ) {
@@ -52,7 +54,8 @@ final class FileTreeNodeCell: NSCollectionViewItem {
         self.cachedItem = item
         self.cachedIsSelected = isSelected
         self.cachedGitStatus = gitStatus
-        self.cachedTheme = theme
+        self.cachedPalette = palette
+        self.cachedColorScheme = colorScheme
         self.cachedAppearanceID = appearanceID
         // 显式设置 hostingView.appearance，强制 NSHostingView 用正确外观渲染，
         // 避免 NSHostingView 缓存旧 appearance 导致颜色不随主题切换刷新。
@@ -63,7 +66,8 @@ final class FileTreeNodeCell: NSCollectionViewItem {
             isSelected: isSelected,
             isHovered: isHovered,
             gitStatus: gitStatus,
-            theme: theme,
+            palette: palette,
+            colorScheme: colorScheme,
             appearanceID: appearanceID
         )
     }
@@ -73,14 +77,15 @@ final class FileTreeNodeCell: NSCollectionViewItem {
     /// 不做 isHovered 去重——mouseMoved 已在外层判断了 hoveredItemURL 是否变化，
     /// 这里必须无条件生效，避免因状态不同步导致高亮残留。
     func updateHovered(_ hovered: Bool) {
-        guard let item = cachedItem, let theme = cachedTheme else { return }
+        guard let item = cachedItem, let palette = cachedPalette else { return }
         isHovered = hovered
         hostingView?.rootView = NodeRowView(
             item: item,
             isSelected: cachedIsSelected,
             isHovered: hovered,
             gitStatus: cachedGitStatus,
-            theme: theme,
+            palette: palette,
+            colorScheme: cachedColorScheme,
             appearanceID: cachedAppearanceID
         )
     }
@@ -92,7 +97,8 @@ final class FileTreeNodeCell: NSCollectionViewItem {
         cachedItem = nil
         cachedIsSelected = false
         cachedGitStatus = nil
-        cachedTheme = nil
+        cachedPalette = nil
+        cachedColorScheme = .light
         cachedAppearanceID = ""
     }
 }

@@ -9,19 +9,23 @@ struct PackageDependencyNodeRowView: View {
     let item: CollectionItem
     let isSelected: Bool
     let isHovered: Bool
-    let theme: any LumiAppChromeTheme
-
-    @LumiTheme private var uiTheme
+    let palette: FileTreeRowPalette
+    let colorScheme: ColorScheme
+    let appearanceID: String
 
     var body: some View {
-        switch item {
-        case .packageHeader(let header):
-            headerRow(header: header)
-        case .packageDependency(let dep):
-            dependencyRow(dep: dep)
-        case .file:
-            EmptyView()
+        Group {
+            switch item {
+            case .packageHeader(let header):
+                headerRow(header: header)
+            case .packageDependency(let dep):
+                dependencyRow(dep: dep)
+            case .file:
+                EmptyView()
+            }
         }
+        .environment(\.colorScheme, colorScheme)
+        .id(appearanceID)
     }
 
     // MARK: Header
@@ -30,18 +34,18 @@ struct PackageDependencyNodeRowView: View {
         HStack(spacing: 4) {
             Image(systemName: "chevron.right")
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundColor(uiTheme.textTertiary)
+                .foregroundColor(palette.textTertiary)
                 .frame(width: 12)
                 .rotationEffect(.degrees(header.isExpanded ? 90 : 0))
 
             Image(systemName: "shippingbox")
                 .font(.system(size: 12))
-                .foregroundColor(uiTheme.primary)
+                .foregroundColor(palette.accentPrimary)
                 .frame(width: 16)
 
             Text(LumiPluginLocalization.string("Package Dependencies", bundle: .module))
                 .font(.appCaption)
-                .foregroundColor(uiTheme.textPrimary)
+                .foregroundColor(palette.textPrimary)
                 .lineLimit(1)
 
             Spacer(minLength: 4)
@@ -49,7 +53,7 @@ struct PackageDependencyNodeRowView: View {
             if header.dependencyCount != 0 {
                 Text("\(header.dependencyCount)")
                     .font(.appMicro)
-                    .foregroundColor(uiTheme.textSecondary)
+                    .foregroundColor(palette.textSecondary)
             }
         }
         .padding(.vertical, 4)
@@ -67,18 +71,18 @@ struct PackageDependencyNodeRowView: View {
 
             Image(systemName: dep.isLocal ? "folder" : "cube.transparent")
                 .font(.system(size: 12))
-                .foregroundColor(dep.isLocal ? uiTheme.textSecondary : uiTheme.primary)
+                .foregroundColor(dep.isLocal ? palette.textSecondary : palette.accentPrimary)
                 .frame(width: 16)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(dep.displayName)
                     .font(.appCaption)
-                    .foregroundColor(uiTheme.textPrimary)
+                    .foregroundColor(palette.textPrimary)
                     .lineLimit(1)
 
                 Text(dep.subtitle)
                     .font(.appMicro)
-                    .foregroundColor(uiTheme.textTertiary)
+                    .foregroundColor(palette.textTertiary)
                     .lineLimit(1)
             }
 
@@ -96,9 +100,9 @@ struct PackageDependencyNodeRowView: View {
     private func rowBackground() -> some View {
         ZStack(alignment: .leading) {
             if isSelected {
-                theme.sidebarSelectionColor()
+                palette.selectionBackground
             } else if isHovered {
-                theme.workspaceTextColor().opacity(0.06)
+                palette.hoverBackground
             } else {
                 Color.clear
             }
@@ -115,7 +119,9 @@ final class PackageDependencyNodeCell: NSCollectionViewItem {
     private var isHovered = false
     private var cachedItem: CollectionItem?
     private var cachedIsSelected = false
-    private var cachedTheme: (any LumiAppChromeTheme)?
+    private var cachedPalette: FileTreeRowPalette?
+    private var cachedColorScheme: ColorScheme = .light
+    private var cachedAppearanceID = ""
 
     override func loadView() {
         view = NSView()
@@ -140,29 +146,39 @@ final class PackageDependencyNodeCell: NSCollectionViewItem {
         with item: CollectionItem,
         isSelected: Bool,
         isHovered: Bool,
-        theme: any LumiAppChromeTheme
+        palette: FileTreeRowPalette,
+        colorScheme: ColorScheme,
+        appearance: NSAppearance,
+        appearanceID: String
     ) {
         self.isHovered = isHovered
         self.cachedItem = item
         self.cachedIsSelected = isSelected
-        self.cachedTheme = theme
+        self.cachedPalette = palette
+        self.cachedColorScheme = colorScheme
+        self.cachedAppearanceID = appearanceID
+        hostingView?.appearance = appearance
 
         hostingView?.rootView = PackageDependencyNodeRowView(
             item: item,
             isSelected: isSelected,
             isHovered: isHovered,
-            theme: theme
+            palette: palette,
+            colorScheme: colorScheme,
+            appearanceID: appearanceID
         )
     }
 
     func updateHovered(_ hovered: Bool) {
-        guard let item = cachedItem, let theme = cachedTheme else { return }
+        guard let item = cachedItem, let palette = cachedPalette else { return }
         isHovered = hovered
         hostingView?.rootView = PackageDependencyNodeRowView(
             item: item,
             isSelected: cachedIsSelected,
             isHovered: hovered,
-            theme: theme
+            palette: palette,
+            colorScheme: cachedColorScheme,
+            appearanceID: cachedAppearanceID
         )
     }
 
@@ -172,7 +188,9 @@ final class PackageDependencyNodeCell: NSCollectionViewItem {
         isHovered = false
         cachedItem = nil
         cachedIsSelected = false
-        cachedTheme = nil
+        cachedPalette = nil
+        cachedColorScheme = .light
+        cachedAppearanceID = ""
     }
 
     private func placeholderRowView() -> PackageDependencyNodeRowView {
@@ -185,7 +203,13 @@ final class PackageDependencyNodeCell: NSCollectionViewItem {
             item: .packageHeader(header),
             isSelected: false,
             isHovered: false,
-            theme: LumiFallbackChromeTheme()
+            palette: FileTreeRowPalette(
+                theme: LumiFallbackChromeTheme(),
+                uiTheme: LumiDefaultTheme(),
+                appearance: NSAppearance(named: .aqua)!
+            ),
+            colorScheme: .light,
+            appearanceID: "placeholder"
         )
     }
 }
