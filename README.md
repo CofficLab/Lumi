@@ -1,14 +1,33 @@
 # Lumi
 
-Lumi is an AI-powered personal desktop assistant application for macOS.
+Lumi is an AI-powered personal desktop assistant for macOS. It brings LLM chat, an agent with tool use, a code editor, a terminal, and a rich toolbox of system and developer utilities into one plugin-driven app.
 
-📖 [中文版](README_zh.md) | English
+📖 English | [中文版](README_zh.md)
 
-[![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
-[![macOS](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://developer.apple.com/macos/)
+[![Swift](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
+[![macOS](https://img.shields.io/badge/macOS-14.0+-blue.svg)](https://developer.apple.com/macos/)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/badge/release-v4.19.0-blue.svg)](https://github.com/CofficLab/Lumi/releases)
 
 ![Lumi Application](docs/hero2.png)
+
+## ✨ Features
+
+- **Multi-provider LLM chat** — 25+ built-in providers, including OpenAI, Anthropic (Claude), DeepSeek, Zhipu (GLM), MiniMax, Kimi, Aliyun (DashScope), StepFun, Xiaomi (MiMo), OpenRouter, and local models via MLX. See [Plugins/](Plugins/) for the full list.
+- **Agent with tool use** — the agent can browse files, run terminal commands, fetch web pages, search the web, automate the browser, take screenshots, and answer questions mid-task.
+- **MCP support** — connect external [Model Context Protocol](https://modelcontextprotocol.io) servers (stdio and SSE transports) to extend the agent with more tools.
+- **Built-in code editor** — tree-sitter syntax highlighting, fuzzy file search, outline, references, call hierarchy, problems panel, and Markdown preview.
+- **Developer tools** — native terminal, Git/GitHub integration, database manager (SQLite/MySQL/PostgreSQL/Redis), Docker, Homebrew, ports and hosts management.
+- **System utilities** — clipboard history, disk/network monitoring, screen recorder, OCR, display control (DDC), anti-sleep, and more.
+- **Project intelligence** — per-project agent rules, skills, memory, and local retrieval-augmented generation (RAG).
+- **Highly customizable** — 170+ plugins that can be enabled/disabled at runtime, and 20+ built-in themes.
+- **Local HTTP API** — enabled plugins expose routes on a localhost-only web server for automation.
+
+## 📥 Download
+
+Download the latest DMG from the [Releases](https://github.com/CofficLab/Lumi/releases) page (universal, arm64, and x86_64 builds available). The app updates itself via [Sparkle](https://sparkle-project.org).
+
+> The Mac App Store build does not include Sparkle auto-update or the embedded vector-search RAG component; everything else is identical.
 
 ## 🏗️ Architecture
 
@@ -17,103 +36,98 @@ Lumi is an AI-powered personal desktop assistant application for macOS.
 ```mermaid
 graph BT
     subgraph "Lumi App"
-        subgraph "Core Layer"
-            A1[Bootstrap<br/>App Launch]
-            A2[Services<br/>LLM/Tools/Tasks]
-            A3[Models & Entities<br/>Data Models]
-            A4[Views & ViewModels<br/>Views & State]
-            A5[Middleware<br/>Middleware System]
-            A6[Contact<br/>Plugin Protocol]
+        APP[LumiApp<br/>App Entry]
+        subgraph "Host Layer"
+            FL[FactoryLumi<br/>Plugin Catalog]
+            FC[FactoryCore<br/>Windows / Layout / Bootstrap]
         end
-        
-        subgraph "Plugins Layer"
-            B1[Agent Tools<br/>FileTree/Terminal/MCP]
-            B2[System Management<br/>CPU/Memory/Disk]
-            B3[Dev Tools<br/>Database/Docker/Brew]
-            B4[Productivity<br/>Clipboard/Text]
-        end
-        
-        subgraph "UI Layer"
-            C1[Themes<br/>Theme System]
-            C2[DesignSystem<br/>Design System]
-        end
+        K[KernelLumi<br/>Service Registry · PluginManager · EventManager]
+        P[Plugins ×170<br/>LLM Providers / Agent Tools /<br/>System Mgmt / Dev Tools / Productivity / Themes]
+        UI[LumiUI<br/>Design System + Themes]
     end
-    
-    A6 --> B1
-    A6 --> B2
-    A6 --> B3
-    A6 --> B4
-    A2 --> B1
-    C1 --> C2
+
+    APP --> FL
+    FL --> FC
+    FC --> K
+    P -->|LumiPlugin protocol| K
+    K --> UI
+    FC --> UI
 ```
+
+- **LumiApp**: the app entry point; injects distribution-sensitive plugins (auto-update, RAG)
+- **FactoryLumi / FactoryCore**: compile-time plugin catalog and the plugin-free host engine (windows, layout, bootstrap)
+- **KernelLumi**: the kernel — service registry, plugin lifecycle management, and event dispatch
+- **LumiUI**: shared design system and theme rendering
 
 ### Plugin System
 
-- **SuperPlugin Protocol**: Base protocol for all plugins, defining lifecycle and UI contribution points
-- **Extension Points**: Navigation bar, toolbar, status bar, settings page, Agent views, etc.
-- **Middleware**: Intercept and modify message sending, conversation turns, and other events
-- **Agent Tools**: Plugins can register custom tools for AI invocation
+- **LumiPlugin protocol**: the base protocol for all plugins, defined in [KernelLumi](Packages/KernelLumi), covering lifecycle (`onBoot` / `onReady` / `onEnable` / `onDisable`) and UI contribution points
+- **Extension points**: menu bar, toolbar, status bar, settings pages, chat sections, editor extensions, onboarding pages, local web routes, and more
+- **Plugin hooks**: `willSendToLLM` lets any plugin modify messages before each LLM request (e.g. inject system prompts); `onTurnFinished` is called after every agent turn
+- **Agent tools**: plugins can register custom tools (`LumiAgentTool`) for AI invocation
 
 ### AI/Agent Workflow
 
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant M as Middleware
-    participant L as LLM Service
-    participant T as Tool Coordinator
-    participant E as Tool Executor
-    
-    U->>M: Input Request
-    M->>M: Preprocessing
-    M->>L: Send Request
-    L-->>M: Streaming Response
+    participant S as MessageSender
+    participant R as AgentTurnRunner
+    participant P as Plugins
+    participant L as LumiLLMProvider
+    participant T as ToolManager
+
+    U->>S: Send Message
+    S->>R: Run Agent Turn
+    R->>P: willSendToLLM (modify messages)
+    R->>L: Streaming Request
+    L-->>R: Streaming Response
     alt Tool Invocation Needed
-        L->>T: Tool Call Request
-        T->>E: Execute Tool
-        E-->>T: Return Result
-        T->>L: Result Feedback
-        L-->>M: Final Response
+        R->>T: Risk Check / User Approval
+        T->>T: Execute LumiAgentTool
+        T-->>R: Tool Result
+        R->>L: Next Request with Tool Results
+        L-->>R: Final Response
     end
-    M->>U: Display Result
+    R->>P: onTurnFinished
+    R-->>U: Display Result
 ```
 
-- **LLMProvider Protocol**: Unified LLM interface supporting multiple providers
-- **ToolService**: Tool registration, discovery, and execution
-- **WorkerAgent**: Background task execution agent
+- **MessageSender** (`MessageSending`): persists messages and starts the agent turn
+- **AgentTurnRunner** (`AgentTurnManaging`): the agent loop — builds requests, streams responses, and executes tool calls until the turn completes
+- **LumiLLMProvider**: unified streaming LLM interface; 25+ provider plugins built on top of [LLMKit](Packages/LLMKit)
+- **ToolManager** (`ToolManaging`): tool registration, risk checks, user approval for risky tools, and execution of `LumiAgentTool`
 
 ## 📋 Requirements
 
-- macOS 13.0+
-- Xcode 15.0+
-- Swift 5.9+
+- macOS 14.0+
+- Xcode 16.0+
+- Swift 6.0+
 
 ## 🚀 Build & Run
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Coffic/Lumi.git
+git clone https://github.com/CofficLab/Lumi.git
 cd Lumi
 ```
 
-### 2. Resolve Swift Packages
-
-Language plugins bundle their own tree-sitter grammars via SPM. No separate `CodeLanguagesContainer.xcframework` build is required.
-
-See [Packages/EditorLanguageRuntime/README.md](Packages/EditorLanguageRuntime/README.md).
-
-### 3. Open in Xcode
+### 2. Open in Xcode
 
 ```bash
 open Lumi.xcodeproj
 ```
 
-### 4. Build and Run
+### 3. Build and Run
 
-- Select the macOS target
+- Select the **Lumi** scheme and the macOS target
 - Build (⌘B) and run (⌘R)
+
+## 🤝 Contributing
+
+Issues and pull requests are welcome at [CofficLab/Lumi](https://github.com/CofficLab/Lumi). New features are usually developed as plugins — see the [LumiPlugin protocol](Packages/KernelLumi/Sources/KernelLumi/Contracts/LumiPlugin.swift) and existing plugins under [Plugins/](Plugins/) for reference.
 
 ## 📄 License
 
-This project is licensed under the GNU General Public License v3.0 - see [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 — see the [LICENSE](LICENSE) file for details.
