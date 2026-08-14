@@ -72,11 +72,11 @@ public protocol MessageSending: ObservableObject where ObjectWillChangePublisher
     /// 默认实现会把当前 `pendingAttachments` 作为本次发送的附件,然后转发到
     /// `sendMessage(_:imageAttachments:conversationID:)`。
     /// - Parameter content: 用户输入的文本。**由实现负责 trim 并校验非空**。
-    /// - Parameter conversationID: 目标会话 ID。`nil` 表示"由实现选取当前会话";
-    ///   若当前没有选中会话,实现应抛出 `KernelLumiError.noActiveConversation`。
-    ///   **本协议不负责自动创建会话** — 调用方应先
-    ///   `kernel.conversations?.createConversation(title: nil)` 拿到一个 ID 再传入。
-    /// - Throws: `KernelLumiError.noActiveConversation` 当没有可用会话时
+    /// - Parameter conversationID: 目标会话 ID。`nil` 表示由实现选取当前选中会话;
+    ///   若当前没有选中会话,实现会自动创建一个新会话(与
+    ///   `sendMessage(_:imageAttachments:conversationID:)` 一致)。
+    /// - Throws: `KernelLumiError.noActiveConversation` 仅在会话服务不可用、
+    ///   且自动创建会话失败时抛出。
     func sendMessage(_ content: String, conversationID: UUID?) async throws
 
     /// 文本 + 显式图片附件的发送

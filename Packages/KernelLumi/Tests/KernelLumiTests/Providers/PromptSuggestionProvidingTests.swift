@@ -110,11 +110,97 @@ struct PromptSuggestionProvidingTests {
 
         // writer(order 200) 在前，icon-designer(order 250) 在后；
         // icon-designer 内两条保持插件返回顺序。
-        #expect(kernel.promptSuggestions?.allPromptSuggestions.map(\.id) == [
+        let collected = kernel.promptSuggestions?.allPromptSuggestions ?? []
+        #expect(collected.map(\.id) == [
             "writer.draft",
             "icon-designer.design",
             "icon-designer.resize",
         ])
+        // 内核盖戳：已启用插件的提示词都带 pluginID 且 requiresEnable 为 false。
+        #expect(collected.allSatisfy { $0.pluginID != nil })
+        #expect(collected.allSatisfy { !$0.requiresEnable })
+        // 未声明动作的提示词经聚合后 action 仍为 nil。
+        #expect(collected.allSatisfy { $0.action == nil })
+    }
+
+    @Test("聚合保留提示词声明的 action")
+    func aggregatesPreserveAction() async throws {
+        let kernel = KernelTestKit.makeKernel()
+        try kernel.registerPromptSuggestionService(PromptSuggestionManager())
+
+        let manager = PluginManager()
+        try await manager.initializePlugins([
+            MockLumiPlugin(
+                id: "designer",
+                order: 100,
+                policy: .alwaysOn,
+                promptSuggestions: [
+                    LumiPromptSuggestion(
+                        id: "designer.open",
+                        title: "打开设计器",
+                        action: .activateViewContainer("designer")
+                    ),
+                    LumiPromptSuggestion(id: "designer.plain", title: "普通提示"),
+                ]
+            ),
+        ], kernel: kernel)
+
+        manager.registerPromptSuggestions(in: kernel)
+
+        let suggestions = kernel.promptSuggestions?.allPromptSuggestions ?? []
+        #expect(suggestions.count == 2)
+        let open = suggestions.first { $0.id == "designer.open" }
+        #expect(open?.action == .activateViewContainer("designer"))
+        let plain = suggestions.first { $0.id == "designer.plain" }
+        #expect(plain?.action == nil)
+    }
+
+    @Test("禁用但可配置的插件仍贡献提示词，标记 requiresEnable 与 pluginID")
+    func disabledConfigurablePluginStillContributes() async throws {
+        let kernel = KernelTestKit.makeKernel()
+        try kernel.registerPromptSuggestionService(PromptSuggestionManager())
+
+        let manager = PluginManager()
+        try await manager.initializePlugins([
+            MockLumiPlugin(
+                id: "optin-plugin",
+                order: 100,
+                policy: .optIn,  // 默认禁用，但可启用
+                promptSuggestions: [LumiPromptSuggestion(id: "optin-plugin.start", title: "开始")]
+            ),
+        ], kernel: kernel)
+
+        manager.registerPromptSuggestions(in: kernel)
+
+        let suggestions = kernel.promptSuggestions?.allPromptSuggestions ?? []
+        #expect(suggestions.count == 1)
+        #expect(suggestions.first?.id == "optin-plugin.start")
+        #expect(suggestions.first?.pluginID == "optin-plugin")
+        #expect(suggestions.first?.requiresEnable == true)
+    }
+
+    @Test("启用插件后其提示词 requiresEnable 变为 false")
+    func enablingFlipsRequiresEnable() async throws {
+        let kernel = KernelTestKit.makeKernel()
+        try kernel.registerPromptSuggestionService(PromptSuggestionManager())
+
+        let manager = PluginManager()
+        try await manager.initializePlugins([
+            MockLumiPlugin(
+                id: "optin-plugin",
+                order: 100,
+                policy: .optIn,
+                promptSuggestions: [LumiPromptSuggestion(id: "optin-plugin.start", title: "开始")]
+            ),
+        ], kernel: kernel)
+
+        manager.registerPromptSuggestions(in: kernel)
+        #expect(kernel.promptSuggestions?.allPromptSuggestions.first?.requiresEnable == true)
+
+        // 启用后重新收集，requiresEnable 应翻转为 false。
+        _ = await manager.setPluginEnabled(id: "optin-plugin", enabled: true)
+        manager.registerPromptSuggestions(in: kernel)
+        #expect(kernel.promptSuggestions?.allPromptSuggestions.first?.requiresEnable == false)
     }
 
     @Test("rebuild 时剔除 disabled 插件的提示词")

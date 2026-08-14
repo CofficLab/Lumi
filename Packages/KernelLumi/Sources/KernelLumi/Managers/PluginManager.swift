@@ -432,24 +432,54 @@ public final class PluginManager: ObservableObject {
     /// 调用时机：在 `KernelLumi.startup()` 的收集阶段，以及 `rebuildAllContributions`
     /// 中（插件启用/禁用后）。每个插件只需实现 `LumiPlugin.promptSuggestions(kernel:)`
     /// 返回其提示词，内核会按插件 `order` 盖戳并聚合。服务未注册时为 no-op。
+    ///
+    /// 收集范围：**所有可注册插件**（`policy.shouldRegister`），而非仅当前启用者。
+    /// 这样禁用插件的提示词也会展示，并通过 `requiresEnable = true` 标记，供 UI 在点击时
+    /// 「启用并发送」。永远无法启用的 `.disabled` 插件不参与收集。
     public func registerPromptSuggestions(in kernel: KernelLumi) {
         self.kernel = kernel
         guard let manager = kernel.promptSuggestions else { return }
 
-        // 先清空再按"有效启用"状态重新注册，使被禁用插件的提示词即时撤回。
+        // 先清空再重新注册：启用态变化的插件其 requiresEnable 标记会被即时刷新。
         manager.clearAllContributions()
         for plugin in allPlugins {
-            guard effectiveEnabled(for: plugin) else { continue }
+            guard plugin.policy.shouldRegister else { continue }
+            let isEnabled = effectiveEnabled(for: plugin)
             let pluginOrder = plugin.order
             for suggestion in plugin.promptSuggestions(kernel: kernel) {
                 var item = LumiPromptSuggestion(
                     id: suggestion.id,
                     title: suggestion.title,
                     prompt: suggestion.prompt,
-                    systemImage: suggestion.systemImage
+                    systemImage: suggestion.systemImage,
+                    action: suggestion.action
                 )
                 item.order = pluginOrder
+                item.pluginID = plugin.id
+                item.requiresEnable = !isEnabled
                 manager.registerPromptSuggestion(item)
+            }
+        }
+    }
+
+    /// 收集所有插件贡献的 Web 路由,并注册到内核的 `WebServerProviding` 服务。
+    ///
+    /// 调用时机:在 `KernelLumi.startup()` 的收集阶段,以及 `rebuildAllContributions`
+    /// 中(插件启用/禁用后)。每个插件只需实现 `LumiPlugin.webRoutes(kernel:)`
+    /// 返回其路由,内核按插件 `id` 归属,便于整体替换/撤回。
+    /// 服务未注册(`kernel.webServer == nil`)时为 no-op。
+    public func registerWebRoutes(in kernel: KernelLumi) {
+        self.kernel = kernel
+        guard let server = kernel.webServer else { return }
+
+        // 全量重建:启用插件的贡献按插件整体写入(幂等替换);
+        // 禁用插件的贡献按插件整体撤回。
+        for plugin in allPlugins {
+            if effectiveEnabled(for: plugin) {
+                let routes = plugin.webRoutes(kernel: kernel)
+                server.register(routes, forPlugin: plugin.id)
+            } else {
+                server.unregister(pluginID: plugin.id)
             }
         }
     }
@@ -484,6 +514,9 @@ public final class PluginManager: ObservableObject {
 
         // 2.5 提示词贡献重建（撤回已禁用插件、加入新启用插件的提示词）
         registerPromptSuggestions(in: kernel)
+
+        // 2.6 Web 路由重建(撤回已禁用插件的路由,加入新启用插件的路由)
+        registerWebRoutes(in: kernel)
 
         // 3. Command 菜单贡献重建
         registerPluginCommandContributions(in: kernel)
