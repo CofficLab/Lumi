@@ -24,7 +24,7 @@ public final class QuickLauncherPlugin: LumiPlugin, SuperLog {
         LumiPluginLocalization.string("Quick Launcher", bundle: .module)
     }
     public let order = 8
-    public let policy: LumiPluginPolicy = .optIn
+    public let policy: LumiPluginPolicy = .alwaysOn
     public let stage: LumiPluginStage = .beta
 
     // MARK: - Initialization
