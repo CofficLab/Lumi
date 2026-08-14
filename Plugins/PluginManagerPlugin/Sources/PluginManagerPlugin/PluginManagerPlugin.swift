@@ -21,6 +21,7 @@ public final class PluginManagerPlugin: LumiPlugin {
     public let stage: LumiPluginStage = .beta
 
     private var enabledStateStore: PluginEnabledStateStore?
+    private var pluginController: PluginController?
 
     public init() {}
 
@@ -32,16 +33,17 @@ public final class PluginManagerPlugin: LumiPlugin {
         // PluginManagerPlugin owns persistence. The kernel manager only receives
         // the already loaded runtime state and never touches the storage layer.
         kernel.pluginManager.applyPersistedPluginStates(store.loadPluginEnabledOverrides())
+
+        // 注册插件控制能力（运行时启停 + 持久化 + 同步重建），供空态提示词等 UI
+        // 通过 kernel.pluginControl 调用。
+        let controller = PluginController(kernel: kernel, store: store)
+        pluginController = controller
+        try kernel.registerPluginControlling(controller)
     }
 
-    /// 更新插件启用状态：先持久化用户意图，再通知内核应用运行时状态。
+    /// 更新插件启用状态：委托给 `PluginController`（运行时 + 持久化 + 同步重建）。
     public func setPluginEnabled(kernel: KernelLumi, id: String, enabled: Bool) async {
-        guard let store = enabledStateStore else { return }
-        guard kernel.pluginManager.plugin(id: id)?.policy.isConfigurable == true else { return }
-        guard kernel.pluginManager.isPluginEnabled(id: id) != enabled else { return }
-
-        guard await kernel.pluginManager.setPluginEnabled(id: id, enabled: enabled) else { return }
-        store.savePluginEnabledOverride(enabled, for: id)
+        await pluginController?.setEnabled(id: id, enabled: enabled)
     }
 
     /// 清除用户覆盖，回落到插件声明的默认策略。
