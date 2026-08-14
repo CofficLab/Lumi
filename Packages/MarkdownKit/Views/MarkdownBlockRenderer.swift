@@ -246,7 +246,7 @@ public struct MarkdownBlockRenderer: View {
 private final class MarkdownBlockCache: @unchecked Sendable {
     static let shared = MarkdownBlockCache()
 
-    private let limit = 128
+    private let limit = 384
     private let lock = NSLock()
     private var cache: [String: [MarkdownBlock]] = [:]
     private var keys: [String] = []
@@ -348,25 +348,50 @@ private final class MarkdownBlockCache: @unchecked Sendable {
     }
 }
 
-/// Asynchronous bounded cache for inline Markdown parsing.
+/// Synchronous bounded cache for inline Markdown parsing.
 ///
 /// Inline parsing used to happen directly inside `body`, which meant that
 /// rebuilding a message row could re-run `AttributedString(markdown:)` for
 /// every paragraph, list item, quote, and table cell. The cache keeps that
 /// work off the view evaluation path and bounds retained attributed strings.
-private actor MarkdownInlineParseCache {
+///
+/// 锁保护的同步缓存(与 `MarkdownBlockCache` 同构),使缓存命中可以在 `body`
+/// 求值内同步返回 —— 列表滚动使行重新物化时,已解析过的文本首帧即富文本,
+/// 不再经历"纯文本 → 异步升级"的两阶段布局跳变。miss 时的全量解析由调用方
+/// 在 `.task`(后台线程)中完成,不占主线程。
+private final class MarkdownInlineParseCache: @unchecked Sendable {
     static let shared = MarkdownInlineParseCache()
 
-    private let limit = 512
+    private let limit = 2048
+    private let lock = NSLock()
     private var cache: [String: AttributedString] = [:]
     private var keys: [String] = []
 
+    /// 只返回缓存命中结果,不触发解析。
+    ///
+    /// 供 `CachedMarkdownInlineText.body` 在视图求值路径上同步调用:命中即首帧
+    /// 富文本;miss 返回 nil,由 `.task` 调 `attributedString(for:)` 异步解析填充。
+    func cachedAttributedString(for text: String) -> AttributedString? {
+        lock.lock()
+        defer { lock.unlock() }
+        return cache[text]
+    }
+
+    /// 命中即返回;miss 时同步解析并写入缓存。
+    /// 调用方应在后台线程(如 `.task`)调用,避免长文本解析阻塞主线程。
+    /// 解析在锁外执行,不阻塞并发的缓存查询。
     func attributedString(for text: String) -> AttributedString {
-        if let cached = cache[text] {
+        lock.lock()
+        let cached = cache[text]
+        lock.unlock()
+        if let cached {
             return cached
         }
 
         let parsed = MarkdownInlineParser.parse(text)
+
+        lock.lock()
+        defer { lock.unlock() }
         cache[text] = parsed
         keys.append(text)
 
@@ -382,8 +407,8 @@ private actor MarkdownInlineParseCache {
     }
 }
 
-/// Displays plain text first, then upgrades to the cached inline Markdown
-/// representation when the asynchronous parse completes.
+/// 缓存命中时首帧直接渲染富文本;miss 时先显示纯文本,
+/// 待后台解析完成后升级为富文本。
 private struct CachedMarkdownInlineText: View {
     let text: String
 
@@ -391,14 +416,22 @@ private struct CachedMarkdownInlineText: View {
 
     var body: some View {
         Group {
+            // 同步命中(历史行滚回视口的常见情况):首帧即富文本,
+            // 无"纯文本 → 富文本"的高度跳变,也不占异步任务。
             if let attributedText {
                 Text(attributedText)
+            } else if let cached = MarkdownInlineParseCache.shared.cachedAttributedString(for: text) {
+                Text(cached)
             } else {
                 Text(verbatim: text)
             }
         }
         .task(id: text) {
-            attributedText = await MarkdownInlineParseCache.shared.attributedString(for: text)
+            guard attributedText == nil else { return }
+            let parsed = MarkdownInlineParseCache.shared.attributedString(for: text)
+            if attributedText != parsed {
+                attributedText = parsed
+            }
         }
     }
 }
