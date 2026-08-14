@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.12.0</title>
-            <pubDate>Thu, 13 Aug 2026 11:02:47 +0000</pubDate>
-            <sparkle:version>606</sparkle:version>
-            <sparkle:shortVersionString>5.12.0</sparkle:shortVersionString>
+            <title>5.13.0</title>
+            <pubDate>Fri, 14 Aug 2026 01:15:49 +0000</pubDate>
+            <sparkle:version>607</sparkle:version>
+            <sparkle:shortVersionString>5.13.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.12.0</h2>
-<h3>Changes since v5.11.1</h3>
+            <description><![CDATA[<h2>Release v5.13.0</h2>
+<h3>Changes since v5.12.0</h3>
 <ul>
-<li>docs(BookletMaker): document mobile and multiplatform plans</li>
-<li>docs(KernelHosting): add README</li>
-<li>feat: enhance API key management in provider access failed view</li>
-<li>feat(AppIconDesignerPlugin): add dual-scope storage and LLM icon review</li>
-<li>feat(BookletMakerPlugin): finish cross-platform adaptation</li>
-<li>feat(BookletMakerPlugin): localize mobile UI and add zh-Hant translations</li>
-<li>feat(BookletMakerPlugin): make PDF page rendering cross-platform</li>
-<li>feat(BookletMakerPlugin): support export cancellation and richer progress UI</li>
-<li>feat(ConversationInputPlugin): add native placeholder support for chat input</li>
-<li>feat(FactoryLumi): set initialContainerID to chat-panel plugin</li>
-<li>feat(foundation): add iOS platform support</li>
-<li>feat(iOS): add BookletMaker-iOS canary target</li>
-<li>feat(iOS): add FactoryCoreMobile host engine; widen WorkspacePlugin</li>
-<li>feat(iOS): add native BookletMaker mobile workspace</li>
-<li>feat(iOS): real BookletMaker-iOS app (kernel boot + PDF import/export)</li>
-<li>feat(LocalizationKit): fall back across Chinese script variants</li>
-<li>feat(MessageListPlugin): smart empty state with API key setup and suggestions</li>
-<li>feat(OnboardingPlugin): add multi-step onboarding with AI setup and features tour</li>
-<li>fix(BookletMaker-iOS): declare supported localizations in app plist</li>
-<li>refactor(BookletMaker): merge app targets across platforms</li>
+<li>Add copyright © 2026 Coffic</li>
+<li>feat: add Onboarding page localization and bundled sample project</li>
+<li>feat: add shared landing page views for LLM provider, Open-in, and Theme families</li>
+<li>feat: improve ProjectsPlugin ControlView with dropdown arrow, hover effects and animations</li>
+<li>feat(AppLayout): Hide ActivityBar when only one view container exists</li>
+<li>feat(ChatView): optimize UI display when no conversation selected</li>
+<li>feat(conversation-list): hide redundant 'Current Project' scope when only one project exists</li>
+<li>feat(ConversationList): Hide Current Project tab when project has no conversations</li>
+<li>feat(ConversationListPlugin): dynamically control project-chats tab visibility</li>
+<li>feat(ConversationManager): Implement conversationProjectCount API</li>
+<li>feat(ConversationNewPlugin): 仅在有选中对话时显示新建会话按钮</li>
+<li>feat(FactoryCore): Add RailBottomView with settings entry</li>
+<li>feat(FactoryCore): bridge Settings window open via notification and replace polling with KernelBootstrapStatus</li>
+<li>feat(KernelHosting): Add KernelBootstrapStatus for cross-window boot phase observation</li>
+<li>feat(KernelLumi): Add openSettings notification and conversationProjectCount API</li>
+<li>feat(KernelLumi): add Prompt Suggestion protocol and aggregation manager</li>
+<li>feat(LumiUI): add Landing component suite</li>
+<li>feat(LumiUI): Redesign color theme to forest-green palette and add Landing components</li>
+<li>feat(message-list): add prompt suggestion chips to empty state</li>
+<li>feat(MessageList): Add project switching and adding to empty state view</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.12.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.13.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.12.0/Lumi_5.12.0_arm64.dmg" length="43915883" type="application/octet-stream" sparkle:edSignature="NppjAy21rfCbWmFbm19WkTCqxpaFrEBQzmBnFkLhobUQSBsIXS7r7SifOA5BZKzOzDg8X4A2ZJBcWkNof3EyCQ=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.13.0/Lumi_5.13.0_arm64.dmg" length="44655695" type="application/octet-stream" sparkle:edSignature="gSODNUtL0GISyWO9EdqOg+eH03tvRptnJb/IL2CbxhP3M3QUnRV2sHWPiCnYeieF8RVCAciFk7LBxQOtuFo/DA=="/>
         </item>
     </channel>
 </rss>
