@@ -3,6 +3,7 @@ import KernelLumi
 
 /// 流式速度不可用时的原因分类。
 enum ConversationSpeedUnavailability: String, Equatable {
+    case noConversationSelected
     case waitingForResponse
     case missingOutputTokens
     case missingDuration
@@ -30,6 +31,8 @@ enum ConversationSpeedUnavailability: String, Equatable {
     var localizedExplanation: String {
         let key: String
         switch self {
+        case .noConversationSelected:
+            key = "Speed unavailable no conversation selected"
         case .waitingForResponse:
             key = "Speed unavailable waiting for response"
         case .missingOutputTokens:

@@ -179,6 +179,22 @@
         }
       }
     },
+    "Speed unavailable no conversation selected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No conversation is selected. Select a conversation to see its streaming speed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前未选择对话。选择一个会话即可查看其生成速度。"
+          }
+        }
+      }
+    },
     "Speed unavailable waiting for response": {
       "localizations": {
         "en": {

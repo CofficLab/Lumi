@@ -22,44 +22,38 @@ struct ToolbarView: View {
     @State private var providerID: String?
 
     var body: some View {
-        Group {
-            if selectedConversationID != nil {
-                Button {
-                    popoverShown.toggle()
-                } label: {
-                    HStack(spacing: ToolbarMetrics.chipSpacing) {
-                        Image(systemName: "gauge.with.dots.needle.bottom.50percent")
-                            .font(.system(size: ToolbarMetrics.chipIconSize, weight: .medium))
-                        Text(speedLabel)
-                            .font(.system(size: ToolbarMetrics.chipTextSize, weight: ToolbarMetrics.chipTextWeight))
-                            .contentTransition(.numericText())
-                    }
-                    .foregroundColor(cachedTPS == nil ? .secondary : .orange)
-                    .padding(.horizontal, ToolbarMetrics.chipHorizontalPadding)
-                    .padding(.vertical, ToolbarMetrics.chipVerticalPadding)
-                    .background(
-                        cachedTPS == nil ? Color.secondary.opacity(0.12) : Color.orange.opacity(0.22),
-                        in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous)
-                    )
-                }
-                .buttonStyle(.plain)
-                .help(LumiPluginLocalization.string("Streaming speed help", bundle: .module))
-                .popover(isPresented: $popoverShown, arrowEdge: .bottom) {
-                    SpeedPopover(
-                        tps: cachedTPS,
-                        unavailabilityReason: unavailabilityReason,
-                        modelName: modelName,
-                        outputTokens: outputTokens,
-                        streamingDurationMs: streamingDurationMs,
-                        timeToFirstTokenMs: timeToFirstTokenMs,
-                        providerID: providerID,
-                        speedHistory: speedHistory
-                    )
-                    .frame(width: 360)
-                }
-            } else {
-                EmptyView()
+        Button {
+            popoverShown.toggle()
+        } label: {
+            HStack(spacing: ToolbarMetrics.chipSpacing) {
+                Image(systemName: "gauge.with.dots.needle.bottom.50percent")
+                    .font(.system(size: ToolbarMetrics.chipIconSize, weight: .medium))
+                Text(speedLabel)
+                    .font(.system(size: ToolbarMetrics.chipTextSize, weight: ToolbarMetrics.chipTextWeight))
+                    .contentTransition(.numericText())
             }
+            .foregroundColor(cachedTPS == nil ? .secondary : .orange)
+            .padding(.horizontal, ToolbarMetrics.chipHorizontalPadding)
+            .padding(.vertical, ToolbarMetrics.chipVerticalPadding)
+            .background(
+                cachedTPS == nil ? Color.secondary.opacity(0.12) : Color.orange.opacity(0.22),
+                in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous)
+            )
+        }
+        .buttonStyle(.plain)
+        .help(LumiPluginLocalization.string("Streaming speed help", bundle: .module))
+        .popover(isPresented: $popoverShown, arrowEdge: .bottom) {
+            SpeedPopover(
+                tps: cachedTPS,
+                unavailabilityReason: unavailabilityReason,
+                modelName: modelName,
+                outputTokens: outputTokens,
+                streamingDurationMs: streamingDurationMs,
+                timeToFirstTokenMs: timeToFirstTokenMs,
+                providerID: providerID,
+                speedHistory: speedHistory
+            )
+            .frame(width: 360)
         }
         .onLumiMessagesDidChange { eventConversationID in
             guard eventConversationID == nil
@@ -107,6 +101,15 @@ struct ToolbarView: View {
 
     private func updateTPS() {
         guard let conversationID = selectedConversationID else {
+            // 未选择对话也是"无法展示速度"的一种原因：chip 保持可见并显示不可用态。
+            cachedTPS = nil
+            unavailabilityReason = .noConversationSelected
+            speedHistory = []
+            modelName = nil
+            outputTokens = nil
+            streamingDurationMs = nil
+            timeToFirstTokenMs = nil
+            providerID = nil
             if ConversationSpeedPlugin.verbose {
                 ConversationSpeedPlugin.logger.info("\(ConversationSpeedPlugin.t)No selected conversation ID")
             }
