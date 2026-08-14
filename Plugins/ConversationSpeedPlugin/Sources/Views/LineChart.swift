@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// 会话流式速度历史折线图（Canvas 绘制，支持 hover 查看采样点）。
-struct ConversationSpeedLineChart: View {
-    let samples: [ConversationSpeedSample]
+struct LineChart: View {
+    let samples: [SpeedSample]
     @State private var hoveredIndex: Int?
 
     var body: some View {

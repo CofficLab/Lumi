@@ -37,7 +37,7 @@ public final class ConversationSpeedPlugin: LumiPlugin, SuperLog {
         }
         let items = [
             ChatSectionToolbarBarItem(id: id) {
-                ConversationSpeedToolbarView(kernel: kernel)
+                ToolbarView(kernel: kernel)
             }
         ]
         if Self.verbose {

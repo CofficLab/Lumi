@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// 流式速度详情弹窗：当前速度、平均速度、明细行与历史趋势。
-struct ConversationSpeedPopover: View {
+struct SpeedPopover: View {
     let tps: Double?
     let unavailabilityReason: ConversationSpeedUnavailability
     let modelName: String?
@@ -9,7 +9,7 @@ struct ConversationSpeedPopover: View {
     let streamingDurationMs: Double?
     let timeToFirstTokenMs: Double?
     let providerID: String?
-    let speedHistory: [ConversationSpeedSample]
+    let speedHistory: [SpeedSample]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -125,10 +125,10 @@ struct ConversationSpeedPopover: View {
 
 // MARK: - 子区块
 
-extension ConversationSpeedPopover {
+extension SpeedPopover {
     @ViewBuilder
     var averageSpeedBlock: some View {
-        if let averageTPS = ConversationSpeedSample.averageTokensPerSecond(from: speedHistory) {
+        if let averageTPS = SpeedSample.averageTokensPerSecond(from: speedHistory) {
             HStack(spacing: 10) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 16, weight: .semibold))
@@ -175,7 +175,7 @@ extension ConversationSpeedPopover {
                         .foregroundStyle(.secondary)
                 }
 
-                ConversationSpeedLineChart(samples: speedHistory)
+                LineChart(samples: speedHistory)
                     .frame(height: 118)
 
                 HStack {

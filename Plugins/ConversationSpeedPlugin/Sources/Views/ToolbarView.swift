@@ -2,7 +2,7 @@ import SwiftUI
 import KernelLumi
 
 /// 会话流式速度工具条按钮（chip 样式），点击弹出速度详情。
-struct ConversationSpeedToolbarView: View {
+struct ToolbarView: View {
     // selectedConversationID 由 .onLumiSelectedConversationDidChange 事件更新；
     // 消息变更由 .onLumiMessagesDidChange 精确覆盖。
     // 不挂 kernel 全局总线，project/settings 等无关服务变更不会触发这里刷新。
@@ -12,7 +12,7 @@ struct ConversationSpeedToolbarView: View {
     @State private var cachedTPS: Double?
     @State private var unavailabilityReason: ConversationSpeedUnavailability = .waitingForResponse
     @State private var popoverShown = false
-    @State private var speedHistory: [ConversationSpeedSample] = []
+    @State private var speedHistory: [SpeedSample] = []
 
     // Detail data shown inside the popover.
     @State private var modelName: String?
@@ -45,7 +45,7 @@ struct ConversationSpeedToolbarView: View {
                 .buttonStyle(.plain)
                 .help(LumiPluginLocalization.string("Streaming speed help", bundle: .module))
                 .popover(isPresented: $popoverShown, arrowEdge: .bottom) {
-                    ConversationSpeedPopover(
+                    SpeedPopover(
                         tps: cachedTPS,
                         unavailabilityReason: unavailabilityReason,
                         modelName: modelName,
@@ -118,7 +118,7 @@ struct ConversationSpeedToolbarView: View {
         }
 
         let messages = messageManager.messages(for: conversationID)
-        let history = ConversationSpeedSample.samples(from: messages)
+        let history = SpeedSample.samples(from: messages)
         speedHistory = history
 
         guard let lastMessage = messages.last ?? messageManager.lastMessage(in: conversationID) else {
