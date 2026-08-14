@@ -144,41 +144,6 @@
         }
       }
     },
-    "Adding a project gives the agent file context. This is optional — chat works without one." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adding a project gives the agent file context. This is optional — chat works without one."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加项目可为 Agent 提供文件上下文。这是可选功能，无项目时聊天也可正常使用。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加專案可為 Agent 提供檔案上下文。這是可選功能，無專案時聊天也可正常使用。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加專案可為 Agent 提供檔案上下文。這是可選功能，無專案時聊天也可正常使用。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加專案可為 Agent 提供檔案上下文。這是可選功能，無專案時聊天也可正常使用。"
-          }
-        }
-      }
-    },
     "Failed to Open Project" : {
       "extractionState" : "manual",
       "localizations" : {

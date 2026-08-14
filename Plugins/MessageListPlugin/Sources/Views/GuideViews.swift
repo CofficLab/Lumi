@@ -200,9 +200,10 @@ struct NoConversationSelectedView: View {
 
             if projects.isEmpty {
                 // 无任何项目：项目可选，不显示嵌入项目菜单的标题（避免出现
-                // 「关于当前项目…」这类无指代对象的病句），改用通用问候语。
+                // 「关于当前项目…」这类无指代对象的病句），改用通用问候语
+                // + 「添加项目」按钮（位于提示词上方）。
                 noProjectTitleView
-                addProjectHint
+                addProjectButton
             } else {
                 titleView
             }
@@ -253,22 +254,16 @@ struct NoConversationSelectedView: View {
             .multilineTextAlignment(.center)
     }
 
-    /// 无项目时的轻量提示：说明项目可选，并提供「添加项目…」入口。
-    private var addProjectHint: some View {
-        HStack(spacing: 6) {
-            Text(LumiPluginLocalization.string("Adding a project gives the agent file context. This is optional — chat works without one.", bundle: .module))
-                .font(.system(size: 12))
-                .foregroundColor(theme.textTertiary)
-
-            Button {
-                isImporterPresented = true
-            } label: {
-                Text(LumiPluginLocalization.string("Add Project…", bundle: .module))
-                    .font(.system(size: 12, weight: .medium))
-            }
-            .buttonStyle(.link)
+    /// 无项目时的「添加项目」按钮（位于提示词上方）：点击打开文件夹选择器。
+    private var addProjectButton: some View {
+        AppButton(
+            LumiPluginLocalization.string("Add Project…", bundle: .module),
+            systemImage: "folder.badge.plus",
+            style: .secondary,
+            size: .small
+        ) {
+            isImporterPresented = true
         }
-        .frame(maxWidth: 480)
     }
 
     /// 标题：前缀 + 项目名下拉菜单 + 后缀，仅项目名是可交互元素。
