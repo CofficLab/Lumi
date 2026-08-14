@@ -15,6 +15,13 @@ public final class GitPlugin: LumiPlugin, SuperLog {
     )
 
     public let id = "com.coffic.lumi.plugin.git"
+
+    /// 本插件 Git 历史面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let historyTabID = "com.coffic.lumi.plugin.git.history"
+
+    /// 本插件 Git 工具面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let toolsTabID = "com.coffic.lumi.plugin.git.tools"
+
     public var name: String {
         LumiPluginLocalization.string("Git", bundle: .module)
     }
@@ -52,7 +59,7 @@ public final class GitPlugin: LumiPlugin, SuperLog {
         guard let project = kernel.project else { return [] }
         return [
             PanelRailTabItem(
-                id: "\(id).history",
+                id: Self.historyTabID,
                 title: LumiPluginLocalization.string("History", bundle: .module),
                 systemImage: "clock",
                 visibility: .viewContainer(id: id),
@@ -63,7 +70,7 @@ public final class GitPlugin: LumiPlugin, SuperLog {
                     .environmentObject(gitVM)
             },
             PanelRailTabItem(
-                id: "\(id).tools",
+                id: Self.toolsTabID,
                 title: LumiPluginLocalization.string("Tools", bundle: .module),
                 systemImage: "wrench.and.screwdriver",
                 visibility: .viewContainer(id: id),
