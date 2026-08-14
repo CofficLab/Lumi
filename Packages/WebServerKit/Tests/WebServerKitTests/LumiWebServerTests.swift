@@ -82,4 +82,54 @@ final class LumiWebServerTests: XCTestCase {
 
         await server.stop()
     }
+
+    /// 自描述端点 GET /api/plugins 返回所有已注册路由。
+    func testDiscoveryEndpoint() async throws {
+        let server = LumiWebServer(port: 0)
+        server.register([
+            WebRoute(id: "a", method: .get, path: "/x", description: "做 X") { _ in .text("x") },
+            WebRoute(id: "b", method: .post, path: "/y/:id", description: nil) { _ in .text("y") },
+        ], forPlugin: "com.test.plugin")
+        try await server.start()
+        let port = try XCTUnwrap(server.boundPort)
+
+        let url = URL(string: "http://127.0.0.1:\(port)/api/plugins")!
+        let (data, resp) = try await URLSession.shared.data(for: URLRequest(url: url))
+        let http = try XCTUnwrap(resp as? HTTPURLResponse)
+        XCTAssertEqual(http.statusCode, 200)
+
+        // 结构化解码,规避 JSON 格式细节(如 `/` 转义)。
+        struct DiscoveryBody: Decodable {
+            struct RouteInfo: Decodable {
+                let plugin: String
+                let method: String
+                let path: String
+                let description: String?
+            }
+            let routes: [RouteInfo]
+        }
+        let decoded = try JSONDecoder().decode(DiscoveryBody.self, from: data)
+        XCTAssertEqual(decoded.routes.count, 2)
+        let byPath = Dictionary(uniqueKeysWithValues: decoded.routes.map { ($0.path, $0) })
+        XCTAssertEqual(byPath["/x"]?.method, "GET")
+        XCTAssertEqual(byPath["/y/:id"]?.method, "POST")
+        XCTAssertEqual(byPath["/x"]?.plugin, "com.test.plugin")
+        XCTAssertEqual(byPath["/x"]?.description, "做 X")
+        XCTAssertNil(byPath["/y/:id"]?.description)
+
+        await server.stop()
+    }
+
+    /// 开启鉴权时,自描述端点同样受保护。
+    func testDiscoveryRequiresAuthWhenEnabled() async throws {
+        let server = LumiWebServer(port: 0, authToken: "tok")
+        try await server.start()
+        let port = try XCTUnwrap(server.boundPort)
+
+        let url = URL(string: "http://127.0.0.1:\(port)/api/plugins")!
+        let (_, resp) = try await URLSession.shared.data(for: URLRequest(url: url))
+        XCTAssertEqual((resp as? HTTPURLResponse)?.statusCode, 401)
+
+        await server.stop()
+    }
 }

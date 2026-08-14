@@ -115,18 +115,34 @@ public struct WebRoute: Identifiable, Sendable {
     /// 路由路径,以 `/` 开头;支持 `:param` 占位符(如 `/api/theme/:id`)。
     public let path: String
 
+    /// 可选的人类可读描述,用于自描述端点 `GET /api/plugins` 展示,便于调用方发现。
+    public let description: String?
+
     /// 处理器。运行在主线程上,可直接调用 `@MainActor` 服务。
     public let handler: @MainActor @Sendable (WebRouteRequest) async throws -> WebRouteResponse
 
+    /// 创建一个不带描述的路由(等价于 `description: nil`)。
     public init(
         id: String,
         method: HTTPMethod,
         path: String,
         handler: @escaping @MainActor @Sendable (WebRouteRequest) async throws -> WebRouteResponse
     ) {
+        self.init(id: id, method: method, path: path, description: nil, handler: handler)
+    }
+
+    /// 创建一个带描述的路由。`description` 会出现在自描述端点的路由列表中。
+    public init(
+        id: String,
+        method: HTTPMethod,
+        path: String,
+        description: String?,
+        handler: @escaping @MainActor @Sendable (WebRouteRequest) async throws -> WebRouteResponse
+    ) {
         self.id = id
         self.method = method
         self.path = path
+        self.description = description
         self.handler = handler
     }
 }

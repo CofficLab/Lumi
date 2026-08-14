@@ -43,6 +43,24 @@ private final class StartGate: @unchecked Sendable {
     }
 }
 
+// MARK: - Discovery Response
+
+/// `GET /api/plugins` 自描述端点的响应体:列出所有已注册路由,便于调用方发现。
+private struct DiscoveryResponse: Encodable {
+    struct RouteInfo: Encodable {
+        /// 归属插件 ID。
+        let plugin: String
+        /// HTTP 方法(如 "GET"、"POST")。
+        let method: String
+        /// 路由路径(含 `:param` 占位符)。
+        let path: String
+        /// 可选的人类可读描述。
+        let description: String?
+    }
+
+    let routes: [RouteInfo]
+}
+
 // MARK: - Route Dispatch Middleware
 
 /// Hummingbird 中间件:拦截所有请求,交给 `LumiWebServer` 按其路由表匹配并派发。
@@ -85,6 +103,8 @@ public final class LumiWebServer: WebServerProviding, @unchecked Sendable {
     private let maxBodySize: Int
     /// 可选鉴权 token。非 nil 时要求请求头 `Authorization: Bearer <token>`。
     private let authToken: String?
+    /// 内置自描述端点路径:GET 之即返回所有已注册路由的清单。
+    private static let discoveryPath = "/api/plugins"
     /// 已绑定的 Hummingbird 应用的服务组(用于停止)。
     private var serviceGroup: ServiceGroup?
     /// 运行服务组的后台任务。
@@ -205,13 +225,20 @@ public final class LumiWebServer: WebServerProviding, @unchecked Sendable {
             return Self.makeResponse(status: .methodNotAllowed, message: "Method Not Allowed")
         }
 
+        let path = request.uri.path
+
+        // 内置自描述端点:GET /api/plugins,实时列出所有已注册路由(无需读取请求体)。
+        if method == .get, path == Self.discoveryPath {
+            let infos = discoveryRouteInfos()
+            let webResponse = try WebRouteResponse.json(DiscoveryResponse(routes: infos))
+            return Self.makeResponse(from: webResponse)
+        }
+
         // 请求体
         var collated = request
         let buffer = try await collated.collectBody(upTo: maxBodySize)
         var bodyData = Data()
         bodyData.append(contentsOf: buffer.readableBytesView)
-
-        let path = request.uri.path
 
         // 路由匹配
         guard let matched = matchRoute(method: method, path: path) else {
@@ -259,6 +286,21 @@ public final class LumiWebServer: WebServerProviding, @unchecked Sendable {
             }
         }
         return nil
+    }
+
+    /// 枚举当前所有已注册路由,供自描述端点 `GET /api/plugins` 返回。
+    private func discoveryRouteInfos() -> [DiscoveryResponse.RouteInfo] {
+        lock.lock(); defer { lock.unlock() }
+        return routesByPlugin.flatMap { (pluginID, routes) in
+            routes.map { route in
+                DiscoveryResponse.RouteInfo(
+                    plugin: pluginID,
+                    method: route.method.rawValue,
+                    path: route.path,
+                    description: route.description
+                )
+            }
+        }
     }
 
     private static func parseQuery(_ query: String?) -> [String: String] {
