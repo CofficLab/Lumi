@@ -183,6 +183,13 @@ public protocol LumiPlugin: AnyObject {
     /// 每个插件详情面板中呈现;返回 `nil` 时显示空状态。
     func pluginAboutView(kernel: KernelLumi) -> AnyView?
 
+    /// 插件说明书视图。
+    ///
+    /// 与 `pluginAboutView` 类似的拉取式入口:插件可返回自己的使用说明 /
+    /// 功能手册视图,供宿主的说明书 UI 在渲染时按需调用。返回 `nil` 表示
+    /// 该插件没有提供说明书。默认返回 `nil`。
+    func pluginManualView(kernel: KernelLumi) -> AnyView?
+
     /// LLM Provider 设置项,已由 `LLMProviderManagerPlugin` 等路由器使用。
     func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem]
 
@@ -289,4 +296,7 @@ public extension LumiPlugin {
 
     /// 默认不贡献任何 Web 路由。
     func webRoutes(kernel: KernelLumi) -> [WebRoute] { [] }
+
+    /// 默认不提供说明书视图。
+    func pluginManualView(kernel: KernelLumi) -> AnyView? { nil }
 }
