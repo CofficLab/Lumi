@@ -3,6 +3,7 @@ import KernelLumi
 import LumiUI
 import SwiftUI
 import UniformTypeIdentifiers
+import os
 
 /// 空态点击提示词的统一处理：
 /// 1. 若来源插件未启用，先启用它（含同步重建贡献——确保其视图容器等已注册）；
@@ -147,8 +148,16 @@ struct NoConversationSelectedView: View {
     @StateObject private var projectObserver: NoConversationProjectObserver
     @StateObject private var promptObserver: PromptSuggestionsObserver
 
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.message-list.no-conversation"
+    )
+
     /// 控制「添加项目」文件夹选择器的显隐。
     @State private var isImporterPresented = false
+
+    /// 项目切换/添加失败时的错误信息，非 nil 时弹出提示。
+    @State private var errorMessage: String?
 
     init(kernel: KernelLumi) {
         self.kernel = kernel
@@ -184,7 +193,14 @@ struct NoConversationSelectedView: View {
                 .font(.system(size: 48, weight: .light))
                 .foregroundColor(theme.textSecondary.opacity(0.5))
 
-            titleView
+            if projects.isEmpty {
+                // 无任何项目：项目可选，不显示嵌入项目菜单的标题（避免出现
+                // 「关于当前项目…」这类无指代对象的病句），改用通用问候语。
+                noProjectTitleView
+                addProjectHint
+            } else {
+                titleView
+            }
 
             if !promptSuggestions.isEmpty {
                 promptChips
@@ -199,6 +215,21 @@ struct NoConversationSelectedView: View {
         ) { result in
             handleAddProject(result)
         }
+        .alert(
+            LumiPluginLocalization.string("Failed to Open Project", bundle: .module),
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        errorMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
+        } message: {
+            Text(errorMessage ?? "")
+        }
     }
 
     /// 将标题模板按 `%@` 拆分为前缀/后缀，项目名作为中间的可交互元素。
@@ -207,6 +238,32 @@ struct NoConversationSelectedView: View {
         let template = LumiPluginLocalization.string("How can I help with %@?", bundle: .module)
         let parts = template.components(separatedBy: "%@")
         return (prefix: parts.first ?? "", suffix: parts.count > 1 ? parts[1] : "")
+    }
+
+    /// 无项目时的通用问候标题（不含可交互元素）。
+    private var noProjectTitleView: some View {
+        Text(LumiPluginLocalization.string("How can I help you today?", bundle: .module))
+            .font(titleFont)
+            .foregroundColor(theme.textPrimary)
+            .multilineTextAlignment(.center)
+    }
+
+    /// 无项目时的轻量提示：说明项目可选，并提供「添加项目…」入口。
+    private var addProjectHint: some View {
+        HStack(spacing: 6) {
+            Text(LumiPluginLocalization.string("Adding a project gives the agent file context. This is optional — chat works without one.", bundle: .module))
+                .font(.system(size: 12))
+                .foregroundColor(theme.textTertiary)
+
+            Button {
+                isImporterPresented = true
+            } label: {
+                Text(LumiPluginLocalization.string("Add Project…", bundle: .module))
+                    .font(.system(size: 12, weight: .medium))
+            }
+            .buttonStyle(.link)
+        }
+        .frame(maxWidth: 480)
     }
 
     /// 标题：前缀 + 项目名下拉菜单 + 后缀，仅项目名是可交互元素。
@@ -278,7 +335,12 @@ struct NoConversationSelectedView: View {
     private func switchToProject(_ target: ProjectInfo) {
         let projectService = project
         Task {
-            try? await projectService?.openProject(at: target.path)
+            do {
+                try await projectService?.openProject(at: target.path)
+            } catch {
+                Self.logger.error("📂 切换项目失败 \(target.path): \(error.localizedDescription)")
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
@@ -286,7 +348,12 @@ struct NoConversationSelectedView: View {
         guard case let .success(urls) = result, let url = urls.first else { return }
         let projectService = project
         Task {
-            try? await projectService?.openProject(at: url.path)
+            do {
+                try await projectService?.openProject(at: url.path)
+            } catch {
+                Self.logger.error("📂 添加项目失败 \(url.path): \(error.localizedDescription)")
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }
