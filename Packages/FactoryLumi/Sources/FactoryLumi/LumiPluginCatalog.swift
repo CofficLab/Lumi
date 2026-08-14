@@ -100,6 +100,7 @@ import MessageSenderPlugin
 import ModelSelectorPlugin
 import NettoPlugin
 import NetworkManagerPlugin
+import OcrPlugin
 import OnboardingPlugin
 import OpenInAntigravityPlugin
 import OpenInCursorPlugin
@@ -304,6 +305,7 @@ public enum LumiPluginCatalog {
             CADDesignerPlugin(),
             MindMapPlugin(),
             ScreenRecorderPlugin(),
+            OcrPlugin(),
             StoryWriterPlugin(),
             ActivityHeatmapPlugin(),
             FileLogPlugin(),

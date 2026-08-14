@@ -168,6 +168,7 @@ let package = Package(
         .package(path: "../../Plugins/AgentTurnNotificationPlugin"),
         .package(path: "../../Plugins/AskUserPlugin"),
         .package(path: "../../Plugins/ScreenRecorderPlugin"),
+        .package(path: "../../Plugins/OcrPlugin"),
     ],
     targets: [
         .target(
@@ -333,6 +334,7 @@ let package = Package(
                 .product(name: "AgentTurnNotificationPlugin", package: "AgentTurnNotificationPlugin"),
                 .product(name: "AskUserPlugin", package: "AskUserPlugin"),
                 .product(name: "ScreenRecorderPlugin", package: "ScreenRecorderPlugin"),
+                .product(name: "OcrPlugin", package: "OcrPlugin"),
             ]
         ),
         .testTarget(
