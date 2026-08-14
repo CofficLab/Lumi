@@ -30,7 +30,14 @@ public final class WebServerPlugin: LumiPlugin {
     // MARK: - Lifecycle
 
     public func onBoot(kernel: KernelLumi) async throws {
-        let server = LumiWebServer(port: port)
+        // onActivity 在网络线程触发;EventManager 是 @MainActor,需切到主线程发送事件,
+        // 供 UI 层(toast)订阅 .lumiWebRequestReceived 做视觉反馈。
+        let eventManager = kernel.eventManager
+        let server = LumiWebServer(port: port) { activity in
+            Task { @MainActor in
+                eventManager.postWebRequestReceived(activity: activity)
+            }
+        }
         try kernel.registerWebServer(server)
         self.server = server
     }
