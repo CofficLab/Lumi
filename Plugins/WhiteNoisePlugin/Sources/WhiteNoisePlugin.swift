@@ -51,12 +51,15 @@ public final class WhiteNoisePlugin: LumiPlugin {
     /// 贡献聊天起始提示词，点击时激活本容器（必要时先启用插件）。
     public func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] {
         [
-            LumiPromptSuggestion(
-                id: "\(id).play",
-                title: "Play white noise for focus",
-                systemImage: "speaker.wave.2.fill",
-                action: .activateViewContainer(id)
-            ),
+//            LumiPromptSuggestion(
+//                id: "\(id).play",
+//                title: LumiLanguagePreference.current.localized(
+//                    en: "Play white noise for focus",
+//                    zh: "播放白噪音帮助专注"
+//                ),
+//                systemImage: "speaker.wave.2.fill",
+//                action: .activateViewContainer(id)
+//            ),
         ]
     }
 

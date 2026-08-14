@@ -15,6 +15,10 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
     nonisolated public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.app-manager"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "app-manager.sidebar"
+
     public var name: String {
         PluginAppManagerLocalization.string("App Manager")
     }
@@ -87,7 +91,7 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "app-manager.sidebar",
+                id: Self.railTabID,
                 title: PluginAppManagerLocalization.string("Apps"),
                 systemImage: "apps.iphone",
                 visibility: .viewContainer(id: id)

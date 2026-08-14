@@ -11,6 +11,10 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "DatabaseManagerPlugin")
 
     public let id = "com.coffic.lumi.plugin.database-manager"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "database-manager.sidebar"
+
     public var name: String {
         LumiPluginLocalization.string("Database", bundle: .module)
     }
@@ -98,7 +102,7 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "database-manager.sidebar",
+                id: Self.railTabID,
                 title: LumiPluginLocalization.string("Database", bundle: .module),
                 systemImage: "cylinder.split.1x2",
                 visibility: .viewContainer(id: "database-manager")

@@ -21,6 +21,10 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     /// 是否启用拖放(文件移动)。
     public nonisolated static let dragAndDropEnabled = true
     public let id = "com.coffic.lumi.plugin.project-file-tree"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "explorer"
+
     public var name: String {
         LumiPluginLocalization.string("Project File Tree", bundle: .module)
     }
@@ -44,7 +48,7 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "explorer",
+                id: Self.railTabID,
                 title: "Explorer",
                 systemImage: "square.grid.2x2.fill",
                 requiresProjectSupport: true

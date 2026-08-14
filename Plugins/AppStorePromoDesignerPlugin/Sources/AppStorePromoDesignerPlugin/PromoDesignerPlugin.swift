@@ -5,6 +5,10 @@ import SwiftUI
 @MainActor
 public final class PromoDesignerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.app-store-promo-designer"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "app-store-promo.tasks"
+
     public var name: String { PromoLocalization.string("App Store Promo Designer") }
     public let order = 80
     public let policy: LumiPluginPolicy = .optIn
@@ -49,7 +53,7 @@ public final class PromoDesignerPlugin: LumiPlugin {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "app-store-promo.tasks",
+                id: Self.railTabID,
                 title: PromoLocalization.string("Promo Tasks"),
                 systemImage: "photo.stack",
                 visibility: .viewContainer(id: id)

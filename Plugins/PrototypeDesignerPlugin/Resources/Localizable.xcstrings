@@ -1,0 +1,216 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Prompt.Suggestion.Dashboard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design a data dashboard"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设计数据看板"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計數據看板"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計數據看板"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計數據看板"
+          }
+        }
+      }
+    },
+    "Prompt.Suggestion.Dashboard.Prompt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design a desktop data dashboard home screen with key metric cards, a trend chart area, and a recent orders list."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帮我设计一个桌面端的数据看板首页，包含关键指标卡片、趋势图区域和最近订单列表。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我設計一個桌面端的數據看板首頁，包含關鍵指標卡片、趨勢圖區域和最近訂單列表。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我設計一個桌面端的數據看板首頁，包含關鍵指標卡片、趨勢圖區域和最近訂單列表。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我設計一個桌面端的數據看板首頁，包含關鍵指標卡片、趨勢圖區域和最近訂單列表。"
+          }
+        }
+      }
+    },
+    "Prompt.Suggestion.Login" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design a login page"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设计一个登录页"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計一個登入頁"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計一個登入頁"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計一個登入頁"
+          }
+        }
+      }
+    },
+    "Prompt.Suggestion.Login.Prompt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design a mobile app login screen with email/password sign-in, a 'Remember me' option, and third-party login entries."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帮我设计一个手机 App 的登录页面，包含邮箱/密码登录、记住我，以及第三方登录入口。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我設計一個手機 App 的登入頁面，包含電子郵件/密碼登入、記住我，以及第三方登入入口。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我設計一個手機 App 的登入頁面，包含電子郵件/密碼登入、記住我，以及第三方登入入口。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我設計一個手機 App 的登入頁面，包含電子郵件/密碼登入、記住我，以及第三方登入入口。"
+          }
+        }
+      }
+    },
+    "Prompt.Suggestion.Shop" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design a product list"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设计电商商品列表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計電商商品列表"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計電商商品列表"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計電商商品列表"
+          }
+        }
+      }
+    },
+    "Prompt.Suggestion.Shop.Prompt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design an e-commerce app product list page with a top search bar, category entries, and product cards."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帮我设计一个电商 App 的商品列表页，带顶部搜索、分类入口和商品卡片。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我設計一個電商 App 的商品列表頁，帶頂部搜尋、分類入口和商品卡片。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我設計一個電商 App 的商品列表頁，帶頂部搜尋、分類入口和商品卡片。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我設計一個電商 App 的商品列表頁，帶頂部搜尋、分類入口和商品卡片。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.1"
+}

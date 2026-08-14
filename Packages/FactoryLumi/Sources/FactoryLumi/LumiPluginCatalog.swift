@@ -14,6 +14,7 @@ import BrowserPlugin
 import ComputerUsePlugin
 import CADDesignerPlugin
 import MindMapPlugin
+import ScreenRecorderPlugin
 import StoryWriterPlugin
 import StateMonitorPlugin
 import CaffeinatePlugin
@@ -302,6 +303,7 @@ public enum LumiPluginCatalog {
             AppStoreConnectPlugin(),
             CADDesignerPlugin(),
             MindMapPlugin(),
+            ScreenRecorderPlugin(),
             StoryWriterPlugin(),
             ActivityHeatmapPlugin(),
             FileLogPlugin(),

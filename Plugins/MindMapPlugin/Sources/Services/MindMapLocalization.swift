@@ -14,8 +14,8 @@ public enum MindMapLocalization {
         }
     }
 
-    /// 不依赖内核时的固定双语回退（默认英文）。
+    /// 无内核上下文时的双语回退：按系统语言偏好返回。
     public static func string(_ en: String, _ zh: String) -> String {
-        en
+        localized(LumiLanguagePreference.current, en: en, zh: zh)
     }
 }

@@ -63,24 +63,24 @@ public final class PrototypeDesignerPlugin: LumiPlugin {
 
     public func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] {
         [
-            LumiPromptSuggestion(
-                id: "\(id).login",
-                title: "设计一个登录页",
-                prompt: "帮我设计一个手机 App 的登录页面，包含邮箱/密码登录、记住我，以及第三方登录入口。",
-                systemImage: "person.crop.circle.badge.checkmark"
-            ),
-            LumiPromptSuggestion(
-                id: "\(id).dashboard",
-                title: "设计数据看板",
-                prompt: "帮我设计一个桌面端的数据看板首页，包含关键指标卡片、趋势图区域和最近订单列表。",
-                systemImage: "chart.bar.fill"
-            ),
-            LumiPromptSuggestion(
-                id: "\(id).shop",
-                title: "设计电商商品列表",
-                prompt: "帮我设计一个电商 App 的商品列表页，带顶部搜索、分类入口和商品卡片。",
-                systemImage: "cart.fill"
-            ),
+//            LumiPromptSuggestion(
+//                id: "\(id).login",
+//                title: "设计一个登录页",
+//                prompt: "帮我设计一个手机 App 的登录页面，包含邮箱/密码登录、记住我，以及第三方登录入口。",
+//                systemImage: "person.crop.circle.badge.checkmark"
+//            ),
+//            LumiPromptSuggestion(
+//                id: "\(id).dashboard",
+//                title: "设计数据看板",
+//                prompt: "帮我设计一个桌面端的数据看板首页，包含关键指标卡片、趋势图区域和最近订单列表。",
+//                systemImage: "chart.bar.fill"
+//            ),
+//            LumiPromptSuggestion(
+//                id: "\(id).shop",
+//                title: "设计电商商品列表",
+//                prompt: "帮我设计一个电商 App 的商品列表页，带顶部搜索、分类入口和商品卡片。",
+//                systemImage: "cart.fill"
+//            ),
         ]
     }
 

@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/KernelLumi"),
+        .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
     ],
     targets: [
@@ -22,9 +23,13 @@ let package = Package(
             name: "PrototypeDesignerPlugin",
             dependencies: [
                 .product(name: "KernelLumi", package: "KernelLumi"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("../Resources/Localizable.xcstrings")
+            ]
         )
     ]
 )

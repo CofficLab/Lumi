@@ -8,6 +8,10 @@ import SwiftUI
 @MainActor
 public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.app-store-connect"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "app-store-connect.sidebar"
+
     public var name: String {
         AppStoreConnectLocalization.string("AppStoreConnect", bundle: .module)
     }
@@ -94,7 +98,7 @@ public final class AppStoreConnectPlugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "app-store-connect.sidebar",
+                id: Self.railTabID,
                 title: name,
                 systemImage: "app.badge.checkmark",
                 visibility: .viewContainer(id: id)
