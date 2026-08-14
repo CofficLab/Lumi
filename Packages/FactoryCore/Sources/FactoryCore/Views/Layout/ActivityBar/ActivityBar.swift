@@ -43,6 +43,15 @@ struct ActivityBar: View, SuperLog {
         .frame(width: 48)
         .appSurface(style: .panel, cornerRadius: 0)
         .borderTrailing()
+        .contextMenu {
+            Button {
+                // 与「应用菜单 → Settings...」一致：发出通知，由主窗口根视图
+                // （`WindowMain`）监听并调用 `openWindow(id:)` 打开设置窗口。
+                NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
+            } label: {
+                Label("打开设置", systemImage: "gearshape")
+            }
+        }
         .onWorkspaceContributionsDidChange {
             containers = kernel.workspace?.allViewContainers ?? []
         }
