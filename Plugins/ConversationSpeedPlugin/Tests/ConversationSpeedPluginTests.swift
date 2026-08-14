@@ -35,14 +35,14 @@ final class ConversationSpeedPluginTests: XCTestCase {
             )
         ]
 
-        let samples = ConversationSpeedSample.samples(from: messages)
+        let samples = SpeedSample.samples(from: messages)
 
         XCTAssertEqual(samples.count, 2)
         XCTAssertEqual(samples.map(\.index), [0, 1])
         XCTAssertEqual(samples.map(\.message.content), ["earlier", "later"])
         XCTAssertEqual(samples.map(\.tokensPerSecond), [30, 20])
-        XCTAssertEqual(ConversationSpeedSample.averageTokensPerSecond(from: samples), 25)
-        XCTAssertNil(ConversationSpeedSample.averageTokensPerSecond(from: []))
+        XCTAssertEqual(SpeedSample.averageTokensPerSecond(from: samples), 25)
+        XCTAssertNil(SpeedSample.averageTokensPerSecond(from: []))
     }
 
     func testSpeedUsesFullLatencyWhenResponseArrivesInOneChunk() throws {
@@ -56,10 +56,20 @@ final class ConversationSpeedPluginTests: XCTestCase {
             streamingDurationMs: 4
         )
 
-        let samples = ConversationSpeedSample.samples(from: [message])
+        let samples = SpeedSample.samples(from: [message])
 
         XCTAssertEqual(samples.count, 1)
         XCTAssertEqual(samples[0].tokensPerSecond, 127.0 / 6.65, accuracy: 0.0001)
+    }
+
+    func testNoConversationSelectedIsAnUnavailableReason() {
+        XCTAssertEqual(ConversationSpeedUnavailability.noConversationSelected.rawValue, "noConversationSelected")
+        // 未选择对话时应给出可读的不可用原因（本地化文案存在）。
+        XCTAssertFalse(ConversationSpeedUnavailability.noConversationSelected.localizedExplanation.isEmpty)
+        XCTAssertNotEqual(
+            ConversationSpeedUnavailability.noConversationSelected.localizedExplanation,
+            ConversationSpeedUnavailability.waitingForResponse.localizedExplanation
+        )
     }
 
     func testUnavailableReasonIdentifiesMissingPerformanceData() {
