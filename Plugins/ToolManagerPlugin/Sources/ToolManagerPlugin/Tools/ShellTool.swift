@@ -72,8 +72,10 @@ public struct ShellTool: LumiAgentTool {
             timeout = commandTimeout
         }
 
+        // 无当前项目时回退到用户主目录，避免命令静默继承 App 进程自身的工作目录
         let options = ShellOptions(
-            workingDirectory: kernel.currentProjectPath,
+            workingDirectory: kernel.currentProjectPath
+                ?? FileManager.default.homeDirectoryForCurrentUser.path,
             timeout: timeout,
             throwsOnError: false
         )
