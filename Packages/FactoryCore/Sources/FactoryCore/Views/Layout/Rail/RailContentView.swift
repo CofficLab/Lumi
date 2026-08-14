@@ -12,11 +12,12 @@ struct RailContentView: View {
         let container = workspace.currentViewContainer
         let supportsProject = container?.supportsProject == true
         let supportsChat = container?.chatVisibility.isSupported == true
-        return workspace.allPanelRailTabItems.filter {
-            $0.visibility.isVisible(in: containerID)
-                && (!$0.requiresProjectSupport || supportsProject)
-                && (!$0.requiresChatSupport || supportsChat)
-        }
+        return filteredRailTabs(
+            workspace.allPanelRailTabItems,
+            containerID: containerID,
+            supportsProject: supportsProject,
+            supportsChat: supportsChat
+        )
     }
 
     private var viewContainerID: String {

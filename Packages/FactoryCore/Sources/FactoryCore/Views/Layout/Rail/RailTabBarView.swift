@@ -6,6 +6,10 @@ import SwiftUI
 ///
 /// 显示当前容器可用的 rail tabs，用户点击切换活跃 tab。
 ///
+/// 当容器拥有专属 rail tab（`visibility == .viewContainer(id: 当前容器)`）时，
+/// 只展示这些专属 tab（见 `filteredRailTabs`），不再混入 `.always` 等全局 tab；
+/// 否则展示全部可用 tab。
+///
 /// 不订阅 workspace 服务的 `objectWillChange`，
 /// 改为「快照 + 事件刷新」：init 读一次初值，监听三个事件：
 /// - `.workspaceContributionsDidChange`：rail tab 清单变更；
@@ -45,11 +49,12 @@ struct RailTabBarView: View {
 
     /// 按当前容器条件过滤后的可见 tabs。
     private var tabs: [PanelRailTabItem] {
-        allRailTabs.filter {
-            $0.visibility.isVisible(in: viewContainerID)
-                && (!$0.requiresProjectSupport || containerSnapshot.supportsProject)
-                && (!$0.requiresChatSupport || containerSnapshot.supportsChat)
-        }
+        filteredRailTabs(
+            allRailTabs,
+            containerID: viewContainerID,
+            supportsProject: containerSnapshot.supportsProject,
+            supportsChat: containerSnapshot.supportsChat
+        )
     }
 
     /// 仅当已注册的侧边栏标签多于一个时才显示标签栏。
