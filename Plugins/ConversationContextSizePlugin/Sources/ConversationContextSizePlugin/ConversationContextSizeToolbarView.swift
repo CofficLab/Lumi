@@ -60,6 +60,9 @@ struct ConversationContextSizeToolbarView: View {
         .onLumiSelectedRemoteProviderIDDidChange { Task { await self.refreshSize() } }
         .onLumiSelectedLocalProviderIDDidChange { Task { await self.refreshSize() } }
         .onLumiSelectedModelsDidChange { Task { await self.refreshSize() } }
+        .onReceive(NotificationCenter.default.publisher(for: .lumiLLMProvidersDidChange)) { _ in
+            Task { await self.refreshSize() }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .lumiMessagesDidChange)) { notification in
             Task { @MainActor in
                 if let conversationID = notification.lumiConversationID,
@@ -81,15 +84,21 @@ struct ConversationContextSizeToolbarView: View {
         let conversationID = conversationManager?.selectedConversationID
         let providerID = conversationID.flatMap { conversationManager?.providerID(for: $0) }
             ?? providerManager.selectedProviderID
-        let modelName = conversationID.flatMap { conversationManager?.modelName(for: $0) }
-            ?? providerManager.selectedModel
+            ?? providerManager.allLLMProviders().first?.providerInfo.id
 
-        guard let providerID, let modelName,
+        guard let providerID,
               let info = providerManager.providerInfo(id: providerID) else {
             maxContextSize = nil
             usedTokens = nil
             return
         }
+
+        // A fresh install has no explicit global selection yet. The send path
+        // uses the first provider and its default model in that case, so the
+        // context-size indicator must resolve the same effective model.
+        let modelName = conversationID.flatMap { conversationManager?.modelName(for: $0) }
+            ?? providerManager.selectedModel
+            ?? info.defaultModel
         maxContextSize = info.modelInfo(for: modelName)?.contextWindowSize
         await refreshUsedTokens()
     }
