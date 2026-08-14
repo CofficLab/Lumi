@@ -23,9 +23,15 @@ public final class OpenCodeGoProvider: LumiLLMProvider, @unchecked Sendable {
     ]
     public static let info = LumiLLMProviderInfo(id: "opencode-go", displayName: "OpenCode Go", description: "低成本的开源编程模型订阅服务", defaultModel: "deepseek-v4-flash", availableModels: models.map { LumiModelInfo(id: $0.id, displayName: $0.name, capabilities: .init(supportsVision: false, supportsTools: true)) }, websiteURL: URL(string: "https://opencode.ai/docs/zh-cn/go/")!, apiKeyStorageKey: "DevAssistant_ApiKey_OpenCodeGo")
     public var providerInfo: LumiLLMProviderInfo { Self.info }
-    private let api = LLMAPIService()
+    private let api: LLMAPIService
     private var keyName: String { Self.info._apiKeyStorageKey! }
-    public init() {}
+
+    /// - Parameter apiService: 底层 HTTP 传输。默认走 `HTTPClient`；传入
+    ///   `LLMAPIService(kernel:)` 时由 NetworkManagerPlugin 的
+    ///   `NetworkProviding` 承载，请求会进入 HTTP 交换记录。
+    public init(apiService: LLMAPIService = LLMAPIService()) {
+        self.api = apiService
+    }
     public func lumiResolveAPIKey() throws -> String { try LumiAPIKeyTools.resolve(storageKey: keyName, displayName: Self.info.displayName) }
     public func hasApiKey() -> Bool { LumiAPIKeyTools.has(storageKey: keyName) }
     public func getApiKey() -> String { LumiAPIKeyTools.get(storageKey: keyName) }
