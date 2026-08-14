@@ -74,6 +74,7 @@ import LLMProviderHyperAPIPlugin
 import LLMProviderKimiCodePlugin
 import LLMProviderLPgptPlugin
 import LLMProviderManagerPlugin
+import LLMProviderOpenCodeGoPlugin
 import LLMProviderMegaLLMPlugin
 import LLMProviderMiniMaxPlugin
 import LLMProviderMLXPlugin
@@ -174,6 +175,7 @@ public enum LumiPluginCatalog {
         var list: [LumiPlugin] = [
             // Core (order matters! PanelPlugin must register early for rail tabs)
             LLMProviderManagerPlugin(),
+            OpenCodeGoPlugin(),
             // EditorKernelPlugin 必须先于 EditorProviderPlugin:
             // 前者在 OnBoot 注册具象 EditorService,后者在 OnReady resolve 并转发文件操作。
             EditorKernelPlugin(),
