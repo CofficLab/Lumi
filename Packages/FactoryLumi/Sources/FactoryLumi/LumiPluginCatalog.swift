@@ -7,6 +7,7 @@ import AppIconDesignerPlugin
 import AppManagerPlugin
 import AppStoreConnectPlugin
 import AppStorePromoDesignerPlugin
+import ResumeDesignerPlugin
 import AskUserPlugin
 import BookletMakerPlugin
 import BrewManagerPlugin
@@ -288,6 +289,7 @@ public enum LumiPluginCatalog {
             AgentTempStoragePlugin(),
             AppIconDesignerPlugin(),
             PromoDesignerPlugin(),
+            ResumeDesignerPlugin(),
             WebFetchPlugin(),
             WebSearchPlugin(),
             MemoryPlugin(),
