@@ -92,6 +92,61 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
         if Self.verbose {
             Self.logger.info("\(Self.t)registerLLMProviders ➡️ 批量完成, 总计 \(self.llmProviderOrder.count) 个 provider")
         }
+        ensureValidSelection()
+        // Provider registration happens after plugin UI contributions during startup.
+        // Notify dependent views once the registry is ready so an initial refresh can
+        // resolve the restored provider/model selection.
+        kernel?.eventManager.post(.llmProvidersDidChange)
+    }
+
+    /// Ensure fresh installs and stale persisted selections resolve to the same
+    /// concrete provider/model pair used by the request path.
+    private func ensureValidSelection() {
+        let providerID: String
+        let provider: any LumiLLMProvider
+
+        if let selectedProviderID = _selectedProviderID,
+           let selectedProvider = llmProviders[selectedProviderID] {
+            providerID = selectedProviderID
+            provider = selectedProvider
+        } else {
+            guard let firstProviderID = llmProviderOrder.first,
+                  let firstProvider = llmProviders[firstProviderID] else {
+                return
+            }
+            providerID = firstProviderID
+            provider = firstProvider
+        }
+
+        let info = provider.providerInfo
+        let modelID: String?
+        if let selectedModel = _selectedModel,
+           info.modelIDs.contains(selectedModel) {
+            modelID = selectedModel
+        } else if !info.defaultModel.isEmpty {
+            modelID = info.defaultModel
+        } else {
+            modelID = info.modelIDs.first
+        }
+
+        let providerChanged = _selectedProviderID != providerID
+        let modelChanged = _selectedModel != modelID
+
+        if providerChanged {
+            _selectedProviderID = providerID
+            UserDefaults.standard.set(providerID, forKey: UserDefaultsKeys.selectedProviderID)
+            kernel?.eventManager.post(.selectedRemoteProviderIDDidChange)
+        }
+
+        if modelChanged {
+            _selectedModel = modelID
+            if let modelID {
+                UserDefaults.standard.set(modelID, forKey: UserDefaultsKeys.selectedModel)
+            } else {
+                UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedModel)
+            }
+            kernel?.eventManager.post(.selectedModelsDidChange)
+        }
     }
 
     public func unregisterLLMProvider(id: String) {

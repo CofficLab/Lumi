@@ -23,6 +23,8 @@ public enum KernelLumiEvent: String, CaseIterable, Sendable {
     case selectedRemoteProviderIDDidChange = "LumiProviderState.SelectedRemoteProviderIDDidChange"
     case selectedLocalProviderIDDidChange = "LumiProviderState.SelectedLocalProviderIDDidChange"
     case selectedModelsDidChange = "LumiProviderState.SelectedModelsDidChange"
+    /// LLM provider registry changed (initial registration or runtime rebuild).
+    case llmProvidersDidChange = "LumiProviderState.LLMProvidersDidChange"
 
     /// 工具调用记录已写入 ToolManager 存储后触发。
     case toolActivityDidChange = "Lumi.ToolActivityDidChange"
@@ -81,6 +83,7 @@ public extension Notification.Name {
     static let lumiSelectedRemoteProviderIDDidChange = KernelLumiEvent.selectedRemoteProviderIDDidChange.notificationName
     static let lumiSelectedLocalProviderIDDidChange = KernelLumiEvent.selectedLocalProviderIDDidChange.notificationName
     static let lumiSelectedModelsDidChange = KernelLumiEvent.selectedModelsDidChange.notificationName
+    static let lumiLLMProvidersDidChange = KernelLumiEvent.llmProvidersDidChange.notificationName
 }
 
 /// Convenience helper for subscribing to enabled-plugins-changed events.
