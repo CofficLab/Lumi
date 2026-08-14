@@ -148,6 +148,7 @@ import ConversationVerbosityPlugin
 import VideoConverterPlugin
 import WebFetchPlugin
 import WebSearchPlugin
+import WebServerPlugin
 
 /// Lumi 完整插件目录
 ///
@@ -290,6 +291,8 @@ public enum LumiPluginCatalog {
             SkillPlugin(),
             DocxReadPlugin(),
             NetworkManagerPlugin(),
+            // 本地 Web 服务(127.0.0.1):聚合插件贡献的 webRoutes,默认启用(optOut)。
+            WebServerPlugin(),
             ProjectOverviewPlugin(),
             AppStoreConnectPlugin(),
             CADDesignerPlugin(),
