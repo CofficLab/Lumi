@@ -141,7 +141,27 @@ public protocol LumiPlugin: AnyObject {
     /// 插件返回的提示词由内核聚合（按插件 `order` 排序，同插件内保持返回顺序），
     /// 供空态等 UI 展示。点击提示词时通常把 `prompt` 写入输入框。
     /// `id` 需稳定唯一（建议带插件前缀，如 `"icon-designer.design"`）。
+    ///
+    /// - Important: 本方法必须是**纯声明式元数据**——只返回静态数据，不得依赖
+    ///   `onBoot` / `onEnable` 注册的服务或副作用。内核在收集提示词时**不区分插件启用
+    ///   状态**：即便插件当前禁用，其提示词也会被聚合（并标记 `requiresEnable = true`），
+    ///   以便用户在空态点击时「启用并发送」。
     func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion]
+
+    // MARK: - Web Server Contributions
+
+    /// 贡献本地 Web 服务的 HTTP 路由。
+    ///
+    /// 内核会启动一个仅监听本地回环地址(127.0.0.1)的 Web 服务,聚合所有启用插件
+    /// 贡献的路由,使用户(或其它本地工具)可通过 HTTP API 触发插件能力。
+    ///
+    /// 返回的 `WebRoute.handler` 运行在主线程上,可直接调用 `kernel` 上以
+    /// `@MainActor` 暴露的服务(如 `kernel.theme`)。
+    ///
+    /// - Important: 路由 `id` 需稳定唯一并建议带插件前缀(如
+    ///   `"theme-manager.switch"`)。当插件在运行时启用/禁用时,内核会按插件整体
+    ///   替换其路由,无需插件手动处理生命周期。
+    func webRoutes(kernel: KernelLumi) -> [WebRoute]
 
     // MARK: - Settings Contributions
 
@@ -266,4 +286,7 @@ public extension LumiPlugin {
 
     /// 默认不贡献任何聊天起始提示词。
     func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] { [] }
+
+    /// 默认不贡献任何 Web 路由。
+    func webRoutes(kernel: KernelLumi) -> [WebRoute] { [] }
 }
