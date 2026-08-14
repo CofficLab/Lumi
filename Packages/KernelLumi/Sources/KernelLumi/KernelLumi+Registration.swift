@@ -157,6 +157,14 @@ extension KernelLumiContainer {
         try registerService(LegacyDataProviding.self, legacyData)
     }
 
+    /// Register toast presentation service (transient user-facing hints).
+    ///
+    /// 可选服务:由 UI 插件在 `onBoot` 中注册实现。未注册时
+    /// `kernel.toast` 为 nil,所有 Toast 调用静默 no-op。
+    public func registerToastService(_ toast: any ToastProviding) throws {
+        try registerService(ToastProviding.self, toast)
+    }
+
     /// Register local web server service (inbound HTTP API for plugin-contributed routes).
     ///
     /// 可选服务:由专门的 Web Server 插件在 `onBoot` 中注册实现。未注册时

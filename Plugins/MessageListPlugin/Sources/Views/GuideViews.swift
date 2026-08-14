@@ -25,7 +25,20 @@ private func handlePromptSuggestionTap(
     let workspace = kernel.workspace
     Task { @MainActor in
         if needsEnable, let pluginID, let control {
-            _ = await control.enablePlugin(id: pluginID)
+            if await control.enablePlugin(id: pluginID) {
+                let pluginName = kernel.pluginManager.plugin(id: pluginID)?.name ?? pluginID
+                kernel.toast?.show(
+                    LumiPluginLocalization.string("Plugin Enabled", bundle: .module),
+                    detail: String(
+                        format: LumiPluginLocalization.string(
+                            "%@ is now enabled.",
+                            bundle: .module
+                        ),
+                        pluginName
+                    ),
+                    style: .success
+                )
+            }
         }
         // 动作在启用之后执行：禁用插件的视图容器要等重建后才注册。
         performPromptAction(action, workspace: workspace)

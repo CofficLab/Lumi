@@ -128,6 +128,7 @@ import SkillPlugin
 import StoragePlugin
 import TerminalPlugin
 import TextActionsPlugin
+import ToastPlugin
 import ThemeAuroraPlugin
 import ThemeAutumnPlugin
 import ThemeDraculaPlugin
@@ -313,6 +314,8 @@ public enum LumiPluginCatalog {
             DatabaseManagerPlugin(),
             ConversationForkPlugin(),
             AgentTurnNotificationPlugin(),
+            // Toast 提示能力(ToastProviding 实现):窗口顶部瞬时提示。
+            ToastPlugin(),
             // User interaction
             AskUserPlugin(),
             // Themes
