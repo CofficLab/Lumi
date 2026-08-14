@@ -5,6 +5,10 @@ import SwiftUI
 @MainActor
 public final class PromoDesignerPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.app-store-promo-designer"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "app-store-promo.tasks"
+
     public var name: String { PromoLocalization.string("App Store Promo Designer") }
     public let order = 80
     public let policy: LumiPluginPolicy = .optIn
@@ -46,10 +50,27 @@ public final class PromoDesignerPlugin: LumiPlugin {
         await PromoDesignerWillSendToLLMHook().execute(kernel: kernel, messages: messages)
     }
 
+    // MARK: - Prompt Suggestions
+
+    /// 贡献聊天起始提示词，供消息列表空态展示。
+    ///
+    /// 每条都声明 `.activateRailTab` 动作——点击时（必要时先启用本插件并重建
+    /// 贡献注册其容器）会自动激活宣传图任务面板，再发送提示词。
+    public func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] {
+        [
+            LumiPromptSuggestion(
+                id: "\(id).create",
+                title: PromoLocalization.string("Prompt.Suggestion.Create"),
+                systemImage: "photo.artframe",
+                action: .activateRailTab(id: Self.railTabID, viewContainerID: self.id)
+            )
+        ]
+    }
+
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "app-store-promo.tasks",
+                id: Self.railTabID,
                 title: PromoLocalization.string("Promo Tasks"),
                 systemImage: "photo.stack",
                 visibility: .viewContainer(id: id)

@@ -17,6 +17,10 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     // MARK: - LumiPlugin
 
     public let id = "com.coffic.lumi.plugin.disk-manager"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "com.coffic.lumi.plugin.disk-manager.categories"
+
     public var name: String { PluginDiskManagerLocalization.string("Disk Manager") }
     public var pluginDescription: String { PluginDiskManagerLocalization.string("Disk space analysis and large file cleaning") }
     public let order = 250
@@ -98,7 +102,7 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "\(id).categories",
+                id: Self.railTabID,
                 title: PluginDiskManagerLocalization.string("Cleanup"),
                 systemImage: "list.bullet.indent",
                 visibility: .viewContainer(id: id)

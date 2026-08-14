@@ -163,6 +163,15 @@ extension KernelLumiContainer {
         resolveService(NetworkProviding.self)
     }
 
+    /// Toast 展示服务 (transient user-facing hints)
+    ///
+    /// 可选服务:未注册时返回 nil。
+    /// 消费方应 `guard let toast = kernel.toast else { return }` 或使用
+    /// 可选链静默跳过,保证在未提供 Toast 实现的精简宿主中 no-op。
+    public var toast: (any ToastProviding)? {
+        resolveService(ToastProviding.self)
+    }
+
     /// Local web server service (inbound HTTP API for plugin-contributed routes).
     ///
     /// 可选服务:未注册时返回 nil。与 `network`(出站客户端)互补,本服务是入站

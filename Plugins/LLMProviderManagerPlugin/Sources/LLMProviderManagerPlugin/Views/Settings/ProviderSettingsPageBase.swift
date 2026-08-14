@@ -72,6 +72,9 @@ struct ProviderSettingsPage<DetailContent: View>: View {
         .task {
             await loadProviders()
         }
+        .onReceive(NotificationCenter.default.publisher(for: CustomProviderStore.didChange)) { _ in
+            Task { @MainActor in await loadProviders() }
+        }
         .onChange(of: filteredProviders.map(\.id)) { _, ids in
             if !ids.contains(selectedProviderID) {
                 selectedProviderID = ids.first ?? ""
@@ -202,13 +205,11 @@ struct ProviderSettingsPage<DetailContent: View>: View {
 
     @MainActor
     private func loadProviders() async {
-        guard isLoadingProviders else { return }
-
         // Let SwiftUI commit the loading view before enumerating plugin/provider
         // contributions, which can be expensive on a freshly opened Settings tab.
         await Task.yield()
 
-        let loadedProviders = (llmProvider?.allLLMProviders().map { type(of: $0).info } ?? [])
+        let loadedProviders = (llmProvider?.allLLMProviders().map { $0.providerInfo } ?? [])
             .filter(isLocalProvider)
         providers = loadedProviders
         isLoadingProviders = false

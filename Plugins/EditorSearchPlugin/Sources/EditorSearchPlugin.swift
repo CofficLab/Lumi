@@ -6,6 +6,9 @@ import SwiftUI
 @MainActor
 public final class EditorSearchPanelPlugin: LumiPlugin {
     public let id = "com.coffic.lumi.plugin.editor-bottom-search"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "search"
     public var name: String {
         LumiPluginLocalization.string("Editor Search", bundle: .module)
     }
@@ -46,7 +49,7 @@ public final class EditorSearchPanelPlugin: LumiPlugin {
 
         return [
             PanelRailTabItem(
-                id: "search",
+                id: Self.railTabID,
                 order: order,
                 title: LumiPluginLocalization.string("Search", bundle: .module),
                 systemImage: "magnifyingglass"

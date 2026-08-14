@@ -22,6 +22,7 @@ struct RemoteProviderSettingsPage: View {
     @State private var providerUsage: [String: ProviderDailyTokenUsageSeries] = [:]
     @State private var loadingUsageProviderIDs: Set<String> = []
     @State private var usageCache: ProviderUsageCache?
+    @State private var isShowingAddProvider = false
 
     private var llmProvider: (any LLMProviderManaging)? {
         kernel.resolveService((any LLMProviderManaging).self)
@@ -47,7 +48,7 @@ struct RemoteProviderSettingsPage: View {
             localizedProvidersKey: "%lld cloud providers",
             isLocalProvider: { !$0.isLocal },
             selectedProviderID: $selectedProviderID,
-            headerAccessory: AnyView(openDataDirectoryButton)
+            headerAccessory: AnyView(headerActions)
         ) { provider in
             VStack(alignment: .leading, spacing: 32) {
                 ProviderDailyTokenUsageCard(
@@ -78,6 +79,18 @@ struct RemoteProviderSettingsPage: View {
                 await Task.yield()
                 reloadStats()
             }
+        }
+        .sheet(isPresented: $isShowingAddProvider) {
+            AddCustomProviderSheet(kernel: kernel)
+        }
+    }
+
+    private var headerActions: some View {
+        HStack(spacing: 8) {
+            AppButton("添加供应商", systemImage: "plus", style: .primary, size: .small) {
+                isShowingAddProvider = true
+            }
+            openDataDirectoryButton
         }
     }
 
@@ -192,7 +205,7 @@ struct RemoteProviderSettingsPage: View {
         let messages = conversationManaging.conversations.flatMap { messageManager.messages(for: $0.id) }
         stats = ModelUsageStatsService.buildSnapshot(
             messages: messages,
-            providers: llmProvider?.allLLMProviders().map { type(of: $0).info } ?? []
+            providers: llmProvider?.allLLMProviders().map { $0.providerInfo } ?? []
         )
     }
 

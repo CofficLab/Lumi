@@ -41,7 +41,7 @@ public enum LumiLLMProviderStatusSupport {
         // 通过动态类型读取。
         provider.hasApiKey()
             ? nil
-            : missingAPIKeyStatus(providerName: type(of: provider).info.displayName)
+            : missingAPIKeyStatus(providerName: provider.providerInfo.displayName)
     }
 
     public static func hasConfiguredAPIKey(provider: LumiLLMProvider) -> Bool {

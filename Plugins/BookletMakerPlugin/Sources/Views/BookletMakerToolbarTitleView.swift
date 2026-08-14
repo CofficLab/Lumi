@@ -1,4 +1,5 @@
 import KernelLumi
+import LumiUI
 import SwiftUI
 
 /// Toolbar title view that reflects the currently selected PDF tool.
@@ -28,11 +29,10 @@ struct BookletMakerToolbarTitleView: View {
     var body: some View {
         Group {
             if activeContainerID == containerID {
-                HStack(spacing: 6) {
-                    Image(systemName: viewModel.selectedTool.systemImage)
-                    Text(title(for: viewModel.selectedTool))
-                        .font(.headline)
-                }
+                AppToolbarTitleLabel(
+                    icon: viewModel.selectedTool.systemImage,
+                    title: title(for: viewModel.selectedTool)
+                )
             }
         }
         .onActiveViewContainerIDDidChange { newContainerID in

@@ -15,6 +15,10 @@ public final class StoryWriterPlugin: LumiPlugin, SuperLog {
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.story-writer"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "com.coffic.lumi.plugin.story-writer.outline"
+
     public var name: String {
         LumiPluginLocalization.string("Story Writer")
     }
@@ -66,7 +70,7 @@ public final class StoryWriterPlugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "\(id).outline",
+                id: Self.railTabID,
                 title: LumiPluginLocalization.string("Story Outline"),
                 systemImage: "list.bullet.rectangle.portrait",
                 visibility: .viewContainer(id: id)

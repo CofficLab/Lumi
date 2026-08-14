@@ -12,6 +12,21 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "选中文字后的快捷操作" } }
       }
     },
+    "Translate" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "翻译" } }
+      }
+    },
+    "Copy Translation" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "复制译文" } }
+      }
+    },
+    "Translating…" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "翻译中…" } }
+      }
+    },
     "Enable Text Actions" : {
       "localizations" : {
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启用文本操作" } }

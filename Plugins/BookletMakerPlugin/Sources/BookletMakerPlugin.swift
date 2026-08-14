@@ -26,6 +26,10 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     // MARK: - Identity
 
     public let id = "com.coffic.lumi.plugin.booklet-maker"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "booklet-maker.sidebar"
+
     public var name: String { BookletLocalization.string("PDF Tools") }
     public let order = 880
     public let policy: LumiPluginPolicy = .optIn
@@ -172,7 +176,7 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "booklet-maker.sidebar",
+                id: Self.railTabID,
                 title: BookletLocalization.string("PDF Tools"),
                 systemImage: "square.grid.2x2",
                 visibility: .viewContainer(id: id)

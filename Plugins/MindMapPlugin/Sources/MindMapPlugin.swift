@@ -19,6 +19,10 @@ public final class MindMapPlugin: LumiPlugin, SuperLog {
         category: "plugin.mind-map"
     )
 
+    /// 本插件思维导图 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`，并用于
+    /// 提示词动作 `.activateRailTab` 定位到该面板）。
+    public nonisolated static let railTabID = "mind-map.documents"
+
     public let id = "com.coffic.lumi.plugin.mind-map"
     public var name: String { MindMapLocalization.string("Mind Map", "思维导图") }
     public var pluginDescription: String {
@@ -66,21 +70,15 @@ public final class MindMapPlugin: LumiPlugin, SuperLog {
 
     // MARK: - Prompt Suggestions
 
-    /// 贡献聊天起始提示词，点击后激活本容器并把提示词送入全局聊天。
+    /// 贡献聊天起始提示词，点击后激活本容器及其思维导图 rail 面板，并把提示词送入全局聊天。
     public func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] {
         [
-            LumiPromptSuggestion(
-                id: "\(id).create",
-                title: MindMapLocalization.string("Create a mind map", "创建一个思维导图"),
-                systemImage: "brain.head.profile",
-                action: .activateViewContainer(id)
-            ),
-            LumiPromptSuggestion(
-                id: "\(id).outline",
-                title: MindMapLocalization.string("Turn outline into a mind map", "把大纲变成思维导图"),
-                systemImage: "list.bullet.indent",
-                action: .activateViewContainer(id)
-            ),
+//            LumiPromptSuggestion(
+//                id: "\(id).create",
+//                title: MindMapLocalization.string("Create a mind map", "创建一个思维导图"),
+//                systemImage: "brain.head.profile",
+//                action: .activateRailTab(id: Self.railTabID, viewContainerID: id)
+//            ),
         ]
     }
 
@@ -107,7 +105,7 @@ public final class MindMapPlugin: LumiPlugin, SuperLog {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "mind-map.documents",
+                id: Self.railTabID,
                 title: MindMapLocalization.string("Mind Maps", "思维导图"),
                 systemImage: "doc.text",
                 visibility: .viewContainer(id: id)

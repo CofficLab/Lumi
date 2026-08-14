@@ -41,7 +41,7 @@ struct ConversationReasoningActionBarButton: View {
               let provider = llmProvider?.llmProvider(id: selectedProviderID) else {
             return nil
         }
-        let info = type(of: provider).info
+        let info = provider.providerInfo
         let model = selectedModel ?? info.defaultModel
         return info.modelInfo(for: model)?.capabilities
     }

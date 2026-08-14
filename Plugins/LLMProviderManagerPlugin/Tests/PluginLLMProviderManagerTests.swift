@@ -139,7 +139,7 @@ import Testing
     #expect(state.isProviderAvailable(info))
 
     for model in info.availableModels {
-        let s = state.state(providerId: info.id, modelId: model)
+        let s = state.state(providerId: info.id, modelId: model.id)
         #expect(s.isAvailable)
         #expect(s.phase == .notChecked)
     }

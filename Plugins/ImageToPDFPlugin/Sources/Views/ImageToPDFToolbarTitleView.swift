@@ -1,4 +1,5 @@
 import KernelLumi
+import LumiUI
 import SwiftUI
 
 /// Toolbar title view that only displays when this plugin's container is active.
@@ -21,11 +22,10 @@ struct ImageToPDFToolbarTitleView: View {
     var body: some View {
         Group {
             if activeContainerID == containerID {
-                HStack(spacing: 6) {
-                    Image(systemName: "photo.on.rectangle.angled")
-                    Text(ImageToPDFLocalization.string("Image to PDF"))
-                        .font(.headline)
-                }
+                AppToolbarTitleLabel(
+                    icon: "photo.on.rectangle.angled",
+                    title: ImageToPDFLocalization.string("Image to PDF")
+                )
             }
         }
         .onActiveViewContainerIDDidChange { newContainerID in

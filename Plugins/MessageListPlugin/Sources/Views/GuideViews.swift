@@ -25,7 +25,20 @@ private func handlePromptSuggestionTap(
     let workspace = kernel.workspace
     Task { @MainActor in
         if needsEnable, let pluginID, let control {
-            _ = await control.enablePlugin(id: pluginID)
+            if await control.enablePlugin(id: pluginID) {
+                let pluginName = kernel.pluginManager.plugin(id: pluginID)?.name ?? pluginID
+                kernel.toast?.show(
+                    LumiPluginLocalization.string("Plugin Enabled", bundle: .module),
+                    detail: String(
+                        format: LumiPluginLocalization.string(
+                            "%@ is now enabled.",
+                            bundle: .module
+                        ),
+                        pluginName
+                    ),
+                    style: .success
+                )
+            }
         }
         // 动作在启用之后执行：禁用插件的视图容器要等重建后才注册。
         performPromptAction(action, workspace: workspace)
@@ -40,6 +53,86 @@ private func performPromptAction(_ action: LumiPromptAction?, workspace: (any Wo
     switch action {
     case .activateViewContainer(let containerID):
         workspace?.activateContainer(id: containerID)
+    case .activateRailTab(let railTabID, let containerID):
+        // 先激活容器（确保其 rail 可见），再定位到指定 tab。
+        workspace?.activateContainer(id: containerID)
+        workspace?.presentRailTab(id: railTabID, for: containerID)
+    }
+}
+
+/// 空态提示词的主题化胶囊芯片。
+///
+/// 镜像 `LumiUI.AppTag` 的强调风格（主题色玻璃底 + 悬停放大/高亮），
+/// 支持前置图标，用于替换空态里观感较「原始」的原生 `.bordered` 按钮。
+private struct PromptSuggestionChip: View {
+    @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
+
+    private let title: String
+    private let systemImage: String?
+
+    @State private var isHovered = false
+
+    init(title: String, systemImage: String?) {
+        self.title = title
+        self.systemImage = systemImage
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .font(.system(size: 12, weight: .medium))
+            }
+            Text(title)
+                .font(.appCaption)
+                .lineLimit(1)
+        }
+        .foregroundStyle(theme.textPrimary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(
+            Capsule(style: .continuous)
+                .fill(isHovered ? theme.primary.opacity(0.22) : theme.primary.opacity(0.12))
+        )
+        .overlay(
+            Capsule(style: .continuous)
+                .strokeBorder(
+                    isHovered ? theme.primary.opacity(0.40) : theme.primary.opacity(0.22),
+                    lineWidth: 1
+                )
+        )
+        .scaleEffect(isHovered && motionPreference.allowsMotion ? LumiMotion.hoverScale : 1.0)
+        .shadow(color: theme.primary.opacity(isHovered ? 0.20 : 0), radius: isHovered ? 8 : 0, y: isHovered ? 3 : 0)
+        .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHovered)
+        .onHover { hovering in
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
+                isHovered = hovering
+            }
+        }
+    }
+}
+
+/// 提示词胶囊按钮：点击发送该提示词（必要时先启用来源插件、执行声明动作）。
+private struct PromptSuggestionButton: View {
+    private let suggestion: LumiPromptSuggestion
+    private let kernel: KernelLumi
+
+    init(_ suggestion: LumiPromptSuggestion, kernel: KernelLumi) {
+        self.suggestion = suggestion
+        self.kernel = kernel
+    }
+
+    var body: some View {
+        Button {
+            handlePromptSuggestionTap(suggestion, kernel: kernel)
+        } label: {
+            PromptSuggestionChip(
+                title: suggestion.title,
+                systemImage: suggestion.systemImage
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -138,22 +231,9 @@ struct NoConversationSelectedView: View {
     /// 会先启用它。带 `+` 徽标的芯片表示其插件当前未启用。
     private var promptChips: some View {
         FlowLayout(spacing: 8) {
-            ForEach(promptSuggestions) { suggestion in
-                Button {
-                    handlePromptSuggestionTap(suggestion, kernel: kernel)
-                } label: {
-                    HStack(spacing: 6) {
-                        if let image = suggestion.systemImage {
-                            Image(systemName: image)
-                        }
-                        Text(suggestion.title)
-                        if suggestion.requiresEnable {
-                            Image(systemName: "plus.circle")
-                        }
-                    }
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            ForEach(Array(promptSuggestions.enumerated()), id: \.element.id) { index, suggestion in
+                PromptSuggestionButton(suggestion, kernel: kernel)
+                    .landingAppear(delay: Double(index) * 0.04)
             }
         }
         .frame(maxWidth: 480)
@@ -287,46 +367,35 @@ struct MessageEmptyStateView: View {
                 .font(.system(size: 48, weight: .light))
                 .foregroundColor(theme.primary.opacity(0.75))
 
-            Text(hasConfiguredKey ? "开始和 Lumi 对话" : "配置 API Key 开始聊天")
+            Text(hasConfiguredKey
+                 ? LumiPluginLocalization.string("Start chatting with Lumi", bundle: .module)
+                 : LumiPluginLocalization.string("Configure an API Key to start chatting", bundle: .module))
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(theme.textPrimary)
 
             if hasConfiguredKey {
-                Text("选择一个示例，或直接在下方输入你的问题。")
+                Text(LumiPluginLocalization.string("Pick an example, or type your question below.", bundle: .module))
                     .font(.body)
                     .foregroundColor(theme.textSecondary)
                     .multilineTextAlignment(.center)
                 if !promptSuggestions.isEmpty {
                     FlowLayout(spacing: 8) {
-                        ForEach(promptSuggestions) { suggestion in
-                            Button {
-                                handlePromptSuggestionTap(suggestion, kernel: kernel)
-                            } label: {
-                                HStack(spacing: 6) {
-                                    if let image = suggestion.systemImage {
-                                        Image(systemName: image)
-                                    }
-                                    Text(suggestion.title)
-                                    if suggestion.requiresEnable {
-                                        Image(systemName: "plus.circle")
-                                    }
-                                }
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
+                        ForEach(Array(promptSuggestions.enumerated()), id: \.element.id) { index, suggestion in
+                            PromptSuggestionButton(suggestion, kernel: kernel)
+                                .landingAppear(delay: Double(index) * 0.04)
                         }
                     }
                     .frame(maxWidth: 520)
                 }
             } else if let providerInfo {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("当前 Provider：\(providerInfo.displayName)")
+                    Text(String(format: LumiPluginLocalization.string("Current Provider: %@", bundle: .module), providerInfo.displayName))
                         .font(.subheadline.weight(.semibold))
-                    Text("聊天请求需要 API Key，请在设置中配置后再开始对话。")
+                    Text(LumiPluginLocalization.string("Chat requests require an API Key. Configure one in Settings before you start.", bundle: .module))
                         .font(.caption)
                         .foregroundStyle(theme.textSecondary)
                     AppInputField("API Key", text: $apiKey, fieldType: .secure)
-                    Button("保存 API Key") {
+                    Button(LumiPluginLocalization.string("Save API Key", bundle: .module)) {
                         saveAPIKey()
                     }
                     .buttonStyle(.borderedProminent)
@@ -335,7 +404,7 @@ struct MessageEmptyStateView: View {
                             .font(.caption)
                             .foregroundStyle(theme.warning)
                     }
-                    Link("打开 Provider 官网获取 API Key", destination: providerInfo.websiteURL)
+                    Link(LumiPluginLocalization.string("Open the provider's website to get an API Key", bundle: .module), destination: providerInfo.websiteURL)
                         .font(.caption)
                 }
                 .padding(16)
@@ -344,7 +413,7 @@ struct MessageEmptyStateView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(theme.divider, lineWidth: 1) }
             } else {
-                Text("还没有可用的 AI Provider，请先在设置中启用一个 Provider。")
+                Text(LumiPluginLocalization.string("No AI Provider is available yet. Enable one in Settings first.", bundle: .module))
                     .font(.body)
                     .foregroundColor(theme.textSecondary)
             }
@@ -360,7 +429,7 @@ struct MessageEmptyStateView: View {
         guard let provider else { return }
         do {
             try provider.saveAPIKey(apiKey)
-            providerManager?.selectProvider(id: type(of: provider).info.id)
+            providerManager?.selectProvider(id: provider.providerInfo.id)
             saveError = nil
         } catch {
             saveError = error.localizedDescription

@@ -12,15 +12,26 @@ func pluginMetadata() {
 
 @Test
 func textActionCatalogIsComplete() {
-    #expect(TextAction.allCases == [.copy, .search])
+    #expect(TextAction.allCases == [.copy, .search, .translate])
     #expect(TextAction.copy.systemImage == "doc.on.doc")
     #expect(TextAction.search.systemImage == "magnifyingglass")
+    #expect(TextAction.translate.systemImage == "character.book.closed")
 }
 
 @Test
 func searchURLEncodesQueryItems() throws {
     let url = try #require(TextAction.searchURL(for: "hello world & swift"))
     #expect(url.absoluteString == "https://www.google.com/search?q=hello%20world%20%26%20swift")
+}
+
+@Test
+func translationRequestUsesSelectedTextAndTranslationInstruction() {
+    let request = TextAction.translationRequest(for: "Hello world")
+
+    #expect(request.messages.count == 2)
+    #expect(request.messages[0].content.contains("Simplified Chinese"))
+    #expect(request.messages[1].content == "Hello world")
+    #expect(request.maxTokens == 2_000)
 }
 
 @Test

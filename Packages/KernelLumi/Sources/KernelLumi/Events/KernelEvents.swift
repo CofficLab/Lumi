@@ -23,12 +23,17 @@ public enum KernelLumiEvent: String, CaseIterable, Sendable {
     case selectedRemoteProviderIDDidChange = "LumiProviderState.SelectedRemoteProviderIDDidChange"
     case selectedLocalProviderIDDidChange = "LumiProviderState.SelectedLocalProviderIDDidChange"
     case selectedModelsDidChange = "LumiProviderState.SelectedModelsDidChange"
+    /// LLM provider registry changed (initial registration or runtime rebuild).
+    case llmProvidersDidChange = "LumiProviderState.LLMProvidersDidChange"
 
     /// 工具调用记录已写入 ToolManager 存储后触发。
     case toolActivityDidChange = "Lumi.ToolActivityDidChange"
 
     /// 本地 Web 服务处理完一次请求后触发,携带 `WebRequestActivity`。
     case webRequestReceived = "com.coffic.lumi.webRequestReceived"
+
+    /// 屏幕录制会话状态变化时触发，携带 `RecordingActivity`。
+    case recordingStateChanged = "com.coffic.lumi.recordingStateChanged"
 
     /// 工作区布局事件。rawValue 对齐既有 `Notification.Name` 常量，
     /// 订阅端不受影响；统一由 `EventManager` 发射。
@@ -59,6 +64,7 @@ public extension Notification.Name {
     static let lumiTurnFinished = KernelLumiEvent.turnFinished.notificationName
 
     static let lumiWebRequestReceived = KernelLumiEvent.webRequestReceived.notificationName
+    static let lumiRecordingStateChanged = KernelLumiEvent.recordingStateChanged.notificationName
 
     static let lumiShowOnboarding = Notification.Name("Onboarding.Show")
 
@@ -77,6 +83,7 @@ public extension Notification.Name {
     static let lumiSelectedRemoteProviderIDDidChange = KernelLumiEvent.selectedRemoteProviderIDDidChange.notificationName
     static let lumiSelectedLocalProviderIDDidChange = KernelLumiEvent.selectedLocalProviderIDDidChange.notificationName
     static let lumiSelectedModelsDidChange = KernelLumiEvent.selectedModelsDidChange.notificationName
+    static let lumiLLMProvidersDidChange = KernelLumiEvent.llmProvidersDidChange.notificationName
 }
 
 /// Convenience helper for subscribing to enabled-plugins-changed events.
@@ -208,6 +215,15 @@ public extension View {
     func onLumiWebRequestReceived(perform action: @escaping (WebRequestActivity) -> Void) -> some View {
         self.onReceive(NotificationCenter.default.publisher(for: .lumiWebRequestReceived)) { notification in
             if let activity = notification.lumiWebRequestActivity {
+                action(activity)
+            }
+        }
+    }
+
+    /// 监听 `.lumiRecordingStateChanged` 通知，并传出录制状态变化记录。
+    func onLumiRecordingStateChanged(perform action: @escaping (RecordingActivity) -> Void) -> some View {
+        self.onReceive(NotificationCenter.default.publisher(for: .lumiRecordingStateChanged)) { notification in
+            if let activity = notification.lumiRecordingActivity {
                 action(activity)
             }
         }

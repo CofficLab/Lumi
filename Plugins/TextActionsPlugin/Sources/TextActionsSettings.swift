@@ -1,6 +1,7 @@
 import AppKit
 import ApplicationServices
 import Combine
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -174,8 +175,30 @@ final class TextActionMenuController {
     static let shared = TextActionMenuController()
 
     private var window: NSPanel?
+    private weak var kernel: KernelLumi?
+    private var currentText = ""
+    private var currentAnchor = CGPoint.zero
+    private var translationState: TranslationState = .idle
+
+    enum TranslationState {
+        case idle
+        case loading
+        case result(String)
+        case failure(String)
+    }
+
+    func configure(kernel: KernelLumi) {
+        self.kernel = kernel
+    }
 
     func show(text: String, at point: CGPoint) {
+        currentText = text
+        currentAnchor = point
+        translationState = .idle
+        render()
+    }
+
+    private func render() {
         if window == nil {
             let panel = NSPanel(
                 contentRect: .zero,
@@ -193,27 +216,63 @@ final class TextActionMenuController {
         }
 
         window?.contentView = NSHostingView(
-            rootView: TextActionMenuView(text: text) { [weak self] action in
-                action.perform(with: text)
-                self?.hide()
+            rootView: TextActionMenuView(
+                text: currentText,
+                translationState: translationState
+            ) { [weak self] action in
+                self?.perform(action)
             }
         )
 
         let size = window?.contentView?.fittingSize ?? CGSize(width: 180, height: 70)
-        let screen = NSScreen.screens.first { $0.frame.contains(point) } ?? NSScreen.main
+        let screen = NSScreen.screens.first { $0.frame.contains(currentAnchor) } ?? NSScreen.main
         let screenFrame = screen?.frame ?? CGRect(
-            x: point.x,
-            y: point.y,
+            x: currentAnchor.x,
+            y: currentAnchor.y,
             width: size.width + 16,
             height: size.height + 26
         )
         let frame = TextActionMenuLayout.frame(
-            for: point,
+            for: currentAnchor,
             menuSize: size,
             screenFrame: screenFrame
         )
         window?.setFrame(frame, display: true)
         window?.orderFrontRegardless()
+    }
+
+    private func perform(_ action: TextAction) {
+        guard action == .translate else {
+            action.perform(with: currentText)
+            hide()
+            return
+        }
+
+        translationState = .loading
+        render()
+        guard let kernel, let providerManager = kernel.llmProvider else {
+            translationState = .failure("No LLM provider is configured.")
+            render()
+            return
+        }
+
+        let request = TextAction.translationRequest(for: currentText)
+        Task { @MainActor [weak self] in
+            do {
+                let result = try await providerManager.generateText(
+                    request,
+                    providerID: providerManager.selectedProviderID,
+                    model: providerManager.selectedModel
+                )
+                guard let self else { return }
+                let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
+                self.translationState = trimmed.isEmpty ? .failure("The LLM returned an empty translation.") : .result(trimmed)
+                self.render()
+            } catch {
+                self?.translationState = .failure(error.localizedDescription)
+                self?.render()
+            }
+        }
     }
 
     func hide() {
@@ -223,20 +282,43 @@ final class TextActionMenuController {
 
 struct TextActionMenuView: View {
     let text: String
+    let translationState: TextActionMenuController.TranslationState
     let action: (TextAction) -> Void
 
     var body: some View {
         AppCard(style: .glass, cornerRadius: 12, padding: EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)) {
-            HStack(spacing: 6) {
-                ForEach(TextAction.allCases) { item in
-                    AppButton(item.title, systemImage: item.systemImage, style: .secondary, size: .small) {
-                        action(item)
+            VStack(alignment: .leading, spacing: 8) {
+                if case .result(let translation) = translationState {
+                    Text(translation)
+                        .font(.appBody)
+                        .foregroundStyle(.primary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: 320, alignment: .leading)
+                    AppButton("Copy Translation", systemImage: "doc.on.doc", style: .secondary, size: .small) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(translation, forType: .string)
                     }
-                    // Keep the action cells stable for both English and
-                    // Chinese localization instead of letting the hosting
-                    // panel compress their labels.
-                    .frame(minWidth: 96)
-                    .layoutPriority(1)
+                } else if case .failure(let message) = translationState {
+                    Text(message)
+                        .font(.appCaption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: 320, alignment: .leading)
+                } else if case .loading = translationState {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("Translating…")
+                            .font(.appCaption)
+                    }
+                } else {
+                    HStack(spacing: 6) {
+                        ForEach(TextAction.allCases) { item in
+                            AppButton(item.title, systemImage: item.systemImage, style: .secondary, size: .small) {
+                                action(item)
+                            }
+                            .frame(minWidth: 96)
+                            .layoutPriority(1)
+                        }
+                    }
                 }
             }
         }

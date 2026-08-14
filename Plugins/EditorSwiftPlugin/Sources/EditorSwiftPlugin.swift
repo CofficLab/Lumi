@@ -1,6 +1,6 @@
-import SwiftUI
 import KernelLumi
 import LocalizationKit
+import SwiftUI
 
 @MainActor
 public final class EditorSwiftPlugin: LumiPlugin {
@@ -8,8 +8,9 @@ public final class EditorSwiftPlugin: LumiPlugin {
     public var name: String {
         LumiPluginLocalization.string("Swift Editor", bundle: .module)
     }
+
     public let order = 4
-    public let policy: LumiPluginPolicy = .optIn
+    public let policy: LumiPluginPolicy = .alwaysOn
     public let category: LumiPluginCategory = .development
     public let stage: LumiPluginStage = .beta
     public var pluginDescription: String {
@@ -23,9 +24,7 @@ public final class EditorSwiftPlugin: LumiPlugin {
     }
 
     public func onReady(kernel: KernelLumi) async throws {
- 
     }
-
 
     // MARK: - LumiPlugin stubs
 
@@ -50,6 +49,7 @@ public final class EditorSwiftPlugin: LumiPlugin {
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(EditorSwiftAboutView())
     }
+
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

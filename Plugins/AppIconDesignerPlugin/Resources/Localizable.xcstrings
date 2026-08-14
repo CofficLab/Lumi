@@ -1821,6 +1821,7 @@
       }
     },
     "Prompt.Suggestion.Export" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1855,6 +1856,7 @@
       }
     },
     "Prompt.Suggestion.Preset" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1889,6 +1891,7 @@
       }
     },
     "Prompt.Suggestion.Review" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

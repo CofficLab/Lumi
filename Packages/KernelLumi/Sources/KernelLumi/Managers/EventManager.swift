@@ -145,4 +145,14 @@ public final class EventManager: ObservableObject, SuperLog {
         ]
         post(.webRequestReceived, object: object, userInfo: userInfo)
     }
+
+    // MARK: - Screen Recording Notifications
+
+    /// 发送 `.lumiRecordingStateChanged` 通知，携带一次录制状态变化记录。
+    public func postRecordingStateChanged(object: Any? = nil, activity: RecordingActivity) {
+        let userInfo: [AnyHashable: Any] = [
+            RecordingActivityNotification.activityKey: activity
+        ]
+        post(.recordingStateChanged, object: object, userInfo: userInfo)
+    }
 }

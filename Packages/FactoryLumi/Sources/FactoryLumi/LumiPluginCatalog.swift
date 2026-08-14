@@ -14,6 +14,7 @@ import BrowserPlugin
 import ComputerUsePlugin
 import CADDesignerPlugin
 import MindMapPlugin
+import ScreenRecorderPlugin
 import StoryWriterPlugin
 import StateMonitorPlugin
 import CaffeinatePlugin
@@ -99,6 +100,7 @@ import MessageSenderPlugin
 import ModelSelectorPlugin
 import NettoPlugin
 import NetworkManagerPlugin
+import OcrPlugin
 import OnboardingPlugin
 import OpenInAntigravityPlugin
 import OpenInCursorPlugin
@@ -126,6 +128,7 @@ import SkillPlugin
 import StoragePlugin
 import TerminalPlugin
 import TextActionsPlugin
+import ToastPlugin
 import ThemeAuroraPlugin
 import ThemeAutumnPlugin
 import ThemeDraculaPlugin
@@ -302,6 +305,8 @@ public enum LumiPluginCatalog {
             AppStoreConnectPlugin(),
             CADDesignerPlugin(),
             MindMapPlugin(),
+            ScreenRecorderPlugin(),
+            OcrPlugin(),
             StoryWriterPlugin(),
             ActivityHeatmapPlugin(),
             FileLogPlugin(),
@@ -309,6 +314,8 @@ public enum LumiPluginCatalog {
             DatabaseManagerPlugin(),
             ConversationForkPlugin(),
             AgentTurnNotificationPlugin(),
+            // Toast 提示能力(ToastProviding 实现):窗口顶部瞬时提示。
+            ToastPlugin(),
             // User interaction
             AskUserPlugin(),
             // Themes

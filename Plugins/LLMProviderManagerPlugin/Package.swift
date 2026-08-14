@@ -11,6 +11,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/KernelLumi"),
+        .package(path: "../../Packages/LLMKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -20,6 +21,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "KernelLumi", package: "KernelLumi"),
+                .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

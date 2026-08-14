@@ -211,6 +211,40 @@
         }
       }
     },
+    "Prompt.Suggestion.Create" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create an App Store promo image for me"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帮我创建一张 App Store 宣传图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我建立一張 App Store 宣傳圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我製作一張 App Store 宣傳圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我建立一張 App Store 宣傳圖"
+          }
+        }
+      }
+    },
     "Refresh" : {
       "localizations" : {
         "zh-Hans" : {

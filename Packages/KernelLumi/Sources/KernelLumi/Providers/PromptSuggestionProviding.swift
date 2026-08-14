@@ -15,6 +15,15 @@ public enum LumiPromptAction: Equatable, Sendable {
     /// 禁用，点击流程会先启用它（含贡献重建，注册其容器）再执行本动作，确保目标容器
     /// 已存在。
     case activateViewContainer(_ id: String)
+
+    /// 激活指定视图容器，并将其 rail 侧栏切换到指定 tab（等价于先
+    /// `activateContainer(id:)` 再 `presentRailTab(id:for:)`）。
+    ///
+    /// rail tab 隶属于容器，因此需要同时指定容器 id 与 tab id。常用于点击提示词后
+    /// 自动切换到某插件的容器并定位到其某个子面板（如多 tab 容器中的特定一项）。
+    /// 若来源插件当前禁用，点击流程会先启用它（含贡献重建，注册其容器与 tab）再执行
+    /// 本动作，确保目标容器与 tab 已存在。
+    case activateRailTab(id: String, viewContainerID: String)
 }
 
 /// 聊天起始提示词项

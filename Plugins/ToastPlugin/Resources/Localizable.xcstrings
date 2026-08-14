@@ -1,0 +1,50 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Toast" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toast"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toast 提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toast 提示"
+          }
+        }
+      }
+    },
+    "在应用窗口顶部展示瞬时 Toast 提示，供内核与其他插件调用。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows transient toast hints at the top of the app window, for the kernel and other plugins to call."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在应用窗口顶部展示瞬时 Toast 提示，供内核与其他插件调用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在應用程式視窗頂部展示瞬時 Toast 提示，供內核與其他插件調用。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

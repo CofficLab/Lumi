@@ -46,7 +46,7 @@ struct PopoverContent: View {
             // Use initial selection if available
             if selectedProviderID == nil {
                 selectedProviderID = initialSelection.providerID
-                    ?? llmProvider?.allLLMProviders().first.map { type(of: $0).info.id }
+                    ?? llmProvider?.allLLMProviders().first.map { $0.providerInfo.id }
             }
         }
     }
