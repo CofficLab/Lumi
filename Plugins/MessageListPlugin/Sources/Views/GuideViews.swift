@@ -183,8 +183,13 @@ struct NoConversationSelectedView: View {
     private var titleFont: Font { .system(size: 18, weight: .semibold) }
 
     /// 内核聚合后的全部提示词（来自各启用插件，按 order 排序）。
+    /// 无当前项目时过滤掉声明了 `requiresProject` 的提示词（它们依赖项目上下文）。
     private var promptSuggestions: [LumiPromptSuggestion] {
-        kernel.promptSuggestions?.allPromptSuggestions ?? []
+        let all = kernel.promptSuggestions?.allPromptSuggestions ?? []
+        guard currentProject != nil else {
+            return all.filter { !$0.requiresProject }
+        }
+        return all
     }
 
     var body: some View {

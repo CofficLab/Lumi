@@ -80,6 +80,40 @@ struct PromptSuggestionProvidingTests {
         #expect(item.order == 200)  // 默认值，内核收集时会用插件 order 覆盖
     }
 
+    @Test("requiresProject 缺省为 false，声明后经聚合保留")
+    func requiresProjectDefaultsAndSurvivesAggregation() async throws {
+        // 缺省不要求项目
+        let plain = LumiPromptSuggestion(id: "x", title: "普通提示")
+        #expect(plain.requiresProject == false)
+
+        let kernel = KernelTestKit.makeKernel()
+        try kernel.registerPromptSuggestionService(PromptSuggestionManager())
+
+        let manager = PluginManager()
+        try await manager.initializePlugins([
+            MockLumiPlugin(
+                id: "overview",
+                order: 100,
+                promptSuggestions: [
+                    LumiPromptSuggestion(
+                        id: "overview.overview",
+                        title: "生成项目概览",
+                        requiresProject: true
+                    ),
+                    LumiPromptSuggestion(id: "overview.plain", title: "普通提示"),
+                ]
+            ),
+        ], kernel: kernel)
+
+        manager.registerPromptSuggestions(in: kernel)
+
+        let collected = kernel.promptSuggestions?.allPromptSuggestions ?? []
+        let overview = collected.first { $0.id == "overview.overview" }
+        #expect(overview?.requiresProject == true)
+        let other = collected.first { $0.id == "overview.plain" }
+        #expect(other?.requiresProject == false)
+    }
+
     // MARK: - PluginManager 收集链路
 
     @Test("收集插件贡献的提示词并按插件 order 盖戳排序")

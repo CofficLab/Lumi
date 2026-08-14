@@ -55,6 +55,10 @@ public struct LumiPromptSuggestion: Identifiable, Sendable {
     /// 可选的点击动作（声明式，由内核执行）。`nil` 表示点击仅发送提示词。
     public let action: LumiPromptAction?
 
+    /// 该提示词是否要求已选择项目。为 `true` 时，仅在存在当前项目的场景下展示
+    /// （如依赖文件/目录上下文的提示词）；无项目的空态 UI 会将其过滤掉。
+    public let requiresProject: Bool
+
     /// 来源插件 ID（由内核盖戳）。`nil` 表示未被内核收集过。
     public var pluginID: String?
 
@@ -69,12 +73,14 @@ public struct LumiPromptSuggestion: Identifiable, Sendable {
     ///   - prompt: 点击后注入输入框的真实提示词；传 `nil` 时回退为 `title`。
     ///   - systemImage: 可选 SF Symbol 图标名。
     ///   - action: 可选的点击动作（如激活视图容器）；传 `nil` 时点击仅发送提示词。
+    ///   - requiresProject: 是否要求已选择项目；为 `true` 时无项目的空态不展示该提示词，默认 `false`。
     public init(
         id: String,
         title: String,
         prompt: String? = nil,
         systemImage: String? = nil,
-        action: LumiPromptAction? = nil
+        action: LumiPromptAction? = nil,
+        requiresProject: Bool = false
     ) {
         self.id = id
         self.order = 200  // 默认值，内核会覆盖
@@ -82,6 +88,7 @@ public struct LumiPromptSuggestion: Identifiable, Sendable {
         self.prompt = prompt ?? title
         self.systemImage = systemImage
         self.action = action
+        self.requiresProject = requiresProject
         self.pluginID = nil
         self.requiresEnable = false
     }

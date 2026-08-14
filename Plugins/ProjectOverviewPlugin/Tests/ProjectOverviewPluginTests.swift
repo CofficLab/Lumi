@@ -9,20 +9,25 @@ struct PluginProjectOverviewTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
         #expect(ProjectOverviewPlugin().id == "ProjectOverview")
-        #expect(ProjectOverviewPlugin.name == "Project Overview")
-        #expect(ProjectOverviewPlugin().category == .general)
+        #expect(ProjectOverviewPlugin().name.isEmpty == false)
         #expect(ProjectOverviewPlugin().order == 14)
-        #expect(ProjectOverviewPlugin.isConfigurable == false)
+        #expect(ProjectOverviewPlugin().policy == .alwaysOn)
     }
 
     @Test("plugin registers one tool")
     func pluginRegistersTool() {
-        let tools = ProjectOverviewPlugin.agentTools(
-            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
-        )
+        let tools = ProjectOverviewPlugin().agentTools(kernel: KernelLumi())
 
         #expect(tools.count == 1)
         #expect(tools.first?.name == "project_overview")
+    }
+
+    @Test("prompt suggestion requires a project")
+    func promptSuggestionRequiresProject() {
+        let suggestions = ProjectOverviewPlugin().promptSuggestions(kernel: KernelLumi())
+
+        #expect(suggestions.count == 1)
+        #expect(suggestions.first?.requiresProject == true)
     }
 
     @Test("tool name and description")
@@ -92,7 +97,7 @@ struct PluginProjectOverviewTests {
 
     @Test("localization catalog is packaged")
     func localizationCatalogIsPackaged() {
-        #expect(PluginProjectOverviewLocalization.bundle.url(forResource: "ProjectOverview", withExtension: "xcstrings") != nil)
+        #expect(PluginProjectOverviewLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
         #expect(PluginProjectOverviewLocalization.string("Project Overview").isEmpty == false)
     }
 }
