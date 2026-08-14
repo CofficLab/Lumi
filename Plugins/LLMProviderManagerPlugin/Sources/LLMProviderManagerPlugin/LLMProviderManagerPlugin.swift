@@ -29,6 +29,9 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
         service.kernel = kernel
         try kernel.registerLLMProviderService(service)
         self.manager = service
+        for configuration in CustomProviderStore.shared.load() {
+            try? service.registerCustomProvider(configuration)
+        }
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 LLMProviderManager 到内核")
         }

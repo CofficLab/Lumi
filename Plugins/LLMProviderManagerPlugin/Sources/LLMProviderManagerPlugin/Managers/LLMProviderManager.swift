@@ -17,6 +17,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
 
     private var llmProviders: [String: any LumiLLMProvider] = [:]
     private var llmProviderOrder: [String] = []
+    private var customProviderConfigurations: [String: CustomProviderConfiguration] = [:]
     @Published private var _selectedProviderID: String?
     @Published private var _selectedModel: String?
 
@@ -353,5 +354,18 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
     public func registerProviderSettingsView(_ item: LumiLLMProviderSettingsViewItem) {
         providerSettingsViewItems.removeAll { $0.providerID == item.providerID }
         providerSettingsViewItems.append(item)
+    }
+
+    func registerCustomProvider(_ configuration: CustomProviderConfiguration) throws {
+        let provider = CustomLLMProvider(configuration: configuration)
+        try registerLLMProvider(provider)
+        customProviderConfigurations[configuration.id] = configuration
+        kernel?.eventManager.post(.llmProvidersDidChange)
+    }
+
+    func removeCustomProvider(id: String) {
+        guard customProviderConfigurations.removeValue(forKey: id) != nil else { return }
+        unregisterLLMProvider(id: id)
+        kernel?.eventManager.post(.llmProvidersDidChange)
     }
 }
