@@ -153,14 +153,22 @@ public final class OpenCodeGoProvider: LumiLLMProvider, @unchecked Sendable {
         guard let model = Self.models.first(where: { $0.id == request.model }) else {
             throw LumiLLMProviderSupportError.emptyResponse
         }
+        let started = Date()
+        var m: LumiChatMessage
         switch model.kind {
         case .openAI:
-            return try await chat(request, anthropic: false)
+            m = try await chat(request, anthropic: false)
         case .anthropic:
-            return try await chat(request, anthropic: true)
+            m = try await chat(request, anthropic: true)
         case .responses:
-            return try await responses(request)
+            m = try await responses(request)
         }
+        // 非流式 provider：整体耗时即用户等待时长，首个 token 与全部内容同时到达，
+        // 因此 TTFT = 总耗时；streamingDurationMs 保持 nil（不存在流式阶段）。
+        let latency = Date().timeIntervalSince(started) * 1000
+        m.latencyMs = latency
+        m.timeToFirstTokenMs = latency
+        return m
     }
 
     private func url(_ path: String) throws -> URL {

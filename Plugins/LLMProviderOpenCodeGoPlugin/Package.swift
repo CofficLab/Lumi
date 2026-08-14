@@ -9,12 +9,18 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LLMKit"),
+        .package(path: "../../Packages/HttpKit"),
     ],
     targets: [
         .target(name: "LLMProviderOpenCodeGoPlugin", dependencies: [
             .product(name: "KernelLumi", package: "KernelLumi"),
             .product(name: "LLMKit", package: "LLMKit"),
+            .product(name: "HttpKit", package: "HttpKit"),
         ], path: "Sources"),
-        .testTarget(name: "LLMProviderOpenCodeGoPluginTests", dependencies: ["LLMProviderOpenCodeGoPlugin"], path: "Tests"),
+        .testTarget(name: "LLMProviderOpenCodeGoPluginTests", dependencies: [
+            "LLMProviderOpenCodeGoPlugin",
+            .product(name: "LLMKit", package: "LLMKit"),
+            .product(name: "HttpKit", package: "HttpKit"),
+        ], path: "Tests"),
     ]
 )
