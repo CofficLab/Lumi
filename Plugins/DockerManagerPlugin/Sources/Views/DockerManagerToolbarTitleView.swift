@@ -1,4 +1,5 @@
 import KernelLumi
+import LumiUI
 import SwiftUI
 
 /// 工具栏居中标题视图：仅在该插件对应的视图容器激活时显示。
@@ -24,8 +25,7 @@ struct DockerManagerToolbarTitleView: View {
     var body: some View {
         Group {
             if activeContainerID == containerID {
-                Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                AppToolbarTitleLabel(title: title)
             }
         }
         .onActiveViewContainerIDDidChange { newContainerID in

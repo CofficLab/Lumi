@@ -1,4 +1,5 @@
 import KernelLumi
+import LumiUI
 import SwiftUI
 
 /// 标题栏：显示插件名 + 当前选中思维导图标题与节点数。
@@ -25,11 +26,7 @@ struct MindMapToolbarTitleView: View {
     var body: some View {
         Group {
             if activeContainerID == containerID {
-                HStack(spacing: 6) {
-                    Image(systemName: "brain.head.profile")
-                        .foregroundStyle(.secondary)
-                    Text(title)
-                        .font(.headline)
+                AppToolbarTitleLabel(icon: "brain.head.profile", title: title) {
                     if let map = store.selectedMap {
                         Text("·")
                             .foregroundStyle(.tertiary)
