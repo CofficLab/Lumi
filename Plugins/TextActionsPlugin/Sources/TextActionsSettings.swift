@@ -315,8 +315,22 @@ struct TextActionsSettingsView: View {
             .padding()
         }
         .onAppear {
-            manager.refreshPermission()
+            refreshPermissionAndMonitoring()
             isEnabled = TextActionsSettings.isEnabled
+        }
+        // System Settings is a separate app. Refresh when Lumi becomes
+        // active again so the permission card immediately reflects the
+        // user's choice without requiring a view reload.
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshPermissionAndMonitoring()
+            isEnabled = TextActionsSettings.isEnabled
+        }
+    }
+
+    private func refreshPermissionAndMonitoring() {
+        manager.refreshPermission()
+        if manager.isPermissionGranted && TextActionsSettings.isEnabled {
+            manager.startMonitoring()
         }
     }
 }

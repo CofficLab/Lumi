@@ -95,6 +95,26 @@ func selectionManagerDoesNotMonitorWithoutAccessibilityPermission() {
 
 @MainActor
 @Test
+func selectionManagerCanStartAfterPermissionIsGranted() {
+    let monitor = RecordingTextEventMonitor()
+    var permissionGranted = false
+    let manager = TextSelectionManager(
+        eventMonitor: monitor,
+        selectedTextProvider: RecordingSelectedTextProvider(),
+        permissionChecker: { permissionGranted }
+    )
+
+    manager.startMonitoring()
+    #expect(monitor.addCount == 0)
+
+    permissionGranted = true
+    manager.refreshPermission()
+    manager.startMonitoring()
+    #expect(monitor.addCount == 1)
+}
+
+@MainActor
+@Test
 func selectedTextProviderCanSimulateAXRetrySequence() {
     let provider = RecordingSelectedTextProvider(
         results: [nil, SelectedText(text: "selected", anchor: CGPoint(x: 10, y: 20))]
