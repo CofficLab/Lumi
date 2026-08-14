@@ -54,7 +54,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
     }
 
     public func registerLLMProvider(_ provider: any LumiLLMProvider) throws {
-        let id = type(of: provider).info.id
+        let id = provider.providerInfo.id
         guard !id.isEmpty else {
             throw KernelLumiError.llmProviderRegistrationFailed(
                 providerType: String(describing: type(of: provider)),
@@ -73,7 +73,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
 
     public func registerLLMProviders(_ providers: [any LumiLLMProvider]) throws {
         for provider in providers {
-            let id = type(of: provider).info.id
+            let id = provider.providerInfo.id
             guard !id.isEmpty else {
                 throw KernelLumiError.llmProviderRegistrationFailed(
                     providerType: String(describing: type(of: provider)),
@@ -117,7 +117,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             }
             return nil
         }
-        return type(of: provider).info
+        return provider.providerInfo
     }
 
     // MARK: - Provider Selection
@@ -149,7 +149,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             }
             return []
         }
-        return type(of: provider).info.modelIDs
+        return provider.providerInfo.modelIDs
     }
 
     public var selectedModel: String? { _selectedModel }
@@ -174,7 +174,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             }
             throw KernelLumiError.llmProviderUnavailable
         }
-        let providerID = type(of: provider).info.id
+        let providerID = provider.providerInfo.id
         if Self.verbose {
             Self.logger.info("\(Self.t)sendToFirstProvider ➡️ 选 provider id=\(providerID), model=\(request.model), messages=\(request.messages.count), tools=\(request.tools.count)")
         }
@@ -189,7 +189,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
             }
             throw KernelLumiError.invalidProviderOrModel
         }
-        let model = _selectedModel ?? type(of: provider).info.defaultModel
+        let model = _selectedModel ?? provider.providerInfo.defaultModel
         if Self.verbose {
             Self.logger.info("\(Self.t)sendToSelectedProvider ➡️ 选 provider id=\(providerID), model=\(model), messages=\(request.messages.count), tools=\(request.tools.count)")
         }
@@ -284,7 +284,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
            !selectedModel.isEmpty {
             return selectedModel
         }
-        return type(of: provider).info.defaultModel
+        return provider.providerInfo.defaultModel
     }
 
     // MARK: - LumiLLMProviderSettingsContributing

@@ -192,7 +192,7 @@ struct RemoteProviderSettingsPage: View {
         let messages = conversationManaging.conversations.flatMap { messageManager.messages(for: $0.id) }
         stats = ModelUsageStatsService.buildSnapshot(
             messages: messages,
-            providers: llmProvider?.allLLMProviders().map { type(of: $0).info } ?? []
+            providers: llmProvider?.allLLMProviders().map { $0.providerInfo } ?? []
         )
     }
 

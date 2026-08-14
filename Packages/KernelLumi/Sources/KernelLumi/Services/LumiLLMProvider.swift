@@ -4,6 +4,9 @@ import Foundation
 
 public protocol LumiLLMProvider: Sendable {
     static var info: LumiLLMProviderInfo { get }
+    /// Runtime metadata. Built-in providers inherit this from their static info;
+    /// user-created providers override it with their persisted configuration.
+    var providerInfo: LumiLLMProviderInfo { get }
     func lumiResolveAPIKey() throws -> String
     func hasApiKey() -> Bool
     func getApiKey() -> String
@@ -40,6 +43,7 @@ public enum LumiLLMProviderAPIKeySaveError: LocalizedError, Sendable, Equatable 
 }
 
 public extension LumiLLMProvider {
+    var providerInfo: LumiLLMProviderInfo { Self.info }
     /// Saves and verifies the exact value through the provider's request-time
     /// resolver. This catches write failures hidden by legacy void setters.
     func saveAPIKey(_ apiKey: String) throws {

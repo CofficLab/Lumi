@@ -98,7 +98,7 @@ struct AISetupPage: View {
         do {
             try provider.saveAPIKey(apiKey)
             apiKey = provider.getApiKey()
-            manager?.selectProvider(id: type(of: provider).info.id)
+            manager?.selectProvider(id: provider.providerInfo.id)
             didSave = true
             saveError = nil
         } catch {

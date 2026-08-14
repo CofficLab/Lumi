@@ -70,11 +70,11 @@ struct ActionBarButton: View {
     private var buttonLabel: String {
         guard let llmProvider else { return "Select Provider" }
         guard let providerID = selectedProviderID,
-              let provider = llmProvider.allLLMProviders().first(where: { type(of: $0).info.id == providerID })
+              let provider = llmProvider.allLLMProviders().first(where: { $0.providerInfo.id == providerID })
         else {
             return "Select Provider"
         }
-        let info = type(of: provider).info
+        let info = provider.providerInfo
         if let model = selectedModel {
             let displayModel = info.modelInfo(for: model)?.displayName ?? model
             return "\(info.displayName) · \(displayModel)"
