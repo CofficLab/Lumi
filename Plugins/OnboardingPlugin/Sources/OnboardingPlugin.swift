@@ -29,9 +29,6 @@ public final class OnboardingPlugin: LumiPlugin {
             OnboardingPageItem(id: "onboarding-ai-setup") {
                 AISetupPage(kernel: kernel)
             },
-            OnboardingPageItem(id: "onboarding-features") {
-                FeaturesPage()
-            },
         ]
     }
 
