@@ -36,11 +36,24 @@ struct ListView: View {
     @ViewBuilder
     private var list: some View {
         if filteredProjects.isEmpty {
-            AppEmptyState(
-                icon: "folder.badge.plus",
-                title: LumiPluginLocalization.string("No Projects", bundle: .module)
-            )
-            .frame(maxWidth: .infinity, minHeight: 126)
+            if viewModel.projects.isEmpty {
+                // 列表为空：引导添加项目（项目是可选功能，无项目时聊天仍可正常使用）
+                AppEmptyState(
+                    icon: "folder.badge.plus",
+                    title: LumiPluginLocalization.string("No Projects", bundle: .module),
+                    description: LumiPluginLocalization.string("Adding a project gives the agent file context. This is optional — chat works without one.", bundle: .module),
+                    actionTitle: LumiPluginLocalization.string("Add Project", bundle: .module),
+                    action: { isImporterPresented = true }
+                )
+                .frame(maxWidth: .infinity, minHeight: 126)
+            } else {
+                // 仅为搜索无匹配
+                AppEmptyState(
+                    icon: "magnifyingglass",
+                    title: LumiPluginLocalization.string("No Projects", bundle: .module)
+                )
+                .frame(maxWidth: .infinity, minHeight: 126)
+            }
         } else {
             ScrollView {
                 LazyVStack(spacing: 4) {
