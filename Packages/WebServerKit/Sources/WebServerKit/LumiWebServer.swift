@@ -113,16 +113,28 @@ public final class LumiWebServer: WebServerProviding, @unchecked Sendable {
     // 路由表(pluginID -> routes),与派发用的扁平匹配器列表,统一用锁保护。
     private let lock = NSLock()
     private var routesByPlugin: [String: [WebRoute]] = [:]
-    private var matchers: [(route: WebRoute, matcher: RouteMatcher)] = []
+    private var matchers: [(route: WebRoute, matcher: RouteMatcher, pluginID: String)] = []
+
+    /// 请求处理完成后的活动回调(可选)。每次成功匹配并执行路由后调用一次,
+    /// 携带 method/path/pluginID/description/状态码,供宿主做 UI 反馈(toast)。
+    /// 在 init 时设置一次,故为 `let`,无线程安全问题。
+    public let onActivity: (@Sendable (WebRequestActivity) -> Void)?
 
     /// - Parameters:
     ///   - port: 监听端口(默认 7310)。
     ///   - authToken: 可选鉴权 token。
     ///   - maxBodySize: 请求体最大字节数(默认 1 MiB)。
-    public init(port: Int = 7310, authToken: String? = nil, maxBodySize: Int = 1_048_576) {
+    ///   - onActivity: 可选的请求完成回调,用于 UI 反馈等。
+    public init(
+        port: Int = 7310,
+        authToken: String? = nil,
+        maxBodySize: Int = 1_048_576,
+        onActivity: (@Sendable (WebRequestActivity) -> Void)? = nil
+    ) {
         self.port = port
         self.authToken = authToken
         self.maxBodySize = maxBodySize
+        self.onActivity = onActivity
     }
 
     // MARK: WebServerProviding - Route Registration
@@ -142,10 +154,9 @@ public final class LumiWebServer: WebServerProviding, @unchecked Sendable {
     }
 
     private func rebuildMatchersLocked() {
-        matchers = routesByPlugin
-            .values
-            .flatMap { $0 }
-            .map { (route: $0, matcher: RouteMatcher(template: $0.path)) }
+        matchers = routesByPlugin.flatMap { (pluginID, routes) in
+            routes.map { (route: $0, matcher: RouteMatcher(template: $0.path), pluginID: pluginID) }
+        }
     }
 
     // MARK: WebServerProviding - Lifecycle
@@ -269,20 +280,31 @@ public final class LumiWebServer: WebServerProviding, @unchecked Sendable {
             return Self.makeResponse(status: .internalServerError, message: message)
         }
 
-        return Self.makeResponse(from: result)
+        let response = Self.makeResponse(from: result)
+
+        // 发射活动记录(供宿主做 toast 反馈)。回调在网络线程触发,宿主需自行切线程。
+        onActivity?(WebRequestActivity(
+            pluginID: matched.pluginID,
+            method: method.rawValue,
+            path: path,
+            description: matched.route.description,
+            statusCode: result.statusCode
+        ))
+
+        return response
     }
 
     // MARK: - Helpers
 
-    private func matchRoute(method: HTTPMethod, path: String) -> (route: WebRoute, parameters: [String: String])? {
-        let snapshot: [(route: WebRoute, matcher: RouteMatcher)] = {
+    private func matchRoute(method: HTTPMethod, path: String) -> (route: WebRoute, parameters: [String: String], pluginID: String)? {
+        let snapshot: [(route: WebRoute, matcher: RouteMatcher, pluginID: String)] = {
             lock.lock(); defer { lock.unlock() }
             return matchers
         }()
         for entry in snapshot {
             guard entry.route.method == method else { continue }
             if let parameters = entry.matcher.match(path) {
-                return (route: entry.route, parameters: parameters)
+                return (route: entry.route, parameters: parameters, pluginID: entry.pluginID)
             }
         }
         return nil

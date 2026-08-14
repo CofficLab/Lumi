@@ -132,4 +132,53 @@ final class LumiWebServerTests: XCTestCase {
 
         await server.stop()
     }
+
+    /// onActivity 回调在请求成功后携带完整活动记录。
+    func testOnActivityReportsRequest() async throws {
+        let fired = expectation(description: "onActivity")
+        let box = LockedBox<WebRequestActivity>()
+        let server = LumiWebServer(port: 0, onActivity: { activity in
+            box.set(activity)
+            fired.fulfill()
+        })
+        server.register([
+            WebRoute(id: "set", method: .post, path: "/set", description: "设置某值") { _ in .text("ok") },
+        ], forPlugin: "com.test.plugin")
+        try await server.start()
+        let port = try XCTUnwrap(server.boundPort)
+
+        var req = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/set")!)
+        req.httpMethod = "POST"
+        _ = try await URLSession.shared.data(for: req)
+
+        await fulfillment(of: [fired], timeout: 5)
+        let activity = try XCTUnwrap(box.get())
+        XCTAssertEqual(activity.pluginID, "com.test.plugin")
+        XCTAssertEqual(activity.method, "POST")
+        XCTAssertEqual(activity.path, "/set")
+        XCTAssertEqual(activity.description, "设置某值")
+        XCTAssertEqual(activity.statusCode, 200)
+        XCTAssertTrue(activity.isMutation)
+        XCTAssertTrue(activity.isSuccess)
+
+        await server.stop()
+    }
+}
+
+/// 线程安全的单值容器,用于在跨线程回调中捕获结果供断言。
+private final class LockedBox<T>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: T?
+
+    func set(_ value: T) {
+        lock.lock()
+        self.value = value
+        lock.unlock()
+    }
+
+    func get() -> T? {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
 }
