@@ -80,7 +80,7 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
                 id: "\(id).design",
                 title: AppIconDesignerLocalization.string("Prompt.Suggestion.Design"),
                 systemImage: "app.dashed",
-                action: .activateViewContainer(id)
+                action: .activateRailTab(id: Self.railTabID, viewContainerID: self.id)
             )
         ]
     }
