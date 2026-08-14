@@ -12,7 +12,7 @@ import Testing
 @Test @MainActor func onboardingPluginProvidesPages() throws {
     let pages = OnboardingPlugin().onboardingPages(kernel: KernelLumi())
 
-    #expect(pages.count == 3)
+    #expect(pages.count == 2)
 }
 
 @Test @MainActor func onboardingPageMakesContent() throws {

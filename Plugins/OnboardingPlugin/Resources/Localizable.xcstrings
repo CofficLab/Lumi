@@ -576,6 +576,40 @@
         }
       }
     },
+    "Optional: add a project later from the title bar to give the agent file context." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optional: add a project later from the title bar to give the agent file context."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可选：稍后从标题栏添加项目，为 Agent 提供文件上下文。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可選：稍後從標題列添加專案，為 Agent 提供檔案上下文。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可選：稍後從標題列添加專案，為 Agent 提供檔案上下文。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可選：稍後從標題列添加專案，為 Agent 提供檔案上下文。"
+          }
+        }
+      }
+    },
     "Previous" : {
       "localizations" : {
         "en" : {
