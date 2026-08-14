@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.13.1</title>
-            <pubDate>Fri, 14 Aug 2026 04:39:51 +0000</pubDate>
-            <sparkle:version>608</sparkle:version>
-            <sparkle:shortVersionString>5.13.1</sparkle:shortVersionString>
+            <title>5.14.0</title>
+            <pubDate>Fri, 14 Aug 2026 08:50:40 +0000</pubDate>
+            <sparkle:version>609</sparkle:version>
+            <sparkle:shortVersionString>5.14.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.13.1</h2>
-<h3>Changes since v5.13.0</h3>
+            <description><![CDATA[<h2>Release v5.14.0</h2>
+<h3>Changes since v5.13.1</h3>
 <ul>
-<li>docs(WebServerPlugin): add README and .gitignore</li>
-<li>feat(AppIconDesigner): add activateViewContainer action to prompt suggestions</li>
-<li>feat(FactoryCore): add WebRequestToast overlay for web-driven actions</li>
-<li>feat(FactoryLumi): register PrototypeDesignerPlugin in plugin catalog</li>
-<li>feat(FactoryLumi): register WebServerPlugin in plugin catalog</li>
-<li>feat(FactoryLumi): register WhiteNoisePlugin in plugin catalog</li>
-<li>feat(KernelLumi): add WebRequestActivity event for web request feedback</li>
-<li>feat(KernelLumi): web route collection, plugin control protocol, and prompt action support</li>
-<li>feat(LumiPlugin): add webRoutes contribution and clarify promptSuggestions contract</li>
-<li>feat(MessageListPlugin): prompt suggestions tap-to-send with plugin auto-enable</li>
-<li>feat(MindMapPlugin): native SwiftUI mind map editor with agent tools</li>
-<li>feat(PluginManagerPlugin): extract PluginController service for kernel.pluginControl</li>
-<li>feat(PrototypeDesignerPlugin): LLM-powered prototype designer with live preview</li>
-<li>feat(ThemeManagerPlugin): expose theme list and select HTTP routes</li>
-<li>feat(WebServerKit): add GET /api/plugins self-describing endpoint</li>
-<li>feat(WebServerKit): add local-only web server package</li>
-<li>feat(WebServerKit): add onActivity callback after route handling</li>
-<li>feat(WebServerPlugin): add loopback HTTP server plugin</li>
-<li>feat(WebServerPlugin): wire onActivity to EventManager for toast feedback</li>
-<li>feat(WhiteNoisePlugin): real-time white/pink/brown noise generator</li>
+<li>docs: add commit convention rules</li>
+<li>docs: add custom LLM providers planning document</li>
+<li>feat: add llmProvidersDidChange event and ensure valid selection on startup</li>
+<li>feat: Add Toast plugin and show toast when enabling plugins</li>
+<li>feat: support custom LLM providers with persistent configuration</li>
+<li>feat(ActivityBar): add context menu to open settings</li>
+<li>feat(AppStorePromoDesignerPlugin): add prompt suggestion with activateRailTab action</li>
+<li>feat(EditorSwiftPlugin): enable Swift editor by default</li>
+<li>feat(LumiUI): add shared toolbar title label component</li>
+<li>feat(OcrPlugin): add on-device OCR plugin with agent tool</li>
+<li>feat(ProjectOverviewPlugin): add project overview prompt suggestion</li>
+<li>feat(ScreenRecorderPlugin): add screen recorder plugin with agent tools</li>
+<li>feat(TextActions): add LLM translate action</li>
+<li>fix: observe conversation selection via ObservableObject to avoid stale state</li>
+<li>fix: resolve default model in context size view when no explicit selection</li>
+<li>fix(mind-map): only show toolbar title when Mind Map container is active</li>
+<li>fix(OnboardingPlugin): bundle Localizable.strings for all locales</li>
+<li>refactor: introduce providerInfo instance property on LumiLLMProvider</li>
+<li>refactor(AppIconDesignerPlugin): adopt AppToolbarTitleLabel in toolbar title</li>
+<li>refactor(AppIconDesignerPlugin): extract railTabID constant and remove unused prompt suggestions</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.13.1</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.14.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.13.1/Lumi_5.13.1_arm64.dmg" length="46842531" type="application/octet-stream" sparkle:edSignature="tBePrXbFY5FMHxuNk0ekQu/Y2908Kv5aAsAjRZSj2kuN34TLf74kc5TDmFciZy6Ar3Tn9IznaEPEjCdspfsZAg=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.14.0/Lumi_5.14.0_arm64.dmg" length="47276496" type="application/octet-stream" sparkle:edSignature="ftUibciXgWJGaFiJg66pso/AkA+Kkrf1/e0RFpLCxDkqZ9hHjXkIGaNytZ9bGDiCdchzYh7mTSfEysLaB2Y+BQ=="/>
         </item>
     </channel>
 </rss>
