@@ -31,11 +31,7 @@ let package = Package(
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings"),
-                .process("../Resources/PageLocalizations/en.lproj"),
-                .process("../Resources/PageLocalizations/zh-Hans.lproj"),
-                .process("../Resources/PageLocalizations/zh-Hant.lproj"),
-                .process("../Resources/PageLocalizations/zh-HK.lproj"),
-                .process("../Resources/PageLocalizations/zh-TW.lproj")
+                .process("../Resources/OnboardingPages.xcstrings")
             ]
         ),
         .testTarget(
