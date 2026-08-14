@@ -28,6 +28,15 @@ public final class PromoDesignerPlugin: LumiPlugin {
         try await PromoDesignerOnReadyHook().execute(kernel)
     }
 
+    /// 运行时启用插件时同样需要配置存储目录。
+    ///
+    /// `onBoot` 只在 App 启动时对已启用插件执行一次；若用户在本会话中通过设置页
+    /// 开关或提示词「启用并发送」启用本插件，`onBoot` 不会重跑，存储目录将保持 nil，
+    /// rail 会误报"插件存储不可用"。复用 OnBoot 逻辑可保证两种路径下存储配置一致。
+    public func onEnable(kernel: KernelLumi) async throws {
+        try await PromoDesignerOnBootHook().execute(kernel)
+    }
+
     public func agentTools(kernel: KernelLumi) -> [any LumiAgentTool] {
         [
             ListPromoTasksTool(),
