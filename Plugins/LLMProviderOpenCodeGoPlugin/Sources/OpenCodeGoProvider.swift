@@ -170,15 +170,101 @@ public final class OpenCodeGoProvider: LumiLLMProvider, @unchecked Sendable {
         return u
     }
 
-    private func message(_ r: LumiLLMRequest, _ text: String, _ calls: [LumiToolCall]? = nil) -> LumiChatMessage {
-        .init(
+    /// 非流式响应的 token 用量统计（对应响应中的 `usage` 字段）。
+    struct TokenUsage {
+        var inputTokens: Int?
+        var outputTokens: Int?
+        var cachedInputTokens: Int?
+        var cacheWriteInputTokens: Int?
+        var cacheTotalInputTokens: Int?
+    }
+
+    private func message(
+        _ r: LumiLLMRequest,
+        _ text: String,
+        _ calls: [LumiToolCall]? = nil,
+        usage: TokenUsage? = nil
+    ) -> LumiChatMessage {
+        // 参照 DeepSeek 插件：input/output 直接落到专用字段，缓存明细写入 metadata，
+        // 二者都会被 MessageStore 持久化到数据库（metadata 以 JSON 形式落库）。
+        var metadata: [String: String] = [:]
+        if let usage {
+            let usageMetadata = MessageTokenMetadata.metadata(
+                inputTokens: usage.inputTokens,
+                outputTokens: usage.outputTokens,
+                cachedInputTokens: usage.cachedInputTokens,
+                cacheWriteInputTokens: usage.cacheWriteInputTokens,
+                cacheTotalInputTokens: usage.cacheTotalInputTokens
+            )
+            // 已有 metadata 中的同名 key 优先保留（与 DeepSeek toLumiChatMessage 语义一致）
+            metadata.merge(usageMetadata) { existing, _ in existing }
+        }
+        return .init(
             conversationID: r.messages.first?.conversationID ?? UUID(),
             role: .assistant,
             content: text,
             providerID: Self.info.id,
             modelName: r.model,
-            toolCalls: calls
+            metadata: metadata,
+            toolCalls: calls,
+            inputTokenCount: usage?.inputTokens,
+            outputTokenCount: usage?.outputTokens
         )
+    }
+
+    /// 从非流式 JSON 响应体提取 `usage` 统计。
+    ///
+    /// 兼容 opencode.go 三种协议端点：
+    /// - OpenAI-compatible：`usage.prompt_tokens` / `completion_tokens` /
+    ///   `prompt_cache_hit_tokens` / `prompt_tokens_details.cached_tokens`
+    /// - Anthropic-compatible：`usage.input_tokens` / `output_tokens` /
+    ///   `cache_read_input_tokens` / `cache_creation_input_tokens`
+    /// - Responses API：`usage.input_tokens` / `output_tokens` /
+    ///   `input_tokens_details.cached_tokens`
+    ///
+    /// `cacheTotalInputTokens` 语义：Anthropic 风格 input_tokens 不含缓存命中部分，
+    /// 须累加 cache_read + cache_write；Responses 风格 input_tokens 已含缓存命中，
+    /// 直接用 input_tokens 即可（与 DeepSeek 插件的合并规则一致）。
+    func tokenUsage(from data: Data) -> TokenUsage {
+        guard let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let usage = json["usage"] as? [String: Any] else {
+            return TokenUsage()
+        }
+
+        // OpenAI-compatible
+        if let prompt = usage["prompt_tokens"] as? Int {
+            let hit = usage["prompt_cache_hit_tokens"] as? Int
+            let miss = usage["prompt_cache_miss_tokens"] as? Int
+            let detailsCached = (usage["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
+            let cached = hit ?? detailsCached
+            return TokenUsage(
+                inputTokens: prompt,
+                outputTokens: usage["completion_tokens"] as? Int,
+                cachedInputTokens: cached,
+                cacheWriteInputTokens: nil,
+                cacheTotalInputTokens: hit.flatMap { h in miss.map { h + $0 } } ?? prompt
+            )
+        }
+
+        // Anthropic-compatible / Responses API
+        if let input = usage["input_tokens"] as? Int {
+            let details = usage["input_tokens_details"] as? [String: Any]
+            let responsesCached = details?["cached_tokens"] as? Int
+            let cacheRead = usage["cache_read_input_tokens"] as? Int ?? responsesCached
+            let cacheWrite = usage["cache_creation_input_tokens"] as? Int
+            let total: Int? = responsesCached != nil
+                ? input
+                : input + (cacheRead ?? 0) + (cacheWrite ?? 0)
+            return TokenUsage(
+                inputTokens: input,
+                outputTokens: usage["output_tokens"] as? Int,
+                cachedInputTokens: cacheRead,
+                cacheWriteInputTokens: cacheWrite,
+                cacheTotalInputTokens: total
+            )
+        }
+
+        return TokenUsage()
     }
 
     private func chat(_ r: LumiLLMRequest, anthropic: Bool) async throws -> LumiChatMessage {
@@ -193,7 +279,12 @@ public final class OpenCodeGoProvider: LumiLLMProvider, @unchecked Sendable {
                 body: body
             )
             let p = try a.parseResponse(data: data)
-            return message(r, p.content, p.toolCalls?.map { .init(id: $0.id, name: $0.name, arguments: $0.arguments) })
+            return message(
+                r,
+                p.content,
+                p.toolCalls?.map { .init(id: $0.id, name: $0.name, arguments: $0.arguments) },
+                usage: tokenUsage(from: data)
+            )
         }
 
         let a = OpenAICompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
@@ -203,7 +294,12 @@ public final class OpenCodeGoProvider: LumiLLMProvider, @unchecked Sendable {
             body: body
         )
         let p = try a.parseResponse(data: data)
-        return message(r, p.content, p.toolCalls?.map { .init(id: $0.id, name: $0.name, arguments: $0.arguments) })
+        return message(
+            r,
+            p.content,
+            p.toolCalls?.map { .init(id: $0.id, name: $0.name, arguments: $0.arguments) },
+            usage: tokenUsage(from: data)
+        )
     }
 
     private func responses(_ r: LumiLLMRequest) async throws -> LumiChatMessage {
@@ -218,7 +314,8 @@ public final class OpenCodeGoProvider: LumiLLMProvider, @unchecked Sendable {
         req.setValue("Bearer \(try lumiResolveAPIKey())", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let object = try JSONSerialization.jsonObject(with: try await api.sendChatRequest(request: req, body: body)) as? [String: Any] ?? [:]
+        let data = try await api.sendChatRequest(request: req, body: body)
+        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
         let output = object["output"] as? [[String: Any]] ?? []
         let text = (object["output_text"] as? String) ?? output
             .flatMap { ($0["content"] as? [[String: Any]]) ?? [] }
@@ -231,6 +328,6 @@ public final class OpenCodeGoProvider: LumiLLMProvider, @unchecked Sendable {
                       let n = x["name"] as? String else { return nil }
                 return .init(id: id, name: n, arguments: x["arguments"] as? String ?? "{}")
             }
-        return message(r, text, calls.isEmpty ? nil : calls)
+        return message(r, text, calls.isEmpty ? nil : calls, usage: tokenUsage(from: data))
     }
 }
