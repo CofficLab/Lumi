@@ -12,6 +12,10 @@ public final class RClickPlugin: LumiPlugin {
     public nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.rclick"
+
+    /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
+    public nonisolated static let railTabID = "com.coffic.lumi.plugin.rclick.preview"
+
     public var name: String {
         LumiPluginLocalization.string("Right Click", bundle: .module)
     }
@@ -48,7 +52,7 @@ public final class RClickPlugin: LumiPlugin {
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
         [
             PanelRailTabItem(
-                id: "\(id).preview",
+                id: Self.railTabID,
                 title: LumiPluginLocalization.string("Preview", bundle: .module),
                 systemImage: "eye",
                 visibility: .viewContainer(id: id)
