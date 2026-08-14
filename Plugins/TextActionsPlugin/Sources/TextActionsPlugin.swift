@@ -23,12 +23,14 @@ public final class TextActionsPlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: KernelLumi) async throws {}
 
     public func onReady(kernel: KernelLumi) async throws {
+        TextActionMenuController.shared.configure(kernel: kernel)
         if TextActionsSettings.isEnabled {
             TextSelectionManager.shared.startMonitoring()
         }
     }
 
     public func onEnable(kernel: KernelLumi) async throws {
+        TextActionMenuController.shared.configure(kernel: kernel)
         if TextActionsSettings.isEnabled {
             TextSelectionManager.shared.startMonitoring()
         }
