@@ -89,7 +89,7 @@ public final class ResumeDesignerPlugin: LumiPlugin {
                 id: id,
                 title: name,
                 systemImage: "doc.badge.gearshape",
-                supportsProject: true,
+                supportsProject: false,
                 railVisibility: .alwaysVisible,
                 chatVisibility: .alwaysVisible,
                 panelHeaderVisibility: .unsupported,
