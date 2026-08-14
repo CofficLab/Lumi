@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.13.0</title>
-            <pubDate>Fri, 14 Aug 2026 01:15:52 +0000</pubDate>
-            <sparkle:version>607</sparkle:version>
-            <sparkle:shortVersionString>5.13.0</sparkle:shortVersionString>
+            <title>5.13.1</title>
+            <pubDate>Fri, 14 Aug 2026 04:39:55 +0000</pubDate>
+            <sparkle:version>608</sparkle:version>
+            <sparkle:shortVersionString>5.13.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.13.0</h2>
-<h3>Changes since v5.12.0</h3>
+            <description><![CDATA[<h2>Release v5.13.1</h2>
+<h3>Changes since v5.13.0</h3>
 <ul>
-<li>Add copyright © 2026 Coffic</li>
-<li>feat: add Onboarding page localization and bundled sample project</li>
-<li>feat: add shared landing page views for LLM provider, Open-in, and Theme families</li>
-<li>feat: improve ProjectsPlugin ControlView with dropdown arrow, hover effects and animations</li>
-<li>feat(AppLayout): Hide ActivityBar when only one view container exists</li>
-<li>feat(ChatView): optimize UI display when no conversation selected</li>
-<li>feat(conversation-list): hide redundant 'Current Project' scope when only one project exists</li>
-<li>feat(ConversationList): Hide Current Project tab when project has no conversations</li>
-<li>feat(ConversationListPlugin): dynamically control project-chats tab visibility</li>
-<li>feat(ConversationManager): Implement conversationProjectCount API</li>
-<li>feat(ConversationNewPlugin): 仅在有选中对话时显示新建会话按钮</li>
-<li>feat(FactoryCore): Add RailBottomView with settings entry</li>
-<li>feat(FactoryCore): bridge Settings window open via notification and replace polling with KernelBootstrapStatus</li>
-<li>feat(KernelHosting): Add KernelBootstrapStatus for cross-window boot phase observation</li>
-<li>feat(KernelLumi): Add openSettings notification and conversationProjectCount API</li>
-<li>feat(KernelLumi): add Prompt Suggestion protocol and aggregation manager</li>
-<li>feat(LumiUI): add Landing component suite</li>
-<li>feat(LumiUI): Redesign color theme to forest-green palette and add Landing components</li>
-<li>feat(message-list): add prompt suggestion chips to empty state</li>
-<li>feat(MessageList): Add project switching and adding to empty state view</li>
+<li>docs(WebServerPlugin): add README and .gitignore</li>
+<li>feat(AppIconDesigner): add activateViewContainer action to prompt suggestions</li>
+<li>feat(FactoryCore): add WebRequestToast overlay for web-driven actions</li>
+<li>feat(FactoryLumi): register PrototypeDesignerPlugin in plugin catalog</li>
+<li>feat(FactoryLumi): register WebServerPlugin in plugin catalog</li>
+<li>feat(FactoryLumi): register WhiteNoisePlugin in plugin catalog</li>
+<li>feat(KernelLumi): add WebRequestActivity event for web request feedback</li>
+<li>feat(KernelLumi): web route collection, plugin control protocol, and prompt action support</li>
+<li>feat(LumiPlugin): add webRoutes contribution and clarify promptSuggestions contract</li>
+<li>feat(MessageListPlugin): prompt suggestions tap-to-send with plugin auto-enable</li>
+<li>feat(MindMapPlugin): native SwiftUI mind map editor with agent tools</li>
+<li>feat(PluginManagerPlugin): extract PluginController service for kernel.pluginControl</li>
+<li>feat(PrototypeDesignerPlugin): LLM-powered prototype designer with live preview</li>
+<li>feat(ThemeManagerPlugin): expose theme list and select HTTP routes</li>
+<li>feat(WebServerKit): add GET /api/plugins self-describing endpoint</li>
+<li>feat(WebServerKit): add local-only web server package</li>
+<li>feat(WebServerKit): add onActivity callback after route handling</li>
+<li>feat(WebServerPlugin): add loopback HTTP server plugin</li>
+<li>feat(WebServerPlugin): wire onActivity to EventManager for toast feedback</li>
+<li>feat(WhiteNoisePlugin): real-time white/pink/brown noise generator</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.13.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.13.0/Lumi_5.13.0_x86_64.dmg" length="48544380" type="application/octet-stream" sparkle:edSignature="BZt8d8pTksIK7ghx1ReZFPbcKXV3hVgGfJZYL98Zx4277CKH+LQhOQLasaXJnadxI9XTE9yy3qjiqMXfWftICA=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.13.1</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.13.1/Lumi_5.13.1_x86_64.dmg" length="51160510" type="application/octet-stream" sparkle:edSignature="uxdJy7xvUC9hRjtty+Xj6n6XoQwpPBVXVjn/vICbCp4pFMfqkyQ6UtJUO62Fm5zkmd+Kv17jlDC/mRZ9gzUCAA=="/>
         </item>
     </channel>
 </rss>
