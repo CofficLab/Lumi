@@ -17,6 +17,7 @@ import SwiftUI
 /// - `.activeRailTabIDDidChange`：其他路径（如恢复、命令）修改选中 tab 时同步快照。
 struct RailTabBarView: View {
     let kernel: KernelLumi
+    let hasActiveProject: Bool
 
     @State private var allRailTabs: [PanelRailTabItem] = []
     @State private var viewContainerID: String
@@ -25,8 +26,9 @@ struct RailTabBarView: View {
 
     @LumiTheme private var theme
 
-    init(kernel: KernelLumi) {
+    init(kernel: KernelLumi, hasActiveProject: Bool) {
         self.kernel = kernel
+        self.hasActiveProject = hasActiveProject
         let workspace = kernel.workspace
         _allRailTabs = State(initialValue: workspace?.allPanelRailTabItems ?? [])
         let containerID = workspace?.activeViewContainerID ?? ""
@@ -53,6 +55,7 @@ struct RailTabBarView: View {
             allRailTabs,
             containerID: viewContainerID,
             supportsProject: containerSnapshot.supportsProject,
+            hasActiveProject: hasActiveProject,
             supportsChat: containerSnapshot.supportsChat
         )
     }

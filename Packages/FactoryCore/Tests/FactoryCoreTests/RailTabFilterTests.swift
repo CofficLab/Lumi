@@ -15,6 +15,7 @@ final class RailTabFilterTests: XCTestCase {
         id: String,
         visibility: PanelRailTabVisibility = .always,
         requiresProjectSupport: Bool = false,
+        requiresActiveProject: Bool = false,
         requiresChatSupport: Bool = false
     ) -> PanelRailTabItem {
         PanelRailTabItem(
@@ -23,6 +24,7 @@ final class RailTabFilterTests: XCTestCase {
             systemImage: "circle",
             visibility: visibility,
             requiresProjectSupport: requiresProjectSupport,
+            requiresActiveProject: requiresActiveProject,
             requiresChatSupport: requiresChatSupport
         ) { Text(id) }
     }
@@ -40,6 +42,7 @@ final class RailTabFilterTests: XCTestCase {
             tabs,
             containerID: "default",
             supportsProject: false,
+            hasActiveProject: false,
             supportsChat: true
         )
         XCTAssertEqual(result.map(\.id), ["chats", "search"])
@@ -60,6 +63,7 @@ final class RailTabFilterTests: XCTestCase {
             tabs,
             containerID: "resume",
             supportsProject: false,
+            hasActiveProject: false,
             supportsChat: true
         )
         XCTAssertEqual(result.map(\.id), ["resume.sidebar"])
@@ -77,6 +81,7 @@ final class RailTabFilterTests: XCTestCase {
             [search, booklet],
             containerID: "booklet",
             supportsProject: false,
+            hasActiveProject: false,
             supportsChat: false
         )
         XCTAssertEqual(result.map(\.id), ["booklet.sidebar"])
@@ -101,6 +106,7 @@ final class RailTabFilterTests: XCTestCase {
             [chats, history, tools],
             containerID: "git",
             supportsProject: true,
+            hasActiveProject: true,
             supportsChat: true
         )
         XCTAssertEqual(result.map(\.id), ["git.history", "git.tools"])
@@ -120,8 +126,50 @@ final class RailTabFilterTests: XCTestCase {
             [chats, gitTools],
             containerID: "git",
             supportsProject: false,
+            hasActiveProject: false,
             supportsChat: true
         )
         XCTAssertTrue(result.isEmpty)
+    }
+
+    /// 需要当前项目的 tab 在未选择项目时隐藏，其他 tab 仍保留。
+    @MainActor
+    func testActiveProjectRequirementHidesOnlyDependentTab() {
+        let explorer = makeTab(
+            id: "explorer",
+            requiresProjectSupport: true,
+            requiresActiveProject: true
+        )
+        let chats = makeTab(id: "chats", requiresChatSupport: true)
+
+        let result = filteredRailTabs(
+            [explorer, chats],
+            containerID: "default",
+            supportsProject: true,
+            hasActiveProject: false,
+            supportsChat: true
+        )
+
+        XCTAssertEqual(result.map(\.id), ["chats"])
+    }
+
+    /// 选择项目后，需要当前项目的 tab 恢复可见。
+    @MainActor
+    func testActiveProjectRequirementShowsTabWhenProjectSelected() {
+        let explorer = makeTab(
+            id: "explorer",
+            requiresProjectSupport: true,
+            requiresActiveProject: true
+        )
+
+        let result = filteredRailTabs(
+            [explorer],
+            containerID: "default",
+            supportsProject: true,
+            hasActiveProject: true,
+            supportsChat: true
+        )
+
+        XCTAssertEqual(result.map(\.id), ["explorer"])
     }
 }

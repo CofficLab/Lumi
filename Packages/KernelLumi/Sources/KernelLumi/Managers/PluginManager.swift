@@ -179,6 +179,7 @@ public final class PluginManager: ObservableObject {
                     systemImage: item.systemImage,
                     visibility: item.visibility,
                     requiresProjectSupport: item.requiresProjectSupport,
+                    requiresActiveProject: item.requiresActiveProject,
                     requiresChatSupport: item.requiresChatSupport,
                     content: item.makeView
                 )

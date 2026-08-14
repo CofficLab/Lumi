@@ -12,6 +12,7 @@ enum LayoutDividerSyncConfiguration {
 struct AppLayoutView: View {
     @LumiTheme private var theme
     @ObservedObject var kernel: KernelLumi
+    @StateObject private var railProjectObserver: RailProjectObserver
     private let layoutManager: (any WorkspaceProviding)?
     private let showsStatusBar: Bool
     private let showsActivityBar: Bool
@@ -27,6 +28,9 @@ struct AppLayoutView: View {
         showsActivityBar: Bool = true
     ) {
         self.kernel = kernel
+        _railProjectObserver = StateObject(
+            wrappedValue: RailProjectObserver(project: kernel.project)
+        )
         self.layoutManager = kernel.workspace
         self.showsStatusBar = showsStatusBar
         self.showsActivityBar = showsActivityBar
@@ -107,7 +111,19 @@ struct AppLayoutView: View {
     // MARK: - Split Layout
 
     private func showRail(for layoutManager: any WorkspaceProviding) -> Bool {
-        isRailVisible && layoutManager.activeViewContainerID != nil
+        guard isRailVisible,
+              let containerID = layoutManager.activeViewContainerID,
+              let container = layoutManager.viewContainer(id: containerID) else {
+            return false
+        }
+
+        return !filteredRailTabs(
+            layoutManager.allPanelRailTabItems,
+            containerID: containerID,
+            supportsProject: container.supportsProject,
+            hasActiveProject: railProjectObserver.hasActiveProject,
+            supportsChat: container.chatVisibility.isSupported
+        ).isEmpty
     }
 
     private func showChat(for layoutManager: any WorkspaceProviding) -> Bool {
@@ -120,7 +136,10 @@ struct AppLayoutView: View {
         let railWidth = layoutManager.railDivider(for: containerID, fallback: 240)
         if showRail(for: layoutManager) {
             HSplitView {
-                RailView(kernel: kernel)
+                RailView(
+                    kernel: kernel,
+                    hasActiveProject: railProjectObserver.hasActiveProject
+                )
                     .frame(minWidth: 180, idealWidth: railWidth, maxWidth: 400)
                     // 必须挂在 HSplitView 左侧 pane，组件会直接识别原生可拖拽 divider。
                     .appSplitDivider(.trailing, initialPosition: railWidth) { position in
