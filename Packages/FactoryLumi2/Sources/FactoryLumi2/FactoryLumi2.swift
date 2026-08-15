@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderProject
+import ProviderToast
 
 /// FactoryLumi2 — 工厂命名空间。
 ///
