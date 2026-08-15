@@ -21,7 +21,7 @@ struct ProviderScopeTests {
             id: id,
             displayName: id,
             defaultModel: "model",
-            availableModels: [],
+            availableModels: [LumiModelInfo](),
             isLocal: isLocal,
             websiteURL: URL(string: "https://example.com")!
         )
