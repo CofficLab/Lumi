@@ -7,6 +7,7 @@ import ProviderRailView
 import ProviderRootView
 import ProviderToast
 import ProviderToolbar
+import SwiftUI
 
 /// KernelFactory — 内核工厂。
 ///
@@ -38,5 +39,34 @@ public enum KernelFactory {
         try kernel.registerProvider((any ActivityBarProviding).self, factory.makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, factory.makeRailViewProvider())
         return kernel
+    }
+
+    // MARK: - Main View Assembly
+
+    /// 创建内核并组装完整主视图（工具栏 + ActivityBar + Rail + 内容区）。
+    ///
+    /// 视图组装逻辑集中在此：宿主只需要一个视图，无需关心内核如何把
+    /// 各 Provider 的能力组合起来。
+    ///
+    /// - Returns: 已装配的根视图（`AnyView`）。
+    /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
+    public static func makeMainView() throws -> AnyView {
+        let kernel = try makeKernel()
+
+        guard let rootView = kernel.resolveProvider((any RootViewProviding).self) else {
+            return AnyView(Text("RootViewProviding not registered"))
+        }
+
+        if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
+            rootView.setToolbarView(toolbar.makeToolbarView())
+        }
+        if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
+            rootView.setActivityBarView(activityBar.makeActivityBarView())
+        }
+        if let rail = kernel.resolveProvider((any RailViewProviding).self) {
+            rootView.setRailView(rail.makeRailView())
+        }
+
+        return rootView.makeRootView()
     }
 }
