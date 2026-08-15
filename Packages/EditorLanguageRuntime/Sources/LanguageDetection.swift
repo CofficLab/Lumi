@@ -26,10 +26,11 @@ public enum LanguageDetection {
     }
 
     private static func detectUsingURL(descriptors: [EditorLanguageDescriptor], url: URL) -> EditorLanguageDescriptor? {
-        let fileName = url.lastPathComponent
+        let fileName = url.lastPathComponent.lowercased()
         let ext = url.pathExtension.lowercased()
         for descriptor in descriptors {
-            if descriptor.fileExtensions.contains(fileName) || descriptor.fileExtensions.contains(ext) {
+            let extensions = descriptor.fileExtensions.map { $0.lowercased() }
+            if extensions.contains(fileName) || extensions.contains(ext) {
                 return descriptor
             }
         }
@@ -44,10 +45,10 @@ public enum LanguageDetection {
         let line = contents.split(separator: "\n", maxSplits: 1).first.map(String.init) ?? contents
         for descriptor in descriptors {
             for alias in descriptor.shebangAliases {
-                if line.contains(alias) { return descriptor }
+                if line.contains(alias.lowercased()) { return descriptor }
             }
-            if line.contains(descriptor.highlightLanguageId) { return descriptor }
-            for ext in descriptor.fileExtensions where line.contains(ext) {
+            if line.contains(descriptor.highlightLanguageId.lowercased()) { return descriptor }
+            for ext in descriptor.fileExtensions where line.contains(ext.lowercased()) {
                 return descriptor
             }
         }
@@ -83,9 +84,10 @@ public enum LanguageDetection {
     }
 
     private static func extractModelineValue(from buffer: String, key: String) -> String? {
+        // \b prevents matching the key inside words (e.g. `soft=` must not parse as `ft=`).
         let patterns = [
-            "vim:.*\(key)[=:]\\s*([a-zA-Z0-9_+-]+)",
-            "-\\*-\\s*\(key)[=:]\\s*([a-zA-Z0-9_+-]+)",
+            "vim:.*\\b\(key)[=:]\\s*([a-zA-Z0-9_+-]+)",
+            "-\\*-\\s*\\b\(key)[=:]\\s*([a-zA-Z0-9_+-]+)",
         ]
         for pattern in patterns {
             guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }

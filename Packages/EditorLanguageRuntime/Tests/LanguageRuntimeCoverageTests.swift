@@ -125,4 +125,70 @@ final class LanguageRuntimeCoverageTests: XCTestCase {
         XCTAssertNotNil(provider.foldsQueryURL())
         XCTAssertNil(provider.cachedQuery())
     }
+
+    private final class FakeGrammarProvider: LanguageGrammarProviding {
+        let grammarId: String
+        init(grammarId: String) { self.grammarId = grammarId }
+        func treeSitterLanguage() -> OpaquePointer? { nil }
+        func highlightQueryURLs() -> [URL] { [] }
+        func injectionQueryURL() -> URL? { nil }
+    }
+
+    func testGrammarProviderRegistrationAndUnregister() {
+        let registry = LanguageRegistry.shared
+        registry.reset()
+        let provider = FakeGrammarProvider(grammarId: "swift")
+        registry.registerGrammarProvider(provider)
+        XCTAssertTrue(registry.grammar(for: "swift") === provider)
+        XCTAssertNil(registry.grammar(for: "missing"))
+
+        registry.unregisterGrammarProvider(grammarId: "swift")
+        XCTAssertNil(registry.grammar(for: "swift"))
+        // 未注册时为 no-op
+        registry.unregisterGrammarProvider(grammarId: "none")
+        registry.reset()
+    }
+
+    func testUnregisterLanguageRemovesMappings() {
+        let registry = LanguageRegistry.shared
+        registry.reset()
+        registry.register(makeDescriptor())
+        registry.registerGrammarProvider(FakeGrammarProvider(grammarId: "swift"))
+
+        registry.unregister(languageId: "swift")
+        XCTAssertTrue(registry.availableLanguageIDs.isEmpty)
+        XCTAssertNil(registry.descriptor(for: "swift"))
+        XCTAssertNil(registry.grammar(for: "swift"))
+        XCTAssertNil(registry.context(for: "swift"))
+        XCTAssertNil(registry.context(forHighlightGrammarId: "swift"))
+        XCTAssertNil(registry.lspLanguageId(forExtension: "swift"))
+        // 未注册时为 no-op
+        registry.unregister(languageId: "missing")
+        registry.reset()
+    }
+
+    func testUnregisterDoesNotStealSharedExtension() {
+        let registry = LanguageRegistry.shared
+        registry.reset()
+        let first = makeDescriptor(languageId: "a")
+        let second = makeDescriptor(languageId: "b")
+        registry.register(first)
+        // 后注册者占用相同扩展名
+        registry.register(second)
+        XCTAssertEqual(registry.lspLanguageId(forExtension: "b"), "b")
+        // 撤回后注册者不应当清掉该扩展名当前归属
+        registry.unregister(languageId: "a")
+        XCTAssertEqual(registry.lspLanguageId(forExtension: "b"), "b")
+        registry.unregister(languageId: "b")
+        XCTAssertNil(registry.lspLanguageId(forExtension: "b"))
+        registry.reset()
+    }
+
+    func testQueryRegistryInvalidation() {
+        let registry = LanguageQueryRegistry.shared
+        registry.reset()
+        registry.invalidate(grammarId: "none")
+        XCTAssertNil(registry.query(for: "none", highlightURLs: [], language: nil))
+        registry.reset()
+    }
 }
