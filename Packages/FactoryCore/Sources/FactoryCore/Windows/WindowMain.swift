@@ -63,6 +63,15 @@ public struct WindowMain: View, SuperLog {
         .onReceive(NotificationCenter.default.publisher(for: .lumiOpenSettings)) { _ in
             openWindow(id: AppBootstrap.settingsWindowID)
         }
+        // 请求打开设置窗口并定位到指定标签（如空态提示词的动作胶囊）：
+        // 先把目标标签写入共享路由（设置窗口可能尚未创建，无法即时收通知），
+        // 再开窗，由 `SettingsView` 出现时消费。
+        .onReceive(NotificationCenter.default.publisher(for: .lumiOpenSettingsTab)) { notification in
+            if let tabID = notification.userInfo?[LumiNotificationUserInfoKey.settingsTabID] as? String {
+                SettingsTabRouting.shared.requestedTabID = tabID
+            }
+            openWindow(id: AppBootstrap.settingsWindowID)
+        }
         .background {
             WindowAccessor { window in
                 // WindowAccessor can resolve its NSWindow while SwiftUI is

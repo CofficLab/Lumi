@@ -48,10 +48,26 @@ struct SettingsView: View {
         }
         .ignoresSafeArea()
         .onAppear {
-            // 首次进入若无选中,选第一个标签(按 order 最前者)。
+            // 首次进入若无选中,选第一个标签(按 order 最前者);若已有
+            // 外部路由请求的标签(如空态动作胶囊),优先定位到该标签。
+            consumeRoutedTab()
             if selectedTab == nil {
                 selectedTab = descriptors.first?.id
             }
+        }
+        // 外部路由请求到达时(设置窗口已打开的场景),即时切换标签。
+        .onReceive(SettingsTabRouting.shared.$requestedTabID) { _ in
+            consumeRoutedTab()
+        }
+    }
+
+    /// 消费共享路由中的目标标签:存在且有效时切换选中并清除请求。
+    private func consumeRoutedTab() {
+        guard let requested = SettingsTabRouting.shared.requestedTabID else { return }
+        SettingsTabRouting.shared.requestedTabID = nil
+        // 仅接受当前确实存在的标签,避免路由到已被插件取消贡献的 tab。
+        if descriptors.contains(where: { $0.id == requested }) {
+            selectedTab = requested
         }
     }
 
