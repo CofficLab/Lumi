@@ -11,12 +11,15 @@ struct ErrorMessageView: View {
 
     private var isBrief: Bool { verbosity == .brief }
 
-    private var transportDetails: ResolvedErrorTransportDetails {
+    /// 单次计算复用:resolver 会对 rawErrorDetail/content 做全串 trimming 与
+    /// 分隔符扫描(HTTP body 可达 MB 级),历史实现每次 body 求值跑 2 次
+    /// (transportDetails + summaryText),滚动重物化时被高频触发。
+    private var resolvedDetails: ResolvedErrorTransportDetails {
         ErrorTransportDetailsResolver.resolve(for: message)
     }
 
-    private var summaryText: String {
-        let summary = transportDetails.displaySummary
+    private func summaryText(for details: ResolvedErrorTransportDetails) -> String {
+        let summary = details.displaySummary
         if !summary.isEmpty {
             return summary
         }
@@ -32,14 +35,17 @@ struct ErrorMessageView: View {
     }
 
     var body: some View {
+        // 局部 let:transportDetails/summary 在本次求值内只算一次
+        let details = resolvedDetails
+        let summary = summaryText(for: details)
         MessageViewChrome(
             message: message,
-            errorTransportDetails: transportDetails,
+            errorTransportDetails: details,
             verbosity: verbosity
         ) {
             Group {
                 if isBrief {
-                    Text(summaryText)
+                    Text(summary)
                         .font(.appCaption)
                         .foregroundColor(theme.error)
                         .textSelection(.enabled)
@@ -50,7 +56,7 @@ struct ErrorMessageView: View {
                                 Text("HTTP Status Code: \(httpStatusCode)")
                             }
 
-                            Text(summaryText)
+                            Text(summary)
 
                             if let httpBodyText {
                                 Text("HTTP Body:\n\(httpBodyText)")

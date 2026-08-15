@@ -30,10 +30,6 @@ struct MessageViewChrome<Content: View>: View {
         return nil
     }
 
-    private var hasThinkingContent: Bool {
-        thinkingContent != nil
-    }
-
     private var tokenDisplayText: String? {
         guard let input = message.inputTokenCount,
               let output = message.outputTokenCount else {
@@ -57,18 +53,23 @@ struct MessageViewChrome<Content: View>: View {
     }
 
     var body: some View {
-        Group {
+        // 局部 let:thinkingContent/tokenDisplayText 历史上每次求值计算 2 次
+        // (hasThinkingContent + 显式读取),滚动重物化时被高频触发。
+        let thinking = thinkingContent
+        let tokenText = tokenDisplayText
+        return Group {
             if isBrief {
-                messageBody.contextMenu { briefContextMenu }
+                messageBody(thinking: thinking, tokenText: tokenText)
+                    .contextMenu { briefContextMenu }
             } else {
-                messageBody
+                messageBody(thinking: thinking, tokenText: tokenText)
             }
         }
         .appThemedAppearance()
     }
 
     @ViewBuilder
-    private var messageBody: some View {
+    private func messageBody(thinking: String?, tokenText: String?) -> some View {
         VStack(alignment: .leading, spacing: isBrief ? 0 : 4) {
             if showsHeader && !isBrief {
                 CompactMessageHeaderView {
@@ -82,7 +83,7 @@ struct MessageViewChrome<Content: View>: View {
                 } trailing: {
                     HStack(alignment: .center, spacing: 12) {
                         CopyMessageButton(
-                            content: MessageViewHelpers.copyContent(for: message),
+                            contentProvider: { MessageViewHelpers.copyContent(for: message) },
                             showFeedback: $didCopy
                         )
 
@@ -90,7 +91,7 @@ struct MessageViewChrome<Content: View>: View {
                             ResendMessageButton(kernel: kernel, message: message)
                         }
 
-                        if hasThinkingContent, verbosity != .detailed {
+                        if thinking != nil, verbosity != .detailed {
                             AppIconButton(
                                 systemImage: "brain",
                                 tint: showThinkingPopover ? theme.textPrimary : theme.textSecondary,
@@ -101,7 +102,7 @@ struct MessageViewChrome<Content: View>: View {
                             }
                             .help(LumiPluginLocalization.string("思考过程", bundle: .module))
                             .popover(isPresented: $showThinkingPopover, arrowEdge: .bottom) {
-                                ThinkingPopoverContent(text: thinkingContent!)
+                                ThinkingPopoverContent(text: thinking!)
                             }
                         }
 
@@ -110,7 +111,7 @@ struct MessageViewChrome<Content: View>: View {
                             titleColor: theme.textSecondary
                         )
 
-                        if let tokenInfo = tokenDisplayText {
+                        if let tokenInfo = tokenText {
                             AppIdentityRow(
                                 title: tokenInfo,
                                 titleColor: theme.textSecondary
