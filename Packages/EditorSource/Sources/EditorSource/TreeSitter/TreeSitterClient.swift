@@ -148,6 +148,10 @@ public final class TreeSitterClient: HighlightProviding {
         self.readBlock = readBlock
         self.readCallback = readCallback
         self.attachedDocumentKey = documentKey
+        // 切换文档时清掉旧文档遗留的待重放编辑与旧终点，
+        // 否则这些针对旧文档偏移的编辑会被重放进新文档的语法树。
+        pendingEdits.mutate { $0.removeAll() }
+        oldEndPoint = nil
 
         if let documentStore,
            let cachedState = documentStore.takeState(for: documentKey) {
@@ -228,7 +232,10 @@ public final class TreeSitterClient: HighlightProviding {
             executor.cancelAll(below: .reset) // Cancel all edits, add it to the pending edit queue
             executor.execAsync(
                 priority: .edit,
-                operation: { completion(.success(operation())) },
+                operation: {
+                    let result = operation()
+                    DispatchQueue.dispatchMainIfNot { completion(.success(result)) }
+                },
                 onCancel: { [weak self] in
                     self?.pendingEdits.mutate { edits in
                         edits.append(edit)

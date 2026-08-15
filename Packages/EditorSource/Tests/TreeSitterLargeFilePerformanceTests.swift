@@ -5,6 +5,7 @@ import EditorLanguageRuntime
 
 /// Tree-sitter 大文件性能测试 - 模拟大文件的高亮解析性能
 /// 测量 tree-sitter 初始化和高亮查询的耗时
+@MainActor
 class TreeSitterLargeFilePerformanceTests: XCTestCase {
     
     // MARK: - Test Data Generation
@@ -59,6 +60,17 @@ class TreeSitterLargeFilePerformanceTests: XCTestCase {
     // MARK: - Phase 1: Tree-sitter 初始化测试
     
     /// 测试 Tree-sitter 状态初始化性能
+    /// XCTest 每个测试方法只允许记录一次 metrics；循环中仅首轮 measure，其余直接执行
+    private var didRecordMetrics = false
+    private func measureFirstIteration(_ block: () -> Void) {
+        if !didRecordMetrics {
+            didRecordMetrics = true
+            measure(block)
+        } else {
+            block()
+        }
+    }
+
     /// 测量创建 TreeSitterState 并解析整个文档的耗时
     func testTreeSitterStateInitialization() throws {
         let scales: [TestScale] = [.small, .medium, .large]
@@ -72,7 +84,7 @@ class TreeSitterLargeFilePerformanceTests: XCTestCase {
                 isSelectable: true
             )
             
-            measure {
+            measureFirstIteration {
                 let client = TreeSitterClient()
                 // 强制同步操作以便准确测量
                 client.forceSyncOperation = true
@@ -113,7 +125,7 @@ class TreeSitterLargeFilePerformanceTests: XCTestCase {
         ]
         
         for (index, range) in ranges.enumerated() {
-            measure {
+            measureFirstIteration {
                 let expectation = XCTestExpectation(description: "Highlight query")
                 
                 client.queryHighlightsFor(textView: textView, range: range) { result in
@@ -163,7 +175,7 @@ class TreeSitterLargeFilePerformanceTests: XCTestCase {
         ]
         
         for (index, range) in editLocations.enumerated() {
-            measure {
+            measureFirstIteration {
                 let expectation = XCTestExpectation(description: "Apply edit")
                 
                 client.applyEdit(
@@ -211,7 +223,7 @@ class TreeSitterLargeFilePerformanceTests: XCTestCase {
             }
             wait(for: [setupExpectation], timeout: 2.0)
             
-            measure {
+            measureFirstIteration {
                 let expectation = XCTestExpectation(description: "Full highlight")
                 
                 // 查询整个文件的高亮
@@ -251,7 +263,7 @@ class TreeSitterLargeFilePerformanceTests: XCTestCase {
                 isSelectable: true
             )
             
-            measure {
+            measureFirstIteration {
                 let client = TreeSitterClient()
                 client.setUp(textView: textView, codeLanguage: language)
                 

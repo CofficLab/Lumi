@@ -27,12 +27,12 @@ extension TextViewController {
                 } else if let linePosition = textView.layoutManager.textLineForIndex(position.start.line - 1) {
                     // If this is a valid line, set the new position
                     let startCharacter = linePosition.range.lowerBound + min(
-                        linePosition.range.upperBound,
+                        linePosition.range.upperBound - linePosition.range.lowerBound,
                         position.start.column - 1
                     )
                     if let end = position.end, let endLine = textView.layoutManager.textLineForIndex(end.line - 1) {
                         let endCharacter = endLine.range.lowerBound + min(
-                            endLine.range.upperBound,
+                            endLine.range.upperBound - endLine.range.lowerBound,
                             end.column - 1
                         )
                         newSelectedRanges.append(NSRange(start: startCharacter, end: endCharacter))
@@ -96,13 +96,23 @@ extension TextViewController {
                     let linePosition = textView.layoutManager.textLineForIndex(position.start.line - 1) else {
                 return nil
             }
-            if position.end != nil {
+            // 列号从 1 开始；clamp 到该行长度内（旧实现把绝对偏移当 length，会产生越界范围）
+            let startColumn = min(
+                position.start.column - 1,
+                linePosition.range.max - linePosition.range.location
+            )
+            if let end = position.end,
+               let endLine = textView.layoutManager.textLineForIndex(end.line - 1) {
+                let endColumn = min(
+                    end.column - 1,
+                    endLine.range.max - endLine.range.location
+                )
                 range = NSRange(
-                    location: linePosition.range.location + position.start.column,
-                    length: linePosition.range.max
+                    start: linePosition.range.location + startColumn,
+                    end: endLine.range.location + endColumn
                 )
             } else {
-                range = NSRange(location: linePosition.range.location + position.start.column, length: 0)
+                range = NSRange(location: linePosition.range.location + startColumn, length: 0)
             }
         }
 
