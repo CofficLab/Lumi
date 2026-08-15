@@ -72,7 +72,7 @@ public final class ToolCallRowRendererRegistry: ObservableObject {
 
     private var renderers: [any ToolCallRowRenderer] = []
 
-    private init() {}
+    public init() {}
 
     /// 注册一个渲染器
     public func register(_ renderer: some ToolCallRowRenderer) {
