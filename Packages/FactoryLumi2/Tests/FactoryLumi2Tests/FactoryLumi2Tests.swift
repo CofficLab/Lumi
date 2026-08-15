@@ -6,6 +6,7 @@ import ProviderProject
 import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
+import ProviderStorage
 import ProviderToast
 import ProviderToolbar
 import SwiftUI
@@ -15,6 +16,15 @@ import Testing
 @MainActor
 @Suite("FactoryLumi2")
 struct FactoryLumi2Tests {
+
+    @Test("makeKernel 创建内核并注册默认 StorageProviding")
+    func makeKernelRegistersDefaultStorageProviding() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let resolved: (any StorageProviding)? = kernel.resolveProvider((any StorageProviding).self)
+        #expect(resolved != nil)
+        #expect(resolved is DefaultStorageProviding)
+    }
 
     @Test("makeKernel 创建内核并注册默认 ProjectProviding")
     func makeKernelRegistersDefaultProjectProviding() throws {
@@ -103,6 +113,7 @@ struct FactoryLumi2Tests {
     func providerFactoryMakesDefaults() {
         let factory = DefaultProviderFactory()
 
+        let storage = factory.makeStorageProvider()
         let project = factory.makeProjectProvider()
         let toast = factory.makeToastProvider()
         let network = factory.makeNetworkProvider()
@@ -112,6 +123,7 @@ struct FactoryLumi2Tests {
         let railView = factory.makeRailViewProvider()
         let settingView = factory.makeSettingViewProvider()
 
+        #expect(storage is DefaultStorageProviding)
         #expect(project is DefaultProjectProviding)
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
