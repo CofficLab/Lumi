@@ -1,8 +1,7 @@
 import AgentTurnRunnerPlugin
 import BookletMakerPlugin
 import CommandPlugin
-import EditorKernelPlugin
-import EditorProviderPlugin
+import EditorHostPlugin
 import LLMProviderManagerPlugin
 import KernelLumi
 import LogoPlugin
@@ -35,10 +34,8 @@ public enum BookletMakerPluginCatalog {
         var list: [any LumiPlugin] = [
             // 核心服务：必须先于依赖它们的插件注册。
             LLMProviderManagerPlugin(),
-            // EditorKernelPlugin 必须先于 EditorProviderPlugin:
-            // 前者在 OnBoot 注册具象 EditorService,后者在 OnReady resolve 并转发文件操作。
-            EditorKernelPlugin(),
-            EditorProviderPlugin(),
+            // Editor Host — 唯一持有 EditorService 的插件（合并原 Kernel/Provider 两插件）。
+            EditorHostPlugin(),
             ToolManagerPlugin(),
             ProjectsPlugin(),
             WorkspacePlugin(),

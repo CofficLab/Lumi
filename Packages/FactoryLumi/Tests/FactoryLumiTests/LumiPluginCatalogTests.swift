@@ -9,21 +9,22 @@ final class LumiPluginCatalogTests: XCTestCase {
         XCTAssertEqual(Set(ids).count, ids.count, "插件目录存在重复 ID")
     }
 
-    /// 关键 bootstrap 顺序：LLM Provider 管理器、编辑器内核、编辑器提供者
-    /// 必须先于依赖它们的插件注册。
+    /// 关键 bootstrap 顺序：LLM Provider 管理器、编辑器宿主
+    /// 必须先于依赖它们的插件（EditorPanelPlugin 等）注册。
     @MainActor
     func testCriticalBootstrapOrder() {
         let ids = LumiPluginCatalog.plugins.map(\.id)
         let managerIdx = ids.firstIndex(of: "com.coffic.lumi.plugin.llm-provider-manager")
-        let editorKernelIdx = ids.firstIndex(of: "com.coffic.lumi.plugin.editor-kernel")
-        let editorProviderIdx = ids.firstIndex(of: "com.coffic.lumi.plugin.editor-provider")
+        let editorHostIdx = ids.firstIndex(of: "com.coffic.lumi.plugin.editor-host")
+        let editorPanelIdx = ids.firstIndex(of: "LumiEditor")
 
         XCTAssertNotNil(managerIdx)
-        XCTAssertNotNil(editorKernelIdx)
-        XCTAssertNotNil(editorProviderIdx)
+        XCTAssertNotNil(editorHostIdx)
+        XCTAssertNotNil(editorPanelIdx)
 
-        // EditorKernel 必须先于 EditorProvider。
-        XCTAssertLessThan(editorKernelIdx!, editorProviderIdx!)
+        // EditorHost（OnBoot 注册 EditorService）必须先于 EditorPanel。
+        XCTAssertLessThan(managerIdx!, editorHostIdx!)
+        XCTAssertLessThan(editorHostIdx!, editorPanelIdx!)
     }
 
     /// 代表性核心插件与功能插件 ID 必须存在。

@@ -13,8 +13,7 @@ final class BookletMakerPluginCatalogTests: XCTestCase {
             "com.coffic.lumi.plugin.message-sender",
             "com.coffic.lumi.plugin.llm-provider-manager",
             "com.coffic.lumi.plugin.agent-turn-runner",
-            "com.coffic.lumi.plugin.editor-kernel",
-            "com.coffic.lumi.plugin.editor-provider",
+            "com.coffic.lumi.plugin.editor-host",
             "com.coffic.lumi.plugin.tool-manager",
             "com.coffic.lumi.plugin.settings",
             "com.coffic.lumi.plugin.logo",
@@ -42,15 +41,15 @@ final class BookletMakerPluginCatalogTests: XCTestCase {
         XCTAssertEqual(Set(ids).count, ids.count, "插件目录存在重复 ID")
     }
 
-    /// 关键 bootstrap 顺序：EditorKernel 先于 EditorProvider。
+    /// 关键 bootstrap 顺序：EditorHost（合并原 Kernel/Provider 两插件）存在且先于 ToolManager。
     @MainActor
-    func testEditorKernelPrecedesEditorProvider() {
+    func testEditorHostPrecedesToolManager() {
         let ids = BookletMakerPluginCatalog.plugins.map(\.id)
-        let kernelIdx = ids.firstIndex(of: "com.coffic.lumi.plugin.editor-kernel")
-        let providerIdx = ids.firstIndex(of: "com.coffic.lumi.plugin.editor-provider")
-        XCTAssertNotNil(kernelIdx)
-        XCTAssertNotNil(providerIdx)
-        XCTAssertLessThan(kernelIdx!, providerIdx!)
+        let hostIdx = ids.firstIndex(of: "com.coffic.lumi.plugin.editor-host")
+        let toolManagerIdx = ids.firstIndex(of: "com.coffic.lumi.plugin.tool-manager")
+        XCTAssertNotNil(hostIdx)
+        XCTAssertNotNil(toolManagerIdx)
+        XCTAssertLessThan(hostIdx!, toolManagerIdx!)
     }
 
     /// 固定配置：启用 BookletMaker 插件、隐藏状态栏与活动栏。
