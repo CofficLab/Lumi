@@ -14,10 +14,21 @@ struct MessageViewChrome<Content: View>: View {
     let verbosity: LumiResponseVerbosity
     @State private var didCopy = false
     @State private var showThinkingPopover = false
+    /// 行级悬停态:操作按钮组仅在悬停该行时物化(滚动重物化时每行
+    /// 少构建 ~5 个按钮子树),popover 打开或复制反馈期间保持可见。
+    @State private var isRowHovered = false
+    /// 悬停进入防抖:滚动时光标下的行快速进出,立即物化按钮会造成
+    /// hover 风暴;停留 150ms 才显示(标准菜单式交互),离开立即隐藏。
+    @State private var hoverDebounceTask: Task<Void, Never>?
     @ViewBuilder let content: () -> Content
 
     private var isBrief: Bool {
         verbosity == .brief
+    }
+
+    /// 操作按钮的可见性:悬停、思考 popover 打开、复制反馈显示中任一为真。
+    private var showsActions: Bool {
+        isRowHovered || showThinkingPopover || didCopy
     }
 
     private var thinkingContent: String? {
@@ -82,16 +93,20 @@ struct MessageViewChrome<Content: View>: View {
                     }
                 } trailing: {
                     HStack(alignment: .center, spacing: 12) {
-                        CopyMessageButton(
-                            contentProvider: { MessageViewHelpers.copyContent(for: message) },
-                            showFeedback: $didCopy
-                        )
+                        // 操作按钮仅在悬停时物化(见 showsActions);
+                        // 时间戳与 token 信息是纯文本,常驻。
+                        if showsActions {
+                            CopyMessageButton(
+                                contentProvider: { MessageViewHelpers.copyContent(for: message) },
+                                showFeedback: $didCopy
+                            )
+                        }
 
-                        if showsResendButton, let kernel, !message.content.isEmpty {
+                        if showsActions, showsResendButton, let kernel, !message.content.isEmpty {
                             ResendMessageButton(kernel: kernel, message: message)
                         }
 
-                        if thinking != nil, verbosity != .detailed {
+                        if showsActions, thinking != nil, verbosity != .detailed {
                             AppIconButton(
                                 systemImage: "brain",
                                 tint: showThinkingPopover ? theme.textPrimary : theme.textSecondary,
@@ -118,11 +133,13 @@ struct MessageViewChrome<Content: View>: View {
                             )
                         }
 
-                        if let errorTransportDetails, errorTransportDetails.hasTransportDetails {
+                        if showsActions, let errorTransportDetails, errorTransportDetails.hasTransportDetails {
                             ErrorTransportDetailsButton(details: errorTransportDetails)
                         }
 
-                        MessageInfoButton(message: message)
+                        if showsActions {
+                            MessageInfoButton(message: message)
+                        }
                     }
                 }
             }
@@ -130,6 +147,19 @@ struct MessageViewChrome<Content: View>: View {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onHover { hovering in
+            if hovering {
+                hoverDebounceTask?.cancel()
+                hoverDebounceTask = Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(150))
+                    guard !Task.isCancelled else { return }
+                    isRowHovered = true
+                }
+            } else {
+                hoverDebounceTask?.cancel()
+                isRowHovered = false
+            }
+        }
     }
 
     @ViewBuilder
