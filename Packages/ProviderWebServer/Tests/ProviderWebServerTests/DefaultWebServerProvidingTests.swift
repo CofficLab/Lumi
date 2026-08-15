@@ -1,0 +1,84 @@
+import Foundation
+import Testing
+@testable import ProviderWebServer
+
+/// DefaultWebServerProviding 内存默认实现的基础验证。
+@Suite("DefaultWebServerProviding")
+@MainActor
+struct DefaultWebServerProvidingTests {
+
+    @Test("按插件注册/替换/注销路由")
+    func registerReplaceUnregister() async throws {
+        let server = DefaultWebServerProviding()
+        let routeA = WebRoute(id: "a", method: .get, path: "/a") { _ in .text("a") }
+        let routeB = WebRoute(id: "b", method: .get, path: "/b") { _ in .text("b") }
+
+        // 同一 pluginID 再次注册会整体替换旧路由
+        server.register([routeA], forPlugin: "p1")
+        server.register([routeB], forPlugin: "p1")
+
+        let hitB = try await server.handle(WebRouteRequest(method: .get, path: "/b"))
+        #expect(hitB.statusCode == 200)
+        #expect(String(data: hitB.body, encoding: .utf8) == "b")
+
+        // 旧路由已被替换,不再命中
+        let hitA = try await server.handle(WebRouteRequest(method: .get, path: "/a"))
+        #expect(hitA.statusCode == 404)
+
+        // 空数组等效于 unregister
+        server.register([], forPlugin: "p1")
+        let afterUnregister = try await server.handle(WebRouteRequest(method: .get, path: "/b"))
+        #expect(afterUnregister.statusCode == 404)
+
+        server.unregister(pluginID: "p1")
+    }
+
+    @Test("匹配 :param 占位符并区分 404/405")
+    func routeMatching() async throws {
+        let server = DefaultWebServerProviding()
+        let route = WebRoute(id: "theme.switch", method: .get, path: "/api/theme/:id", description: "Switch theme") { request in
+            let id = request.pathParameters["id"] ?? "unknown"
+            return try .json(["id": id])
+        }
+        server.register([route], forPlugin: "theme")
+
+        // 命中 :param 占位符
+        let ok = try await server.handle(WebRouteRequest(method: .get, path: "/api/theme/dark"))
+        #expect(ok.statusCode == 200)
+        let payload = try JSONDecoder().decode([String: String].self, from: ok.body)
+        #expect(payload["id"] == "dark")
+
+        // 路径不存在 -> 404
+        let missing = try await server.handle(WebRouteRequest(method: .get, path: "/api/unknown"))
+        #expect(missing.statusCode == 404)
+
+        // 路径存在但方法不匹配 -> 405
+        let wrongMethod = try await server.handle(WebRouteRequest(method: .post, path: "/api/theme/dark"))
+        #expect(wrongMethod.statusCode == 405)
+    }
+
+    @Test("start/stop 状态切换且可重复调用")
+    func startStop() async throws {
+        let server = DefaultWebServerProviding(port: 9999)
+        #expect(server.port == 9999)
+        #expect(!server.isRunning)
+
+        try await server.start()
+        #expect(server.isRunning)
+
+        // 重复 stop 是安全幂等的
+        await server.stop()
+        #expect(!server.isRunning)
+        await server.stop()
+        #expect(!server.isRunning)
+    }
+
+    @Test("可作为 any WebServerProviding 使用")
+    func providerAsExistential() async throws {
+        let server: any WebServerProviding = DefaultWebServerProviding()
+        try await server.start()
+        #expect(server.isRunning)
+        await server.stop()
+        #expect(!server.isRunning)
+    }
+}
