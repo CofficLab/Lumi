@@ -80,11 +80,12 @@ struct PromptSuggestionProvidingTests {
         #expect(item.order == 200)  // 默认值，内核收集时会用插件 order 覆盖
     }
 
-    @Test("requiresProject 缺省为 false，声明后经聚合保留")
-    func requiresProjectDefaultsAndSurvivesAggregation() async throws {
-        // 缺省不要求项目
+    @Test("visibility/style 缺省为 always/standard，声明后经聚合保留")
+    func visibilityAndStyleDefaultsAndSurviveAggregation() async throws {
+        // 缺省：总是展示 + 常规样式
         let plain = LumiPromptSuggestion(id: "x", title: "普通提示")
-        #expect(plain.requiresProject == false)
+        #expect(plain.visibility == .always)
+        #expect(plain.style == .standard)
 
         let kernel = KernelTestKit.makeKernel()
         try kernel.registerPromptSuggestionService(PromptSuggestionManager())
@@ -92,15 +93,28 @@ struct PromptSuggestionProvidingTests {
         let manager = PluginManager()
         try await manager.initializePlugins([
             MockLumiPlugin(
-                id: "overview",
+                id: "projects",
                 order: 100,
                 promptSuggestions: [
                     LumiPromptSuggestion(
-                        id: "overview.overview",
-                        title: "生成项目概览",
-                        requiresProject: true
+                        id: "projects.add",
+                        title: "添加项目",
+                        systemImage: "folder.badge.plus",
+                        action: .pickProjectFolder,
+                        visibility: .onlyWithoutProject,
+                        style: .additive
                     ),
-                    LumiPromptSuggestion(id: "overview.plain", title: "普通提示"),
+                    LumiPromptSuggestion(
+                        id: "projects.overview",
+                        title: "生成项目概览",
+                        visibility: .onlyWithProject
+                    ),
+                    LumiPromptSuggestion(
+                        id: "plugin-manager.browse",
+                        title: "发现实用插件",
+                        action: .openSettingsTab(id: "com.coffic.lumi.plugin.plugin-manager"),
+                        style: .additive
+                    ),
                 ]
             ),
         ], kernel: kernel)
@@ -108,10 +122,16 @@ struct PromptSuggestionProvidingTests {
         manager.registerPromptSuggestions(in: kernel)
 
         let collected = kernel.promptSuggestions?.allPromptSuggestions ?? []
-        let overview = collected.first { $0.id == "overview.overview" }
-        #expect(overview?.requiresProject == true)
-        let other = collected.first { $0.id == "overview.plain" }
-        #expect(other?.requiresProject == false)
+        let add = collected.first { $0.id == "projects.add" }
+        #expect(add?.visibility == .onlyWithoutProject)
+        #expect(add?.style == .additive)
+        #expect(add?.action == .pickProjectFolder)
+        let overview = collected.first { $0.id == "projects.overview" }
+        #expect(overview?.visibility == .onlyWithProject)
+        #expect(overview?.style == .standard)
+        let browse = collected.first { $0.id == "plugin-manager.browse" }
+        #expect(browse?.action == .openSettingsTab(id: "com.coffic.lumi.plugin.plugin-manager"))
+        #expect(browse?.style == .additive)
     }
 
     // MARK: - PluginManager 收集链路

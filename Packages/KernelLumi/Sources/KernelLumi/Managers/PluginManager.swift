@@ -454,7 +454,8 @@ public final class PluginManager: ObservableObject {
                     prompt: suggestion.prompt,
                     systemImage: suggestion.systemImage,
                     action: suggestion.action,
-                    requiresProject: suggestion.requiresProject
+                    visibility: suggestion.visibility,
+                    style: suggestion.style
                 )
                 item.order = pluginOrder
                 item.pluginID = plugin.id
