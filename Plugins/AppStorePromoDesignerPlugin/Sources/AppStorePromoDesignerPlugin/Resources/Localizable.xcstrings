@@ -247,1362 +247,1192 @@
         }
       }
     },
-    "Ask AI to design App Store promo screenshots for your app." : {
+    "Adding Languages" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ask AI to design App Store promo screenshots for your app."
+            "value" : "Adding Languages"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "让 AI 为你的应用设计 App Store 宣传截图。"
+            "value" : "添加语言"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 為你的應用程式設計 App Store 宣傳截圖。"
+            "value" : "新增語言"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 為你的應用程式設計 App Store 宣傳截圖。"
+            "value" : "新增語言"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 為你的 App 設計 App Store 宣傳截圖。"
+            "value" : "新增語言"
           }
         }
       }
     },
-    "Chat to Create" : {
+    "Ask the AI to review the image and apply its suggestions before exporting." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chat to Create"
+            "value" : "Ask the AI to review the image and apply its suggestions before exporting."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "对话生成"
+            "value" : "导出前建议让 AI 检查宣传图,并按建议修改。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "對話生成"
+            "value" : "匯出前建議讓 AI 檢查宣傳圖,並按建議修改。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "對話生成"
+            "value" : "匯出前建議讓 AI 檢查宣傳圖,並按建議修改。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "對話生成"
+            "value" : "匯出前建議讓 AI 檢查宣傳圖,並按建議修改。"
           }
         }
       }
     },
-    "Multi-language" : {
+    "Ask the AI to translate and adapt the copy for the new language." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Multi-language"
+            "value" : "Ask the AI to translate and adapt the copy for the new language."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "多语言"
+            "value" : "让 AI 为新语言翻译并调整文案。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "多語言"
+            "value" : "讓 AI 為新語言翻譯並調整文案。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "多語言"
+            "value" : "讓 AI 為新語言翻譯並調整文案。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "多語言"
+            "value" : "讓 AI 為新語言翻譯並調整文案。"
           }
         }
       }
     },
-    "Exact App Store Sizes" : {
+    "Available sizes: iPhone 6.7\" (1290×2796), iPhone 6.5\" (1284×2778), iPhone 6.1\" / 5.8\" (1170×2532), iPad Pro 12.9\" (2048×2732), iPad Pro 11\" (1668×2388), and Desktop (1280×800)." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Exact App Store Sizes"
+            "value" : "Available sizes: iPhone 6.7\" (1290×2796), iPhone 6.5\" (1284×2778), iPhone 6.1\" / 5.8\" (1170×2532), iPad Pro 12.9\" (2048×2732), iPad Pro 11\" (1668×2388), and Desktop (1280×800)."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "精确 App Store 尺寸"
+            "value" : "可选尺寸:iPhone 6.7 英寸(1290×2796)、iPhone 6.5 英寸(1284×2778)、iPhone 6.1 / 5.8 英寸(1170×2532)、iPad Pro 12.9 英寸(2048×2732)、iPad Pro 11 英寸(1668×2388)、桌面(1280×800)。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "精確 App Store 尺寸"
+            "value" : "可選尺寸:iPhone 6.7 吋(1290×2796)、iPhone 6.5 吋(1284×2778)、iPhone 6.1 / 5.8 吋(1170×2532)、iPad Pro 12.9 吋(2048×2732)、iPad Pro 11 吋(1668×2388)、桌面(1280×800)。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "精確 App Store 尺寸"
+            "value" : "可選尺寸:iPhone 6.7 吋(1290×2796)、iPhone 6.5 吋(1284×2778)、iPhone 6.1 / 5.8 吋(1170×2532)、iPad Pro 12.9 吋(2048×2732)、iPad Pro 11 吋(1668×2388)、桌面(1280×800)。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "精確 App Store 尺寸"
+            "value" : "可選尺寸:iPhone 6.7 吋(1290×2796)、iPhone 6.5 吋(1284×2778)、iPhone 6.1 / 5.8 吋(1170×2532)、iPad Pro 12.9 吋(2048×2732)、iPad Pro 11 吋(1668×2388)、桌面(1280×800)。"
           }
         }
       }
     },
-    "Languages" : {
+    "Choose Add Language from the language picker." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Languages"
+            "value" : "Choose Add Language from the language picker."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "语言"
+            "value" : "在语言选择器中选择「添加语言」。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "語言"
+            "value" : "在語言選擇器中選擇「新增語言」。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "語言"
+            "value" : "在語言選擇器中選擇「新增語言」。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "語言"
+            "value" : "在語言選擇器中選擇「新增語言」。"
           }
         }
       }
     },
-    "App Store sizes" : {
+    "Click Export and choose a folder." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App Store sizes"
+            "value" : "Click Export and choose a folder."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App Store 尺寸"
+            "value" : "点击「导出」,并选择保存文件夹。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App Store 尺寸"
+            "value" : "點按「匯出」,並選擇儲存資料夾。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App Store 尺寸"
+            "value" : "點按「匯出」,並選擇儲存資料夾。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App Store 尺寸"
+            "value" : "點按「匯出」,並選擇儲存資料夾。"
           }
         }
       }
     },
-    "Getting Started" : {
+    "Click Refresh in the toolbar if the list or preview looks out of date." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Getting Started"
+            "value" : "Click Refresh in the toolbar if the list or preview looks out of date."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "快速上手"
+            "value" : "列表或预览未更新时,点击工具栏中的「刷新」。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "快速上手"
+            "value" : "列表或預覽未更新時,點按工具列中的「重新整理」。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "快速上手"
+            "value" : "列表或預覽未更新時,點按工具列中的「重新整理」。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "快速上手"
+            "value" : "列表或預覽未更新時,點按工具列中的「重新整理」。"
           }
         }
       }
     },
-    "Open the Promo Designer" : {
+    "Creating a Promo Image" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open the Promo Designer"
+            "value" : "Creating a Promo Image"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开宣传图设计器"
+            "value" : "创建宣传图"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟宣傳圖設計器"
+            "value" : "建立宣傳圖"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟宣傳圖設計器"
+            "value" : "建立宣傳圖"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟宣傳圖設計器"
+            "value" : "建立宣傳圖"
           }
         }
       }
     },
-    "Select the promo designer tab in the sidebar; your tasks are listed on the left." : {
+    "Describe your app and what to highlight in the chat, e.g. \"a promo image for a coffee tracker, highlight the brew timer\"." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select the promo designer tab in the sidebar; your tasks are listed on the left."
+            "value" : "Describe your app and what to highlight in the chat, e.g. \"a promo image for a coffee tracker, highlight the brew timer\"."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在侧边栏选择宣传图标签，你的任务会列在左侧。"
+            "value" : "在聊天中描述应用与要突出的内容,例如「为一个咖啡记录应用创建宣传图,突出冲煮计时功能」。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在側邊欄選擇宣傳圖標籤，你的任務會列在左側。"
+            "value" : "在聊天中描述應用程式與要突出的內容,例如「為一個咖啡記錄應用程式建立宣傳圖,突出沖煮計時功能」。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在側邊欄選擇宣傳圖標籤，你的任務會列在左側。"
+            "value" : "在聊天中描述應用程式與要突出的內容,例如「為一個咖啡記錄應用程式建立宣傳圖,突出沖煮計時功能」。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在側邊欄選擇宣傳圖標籤，你的任務會列在左側。"
+            "value" : "在聊天中描述應用程式與要突出的內容,例如「為一個咖啡記錄應用程式建立宣傳圖,突出沖煮計時功能」。"
           }
         }
       }
     },
-    "Ask the AI to create one" : {
+    "Editing Content" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ask the AI to create one"
+            "value" : "Editing Content"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "让 AI 创建宣传图"
+            "value" : "修改内容"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 建立宣傳圖"
+            "value" : "修改內容"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 建立宣傳圖"
+            "value" : "修改內容"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 建立宣傳圖"
+            "value" : "修改內容"
           }
         }
       }
     },
-    "Describe your app and what to highlight, for example \"a promo image for a coffee tracker, highlight the brew timer\"." : {
+    "Exporting" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Describe your app and what to highlight, for example \"a promo image for a coffee tracker, highlight the brew timer\"."
+            "value" : "Exporting"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "描述你的应用和想突出的卖点，例如「为一个咖啡记录应用做宣传图，突出冲煮计时功能」。"
+            "value" : "导出"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "描述你的應用程式和想突出的賣點，例如「為一個咖啡記錄應用程式製作宣傳圖，突出沖煮計時功能」。"
+            "value" : "匯出"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "描述你的應用程式和想突出的賣點，例如「為一個咖啡記錄應用程式製作宣傳圖，突出沖煮計時功能」。"
+            "value" : "匯出"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "描述你的 App 和想突出的賣點，例如「為一個咖啡記錄 App 製作宣傳圖，突出沖煮計時功能」。"
+            "value" : "匯出"
           }
         }
       }
     },
-    "Preview and refine" : {
+    "Images are exported as PNGs at the selected size, grouped into folders by language." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preview and refine"
+            "value" : "Images are exported as PNGs at the selected size, grouped into folders by language."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "预览并调整"
+            "value" : "图片将按所选尺寸导出为 PNG,并按语言分文件夹存放。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "預覽並調整"
+            "value" : "圖片將按所選尺寸匯出為 PNG,並按語言分資料夾存放。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "預覽並調整"
+            "value" : "圖片將按所選尺寸匯出為 PNG,並按語言分資料夾存放。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "預覽並調整"
+            "value" : "圖片將按所選尺寸匯出為 PNG,並按語言分資料夾存放。"
           }
         }
       }
     },
-    "Toggle Preview / HTML Source in the toolbar, and ask the AI to change the copy, colors or layout until it looks right." : {
+    "In App: stored in the app and available in every project." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toggle Preview / HTML Source in the toolbar, and ask the AI to change the copy, colors or layout until it looks right."
+            "value" : "In App: stored in the app and available in every project."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在工具栏切换「预览 / HTML 源码」，让 AI 修改文案、配色或布局，直到满意。"
+            "value" : "APP 内:保存在应用中,所有项目均可使用。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在工具列切換「預覽 / HTML 原始碼」，讓 AI 修改文案、配色或版面配置，直到滿意。"
+            "value" : "APP 內:保存在應用程式中,所有專案均可使用。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在工具列切換「預覽 / HTML 原始碼」，讓 AI 修改文案、配色或版面配置，直到滿意。"
+            "value" : "APP 內:保存在應用程式中,所有專案均可使用。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在工具列切換「預覽 / HTML 原始碼」，讓 AI 修改文案、配色或版面配置，直到滿意。"
+            "value" : "APP 內:保存在應用程式中,所有專案均可使用。"
           }
         }
       }
     },
-    "Add more languages" : {
+    "In Preview mode, right-click the headline or the screenshot area to draft an edit request for that block." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add more languages"
+            "value" : "In Preview mode, right-click the headline or the screenshot area to draft an edit request for that block."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加更多语言"
+            "value" : "预览模式下,右键点击标题或截图区域,可快速生成对应区块的修改请求。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增更多語言"
+            "value" : "預覽模式下,右鍵點按標題或截圖區域,可快速生成對應區塊的修改請求。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增更多語言"
+            "value" : "預覽模式下,右鍵點按標題或截圖區域,可快速生成對應區塊的修改請求。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增更多語言"
+            "value" : "預覽模式下,右鍵點按標題或截圖區域,可快速生成對應區塊的修改請求。"
           }
         }
       }
     },
-    "Use the language picker to add a language version, then ask the AI to translate and adapt the text." : {
+    "In Project: stored with the current project and available only to it." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Use the language picker to add a language version, then ask the AI to translate and adapt the text."
+            "value" : "In Project: stored with the current project and available only to it."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用语言选择器添加语言版本，再让 AI 翻译并调整文案。"
+            "value" : "项目内:保存在当前项目中,仅该项目可用。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用語言選擇器新增語言版本，再讓 AI 翻譯並調整文案。"
+            "value" : "專案內:保存在目前的專案中,僅該專案可用。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用語言選擇器新增語言版本，再讓 AI 翻譯並調整文案。"
+            "value" : "專案內:保存在目前的專案中,僅該專案可用。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用語言選擇器新增語言版本，再讓 AI 翻譯並調整文案。"
+            "value" : "專案內:保存在目前的專案中,僅該專案可用。"
           }
         }
       }
     },
-    "Export for App Store" : {
+    "Interface" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Export for App Store"
+            "value" : "Interface"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "导出到 App Store"
+            "value" : "界面说明"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "匯出到 App Store"
+            "value" : "介面說明"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "匯出到 App Store"
+            "value" : "介面說明"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "匯出到 App Store"
+            "value" : "介面說明"
           }
         }
       }
     },
-    "Click Export and choose a folder; every image is saved as App Store-ready PNGs, grouped by language." : {
+    "Notes" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Click Export and choose a folder; every image is saved as App Store-ready PNGs, grouped by language."
+            "value" : "Notes"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "点击「导出」并选择文件夹；每张图片都会按 App Store 尺寸导出为 PNG，并按语言分好类。"
+            "value" : "注意事项"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點按「匯出」並選擇資料夾；每張圖片都會按 App Store 尺寸匯出為 PNG，並按語言分好類。"
+            "value" : "注意事項"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點按「匯出」並選擇資料夾；每張圖片都會按 App Store 尺寸匯出為 PNG，並按語言分好類。"
+            "value" : "注意事項"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點按「匯出」並選擇資料夾；每張圖片都會按 App Store 尺寸匯出為 PNG，並按語言分好類。"
+            "value" : "注意事項"
           }
         }
       }
     },
-    "Right-click to tweak a block" : {
+    "Open the promo designer tab in the sidebar." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Right-click to tweak a block"
+            "value" : "Open the promo designer tab in the sidebar."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "右键即可修改区块"
+            "value" : "打开侧边栏中的「宣传图」标签。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "右鍵即可修改區塊"
+            "value" : "開啟側邊欄中的「宣傳圖」標籤。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "右鍵即可修改區塊"
+            "value" : "開啟側邊欄中的「宣傳圖」標籤。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "右鍵即可修改區塊"
+            "value" : "開啟側邊欄中的「宣傳圖」標籤。"
           }
         }
       }
     },
-    "In Preview mode, right-click the headline or the screenshot area to instantly draft an edit request in chat." : {
+    "Overview" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In Preview mode, right-click the headline or the screenshot area to instantly draft an edit request in chat."
+            "value" : "Overview"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在预览模式下右键点按标题或截图区域，即可在聊天中快速生成一条修改请求。"
+            "value" : "概述"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在預覽模式下右鍵點按標題或截圖區域，即可在聊天中快速生成一條修改請求。"
+            "value" : "概述"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在預覽模式下右鍵點按標題或截圖區域，即可在聊天中快速生成一條修改請求。"
+            "value" : "概述"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在預覽模式下右鍵點按標題或截圖區域，即可在聊天中快速生成一條修改請求。"
+            "value" : "概述"
           }
         }
       }
     },
-    "What You Can Ask" : {
+    "Preview: shows the image at the selected display size." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What You Can Ask"
+            "value" : "Preview: shows the image at the selected display size."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你可以让 AI 做什么"
+            "value" : "预览区:按所选设备尺寸显示宣传图效果。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你可以讓 AI 做什麼"
+            "value" : "預覽區:按所選裝置尺寸顯示宣傳圖效果。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你可以讓 AI 做什麼"
+            "value" : "預覽區:按所選裝置尺寸顯示宣傳圖效果。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你可以讓 AI 做什麼"
+            "value" : "預覽區:按所選裝置尺寸顯示宣傳圖效果。"
           }
         }
       }
     },
-    "Design from scratch" : {
+    "Product screenshots must be provided by you; ask the AI to import them." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Design from scratch"
+            "value" : "Product screenshots must be provided by you; ask the AI to import them."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "从零设计"
+            "value" : "宣传图中的产品截图需由您提供,可让 AI 导入。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "從零設計"
+            "value" : "宣傳圖中的產品截圖需由您提供,可讓 AI 匯入。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "從零設計"
+            "value" : "宣傳圖中的產品截圖需由您提供,可讓 AI 匯入。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "從零設計"
+            "value" : "宣傳圖中的產品截圖需由您提供,可讓 AI 匯入。"
           }
         }
       }
     },
-    "Describe your app and its best features; the AI builds the layout for you." : {
+    "Review the generated image in the preview." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Describe your app and its best features; the AI builds the layout for you."
+            "value" : "Review the generated image in the preview."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "描述你的应用和亮点功能，AI 会为你搭建版面。"
+            "value" : "在预览区查看生成的宣传图。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "描述你的應用程式和亮點功能，AI 會為你搭建版面。"
+            "value" : "在預覽區檢視產生的宣傳圖。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "描述你的應用程式和亮點功能，AI 會為你搭建版面。"
+            "value" : "在預覽區檢視產生的宣傳圖。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "描述你的 App 和亮點功能，AI 會為你搭建版面。"
+            "value" : "在預覽區檢視產生的宣傳圖。"
           }
         }
       }
     },
-    "Use your screenshots" : {
+    "Select a display size in the toolbar." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Use your screenshots"
+            "value" : "Select a display size in the toolbar."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用你的截图"
+            "value" : "在工具栏选择设备尺寸。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用你的截圖"
+            "value" : "在工具列選擇裝置尺寸。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用你的截圖"
+            "value" : "在工具列選擇裝置尺寸。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用你的截圖"
+            "value" : "在工具列選擇裝置尺寸。"
           }
         }
       }
     },
-    "Ask the AI to place your own screenshots into the image." : {
+    "Sidebar: the task list, grouped into In Project and In App." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ask the AI to place your own screenshots into the image."
+            "value" : "Sidebar: the task list, grouped into In Project and In App."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "让 AI 把你自己的截图放进宣传图里。"
+            "value" : "侧边栏:任务列表,分为「项目内」与「APP 内」两组。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 把你自己的截圖放進宣傳圖裡。"
+            "value" : "側邊欄:任務列表,分為「專案內」與「APP 內」兩組。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 把你自己的截圖放進宣傳圖裡。"
+            "value" : "側邊欄:任務列表,分為「專案內」與「APP 內」兩組。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 把你自己的截圖放進宣傳圖裡。"
+            "value" : "側邊欄:任務列表,分為「專案內」與「APP 內」兩組。"
           }
         }
       }
     },
-    "Localize versions" : {
+    "State changes in the conversation, such as copy, colors, or layout." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Localize versions"
+            "value" : "State changes in the conversation, such as copy, colors, or layout."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本地化版本"
+            "value" : "在对话中说明修改要求,如文案、配色或布局。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在地化版本"
+            "value" : "在對話中說明修改要求,如文案、配色或版面配置。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在地化版本"
+            "value" : "在對話中說明修改要求,如文案、配色或版面配置。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在地化版本"
+            "value" : "在對話中說明修改要求,如文案、配色或版面配置。"
           }
         }
       }
     },
-    "Add a language and ask the AI to translate and adapt the copy." : {
+    "Storage" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add a language and ask the AI to translate and adapt the copy."
+            "value" : "Storage"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加语言后，让 AI 翻译并调整文案。"
+            "value" : "存储位置"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增語言後，讓 AI 翻譯並調整文案。"
+            "value" : "儲存位置"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增語言後，讓 AI 翻譯並調整文案。"
+            "value" : "儲存位置"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增語言後，讓 AI 翻譯並調整文案。"
+            "value" : "儲存位置"
           }
         }
       }
     },
-    "Get a design review" : {
+    "This manual covers the interface and basic operations of the App Store Promo Designer: creating, editing, localizing, and exporting promo screenshots." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Get a design review"
+            "value" : "This manual covers the interface and basic operations of the App Store Promo Designer: creating, editing, localizing, and exporting promo screenshots."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "让 AI 帮你把关"
+            "value" : "本手册介绍 App Store 宣传图设计器的界面与基本操作,包括创建、修改、多语言与导出宣传截图。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 幫你把關"
+            "value" : "本手冊介紹 App Store 宣傳圖設計器的介面與基本操作,包括建立、修改、多語言與匯出宣傳截圖。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 幫你把關"
+            "value" : "本手冊介紹 App Store 宣傳圖設計器的介面與基本操作,包括建立、修改、多語言與匯出宣傳截圖。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "讓 AI 幫你把關"
+            "value" : "本手冊介紹 App Store 宣傳圖設計器的介面與基本操作,包括建立、修改、多語言與匯出宣傳截圖。"
           }
         }
       }
     },
-    "Before exporting, ask the AI to critique the design and suggest improvements." : {
+    "Toolbar: language picker, display size picker, Preview / HTML Source switch, Refresh, and Export." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Before exporting, ask the AI to critique the design and suggest improvements."
+            "value" : "Toolbar: language picker, display size picker, Preview / HTML Source switch, Refresh, and Export."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "导出前让 AI 点评设计并提出改进建议。"
+            "value" : "工具栏:语言选择器、设备尺寸选择器、「预览 / HTML 源码」切换、刷新与导出按钮。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "匯出前讓 AI 點評設計並提出改進建議。"
+            "value" : "工具列:語言選擇器、裝置尺寸選擇器、「預覽 / HTML 原始碼」切換、重新整理與匯出按鈕。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "匯出前讓 AI 點評設計並提出改進建議。"
+            "value" : "工具列:語言選擇器、裝置尺寸選擇器、「預覽 / HTML 原始碼」切換、重新整理與匯出按鈕。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "匯出前讓 AI 點評設計並提出改進建議。"
+            "value" : "工具列:語言選擇器、裝置尺寸選擇器、「預覽 / HTML 原始碼」切換、重新整理與匯出按鈕。"
           }
         }
       }
     },
-    "Where Tasks Are Stored" : {
+    "User Manual" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Where Tasks Are Stored"
+            "value" : "User Manual"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "任务保存在哪里"
+            "value" : "使用手册"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "任務儲存在哪裡"
+            "value" : "使用手冊"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "任務儲存在哪裡"
+            "value" : "使用手冊"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "任務儲存在哪裡"
+            "value" : "使用手冊"
           }
         }
       }
     },
-    "Project tasks" : {
+    "Figure 1: Interface layout" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Project tasks"
+            "value" : "Figure 1: Interface layout"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "项目任务"
+            "value" : "图 1 界面布局"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "專案任務"
+            "value" : "圖 1 介面說明"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "專案任務"
+            "value" : "圖 1 介面說明"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "專案任務"
+            "value" : "圖 1 介面說明"
           }
         }
       }
     },
-    "Kept with the current project, so each project keeps its own promo images." : {
+    "Figure 2: Right-click a block to edit it" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kept with the current project, so each project keeps its own promo images."
+            "value" : "Figure 2: Right-click a block to edit it"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "保存在当前项目中，每个项目拥有自己的宣传图。"
+            "value" : "图 2 右键点击区块即可修改"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "保存在目前的專案中，每個專案擁有自己的宣傳圖。"
+            "value" : "圖 2 右鍵點按區塊即可修改"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "保存在目前的專案中，每個專案擁有自己的宣傳圖。"
+            "value" : "圖 2 右鍵點按區塊即可修改"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "保存在目前的專案中，每個專案擁有自己的宣傳圖。"
+            "value" : "圖 2 右鍵點按區塊即可修改"
           }
         }
       }
     },
-    "Shared tasks" : {
+    "Figure 3: Exports grouped by language" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shared tasks"
+            "value" : "Figure 3: Exports grouped by language"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "共享任务"
+            "value" : "图 3 按语言分组的导出结果"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "共用任務"
+            "value" : "圖 3 按語言分組的匯出結果"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "共用任務"
+            "value" : "圖 3 按語言分組的匯出結果"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "共用任務"
+            "value" : "圖 3 按語言分組的匯出結果"
           }
         }
       }
     },
-    "Always available, no matter which project is open." : {
+    "Sidebar" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Always available, no matter which project is open."
+            "value" : "Sidebar"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无论打开哪个项目都可以使用。"
+            "value" : "侧边栏"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無論開啟哪個專案都可以使用。"
+            "value" : "側邊欄"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無論開啟哪個專案都可以使用。"
+            "value" : "側邊欄"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無論開啟哪個專案都可以使用。"
+            "value" : "側邊欄"
           }
         }
       }
     },
-    "Tips" : {
+    "Toolbar" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tips"
+            "value" : "Toolbar"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "小贴士"
+            "value" : "工具栏"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "小秘訣"
+            "value" : "工具列"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "小秘訣"
+            "value" : "工具列"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "小秘訣"
+            "value" : "工具列"
           }
         }
       }
     },
-    "Pick the right size" : {
+    "Preview" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pick the right size"
+            "value" : "Preview"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择合适的尺寸"
+            "value" : "预览区"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇合適的尺寸"
+            "value" : "預覽區"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇合適的尺寸"
+            "value" : "預覽區"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇合適的尺寸"
-          }
-        }
-      }
-    },
-    "Use the display picker to preview and export for iPhone, iPad or Desktop." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use the display picker to preview and export for iPhone, iPad or Desktop."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用设备尺寸选择器为 iPhone、iPad 或桌面端预览和导出。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用裝置尺寸選擇器為 iPhone、iPad 或桌面預覽和匯出。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用裝置尺寸選擇器為 iPhone、iPad 或桌面預覽和匯出。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用裝置尺寸選擇器為 iPhone、iPad 或桌面預覽和匯出。"
-          }
-        }
-      }
-    },
-    "Find your exports" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Find your exports"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找到导出的文件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找到匯出的文件"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找到匯出的文件"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找到匯出的檔案"
-          }
-        }
-      }
-    },
-    "Exports are grouped into folders by language, ready to upload." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Exports are grouped into folders by language, ready to upload."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出结果按语言分文件夹，可直接上传。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出結果按語言分資料夾，可直接上傳。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出結果按語言分資料夾，可直接上傳。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出結果按語言分資料夾，可直接上傳。"
-          }
-        }
-      }
-    },
-    "Refresh to see the latest" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh to see the latest"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新查看最新内容"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理查看最新內容"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理查看最新內容"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理查看最新內容"
-          }
-        }
-      }
-    },
-    "Click Refresh if a list or preview looks out of date." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click Refresh if a list or preview looks out of date."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "列表或预览未更新时，点击「刷新」。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "列表或預覽未更新時，點按「重新整理」。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "列表或預覽未更新時，點按「重新整理」。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "列表或預覽未更新時，點按「重新整理」。"
+            "value" : "預覽區"
           }
         }
       }
