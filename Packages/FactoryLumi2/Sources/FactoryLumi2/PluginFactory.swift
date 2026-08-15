@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import PluginDevice
+import PluginLogoCoffic
 import PluginSettingGeneral
 import PluginToolbarSettings
 
@@ -28,6 +29,7 @@ public struct DefaultPluginFactory: PluginFactory {
         [
             SettingGeneralPlugin(),
             DevicePlugin(),
+            LogoCofficPlugin(),
             SettingsToolbarPlugin(),
         ]
     }

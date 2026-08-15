@@ -215,22 +215,26 @@ struct FactoryLumi2Tests {
         #expect(logo is DefaultLogoProviding)
     }
 
-    @Test("装配后的 LogoProviding 可注册并查询最高优先级 Logo")
+    @Test("装配后的 LogoProviding 注册 LogoCofficPlugin 贡献并可查询最高优先级")
     func kernelLogoProviderRegistersAndQueries() throws {
         let kernel = try KernelFactory.makeKernel()
 
         let logo = kernel.resolveProvider((any LogoProviding).self)
         #expect(logo != nil)
 
+        // 默认已由 LogoCofficPlugin 贡献 Coffic Logo
+        #expect(logo?.highestPriorityLogoItem?.id == "com.lumi.plugin.logo-coffic")
+
+        // 注册更高优先级 Logo 后成为最高优先级
         logo?.registerLogoItem(
             LogoItem(id: "test.logo", order: 999) { _ in
                 Image(systemName: "circle")
             }
         )
-
         #expect(logo?.highestPriorityLogoItem?.id == "test.logo")
 
+        // 注销后回退到下一个贡献者（Coffic Logo）
         logo?.unregisterLogoItem(id: "test.logo")
-        #expect(logo?.highestPriorityLogoItem == nil)
+        #expect(logo?.highestPriorityLogoItem?.id == "com.lumi.plugin.logo-coffic")
     }
 }
