@@ -47,11 +47,24 @@ struct ProviderRootViewTests {
         #expect(type(of: view) == AnyView.self)
     }
 
+    @Test("同时注入工具栏、ActivityBar 与 Rail 后返回根视图")
+    func defaultProviderReturnsRootViewWithAllInjections() {
+        let provider = DefaultRootViewProviding()
+        provider.setToolbarView(AnyView(Text("toolbar")))
+        provider.setActivityBarView(AnyView(Text("activity bar")))
+        provider.setRailView(AnyView(Text("rail")))
+
+        let view = provider.makeRootView()
+
+        #expect(type(of: view) == AnyView.self)
+    }
+
     @Test("RootViewProviding 可作为 any RootViewProviding 使用")
     func providerAccessibleThroughProtocol() {
         let provider: any RootViewProviding = DefaultRootViewProviding()
         provider.setToolbarView(AnyView(Text("toolbar")))
         provider.setActivityBarView(AnyView(Text("activity bar")))
+        provider.setRailView(AnyView(Text("rail")))
 
         #expect(type(of: provider.makeRootView()) == AnyView.self)
     }
@@ -61,6 +74,7 @@ struct ProviderRootViewTests {
         final class CustomRootView: RootViewProviding {
             var toolbarView: AnyView?
             var activityBarView: AnyView?
+            var railView: AnyView?
 
             func setToolbarView(_ view: AnyView?) {
                 toolbarView = view
@@ -70,11 +84,16 @@ struct ProviderRootViewTests {
                 activityBarView = view
             }
 
+            func setRailView(_ view: AnyView?) {
+                railView = view
+            }
+
             func makeRootView() -> AnyView {
                 AnyView(VStack {
                     if let toolbarView { toolbarView }
                     HStack {
                         if let activityBarView { activityBarView }
+                        if let railView { railView }
                         Text("custom root")
                     }
                 })
@@ -84,6 +103,7 @@ struct ProviderRootViewTests {
         let provider: any RootViewProviding = CustomRootView()
         provider.setToolbarView(AnyView(Text("custom toolbar")))
         provider.setActivityBarView(AnyView(Text("custom activity bar")))
+        provider.setRailView(AnyView(Text("custom rail")))
 
         #expect(type(of: provider.makeRootView()) == AnyView.self)
     }

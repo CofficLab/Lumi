@@ -2,6 +2,7 @@ import Foundation
 import ProviderActivityBar
 import ProviderNetwork
 import ProviderProject
+import ProviderRailView
 import ProviderRootView
 import ProviderToast
 import ProviderToolbar
@@ -30,6 +31,9 @@ public protocol ProviderFactory {
 
     /// 产出 `ActivityBarProviding` 实现。
     func makeActivityBarProvider() -> any ActivityBarProviding
+
+    /// 产出 `RailViewProviding` 实现。
+    func makeRailViewProvider() -> any RailViewProviding
 }
 
 /// 默认 `ProviderFactory` 实现：产出各 Provider 的默认实现。
@@ -65,5 +69,10 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `ActivityBarProviding` 实现（默认竖直入口栏）。
     public func makeActivityBarProvider() -> any ActivityBarProviding {
         DefaultActivityBarProviding()
+    }
+
+    /// 产出 `RailViewProviding` 实现（默认侧边栏标签 + 内容）。
+    public func makeRailViewProvider() -> any RailViewProviding {
+        DefaultRailViewProviding()
     }
 }
