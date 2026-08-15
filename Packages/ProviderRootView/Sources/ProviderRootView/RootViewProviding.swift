@@ -10,7 +10,8 @@ import SwiftUI
 /// - 内容区左侧的竖直 ActivityBar（通过 `setActivityBarView(_:)` 注入，
 ///   通常来自 `ActivityBarProviding`）；
 /// - ActivityBar 右侧的侧边栏 Rail（通过 `setRailView(_:)` 注入，
-///   通常来自 `RailViewProviding`）。
+///   通常来自 `RailViewProviding`）；
+/// - 内容区（通过 `setContentView(_:)` 注入，通常来自 `ContentViewProviding`）。
 ///
 /// 协议只声明能力，不关心具体实现。
 ///
@@ -34,6 +35,12 @@ public protocol RootViewProviding: AnyObject {
     /// 宿主通常把 `RailViewProviding.makeRailView()` 的结果注入进来，
     /// 显示在 ActivityBar 右侧。
     func setRailView(_ view: AnyView?)
+
+    /// 注入主内容视图（传 `nil` 表示回退到占位）。
+    ///
+    /// 宿主通常把 `ContentViewProviding.makeContentView()` 的结果注入进来，
+    /// 显示在内容区（ActivityBar / Rail 右侧）。
+    func setContentView(_ view: AnyView?)
 
     /// 返回根布局视图（工具栏 + 内容区，内容区左侧可带 ActivityBar 与 Rail）。
     func makeRootView() -> AnyView

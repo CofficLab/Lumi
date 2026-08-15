@@ -78,6 +78,9 @@ public enum KernelFactory {
         if let rail = kernel.resolveProvider((any RailViewProviding).self) {
             rootView.setRailView(rail.makeRailView())
         }
+        if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
+            rootView.setContentView(contentView.makeContentView())
+        }
 
         return rootView.makeRootView()
     }
