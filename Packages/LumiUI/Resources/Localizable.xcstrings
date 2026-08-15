@@ -109,6 +109,9 @@
         }
       }
     },
+    "%lld." : {
+
+    },
     "%lld%%" : {
       "localizations" : {
         "en" : {
