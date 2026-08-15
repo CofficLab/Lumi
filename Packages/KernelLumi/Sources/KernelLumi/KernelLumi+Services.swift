@@ -75,22 +75,6 @@ extension KernelLumiContainer {
         resolveService(EditorProviding.self)
     }
 
-    /// File-tree/editor coordination service
-    ///
-    /// 文件树与编辑器的协同能力(高亮、打开/关闭/迁移 session、加入对话等)。
-    /// 由编辑器插件注册,文件树等 UI 组件消费。
-    public var fileTreeEditorCoordination: (any FileTreeEditorCoordination)? {
-        resolveService(FileTreeEditorCoordination.self)
-    }
-
-    /// Editor tab-strip coordination service
-    ///
-    /// 标签栏与编辑器的协同能力(标签列表、激活/关闭/重排/置顶等)。
-    /// 由编辑器插件注册,标签栏等 UI 组件消费。
-    public var editorTabStripCoordination: (any EditorTabStripCoordination)? {
-        resolveService(EditorTabStripCoordination.self)
-    }
-
     /// Agent tool service
     public var toolManager: (any ToolManaging)? {
         resolveService(ToolManaging.self)

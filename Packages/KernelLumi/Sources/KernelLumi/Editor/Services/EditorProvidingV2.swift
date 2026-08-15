@@ -38,4 +38,7 @@ public protocol EditorProvidingV2: AnyObject {
 
     /// Surface 能力：标准编辑器视图组装（Shell UI 插件消费）。
     var surface: any EditorSurfaceProviding { get }
+
+    /// 扩展宿主能力：贡献包原子安装/撤回与能力可用性（§9）。
+    var extensions: any EditorExtensionHosting { get }
 }

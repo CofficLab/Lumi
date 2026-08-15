@@ -1,3 +1,4 @@
 # Swift Package Manager
 .build/
 *.swiftpm
+build/

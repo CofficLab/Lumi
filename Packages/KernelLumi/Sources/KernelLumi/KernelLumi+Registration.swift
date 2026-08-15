@@ -78,22 +78,6 @@ extension KernelLumiContainer {
         try registerService(EditorProviding.self, editor)
     }
 
-    /// Register file-tree/editor coordination service
-    ///
-    /// 注册文件树与编辑器协同能力(通常由编辑器插件以 `EditorContext` 实现)。
-    /// 文件树等 UI 组件通过 `kernel.resolveService(FileTreeEditorCoordination.self)` 取用。
-    public func registerFileTreeEditorCoordination(_ coordination: any FileTreeEditorCoordination) throws {
-        try registerService(FileTreeEditorCoordination.self, coordination)
-    }
-
-    /// Register editor tab-strip coordination service
-    ///
-    /// 注册标签栏与编辑器协同能力(通常由编辑器插件以 `EditorContext` 实现)。
-    /// 标签栏等 UI 组件通过 `kernel.resolveService(EditorTabStripCoordination.self)` 取用。
-    public func registerEditorTabStripCoordination(_ coordination: any EditorTabStripCoordination) throws {
-        try registerService(EditorTabStripCoordination.self, coordination)
-    }
-
     /// Register agent tool service
     public func registerToolManagerService(_ toolManager: any ToolManaging) throws {
         try registerService(ToolManaging.self, toolManager)

@@ -9,6 +9,9 @@ public struct EditorSessionTab: Equatable, Hashable, Identifiable, Sendable {
     /// 对应文档。
     public let documentID: EditorDocumentID
 
+    /// 文档 URI（标签展示/文件树联动用；untitled 为 nil）。
+    public let uri: URL?
+
     /// 展示标题（通常为文件名）。
     public let title: String
 
@@ -24,6 +27,7 @@ public struct EditorSessionTab: Equatable, Hashable, Identifiable, Sendable {
     public init(
         id: EditorSessionID,
         documentID: EditorDocumentID,
+        uri: URL? = nil,
         title: String,
         isDirty: Bool = false,
         isPinned: Bool = false,
@@ -31,6 +35,7 @@ public struct EditorSessionTab: Equatable, Hashable, Identifiable, Sendable {
     ) {
         self.id = id
         self.documentID = documentID
+        self.uri = uri
         self.title = title
         self.isDirty = isDirty
         self.isPinned = isPinned

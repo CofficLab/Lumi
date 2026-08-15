@@ -246,6 +246,14 @@ public protocol LumiPlugin: AnyObject {
     /// 插件只需要依赖 `KernelLumi` 的 `EditorPlugin` / `EditorExtensionRegistrar`
     /// 协议；具体编辑器宿主由 `EditorProviding` 在边界处桥接到运行时实现。
     func editorPlugins(kernel: KernelLumi) -> [any EditorPlugin]
+
+    /// 编辑器贡献包（契约 V2，重构方案 §9.1）。
+    ///
+    /// 取代 `editorPlugins` / `registerEditorExtensions` / `configureEditorRuntime`
+    /// 的最终贡献入口。Bundle 构建阶段只创建描述符和 Provider，
+    /// **不得**启动 Language Server、watcher 或后台任务。
+    /// Host 按插件维度原子安装/替换/撤回（`kernel.editorV2.extensions`）。
+    func editorContributionBundle(kernel: KernelLumi) async throws -> EditorContributionBundle?
 }
 
 // MARK: - Default Implementations
@@ -284,6 +292,9 @@ public extension LumiPlugin {
 
     /// 默认不贡献编辑器运行时插件。
     func editorPlugins(kernel: KernelLumi) -> [any EditorPlugin] { [] }
+
+    /// 默认不贡献编辑器贡献包。
+    func editorContributionBundle(kernel: KernelLumi) async throws -> EditorContributionBundle? { nil }
 
     /// 默认不处理任何外部文件打开请求。
     func openFile(kernel: KernelLumi, url: URL) -> Bool { false }
