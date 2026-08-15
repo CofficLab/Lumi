@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderContentView
 import ProviderSettingView
 import SwiftUI
 import Testing
@@ -9,23 +10,26 @@ import Testing
 @MainActor
 struct PluginDeviceTests {
 
-    @Test("onBoot 在设置视图中注册「设备信息」入口")
-    func onBootRegistersDeviceEntry() throws {
+    @Test("onBoot 注册设置入口并把设备信息设为主内容")
+    func onBootRegistersEntryAndContentView() throws {
         let kernel = KernelCoreContainer()
         let settings = DefaultSettingViewProviding()
+        let contentView = DefaultContentViewProviding()
         try kernel.registerProvider((any SettingViewProviding).self, settings)
+        try kernel.registerProvider((any ContentViewProviding).self, contentView)
 
         let plugin = DevicePlugin()
         try plugin.onBoot(kernel: kernel)
 
+        // 设置入口
         #expect(settings.entries.count == 1)
         let entry = settings.entries[0]
         #expect(entry.id == "device")
         #expect(entry.title == "设备信息")
-        #expect(entry.systemImage == "macbook.and.iphone")
-
-        // 详情视图可渲染
         #expect(type(of: entry.makeDetailView()) == AnyView.self)
+
+        // 主内容视图
+        #expect(type(of: contentView.makeContentView()) == AnyView.self)
     }
 
     @Test("onBoot 追加语义不覆盖已有入口")

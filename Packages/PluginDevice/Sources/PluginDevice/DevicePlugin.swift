@@ -1,14 +1,16 @@
 import KernelCore
+import ProviderContentView
 import ProviderSettingView
 import SwiftUI
 
 /// 设备信息插件
 ///
 /// 在设置视图中注册「设备信息」入口，详情展示设备静态信息与动态指标
-/// （CPU / 内存 / 磁盘 / 电池 / 运行时间）。
+/// （CPU / 内存 / 磁盘 / 电池 / 运行时间）；并把设备信息视图注册为
+/// 当前主内容视图（ContentView）。
 ///
-/// 通过 `SuperPlugin.onBoot(kernel:)` 解析内核中的 `SettingViewProviding`，
-/// 用 `addEntries(_:)`（追加语义）注册入口，不覆盖其他插件贡献的入口。
+/// 通过 `SuperPlugin.onBoot(kernel:)` 解析内核中的 `SettingViewProviding`
+/// 与 `ContentViewProviding`，用追加语义注册，不覆盖其他插件的贡献。
 @MainActor
 public final class DevicePlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.device"
@@ -17,20 +19,22 @@ public final class DevicePlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
-            // 设置视图未注册：优雅降级，不贡献入口。
-            return
+        // 1. 设置视图入口（详情展示设备信息）
+        if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
+            let entry = SettingEntryItem(
+                id: "device",
+                title: "设备信息",
+                systemImage: "macbook.and.iphone",
+                order: 150
+            ) {
+                DeviceInfoView()
+            }
+            settings.addEntries([entry])
         }
 
-        let entry = SettingEntryItem(
-            id: "device",
-            title: "设备信息",
-            systemImage: "macbook.and.iphone",
-            order: 150
-        ) {
-            DeviceInfoView()
+        // 2. 注册设备信息视图为主内容（ContentView）
+        if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
+            contentView.setContentView(AnyView(DeviceInfoView()))
         }
-
-        settings.addEntries([entry])
     }
 }

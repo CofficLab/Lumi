@@ -1,5 +1,6 @@
 import Foundation
 import ProviderActivityBar
+import ProviderContentView
 import ProviderNetwork
 import ProviderProject
 import ProviderRailView
@@ -18,6 +19,9 @@ import ProviderToolbar
 public protocol ProviderFactory {
     /// 产出 `StorageProviding` 实现。
     func makeStorageProvider() -> any StorageProviding
+
+    /// 产出 `ContentViewProviding` 实现。
+    func makeContentViewProvider() -> any ContentViewProviding
 
     /// 产出 `ProjectProviding` 实现。
     func makeProjectProvider() -> any ProjectProviding
@@ -52,6 +56,11 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `StorageProviding` 实现（默认 Application Support 磁盘存储）。
     public func makeStorageProvider() -> any StorageProviding {
         DefaultStorageProviding()
+    }
+
+    /// 产出 `ContentViewProviding` 实现（默认持有当前内容视图）。
+    public func makeContentViewProvider() -> any ContentViewProviding {
+        DefaultContentViewProviding()
     }
 
     /// 产出 `ProjectProviding` 实现（默认内存实现）。

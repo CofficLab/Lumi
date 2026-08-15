@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderActivityBar
+import ProviderContentView
 import ProviderNetwork
 import ProviderProject
 import ProviderRailView
@@ -158,5 +159,16 @@ struct FactoryLumi2Tests {
         let settings = kernel.resolveProvider((any SettingViewProviding).self)
         #expect(settings?.entries.contains(where: { $0.id == "general" }) == true)
         #expect(settings?.entries.contains(where: { $0.id == "device" }) == true)
+    }
+
+    @Test("makeKernel 注册 ContentViewProviding 且插件已设置内容")
+    func makeKernelRegistersContentViewProviding() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        #expect(contentView != nil)
+        #expect(contentView is DefaultContentViewProviding)
+        let view = contentView?.makeContentView()
+        #expect(view != nil)
     }
 }
