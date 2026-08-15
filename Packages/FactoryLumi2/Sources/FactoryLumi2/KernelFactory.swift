@@ -1,6 +1,5 @@
 import Foundation
 import KernelCore
-import PluginSettingGeneral
 import ProviderActivityBar
 import ProviderNetwork
 import ProviderProject
@@ -19,16 +18,6 @@ import SwiftUI
 /// 注册各自的贡献。
 @MainActor
 public enum KernelFactory {
-
-    /// 默认插件列表。
-    ///
-    /// 各插件在 `onBoot` 中解析内核已有 Provider 并注册自己的贡献
-    /// （如 SettingGeneralPlugin 向设置视图注册「通用」入口）。
-    static var defaultPlugins: [any SuperPlugin] {
-        [
-            SettingGeneralPlugin(),
-        ]
-    }
 
     /// 创建 KernelCore 内核，装配并注册全部默认 Provider：
     /// - `ProjectProviding` → `DefaultProjectProviding`
@@ -53,8 +42,8 @@ public enum KernelFactory {
         try kernel.registerProvider((any ActivityBarProviding).self, factory.makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, factory.makeRailViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, factory.makeSettingViewProvider())
-        // 启动插件：注册各自的贡献（如设置「通用」入口）。
-        try kernel.start(plugins: defaultPlugins)
+        // 启动插件（由 DefaultPluginFactory 产出）：注册各自的贡献。
+        try kernel.start(plugins: DefaultPluginFactory().makePlugins())
         return kernel
     }
 
