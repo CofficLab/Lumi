@@ -9,6 +9,7 @@ import SwiftUI
 struct LumiApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: MacAgent
 
+
     /// Lumi 直营分发：显式注入分发渠道敏感或体积较大的插件。
     /// - `AppUpdatePlugin`（Sparkle 自动更新）：MAS 禁止自带更新机制。
     /// - `ProjectRAGPlugin`（vec0.dylib 向量检索）：嵌入的二进制库需要
@@ -36,7 +37,10 @@ struct LumiApp: App {
                     }
                 }
         }
-        .handlesExternalEvents(matching: Set())
+        // 注意：不要加 `.handlesExternalEvents(matching: Set([]))`。
+        // 空集合会让主窗口不认领 LaunchServices 的启动事件（open/Xcode/Dock 启动），
+        // SwiftUI 因此不在冷启动创建主窗口，App 会卡在只有设置窗的 Loading 状态。
+        // 外部文件打开由 MacAgent 的 application(_:open:) 处理，无需此修饰符。
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: AppBootstrap.defaultWindowSize.width, height: AppBootstrap.defaultWindowSize.height)
