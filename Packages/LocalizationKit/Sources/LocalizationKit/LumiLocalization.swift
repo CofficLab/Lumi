@@ -8,6 +8,7 @@ import Foundation
 public enum LumiLocalization {
     private static let missingMarker = "\u{FFFF}"
     private static let supportedLanguages = ["en", "zh-Hans", "zh-HK", "zh-TW", "zh-Hant"]
+    private static let resultCache = LocalizationResultCache.shared
 
     /// 根据当前系统语言偏好查找本地化字符串。
     ///
@@ -15,11 +16,38 @@ public enum LumiLocalization {
     /// 1. `Bundle.lproj` 中的 `Localizable.strings` / 指定 table
     /// 2. 回退到同 bundle 下的 `Localizable.xcstrings` catalog
     /// 3. 均未命中时返回原始 key，保证 UI 不会空白
+    ///
+    /// 性能:消息行 header 等高频 body 求值路径会反复查询相同的
+    /// (key, bundle, table, locale)。首次查找含 `bundle.path(forResource:)`
+    /// 文件系统探测与语言链归一化,这里按完整键记忆化结果(有界 FIFO),
+    /// 重复查询退化为一次加锁字典命中。
+    /// 注:系统语言偏好变化需重启进程生效(catalog 缓存同此假设)。
     public static func string(
         _ key: String,
         bundle: Bundle,
         table: String = "Localizable",
         locale: Locale = .current
+    ) -> String {
+        let cacheKey = ResultCacheKey(
+            bundlePath: bundle.bundlePath,
+            table: table,
+            key: key,
+            localeID: locale.identifier
+        )
+        if let cached = resultCache.value(forKey: cacheKey) {
+            return cached
+        }
+
+        let resolved = resolve(key, bundle: bundle, table: table, locale: locale)
+        resultCache.setValue(resolved, forKey: cacheKey)
+        return resolved
+    }
+
+    private static func resolve(
+        _ key: String,
+        bundle: Bundle,
+        table: String,
+        locale: Locale
     ) -> String {
         let catalog = catalog(for: bundle, table: table)
 
@@ -172,6 +200,45 @@ public enum LumiLocalization {
 private struct CatalogCacheKey: Hashable {
     let bundlePath: String
     let table: String
+}
+
+private struct ResultCacheKey: Hashable {
+    let bundlePath: String
+    let table: String
+    let key: String
+    let localeID: String
+}
+
+/// 单条字符串解析结果的记忆化缓存(有界 FIFO)。
+/// 不同插件的 key 总量有限,上限仅防御性约束内存。
+private final class LocalizationResultCache: @unchecked Sendable {
+    static let shared = LocalizationResultCache()
+
+    private let limit = 8192
+    private let lock = NSLock()
+    private var storage: [ResultCacheKey: String] = [:]
+    private var insertionOrder: [ResultCacheKey] = []
+
+    func value(forKey key: ResultCacheKey) -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage[key]
+    }
+
+    func setValue(_ value: String, forKey key: ResultCacheKey) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard storage[key] == nil else { return }
+        storage[key] = value
+        insertionOrder.append(key)
+        if insertionOrder.count > limit {
+            let overflow = insertionOrder.count - limit
+            for evicted in insertionOrder.prefix(overflow) {
+                storage.removeValue(forKey: evicted)
+            }
+            insertionOrder.removeFirst(overflow)
+        }
+    }
 }
 
 private final class CatalogCache: @unchecked Sendable {
