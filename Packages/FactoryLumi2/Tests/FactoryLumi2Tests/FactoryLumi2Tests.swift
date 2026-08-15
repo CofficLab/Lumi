@@ -3,6 +3,7 @@ import KernelCore
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderLogo
 import ProviderMenuBar
 import ProviderNetwork
 import ProviderProject
@@ -194,5 +195,42 @@ struct FactoryLumi2Tests {
         #expect(menuBar is DefaultMenuBarProviding)
         #expect(menuBar?.contentItems.contains(where: { $0.id.hasSuffix(".content") }) == true)
         #expect(menuBar?.popupItems.contains(where: { $0.id.hasSuffix(".popup") }) == true)
+    }
+
+    @Test("makeKernel 创建内核并注册默认 LogoProviding")
+    func makeKernelRegistersDefaultLogoProviding() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let resolved: (any LogoProviding)? = kernel.resolveProvider((any LogoProviding).self)
+        #expect(resolved != nil)
+        #expect(resolved is DefaultLogoProviding)
+    }
+
+    @Test("ProviderFactory 产出默认 LogoProviding 实现")
+    func providerFactoryMakesDefaultLogo() {
+        let factory = DefaultProviderFactory()
+
+        let logo = factory.makeLogoProvider()
+
+        #expect(logo is DefaultLogoProviding)
+    }
+
+    @Test("装配后的 LogoProviding 可注册并查询最高优先级 Logo")
+    func kernelLogoProviderRegistersAndQueries() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let logo = kernel.resolveProvider((any LogoProviding).self)
+        #expect(logo != nil)
+
+        logo?.registerLogoItem(
+            LogoItem(id: "test.logo", order: 999) { _ in
+                Image(systemName: "circle")
+            }
+        )
+
+        #expect(logo?.highestPriorityLogoItem?.id == "test.logo")
+
+        logo?.unregisterLogoItem(id: "test.logo")
+        #expect(logo?.highestPriorityLogoItem == nil)
     }
 }

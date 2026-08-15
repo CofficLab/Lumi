@@ -2,6 +2,7 @@ import Foundation
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderLogo
 import ProviderMenuBar
 import ProviderNetwork
 import ProviderProject
@@ -30,6 +31,9 @@ public protocol ProviderFactory {
 
     /// 产出 `MenuBarProviding` 实现。
     func makeMenuBarProvider() -> any MenuBarProviding
+
+    /// 产出 `LogoProviding` 实现。
+    func makeLogoProvider() -> any LogoProviding
 
     /// 产出 `ProjectProviding` 实现。
     func makeProjectProvider() -> any ProjectProviding
@@ -79,6 +83,11 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `MenuBarProviding` 实现（默认持有菜单栏条目数组）。
     public func makeMenuBarProvider() -> any MenuBarProviding {
         DefaultMenuBarProviding()
+    }
+
+    /// 产出 `LogoProviding` 实现（默认持有 Logo 项集合）。
+    public func makeLogoProvider() -> any LogoProviding {
+        DefaultLogoProviding()
     }
 
     /// 产出 `ProjectProviding` 实现（默认内存实现）。

@@ -4,6 +4,7 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderMenuBar
+import ProviderLogo
 import ProviderNetwork
 import ProviderProject
 import ProviderRailView
@@ -44,6 +45,7 @@ public enum KernelFactory {
         try kernel.registerProvider((any ContentViewProviding).self, factory.makeContentViewProvider())
         try kernel.registerProvider((any DocsViewProviding).self, factory.makeDocsViewProvider())
         try kernel.registerProvider((any MenuBarProviding).self, factory.makeMenuBarProvider())
+        try kernel.registerProvider((any LogoProviding).self, factory.makeLogoProvider())
         try kernel.registerProvider((any ProjectProviding).self, factory.makeProjectProvider())
         try kernel.registerProvider((any ToastProviding).self, factory.makeToastProvider())
         try kernel.registerProvider((any NetworkProviding).self, factory.makeNetworkProvider())
