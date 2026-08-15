@@ -56,36 +56,36 @@ struct ProviderListView: View {
 
             AppDivider()
 
-            // Provider scope
-            Picker("", selection: $selectedScope) {
-                Text(LumiPluginLocalization.string("Cloud", bundle: .module))
-                    .tag(ProviderScope.cloud)
-                Text(LumiPluginLocalization.string("Local", bundle: .module))
-                    .tag(ProviderScope.local)
-            }
-            .labelsHidden()
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-
-            AppDivider()
-
-            // Format filter
-            HStack {
-                Text(LumiPluginLocalization.string("Format", bundle: .module))
-                    .font(.appMicro)
-                    .foregroundColor(theme.textTertiary)
-                Spacer()
-                Picker("", selection: $selectedFormat) {
-                    Text(LumiPluginLocalization.string("All Formats", bundle: .module))
-                        .tag(LumiLLMAPIFormat?.none)
-                    ForEach(LumiLLMAPIFormat.allCases, id: \.self) { format in
-                        Text(format.displayName)
-                            .tag(LumiLLMAPIFormat?.some(format))
-                    }
+            // 云端/本地 + 格式筛选：同一行，一左一右
+            HStack(spacing: 8) {
+                Picker("", selection: $selectedScope) {
+                    Text(LumiPluginLocalization.string("Cloud", bundle: .module))
+                        .tag(ProviderScope.cloud)
+                    Text(LumiPluginLocalization.string("Local", bundle: .module))
+                        .tag(ProviderScope.local)
                 }
                 .labelsHidden()
-                .pickerStyle(.menu)
+                .pickerStyle(.segmented)
+                .frame(width: 140)
+
+                Spacer(minLength: 8)
+
+                HStack(spacing: 4) {
+                    Text(LumiPluginLocalization.string("Format", bundle: .module))
+                        .font(.appMicro)
+                        .foregroundColor(theme.textTertiary)
+                    Picker("", selection: $selectedFormat) {
+                        Text(LumiPluginLocalization.string("All Formats", bundle: .module))
+                            .tag(LumiLLMAPIFormat?.none)
+                        ForEach(LumiLLMAPIFormat.allCases, id: \.self) { format in
+                            Text(format.displayName)
+                                .tag(LumiLLMAPIFormat?.some(format))
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                }
+                .fixedSize()
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)

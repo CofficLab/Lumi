@@ -2,6 +2,14 @@ import KernelLumi
 import LumiUI
 import SwiftUI
 
+/// header 内容行的固定高度。
+///
+/// 悬停时操作按钮组（CopyMessageButton / AppIconButton(.compact) 等）会物化，
+/// 它们高 26pt；非悬停时行内最高的元素是头像(24pt)。若不固定高度，
+/// 按钮物化瞬间行高会从 24pt 跳到 26pt，造成 header 抖动。
+/// 固定为 26pt 后行高恒定，所有子元素垂直居中。
+private let compactHeaderContentHeight: CGFloat = 26
+
 struct CompactMessageHeaderView<Leading: View, Trailing: View>: View {
     @LumiTheme private var theme
 
@@ -25,6 +33,7 @@ struct CompactMessageHeaderView<Leading: View, Trailing: View>: View {
             Spacer()
             trailing
         }
+        .frame(height: compactHeaderContentHeight)
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .appSurface(
