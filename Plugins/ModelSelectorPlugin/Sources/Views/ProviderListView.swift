@@ -24,8 +24,8 @@ struct ProviderListView: View {
 
     @State private var searchText = ""
     @State private var selectedScope = ProviderScope.cloud
-    /// nil 表示不按格式筛选
-    @State private var selectedFormat: LumiLLMAPIFormat?
+    /// 默认按 OpenAI 格式筛选；nil 表示全部格式
+    @State private var selectedFormat: LumiLLMAPIFormat? = .openAI
 
     /// 从 kernel 获取 LLMProviderManaging 服务
     private var llmProvider: (any LLMProviderManaging)? {
@@ -76,38 +76,16 @@ struct ProviderListView: View {
                     .font(.appMicro)
                     .foregroundColor(theme.textTertiary)
                 Spacer()
-                Menu {
-                    Button {
-                        selectedFormat = nil
-                    } label: {
-                        if selectedFormat == nil {
-                            Image(systemName: "checkmark")
-                        }
-                        Text(LumiPluginLocalization.string("All Formats", bundle: .module))
-                    }
+                Picker("", selection: $selectedFormat) {
+                    Text(LumiPluginLocalization.string("All Formats", bundle: .module))
+                        .tag(LumiLLMAPIFormat?.none)
                     ForEach(LumiLLMAPIFormat.allCases, id: \.self) { format in
-                        Button {
-                            selectedFormat = format
-                        } label: {
-                            if selectedFormat == format {
-                                Image(systemName: "checkmark")
-                            }
-                            Text(format.displayName)
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(selectedFormat?.displayName
-                             ?? LumiPluginLocalization.string("All Formats", bundle: .module))
-                            .font(.appMicro)
-                            .foregroundColor(theme.textSecondary)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundColor(theme.textTertiary)
+                        Text(format.displayName)
+                            .tag(LumiLLMAPIFormat?.some(format))
                     }
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
+                .labelsHidden()
+                .pickerStyle(.menu)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
@@ -148,6 +126,7 @@ struct ProviderListView: View {
         .background(theme.background)
         .onAppear {
             synchronizeScopeWithSelection()
+            selectProviderInCurrentScopeIfNeeded()
         }
         .onChange(of: selectedProviderID) { _, _ in
             synchronizeScopeWithSelection()
@@ -189,7 +168,11 @@ struct ProviderListView: View {
             let selectedProvider = providers(in: provider).first(where: { $0.id == selectedProviderID })
         else { return }
 
-        selectedScope = selectedProvider.isLocal ? .local : .cloud
+        // 仅在值变化时写入，避免触发多余的 onChange 链
+        let scope: ProviderScope = selectedProvider.isLocal ? .local : .cloud
+        if selectedScope != scope {
+            selectedScope = scope
+        }
     }
 
     private func selectProviderInCurrentScopeIfNeeded() {
@@ -199,6 +182,10 @@ struct ProviderListView: View {
         if scopedProviders.contains(where: { $0.id == selectedProviderID }) {
             return
         }
-        selectedProviderID = scopedProviders.first?.id
+        // 仅在值变化时写入，避免触发多余的 onChange 链
+        let next = scopedProviders.first?.id
+        if selectedProviderID != next {
+            selectedProviderID = next
+        }
     }
 }
