@@ -80,7 +80,6 @@ import LLMProviderMegaLLMPlugin
 import LLMProviderMiniMaxPlugin
 import LLMProviderMLXPlugin
 import LLMProviderOpenAIPlugin
-import OpenCodeGoPlugin
 import LLMProviderOpenRouterPlugin
 import LLMProviderStepFunPlugin
 import LLMProviderSublyxPlugin
@@ -203,7 +202,6 @@ public enum LumiPluginCatalog {
             FeifeimiaoPlugin(),
             MiniMaxPlugin(),
             SublyxPlugin(),
-            OpenCodeGoPlugin(),
             AliyunPlugin(),
             CodexLumiPlugin(),
             ZhipuPlugin(),
