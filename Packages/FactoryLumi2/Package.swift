@@ -9,6 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderNetwork"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRootView"),
@@ -20,6 +21,7 @@ let package = Package(
             name: "FactoryLumi2",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderNetwork", package: "ProviderNetwork"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),

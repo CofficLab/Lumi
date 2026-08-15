@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import ProviderActivityBar
 import ProviderNetwork
 import ProviderProject
 import ProviderRootView
@@ -57,6 +58,15 @@ struct FactoryLumi2Tests {
         #expect(resolved is DefaultRootViewProviding)
     }
 
+    @Test("makeKernel 创建内核并注册默认 ActivityBarProviding")
+    func makeKernelRegistersDefaultActivityBarProviding() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let resolved: (any ActivityBarProviding)? = kernel.resolveProvider((any ActivityBarProviding).self)
+        #expect(resolved != nil)
+        #expect(resolved is DefaultActivityBarProviding)
+    }
+
     @Test("内核可解析出 ProjectProviding 并正常使用")
     func kernelResolvesUsableProvider() async throws {
         let kernel = try KernelFactory.makeKernel()
@@ -77,11 +87,13 @@ struct FactoryLumi2Tests {
         let network = factory.makeNetworkProvider()
         let toolbar = factory.makeToolbarProvider()
         let rootView = factory.makeRootViewProvider()
+        let activityBar = factory.makeActivityBarProvider()
 
         #expect(project is DefaultProjectProviding)
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
         #expect(toolbar is DefaultToolbarProviding)
         #expect(rootView is DefaultRootViewProviding)
+        #expect(activityBar is DefaultActivityBarProviding)
     }
 }

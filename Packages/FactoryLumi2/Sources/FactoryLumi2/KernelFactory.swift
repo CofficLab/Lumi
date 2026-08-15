@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import ProviderActivityBar
 import ProviderNetwork
 import ProviderProject
 import ProviderRootView
@@ -9,7 +10,7 @@ import ProviderToolbar
 /// KernelFactory — 内核工厂。
 ///
 /// 负责创建 KernelCore 内核，内部通过 `DefaultProviderFactory` 装配各 Provider
-/// （Project / Toast / Network / Toolbar / RootView）并注册进内核。
+/// （Project / Toast / Network / Toolbar / RootView / ActivityBar）并注册进内核。
 @MainActor
 public enum KernelFactory {
 
@@ -19,6 +20,7 @@ public enum KernelFactory {
     /// - `NetworkProviding` → `DefaultNetworkProviding`（URLSession）
     /// - `ToolbarProviding` → `DefaultToolbarProviding`（按 placement 渲染）
     /// - `RootViewProviding` → `DefaultRootViewProviding`（工具栏 + 内容区）
+    /// - `ActivityBarProviding` → `DefaultActivityBarProviding`（竖直入口栏）
     ///
     /// - Returns: 已装配默认 Provider 的 KernelCore 容器。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
@@ -30,6 +32,7 @@ public enum KernelFactory {
         try kernel.registerProvider((any NetworkProviding).self, factory.makeNetworkProvider())
         try kernel.registerProvider((any ToolbarProviding).self, factory.makeToolbarProvider())
         try kernel.registerProvider((any RootViewProviding).self, factory.makeRootViewProvider())
+        try kernel.registerProvider((any ActivityBarProviding).self, factory.makeActivityBarProvider())
         return kernel
     }
 }

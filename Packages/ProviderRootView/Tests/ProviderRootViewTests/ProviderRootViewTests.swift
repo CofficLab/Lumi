@@ -26,10 +26,32 @@ struct ProviderRootViewTests {
         #expect(type(of: view) == AnyView.self)
     }
 
+    @Test("注入 ActivityBar 后返回根视图")
+    func defaultProviderReturnsRootViewWithActivityBar() {
+        let provider = DefaultRootViewProviding()
+        provider.setActivityBarView(AnyView(Text("activity bar")))
+
+        let view = provider.makeRootView()
+
+        #expect(type(of: view) == AnyView.self)
+    }
+
+    @Test("同时注入工具栏与 ActivityBar 后返回根视图")
+    func defaultProviderReturnsRootViewWithToolbarAndActivityBar() {
+        let provider = DefaultRootViewProviding()
+        provider.setToolbarView(AnyView(Text("toolbar")))
+        provider.setActivityBarView(AnyView(Text("activity bar")))
+
+        let view = provider.makeRootView()
+
+        #expect(type(of: view) == AnyView.self)
+    }
+
     @Test("RootViewProviding 可作为 any RootViewProviding 使用")
     func providerAccessibleThroughProtocol() {
         let provider: any RootViewProviding = DefaultRootViewProviding()
         provider.setToolbarView(AnyView(Text("toolbar")))
+        provider.setActivityBarView(AnyView(Text("activity bar")))
 
         #expect(type(of: provider.makeRootView()) == AnyView.self)
     }
@@ -38,21 +60,30 @@ struct ProviderRootViewTests {
     func customProviderWorks() {
         final class CustomRootView: RootViewProviding {
             var toolbarView: AnyView?
+            var activityBarView: AnyView?
 
             func setToolbarView(_ view: AnyView?) {
                 toolbarView = view
             }
 
+            func setActivityBarView(_ view: AnyView?) {
+                activityBarView = view
+            }
+
             func makeRootView() -> AnyView {
                 AnyView(VStack {
                     if let toolbarView { toolbarView }
-                    Text("custom root")
+                    HStack {
+                        if let activityBarView { activityBarView }
+                        Text("custom root")
+                    }
                 })
             }
         }
 
         let provider: any RootViewProviding = CustomRootView()
         provider.setToolbarView(AnyView(Text("custom toolbar")))
+        provider.setActivityBarView(AnyView(Text("custom activity bar")))
 
         #expect(type(of: provider.makeRootView()) == AnyView.self)
     }

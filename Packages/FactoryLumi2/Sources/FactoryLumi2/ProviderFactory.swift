@@ -1,4 +1,5 @@
 import Foundation
+import ProviderActivityBar
 import ProviderNetwork
 import ProviderProject
 import ProviderRootView
@@ -26,6 +27,9 @@ public protocol ProviderFactory {
 
     /// 产出 `RootViewProviding` 实现。
     func makeRootViewProvider() -> any RootViewProviding
+
+    /// 产出 `ActivityBarProviding` 实现。
+    func makeActivityBarProvider() -> any ActivityBarProviding
 }
 
 /// 默认 `ProviderFactory` 实现：产出各 Provider 的默认实现。
@@ -56,5 +60,10 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `RootViewProviding` 实现（默认「工具栏 + 内容区」根布局）。
     public func makeRootViewProvider() -> any RootViewProviding {
         DefaultRootViewProviding()
+    }
+
+    /// 产出 `ActivityBarProviding` 实现（默认竖直入口栏）。
+    public func makeActivityBarProvider() -> any ActivityBarProviding {
+        DefaultActivityBarProviding()
     }
 }
