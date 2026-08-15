@@ -8,10 +8,14 @@ let package = Package(
         .library(name: "FactoryLumi2", targets: ["FactoryLumi2"]),
     ],
     dependencies: [
+        .package(path: "../ProviderProject"),
     ],
     targets: [
         .target(
             name: "FactoryLumi2",
+            dependencies: [
+                .product(name: "ProviderProject", package: "ProviderProject"),
+            ],
             path: "Sources/FactoryLumi2"
         ),
     ]
