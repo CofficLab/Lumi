@@ -357,8 +357,6 @@ private struct ToolCallRowContainerModifier<Background: View, Border: View>: Vie
                 .background(rowBackground)
                 .overlay(rowBorder)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .scaleEffect(isHovering ? 1.01 : 1)
-                .animation(.easeOut(duration: 0.12), value: isHovering)
         } else {
             // V1:inline,默认无背景/描边,仅悬停时一层极淡底色。
             content
