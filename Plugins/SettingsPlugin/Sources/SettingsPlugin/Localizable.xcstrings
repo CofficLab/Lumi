@@ -171,6 +171,74 @@
         }
       }
     },
+    "No manuals are available yet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No manuals are available yet."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂时还没有说明书。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫時還沒有說明書。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫時還沒有說明書。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫時還沒有說明書。"
+          }
+        }
+      }
+    },
+    "Official Website": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Official Website"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "官方网站"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "官方網站"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "官方網站"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "官方網站"
+          }
+        }
+      }
+    },
     "Onboarding": {
       "localizations": {
         "en": {
@@ -201,6 +269,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "新手引導"
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟"
           }
         }
       }
@@ -443,6 +545,40 @@
         }
       }
     },
+    "Step-by-step guides for every feature.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step-by-step guides for every feature."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "各功能的使用指南。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "各功能的使用指南。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "各功能的使用指南。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "各功能的使用指南。"
+          }
+        }
+      }
+    },
     "Subtle": {
       "localizations": {
         "en": {
@@ -511,36 +647,36 @@
         }
       }
     },
-    "Warning": {
+    "User Manuals": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Warning"
+            "value": "User Manuals"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "警告"
+            "value": "说明书"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "警告"
+            "value": "說明書"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "警告"
+            "value": "說明書"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "警告"
+            "value": "說明書"
           }
         }
       }
@@ -579,6 +715,40 @@
         }
       }
     },
+    "Warning": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warning"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "警告"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "警告"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "警告"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "警告"
+          }
+        }
+      }
+    },
     "Website": {
       "localizations": {
         "en": {
@@ -609,40 +779,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "網站"
-          }
-        }
-      }
-    },
-    "Official Website": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Official Website"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "官方网站"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "官方網站"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "官方網站"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "官方網站"
           }
         }
       }

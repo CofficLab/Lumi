@@ -83,7 +83,7 @@ public final class SettingsPlugin: LumiPlugin, SuperLog {
                 systemImage: "gearshape",
                 order: 0
             ) {
-                GeneralSettingsView()
+                GeneralSettingsView(kernel: kernel)
             },
             SettingsTabItem(
                 id: "app.appearance",
