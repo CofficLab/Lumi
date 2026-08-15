@@ -5,24 +5,33 @@ import ProviderToast
 
 /// FactoryLumi2 — 工厂命名空间。
 ///
-/// 负责创建 KernelCore 内核，并把各 Provider 包（如 ProviderProject、ProviderToast）
-/// 的默认实现注册进内核。
+/// 负责创建 KernelCore 内核，并通过 `ProviderFactory` 产出各 Provider
+/// （如 ProviderProject、ProviderToast）注册进内核。
 @MainActor
 public enum FactoryLumi2 {
 
     // MARK: - makeKernel
 
-    /// 创建 KernelCore 内核，并注册默认实现：
-    /// - `ProjectProviding` → `ProviderProject.DefaultProjectProviding`
-    /// - `ToastProviding` → `ProviderToast.DefaultToastProviding`（no-op）
+    /// 创建 KernelCore 内核，并使用默认 `DefaultProviderFactory` 产出并注册全部 Provider：
+    /// - `ProjectProviding` → `DefaultProjectProviding`
+    /// - `ToastProviding` → `DefaultToastProviding`（no-op）
     ///
     /// - Returns: 已注册默认 Provider 的 KernelCore 容器。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
     public static func makeKernel() throws -> KernelCoreContainer {
-        try makeKernel(
-            projectProvider: DefaultProjectProviding(),
-            toastProvider: DefaultToastProviding()
-        )
+        try makeKernel(providers: DefaultProviderFactory())
+    }
+
+    /// 创建 KernelCore 内核，并使用自定义 `ProviderFactory` 产出并注册全部 Provider。
+    ///
+    /// - Parameter providers: 负责产出各 Provider 实现的工厂。
+    /// - Returns: 已注册 Provider 的 KernelCore 容器。
+    /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
+    public static func makeKernel(providers: any ProviderFactory) throws -> KernelCoreContainer {
+        let kernel = KernelCoreContainer()
+        try kernel.registerProvider((any ProjectProviding).self, providers.makeProjectProvider())
+        try kernel.registerProvider((any ToastProviding).self, providers.makeToastProvider())
+        return kernel
     }
 
     /// 创建 KernelCore 内核，注册自定义 `ProjectProviding` 与默认 `ToastProviding`。
@@ -33,7 +42,7 @@ public enum FactoryLumi2 {
     public static func makeKernel(projectProvider: any ProjectProviding) throws -> KernelCoreContainer {
         try makeKernel(
             projectProvider: projectProvider,
-            toastProvider: DefaultToastProviding()
+            toastProvider: DefaultProviderFactory().makeToastProvider()
         )
     }
 
@@ -44,7 +53,7 @@ public enum FactoryLumi2 {
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
     public static func makeKernel(toastProvider: any ToastProviding) throws -> KernelCoreContainer {
         try makeKernel(
-            projectProvider: DefaultProjectProviding(),
+            projectProvider: DefaultProviderFactory().makeProjectProvider(),
             toastProvider: toastProvider
         )
     }
