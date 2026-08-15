@@ -102,7 +102,8 @@ struct DesignerManualView: View {
                             .foregroundColor(theme.textSecondary)
                     }
                     .padding(10)
-                    .frame(maxWidth: .infinity, height: 148)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 148)
                     .overlay(alignment: .topLeading) { ManualFigureMarker(3).padding(-7) }
                 }
 
