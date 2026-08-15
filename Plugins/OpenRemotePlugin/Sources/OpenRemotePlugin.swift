@@ -40,7 +40,7 @@ public final class OpenRemotePlugin: LumiPlugin {
     }
 
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
-        AnyView(OpenRemoteAboutView(pluginName: name))
+        AnyView(OpenRemoteAboutView())
     }
 
     // MARK: - LumiPlugin stubs
