@@ -26,6 +26,13 @@ public final class KernelCoreContainer: ObservableObject {
     /// internal：由 `KernelCore+Provider.swift` 中的 extension 读写。
     var providerSubscriptions: [ObjectIdentifier: AnyCancellable] = [:]
 
+    // MARK: - Plugin Registry
+
+    /// 插件注册表：以插件的 `id` 为 key。
+    ///
+    /// internal：由 `KernelCore+Plugin.swift` 中的 extension 读写。
+    var plugins: [String: any SuperPlugin] = [:]
+
     // MARK: - Initialization
 
     public init() {}
