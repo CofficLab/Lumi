@@ -1821,7 +1821,552 @@
           }
         }
       }
+    },
+    "Core Capabilities" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Core Capabilities"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心能力"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心能力"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心能力"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "核心能力"
+          }
+        }
+      }
+    },
+    "Where to Find It" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where to Find It"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用入口"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用入口"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用入口"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用入口"
+          }
+        }
+      }
+    },
+    "Finder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "访达"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder"
+          }
+        }
+      }
+    },
+    "Context menu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Context menu"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右键菜单"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右鍵選單"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右鍵選單"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右鍵選單"
+          }
+        }
+      }
+    },
+    "Context Actions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Context Actions"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右键动作"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右鍵動作"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右鍵動作"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右鍵動作"
+          }
+        }
+      }
+    },
+    "Extra actions in the Finder right-click menu." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extra actions in the Finder right-click menu."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "访达右键菜单中的额外动作。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder 右鍵選單中的額外動作。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder 右鍵選單中的額外動作。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder 右鍵選單中的額外動作。"
+          }
+        }
+      }
+    },
+    "Create files from user-defined templates." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create files from user-defined templates."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "根据自定义模板创建文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "根據自訂範本建立檔案。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "根據自訂範本建立檔案。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "根據自訂範本建立檔案。"
+          }
+        }
+      }
+    },
+    "Finder Extension" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder Extension"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "访达扩展"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder 延伸功能"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder 延伸功能"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder 延伸功能"
+          }
+        }
+      }
+    },
+    "A macOS extension enabled from System Settings." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A macOS extension enabled from System Settings."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从系统设置启用的 macOS 扩展。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從系統設定啟用的 macOS 延伸功能。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從系統設定啟用的 macOS 延伸功能。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從系統設定啟用的 macOS 延伸功能。"
+          }
+        }
+      }
+    },
+    "Templates" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Templates"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模板"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "範本"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "範本"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "範本"
+          }
+        }
+      }
+    },
+    "Define name, extension and default content." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define name, extension and default content."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定义名称、扩展名与默认内容。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定義名稱、副檔名與預設內容。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定義名稱、副檔名與預設內容。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定義名稱、副檔名與預設內容。"
+          }
+        }
+      }
+    },
+    "Live Preview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live Preview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时预览"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時預覽"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時預覽"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時預覽"
+          }
+        }
+      }
+    },
+    "Preview the resulting right-click menu." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview the resulting right-click menu."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览最终的右键菜单。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽最終的右鍵選單。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽最終的右鍵選單。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽最終的右鍵選單。"
+          }
+        }
+      }
+    },
+    "Restore actions and templates to defaults." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore actions and templates to defaults."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将动作与模板恢复为默认。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將動作與範本恢復為預設。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將動作與範本恢復為預設。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將動作與範本恢復為預設。"
+          }
+        }
+      }
+    },
+    "Right Click tab in the sidebar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right Click tab in the sidebar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "侧边栏中的右键标签页"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側邊欄中的右鍵標籤頁"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側邊欄中的右鍵標籤頁"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側邊欄中的右鍵標籤頁"
+          }
+        }
+      }
+    },
+    "Settings → Right Click" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings → Right Click"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置 → 右键"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定 → 右鍵"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定 → 右鍵"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定 → 右鍵"
+          }
+        }
+      }
     }
-  },
+
+},
   "version" : "1.1"
 }

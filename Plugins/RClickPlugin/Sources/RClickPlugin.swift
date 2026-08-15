@@ -81,18 +81,8 @@ public final class RClickPlugin: LumiPlugin {
     public func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
-        public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                Label(LumiPluginLocalization.string("Right Click", bundle: .module),
-                      systemImage: "cursorarrow.click.2")
-                    .font(.headline)
-                Text(LumiPluginLocalization.string("Right-click context menu actions.", bundle: .module))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
+    public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
+        AnyView(RClickAboutView())
     }
     public func pluginManualView(kernel: KernelLumi) -> AnyView? {
         AnyView(RClickManualView())
