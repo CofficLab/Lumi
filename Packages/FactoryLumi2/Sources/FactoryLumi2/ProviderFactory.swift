@@ -5,6 +5,7 @@ import ProviderProject
 import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
+import ProviderStorage
 import ProviderToast
 import ProviderToolbar
 
@@ -15,6 +16,9 @@ import ProviderToolbar
 /// 个别 Provider 的产出逻辑。
 @MainActor
 public protocol ProviderFactory {
+    /// 产出 `StorageProviding` 实现。
+    func makeStorageProvider() -> any StorageProviding
+
     /// 产出 `ProjectProviding` 实现。
     func makeProjectProvider() -> any ProjectProviding
 
@@ -44,6 +48,11 @@ public protocol ProviderFactory {
 @MainActor
 public struct DefaultProviderFactory: ProviderFactory {
     public init() {}
+
+    /// 产出 `StorageProviding` 实现（默认 Application Support 磁盘存储）。
+    public func makeStorageProvider() -> any StorageProviding {
+        DefaultStorageProviding()
+    }
 
     /// 产出 `ProjectProviding` 实现（默认内存实现）。
     public func makeProjectProvider() -> any ProjectProviding {
