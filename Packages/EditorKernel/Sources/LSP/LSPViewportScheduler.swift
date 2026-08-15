@@ -75,6 +75,9 @@ public final class LSPViewportScheduler {
     private var diagnosticsTask: Task<Void, Never>?
     private var codeActionsTask: Task<Void, Never>?
 
+    /// 每种请求类型的代数（generation），用于防止旧任务完成时误清新任务的槽位
+    private var generations: [Kind: Int] = [:]
+
     /// 上次已知的 viewport 范围（用于判断是否变化足够大需要重新请求）
     private var lastVisibleStartLine: Int = 0
     private var lastVisibleEndLine: Int = 0
@@ -150,31 +153,35 @@ public final class LSPViewportScheduler {
             cancelBelow(effectivePriority)
         }
 
+        let generation = (generations[type] ?? 0) + 1
+        generations[type] = generation
+
+        let task = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(effectiveDebounce))
+            guard !Task.isCancelled else { return }
+            await operation()
+            // 只有当前代数的任务才允许清空槽位；否则旧任务会把新任务的引用清掉，
+            // 导致 cancelAll() 无法取消新任务（stale 请求照常执行）。
+            await MainActor.run { [weak self] in
+                guard let self, self.generations[type] == generation else { return }
+                self.clearTaskSlot(for: type)
+            }
+        }
+
         switch type {
-        case .inlayHints:
-            inlayHintsTask?.cancel()
-            inlayHintsTask = Task { [weak self] in
-                try? await Task.sleep(for: .milliseconds(effectiveDebounce))
-                guard !Task.isCancelled else { return }
-                await operation()
-                self?.inlayHintsTask = nil
-            }
-        case .diagnostics:
-            diagnosticsTask?.cancel()
-            diagnosticsTask = Task { [weak self] in
-                try? await Task.sleep(for: .milliseconds(effectiveDebounce))
-                guard !Task.isCancelled else { return }
-                await operation()
-                self?.diagnosticsTask = nil
-            }
-        case .codeActions:
-            codeActionsTask?.cancel()
-            codeActionsTask = Task { [weak self] in
-                try? await Task.sleep(for: .milliseconds(effectiveDebounce))
-                guard !Task.isCancelled else { return }
-                await operation()
-                self?.codeActionsTask = nil
-            }
+        case .inlayHints: inlayHintsTask = task
+        case .diagnostics: diagnosticsTask = task
+        case .codeActions: codeActionsTask = task
+        }
+    }
+
+    /// 清空指定类型任务槽位时同步递增代数，使仍在运行的旧任务完成时不再匹配。
+    private func clearTaskSlot(for type: Kind) {
+        generations[type] = (generations[type] ?? 0) + 1
+        switch type {
+        case .inlayHints: inlayHintsTask = nil
+        case .diagnostics: diagnosticsTask = nil
+        case .codeActions: codeActionsTask = nil
         }
     }
 
