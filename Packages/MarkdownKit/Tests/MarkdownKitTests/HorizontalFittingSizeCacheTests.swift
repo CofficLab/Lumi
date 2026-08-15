@@ -100,4 +100,44 @@ struct HorizontalFittingSizeCacheTests {
         #expect(measurementCount == 100)
         #expect(cache.cachedHeight(fingerprint: content, proposedWidth: 800) == 199)
     }
+
+    // MARK: - 共享存储(跨物化复用)
+
+    /// 模拟 List 惰性行:视图滚出被拆除、滚回重建 —— 新 Coordinator
+    /// 的本地单槽为空,但共享存储应命中,无需重新测量。
+    @Test func sharedStoreSurvivesCoordinatorRebuild() {
+        HorizontalFittingSizeStore.shared.removeAll()
+        defer { HorizontalFittingSizeStore.shared.removeAll() }
+
+        // 第一个"Coordinator"测量并写入共享存储
+        var firstCoordinator = HorizontalFittingSizeCache<String>()
+        firstCoordinator.store(fingerprint: "code-v1", proposedWidth: 800, height: 640)
+        HorizontalFittingSizeStore.shared.store(fingerprint: "code-v1", proposedWidth: 800, height: 640)
+
+        // 行重建:新单槽为空,共享命中
+        let rebuilt = HorizontalFittingSizeCache<String>()
+        #expect(rebuilt.cachedHeight(fingerprint: "code-v1", proposedWidth: 800) == nil)
+        #expect(
+            HorizontalFittingSizeStore.shared.height(fingerprint: "code-v1", proposedWidth: 807.5) == 640
+        )  // 同一 16pt 桶内
+        #expect(
+            HorizontalFittingSizeStore.shared.height(fingerprint: "code-v2", proposedWidth: 800) == nil
+        )  // 指纹变化 → 失效
+    }
+
+    @Test func sharedStoreEvictsBounded() {
+        HorizontalFittingSizeStore.shared.removeAll()
+        defer { HorizontalFittingSizeStore.shared.removeAll() }
+
+        for i in 0..<600 {
+            HorizontalFittingSizeStore.shared.store(
+                fingerprint: "code-\(i)",
+                proposedWidth: 800,
+                height: CGFloat(i)
+            )
+        }
+        // LRU 有界:最早的条目被驱逐
+        #expect(HorizontalFittingSizeStore.shared.height(fingerprint: "code-0", proposedWidth: 800) == nil)
+        #expect(HorizontalFittingSizeStore.shared.height(fingerprint: "code-599", proposedWidth: 800) == 599)
+    }
 }

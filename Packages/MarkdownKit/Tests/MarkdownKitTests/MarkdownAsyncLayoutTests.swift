@@ -20,6 +20,9 @@ struct MarkdownAsyncLayoutTests {
             """
         let parsedBlocks = MarkdownParser.parse(markdown)
         #expect(!parsedBlocks.isEmpty)
+        // 生产契约:宿主(消息列表)在后台预热缓存后,行首帧同步可用。
+        // 无窗口的 headless 宿主会取消 `.task`,冷缓存无法在测试内异步落地。
+        MarkdownRenderCache.warm(markdown: markdown)
 
         let height = try await MarkdownLayoutTestSupport.standaloneMarkdownHeight(
             markdown: markdown,

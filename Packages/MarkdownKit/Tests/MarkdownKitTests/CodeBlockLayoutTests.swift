@@ -206,6 +206,8 @@ struct CodeBlockLayoutTests {
     func multiLineCodeBlockInListUsesHorizontalScrollDocumentHeight() async throws {
         let lines = (1...12).map { "let value\($0) = \($0)" }.joined(separator: "\n")
         let markdown = "```swift\n\(lines)\n```\n\nTail paragraph."
+        // headless 宿主会取消 `.task`,预热保证首帧同步可用(生产由消息列表预热)
+        MarkdownRenderCache.warm(markdown: markdown)
 
         let standaloneHeight = try await MarkdownLayoutTestSupport.standaloneMarkdownHeight(
             markdown: markdown,

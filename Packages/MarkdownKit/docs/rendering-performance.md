@@ -34,9 +34,15 @@
 | `MarkdownInlineParseCache` | `MarkdownBlockRenderer.swift` | 进程级 LRU,2048 | 行内文本 | 内容变化 |
 | `CodeHighlightCache` | `HighlightedCodeView.swift` | 进程级 LRU,512 | provider ID + 语言 + 代码 | 任一变化 |
 | `HorizontalFittingSizeCache` | `HorizontalFittingSizeCache.swift` | **每视图实例,单槽** | 内容指纹 + 宽度分桶 | 任一变化 |
+| `HorizontalFittingSizeStore` | `HorizontalFittingSizeCache.swift` | 进程级 LRU,512 | 内容指纹 + 宽度分桶 | 任一变化 |
 
-前三者是内容寻址的数据缓存(进程级共享);第四者是**测量决策缓存**(视图私有),
-也是唯一需要调用方主动参与构造键的——见下节。
+前三者是内容寻址的数据缓存(进程级共享);测量缓存分两级:
+`HorizontalFittingSizeCache`(单槽)管**同一视图实例内的帧间复用**(无锁快路径),
+`HorizontalFittingSizeStore`(共享)管**跨物化复用**——SwiftUI `List` 是惰性容器,
+行滚出视口即被拆除、滚回时 Coordinator 随视图重建,单槽缓存随之丢失,
+共享存储让代码块重新物化时免于重跑全内容 `fittingSize`。
+`sizeThatFits` 的查找顺序:本地单槽 → 共享存储 → 测量(双写回填)。
+测量缓存也是唯一需要调用方主动参与构造键的——见下节。
 
 ---
 
@@ -96,10 +102,49 @@ SwiftUI 在每次布局协商时都会调用 `sizeThatFits`;若此时缓存未�
 |---|---|
 | 不变内容连续 120 帧 update | 仅第一次测量(回归防线:旧行为是每帧测量) |
 | 逐 token 追加 100 步 | 每步都失效(防止"修过头"返回过期高度) |
+| Coordinator 重建后共享存储命中 | List 惰性行拆除重建的跨物化复用 |
+| 共享存储 600 条写入 | LRU 有界,最早条目被驱逐 |
 | 其余 | 分桶边界、桶内抖动命中、跨桶失效、store 覆盖 |
 
-修改 `HorizontalFittingSizeCache` 或 `HorizontalScrollView` 布局逻辑前,
-先确认这套契约仍然成立。
+修改 `HorizontalFittingSizeCache` / `HorizontalFittingSizeStore` /
+`HorizontalScrollView` 布局逻辑前,先确认这套契约仍然成立。
+
+---
+
+## 3A. 解析的后台化与预热(P8)
+
+### 3A.1 `.task` 的真实执行线程
+
+`MarkdownBlockRenderer` 与 `CachedMarkdownInlineText` 的 `.task` 继承视图的
+MainActor——**直接在闭包内同步调用解析,解析就发生在主线程**。两者均改为:
+
+```swift
+let parsed = await Task.detached(priority: .userInitiated) {
+    MarkdownBlockCache.shared.blocks(for: source)   // 或行内解析
+}.value
+guard !Task.isCancelled else { return }             // 丢弃过期结果
+```
+
+取消守卫是正确性要求:流式行 markdown 每帧变化,SwiftUI 取消旧任务后,
+旧任务的 detached 解析可能晚于新任务完成,无守卫会把旧内容回写到新行。
+
+### 3A.2 "首帧同步可用"契约与预热
+
+缓存未命中时行首帧为空,由后台解析异步填充。因此**首帧同步可用的契约由缓存命中保证**:
+
+- 消息列表等宿主在会话加载/翻页后,应对窗口内消息调用公开预热入口
+  `MarkdownRenderCache.warm(markdown:)`(线程安全,后台线程批量调用,
+  已缓存时近免费)。`ListV2ViewModel` 已内置此逻辑(utility 优先级)。
+- `MarkdownBlockCache.warm(markdown:)` 与 `blocks(for:)` 的差异:
+  不推进 `streamingSlot`(预热针对稳定历史内容,不干扰流式增量解析状态),
+  解析在锁外执行,不阻塞滚动/流式路径上的缓存查询。
+
+### 3A.3 测试注意事项
+
+无窗口的 headless 宿主(NSHostingView 不入 window)会**取消 `.task`**,
+冷缓存内容无法在测试内异步落地。依赖"首帧同步有高度"的布局测试,
+必须先 `MarkdownRenderCache.warm(markdown:)` 再测量
+(见 `MarkdownAsyncLayoutTests` 等测试内的注释)。
 
 ---
 
@@ -150,6 +195,12 @@ SwiftUI 在每次布局协商时都会调用 `sizeThatFits`;若此时缓存未�
 |---|---|---|
 | **内容恒定 + 无关重渲染** | markdown 固定,其他状态每 16ms 变化 | 测量缓存的隔离信号(推荐) |
 | 逐 token 追加 | 每 16ms 追加内容 | 复合场景,被全量解析成本主导,不适合单点归因 |
+| **List 往返滚动** | List + 88 条生产同构消息,程序化驱动 NSClipView 往返 | 行重物化的持续性成本(按"趟"分组,首趟含冷缓存) |
+
+滚动场景的已知结论(harness `scroll` 模式实测):热滚趟耗时与首趟相当——
+List 惰性重物化(AG 视图图重建 + 文本排版)是纯 SwiftUI 路径的结构性成本,
+各级缓存只能削平解析/测量尖刺,无法消除重复布局本身。
+评估滚动性能时以"热滚趟"(第 2 趟起)的中位数为准。
 
 评估"重渲染频率转化为主线程成本"类优化时,一律用第一种;
 第二种用于观察解析/流式链路(属于另一个问题域)。

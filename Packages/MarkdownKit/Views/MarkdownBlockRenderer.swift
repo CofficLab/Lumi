@@ -49,8 +49,14 @@ public struct MarkdownBlockRenderer: View {
         .foregroundStyle(theme.textColor ?? .primary)
         .task(id: markdown) {
             // 缓存命中(init 已填充)时 blocks 不会变,这里是一次廉价的不变赋值;
-            // miss 时在这里异步完成全量解析,填充首屏留空的内容。
-            let parsed = MarkdownBlockCache.shared.blocks(for: markdown)
+            // miss 时解析在后台线程完成(注意:`.task` 继承视图的 MainActor,
+            // 直接同步调用会把全量解析留在主线程 —— 审计 P8),主线程只接收结果。
+            // markdown 变化时 SwiftUI 取消旧任务,await 返回后丢弃过期结果。
+            let source = markdown
+            let parsed = await Task.detached(priority: .userInitiated) {
+                MarkdownBlockCache.shared.blocks(for: source)
+            }.value
+            guard !Task.isCancelled else { return }
             if parsed != blocks {
                 blocks = parsed
             }
@@ -243,7 +249,7 @@ public struct MarkdownBlockRenderer: View {
 /// dedicated streaming slot therefore remembers the last streamed content and,
 /// when the new content is a prefix-append of it (the common token-by-token
 /// case), re-parses only the still-changing tail instead of the whole string.
-private final class MarkdownBlockCache: @unchecked Sendable {
+final class MarkdownBlockCache: @unchecked Sendable {
     static let shared = MarkdownBlockCache()
 
     private let limit = 384
@@ -325,6 +331,29 @@ private final class MarkdownBlockCache: @unchecked Sendable {
 
         // 3) Miss — 需全量解析,返回 nil 让调用方异步处理。
         return nil
+    }
+
+    /// 后台预热:未缓存时解析并写入历史缓存。
+    ///
+    /// 与 `blocks(for:)` 的差异:不推进 `streamingSlot` —— 预热针对的是稳定的
+    /// 历史内容,流式尾行的增量解析状态不应被后台任务改写。解析在锁外执行,
+    /// 不阻塞滚动/流式路径上的缓存查询;已缓存时为一次加锁字典查询,近乎免费。
+    /// 供会话加载后由宿主在后台线程批量调用,使用户滚动到未看过的行时同步命中,
+    /// 行物化不再触发主线程解析。
+    func warm(markdown: String) {
+        lock.lock()
+        let isCached = cache[markdown] != nil
+        lock.unlock()
+        guard !isCached else { return }
+
+        let parsed = MarkdownParser.parse(markdown)
+
+        lock.lock()
+        defer { lock.unlock() }
+        guard cache[markdown] == nil else { return }  // 并发下他人已写入
+        cache[markdown] = parsed
+        keys.append(markdown)
+        evictIfNeeded()
     }
 
     /// Returns the length of the prefix of `markdown` that ends at the last
@@ -428,7 +457,13 @@ private struct CachedMarkdownInlineText: View {
         }
         .task(id: text) {
             guard attributedText == nil else { return }
-            let parsed = MarkdownInlineParseCache.shared.attributedString(for: text)
+            // 与块级解析同理(P8):miss 时的解析下放后台线程,
+            // 主线程只接收结果;text 变化时丢弃过期结果。
+            let source = text
+            let parsed = await Task.detached(priority: .userInitiated) {
+                MarkdownInlineParseCache.shared.attributedString(for: source)
+            }.value
+            guard !Task.isCancelled else { return }
             if attributedText != parsed {
                 attributedText = parsed
             }
@@ -488,17 +523,34 @@ struct HorizontalScrollView<Fingerprint: Hashable, Content: View>: NSViewReprese
         let proposalWidth = proposal.width ?? 0
 
         // 缓存命中（内容指纹 + 宽度分桶一致）：直接返回缓存高度，
-        // 不触碰昂贵的 fittingSize。
+        // 不触碰昂贵的 fittingSize。三级查找:
+        // 1) Coordinator 单槽(同视图实例帧间复用,无锁);
+        // 2) 进程级共享存储(行被 List 拆除重建后跨物化复用);
+        // 3) 测量,并双写两级缓存。
         if let cachedHeight = context.coordinator.cache.cachedHeight(
             fingerprint: contentFingerprint,
             proposedWidth: proposalWidth
+        ) ?? HorizontalFittingSizeStore.shared.height(
+            fingerprint: contentFingerprint,
+            proposedWidth: proposalWidth
         ) {
+            // 共享命中时回填本地单槽,后续帧走无锁路径
+            context.coordinator.cache.store(
+                fingerprint: contentFingerprint,
+                proposedWidth: proposalWidth,
+                height: cachedHeight
+            )
             return CGSize(width: proposalWidth, height: cachedHeight)
         }
 
         // 缓存未命中：调用 fittingSize 并缓存结果
         let size = hostingView.fittingSize
         context.coordinator.cache.store(
+            fingerprint: contentFingerprint,
+            proposedWidth: proposalWidth,
+            height: size.height
+        )
+        HorizontalFittingSizeStore.shared.store(
             fingerprint: contentFingerprint,
             proposedWidth: proposalWidth,
             height: size.height
