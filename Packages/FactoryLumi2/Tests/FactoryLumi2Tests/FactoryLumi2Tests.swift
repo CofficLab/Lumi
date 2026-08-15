@@ -135,4 +135,14 @@ struct FactoryLumi2Tests {
 
         #expect(type(of: view) == AnyView.self)
     }
+
+    @Test("makeKernel 启动插件后设置视图含「通用」入口")
+    func makeKernelBootsPluginsAndRegistersGeneralEntry() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.setting-general"))
+
+        let settings = kernel.resolveProvider((any SettingViewProviding).self)
+        #expect(settings?.entries.contains(where: { $0.id == "general" }) == true)
+    }
 }

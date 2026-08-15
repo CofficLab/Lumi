@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import PluginSettingGeneral
 import ProviderActivityBar
 import ProviderNetwork
 import ProviderProject
@@ -14,9 +15,20 @@ import SwiftUI
 ///
 /// 负责创建 KernelCore 内核，内部通过 `DefaultProviderFactory` 装配各 Provider
 /// （Project / Toast / Network / Toolbar / RootView / ActivityBar / RailView /
-/// SettingView）并注册进内核。
+/// SettingView），并通过 `start(plugins:)` 启动插件（如 SettingGeneralPlugin）
+/// 注册各自的贡献。
 @MainActor
 public enum KernelFactory {
+
+    /// 默认插件列表。
+    ///
+    /// 各插件在 `onBoot` 中解析内核已有 Provider 并注册自己的贡献
+    /// （如 SettingGeneralPlugin 向设置视图注册「通用」入口）。
+    static var defaultPlugins: [any SuperPlugin] {
+        [
+            SettingGeneralPlugin(),
+        ]
+    }
 
     /// 创建 KernelCore 内核，装配并注册全部默认 Provider：
     /// - `ProjectProviding` → `DefaultProjectProviding`
@@ -26,7 +38,7 @@ public enum KernelFactory {
     /// - `RootViewProviding` → `DefaultRootViewProviding`（工具栏 + 内容区）
     /// - `ActivityBarProviding` → `DefaultActivityBarProviding`（竖直入口栏）
     /// - `RailViewProviding` → `DefaultRailViewProviding`（侧边栏标签 + 内容）
-    /// - `SettingViewProviding` → `DefaultSettingViewProviding`（最简设置视图）
+    /// - `SettingViewProviding` → `DefaultSettingViewProviding`（入口 + 详情）
     ///
     /// - Returns: 已装配默认 Provider 的 KernelCore 容器。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
@@ -41,6 +53,8 @@ public enum KernelFactory {
         try kernel.registerProvider((any ActivityBarProviding).self, factory.makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, factory.makeRailViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, factory.makeSettingViewProvider())
+        // 启动插件：注册各自的贡献（如设置「通用」入口）。
+        try kernel.start(plugins: defaultPlugins)
         return kernel
     }
 
@@ -77,6 +91,7 @@ public enum KernelFactory {
 
     /// 创建内核并返回设置视图。
     ///
+    /// 设置视图的入口由已启动的插件（如 SettingGeneralPlugin）贡献；
     /// 宿主只需把返回的视图放进设置窗口（如 `Window("设置")`）即可。
     ///
     /// - Returns: 已装配的设置视图（`AnyView`）。
