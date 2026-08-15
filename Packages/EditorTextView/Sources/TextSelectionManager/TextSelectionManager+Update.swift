@@ -9,7 +9,9 @@ import Foundation
 
 extension TextSelectionManager {
     public func didReplaceCharacters(in range: NSRange, replacementLength: Int) {
-        let delta = replacementLength == 0 ? -range.length : replacementLength
+        // Selections after the edit must shift by the net length change, not just the replacement
+        // length. Otherwise asymmetric replacements (e.g. replacing 2 chars with 3) drift later selections.
+        let delta = replacementLength - range.length
         for textSelection in self.textSelections {
             if textSelection.range.location > range.max {
                 textSelection.range.location = max(0, textSelection.range.location + delta)
