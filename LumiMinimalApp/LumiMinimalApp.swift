@@ -15,7 +15,8 @@ struct LumiMinimalApp: App {
     var body: some Scene {
         WindowGroup("LumiMinimal", id: "lumi-minimal.main") {
             // App 只做一件事：让 Factory 给一个视图。
-            (try? KernelFactory.makeMainView()) ?? AnyView(Text("Failed to assemble main view"))
+            // 注意：`.onReceive` 需应用到整个 `??` 表达式（否则会误绑到 fallback 分支）。
+            ((try? KernelFactory.makeMainView()) ?? AnyView(Text("Failed to assemble main view")))
                 // 工具栏「设置」按钮点击后，通知 → 打开设置窗口
                 .onReceive(NotificationCenter.default.publisher(for: .lumiOpenSettings)) { _ in
                     openWindow(id: "lumi-minimal.settings")
