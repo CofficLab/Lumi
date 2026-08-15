@@ -149,6 +149,10 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
         AnyView(DesignerAboutView())
     }
 
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(DesignerManualView())
+    }
+
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }
