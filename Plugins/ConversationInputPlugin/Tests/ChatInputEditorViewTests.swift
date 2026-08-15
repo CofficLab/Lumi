@@ -6,6 +6,23 @@ import Testing
 @MainActor
 @Suite("ChatInputEditorView")
 struct ChatInputEditorViewTests {
+    @Test("active turn keeps both queue send and stop controls available")
+    func activeTurnKeepsQueueSendAffordance() {
+        let state = SendActionBarState(isSending: true, canSend: true)
+
+        #expect(state.showsSendButton)
+        #expect(state.showsStopButton)
+        #expect(state.canSend)
+    }
+
+    @Test("idle state only needs the send control")
+    func idleStateOnlyShowsSend() {
+        let state = SendActionBarState(isSending: false, canSend: false)
+
+        #expect(state.showsSendButton)
+        #expect(!state.showsStopButton)
+    }
+
     @Test("placeholder does not intercept editor clicks")
     func placeholderAllowsClickThrough() {
         let placeholderLabel = ChatInputPlaceholderLabel(labelWithString: "Placeholder")

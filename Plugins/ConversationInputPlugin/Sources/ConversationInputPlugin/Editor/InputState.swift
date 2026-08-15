@@ -46,7 +46,7 @@ final class InputState: ObservableObject, ConversationInputProviding {
         kernel.messageSender?.isSending(for: kernel.conversations?.selectedConversationID) ?? false
     }
 
-    /// 是否满足发送条件（文本非空且未在发送中）
+    /// 是否满足发送条件。发送中仍允许提交，消息会进入当前对话的待发送队列。
     func canSend(kernel: KernelLumi) -> Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
