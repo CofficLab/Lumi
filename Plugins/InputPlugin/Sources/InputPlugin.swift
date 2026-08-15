@@ -71,7 +71,7 @@ public final class InputPlugin: LumiPlugin {
         AnyView(
             VStack(alignment: .leading, spacing: 8) {
                 Label(LumiPluginLocalization.string("Input Manager", bundle: .module),
-                      systemImage: "text.cursor.input")
+                      systemImage: "text.cursor")
                     .font(.headline)
                 Text(LumiPluginLocalization.string("Manages the chat input area and text composition.", bundle: .module))
                     .font(.subheadline)

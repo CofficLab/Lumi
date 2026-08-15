@@ -85,7 +85,7 @@ public final class RClickPlugin: LumiPlugin {
         AnyView(
             VStack(alignment: .leading, spacing: 8) {
                 Label(LumiPluginLocalization.string("Right Click", bundle: .module),
-                      systemImage: "contextualmenu")
+                      systemImage: "cursorarrow.click.2")
                     .font(.headline)
                 Text(LumiPluginLocalization.string("Right-click context menu actions.", bundle: .module))
                     .font(.subheadline)
