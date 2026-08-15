@@ -33,11 +33,15 @@ struct LumiMinimalApp: App {
                     openWindow(id: "lumi-minimal.settings")
                 }
         }
+        .windowStyle(.hiddenTitleBar)
+        .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 480, height: 320)
 
         Window("设置", id: "lumi-minimal.settings") {
             (try? KernelFactory.makeSettingsView()) ?? AnyView(Text("Failed to assemble settings view"))
         }
+        .windowStyle(.hiddenTitleBar)
+        .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 360, height: 260)
 
         // 菜单栏：由 MenuBarProviding 贡献的内容与弹窗
