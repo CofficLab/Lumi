@@ -187,7 +187,6 @@ extension TextLayoutManager {
         )
         let wasLineHeightChanged = lineSize.height != linePosition.height
         var yContentAdjustment: CGFloat = 0.0
-        var maxFoundLineWidth = maxFoundLineWidth
 
         if wasLineHeightChanged {
             lineStorage.update(

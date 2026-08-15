@@ -92,8 +92,9 @@ class MarkedTextManager {
             }
         }
 
-        // If any remaining marked ranges, we need to unmark.
-        if !markedRanges.isEmpty {
+        // 剩余的 marked range 没有匹配的 selection（selection 数量变少或离开）→ 需要取消标记；
+        // 全部匹配则保留 marked text。旧实现两个分支写反了。
+        if markedRanges.isEmpty {
             return false
         } else {
             return true

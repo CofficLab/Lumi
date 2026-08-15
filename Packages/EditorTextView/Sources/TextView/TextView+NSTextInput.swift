@@ -205,7 +205,10 @@ extension TextView: NSTextInputClient {
         forProposedRange range: NSRange,
         actualRange: NSRangePointer?
     ) -> NSAttributedString? {
-        let realRange = (textStorage.string as NSString).rangeOfComposedCharacterSequences(for: range)
+        // 输入法可能给出超出文档范围的 proposedRange；先与文档求交，避免 NSRangeException
+        let documentRange = NSRange(location: 0, length: (textStorage.string as NSString).length)
+        let clamped = NSIntersectionRange(range, documentRange)
+        let realRange = (textStorage.string as NSString).rangeOfComposedCharacterSequences(for: clamped)
         actualRange?.pointee = realRange
         return textStorage.attributedSubstring(from: realRange)
     }

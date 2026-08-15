@@ -95,7 +95,7 @@ package extension TextSelectionManager {
             return NSRange(location: offset, length: 0)
         }
         if up && line.range.location != offset {
-            return NSRange(location: line.range.location, length: offset - line.index)
+            return NSRange(location: line.range.location, length: offset - line.range.location)
         } else if !up && line.range.max - (layoutManager?.detectedLineEnding.length ?? 0) != offset {
             return NSRange(
                 location: offset,

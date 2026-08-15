@@ -83,12 +83,12 @@ extension CTTypesetter {
             breakIndex += 1
         }
 
-        let canLastCharacterBreak = (breakIndex - 1 > 0 && ensureCharacterCanBreakLine(at: breakIndex - 1, for: string))
+        let canLastCharacterBreak = (breakIndex - 1 >= 0 && ensureCharacterCanBreakLine(at: breakIndex - 1, for: string))
 
         if isBreakAtEndOfString || canLastCharacterBreak {
             // Breaking either at the end of the string, or on a whitespace.
             return breakIndex
-        } else if breakIndex - 1 > 0 {
+        } else if breakIndex - 1 >= 0 {
             // Try to walk backwards until we hit a whitespace or punctuation
             var index = breakIndex - 1
 
@@ -116,7 +116,7 @@ extension CTTypesetter {
     /// - Parameter breakIndex: The index to check in the string.
     /// - Returns: True, if the break index lies after the `\n` character in a `\r\n` sequence.
     private func checkIfLineBreakOnCRLF(_ breakIndex: Int, for string: NSAttributedString) -> Bool {
-        guard breakIndex - 1 > 0 && breakIndex + 1 <= string.length else {
+        guard breakIndex - 1 >= 0 && breakIndex + 1 <= string.length else {
             return false
         }
         let substringRange = NSRange(location: breakIndex - 1, length: 2)
