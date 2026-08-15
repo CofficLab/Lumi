@@ -44,6 +44,25 @@ struct HTTPRequestMetadataTests {
         #expect(metadata.isSuccess == true)
     }
 
+    // MARK: - formattedResponseBodySize
+
+    @Test("formattedResponseBodySize is placeholder when response size is nil")
+    func responseSizeNil() {
+        #expect(makeMetadata(size: 0).formattedResponseBodySize == "--")
+    }
+
+    @Test("formats response bytes when size < 1 KB")
+    func responseBytes() {
+        #expect(makeMetadata(size: 0, responseSize: 128).formattedResponseBodySize == "128 bytes")
+    }
+
+    @Test("formats response KB / MB / GB")
+    func responseUnits() {
+        #expect(makeMetadata(size: 0, responseSize: 4096).formattedResponseBodySize == "4.00 KB")
+        #expect(makeMetadata(size: 0, responseSize: 1024 * 1024).formattedResponseBodySize == "1.00 MB")
+        #expect(makeMetadata(size: 0, responseSize: 2 * 1024 * 1024 * 1024).formattedResponseBodySize == "2.00 GB")
+    }
+
     @Test("isSuccess is false when error is set")
     func isSuccessFalse() {
         let metadata = HTTPRequestMetadata(
@@ -57,6 +76,19 @@ struct HTTPRequestMetadataTests {
             error: HTTPClientError.invalidResponse
         )
         #expect(metadata.isSuccess == false)
+    }
+
+    private func makeMetadata(size: Int, responseSize: Int? = nil) -> HTTPRequestMetadata {
+        HTTPRequestMetadata(
+            requestId: UUID(),
+            method: "POST",
+            url: "https://example.com",
+            requestHeaders: [:],
+            requestBodySizeBytes: size,
+            requestBodyPreview: nil,
+            sentAt: Date(),
+            responseBodySizeBytes: responseSize
+        )
     }
 
     // MARK: - Initializer
@@ -93,15 +125,3 @@ struct HTTPRequestMetadataTests {
 }
 
 // MARK: - Helper
-
-private func makeMetadata(size: Int) -> HTTPRequestMetadata {
-    HTTPRequestMetadata(
-        requestId: UUID(),
-        method: "POST",
-        url: "https://example.com",
-        requestHeaders: [:],
-        requestBodySizeBytes: size,
-        requestBodyPreview: nil,
-        sentAt: Date()
-    )
-}
