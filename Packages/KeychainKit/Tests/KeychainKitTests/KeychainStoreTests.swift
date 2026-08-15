@@ -93,7 +93,7 @@ final class KeychainStoreTests: XCTestCase {
     }
 }
 
-private final class StubKeychainBackend: KeychainBackend, @unchecked Sendable {
+final class StubKeychainBackend: KeychainBackend, @unchecked Sendable {
     private let lock = NSLock()
     private let readResult: KeychainResult
     private let writeResult: KeychainResult?
