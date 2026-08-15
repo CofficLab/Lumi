@@ -36,6 +36,21 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
         ]
     }
 
+    /// 贡献「添加项目」动作胶囊：仅在无当前项目时与提示词并列展示，
+    /// 点击打开文件夹选择器（终端动作，不发送消息）。
+    public func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] {
+        [
+            LumiPromptSuggestion(
+                id: "\(id).add",
+                title: LumiPluginLocalization.string("Add Project", bundle: .module),
+                systemImage: "folder.badge.plus",
+                action: .pickProjectFolder,
+                visibility: .onlyWithoutProject,
+                style: .additive
+            )
+        ]
+    }
+
     public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }
     public func willSendToLLM(kernel: KernelLumi, messages: [LumiChatMessage]) async -> [LumiChatMessage] {
         await ProjectsWillSendToLLMHook(pluginID: id).execute(kernel: kernel, messages: messages)

@@ -10,18 +10,28 @@ struct ControlView: View {
     @State private var isPopoverPresented = false
     @State private var isHovering = false
     @State private var activeContainerRevision = 0
+    @State private var conversationsRevision = 0
 
     init(viewModel: ProjectsViewModel, kernel: KernelLumi) {
         self.viewModel = viewModel
         self.kernel = kernel
     }
 
+    /// 新用户（会话与项目均为零）时隐藏工具栏控件：
+    /// 此时空态已有「添加项目」动作胶囊作为唯一项目入口，标题栏再显示
+    /// 一个 Projects 下拉会分散视觉焦点。一旦产生首个会话或首个项目即恢复。
+    private var isNewUser: Bool {
+        (kernel.conversations?.conversations.isEmpty ?? true)
+            && viewModel.projects.isEmpty
+    }
+
     var body: some View {
         let _ = activeContainerRevision
+        let _ = conversationsRevision
         let supportsProject = kernel.workspace?.currentViewContainer?.supportsProject == true
 
         Group {
-            if supportsProject {
+            if supportsProject && !isNewUser {
                 Button {
                     isPopoverPresented = true
                 } label: {
@@ -68,6 +78,10 @@ struct ControlView: View {
             if !supportsProject {
                 isPopoverPresented = false
             }
+        }
+        .onLumiConversationsDidChange {
+            // 会话列表变化时刷新「新用户」判定（如新建首个会话后恢复工具栏）。
+            conversationsRevision += 1
         }
     }
 
