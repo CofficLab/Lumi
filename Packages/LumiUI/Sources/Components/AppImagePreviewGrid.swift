@@ -1,5 +1,42 @@
 import SwiftUI
 
+/// 位图解码缓存:图片字节不可变,历史上每次 body 求值(含消息列表滚动
+/// 重物化)都重新执行 `NSImage(data:)` 全量位图解码。键为原始字节
+/// (哈希远快于解码),LRU 有界。
+enum AppImageDecodeCache {
+    private static let limit = 128
+    // 以下可变静态量均由 lock 保护，标记 nonisolated(unsafe) 以满足并发检查
+    nonisolated(unsafe) private static var storage: [Data: LumiPlatformImage] = [:]
+    nonisolated(unsafe) private static var insertionOrder: [Data] = []
+    private static let lock = NSLock()
+
+    static func image(for data: Data) -> LumiPlatformImage? {
+        lock.lock()
+        if let cached = storage[data] {
+            lock.unlock()
+            return cached
+        }
+        lock.unlock()
+
+        guard let decoded = LumiPlatformImage(data: data) else { return nil }
+
+        lock.lock()
+        defer { lock.unlock() }
+        if storage[data] == nil {
+            insertionOrder.append(data)
+        }
+        storage[data] = decoded
+        if insertionOrder.count > limit {
+            let overflow = insertionOrder.count - limit
+            for key in insertionOrder.prefix(overflow) {
+                storage.removeValue(forKey: key)
+            }
+            insertionOrder.removeFirst(overflow)
+        }
+        return decoded
+    }
+}
+
 public struct AppImagePreviewGrid: View {
     let imageDataList: [Data]
     @State private var previewingImage: LumiPlatformImage?
@@ -16,7 +53,7 @@ public struct AppImagePreviewGrid: View {
             spacing: 8
         ) {
             ForEach(Array(imageDataList.enumerated()), id: \.offset) { _, data in
-                if let nsImage = LumiPlatformImage(data: data) {
+                if let nsImage = AppImageDecodeCache.image(for: data) {
                     Button {
                         previewingImage = nsImage
                     } label: {

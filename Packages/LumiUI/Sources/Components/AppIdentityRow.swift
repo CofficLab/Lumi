@@ -15,7 +15,12 @@ public struct AppIdentityRow: View {
         metadataColor: Color? = nil
     ) {
         self.title = title
-        self.metadata = metadata.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        // 等价于 filter { !trimmingCharacters().isEmpty },但不为每个条目
+        // 构造 trimmed 新串:init 在每次宿主 body 求值时执行(消息行 header),
+        // 正常条目首个字符即非空白,allSatisfy 在首字符处短路。
+        self.metadata = metadata.filter { item in
+            !item.isEmpty && !item.allSatisfy { $0.isWhitespace || $0.isNewline }
+        }
         self.titleColor = titleColor
         self.metadataColor = metadataColor
     }

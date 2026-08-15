@@ -4,13 +4,20 @@ public struct CopyMessageButton: View {
     @LumiMotionPreferenceReader private var motionPreference
     @LumiTheme private var theme
 
-    let content: String
+    /// 惰性求值:复制是低频操作,内容构造(如错误消息的 metadata dump)
+    /// 留到点击时执行,不占行渲染路径。
+    private let contentProvider: () -> String
     @Binding var showFeedback: Bool
 
     @State private var isHovered = false
 
     public init(content: String, showFeedback: Binding<Bool>) {
-        self.content = content
+        self.contentProvider = { content }
+        self._showFeedback = showFeedback
+    }
+
+    public init(contentProvider: @escaping () -> String, showFeedback: Binding<Bool>) {
+        self.contentProvider = contentProvider
         self._showFeedback = showFeedback
     }
 
@@ -77,7 +84,7 @@ public struct CopyMessageButton: View {
     }
 
     private func copyToClipboard() {
-        LumiPasteboard.copyString(content)
+        LumiPasteboard.copyString(contentProvider())
 
         AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.statusPresentation, preference: motionPreference)) {
             showFeedback = true
