@@ -64,10 +64,6 @@ public final class DocumentHighlightPrewarmScheduler {
             }
             enqueuePrewarm(for: url, isActive: url.standardizedFileURL == standardizedActive)
         }
-
-        for url in activeFirst where tasks[url.standardizedFileURL] == nil {
-            enqueuePrewarm(for: url, isActive: url.standardizedFileURL == standardizedActive)
-        }
     }
 
     public func cancelAll() {

@@ -490,16 +490,44 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
 
     private func executeTurnLoop(conversationID: UUID) async {
         let turnID = turnIDs[conversationID]
+
+        guard let kernel else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)kernel 为 nil，turn 结束")
+            }
+            failedConversations.insert(conversationID)
+            return
+        }
+
+        guard let providerManager = kernel.llmProvider,
+              let fallbackProvider = providerManager.allLLMProviders().first else {
+            Self.logger.error("\(Self.t)没有可用的 LLM Provider")
+            appendErrorMessage(
+                conversationID: conversationID,
+                content: String(localized: "No LLM provider available", defaultValue: "No LLM provider available")
+            )
+            failedConversations.insert(conversationID)
+            return
+        }
+
+        // Resolve once for the continuous turn. Conversation settings are the
+        // source of truth; global selection only serves legacy/unbound chats.
+        // Keeping the snapshot outside the tool loop prevents selecting another
+        // conversation from changing this turn's provider/model midway through.
+        let availableProviders = providerManager.allLLMProviders()
+        let selection = AgentTurnProviderSelection.resolve(
+            conversationProviderID: kernel.conversations?.providerID(for: conversationID),
+            conversationModel: kernel.conversations?.modelName(for: conversationID),
+            selectedProviderID: providerManager.selectedProviderID,
+            selectedModel: providerManager.selectedModel,
+            availableProviderIDs: Set(availableProviders.map { type(of: $0).info.id }),
+            fallbackProviderID: type(of: fallbackProvider).info.id
+        )
+        let targetProvider = providerManager.llmProvider(id: selection.providerID) ?? fallbackProvider
+        let model = selection.model ?? type(of: targetProvider).info.defaultModel
+
         while !cancelledConversations.contains(conversationID) {
             try? Task.checkCancellation()
-
-            guard let kernel else {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)kernel 为 nil，turn 结束")
-                }
-                failedConversations.insert(conversationID)
-                return
-            }
 
             // 每轮迭代取一次消息快照,供后续所有只读辅助方法复用,避免它们各自重新
             // fetch + 合并 pending + 全量排序(messages(for:) 在工具回合内会被反复调用,
@@ -532,34 +560,6 @@ public final class AgentTurnRunner: AgentTurnManaging, SuperLog {
             let tools = (automationLevel.allowsTools ? kernel.toolManager?.allAgentTools() ?? [] : []).filter {
                 !turnCreationExcludedToolNames[conversationID, default: []].contains($0.name)
             }
-
-            guard let provider = kernel.llmProvider?.allLLMProviders().first else {
-                Self.logger.error("\(Self.t)没有可用的 LLM Provider")
-
-                appendErrorMessage(
-                    conversationID: conversationID,
-                    content: String(localized: "No LLM provider available", defaultValue: "No LLM provider available")
-                )
-                failedConversations.insert(conversationID)
-                return
-            }
-
-            let targetProvider: any LumiLLMProvider
-            // 优先使用全局选择的 provider（与 ModelSelectorPlugin 一致）
-            if let selectedProviderID = kernel.llmProvider?.selectedProviderID,
-               let selectedProvider = kernel.llmProvider?.llmProvider(id: selectedProviderID) {
-                targetProvider = selectedProvider
-            } else if let conversationProviderID = kernel.conversations?.providerID(for: conversationID),
-                      let conversationProvider = kernel.llmProvider?.llmProvider(id: conversationProviderID) {
-                targetProvider = conversationProvider
-            } else {
-                targetProvider = provider
-            }
-
-            // 优先使用全局选择的 model（与 ModelSelectorPlugin 一致）
-            let model = kernel.llmProvider?.selectedModel
-                ?? kernel.conversations?.modelName(for: conversationID)
-                ?? type(of: targetProvider).info.defaultModel
 
             // 抽取最近一条 user message 的图片附件(由 MessageSender 写入 metadata["imageAttachments"])。
             // 实现细节见 KernelLumi.LumiImageAttachmentMetadata.extract。

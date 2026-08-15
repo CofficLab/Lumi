@@ -51,7 +51,8 @@ public final class ProjectFileTreePlugin: LumiPlugin, SuperLog {
                 id: Self.railTabID,
                 title: "Explorer",
                 systemImage: "square.grid.2x2.fill",
-                requiresProjectSupport: true
+                requiresProjectSupport: true,
+                requiresActiveProject: true
             ) {
                 TreeView(kernel: kernel)
             }

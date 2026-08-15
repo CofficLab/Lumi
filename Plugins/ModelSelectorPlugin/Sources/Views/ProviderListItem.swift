@@ -23,9 +23,18 @@ struct ProviderListItem: View {
                         .font(.appCallout)
                         .foregroundColor(isSelected ? theme.primary : theme.textPrimary)
 
-                    Text("\(info.availableModels.count) models")
-                        .font(.appMicro)
-                        .foregroundColor(theme.textTertiary)
+                    HStack(spacing: 4) {
+                        Text("\(info.availableModels.count) models")
+                            .font(.appMicro)
+                            .foregroundColor(theme.textTertiary)
+
+                        // API 协议格式（如 OpenAI / Anthropic / Responses）
+                        if let apiFormat = info.apiFormat {
+                            Text("· \(apiFormat.displayName)")
+                                .font(.appMicro)
+                                .foregroundColor(theme.textTertiary)
+                        }
+                    }
                 }
 
                 Spacer()

@@ -101,7 +101,7 @@ public final class QuickLauncherPlugin: LumiPlugin, SuperLog {
             SettingsTabItem(
                 id: id,
                 title: LumiPluginLocalization.string("Quick Launcher", bundle: .module),
-                systemImage: "rocket",
+                systemImage: "bolt.fill",
                 order: order
             ) {
                 LauncherSettingsView()

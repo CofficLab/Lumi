@@ -112,6 +112,9 @@ public final class AppManagerPlugin: LumiPlugin, SuperLog {
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(AppManagerAboutView())
     }
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(AppManagerManualView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

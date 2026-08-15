@@ -36,6 +36,7 @@ public final class MiniMaxOpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             LumiModelInfo(id: "MiniMax-Text-01", contextWindowSize: 4000000, capabilities: .init(supportsVision: false, supportsTools: false)),
         ],
         websiteURL: URL(string: "https://platform.minimaxi.com/")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: MiniMaxProviderSupport.apiKeyStorageKey)
     private let support = MiniMaxProviderSupport()
     private let service: MiniMaxOpenAIService

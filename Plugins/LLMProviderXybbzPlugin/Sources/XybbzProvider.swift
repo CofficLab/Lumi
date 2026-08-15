@@ -22,6 +22,7 @@ public final class XybbzProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://xybbz.xyz")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_Xybbz"
     )
 

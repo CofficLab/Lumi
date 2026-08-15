@@ -5,6 +5,7 @@ import SwiftUI
 
 struct RailContentView: View {
     @ObservedObject var kernel: KernelLumi
+    let hasActiveProject: Bool
 
     private var tabs: [PanelRailTabItem] {
         guard let workspace = kernel.workspace else { return [] }
@@ -16,6 +17,7 @@ struct RailContentView: View {
             workspace.allPanelRailTabItems,
             containerID: containerID,
             supportsProject: supportsProject,
+            hasActiveProject: hasActiveProject,
             supportsChat: supportsChat
         )
     }

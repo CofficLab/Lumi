@@ -256,7 +256,7 @@ public enum BracketMatcher {
                 replacementRange: selection,
                 replacementText: replacementText,
                 selectedRange: NSRange(
-                    location: selection.location + replacementText.count,
+                    location: selection.location + replacementText.utf16.count,
                     length: 0
                 )
             )

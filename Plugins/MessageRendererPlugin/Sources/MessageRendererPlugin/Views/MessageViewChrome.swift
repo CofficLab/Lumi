@@ -14,10 +14,21 @@ struct MessageViewChrome<Content: View>: View {
     let verbosity: LumiResponseVerbosity
     @State private var didCopy = false
     @State private var showThinkingPopover = false
+    /// 行级悬停态:操作按钮组仅在悬停该行时物化(滚动重物化时每行
+    /// 少构建 ~5 个按钮子树),popover 打开或复制反馈期间保持可见。
+    @State private var isRowHovered = false
+    /// 悬停进入防抖:滚动时光标下的行快速进出,立即物化按钮会造成
+    /// hover 风暴;停留 150ms 才显示(标准菜单式交互),离开立即隐藏。
+    @State private var hoverDebounceTask: Task<Void, Never>?
     @ViewBuilder let content: () -> Content
 
     private var isBrief: Bool {
         verbosity == .brief
+    }
+
+    /// 操作按钮的可见性:悬停、思考 popover 打开、复制反馈显示中任一为真。
+    private var showsActions: Bool {
+        isRowHovered || showThinkingPopover || didCopy
     }
 
     private var thinkingContent: String? {
@@ -28,10 +39,6 @@ struct MessageViewChrome<Content: View>: View {
             return thinking
         }
         return nil
-    }
-
-    private var hasThinkingContent: Bool {
-        thinkingContent != nil
     }
 
     private var tokenDisplayText: String? {
@@ -57,18 +64,23 @@ struct MessageViewChrome<Content: View>: View {
     }
 
     var body: some View {
-        Group {
+        // 局部 let:thinkingContent/tokenDisplayText 历史上每次求值计算 2 次
+        // (hasThinkingContent + 显式读取),滚动重物化时被高频触发。
+        let thinking = thinkingContent
+        let tokenText = tokenDisplayText
+        return Group {
             if isBrief {
-                messageBody.contextMenu { briefContextMenu }
+                messageBody(thinking: thinking, tokenText: tokenText)
+                    .contextMenu { briefContextMenu }
             } else {
-                messageBody
+                messageBody(thinking: thinking, tokenText: tokenText)
             }
         }
         .appThemedAppearance()
     }
 
     @ViewBuilder
-    private var messageBody: some View {
+    private func messageBody(thinking: String?, tokenText: String?) -> some View {
         VStack(alignment: .leading, spacing: isBrief ? 0 : 4) {
             if showsHeader && !isBrief {
                 CompactMessageHeaderView {
@@ -81,16 +93,20 @@ struct MessageViewChrome<Content: View>: View {
                     }
                 } trailing: {
                     HStack(alignment: .center, spacing: 12) {
-                        CopyMessageButton(
-                            content: MessageViewHelpers.copyContent(for: message),
-                            showFeedback: $didCopy
-                        )
+                        // 操作按钮仅在悬停时物化(见 showsActions);
+                        // 时间戳与 token 信息是纯文本,常驻。
+                        if showsActions {
+                            CopyMessageButton(
+                                contentProvider: { MessageViewHelpers.copyContent(for: message) },
+                                showFeedback: $didCopy
+                            )
+                        }
 
-                        if showsResendButton, let kernel, !message.content.isEmpty {
+                        if showsActions, showsResendButton, let kernel, !message.content.isEmpty {
                             ResendMessageButton(kernel: kernel, message: message)
                         }
 
-                        if hasThinkingContent, verbosity != .detailed {
+                        if showsActions, thinking != nil, verbosity != .detailed {
                             AppIconButton(
                                 systemImage: "brain",
                                 tint: showThinkingPopover ? theme.textPrimary : theme.textSecondary,
@@ -101,7 +117,7 @@ struct MessageViewChrome<Content: View>: View {
                             }
                             .help(LumiPluginLocalization.string("思考过程", bundle: .module))
                             .popover(isPresented: $showThinkingPopover, arrowEdge: .bottom) {
-                                ThinkingPopoverContent(text: thinkingContent!)
+                                ThinkingPopoverContent(text: thinking!)
                             }
                         }
 
@@ -110,18 +126,20 @@ struct MessageViewChrome<Content: View>: View {
                             titleColor: theme.textSecondary
                         )
 
-                        if let tokenInfo = tokenDisplayText {
+                        if let tokenInfo = tokenText {
                             AppIdentityRow(
                                 title: tokenInfo,
                                 titleColor: theme.textSecondary
                             )
                         }
 
-                        if let errorTransportDetails, errorTransportDetails.hasTransportDetails {
+                        if showsActions, let errorTransportDetails, errorTransportDetails.hasTransportDetails {
                             ErrorTransportDetailsButton(details: errorTransportDetails)
                         }
 
-                        MessageInfoButton(message: message)
+                        if showsActions {
+                            MessageInfoButton(message: message)
+                        }
                     }
                 }
             }
@@ -129,6 +147,19 @@ struct MessageViewChrome<Content: View>: View {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onHover { hovering in
+            if hovering {
+                hoverDebounceTask?.cancel()
+                hoverDebounceTask = Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(150))
+                    guard !Task.isCancelled else { return }
+                    isRowHovered = true
+                }
+            } else {
+                hoverDebounceTask?.cancel()
+                isRowHovered = false
+            }
+        }
     }
 
     @ViewBuilder

@@ -1,13 +1,10 @@
 import LumiUI
 import SwiftUI
-import AppKit
 
 struct ListView: View {
     @ObservedObject var viewModel: ProjectsViewModel
     @State private var searchText = ""
     @Binding var isImporterPresented: Bool
-    @State private var errorAlertMessage: String?
-    @State private var showErrorAlert = false
 
     private var filteredProjects: [ProjectEntry] {
         if searchText.isEmpty {
@@ -16,47 +13,11 @@ struct ListView: View {
         return viewModel.projects.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
 
-    private var projectsDirectory: URL {
-        viewModel.store.settingsDirectory
-    }
-
-    private func openProjectsDirectory() {
-        let url = projectsDirectory
-
-        // Ensure directory exists
-        do {
-            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        } catch {
-            errorAlertMessage = "Failed to create directory: \(error.localizedDescription)"
-            showErrorAlert = true
-            return
-        }
-
-        // Verify directory exists and is readable
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue else {
-            errorAlertMessage = "Directory does not exist: \(url.path)"
-            showErrorAlert = true
-            return
-        }
-
-        let success = NSWorkspace.shared.open(url)
-        if !success {
-            errorAlertMessage = "Failed to open directory: \(url.path)"
-            showErrorAlert = true
-        }
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
             list
-        }
-        .alert(LumiPluginLocalization.string("Error", bundle: .module), isPresented: $showErrorAlert) {
-            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
-        } message: {
-            Text(errorAlertMessage ?? "Unknown error")
         }
     }
 
@@ -75,13 +36,24 @@ struct ListView: View {
     @ViewBuilder
     private var list: some View {
         if filteredProjects.isEmpty {
-            AppEmptyState(
-                icon: "folder.badge.plus",
-                title: LumiPluginLocalization.string("No Projects", bundle: .module),
-                actionTitle: LumiPluginLocalization.string("Open Directory", bundle: .module),
-                action: openProjectsDirectory
-            )
-            .frame(maxWidth: .infinity, minHeight: 126)
+            if viewModel.projects.isEmpty {
+                // 列表为空：引导添加项目（项目是可选功能，无项目时聊天仍可正常使用）
+                AppEmptyState(
+                    icon: "folder.badge.plus",
+                    title: LumiPluginLocalization.string("No Projects", bundle: .module),
+                    description: LumiPluginLocalization.string("Adding a project gives the agent file context. This is optional — chat works without one.", bundle: .module),
+                    actionTitle: LumiPluginLocalization.string("Add Project", bundle: .module),
+                    action: { isImporterPresented = true }
+                )
+                .frame(maxWidth: .infinity, minHeight: 126)
+            } else {
+                // 仅为搜索无匹配
+                AppEmptyState(
+                    icon: "magnifyingglass",
+                    title: LumiPluginLocalization.string("No Projects", bundle: .module)
+                )
+                .frame(maxWidth: .infinity, minHeight: 126)
+            }
         } else {
             ScrollView {
                 LazyVStack(spacing: 4) {

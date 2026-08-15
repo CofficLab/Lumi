@@ -18,6 +18,12 @@ public struct WelcomePage: View {
             featuresSection(welcomeFeatures)
                 .padding(.top, 28)
 
+            // 轻量提示：项目是可选功能，不作为引导步骤强制用户配置
+            Text(LumiPluginLocalization.string("Optional: add a project later from the title bar to give the agent file context.", bundle: .module))
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .padding(.top, 20)
+
             Spacer(minLength: 0)
         }
     }

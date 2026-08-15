@@ -125,9 +125,12 @@ public final class FileTreeStore: SuperLog, @unchecked Sendable {
     ///   - projectRoot: 项目根目录的绝对路径
     @discardableResult
     public func setExpandedPaths(_ paths: Set<String>, for projectRoot: String) -> Bool {
-        expandedPathsCache[projectRoot] = paths
         let key = expandedPathsKey(for: projectRoot)
-        return set(Array(paths), forKey: key)
+        let success = set(Array(paths), forKey: key)
+        if success {
+            expandedPathsCache[projectRoot] = paths
+        }
+        return success
     }
 
     /// 添加一个展开的文件夹路径（内存缓存 + 防抖落盘）

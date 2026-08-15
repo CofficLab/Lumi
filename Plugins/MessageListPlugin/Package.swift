@@ -12,6 +12,7 @@ let package = Package(
         .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/MarkdownKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -21,6 +22,7 @@ let package = Package(
                 .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "MarkdownKit", package: "MarkdownKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources",

@@ -69,6 +69,7 @@ public final class HyperAPIProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://hyperapi.cc")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_HyperAPI"
     )
     

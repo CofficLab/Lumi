@@ -35,6 +35,7 @@ import ConversationListPlugin
 import ConversationMessageCountPlugin
 import ConversationContextSizePlugin
 import ConversationAgentTurnCountPlugin
+import ConversationCacheHitRatePlugin
 import ConversationNewPlugin
 import ConversationSpeedPlugin
 import ConversationManagerPlugin
@@ -46,10 +47,9 @@ import DisplayControlPlugin
 import DockerManagerPlugin
 import DocxReadPlugin
 import DownloadPlugin
-import EditorKernelPlugin
+import EditorHostPlugin
 import EditorPanelPlugin
 import EditorPreviewPlugin
-import EditorProviderPlugin
 import EditorSwiftPlugin
 import FileLogPlugin
 import Foundation
@@ -177,10 +177,9 @@ public enum LumiPluginCatalog {
             // Core (order matters! PanelPlugin must register early for rail tabs)
             LLMProviderManagerPlugin(),
             OpenCodePlugin(),
-            // EditorKernelPlugin 必须先于 EditorProviderPlugin:
-            // 前者在 OnBoot 注册具象 EditorService,后者在 OnReady resolve 并转发文件操作。
-            EditorKernelPlugin(),
-            EditorProviderPlugin(),
+            // Editor Host — 唯一持有 EditorService 的插件:
+            // OnBoot 注册具象 EditorService、协同器、legacy EditorProviding 与 V2 EditorProvidingV2。
+            EditorHostPlugin(),
             // App settings tabs (General/Appearance) — order 1, must lead the sidebar
 
             // LLM Providers (order 91-110)
@@ -240,12 +239,12 @@ public enum LumiPluginCatalog {
             ConversationMessageCountPlugin(),
             ConversationContextSizePlugin(),
             ConversationAgentTurnCountPlugin(),
+            ConversationCacheHitRatePlugin(),
             SettingsPlugin(),
             LogoPlugin(),
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
-            // Editor UI Shell — 贡献 "Code Editor" 视图容器,托管 EditorService。
-            // 依赖 EditorKernelPlugin 在 OnBoot 注册的具象 EditorService。
+            // Editor UI Shell — 贡献 "Code Editor" 视图容器,通过 kernel.editorV2.surface 消费。
             EditorPanelPlugin(),
             EditorSwiftPlugin(),
             // Project files panel — 在 PanelHeader 显示项目已打开的文件。

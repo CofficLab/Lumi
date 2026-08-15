@@ -97,9 +97,15 @@ enum MessageViewHelpers {
         return Int(raw)
     }
 
-    static func userDisplayName() -> String {
+    /// 进程级缓存:`NSFullUserName()` 走目录服务查询,历史上每次 body 求值
+    /// (每个用户行、每次滚动重物化)都重跑一次;用户名在进程生命周期内不变。
+    private static let cachedUserDisplayName: String = {
         let fullName = NSFullUserName()
         return fullName.isEmpty ? NSUserName() : fullName
+    }()
+
+    static func userDisplayName() -> String {
+        cachedUserDisplayName
     }
 
     static func avatarKind(for role: LumiChatMessageRole) -> ChatAvatarKind {

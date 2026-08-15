@@ -44,24 +44,6 @@ public struct ProjectsOnReadyHook {
         // loadProjects,此时 projects.json 应已含合并后的数据)。幂等 + 吞错。
         ProjectsLegacyMigration(currentDataRootDirectory: storage.dataRootDirectory, store: store).run()
 
-        // 仅在项目列表从未初始化时安装内置样本。样本会复制到插件的可写数据目录，
-        // 用户移除样本后 projects.json 仍然存在，因此后续启动不会再次添加。
-        if let bundledProjectsURL = Bundle.module.url(
-            forResource: "BundledProjects",
-            withExtension: nil
-        ) {
-            do {
-                try BundledSampleProjectInstaller().installIfNeeded(
-                    from: bundledProjectsURL.appendingPathComponent("Lumi Sample", isDirectory: true),
-                    into: store
-                )
-            } catch {
-                Self.logger.error("📂 安装内置样本项目失败: \(error.localizedDescription)")
-            }
-        } else {
-            Self.logger.error("📂 未找到内置样本项目资源")
-        }
-
         // 2. 初始化 ViewModel
         let viewModel = ProjectsViewModel(store: store)
 

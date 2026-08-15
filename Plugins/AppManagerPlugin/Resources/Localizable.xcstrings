@@ -41,6 +41,9 @@
         }
       }
     },
+    "⌫" : {
+
+    },
     "App Details" : {
       "localizations" : {
         "en" : {
@@ -177,6 +180,74 @@
         }
       }
     },
+    "Apps List" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apps List"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用列表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "應用列表"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "應用列表"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "應用列表"
+          }
+        }
+      }
+    },
+    "Apps list: the left pane lists installed applications, with a search field and a Refresh button on top." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apps list: the left pane lists installed applications, with a search field and a Refresh button on top."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「应用列表」:左侧面板列出已安装的应用,顶部提供搜索框与「刷新」按钮。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「應用列表」:左側面板列出已安裝的應用,頂部提供搜尋欄與「重新整理」按鈕。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「應用列表」:左側面板列出已安裝的應用,頂部提供搜尋欄與「重新整理」按鈕。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「應用列表」:左側面板列出已安裝的應用,頂部提供搜尋欄與「重新整理」按鈕。"
+          }
+        }
+      }
+    },
     "Automatically scan the system for installed applications" : {
       "localizations" : {
         "en" : {
@@ -207,6 +278,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "自動掃描系統中已安裝的應用程式"
+          }
+        }
+      }
+    },
+    "Basic Operations" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic Operations"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
           }
         }
       }
@@ -415,6 +520,40 @@
         }
       }
     },
+    "Click Refresh to rescan when the list looks out of date." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click Refresh to rescan when the list looks out of date."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当列表内容过期时,点击「刷新」重新扫描。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當清單內容過期時,點擊「重新整理」重新掃描。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當清單內容過期時,點擊「重新整理」重新掃描。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當清單內容過期時,點擊「重新整理」重新掃描。"
+          }
+        }
+      }
+    },
     "Confirm Uninstall" : {
       "localizations" : {
         "en" : {
@@ -445,6 +584,108 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "確認解除安裝"
+          }
+        }
+      }
+    },
+    "Detail pane: shows the selected application's information, related files, and cache, and provides the Uninstall Selected button." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detail pane: shows the selected application's information, related files, and cache, and provides the Uninstall Selected button."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「详情面板」:显示所选应用的信息、相关文件与缓存,并提供「卸载所选项」按钮。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「詳情面板」:顯示所選應用的資訊、相關檔案與快取,並提供「解除安裝所選項」按鈕。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「詳情面板」:顯示所選應用的資訊、相關檔案與快取,並提供「解除安裝所選項」按鈕。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「詳情面板」:顯示所選應用的資訊、相關檔案與快取,並提供「解除安裝所選項」按鈕。"
+          }
+        }
+      }
+    },
+    "Figure 1: Interface layout" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Figure 1: Interface layout"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图 1 界面布局"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        }
+      }
+    },
+    "Interface" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interface"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面说明"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
           }
         }
       }
@@ -483,6 +724,40 @@
         }
       }
     },
+    "Notes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        }
+      }
+    },
     "Open" : {
       "localizations" : {
         "en" : {
@@ -513,6 +788,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打開"
+          }
+        }
+      }
+    },
+    "Open the Apps tab in the sidebar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Apps tab in the sidebar."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在侧边栏中打开「应用」标签页。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中開啟「應用」標籤頁。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中開啟「應用」標籤頁。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中開啟「應用」分頁。"
+          }
+        }
+      }
+    },
+    "Overview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
           }
         }
       }
@@ -551,6 +894,40 @@
         }
       }
     },
+    "Removing related files also removes the application's data; review the list before uninstalling." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removing related files also removes the application's data; review the list before uninstalling."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除相关文件会同时移除该应用的数据,卸载前请先查看文件列表。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除相關檔案會同時移除該應用的資料,解除安裝前請先查看檔案清單。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除相關檔案會同時移除該應用的資料,解除安裝前請先查看檔案清單。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除相關檔案會同時移除該應用的資料,解除安裝前請先查看檔案清單。"
+          }
+        }
+      }
+    },
     "Rescan to refresh the application list" : {
       "localizations" : {
         "en" : {
@@ -581,6 +958,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新掃描以刷新應用程式列表"
+          }
+        }
+      }
+    },
+    "Review the application's information, related files, and cache in the detail pane." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the application's information, related files, and cache in the detail pane."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在详情面板中查看该应用的信息、相关文件与缓存。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在詳情面板中查看該應用的資訊、相關檔案與快取。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在詳情面板中查看該應用的資訊、相關檔案與快取。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在詳情面板中查看該應用的資訊、相關檔案與快取。"
+          }
+        }
+      }
+    },
+    "Row actions: hover a row in the list to reveal Show in Finder and Open." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Row actions: hover a row in the list to reveal Show in Finder and Open."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「行操作」:将鼠标悬停在列表中的某一行上,会出现「在 Finder 中显示」与「打开」。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「行操作」:將滑鼠懸停在清單中的某一列上,會出現「在 Finder 中顯示」與「打開」。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「行操作」:將滑鼠懸停在清單中的某一列上,會出現「在 Finder 中顯示」與「打開」。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「行操作」:將滑鼠懸停在清單中的某一列上,會出現「在 Finder 中顯示」與「開啟」。"
           }
         }
       }
@@ -823,6 +1268,74 @@
         }
       }
     },
+    "This manual covers the interface and basic operations of the App Manager: browsing installed applications, viewing app details, and uninstalling applications." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This manual covers the interface and basic operations of the App Manager: browsing installed applications, viewing app details, and uninstalling applications."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手册介绍应用管理器的界面与基本操作:浏览已安装的应用、查看应用详情以及卸载应用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹應用管理器的介面與基本操作:瀏覽已安裝的應用、查看應用詳情以及解除安裝應用。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹應用管理器的介面與基本操作:瀏覽已安裝的應用、查看應用詳情以及解除安裝應用。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹應用管理器的介面與基本操作:瀏覽已安裝的應用、查看應用詳情以及解除安裝應用。"
+          }
+        }
+      }
+    },
+    "To remove an application, click Uninstall Selected and confirm in the dialog." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To remove an application, click Uninstall Selected and confirm in the dialog."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如需移除应用,点击「卸载所选项」并在弹出的对话框中确认。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如需移除應用,點擊「解除安裝所選項」並在彈出的對話框中確認。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如需移除應用,點擊「解除安裝所選項」並在彈出的對話框中確認。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如需移除應用,點擊「解除安裝所選項」並在彈出的對話框中確認。"
+          }
+        }
+      }
+    },
     "Try other search keywords" : {
       "localizations" : {
         "en" : {
@@ -891,6 +1404,74 @@
         }
       }
     },
+    "Uninstall Button" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uninstall Button"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸载按钮"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解除安裝按鈕"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解除安裝按鈕"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解除安裝按鈕"
+          }
+        }
+      }
+    },
+    "Uninstalling cannot be undone; confirm carefully before proceeding." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uninstalling cannot be undone; confirm carefully before proceeding."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸载操作不可恢复,执行前请仔细确认。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解除安裝操作不可復原,執行前請仔細確認。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解除安裝操作不可還原,執行前請仔細確認。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解除安裝操作無法復原,執行前請仔細確認。"
+          }
+        }
+      }
+    },
     "Unknown Bundle ID" : {
       "localizations" : {
         "en" : {
@@ -925,6 +1506,40 @@
         }
       }
     },
+    "Use Show in Finder to reveal the application in the Finder, or Open to launch it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Show in Finder to reveal the application in the Finder, or Open to launch it."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用「在 Finder 中显示」在 Finder 中定位该应用,或使用「打开」启动该应用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用「在 Finder 中顯示」在 Finder 中定位該應用,或使用「打開」啟動該應用。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用「在 Finder 中顯示」在 Finder 中定位該應用,或使用「打開」啟動該應用。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用「在 Finder 中顯示」在 Finder 中定位該應用,或使用「開啟」啟動該應用。"
+          }
+        }
+      }
+    },
     "Use the cache manager to free up disk space" : {
       "localizations" : {
         "en" : {
@@ -955,6 +1570,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用快取管理器釋放磁碟空間"
+          }
+        }
+      }
+    },
+    "Use the search field to find an application, or scroll the list and click one to select it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use the search field to find an application, or scroll the list and click one to select it."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在搜索框中输入名称查找应用,或滚动列表并点击某一应用将其选中。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在搜尋欄中輸入名稱查找應用,或捲動清單並點擊某一應用將其選取。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在搜尋欄中輸入名稱查找應用,或捲動清單並點擊某一應用將其選取。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在搜尋欄中輸入名稱查找應用,或捲動清單並點擊某一應用將其選取。"
+          }
+        }
+      }
+    },
+    "User Manual" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User Manual"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手册"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
           }
         }
       }

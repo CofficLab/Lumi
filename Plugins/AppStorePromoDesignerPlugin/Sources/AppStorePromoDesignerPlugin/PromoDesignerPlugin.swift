@@ -111,6 +111,10 @@ public final class PromoDesignerPlugin: LumiPlugin {
         AnyView(PromoAboutView())
     }
 
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(PromoManualView())
+    }
+
     public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }
     public func messageRenderers(kernel: KernelLumi) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: KernelLumi) -> [LumiMenuBarContentItem] { [] }

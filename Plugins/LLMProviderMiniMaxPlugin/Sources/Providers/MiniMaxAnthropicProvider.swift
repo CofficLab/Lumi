@@ -26,6 +26,7 @@ public final class MiniMaxAnthropicProvider: LumiLLMProvider, @unchecked Sendabl
             LumiModelInfo(id: "MiniMax-Text-01", contextWindowSize: 4_000_000, capabilities: .init(supportsVision: false, supportsTools: false)),
         ],
         websiteURL: URL(string: "https://platform.minimaxi.com/")!,
+        apiFormat: .anthropic,
         apiKeyStorageKey: MiniMaxProviderSupport.apiKeyStorageKey
     )
     private let support = MiniMaxProviderSupport()

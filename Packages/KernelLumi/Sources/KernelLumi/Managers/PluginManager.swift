@@ -179,6 +179,7 @@ public final class PluginManager: ObservableObject {
                     systemImage: item.systemImage,
                     visibility: item.visibility,
                     requiresProjectSupport: item.requiresProjectSupport,
+                    requiresActiveProject: item.requiresActiveProject,
                     requiresChatSupport: item.requiresChatSupport,
                     content: item.makeView
                 )
@@ -452,7 +453,9 @@ public final class PluginManager: ObservableObject {
                     title: suggestion.title,
                     prompt: suggestion.prompt,
                     systemImage: suggestion.systemImage,
-                    action: suggestion.action
+                    action: suggestion.action,
+                    visibility: suggestion.visibility,
+                    style: suggestion.style
                 )
                 item.order = pluginOrder
                 item.pluginID = plugin.id

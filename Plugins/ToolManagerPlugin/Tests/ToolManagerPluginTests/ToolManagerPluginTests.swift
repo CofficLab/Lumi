@@ -412,7 +412,7 @@ struct ToolManagerPluginTests {
         let kernel = KernelLumi()
         #expect(plugin.id == "com.coffic.lumi.plugin.tool-manager")
         #expect(plugin.policy == .alwaysOn)
-        #expect(plugin.agentTools(kernel: kernel).map(\.name) == ["ls", "glob", "read_file", "write_file", "edit_file", "run_command", "run_subagent"])
+        #expect(plugin.agentTools(kernel: kernel).map(\.name) == ["ls", "glob", "read_image", "read_file", "write_file", "edit_file", "run_command", "run_subagent"])
         #expect(plugin.llmProviders(kernel: kernel).isEmpty)
         #expect(plugin.messageRenderers(kernel: kernel).isEmpty)
         #expect(plugin.menuBarContentItems(kernel: kernel).isEmpty)

@@ -24,6 +24,7 @@ public final class FlyMuxProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://flymux.ai")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_FlyMux"
     )
     

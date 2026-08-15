@@ -206,6 +206,8 @@ struct CodeBlockLayoutTests {
     func multiLineCodeBlockInListUsesHorizontalScrollDocumentHeight() async throws {
         let lines = (1...12).map { "let value\($0) = \($0)" }.joined(separator: "\n")
         let markdown = "```swift\n\(lines)\n```\n\nTail paragraph."
+        // headless 宿主会取消 `.task`,预热保证首帧同步可用(生产由消息列表预热)
+        MarkdownRenderCache.warm(markdown: markdown)
 
         let standaloneHeight = try await MarkdownLayoutTestSupport.standaloneMarkdownHeight(
             markdown: markdown,
@@ -267,7 +269,8 @@ struct CodeBlockLayoutTests {
         width: CGFloat,
         height: CGFloat = 50
     ) async throws -> (NSHostingView<some View>, HorizontalOnlyScrollView) {
-        let scrollView = HorizontalScrollView { content }
+        // 测量场景内容静态不变，用一次性指纹即可命中测量缓存路径
+        let scrollView = HorizontalScrollView(contentFingerprint: UUID()) { content }
 
         let hostingView = NSHostingView(rootView: scrollView.frame(width: width))
         hostingView.frame = CGRect(origin: .zero, size: CGSize(width: width, height: height))

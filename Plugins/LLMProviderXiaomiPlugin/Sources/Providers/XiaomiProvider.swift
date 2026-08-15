@@ -38,6 +38,7 @@ public final class XiaomiProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://www.mi.com")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: XiaomiPlugin.apiKeyStorageKey
     )
 

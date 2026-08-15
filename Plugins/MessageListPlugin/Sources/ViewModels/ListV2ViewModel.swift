@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import KernelLumi
+import MarkdownKit
 import os
 import SuperLogKit
 
@@ -78,7 +79,10 @@ final class ListV2ViewModel: ObservableObject, SuperLog {
     /// 内存中的真实落库消息(分页窗口),按时间升序;`hasPersistedMessages` 由它派生。
     /// 任何变更都会触发历史行重算。
     @Published private(set) var persistedMessages: [LumiChatMessage] = [] {
-        didSet { rebuildHistoryRows() }
+        didSet {
+            rebuildHistoryRows()
+            warmMarkdownRenderCaches()
+        }
     }
 
     /// 顶部是否还有更早的消息未加载。
@@ -123,6 +127,10 @@ final class ListV2ViewModel: ObservableObject, SuperLog {
     /// next `rebuildHistoryRows` call sees the same signature, the (expensive,
     /// O(rows × content) memberwise) array comparison is skipped entirely.
     private var lastHistoryBuildSignature: HistoryBuildSignature?
+
+    /// 已预热过 Markdown 块级缓存的消息 id。会话切换/翻页后 `persistedMessages`
+    /// 变化时,只对新出现的消息发起后台预热。
+    private var warmedMarkdownMessageIDs: Set<UUID> = []
 
     init(kernel: KernelLumi) {
         self.kernel = kernel
@@ -485,6 +493,32 @@ final class ListV2ViewModel: ObservableObject, SuperLog {
         )
         if historyRows != rows {
             historyRows = rows
+        }
+    }
+
+    /// 会话加载/翻页后,把窗口内新出现的消息内容在后台线程预热进
+    /// MarkdownKit 块级缓存(utility 优先级,不与 UI 抢资源)。
+    ///
+    /// 动机:`List` 是惰性容器,滚动到未物化过的行时才首次解析该行内容;
+    /// 预热后 `MarkdownBlockRenderer.init` 的同步缓存查询命中,行首帧即有
+    /// 内容与测量高度 —— 不触发主线程解析,也无"留空 → 填充"的高度跳变。
+    private func warmMarkdownRenderCaches() {
+        let pending = persistedMessages.filter {
+            !$0.content.isEmpty && !warmedMarkdownMessageIDs.contains($0.id)
+        }
+        guard !pending.isEmpty else { return }
+
+        // 防止长会话/多会话切换下集合无界增长;重置后重复预热只是近免费的缓存查询
+        if warmedMarkdownMessageIDs.count > 2_000 {
+            warmedMarkdownMessageIDs.removeAll()
+        }
+        let contents = pending.map(\.content)
+        pending.forEach { warmedMarkdownMessageIDs.insert($0.id) }
+
+        Task.detached(priority: .utility) {
+            for content in contents {
+                MarkdownRenderCache.warm(markdown: content)
+            }
         }
     }
 

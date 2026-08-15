@@ -8,6 +8,51 @@ import SwiftUI
 /// V1 (brief) 模式：纯文本 inline 样式，完全融入消息正文；
 /// V2/V3 模式：带图标/背景/边框/按钮的卡片行。
 
+/// 按消息 id 缓存"完全解析"的工具调用数组(锁保护,有界)。
+///
+/// 动机:`List` 惰性行滚出视口即被拆除,`ToolCallRowsView` 的
+/// `@State resolvedToolCalls` 随之丢失;滚回时 `.task` 重新逐个
+/// `await kernel.toolManager.toolCallResult(for:)`。结果不可变,
+/// 跨物化缓存后重物化只做一次字典命中。
+/// 仅缓存全部结果到位的解析;命中时校验工具调用 id 序列与当前消息一致,
+/// 不一致(消息被编辑等罕见情形)按未命中处理。
+final class ToolCallResolutionCache: @unchecked Sendable {
+    static let shared = ToolCallResolutionCache()
+
+    private let limit = 512
+    private let lock = NSLock()
+    private var storage: [UUID: [LumiToolCall]] = [:]
+    private var insertionOrder: [UUID] = []
+
+    func resolvedCalls(messageID: UUID, toolCalls: [LumiToolCall]?) -> [LumiToolCall]? {
+        guard let current = toolCalls, !current.isEmpty else { return nil }
+        lock.lock()
+        defer { lock.unlock() }
+        guard let cached = storage[messageID] else { return nil }
+        let currentIDs = current.map(\.id)
+        let cachedIDs = cached.map(\.id)
+        guard currentIDs == cachedIDs else { return nil }
+        return cached
+    }
+
+    func storeIfFullyResolved(messageID: UUID, toolCalls: [LumiToolCall]) {
+        guard !toolCalls.isEmpty, toolCalls.allSatisfy({ $0.result != nil }) else { return }
+        lock.lock()
+        defer { lock.unlock() }
+        if storage[messageID] == nil {
+            insertionOrder.append(messageID)
+        }
+        storage[messageID] = toolCalls
+        if insertionOrder.count > limit {
+            let overflow = insertionOrder.count - limit
+            for id in insertionOrder.prefix(overflow) {
+                storage.removeValue(forKey: id)
+            }
+            insertionOrder.removeFirst(overflow)
+        }
+    }
+}
+
 struct ToolCallRowsView: View {
     let kernel: KernelLumi
     let message: LumiChatMessage
@@ -45,6 +90,17 @@ struct ToolCallRowsView: View {
         }
         .task {
             guard verbosity != .brief else { return }
+            // 命中"完全解析"缓存:List 惰性行滚出视口被拆除后 @State 丢失,
+            // 历史上每次滚回都重新逐个 await kernel 查询工具结果。
+            if let cached = ToolCallResolutionCache.shared.resolvedCalls(
+                messageID: message.id,
+                toolCalls: message.toolCalls
+            ) {
+                if resolvedToolCalls != cached {
+                    resolvedToolCalls = cached
+                }
+                return
+            }
             await resolveResults()
         }
     }
@@ -56,7 +112,15 @@ struct ToolCallRowsView: View {
         for index in resolved.indices where resolved[index].result == nil {
             resolved[index].result = await manager.toolCallResult(for: resolved[index].id)
         }
-        resolvedToolCalls = resolved
+        // 仅当全部工具调用都有结果时才写入缓存:进行中的回合结果尚未落定,
+        // 缓存会把"暂时为 nil"钉死成永久过期。
+        ToolCallResolutionCache.shared.storeIfFullyResolved(
+            messageID: message.id,
+            toolCalls: resolved
+        )
+        if resolvedToolCalls != resolved {
+            resolvedToolCalls = resolved
+        }
     }
 
     private var lumiCardRows: some View {
@@ -131,21 +195,13 @@ struct ToolCallRowView: View {
         ToolCallResultVisualState(result: toolCall.result, isLoading: isLoadingResult)
     }
 
+    /// 注:不再在 body 内查询 `ToolCallRowRendererRegistry` —— 两个构造方
+    /// (`ToolCallRowsView` / `CollapsibleToolStepGroup`)都已先行查找并在命中时
+    /// 自行渲染自定义行;这里的二次查找每次 body 求值(含 hover 与滚动
+    /// 重物化)都白跑一遍 canRender 匹配链。注册表在插件加载期填充,不存在
+    /// 运行中动态注册后依赖行重求值生效的场景。
     var body: some View {
-        Group {
-            if let customRenderer = ToolCallRowRendererRegistry.shared.findRenderer(for: toolCall.agentToolCall) {
-                customRenderer.render(
-                    toolCall: toolCall.agentToolCall,
-                    message: ToolCallRowMessageContext(
-                        conversationId: message.conversationID,
-                        assistantMessageId: message.id,
-                        verbosityRawValue: verbosity.rawValue
-                    )
-                )
-            } else {
-                defaultToolCallRow
-            }
-        }
+        defaultToolCallRow
     }
 
     private var defaultToolCallRow: some View {
@@ -180,8 +236,8 @@ struct ToolCallRowView: View {
         .modifier(ToolCallRowContainerModifier(
             showsDetails: showsDetails,
             isHovering: isHovering,
-            rowBackground: { AnyView(rowBackground) },
-            rowBorder: { AnyView(rowBorder) },
+            rowBackground: rowBackground,
+            rowBorder: rowBorder,
             hoverBackground: hoverBackground
         ))
         .onHover { hovering in
@@ -283,11 +339,14 @@ struct ToolCallRowView: View {
 
 /// 工具调用行的容器样式,按 `showsDetails` 分流,确保 V1 的 inline 改动
 /// 不会波及 V2/V3 的卡片外观。
-private struct ToolCallRowContainerModifier: ViewModifier {
+///
+/// 背景/描边以泛型视图值传入(历史上是返回 `AnyView` 的闭包,每次 body
+/// 求值分配两个闭包 + 类型擦除包装)。
+private struct ToolCallRowContainerModifier<Background: View, Border: View>: ViewModifier {
     let showsDetails: Bool
     let isHovering: Bool
-    @ViewBuilder let rowBackground: () -> AnyView
-    @ViewBuilder let rowBorder: () -> AnyView
+    let rowBackground: Background
+    let rowBorder: Border
     let hoverBackground: Color
 
     func body(content: Content) -> some View {
@@ -295,11 +354,9 @@ private struct ToolCallRowContainerModifier: ViewModifier {
             // V2/V3:持续可见的卡片。
             content
                 .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
-                .background(rowBackground())
-                .overlay(rowBorder())
+                .background(rowBackground)
+                .overlay(rowBorder)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .scaleEffect(isHovering ? 1.01 : 1)
-                .animation(.easeOut(duration: 0.12), value: isHovering)
         } else {
             // V1:inline,默认无背景/描边,仅悬停时一层极淡底色。
             content

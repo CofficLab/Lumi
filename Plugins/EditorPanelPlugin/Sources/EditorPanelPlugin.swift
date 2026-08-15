@@ -51,16 +51,11 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
     }
 
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 16) {
-                Text(LumiPluginLocalization.string("Code Editor", bundle: .module))
-                    .font(.title2.weight(.semibold))
-                Text(LumiPluginLocalization.string("Display the content of the current project file.", bundle: .module))
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
+        AnyView(EditorPanelAboutView())
+    }
+
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(EditorPanelManualView())
     }
 
     public func onboardingPages(kernel: KernelLumi) -> [OnboardingPageItem] { [] }

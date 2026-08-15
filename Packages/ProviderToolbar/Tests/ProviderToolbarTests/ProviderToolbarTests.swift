@@ -1,0 +1,81 @@
+import SwiftUI
+import Testing
+@testable import ProviderToolbar
+
+/// ToolbarProviding 协议、ToolbarItem 模型与默认实现的基础验证。
+@Suite("ProviderToolbar")
+@MainActor
+struct ProviderToolbarTests {
+
+    @Test("ToolbarItem 可创建且携带位置信息")
+    func toolbarItemBasics() {
+        let item = ProviderToolbar.ToolbarItem(id: "run", title: "Run", placement: .leading) {
+            Image(systemName: "play.fill")
+        }
+
+        #expect(item.id == "run")
+        #expect(item.title == "Run")
+        #expect(item.placement == .leading)
+        #expect(item.order == 200)
+    }
+
+    @Test("DefaultToolbarProviding 注入 items 后可读取")
+    func defaultProviderStoresInjectedItems() {
+        let provider = DefaultToolbarProviding()
+        let items = [
+            ProviderToolbar.ToolbarItem(id: "a", title: "A", placement: .leading) { Text("A") },
+            ProviderToolbar.ToolbarItem(id: "b", title: "B", placement: .trailing) { Text("B") },
+        ]
+
+        provider.registerToolbarItems(items)
+
+        #expect(provider.toolbarItems.count == 2)
+        #expect(provider.toolbarItems.map(\.id) == ["a", "b"])
+    }
+
+    @Test("注入 items 后返回可渲染的工具栏视图")
+    func defaultProviderRendersInjectedItems() {
+        let provider = DefaultToolbarProviding()
+        provider.registerToolbarItems([
+            ProviderToolbar.ToolbarItem(id: "a", title: "A", placement: .leading) { Text("A") },
+        ])
+
+        let view = provider.makeToolbarView()
+
+        #expect(type(of: view) == AnyView.self)
+    }
+
+    @Test("ToolbarProviding 可作为 any ToolbarProviding 使用")
+    func providerAccessibleThroughProtocol() {
+        let provider: any ToolbarProviding = DefaultToolbarProviding()
+        provider.registerToolbarItems([
+            ProviderToolbar.ToolbarItem(id: "x", title: "X") { Text("X") },
+        ])
+
+        #expect(provider.toolbarItems.count == 1)
+        #expect(type(of: provider.makeToolbarView()) == AnyView.self)
+    }
+
+    @Test("自定义实现可被协议访问")
+    func customProviderWorks() {
+        final class CustomToolbar: ToolbarProviding {
+            var toolbarItems: [ProviderToolbar.ToolbarItem] = []
+
+            func registerToolbarItems(_ items: [ProviderToolbar.ToolbarItem]) {
+                toolbarItems = items
+            }
+
+            func makeToolbarView() -> AnyView {
+                AnyView(Text("custom toolbar"))
+            }
+        }
+
+        let provider: any ToolbarProviding = CustomToolbar()
+        provider.registerToolbarItems([
+            ProviderToolbar.ToolbarItem(id: "y", title: "Y") { Text("Y") },
+        ])
+
+        #expect(provider.toolbarItems.count == 1)
+        #expect(type(of: provider.makeToolbarView()) == AnyView.self)
+    }
+}

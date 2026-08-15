@@ -76,6 +76,12 @@ public extension Notification.Name {
     /// 这样菜单命令闭包（非视图上下文）可以与 SwiftUI 的开窗动作解耦。
     static let lumiOpenSettings = Notification.Name("lumi.openSettings")
 
+    /// 请求打开设置窗口并定位到指定标签页。
+    ///
+    /// userInfo 携带目标标签 id（见 `LumiNotificationUserInfoKey.settingsTabID`）。
+    /// 由 `WindowMain` 监听开窗，设置窗口内的 `SettingsView` 消费目标标签。
+    static let lumiOpenSettingsTab = Notification.Name("lumi.openSettingsTab")
+
     static let lumiFocusChatInput = Notification.Name("lumi.focusChatInput")
     static let lumiSendChatMessage = Notification.Name("lumi.sendChatMessage")
     static let lumiStopChatGeneration = Notification.Name("lumi.stopChatGeneration")

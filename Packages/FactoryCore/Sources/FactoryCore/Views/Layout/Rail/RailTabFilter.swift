@@ -19,6 +19,7 @@ func filteredRailTabs(
     _ allTabs: [PanelRailTabItem],
     containerID: String,
     supportsProject: Bool,
+    hasActiveProject: Bool,
     supportsChat: Bool
 ) -> [PanelRailTabItem] {
     // 容器是否拥有专属 rail tab（visibility 精确指向当前容器）。
@@ -30,6 +31,7 @@ func filteredRailTabs(
     let visibleTabs = allTabs.filter {
         $0.visibility.isVisible(in: containerID)
             && (!$0.requiresProjectSupport || supportsProject)
+            && (!$0.requiresActiveProject || hasActiveProject)
             && (!$0.requiresChatSupport || supportsChat)
     }
 

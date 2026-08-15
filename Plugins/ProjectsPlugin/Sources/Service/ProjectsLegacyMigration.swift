@@ -26,8 +26,8 @@ public struct ProjectsLegacyMigration: SuperLog {
         case always
     }
 
-    /// 迁移策略开关。测试期 `.always`,上线前改回 `.once`。
-    public static var policy: MigrationPolicy = .always
+    /// 迁移策略开关。迁移幂等(marker + 按 path 去重),`.once` 足够;需要重跑时测试可临时改回 `.always`。
+    public static var policy: MigrationPolicy = .once
 
     /// 迁移标记的 UserDefaults key
     private static let migrationMarkerKey = "lumi.v4_migration.projects.completed"

@@ -109,6 +109,7 @@ public final class OpenRouterProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://openrouter.ai/")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_OpenRouter"
     )
     

@@ -24,6 +24,7 @@ public final class LPgptProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://lpgpt.us")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_LPgpt"
     )
     

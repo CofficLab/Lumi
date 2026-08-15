@@ -123,6 +123,9 @@ public final class DiskManagerPlugin: LumiPlugin, SuperLog {
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(DiskManagerAboutView())
     }
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(DiskManagerManualView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

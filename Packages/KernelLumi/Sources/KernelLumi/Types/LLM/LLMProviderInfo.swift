@@ -102,6 +102,26 @@ public struct LumiModelInfo: Sendable, Equatable, Identifiable, Hashable {
     }
 }
 
+/// LLM 供应商使用的 API 协议格式（wire protocol）。
+///
+/// 与 `CustomProviderProtocol` 的三档保持一致，用于在模型选择器等消费端按格式筛选。
+public enum LumiLLMAPIFormat: String, Codable, CaseIterable, Sendable, Hashable {
+    /// OpenAI Chat Completions 兼容格式（`/v1/chat/completions`）
+    case openAI
+    /// Anthropic Messages 兼容格式（`/v1/messages`）
+    case anthropic
+    /// OpenAI Responses 格式（`/v1/responses`）
+    case responses
+
+    public var displayName: String {
+        switch self {
+        case .openAI: "OpenAI"
+        case .anthropic: "Anthropic"
+        case .responses: "Responses"
+        }
+    }
+}
+
 public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     public let id: String
     public let displayName: String
@@ -110,6 +130,9 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
     public let availableModels: [LumiModelInfo]
     public let isLocal: Bool
     public let websiteURL: URL
+    /// 供应商使用的 API 协议格式；nil 表示未声明
+    /// （如本地 CLI、按模型动态路由多格式的供应商）。
+    public let apiFormat: LumiLLMAPIFormat?
     internal let apiKeyStorageKey: String?
 
     public var _apiKeyStorageKey: String? { apiKeyStorageKey }
@@ -132,6 +155,7 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         availableModels: [LumiModelInfo],
         isLocal: Bool = false,
         websiteURL: URL,
+        apiFormat: LumiLLMAPIFormat? = nil,
         apiKeyStorageKey: String? = nil
     ) {
         self.id = id
@@ -141,6 +165,7 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         self.availableModels = availableModels
         self.isLocal = isLocal
         self.websiteURL = websiteURL
+        self.apiFormat = apiFormat
         if isLocal {
             self.apiKeyStorageKey = nil
         } else {
@@ -158,6 +183,7 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
         availableModels: [String],
         isLocal: Bool = false,
         websiteURL: URL,
+        apiFormat: LumiLLMAPIFormat? = nil,
         apiKeyStorageKey: String? = nil
     ) {
         self.init(
@@ -168,6 +194,7 @@ public struct LumiLLMProviderInfo: Identifiable, Equatable, Sendable {
             availableModels: availableModels.map { LumiModelInfo(id: $0) },
             isLocal: isLocal,
             websiteURL: websiteURL,
+            apiFormat: apiFormat,
             apiKeyStorageKey: apiKeyStorageKey
         )
     }

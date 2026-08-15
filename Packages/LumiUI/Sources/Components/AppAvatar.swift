@@ -28,7 +28,6 @@ public struct AppAvatar: View {
             .frame(width: size, height: size)
             .background(backgroundTint)
             .clipShape(Circle())
-            .scaleEffect(isHovering && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
             .brightness(isHovering ? 0.08 : 0)
             .shadow(color: tint.opacity(isHovering ? 0.3 : 0), radius: isHovering ? 6 : 0, y: 2)
             .animation(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference), value: isHovering)

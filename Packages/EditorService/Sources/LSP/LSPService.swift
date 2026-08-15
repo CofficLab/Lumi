@@ -412,7 +412,12 @@ public final class LSPService: ObservableObject, SuperLog {
         let snapshot = latestDocumentSnapshot
         do {
             try await server.documentDidChange(uri: uri, changes: changes, fullText: snapshot, version: currentVersion)
-            pendingChanges.removeAll()
+            // 只移除已发送的条目：await 期间可能又有新编辑入队，removeAll 会把它们静默丢掉
+            if pendingChanges.count >= changes.count {
+                pendingChanges.removeFirst(changes.count)
+            } else {
+                pendingChanges.removeAll()
+            }
         } catch {
             if Self.verbose {
                             Self.logger.error("\(Self.t)发送变更失败: \(error)")

@@ -12,6 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/KernelLumi"),
+        .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/WebServerKit")
     ],
     targets: [
@@ -19,6 +20,7 @@ let package = Package(
             name: "WebServerPlugin",
             dependencies: [
                 .product(name: "KernelLumi", package: "KernelLumi"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "WebServerKit", package: "WebServerKit")
             ],
             path: "Sources"

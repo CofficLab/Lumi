@@ -86,6 +86,12 @@ public final class ImageToPDFPlugin: LumiPlugin, SuperLog {
         AnyView(ImageToPDFAboutView())
     }
 
+    // MARK: - Plugin Manual
+
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(ImageToPDFManualView())
+    }
+
     // MARK: - LumiPlugin Stubs
 
     public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }

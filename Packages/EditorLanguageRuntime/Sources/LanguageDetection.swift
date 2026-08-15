@@ -84,8 +84,8 @@ public enum LanguageDetection {
 
     private static func extractModelineValue(from buffer: String, key: String) -> String? {
         let patterns = [
-            "vim:.*\(key)=([a-zA-Z0-9_+-]+)",
-            "-*-\\s*\(key)=([a-zA-Z0-9_+-]+)",
+            "vim:.*\(key)[=:]\\s*([a-zA-Z0-9_+-]+)",
+            "-\\*-\\s*\(key)[=:]\\s*([a-zA-Z0-9_+-]+)",
         ]
         for pattern in patterns {
             guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }

@@ -99,6 +99,8 @@ public struct PanelRailTabItem: Identifiable, Sendable {
     public let visibility: PanelRailTabVisibility
     /// 是否仅在支持项目的 ViewContainer 中展示。
     public let requiresProjectSupport: Bool
+    /// 是否仅在已选择当前项目时展示。
+    public let requiresActiveProject: Bool
     /// 是否仅在支持 Chat 的 ViewContainer 中展示。
     public let requiresChatSupport: Bool
     public let makeView: @MainActor @Sendable () -> AnyView
@@ -110,6 +112,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         systemImage: String,
         visibility: PanelRailTabVisibility = .always,
         requiresProjectSupport: Bool = false,
+        requiresActiveProject: Bool = false,
         requiresChatSupport: Bool = false,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
@@ -119,6 +122,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         self.systemImage = systemImage
         self.visibility = visibility
         self.requiresProjectSupport = requiresProjectSupport
+        self.requiresActiveProject = requiresActiveProject
         self.requiresChatSupport = requiresChatSupport
         self.makeView = { AnyView(content()) }
     }
@@ -131,6 +135,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         systemImage: String,
         visibility: PanelRailTabVisibility = .always,
         requiresProjectSupport: Bool = false,
+        requiresActiveProject: Bool = false,
         requiresChatSupport: Bool = false,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
@@ -140,6 +145,7 @@ public struct PanelRailTabItem: Identifiable, Sendable {
         self.systemImage = systemImage
         self.visibility = visibility
         self.requiresProjectSupport = requiresProjectSupport
+        self.requiresActiveProject = requiresActiveProject
         self.requiresChatSupport = requiresChatSupport
         self.makeView = { AnyView(content()) }
     }

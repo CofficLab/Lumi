@@ -13,7 +13,8 @@ struct ErrorTransportDetailsButton: View {
         AppIconButton(
             systemImage: "network",
             tint: isPresented ? theme.textPrimary : theme.textSecondary,
-            size: .regular,
+            // compact 与 header 其它操作按钮一致(26pt),避免悬停物化时行高变化。
+            size: .compact,
             isActive: isPresented
         ) {
             isPresented.toggle()

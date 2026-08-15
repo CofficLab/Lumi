@@ -199,6 +199,8 @@ actor LineFoldCalculator {
                 count += 1
                 previousDepth = foldInfo.max(by: { $0.depth < $1.depth })?.depth ?? previousDepth
             }
+            // 把跨 chunk 的深度写回存储属性，否则每个 50 行块都会以 depth 0 重新开始
+            self.previousDepth = previousDepth
             if results.isEmpty && count == 0 {
                 return nil
             }

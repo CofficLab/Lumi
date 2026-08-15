@@ -175,7 +175,8 @@ public enum MarkdownLayoutTestSupport {
         clipHeight: CGFloat = 50,
         settleMilliseconds: Int = 200
     ) async throws -> CGSize {
-        let scrollView = HorizontalScrollView { content }
+        // 测量场景内容静态不变，用一次性指纹即可命中测量缓存路径
+        let scrollView = HorizontalScrollView(contentFingerprint: UUID()) { content }
         let hostingView = NSHostingView(rootView: scrollView.frame(width: width))
         hostingView.frame = CGRect(origin: .zero, size: CGSize(width: width, height: clipHeight))
         try await Task.sleep(for: .milliseconds(settleMilliseconds))

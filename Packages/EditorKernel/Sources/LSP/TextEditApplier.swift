@@ -7,7 +7,12 @@ public enum TextEditApplier {
             if lhs.range.start.line != rhs.range.start.line {
                 return lhs.range.start.line > rhs.range.start.line
             }
-            return lhs.range.start.character > rhs.range.start.character
+            if lhs.range.start.character != rhs.range.start.character {
+                return lhs.range.start.character > rhs.range.start.character
+            }
+            // 同起点时先应用更长的替换（先删后插），避免依赖 sort 的非稳定性
+            return (lhs.range.end.line, lhs.range.end.character)
+                > (rhs.range.end.line, rhs.range.end.character)
         }
 
         var result = content

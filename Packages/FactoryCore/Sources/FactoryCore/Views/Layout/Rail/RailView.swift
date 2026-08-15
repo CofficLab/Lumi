@@ -7,6 +7,7 @@ import SwiftUI
 /// 自己从 kernel 获取 tabs 和状态，AppLayoutView 不需要了解其内部细节。
 struct RailView: View {
     @ObservedObject var kernel: KernelLumi
+    let hasActiveProject: Bool
 
     @LumiTheme private var theme
 
@@ -14,9 +15,9 @@ struct RailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            RailTabBarView(kernel: kernel)
+            RailTabBarView(kernel: kernel, hasActiveProject: hasActiveProject)
 
-            RailContentView(kernel: kernel)
+            RailContentView(kernel: kernel, hasActiveProject: hasActiveProject)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: Self.minWidth, maxWidth: .infinity, maxHeight: .infinity)

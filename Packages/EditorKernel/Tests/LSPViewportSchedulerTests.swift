@@ -113,7 +113,7 @@ struct LSPViewportSchedulerTests {
         scheduler.schedule(.diagnostics, debounceMs: 100) {
             diagnosticsExecuted = true
         }
-        scheduler.schedule(.codeActions, debounceMs: 100, cancelLowerPriority: false) {
+        scheduler.schedule(.codeActions, cancelLowerPriority: false, debounceMs: 100) {
             codeActionsExecuted = true
         }
 

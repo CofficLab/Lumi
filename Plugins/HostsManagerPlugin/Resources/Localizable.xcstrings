@@ -73,6 +73,9 @@
         }
       }
     },
+    "127.0.0.1" : {
+
+    },
     "Add" : {
       "localizations" : {
         "en" : {
@@ -137,6 +140,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "添加主機條目"
+          }
+        }
+      }
+    },
+    "Add sheet: 「Add Host Entry」 with the 「IP Address」, 「Domain」, 「Comment」, and 「Group」 fields." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add sheet: 「Add Host Entry」 with the 「IP Address」, 「Domain」, 「Comment」, and 「Group」 fields."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加面板：「添加主机条目」包含「IP 地址」「域名」「备注」「分组」字段。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增面板：「添加主機條目」包含「IP 位址」「網域」「備註」「分組」欄位。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增面板：「添加主機條目」包含「IP 位址」「網域」「備註」「分組」欄位。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增面板：「添加主機條目」包含「IP 位址」「網域」「備註」「分組」欄位。"
           }
         }
       }
@@ -245,6 +283,41 @@
         }
       }
     },
+    "Basic Operations" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic Operations"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        }
+      }
+    },
     "Cancel" : {
       "localizations" : {
         "en" : {
@@ -275,6 +348,180 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "取消"
+          }
+        }
+      }
+    },
+    "Changes are written to the system hosts file and take effect in DNS resolution immediately." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changes are written to the system hosts file and take effect in DNS resolution immediately."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改会写入系统 hosts 文件，并立即生效于 DNS 解析。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "變更會寫入系統 hosts 檔案，並立即生效於 DNS 解析。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "變更會寫入系統 hosts 檔案，並立即生效於 DNS 解析。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "變更會寫入系統 hosts 檔案，並立即生效於 DNS 解析。"
+          }
+        }
+      }
+    },
+    "Choose 「Export Backup...」 from the 「More」 menu to save a backup, or 「Import Backup...」 to restore one." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose 「Export Backup...」 from the 「More」 menu to save a backup, or 「Import Backup...」 to restore one."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从「更多」菜单选择「导出备份...」以保存备份，或选择「导入备份...」以恢复。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從「更多」選單選擇「匯出備份...」以保存備份，或選擇「匯入備份...」以復原。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從「更多」選單選擇「匯出備份...」以保存備份，或選擇「匯入備份...」以復原。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從「更多」選單選擇「匯出備份...」以保存備份，或選擇「匯入備份...」以復原。"
+          }
+        }
+      }
+    },
+    "Click 「Add」; in the 「Add Host Entry」 sheet, fill in 「IP Address」 and 「Domain」, optionally 「Comment」 and 「Group」, then click 「Save」." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click 「Add」; in the 「Add Host Entry」 sheet, fill in 「IP Address」 and 「Domain」, optionally 「Comment」 and 「Group」, then click 「Save」."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击「添加」；在「添加主机条目」面板中填写「IP 地址」与「域名」，可选填「备注」与「分组」，然后点击「保存」。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「新增」；在「添加主機條目」面板中填寫「IP 位址」與「網域」，可選填「備註」與「分組」，然後點擊「儲存」。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「新增」；在「添加主機條目」面板中填寫「IP 位址」與「網域」，可選填「備註」與「分組」，然後點擊「儲存」。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「新增」；在「添加主機條目」面板中填寫「IP 位址」與「網域」，可選填「備註」與「分組」，然後點擊「儲存」。"
+          }
+        }
+      }
+    },
+    "Click the trash button on an entry to remove it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the trash button on an entry to remove it."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击条目上的删除按钮即可移除该条目。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊條目上的刪除按鈕即可移除該條目。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊條目上的刪除按鈕即可移除該條目。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊條目上的刪除按鈕即可移除該條目。"
+          }
+        }
+      }
+    },
+    "Comment" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "备注"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "備註"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "備註"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "備註"
           }
         }
       }
@@ -349,6 +596,75 @@
         }
       }
     },
+    "Disable critical entries with care; some system services may fail to resolve." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disable critical entries with care; some system services may fail to resolve."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "谨慎停用关键条目；部分系统服务可能无法解析。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "謹慎停用關鍵條目；部分系統服務可能無法解析。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "謹慎停用關鍵條目；部分系統服務可能無法解析。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "謹慎停用關鍵條目；部分系統服務可能無法解析。"
+          }
+        }
+      }
+    },
+    "Domain" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Domain"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "域名"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網域"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網域"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網域"
+          }
+        }
+      }
+    },
     "Edit and manage the system hosts file with a user-friendly interface" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -419,6 +735,111 @@
         }
       }
     },
+    "Entry list" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entry list"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "条目列表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "條目列表"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "條目列表"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "條目列表"
+          }
+        }
+      }
+    },
+    "Entry list: entries grouped by group; each entry shows an enable toggle, its domains and comment, the IP address in monospaced text, and a trash button." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entry list: entries grouped by group; each entry shows an enable toggle, its domains and comment, the IP address in monospaced text, and a trash button."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "条目列表：条目按分组归类；每个条目显示启用开关、域名与备注、等宽字体的 IP 地址，以及删除按钮。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "條目列表：條目按分組歸類；每個條目顯示啟用開關、網域與備註、等寬字體的 IP 位址，以及刪除按鈕。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "條目列表：條目按分組歸類；每個條目顯示啟用開關、網域與備註、等寬字體的 IP 位址，以及刪除按鈕。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "條目列表：條目按分組歸類；每個條目顯示啟用開關、網域與備註、等寬字體的 IP 位址，以及刪除按鈕。"
+          }
+        }
+      }
+    },
+    "Export a backup before making large changes." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export a backup before making large changes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "进行大量更改前，请先导出备份。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進行大量變更前，請先匯出備份。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進行大量變更前，請先匯出備份。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進行大量變更前，請先匯出備份。"
+          }
+        }
+      }
+    },
     "Export Backup..." : {
       "localizations" : {
         "en" : {
@@ -483,6 +904,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "匯出失敗：%@"
+          }
+        }
+      }
+    },
+    "Figure 1: Interface layout" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Figure 1: Interface layout"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图 1 界面布局"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
           }
         }
       }
@@ -658,6 +1114,41 @@
         }
       }
     },
+    "Interface" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interface"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面说明"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        }
+      }
+    },
     "Invalid domain format" : {
       "localizations" : {
         "en" : {
@@ -726,6 +1217,75 @@
         }
       }
     },
+    "Invalid IP addresses or domain names are rejected by validation and cannot be saved." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid IP addresses or domain names are rejected by validation and cannot be saved."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效的 IP 地址或域名会被校验拦截，无法保存。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的 IP 位址或網域名稱會被校驗攔截，無法儲存。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的 IP 位址或網域名稱會被校驗攔截，無法儲存。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的 IP 位址或網域名稱會被校驗攔截，無法儲存。"
+          }
+        }
+      }
+    },
+    "IP Address" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IP Address"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IP 地址"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IP 位址"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IP 位址"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IP 位址"
+          }
+        }
+      }
+    },
     "Loading Hosts" : {
       "localizations" : {
         "en" : {
@@ -790,6 +1350,111 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更多"
+          }
+        }
+      }
+    },
+    "Notes" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        }
+      }
+    },
+    "Open the Hosts Manager tab in the sidebar." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Hosts Manager tab in the sidebar."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在侧边栏中打开「Hosts 管理器」标签页。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中開啟「Hosts 管理器」標籤頁。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中開啟「Hosts 管理器」標籤頁。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中開啟「Hosts 管理器」標籤頁。"
+          }
+        }
+      }
+    },
+    "Overview" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
           }
         }
       }
@@ -1140,6 +1805,146 @@
         }
       }
     },
+    "This manual covers the interface and basic operations of the Hosts Manager: adding, toggling, searching, and backing up hosts entries." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This manual covers the interface and basic operations of the Hosts Manager: adding, toggling, searching, and backing up hosts entries."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手册介绍「Hosts 管理器」的界面与基本操作：添加、开关、搜索以及备份 hosts 条目。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹「Hosts 管理器」的介面與基本操作：新增、開關、搜尋以及備份 hosts 條目。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹「Hosts 管理器」的介面與基本操作：新增、開關、搜尋以及備份 hosts 條目。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹「Hosts 管理器」的介面與基本操作：新增、開關、搜尋以及備份 hosts 條目。"
+          }
+        }
+      }
+    },
+    "Toolbar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toolbar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具栏"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具列"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具列"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具列"
+          }
+        }
+      }
+    },
+    "Toolbar: a group picker, the 「Search Host」 field, the 「Add」 button, and a 「More」 menu with 「Refresh」, 「Export Backup...」, and 「Import Backup...」." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toolbar: a group picker, the 「Search Host」 field, the 「Add」 button, and a 「More」 menu with 「Refresh」, 「Export Backup...」, and 「Import Backup...」."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具栏：分组选择器、「搜索主机」输入框、「添加」按钮，以及包含「刷新」「导出备份...」「导入备份...」的「更多」菜单。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具列：分組選擇器、「搜索主机」輸入框、「新增」按鈕，以及包含「重新整理」「匯出備份...」「匯入備份...」的「更多」選單。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具列：分組選擇器、「搜索主机」輸入框、「新增」按鈕，以及包含「重新整理」「匯出備份...」「匯入備份...」的「更多」選單。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具列：分組選擇器、「搜索主机」輸入框、「新增」按鈕，以及包含「重新整理」「匯出備份...」「匯入備份...」的「更多」選單。"
+          }
+        }
+      }
+    },
+    "Type in 「Search Host」 or pick a group in the group picker to filter the list." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type in 「Search Host」 or pick a group in the group picker to filter the list."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「搜索主机」中输入文字，或在分组选择器中选择分组以筛选列表。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「搜索主机」中輸入文字，或在分組選擇器中選擇分組以篩選列表。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「搜索主机」中輸入文字，或在分組選擇器中選擇分組以篩選列表。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「搜索主机」中輸入文字，或在分組選擇器中選擇分組以篩選列表。"
+          }
+        }
+      }
+    },
     "Use profiles to switch between different configurations" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1171,6 +1976,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用設定檔在不同配置間切換"
+          }
+        }
+      }
+    },
+    "Use the toggle on an entry to enable or disable it without deleting it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use the toggle on an entry to enable or disable it without deleting it."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用条目上的开关可启用或停用条目，而不会删除它。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用條目上的開關可啟用或停用條目，而不會刪除它。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用條目上的開關可啟用或停用條目，而不會刪除它。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用條目上的開關可啟用或停用條目，而不會刪除它。"
+          }
+        }
+      }
+    },
+    "User Manual" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User Manual"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手册"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
           }
         }
       }

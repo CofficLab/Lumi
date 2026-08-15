@@ -32,6 +32,7 @@ public final class AliyunTokenPlanProvider: LumiLLMProvider, @unchecked Sendable
             .init(id: "MiniMax-M2.5", contextWindowSize: 204_800, capabilities: .init(supportsVision: false, supportsTools: true)),
         ],
         websiteURL: URL(string: "https://www.aliyun.com/product/bailian")!,
+        apiFormat: .anthropic,
         apiKeyStorageKey: "DevAssistant_ApiKey_Aliyun"
     )
     

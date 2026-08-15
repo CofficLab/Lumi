@@ -30,5 +30,9 @@ let package = Package(
                 .process("Resources/Localizable.xcstrings")
             ]
         ),
+        .testTarget(
+            name: "AgentTurnRunnerPluginTests",
+            dependencies: ["AgentTurnRunnerPlugin"]
+        ),
     ]
 )

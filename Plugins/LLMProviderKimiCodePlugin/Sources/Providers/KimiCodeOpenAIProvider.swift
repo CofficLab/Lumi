@@ -19,6 +19,7 @@ public final class KimiCodeOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
                   capabilities: .init(supportsVision: true, supportsTools: true)),
         ],
         websiteURL: URL(string: "https://www.moonshot.cn/")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: KimiCodePlugin.apiKeyStorageKey
     )
 

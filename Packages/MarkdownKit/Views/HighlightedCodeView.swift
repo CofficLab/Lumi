@@ -55,7 +55,13 @@ struct HighlightedCodeView: View {
     @ViewBuilder
     private func codeScrollView(_ textContent: Text) -> some View {
         if preferOuterScroll {
-            HorizontalScrollView {
+            HorizontalScrollView(contentFingerprint: ScrollContentFingerprint(
+                displayed: attributedCode,
+                code: code,
+                language: language,
+                font: font,
+                highlightProviderID: highlightProvider?.cacheIdentifier
+            )) {
                 textContent
                     .font(font)
                     .textSelection(.enabled)
@@ -76,6 +82,18 @@ struct HighlightedCodeView: View {
     /// 唯一标识代码+语言组合，变化时重新触发高亮
     private var codeHighlightTaskId: String {
         "\(highlightProvider?.cacheIdentifier ?? ""):\(language ?? ""):\(code)"
+    }
+
+    /// `HorizontalScrollView` 测量缓存的内容指纹：覆盖所有会影响渲染
+    /// 结果的输入（异步高亮结果、原始代码、语言、字体、高亮提供者）。
+    /// 任一变化都会使测量缓存失效并触发 rootView 更新；
+    /// 全部未变时（流式间歇、父视图重求值）复用测量结果（P1）。
+    private struct ScrollContentFingerprint: Hashable {
+        let displayed: AttributedString?
+        let code: String
+        let language: String?
+        let font: Font
+        let highlightProviderID: String?
     }
 }
 

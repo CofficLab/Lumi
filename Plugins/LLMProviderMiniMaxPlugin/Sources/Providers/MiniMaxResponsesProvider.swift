@@ -34,6 +34,7 @@ public final class MiniMaxResponsesProvider: LumiLLMProvider, @unchecked Sendabl
             LumiModelInfo(id: "MiniMax-Text-01", contextWindowSize: 4_000_000, capabilities: .init(supportsVision: false, supportsTools: false)),
         ],
         websiteURL: URL(string: "https://platform.minimaxi.com/")!,
+        apiFormat: .responses,
         apiKeyStorageKey: MiniMaxProviderSupport.apiKeyStorageKey
     )
     private let support = MiniMaxProviderSupport()

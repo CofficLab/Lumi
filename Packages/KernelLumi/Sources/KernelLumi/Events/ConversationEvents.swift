@@ -16,6 +16,8 @@ public extension Notification.Name {
 
 public enum LumiNotificationUserInfoKey {
     public static let conversationID = "conversationID"
+    /// `.lumiOpenSettingsTab` 通知携带的目标设置标签 id。
+    public static let settingsTabID = "settingsTabID"
 }
 
 public extension Notification {

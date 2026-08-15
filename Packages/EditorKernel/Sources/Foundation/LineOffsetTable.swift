@@ -100,7 +100,9 @@ public struct LineOffsetTable: Sendable {
         var newLineStarts = lineStarts
         
         // 1. Remove lines that were completely deleted
-        if changeInLength < 0 && endLine > startLine {
+        //    被替换范围跨越多行时，这些行会合并进 startLine —— 与净长度增减无关
+        //    （例如把 "x\ny" 替换成更长的 "abcde"：净长度为正，但换行被删掉了）。
+        if endLine > startLine {
             // Lines were deleted
             newLineStarts.removeSubrange((startLine + 1)...endLine)
         }

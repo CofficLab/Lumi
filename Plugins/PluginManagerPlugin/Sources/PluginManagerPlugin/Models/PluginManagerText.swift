@@ -22,6 +22,8 @@ enum PluginManagerText {
     static let noDetailsProvided = "No details provided"
     static let noDetailsHint = "The plugin author did not provide a details view."
     static let enable = "Enable"
+    /// 空态动作胶囊文案:引导用户打开插件管理发现实用插件。
+    static let browsePlugins = "Explore useful plugins"
 
     /// 查找本地化字符串,缺失回退到 key。
     static func string(_ key: String) -> String {

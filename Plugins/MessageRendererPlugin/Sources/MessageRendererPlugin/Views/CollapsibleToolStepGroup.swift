@@ -154,6 +154,16 @@ struct CollapsibleToolStepGroup: View {
     @MainActor
     private func resolveResults() async {
         guard resolvedToolCalls == nil, let manager = kernel.toolManager else { return }
+
+        // 命中"完全解析"缓存时跳过逐个 kernel 查询与 loading 态闪烁
+        if let cached = ToolCallResolutionCache.shared.resolvedCalls(
+            messageID: message.id,
+            toolCalls: toolCalls
+        ) {
+            resolvedToolCalls = cached
+            return
+        }
+
         isLoadingResults = true
         defer { isLoadingResults = false }
 
@@ -161,6 +171,10 @@ struct CollapsibleToolStepGroup: View {
         for index in resolved.indices where resolved[index].result == nil {
             resolved[index].result = await manager.toolCallResult(for: resolved[index].id)
         }
+        ToolCallResolutionCache.shared.storeIfFullyResolved(
+            messageID: message.id,
+            toolCalls: resolved
+        )
         resolvedToolCalls = resolved
     }
 

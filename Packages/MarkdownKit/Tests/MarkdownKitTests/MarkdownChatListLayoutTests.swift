@@ -36,6 +36,8 @@ struct MarkdownChatListLayoutTests {
     func multiLineCodeBlockDocumentViewGrowsInsideHorizontalScrollView() async throws {
         let lines = (1...12).map { "let item\($0) = \($0)" }.joined(separator: "\n")
         let markdown = "```swift\n\(lines)\n```"
+        // headless 宿主会取消 `.task`,预热保证首帧同步可用(生产由消息列表预热)
+        MarkdownRenderCache.warm(markdown: markdown)
 
         let documentSize = try await MarkdownLayoutTestSupport.horizontalScrollViewDocumentSize(
             for: Text(lines)
@@ -57,6 +59,7 @@ struct MarkdownChatListLayoutTests {
     func preferOuterScrollStandaloneCodeBlockIsNotTruncated() async throws {
         let lines = (1...10).map { "Line \($0)" }.joined(separator: "\n")
         let markdown = "```swift\n\(lines)\n```"
+        MarkdownRenderCache.warm(markdown: markdown)
 
         let withOuterScroll = try await MarkdownLayoutTestSupport.standaloneMarkdownHeight(
             markdown: markdown,

@@ -98,7 +98,12 @@ public final class DeviceInfoPlugin: LumiPlugin, SuperLog {
         ]
     }
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
-    public func pluginAboutView(kernel: KernelLumi) -> AnyView? { nil }
+    public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
+        AnyView(DeviceInfoAboutView())
+    }
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(DeviceInfoManualView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

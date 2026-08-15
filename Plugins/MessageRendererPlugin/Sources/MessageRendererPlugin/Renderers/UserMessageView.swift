@@ -10,14 +10,17 @@ struct UserMessageView: View {
     private var isBrief: Bool { verbosity == .brief }
 
     var body: some View {
-        MessageViewChrome(kernel: kernel, message: message, showsResendButton: true, verbosity: verbosity) {
+        // 单次取用(带进程级缓存):历史上 userImageData / decodedFileAttachments
+        // 各计算两次(JSON+base64 解码),且每次滚动重物化都重复执行。
+        let attachments = message.cachedDecodedAttachments
+        return MessageViewChrome(kernel: kernel, message: message, showsResendButton: true, verbosity: verbosity) {
             VStack(alignment: .leading, spacing: 8) {
-                if !message.userImageData.isEmpty {
-                    AppImagePreviewGrid(imageDataList: message.userImageData)
+                if !attachments.imageData.isEmpty {
+                    AppImagePreviewGrid(imageDataList: attachments.imageData)
                 }
 
-                if !message.decodedFileAttachments.isEmpty {
-                    MessageFileAttachmentChips(attachments: message.decodedFileAttachments)
+                if !attachments.fileAttachments.isEmpty {
+                    MessageFileAttachmentChips(attachments: attachments.fileAttachments)
                 }
 
                 if !message.content.isEmpty {

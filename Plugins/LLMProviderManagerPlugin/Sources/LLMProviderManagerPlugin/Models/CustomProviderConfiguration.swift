@@ -66,8 +66,18 @@ struct CustomProviderConfiguration: Codable, Equatable, Identifiable, Sendable {
             defaultModel: defaultModel.isEmpty ? (models.first?.id ?? "") : defaultModel,
             availableModels: models.map(\.modelInfo),
             websiteURL: URL(string: baseURL) ?? URL(string: "https://example.invalid")!,
+            apiFormat: apiFormat,
             apiKeyStorageKey: apiKeyStorageKey
         )
+    }
+
+    /// 与 `CustomProviderProtocol` 对应的 API 协议格式
+    var apiFormat: LumiLLMAPIFormat {
+        switch protocolType {
+        case .openAI: .openAI
+        case .anthropic: .anthropic
+        case .responses: .responses
+        }
     }
 
     func validated() throws -> CustomProviderConfiguration {

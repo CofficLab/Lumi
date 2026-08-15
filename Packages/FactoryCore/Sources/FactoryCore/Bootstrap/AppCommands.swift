@@ -149,7 +149,17 @@ private final class CommandMenuInstaller {
 
                 let groups = command.allCommandGroups
                 let signature = commandGroupsSignature(groups)
-                if self.lastGroupsSignature != signature {
+                // SwiftUI can mutate the main menu in place (window focus
+                // changes, Settings scene activation, commands re-evaluation)
+                // and drop injected items without replacing the NSMenu instance.
+                // Detect those items so the rebuild below re-adds them.
+                let evictedIDs = installedMenus.filter { _, menuItem in
+                    !mainMenu.items.contains { $0 === menuItem }
+                }.map(\.key)
+                if self.lastGroupsSignature != signature || !evictedIDs.isEmpty {
+                    for id in evictedIDs {
+                        installedMenus.removeValue(forKey: id)
+                    }
                     self.rebuild(in: mainMenu, groups: groups)
                     self.lastGroupsSignature = signature
                 }

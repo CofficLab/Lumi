@@ -65,6 +65,76 @@
         }
       }
     },
+    "Action bar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Action bar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作栏"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作列"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作列"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作列"
+          }
+        }
+      }
+    },
+    "Action bar: the 「Add files」 and 「Convert」 buttons." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Action bar: the 「Add files」 and 「Convert」 buttons."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作栏：「添加文件」与「转换」按钮。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作列：「新增檔案」與「轉換」按鈕。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作列：「新增檔案」與「轉換」按鈕。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作列：「新增檔案」與「轉換」按鈕。"
+          }
+        }
+      }
+    },
     "Add files" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -90,6 +160,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新增檔案"
+          }
+        }
+      }
+    },
+    "Basic Operations" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic Operations"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
           }
         }
       }
@@ -177,6 +282,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "清除"
+          }
+        }
+      }
+    },
+    "Click 「Convert」; each image is converted into a single-page PDF." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click 「Convert」; each image is converted into a single-page PDF."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击「转换」；每张图片都会转换为一份单页 PDF。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「轉換」；每張圖片都會轉換為一份單頁 PDF。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「轉換」；每張圖片都會轉換為一份單頁 PDF。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「轉換」；每張圖片都會轉換為一份單頁 PDF。"
+          }
+        }
+      }
+    },
+    "Click 「Export to…」 and choose a folder to save all PDFs at once." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click 「Export to…」 and choose a folder to save all PDFs at once."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击「导出到…」并选择文件夹，即可一次保存全部 PDF。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「匯出至…」並選擇資料夾，即可一次保存全部 PDF。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「匯出至…」並選擇資料夾，即可一次保存全部 PDF。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「匯出至…」並選擇資料夾，即可一次保存全部 PDF。"
           }
         }
       }
@@ -442,6 +617,41 @@
         }
       }
     },
+    "Drag image files into the drop zone, or click it to browse and select files." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag image files into the drop zone, or click it to browse and select files."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将图片文件拖入拖放区，或点击拖放区浏览并选择文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將圖片檔案拖入拖放區，或點擊拖放區瀏覽並選擇檔案。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將圖片檔案拖入拖放區，或點擊拖放區瀏覽並選擇檔案。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將圖片檔案拖入拖放區，或點擊拖放區瀏覽並選擇檔案。"
+          }
+        }
+      }
+    },
     "Drop image files and convert each one to a single-page PDF." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -467,6 +677,111 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "拖入圖片檔案，並將每個檔案轉換為單頁 PDF。"
+          }
+        }
+      }
+    },
+    "Drop zone" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop zone"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖放区"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖放區"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖放區"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖放區"
+          }
+        }
+      }
+    },
+    "Drop zone: drag image files onto 「Drag & drop image files here」, or click to browse; the file count is shown below." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop zone: drag image files onto 「Drag & drop image files here」, or click to browse; the file count is shown below."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖放区：将图片文件拖到「将图片拖拽到此处」，或点击浏览选择文件；下方显示文件数量。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖放區：將圖片檔案拖到「將圖片拖曳到這裡」，或點擊瀏覽選擇檔案；下方顯示檔案數量。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖放區：將圖片檔案拖到「將圖片拖曳到這裡」，或點擊瀏覽選擇檔案；下方顯示檔案數量。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖放區：將圖片檔案拖到「將圖片拖曳到這裡」，或點擊瀏覽選擇檔案；下方顯示檔案數量。"
+          }
+        }
+      }
+    },
+    "Each image becomes a separate single-page PDF; conversion follows the order of the input list." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each image becomes a separate single-page PDF; conversion follows the order of the input list."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每张图片生成一份独立的单页 PDF；转换按输入列表的顺序进行。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每張圖片生成一份獨立的單頁 PDF；轉換按輸入列表的順序進行。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每張圖片生成一份獨立的單頁 PDF；轉換按輸入列表的順序進行。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每張圖片生成一份獨立的單頁 PDF；轉換按輸入列表的順序進行。"
           }
         }
       }
@@ -645,6 +960,41 @@
         }
       }
     },
+    "Figure 1: Interface layout" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Figure 1: Interface layout"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图 1 界面布局"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        }
+      }
+    },
     "Files: %lld" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -761,6 +1111,76 @@
         }
       }
     },
+    "Input list: selected images appear as rows, each with a remove button." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input list: selected images appear as rows, each with a remove button."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入列表：已选择的图片逐行显示，每行带有移除按钮。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入列表：已選擇的圖片逐行顯示，每行帶有移除按鈕。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入列表：已選擇的圖片逐行顯示，每行帶有移除按鈕。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入列表：已選擇的圖片逐行顯示，每行帶有移除按鈕。"
+          }
+        }
+      }
+    },
+    "Interface" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interface"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面说明"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        }
+      }
+    },
     "No PDFs yet" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -786,6 +1206,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尚無 PDF"
+          }
+        }
+      }
+    },
+    "Notes" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
           }
         }
       }
@@ -819,6 +1274,41 @@
         }
       }
     },
+    "Open the Image to PDF tab in the sidebar." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Image to PDF tab in the sidebar."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在侧边栏中打开「图片转 PDF」标签页。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中開啟「圖片轉 PDF」標籤頁。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中開啟「圖片轉 PDF」標籤頁。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在側邊欄中開啟「圖片轉 PDF」標籤頁。"
+          }
+        }
+      }
+    },
     "or click to browse" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -844,6 +1334,111 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "或點選選擇檔案"
+          }
+        }
+      }
+    },
+    "Output list" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Output list"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输出列表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出列表"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出列表"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出列表"
+          }
+        }
+      }
+    },
+    "Output list: the 「PDFs」 section shows each produced PDF with its status and the 「Reveal in Finder」, 「Open」, and 「Remove」 buttons, plus 「Export to…」 and 「Clear」." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Output list: the 「PDFs」 section shows each produced PDF with its status and the 「Reveal in Finder」, 「Open」, and 「Remove」 buttons, plus 「Export to…」 and 「Clear」."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输出列表：「PDF」区域显示每个生成的 PDF 及其状态，并提供「在访达中显示」「打开」「移除」按钮，以及「导出到…」与「清空」。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出列表：「PDF」區域顯示每個產生的 PDF 及其狀態，並提供「於 Finder 顯示」「開啟」「移除」按鈕，以及「匯出至…」與「清空」。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出列表：「PDF」區域顯示每個產生的 PDF 及其狀態，並提供「於 Finder 顯示」「開啟」「移除」按鈕，以及「匯出至…」與「清空」。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出列表：「PDF」區域顯示每個產生的 PDF 及其狀態，並提供「於 Finder 顯示」「開啟」「移除」按鈕，以及「匯出至…」與「清空」。"
+          }
+        }
+      }
+    },
+    "Overview" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
           }
         }
       }
@@ -902,6 +1497,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PDF 保留原圖尺寸，不縮放、不壓縮"
+          }
+        }
+      }
+    },
+    "PDFs keep the original image size and orientation; images are not resized or compressed." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDFs keep the original image size and orientation; images are not resized or compressed."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF 保留原始图片尺寸与方向；图片不会被缩放或压缩。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF 保留原始圖片尺寸與方向；圖片不會被縮放或壓縮。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF 保留原始圖片尺寸與方向；圖片不會被縮放或壓縮。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF 保留原始圖片尺寸與方向；圖片不會被縮放或壓縮。"
           }
         }
       }
@@ -1051,6 +1681,41 @@
         }
       }
     },
+    "Re-converting replaces the previous PDFs in the output list." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Re-converting replaces the previous PDFs in the output list."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新转换会替换输出列表中原有的 PDF。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新轉換會替換輸出列表中原有的 PDF。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新轉換會替換輸出列表中原有的 PDF。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新轉換會替換輸出列表中原有的 PDF。"
+          }
+        }
+      }
+    },
     "Remove" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1109,6 +1774,41 @@
         }
       }
     },
+    "Supported formats include PNG, JPEG, HEIC, TIFF, BMP, and GIF." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supported formats include PNG, JPEG, HEIC, TIFF, BMP, and GIF."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支持的格式包括 PNG、JPEG、HEIC、TIFF、BMP 与 GIF。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支援的格式包括 PNG、JPEG、HEIC、TIFF、BMP 與 GIF。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支援的格式包括 PNG、JPEG、HEIC、TIFF、BMP 與 GIF。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支援的格式包括 PNG、JPEG、HEIC、TIFF、BMP 與 GIF。"
+          }
+        }
+      }
+    },
     "Supported formats: PNG, JPEG, HEIC, TIFF, BMP, GIF and more" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1134,6 +1834,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "支援格式：PNG、JPEG、HEIC、TIFF、BMP、GIF 等"
+          }
+        }
+      }
+    },
+    "This manual covers the interface and basic operations of Image to PDF: converting images into single-page PDF files and exporting them." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This manual covers the interface and basic operations of Image to PDF: converting images into single-page PDF files and exporting them."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手册介绍「图片转 PDF」的界面与基本操作：将图片转换为单页 PDF 文件并导出。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹「圖片轉 PDF」的介面與基本操作：將圖片轉換為單頁 PDF 檔案並匯出。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹「圖片轉 PDF」的介面與基本操作：將圖片轉換為單頁 PDF 檔案並匯出。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹「圖片轉 PDF」的介面與基本操作：將圖片轉換為單頁 PDF 檔案並匯出。"
           }
         }
       }
@@ -1192,6 +1927,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未知錯誤"
+          }
+        }
+      }
+    },
+    "Use 「Reveal in Finder」 or 「Open」 on a row to locate or view a PDF." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use 「Reveal in Finder」 or 「Open」 on a row to locate or view a PDF."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击某行的「在访达中显示」或「打开」可定位或查看该 PDF。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊某行的「於 Finder 顯示」或「開啟」可定位或檢視該 PDF。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊某行的「於 Finder 顯示」或「開啟」可定位或檢視該 PDF。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊某行的「於 Finder 顯示」或「開啟」可定位或檢視該 PDF。"
+          }
+        }
+      }
+    },
+    "User Manual" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User Manual"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手册"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
           }
         }
       }
