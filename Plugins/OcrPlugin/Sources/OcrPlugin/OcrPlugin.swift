@@ -69,7 +69,9 @@ public final class OcrPlugin: LumiPlugin, SuperLog {
     public func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
-    public func pluginAboutView(kernel: KernelLumi) -> AnyView? { nil }
+    public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
+        AnyView(OcrAboutView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }
