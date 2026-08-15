@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../LumiUI"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderSettingView"),
     ],
@@ -23,6 +24,7 @@ let package = Package(
             name: "PluginDevice",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
             ],

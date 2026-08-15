@@ -100,4 +100,16 @@ struct PluginDeviceTests {
 
         data.stopMonitoring()
     }
+
+    @Test("DeviceInfoAboutView 可渲染")
+    func aboutViewRenders() {
+        let view = DeviceInfoAboutView()
+        #expect(type(of: view) != Never.self)
+    }
+
+    @Test("DeviceInfoManualView 可渲染")
+    func manualViewRenders() {
+        let view = DeviceInfoManualView()
+        #expect(type(of: view) != Never.self)
+    }
 }
