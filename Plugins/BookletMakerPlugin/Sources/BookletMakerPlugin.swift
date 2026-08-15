@@ -86,6 +86,10 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
         AnyView(BookletMakerAboutView())
     }
 
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(BookletMakerManualView())
+    }
+
     // MARK: - Save Panel
 
     private func presentSavePanel() {

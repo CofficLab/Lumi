@@ -99,6 +99,9 @@ public final class CADDesignerPlugin: LumiPlugin, SuperLog {
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(CADDesignerAboutView())
     }
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(CADDesignerManualView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

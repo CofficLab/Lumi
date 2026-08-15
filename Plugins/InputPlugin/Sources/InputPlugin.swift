@@ -80,6 +80,9 @@ public final class InputPlugin: LumiPlugin {
             .padding()
         )
     }
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(InputManualView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

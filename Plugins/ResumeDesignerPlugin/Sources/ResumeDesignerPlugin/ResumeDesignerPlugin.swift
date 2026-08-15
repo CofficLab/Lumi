@@ -105,6 +105,10 @@ public final class ResumeDesignerPlugin: LumiPlugin {
         AnyView(ResumeAboutView())
     }
 
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(ResumeManualView())
+    }
+
     public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }
     public func messageRenderers(kernel: KernelLumi) -> [LumiMessageRendererItem] { [] }
     public func menuBarContentItems(kernel: KernelLumi) -> [LumiMenuBarContentItem] { [] }

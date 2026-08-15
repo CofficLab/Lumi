@@ -63,6 +63,10 @@ public final class EditorPanelPlugin: LumiPlugin, SuperLog {
         )
     }
 
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(EditorPanelManualView())
+    }
+
     public func onboardingPages(kernel: KernelLumi) -> [OnboardingPageItem] { [] }
 
     // MARK: - LumiPlugin stubs

@@ -75,6 +75,9 @@ public final class MenuBarHelperPlugin: LumiPlugin {
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(MenuBarHelperAboutView())
     }
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(MenuBarHelperManualView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

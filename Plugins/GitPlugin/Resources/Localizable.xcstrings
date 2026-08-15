@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    " " : {
+
+    },
+    "-" : {
+
+    },
     ".gitignore" : {
       "localizations" : {
         "en" : {
@@ -31,6 +37,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : ".gitignore"
+          }
+        }
+      }
+    },
+    ".gitignore: view and edit the ignore rules of the repository." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".gitignore: view and edit the ignore rules of the repository."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".gitignore:查看与编辑仓库的忽略规则。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".gitignore:查看與編輯儲存庫的忽略規則。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".gitignore:查看與編輯儲存庫的忽略規則。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".gitignore:查看與編輯儲存庫的忽略規則。"
           }
         }
       }
@@ -366,6 +406,43 @@
     "%llds" : {
 
     },
+    "+" : {
+
+    },
+    "A project must be open; the Git tabs are hidden when no project is open." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A project must be open; the Git tabs are hidden when no project is open."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需先打开项目;未打开项目时 Git 标签页不会显示。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需先開啟專案;未開啟專案時 Git 標籤頁不會顯示。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需先開啟專案;未開啟專案時 Git 標籤頁不會顯示。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需先開啟專案;未開啟專案時 Git 標籤頁不會顯示。"
+          }
+        }
+      }
+    },
     "Abort merge" : {
       "localizations" : {
         "en" : {
@@ -637,6 +714,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "自動推送"
+          }
+        }
+      }
+    },
+    "Auto Push: push commits automatically after committing." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Push: push commits automatically after committing."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动推送:提交后自动推送提交。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動推送:提交後自動推送提交。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動推送:提交後自動推送提交。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動推送:提交後自動推送提交。"
+          }
+        }
+      }
+    },
+    "Basic Operations" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic Operations"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
           }
         }
       }
@@ -981,6 +1126,40 @@
         }
       }
     },
+    "Click Commit to commit the current changes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click Commit to commit the current changes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击「提交」以提交当前变更。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「提交」以提交目前變更。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「提交」以提交目前變更。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊「提交」以提交目前變更。"
+          }
+        }
+      }
+    },
     "Commit" : {
       "localizations" : {
         "en" : {
@@ -1083,6 +1262,74 @@
         }
       }
     },
+    "Commit input" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commit input"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交输入"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交輸入"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交輸入"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交輸入"
+          }
+        }
+      }
+    },
+    "Commit input: the message field with the AI button, which generates a commit message, and the Commit button." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commit input: the message field with the AI button, which generates a commit message, and the Commit button."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交输入:提交信息输入框、「AI」按钮(用于自动生成提交信息)与「提交」按钮。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交輸入:提交訊息輸入框、「AI」按鈕(用於自動產生提交訊息)與「提交」按鈕。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交輸入:提交訊息輸入框、「AI」按鈕(用於自動產生提交訊息)與「提交」按鈕。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交輸入:提交訊息輸入框、「AI」按鈕(用於自動產生提交訊息)與「提交」按鈕。"
+          }
+        }
+      }
+    },
     "Committed: %@" : {
       "localizations" : {
         "en" : {
@@ -1113,6 +1360,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已提交：%@"
+          }
+        }
+      }
+    },
+    "Conflicts: inspect and resolve merge conflicts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conflicts: inspect and resolve merge conflicts."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "冲突:检视并解决合并冲突。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "衝突:檢視並解決合併衝突。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "衝突:檢視並解決合併衝突。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "衝突:檢視並解決合併衝突。"
           }
         }
       }
@@ -1321,6 +1602,74 @@
         }
       }
     },
+    "Detail area" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detail area"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "详情区"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳情區"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳情區"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳情區"
+          }
+        }
+      }
+    },
+    "Detail area: shows the working state, the repository stats (Total Commits, Contributors, Latest Commit), and the diff of the selected commit." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detail area: shows the working state, the repository stats (Total Commits, Contributors, Latest Commit), and the diff of the selected commit."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "详情区:显示工作状态、仓库统计(总提交数、贡献者数、最新提交)以及所选提交的差异。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳情區:顯示工作狀態、儲存庫統計(總提交數、貢獻者數、最新提交)以及所選提交的差異。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳情區:顯示工作狀態、儲存庫統計(總提交數、貢獻者數、最新提交)以及所選提交的差異。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳情區:顯示工作狀態、儲存庫統計(總提交數、貢獻者數、最新提交)以及所選提交的差異。"
+          }
+        }
+      }
+    },
     "Drop" : {
       "localizations" : {
         "en" : {
@@ -1385,6 +1734,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "啟用自動推送"
+          }
+        }
+      }
+    },
+    "Enter a commit message in the field; click AI to generate one automatically." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a commit message in the field; click AI to generate one automatically."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在输入框中填写提交信息;点击「AI」可自动生成。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在輸入框中填寫提交訊息;點擊「AI」可自動產生。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在輸入框中填寫提交訊息;點擊「AI」可自動產生。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在輸入框中填寫提交訊息;點擊「AI」可自動產生。"
           }
         }
       }
@@ -1487,6 +1870,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "拉取 LFS 物件"
+          }
+        }
+      }
+    },
+    "Figure 1: Interface layout" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Figure 1: Interface layout"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图 1 界面布局"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
           }
         }
       }
@@ -1661,6 +2078,108 @@
         }
       }
     },
+    "History" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "历史"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史"
+          }
+        }
+      }
+    },
+    "History sidebar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History sidebar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "历史侧栏"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史側欄"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史側欄"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史側欄"
+          }
+        }
+      }
+    },
+    "History sidebar: the current status (clean working tree or the number of uncommitted files) followed by the commit list with relative dates." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History sidebar: the current status (clean working tree or the number of uncommitted files) followed by the commit list with relative dates."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "历史侧栏:顶部为当前状态(工作树干净或未提交文件数),下方为带相对时间的提交列表。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史側欄:頂部為目前狀態(工作樹乾淨或未提交檔案數),下方為帶相對時間的提交列表。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史側欄:頂部為目前狀態(工作樹乾淨或未提交檔案數),下方為帶相對時間的提交列表。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史側欄:頂部為目前狀態(工作樹乾淨或未提交檔案數),下方為帶相對時間的提交列表。"
+          }
+        }
+      }
+    },
     "Init all" : {
       "localizations" : {
         "en" : {
@@ -1759,6 +2278,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "安裝 LFS 勾選"
+          }
+        }
+      }
+    },
+    "Interface" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interface"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面说明"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
           }
         }
       }
@@ -1907,6 +2460,40 @@
     },
     "LFS %lld" : {
 
+    },
+    "LFS: manage the large file storage of the repository." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LFS: manage the large file storage of the repository."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LFS:管理仓库的大文件存储。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LFS:管理儲存庫的大檔案儲存。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LFS:管理儲存庫的大檔案儲存。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LFS:管理儲存庫的大檔案儲存。"
+          }
+        }
+      }
     },
     "LLM not configured" : {
       "localizations" : {
@@ -2418,6 +3005,40 @@
         }
       }
     },
+    "Notes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        }
+      }
+    },
     "Off" : {
 
     },
@@ -2491,6 +3112,40 @@
     },
     "Ours" : {
 
+    },
+    "Overview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        }
+      }
     },
     "Please select a commit from the sidebar" : {
       "localizations" : {
@@ -2764,6 +3419,40 @@
         }
       }
     },
+    "Select a commit to view its changes in the diff." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a commit to view its changes in the diff."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择一个提交,在差异视图中查看其变更。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇一個提交,在差異視圖中查看其變更。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇一個提交,在差異視圖中查看其變更。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇一個提交,在差異視圖中查看其變更。"
+          }
+        }
+      }
+    },
     "Select a file to view diff" : {
       "localizations" : {
         "en" : {
@@ -2862,6 +3551,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "暫存"
+          }
+        }
+      }
+    },
+    "Stash: save and restore uncommitted changes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stash: save and restore uncommitted changes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "贮藏:保存与恢复未提交的变更。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貯藏:保存與復原未提交的變更。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貯藏:保存與復原未提交的變更。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貯藏:保存與復原未提交的變更。"
           }
         }
       }
@@ -2968,6 +3691,40 @@
         }
       }
     },
+    "Submodule: view and manage the submodules of the repository." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Submodule: view and manage the submodules of the repository."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "子模块:查看与管理仓库的子模块。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "子模組:查看與管理儲存庫的子模組。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "子模組:查看與管理儲存庫的子模組。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "子模組:查看與管理儲存庫的子模組。"
+          }
+        }
+      }
+    },
     "Submodules" : {
       "localizations" : {
         "en" : {
@@ -3002,8 +3759,76 @@
         }
       }
     },
+    "The AI button requires a configured language model." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI button requires a configured language model."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「AI」按钮需要已配置的语言模型。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「AI」按鈕需要已設定的語言模型。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「AI」按鈕需要已設定的語言模型。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「AI」按鈕需要已設定的語言模型。"
+          }
+        }
+      }
+    },
     "Theirs" : {
 
+    },
+    "This manual covers the interface and basic operations of the Git panel: viewing the commit history, inspecting changes, and committing." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This manual covers the interface and basic operations of the Git panel: viewing the commit history, inspecting changes, and committing."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手册介绍 Git 面板的界面与基本操作:查看提交历史、检视变更并进行提交。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹 Git 面板的介面與基本操作:查看提交歷史、檢視變更並進行提交。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹 Git 面板的介面與基本操作:查看提交歷史、檢視變更並進行提交。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹 Git 面板的介面與基本操作:查看提交歷史、檢視變更並進行提交。"
+          }
+        }
+      }
     },
     "Tools" : {
       "localizations" : {
@@ -3035,6 +3860,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "工具"
+          }
+        }
+      }
+    },
+    "Tools tab: a segmented switch with six tools, including Stash and .gitignore." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools tab: a segmented switch with six tools, including Stash and .gitignore."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具页:提供含「贮藏」与「.gitignore」在内的六个工具的分段切换。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具頁:提供含「貯藏」與「.gitignore」在內的六個工具的分段切換。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具頁:提供含「貯藏」與「.gitignore」在內的六個工具的分段切換。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具頁:提供含「貯藏」與「.gitignore」在內的六個工具的分段切換。"
           }
         }
       }
@@ -3273,6 +4132,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全部更新"
+          }
+        }
+      }
+    },
+    "User Manual" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User Manual"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手册"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        }
+      }
+    },
+    "View the commit history in the History sidebar; the current working state is shown at the top." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View the commit history in the History sidebar; the current working state is shown at the top."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在历史侧栏查看提交历史;顶部显示当前工作状态。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在歷史側欄查看提交歷史;頂部顯示目前工作狀態。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在歷史側欄查看提交歷史;頂部顯示目前工作狀態。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在歷史側欄查看提交歷史;頂部顯示目前工作狀態。"
           }
         }
       }

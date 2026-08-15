@@ -121,6 +121,9 @@ public final class StoryWriterPlugin: LumiPlugin, SuperLog {
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(StoryWriterAboutView())
     }
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(StoryWriterManualView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

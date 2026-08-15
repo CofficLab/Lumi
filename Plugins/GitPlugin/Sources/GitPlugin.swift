@@ -210,6 +210,9 @@ public final class GitPlugin: LumiPlugin, SuperLog {
             .padding()
         )
     }
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(GitManualView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

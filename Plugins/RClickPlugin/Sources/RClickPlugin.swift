@@ -94,6 +94,9 @@ public final class RClickPlugin: LumiPlugin {
             .padding()
         )
     }
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(RClickManualView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

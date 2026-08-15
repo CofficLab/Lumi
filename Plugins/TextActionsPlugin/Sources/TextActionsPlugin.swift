@@ -86,6 +86,9 @@ public final class TextActionsPlugin: LumiPlugin, SuperLog {
             .padding()
         )
     }
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(TextActionsManualView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

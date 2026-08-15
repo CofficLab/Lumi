@@ -85,6 +85,9 @@ public final class WhiteNoisePlugin: LumiPlugin {
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
         AnyView(WhiteNoiseAboutView())
     }
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(WhiteNoiseManualView())
+    }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

@@ -105,6 +105,40 @@
         }
       }
     },
+    "Basic Operations" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic Operations"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        }
+      }
+    },
     "Batch update failed: %@" : {
       "localizations" : {
         "en" : {
@@ -243,6 +277,9 @@
         }
       }
     },
+    "cask" : {
+
+    },
     "Cask" : {
       "localizations" : {
         "en" : {
@@ -308,6 +345,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cask（GUI 应用）"
+          }
+        }
+      }
+    },
+    "Click Refresh if a list looks out of date." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click Refresh if a list looks out of date."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当列表内容过期时,点击「刷新」。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當清單內容過期時,點擊「重新整理」。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當清單內容過期時,點擊「重新整理」。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當清單內容過期時,點擊「重新整理」。"
           }
         }
       }
@@ -481,6 +552,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "环境检测"
+          }
+        }
+      }
+    },
+    "Figure 1: Interface layout" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Figure 1: Interface layout"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图 1 界面布局"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖 1 介面佈局"
           }
         }
       }
@@ -936,6 +1041,40 @@
         }
       }
     },
+    "Installed tab: lists installed packages with their versions; casks are tagged, and each row provides Uninstall." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installed tab: lists installed packages with their versions; casks are tagged, and each row provides Uninstall."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「已安装」标签页:列出已安装的软件包及其版本;cask 类软件包带有标记,每行提供「卸载」按钮。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「已安裝」標籤頁:列出已安裝的套件及其版本;cask 類套件帶有標記,每列提供「解除安裝」按鈕。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「已安裝」標籤頁:列出已安裝的套件及其版本;cask 類套件帶有標記,每列提供「解除安裝」按鈕。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「已安裝」分頁:列出已安裝的套件及其版本;cask 類套件帶有標記,每列提供「解除安裝」按鈕。"
+          }
+        }
+      }
+    },
     "Installed: %@" : {
       "localizations" : {
         "en" : {
@@ -966,6 +1105,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已安裝：%@"
+          }
+        }
+      }
+    },
+    "Interface" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interface"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面说明"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "介面說明"
           }
         }
       }
@@ -1138,6 +1311,210 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未找到相關套件"
+          }
+        }
+      }
+    },
+    "Notes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事項"
+          }
+        }
+      }
+    },
+    "Open the Installed tab to view installed packages and their versions." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Installed tab to view installed packages and their versions."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开「已安装」标签页,查看已安装的软件包及其版本。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「已安裝」標籤頁,查看已安裝的套件及其版本。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「已安裝」標籤頁,查看已安裝的套件及其版本。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「已安裝」分頁,查看已安裝的套件及其版本。"
+          }
+        }
+      }
+    },
+    "Open the Search tab, type a name, and click Install on a result." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Search tab, type a name, and click Install on a result."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开「搜索」标签页,输入名称,并在某条结果上点击「安装」。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「搜尋」標籤頁,輸入名稱,並在某條結果上點擊「安裝」。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「搜尋」標籤頁,輸入名稱,並在某條結果上點擊「安裝」。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「搜尋」分頁,輸入名稱,並在某條結果上點擊「安裝」。"
+          }
+        }
+      }
+    },
+    "Open the Updates tab and click Update All, or update a single package with Update." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Updates tab and click Update All, or update a single package with Update."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开「更新」标签页,点击「更新全部」,或使用单行的「更新」按钮更新单个软件包。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「更新」標籤頁,點擊「更新全部」,或使用單列的「更新」按鈕更新單一套件。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「更新」標籤頁,點擊「更新全部」,或使用單列的「更新」按鈕更新單一套件。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「更新」分頁,點擊「更新全部」,或使用單列的「更新」按鈕更新單一套件。"
+          }
+        }
+      }
+    },
+    "Overview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overview"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概述"
+          }
+        }
+      }
+    },
+    "Package List" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Package List"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "软件包列表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "套件清單"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "套件清單"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "套件清單"
           }
         }
       }
@@ -1589,6 +1966,40 @@
         }
       }
     },
+    "Search tab: search field and results; each result provides Install." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search tab: search field and results; each result provides Install."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「搜索」标签页:提供搜索框与结果列表,每条结果提供「安装」按钮。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「搜尋」標籤頁:提供搜尋欄與結果清單,每條結果提供「安裝」按鈕。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「搜尋」標籤頁:提供搜尋欄與結果清單,每條結果提供「安裝」按鈕。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「搜尋」分頁:提供搜尋欄與結果清單,每條結果提供「安裝」按鈕。"
+          }
+        }
+      }
+    },
     "Search the Homebrew repository to install your first formula or cask, then come back here to manage updates and uninstalls." : {
       "localizations" : {
         "en" : {
@@ -1797,6 +2208,142 @@
         }
       }
     },
+    "This manual covers the interface and basic operations of the Package Management tool: viewing installed packages, updating packages, and searching for and installing packages." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This manual covers the interface and basic operations of the Package Management tool: viewing installed packages, updating packages, and searching for and installing packages."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手册介绍包管理的界面与基本操作:查看已安装的软件包、更新软件包以及搜索并安装软件包。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹套件管理的介面與基本操作:查看已安裝的套件、更新套件以及搜尋並安裝套件。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹套件管理的介面與基本操作:查看已安裝的套件、更新套件以及搜尋並安裝套件。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手冊介紹套件管理的介面與基本操作:查看已安裝的套件、更新套件以及搜尋並安裝套件。"
+          }
+        }
+      }
+    },
+    "To remove a package, click Uninstall on its row in the Installed tab and confirm." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To remove a package, click Uninstall on its row in the Installed tab and confirm."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如需移除软件包,在「已安装」标签页中点击该行的「卸载」按钮并确认。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如需移除套件,在「已安裝」標籤頁中點擊該列的「解除安裝」按鈕並確認。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如需移除套件,在「已安裝」標籤頁中點擊該列的「解除安裝」按鈕並確認。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如需移除套件,在「已安裝」分頁中點擊該列的「解除安裝」按鈕並確認。"
+          }
+        }
+      }
+    },
+    "Toolbar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toolbar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具栏"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具列"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具列"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具列"
+          }
+        }
+      }
+    },
+    "Toolbar: the Refresh button reloads the package list." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toolbar: the Refresh button reloads the package list."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「工具栏」:「刷新」按钮用于重新加载软件包列表。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「工具列」:「重新整理」按鈕用於重新載入套件清單。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「工具列」:「重新整理」按鈕用於重新載入套件清單。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「工具列」:「重新整理」按鈕用於重新載入套件清單。"
+          }
+        }
+      }
+    },
     "Uninstall" : {
       "localizations" : {
         "en" : {
@@ -1861,6 +2408,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "解除安裝失敗：%@"
+          }
+        }
+      }
+    },
+    "Uninstalling a package may affect other packages that depend on it; review before proceeding." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uninstalling a package may affect other packages that depend on it; review before proceeding."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卸载软件包可能影响依赖它的其他软件包,操作前请先确认。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解除安裝套件可能影響依賴它的其他套件,操作前請先確認。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解除安裝套件可能影響依賴它的其他套件,操作前請先確認。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解除安裝套件可能影響依賴它的其他套件,操作前請先確認。"
           }
         }
       }
@@ -2037,6 +2618,40 @@
         }
       }
     },
+    "Update packages before reporting issues; many problems are fixed in newer versions." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update packages before reporting issues; many problems are fixed in newer versions."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "反馈问题前请先将软件包更新到新版本;许多问题在新版本中已修复。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回報問題前請先將套件更新到新版本;許多問題在新版本中已修復。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回報問題前請先將套件更新到新版本;許多問題在新版本中已修復。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回報問題前請先將套件更新到新版本;許多問題在新版本中已修復。"
+          }
+        }
+      }
+    },
     "Update to the latest version" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2102,6 +2717,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更新"
+          }
+        }
+      }
+    },
+    "Updates tab: lists available updates, with Update All on top and Update on each row." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updates tab: lists available updates, with Update All on top and Update on each row."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「更新」标签页:列出可用更新,顶部为「更新全部」,每行提供「更新」按钮。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「更新」標籤頁:列出可用更新,頂部為「更新全部」,每列提供「更新」按鈕。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「更新」標籤頁:列出可用更新,頂部為「更新全部」,每列提供「更新」按鈕。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「更新」分頁:列出可用更新,頂部為「更新全部」,每列提供「更新」按鈕。"
           }
         }
       }
@@ -2211,6 +2860,40 @@
         }
       }
     },
+    "User Manual" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User Manual"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手册"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手冊"
+          }
+        }
+      }
+    },
     "Version: %@" : {
       "localizations" : {
         "en" : {
@@ -2310,6 +2993,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "查看包详情和依赖关系"
+          }
+        }
+      }
+    },
+    "View Picker" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View Picker"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "视图切换"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檢視切換"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檢視切換"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檢視切換"
+          }
+        }
+      }
+    },
+    "View picker: switches between the Installed, Updates, and Search tabs." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View picker: switches between the Installed, Updates, and Search tabs."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「视图切换」:在「已安装」「更新」「搜索」三个标签页之间切换。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「檢視切換」:在「已安裝」「更新」「搜尋」三個標籤頁之間切換。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「檢視切換」:在「已安裝」「更新」「搜尋」三個標籤頁之間切換。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「檢視切換」:在「已安裝」「更新」「搜尋」三個分頁之間切換。"
           }
         }
       }

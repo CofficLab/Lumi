@@ -70,6 +70,10 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
         AnyView(AboutView())
     }
 
+    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
+        AnyView(DatabaseManagerManualView())
+    }
+
     // MARK: - LumiPlugin stubs
 
     public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }

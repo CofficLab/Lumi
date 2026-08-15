@@ -33,44 +33,46 @@ struct GeneralSettingsView: View {
                     title: LumiPluginLocalization.string("Onboarding", bundle: .module),
                     titleAlignment: .leading
                 ) {
-                    AppSettingRow(
-                        title: LumiPluginLocalization.string("Replay Onboarding", bundle: .module),
-                        description: LumiPluginLocalization.string("Replay the first-run onboarding flow.", bundle: .module),
-                        icon: "graduationcap"
-                    ) {
-                        AppButton(
-                            LumiPluginLocalization.string("Start", bundle: .module),
-                            systemImage: "arrow.right",
-                            style: .secondary,
-                            size: .small
-                        ) {
-                            NotificationCenter.default.post(
-                                name: .lumiShowOnboarding,
-                                object: nil,
-                                userInfo: [LumiOnboardingNotification.resetKey: true]
-                            )
-                        }
-                    }
-
-                    if !manualPlugins.isEmpty {
-                        Divider()
-                            .padding(.vertical, 8)
-
+                    VStack(spacing: 0) {
                         AppSettingRow(
-                            title: LumiPluginLocalization.string("User Manuals", bundle: .module),
-                            description: LumiPluginLocalization.string(
-                                "Step-by-step guides for every feature.",
-                                bundle: .module
-                            ),
-                            icon: "book"
+                            title: LumiPluginLocalization.string("Replay Onboarding", bundle: .module),
+                            description: LumiPluginLocalization.string("Replay the first-run onboarding flow.", bundle: .module),
+                            icon: "graduationcap"
                         ) {
                             AppButton(
-                                LumiPluginLocalization.string("Open", bundle: .module),
-                                systemImage: "book.pages",
+                                LumiPluginLocalization.string("Start", bundle: .module),
+                                systemImage: "arrow.right",
                                 style: .secondary,
                                 size: .small
                             ) {
-                                isPresentingManuals = true
+                                NotificationCenter.default.post(
+                                    name: .lumiShowOnboarding,
+                                    object: nil,
+                                    userInfo: [LumiOnboardingNotification.resetKey: true]
+                                )
+                            }
+                        }
+
+                        if !manualPlugins.isEmpty {
+                            Divider()
+                                .padding(.vertical, 8)
+
+                            AppSettingRow(
+                                title: LumiPluginLocalization.string("User Manuals", bundle: .module),
+                                description: LumiPluginLocalization.string(
+                                    "Step-by-step guides for every feature.",
+                                    bundle: .module
+                                ),
+                                icon: "book"
+                            ) {
+                                AppButton(
+                                    LumiPluginLocalization.string("Open", bundle: .module),
+                                    systemImage: "book.pages",
+                                    style: .secondary,
+                                    size: .small
+                                ) {
+                                    isPresentingManuals = true
+                                }
                             }
                         }
                     }
