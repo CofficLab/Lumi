@@ -50,4 +50,15 @@ struct ProviderToastTests {
         #expect(recording.received.count == 1)
         #expect(recording.received[0].title == "hello")
     }
+
+    // MARK: - DefaultToastProviding
+
+    @Test("DefaultToastProviding 为 no-op，不抛错")
+    func defaultToastProvidingIsNoOp() {
+        let provider: any ToastProviding = DefaultToastProviding()
+
+        // 不应抛错、不应崩溃（契约：非阻塞、不抛错）
+        provider.show("hello")
+        provider.show(LumiToast(title: "hello", detail: "d", style: .error))
+    }
 }
