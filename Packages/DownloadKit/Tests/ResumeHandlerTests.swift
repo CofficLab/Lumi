@@ -38,6 +38,23 @@ struct ResumeHandlerTests {
         #expect(retrieved == nil)
     }
 
+    @Test("appendData 自动创建缺失的目标目录")
+    func appendDataCreatesMissingDirectory() async throws {
+        try await withTempDir { tempDir in
+            let handler = ResumeHandler()
+            // 目标目录尚不存在：appendData 应创建并写入
+            let target = tempDir.appendingPathComponent("nested/dir/part.bin")
+            let data = Data((0..<32).map { UInt8($0) })
+
+            try await handler.appendData(data, to: target)
+            #expect(try Data(contentsOf: target) == data)
+
+            // 再次追加：seek 到末尾拼接
+            try await handler.appendData(data, to: target)
+            #expect((try Data(contentsOf: target)).count == 64)
+        }
+    }
+
     @Test("获取不存在的断点续传数据返回 nil")
     func getNonExistentResumeData() async throws {
         let handler = ResumeHandler()

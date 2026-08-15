@@ -151,7 +151,10 @@ public actor DownloadManager {
     public func cancel(taskId: String) {
         activeTasks[taskId]?.cancel()
         activeTasks.removeValue(forKey: taskId)
-        taskStates[taskId] = .cancelled
+        // 已处终态（如刚好已完成/失败）的任务不被改写为 .cancelled
+        if !(taskStates[taskId]?.isFinal ?? false) {
+            taskStates[taskId] = .cancelled
+        }
         progressHandlers.removeValue(forKey: taskId)
     }
 
@@ -159,7 +162,9 @@ public actor DownloadManager {
     public func cancelAll() {
         for (taskId, task) in activeTasks {
             task.cancel()
-            taskStates[taskId] = .cancelled
+            if !(taskStates[taskId]?.isFinal ?? false) {
+                taskStates[taskId] = .cancelled
+            }
         }
         activeTasks.removeAll()
         progressHandlers.removeAll()
@@ -235,6 +240,7 @@ public actor DownloadManager {
                 to: task.destination,
                 existingBytes: existingBytes,
                 maxBytesPerSecond: configuration.maxBytesPerSecond,
+                headers: task.headers,
                 progressHandler: { [weak self] downloadedBytes, totalBytes in
                     let elapsed = Date().timeIntervalSince(progressStartTime)
                     // speed 以「本次新下载字节」计，避免续传时把 existingBytes 计入速率导致偏低
@@ -267,10 +273,16 @@ public actor DownloadManager {
             _ = try fileValidator.validate(fileAt: task.destination, expectedSize: task.expectedSize)
 
             // 投递最终进度（100%）：下载完成时同步补发一次，确保订阅者能收到完成态进度，
-            // 即便中间回调因时序未全部送达。
+            // 即便中间回调因时序未全部送达。字节数优先取磁盘上实际文件大小
+            // （expectedSize 可能为 nil，此时不能用 0 冒充完成态进度）。
             if let finalHandler = userProgressHandler {
+                let actualSize: Int64? = {
+                    guard let attrs = try? fileManager.attributesOfItem(atPath: task.destination.path),
+                          let size = attrs[.size] as? Int64 else { return nil }
+                    return size
+                }()
                 let finalProgress = DownloadProgress(
-                    downloadedBytes: task.expectedSize ?? 0,
+                    downloadedBytes: actualSize ?? task.expectedSize ?? 0,
                     totalBytes: task.expectedSize,
                     downloadedFiles: 1,
                     totalFiles: 1,
@@ -302,7 +314,8 @@ public actor DownloadManager {
         if let existing = taskStates[taskId], existing.isFinal {
             return
         }
+        // 仅更新内部状态：用户进度回调已在 performDownload 的 progressHandler 中
+        // 同步投递（见 userProgressHandler），这里再调一次会造成同一事件被投递两遍。
         taskStates[taskId] = .downloading(progress: progress)
-        progressHandlers[taskId]?(progress)
     }
 }

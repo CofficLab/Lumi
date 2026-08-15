@@ -15,6 +15,18 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
     private(set) var lastDestination: URL?
     /// 收到最近一次 download 调用传入的 existingBytes（续传起点），用于断言续传链路。
     private(set) var lastExistingBytes: Int64 = 0
+    /// 收到最近一次 download 调用传入的自定义请求头（断言 headers 未被丢弃）。
+    private(set) var lastHeaders: [String: String] = [:]
+
+    private func recordCall(
+        url: URL, destination: URL, existingBytes: Int64, headers: [String: String]
+    ) {
+        downloadCallCount += 1
+        lastURL = url
+        lastDestination = destination
+        lastExistingBytes = existingBytes
+        lastHeaders = headers
+    }
 
     func download(
         from url: URL,
@@ -24,10 +36,24 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
         progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
         onCancelled: @Sendable @escaping (Data?) -> Void
     ) async throws -> Int64? {
-        downloadCallCount += 1
-        lastURL = url
-        lastDestination = destination
-        lastExistingBytes = existingBytes
+        try await download(
+            from: url, to: destination, existingBytes: existingBytes,
+            maxBytesPerSecond: maxBytesPerSecond, headers: [:],
+            progressHandler: progressHandler, onCancelled: onCancelled
+        )
+    }
+
+    /// 覆盖协议扩展的带请求头版本，记录 headers 以断言其未被 DownloadManager 丢弃
+    func download(
+        from url: URL,
+        to destination: URL,
+        existingBytes: Int64,
+        maxBytesPerSecond: Int?,
+        headers: [String: String],
+        progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
+        onCancelled: @Sendable @escaping (Data?) -> Void
+    ) async throws -> Int64? {
+        recordCall(url: url, destination: destination, existingBytes: existingBytes, headers: headers)
 
         // 模拟进度更新（progressUpdates 是「累计值」，调用方可据此模拟续传进度）
         for (downloaded, total) in progressUpdates {
@@ -91,6 +117,7 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
         lastURL = nil
         lastDestination = nil
         lastExistingBytes = 0
+        lastHeaders = [:]
     }
 }
 
@@ -512,6 +539,118 @@ struct DownloadManagerTests {
             // 注入了 HTTPClient：无共享 RateLimiter，setter 应返回 false（不生效）
             let ok = await manager.setMaxBytesPerSecond(1024 * 1024)
             #expect(ok == false, "注入自定义 HTTPClient 时 setMaxBytesPerSecond 应返回 false")
+        }
+    }
+
+    @Test("DownloadTask.headers 被传给 HTTPClient（不丢弃）")
+    func taskHeadersForwardedToClient() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            let task = DownloadTask(
+                id: "headers-id",
+                url: URL(string: "https://example.com/private.bin")!,
+                destination: tempDir.appendingPathComponent("private.bin"),
+                headers: ["Authorization": "Bearer token-123"]
+            )
+
+            _ = try await manager.download(task)
+
+            #expect(
+                mockClient.lastHeaders["Authorization"] == "Bearer token-123",
+                "task.headers 应原样传给 HTTPClient，实际：\(mockClient.lastHeaders)"
+            )
+        }
+    }
+
+    @Test("每个进度事件只投递一次（无重复回调）")
+    func progressDeliveredExactlyOnce() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+            mockClient.progressUpdates = [
+                (10, 100),
+                (50, 100),
+                (100, 100)
+            ]
+
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            let destination = tempDir.appendingPathComponent("once.txt")
+            let task = DownloadTask(
+                url: URL(string: "https://example.com/file.txt")!,
+                destination: destination
+            )
+
+            let collector = ProgressCollector()
+            _ = try await manager.download(task) { progress in
+                Task { await collector.add(progress) }
+            }
+            try await Task.sleep(for: .milliseconds(200))
+
+            let values = await collector.values
+            // 3 次中间进度 + 1 次完成补发 = 恰好 4 次；修复前异步路径会重复投递中间进度
+            #expect(values.count == 4, "进度应恰好投递 4 次（3 中间 + 1 完成），实际：\(values.count)")
+        }
+    }
+
+    @Test("expectedSize 为 nil 时最终进度取实际文件大小")
+    func finalProgressUsesActualFileSize() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+            let content = Data("mock content".utf8)
+
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            let destination = tempDir.appendingPathComponent("final.txt")
+            let task = DownloadTask(
+                url: URL(string: "https://example.com/file.txt")!,
+                destination: destination,
+                expectedSize: nil
+            )
+
+            let collector = ProgressCollector()
+            _ = try await manager.download(task) { progress in
+                Task { await collector.add(progress) }
+            }
+            try await Task.sleep(for: .milliseconds(200))
+
+            let values = await collector.values
+            guard let last = values.last else {
+                Issue.record("应至少收到最终进度回调")
+                return
+            }
+            #expect(
+                last.downloadedBytes == Int64(content.count),
+                "最终进度 downloadedBytes 应为实际文件大小 \(content.count)，实际：\(last.downloadedBytes)"
+            )
+            #expect(last.downloadedFiles == 1)
+        }
+    }
+
+    @Test("下载完成后再 cancel 不改写 completed 状态")
+    func cancelAfterCompletionKeepsCompletedState() async throws {
+        try await withTempDir { tempDir in
+            let mockClient = MockHTTPClient()
+            let config = DownloadManager.Configuration(downloadDirectory: tempDir)
+            let manager = DownloadManager(configuration: config, httpClient: mockClient)
+
+            let destination = tempDir.appendingPathComponent("done.txt")
+            let task = DownloadTask(
+                id: "done-task",
+                url: URL(string: "https://example.com/file.txt")!,
+                destination: destination
+            )
+
+            _ = try await manager.download(task)
+            #expect(await manager.state(for: task.id) == .completed)
+
+            // 任务已完成后才调用 cancel：状态不应被改写为 cancelled
+            await manager.cancel(taskId: task.id)
+            #expect(await manager.state(for: task.id) == .completed)
         }
     }
 }

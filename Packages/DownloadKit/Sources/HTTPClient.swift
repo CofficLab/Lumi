@@ -25,6 +25,22 @@ public protocol HTTPClient: Sendable {
         progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
         onCancelled: @Sendable @escaping (Data?) -> Void
     ) async throws -> Int64?
+
+    /// 带自定义请求头的下载（如 Authorization）。
+    ///
+    /// 协议要求 + 默认实现（见下方 extension）：默认实现丢弃 `headers` 并退回无请求头
+    /// 版本，既有 conformer 无需改动即可继续编译；`DefaultHTTPClient` 覆盖此方法真正
+    /// 发送请求头。注意必须是协议要求而非纯扩展方法，否则经由 existential 调用时
+    /// 不会动态派发到 conformer 的覆盖实现。
+    func download(
+        from url: URL,
+        to destination: URL,
+        existingBytes: Int64,
+        maxBytesPerSecond: Int?,
+        headers: [String: String],
+        progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
+        onCancelled: @Sendable @escaping (Data?) -> Void
+    ) async throws -> Int64?
 }
 
 // MARK: - Backward-Compatible Default
@@ -43,6 +59,27 @@ public extension HTTPClient {
             to: destination,
             existingBytes: existingBytes,
             maxBytesPerSecond: nil,
+            progressHandler: progressHandler,
+            onCancelled: onCancelled
+        )
+    }
+
+    /// `download(...:headers:)` 协议要求的默认实现：丢弃请求头，退回无请求头版本，
+    /// 保证未覆盖该要求的既有 conformer 行为不变。
+    func download(
+        from url: URL,
+        to destination: URL,
+        existingBytes: Int64,
+        maxBytesPerSecond: Int?,
+        headers: [String: String],
+        progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
+        onCancelled: @Sendable @escaping (Data?) -> Void
+    ) async throws -> Int64? {
+        try await download(
+            from: url,
+            to: destination,
+            existingBytes: existingBytes,
+            maxBytesPerSecond: maxBytesPerSecond,
             progressHandler: progressHandler,
             onCancelled: onCancelled
         )
@@ -77,11 +114,36 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
         progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
         onCancelled: @Sendable @escaping (Data?) -> Void
     ) async throws -> Int64? {
+        try await download(
+            from: url,
+            to: destination,
+            existingBytes: existingBytes,
+            maxBytesPerSecond: maxBytesPerSecond,
+            headers: [:],
+            progressHandler: progressHandler,
+            onCancelled: onCancelled
+        )
+    }
+
+    /// 带自定义请求头的下载（如 Authorization）；其余行为与无请求头版本一致。
+    public func download(
+        from url: URL,
+        to destination: URL,
+        existingBytes: Int64,
+        maxBytesPerSecond: Int?,
+        headers: [String: String],
+        progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
+        onCancelled: @Sendable @escaping (Data?) -> Void
+    ) async throws -> Int64? {
         // 注入了共享限速器则统一使用它（忽略 maxBytesPerSecond，以支持运行时动态调整）；
         // 否则退回旧行为：按本次 maxBytesPerSecond 创建临时限速器。
         let limiter = rateLimiter ?? RateLimiter(bytesPerSecond: maxBytesPerSecond)
 
         var request = URLRequest(url: url)
+        // 自定义请求头（如 Authorization）
+        for (name, value) in headers {
+            request.setValue(value, forHTTPHeaderField: name)
+        }
         // 断点续传：已有字节时用 Range 请求剩余部分。
         if existingBytes > 0 {
             request.setValue("bytes=\(existingBytes)-", forHTTPHeaderField: "Range")

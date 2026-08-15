@@ -151,4 +151,112 @@ struct DefaultHTTPClientTests {
         #expect(written == 1000)
         #expect(try Data(contentsOf: dest) == full)
     }
+
+    @Test func customHeadersReachServerRequest() async throws {
+        let url = URL(string: "https://example.com/file.bin")!
+        let dest = tempFile()
+        defer { try? FileManager.default.removeItem(at: dest) }
+        let body = Data("auth body".utf8)
+        let capturedAuth = Box<String?>(nil)
+        DownloadStubURLProtocol.handler = { request in
+            capturedAuth.value = request.value(forHTTPHeaderField: "Authorization")
+            return self.respond(
+                status: 200, headers: ["Content-Length": String(body.count)], body: body
+            )
+        }
+
+        let written = try await makeClient().download(
+            from: url, to: dest, existingBytes: 0, maxBytesPerSecond: nil,
+            headers: ["Authorization": "Bearer secret-token"],
+            progressHandler: { _, _ in }, onCancelled: { _ in }
+        )
+        #expect(written == Int64(body.count))
+        #expect(capturedAuth.value == "Bearer secret-token")
+    }
+
+    @Test func largeBodyStreamsThroughBufferedWrites() async throws {
+        let url = URL(string: "https://example.com/large.bin")!
+        let dest = tempFile()
+        defer { try? FileManager.default.removeItem(at: dest) }
+        // 大于 64KB 写缓冲：驱动流式分批写入路径（而非仅残余 flush）
+        let body = Data((0..<200_000).map { UInt8($0 % 251) })
+        DownloadStubURLProtocol.handler = { _ in
+            self.respond(
+                status: 200, headers: ["Content-Length": String(body.count)], body: body
+            )
+        }
+
+        let written = try await makeClient().download(
+            from: url, to: dest, existingBytes: 0, maxBytesPerSecond: nil,
+            progressHandler: { _, _ in }, onCancelled: { _ in }
+        )
+        #expect(written == Int64(body.count))
+        #expect(try Data(contentsOf: dest) == body)
+    }
+
+    @Test func resumeWithContentLengthOnlyReportsCumulativeTotal() async throws {
+        let url = URL(string: "https://example.com/file.bin")!
+        let dest = tempFile()
+        defer { try? FileManager.default.removeItem(at: dest) }
+        // 服务器 206 但只给 Content-Length（无 Content-Range）：total 应回退为
+        // existingBytes + 本次长度，进度累计值正确
+        try Data(repeating: 0xAA, count: 400).write(to: dest)
+        let remainder = Data(repeating: 0xBB, count: 600)
+        DownloadStubURLProtocol.handler = { _ in
+            self.respond(
+                status: 206,
+                headers: ["Content-Length": String(remainder.count)],
+                body: remainder
+            )
+        }
+
+        let totals = Box<[Int64?]>([])
+        let written = try await makeClient().download(
+            from: url, to: dest, existingBytes: 400, maxBytesPerSecond: nil,
+            progressHandler: { _, total in totals.value.append(total) },
+            onCancelled: { _ in }
+        )
+        #expect(written == 600)
+        #expect(totals.value.allSatisfy { $0 == 1000 })
+        #expect(try Data(contentsOf: dest).count == 1000)
+    }
+}
+
+/// 仅实现无请求头要求的极简 conformer：验证协议扩展对 download(...:headers:) 的
+/// 默认实现（丢弃请求头、退回无请求头版本）仍能正常下载。
+private struct HeaderAgnosticClient: HTTPClient {
+    func download(
+        from url: URL,
+        to destination: URL,
+        existingBytes: Int64,
+        maxBytesPerSecond: Int?,
+        progressHandler: @Sendable @escaping (Int64, Int64?) -> Void,
+        onCancelled: @Sendable @escaping (Data?) -> Void
+    ) async throws -> Int64? {
+        let data = Data("plain".utf8)
+        try data.write(to: destination)
+        progressHandler(Int64(data.count), Int64(data.count))
+        return Int64(data.count)
+    }
+}
+
+extension DefaultHTTPClientTests {
+    @Test func defaultHeadersImplementationFallsBackGracefully() async throws {
+        let dest = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".bin")
+        defer { try? FileManager.default.removeItem(at: dest) }
+
+        let client: any HTTPClient = HeaderAgnosticClient()
+        let written = try await client.download(
+            from: URL(string: "https://example.com/plain.bin")!,
+            to: dest,
+            existingBytes: 0,
+            maxBytesPerSecond: nil,
+            headers: ["Authorization": "Bearer ignored"],
+            progressHandler: { _, _ in },
+            onCancelled: { _ in }
+        )
+        #expect(written == 5)
+        #expect(try Data(contentsOf: dest) == Data("plain".utf8))
+    }
 }
