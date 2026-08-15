@@ -161,6 +161,17 @@ struct FactoryLumi2Tests {
         #expect(settings?.entries.contains(where: { $0.id == "device" }) == true)
     }
 
+    @Test("makeKernel 启动 SettingsToolbarPlugin 后工具栏含设置按钮")
+    func makeKernelBootsToolbarSettingsPlugin() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.toolbar-settings"))
+
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        #expect(toolbar?.toolbarItems.contains(where: { $0.id == "settings" }) == true)
+        #expect(toolbar?.toolbarItems.first(where: { $0.id == "settings" })?.placement == .trailing)
+    }
+
     @Test("makeKernel 注册 ContentViewProviding 且插件已设置内容")
     func makeKernelRegistersContentViewProviding() throws {
         let kernel = try KernelFactory.makeKernel()

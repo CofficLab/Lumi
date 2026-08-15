@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import PluginDevice
 import PluginSettingGeneral
+import PluginToolbarSettings
 
 /// 产出各种插件的工厂协议。
 ///
@@ -12,8 +13,8 @@ public protocol PluginFactory {
     /// 产出要启动的全部插件。
     ///
     /// 各插件在 `onBoot` 中解析内核已有 Provider 并注册自己的贡献
-    /// （如 SettingGeneralPlugin 向设置视图注册「通用」入口，
-    ///  DevicePlugin 注册「设备信息」入口）。
+    /// （如 SettingGeneralPlugin 注册「通用」入口、DevicePlugin 注册
+    ///  「设备信息」入口与主内容、SettingsToolbarPlugin 注册工具栏设置按钮）。
     func makePlugins() -> [any SuperPlugin]
 }
 
@@ -27,6 +28,7 @@ public struct DefaultPluginFactory: PluginFactory {
         [
             SettingGeneralPlugin(),
             DevicePlugin(),
+            SettingsToolbarPlugin(),
         ]
     }
 }
