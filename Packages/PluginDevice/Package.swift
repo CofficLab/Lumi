@@ -15,24 +15,33 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../LocalizationKit"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderMenuBar"),
         .package(path: "../ProviderSettingView"),
+        .package(path: "../ProviderStorage"),
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
             name: "PluginDevice",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderMenuBar", package: "ProviderMenuBar"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginDevice"
+            path: "Sources/PluginDevice",
+            resources: [
+                .process("Resources/Localizable.xcstrings")
+            ]
         ),
         .testTarget(
             name: "PluginDeviceTests",

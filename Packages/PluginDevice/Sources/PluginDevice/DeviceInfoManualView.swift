@@ -3,61 +3,57 @@ import SwiftUI
 
 // MARK: - Manual View
 
-/// 设备信息插件使用手册 —— 模拟纸质说明书的章节式文档：
-/// 编号章节、编号步骤、条目列表与线框示意图。
-///
-/// 复刻自 Lumi DeviceInfoPlugin 的 DeviceInfoManualView，使用 LumiUI
-/// 的 Manual 组件（Header / SectionHeader / BulletList / StepList / Figure）。
-public struct DeviceInfoManualView: View {
+/// 设备信息插件使用手册 —— 模拟纸质说明书的章节式文档:
+/// 编号章节、编号步骤、条目列表与线框示意图,克制严谨,不含宣传性内容。
+/// 通过 `pluginManualView` 暴露,在 设置 → 通用 → 新手引导 → 说明书 中阅读。
+struct DeviceInfoManualView: View {
     @LumiTheme private var theme
 
-    public init() {}
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            ManualHeader(
+                title: L("Device Info"),
+                subtitle: L("User Manual")
+            )
 
-    public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                ManualHeader(title: "设备信息", subtitle: "使用手册")
+            ManualSectionHeader(number: 1, title: L("Overview"))
+            Text(L("This manual covers the interface and basic operations of Device Info: checking hardware status and reading the real-time monitor charts."))
+                .font(.appBody)
+                .foregroundColor(theme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
 
-                ManualSectionHeader(number: 1, title: "概述")
-                Text("本手册介绍设备信息的界面与基本操作：查看硬件状态与实时监控指标。")
-                    .font(.appBody)
-                    .foregroundColor(theme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
+            ManualSectionHeader(number: 2, title: L("Interface"))
+            ManualBulletList(items: [
+                .init(L("Header card: shows the device name and the macOS version; the footer shows the uptime.")),
+                .init(L("Card grid: CPU (name, cores, usage), Memory (used / total), Disk, Battery (level and cycles), and GPU.")),
+                .init(L("Real-time Monitor: live charts for CPU, Memory, GPU temperature, Network, and Disk IO.")),
+                .init(L("Menu bar: popups with CPU and memory graphs are always available.")),
+            ])
+            interfaceFigure
 
-                ManualSectionHeader(number: 2, title: "界面")
-                ManualBulletList(items: [
-                    .init("主内容面板：设备名称、macOS 版本、处理器与核心数。"),
-                    .init("指标卡片：CPU、内存、磁盘、电池与运行时间。"),
-                    .init("每 2 秒自动刷新实时数据。"),
-                ])
-                interfaceFigure
+            ManualSectionHeader(number: 3, title: L("Basic Operations"))
+            ManualStepList(items: [
+                .init(L("Open the Device Info tab in the sidebar.")),
+                .init(L("Read the header card for the device name and OS version, and the footer for the uptime.")),
+                .init(L("Check each card: CPU usage and core count, the memory usage bar, disk space, battery level and cycles, and the GPU.")),
+                .init(L("Scroll to the Real-time Monitor section to view the live charts.")),
+            ])
 
-                ManualSectionHeader(number: 3, title: "基本操作")
-                ManualStepList(items: [
-                    .init("打开主窗口，查看内容区的设备信息面板。"),
-                    .init("阅读头部系统信息：设备名、系统版本、处理器、核心数。"),
-                    .init("查看各指标卡片：CPU 使用率、内存占用、磁盘空间、电池电量。"),
-                    .init("数据每 2 秒自动更新，无需手动操作。"),
-                ])
-
-                ManualSectionHeader(number: 4, title: "说明")
-                ManualBulletList(items: [
-                    .init("所有数值均为实时快照，随系统报告自动刷新。"),
-                    .init("无电池的 Mac 不显示电池指标。"),
-                ])
-            }
-            .frame(maxWidth: 620, alignment: .leading)
-            .padding(22)
+            ManualSectionHeader(number: 4, title: L("Notes"))
+            ManualBulletList(items: [
+                .init(L("All values are real-time snapshots and refresh as the system reports new data.")),
+            ])
         }
+        .frame(maxWidth: 620, alignment: .leading)
     }
 
-    // MARK: - 图 1 界面布局
+    // MARK: - 图 1 卡片仪表盘
 
     private var interfaceFigure: some View {
-        ManualFigure(caption: "图 1：界面布局") {
+        ManualFigure(caption: L("Figure 1: Interface layout")) {
             VStack(spacing: 12) {
                 VStack(spacing: 8) {
-                    // ① 头部系统信息
+                    // ① 头部卡片:设备名称 + 系统版本
                     HStack(spacing: 8) {
                         Image(systemName: "laptopcomputer")
                             .font(.system(size: 12))
@@ -72,20 +68,21 @@ public struct DeviceInfoManualView: View {
                     .background(cardShape)
                     .overlay(alignment: .topLeading) { ManualFigureMarker(1).padding(-7) }
 
-                    // ② 指标卡片网格
+                    // ② 状态卡片网格
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-                        statCardMock(label: "CPU", fraction: 0.35)
-                        statCardMock(label: "内存", fraction: 0.6)
-                        statCardMock(label: "磁盘", fraction: 0.5)
-                        statCardMock(label: "电池", fraction: 0.8)
-                        statCardMock(label: "运行时间", fraction: 0)
+                        statCardMock(label: L("CPU"), fraction: 0.35)
+                        statCardMock(label: L("Memory"), fraction: 0.6)
+                        statCardMock(label: L("Disk"), fraction: 0.5)
+                        statCardMock(label: L("Battery"), fraction: 0.8)
+                        statCardMock(label: L("GPU"), fraction: 0.25)
+                        statCardMock(label: L("Uptime"), fraction: 0)
                     }
                     .overlay(alignment: .bottomTrailing) { ManualFigureMarker(2).padding(-7) }
                 }
 
                 HStack(spacing: 16) {
-                    ManualFigureLegendItem(1, "系统信息")
-                    ManualFigureLegendItem(2, "指标卡片")
+                    ManualFigureLegendItem(1, L("Header card"))
+                    ManualFigureLegendItem(2, L("Status cards"))
                 }
             }
         }
@@ -98,7 +95,7 @@ public struct DeviceInfoManualView: View {
             .strokeBorder(theme.appDivider)
     }
 
-    /// 指标卡片示意：标签 + 占用条。
+    /// 状态卡片示意:标签 + 占用条。
     private func statCardMock(label: String, fraction: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(label)
@@ -130,4 +127,18 @@ public struct DeviceInfoManualView: View {
             .fill(Color.primary.opacity(0.14))
             .frame(width: width, height: 3)
     }
+
+    // MARK: - Localization
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
+    }
+}
+
+#Preview {
+    ScrollView {
+        DeviceInfoManualView()
+            .padding(22)
+    }
+    .frame(width: 560, height: 900)
 }

@@ -1,11 +1,14 @@
+import AppKit
 import Darwin
 import Foundation
 import IOKit.ps
+import os
+import SwiftUI
 
-/// 持有 Timer 的辅助类，避免 deinit（非隔离）访问 MainActor 隔离属性的问题。
+// Helper class to hold timer avoiding actor isolation issues
 private final class TimerHolder: @unchecked Sendable {
     var timer: Timer?
-
+    
     func invalidate() {
         timer?.invalidate()
         timer = nil
@@ -13,67 +16,84 @@ private final class TimerHolder: @unchecked Sendable {
 }
 
 /// 设备信息数据模型
-///
-/// 采集并发布设备静态信息（设备名 / OS / 处理器 / 核心数）与动态指标
-/// （CPU / 内存 / 磁盘 / 电池 / 运行时间）。
-///
-/// 简化版：不依赖外部日志库；数据采集逻辑内联于此。
 @MainActor
-public final class DeviceData: ObservableObject {
+class DeviceData: ObservableObject {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.device-data")
 
     // MARK: - Published Properties
 
-    @Published public var cpuUsage: Double = 0.0
-    @Published public var memoryUsage: Double = 0.0
-    @Published public var memoryTotal: UInt64 = 0
-    @Published public var memoryUsed: UInt64 = 0
-    @Published public var diskTotal: Int64 = 0
-    @Published public var diskUsed: Int64 = 0
-    @Published public var batteryLevel: Double = 0.0
-    @Published public var isCharging: Bool = false
-    @Published public var uptime: TimeInterval = 0
+    @Published var cpuUsage: Double = 0.0
+    @Published var memoryUsage: Double = 0.0
+    @Published var memoryTotal: UInt64 = 0
+    @Published var memoryUsed: UInt64 = 0
+    @Published var diskTotal: Int64 = 0
+    @Published var diskUsed: Int64 = 0
+    @Published var batteryLevel: Double = 0.0
+    @Published var isCharging: Bool = false
+    @Published var uptime: TimeInterval = 0
 
     // MARK: - Static Properties
 
-    public let deviceName: String
-    public let osVersion: String
-    public let processorName: String
-    public let coreCount: Int
+    let deviceName: String
+    let osVersion: String
+    let processorName: String
+    let coreCount: Int
 
     // MARK: - Private Properties
 
     private nonisolated let timerHolder = TimerHolder()
-    private var previousCPUTicks: (total: UInt64, idle: UInt64)?
     private var isMonitoring = false
+    private var samplingTask: Task<Void, Never>?
+    private let cpuUsageProvider: @MainActor () -> Double
+    private let cpuMonitoringStarter: @MainActor () -> Void
+    private let cpuMonitoringStopper: @MainActor () -> Void
 
     // MARK: - Initialization
 
-    public init() {
+    init(
+        cpuUsageProvider: @escaping @MainActor () -> Double = {
+            CPUService.shared.cpuUsage
+        },
+        cpuMonitoringStarter: @escaping @MainActor () -> Void = {
+            CPUService.shared.startMonitoring()
+        },
+        cpuMonitoringStopper: @escaping @MainActor () -> Void = {
+            CPUService.shared.stopMonitoring()
+        }
+    ) {
+        self.cpuUsageProvider = cpuUsageProvider
+        self.cpuMonitoringStarter = cpuMonitoringStarter
+        self.cpuMonitoringStopper = cpuMonitoringStopper
         self.deviceName = Host.current().localizedName ?? "Unknown Mac"
 
         let os = ProcessInfo.processInfo.operatingSystemVersion
         self.osVersion = "macOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
 
-        self.processorName = Self.getProcessorName()
+        self.processorName = DeviceData.getProcessorName()
         self.coreCount = Self.physicalCoreCount()
 
         self.memoryTotal = ProcessInfo.processInfo.physicalMemory
 
-        updateDynamicData()
-        startMonitoring()
+        self.updateDynamicData()
+        self.startMonitoring()
     }
 
     deinit {
         timerHolder.invalidate()
-        isMonitoring = false
+        samplingTask?.cancel()
+        if isMonitoring {
+            Task { @MainActor [cpuMonitoringStopper] in
+                cpuMonitoringStopper()
+            }
+        }
     }
 
     // MARK: - Monitoring
 
-    /// 开始周期性刷新动态指标（每 2 秒）。
-    public func startMonitoring() {
-        guard !isMonitoring else { return }
+    func startMonitoring() {
+        guard timerHolder.timer == nil else { return }
         isMonitoring = true
+        cpuMonitoringStarter()
 
         let timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
@@ -83,37 +103,50 @@ public final class DeviceData: ObservableObject {
         timerHolder.timer = timer
     }
 
-    /// 停止刷新。
-    public func stopMonitoring() {
+    func stopMonitoring() {
+        guard isMonitoring else { return }
         isMonitoring = false
         timerHolder.invalidate()
+        samplingTask?.cancel()
+        samplingTask = nil
+        cpuMonitoringStopper()
     }
 
     // MARK: - Data Fetching
 
-    /// 刷新全部动态指标。
-    public func updateDynamicData() {
-        cpuUsage = Self.currentCPUUsage(previous: &previousCPUTicks)
+    private func updateDynamicData() {
+        guard samplingTask == nil else { return }
 
-        let memory = Self.getMemoryData()
-        memoryUsed = memory.used
-        memoryTotal = memory.total
-        memoryUsage = memory.total > 0 ? Double(memory.used) / Double(memory.total) : 0
+        // CPU 使用率已在主线程由 CPUService 维护，直接读取
+        let cpuUsage = self.cpuUsageProvider()
 
-        let disk = Self.getDiskData()
-        diskTotal = disk.total
-        diskUsed = disk.used
+        samplingTask = Task.detached(priority: .utility) { [weak self] in
+            // 采集其他数据在后台线程
+            let memoryData = self?.getMemoryData() ?? (used: 0, total: 0)
+            let diskData = self?.getDiskData() ?? (total: 0, used: 0)
+            let batteryData = self?.getBatteryData() ?? (level: 0.0, isCharging: false)
+            let uptime = ProcessInfo.processInfo.systemUptime
 
-        let battery = Self.getBatteryData()
-        batteryLevel = battery.level
-        isCharging = battery.isCharging
-
-        uptime = ProcessInfo.processInfo.systemUptime
+            // 回到主线程更新 @Published 属性
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.samplingTask = nil
+                self.cpuUsage = cpuUsage
+                self.memoryUsed = memoryData.used
+                self.memoryTotal = memoryData.total
+                self.memoryUsage = Double(memoryData.used) / Double(memoryData.total)
+                self.diskTotal = diskData.total
+                self.diskUsed = diskData.used
+                self.batteryLevel = batteryData.level
+                self.isCharging = batteryData.isCharging
+                self.uptime = uptime
+            }
+        }
     }
 
     // MARK: - Helpers
 
-    /// 物理 CPU 核心数（`hw.physicalcpu`）；失败时回退到逻辑核数。
+    /// 物理 CPU 核心数（`hw.physicalcpu`），与系统监视器一致；失败时回退到逻辑核数。
     nonisolated static func physicalCoreCount() -> Int {
         var physicalCores: Int32 = 0
         var size = MemoryLayout<Int32>.size
@@ -123,8 +156,7 @@ public final class DeviceData: ObservableObject {
         return ProcessInfo.processInfo.activeProcessorCount
     }
 
-    /// 处理器名称（`machdep.cpu.brand_string`）。
-    nonisolated static func getProcessorName() -> String {
+    private static func getProcessorName() -> String {
         var size: Int = 0
         guard sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0) == 0, size > 0 else {
             return ""
@@ -137,36 +169,17 @@ public final class DeviceData: ObservableObject {
         return String(decoding: bytes, as: UTF8.self)
     }
 
-    /// 当前 CPU 使用率（0-100）：基于两次 `host_cpu_load_info` 采样差值。
-    nonisolated static func currentCPUUsage(previous: inout (total: UInt64, idle: UInt64)?) -> Double {
-        var info = host_cpu_load_info()
-        var count = mach_msg_type_number_t(MemoryLayout<host_cpu_load_info>.size / MemoryLayout<integer_t>.size)
-        let result = withUnsafeMutablePointer(to: &info) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, $0, &count)
-            }
-        }
-        guard result == KERN_SUCCESS else { return 0 }
-
-        let total = UInt64(info.cpu_ticks.0 + info.cpu_ticks.1 + info.cpu_ticks.2 + info.cpu_ticks.3)
-        let idle = UInt64(info.cpu_ticks.3) // CPU_STATE_IDLE
-
-        defer { previous = (total, idle) }
-        guard let prev = previous, total >= prev.total, idle >= prev.idle else { return 0 }
-
-        let totalDelta = total - prev.total
-        let idleDelta = idle - prev.idle
-        guard totalDelta > 0 else { return 0 }
-        return Double(totalDelta - idleDelta) / Double(totalDelta) * 100
+    private func getCPUUsage() -> Double {
+        cpuUsageProvider()
     }
 
-    /// 内存数据（used = active + wired + compressed）。
-    nonisolated static func getMemoryData() -> (used: UInt64, total: UInt64) {
+    private nonisolated func getMemoryData() -> (used: UInt64, total: UInt64) {
         var pageSize: vm_size_t = 0
         host_page_size(mach_host_self(), &pageSize)
 
         var stats = vm_statistics64()
         var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
+
         let result = withUnsafeMutablePointer(to: &stats) {
             $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
                 host_statistics64(mach_host_self(), HOST_VM_INFO, $0, &count)
@@ -174,38 +187,51 @@ public final class DeviceData: ObservableObject {
         }
 
         let total = ProcessInfo.processInfo.physicalMemory
-        guard result == KERN_SUCCESS else { return (0, total) }
 
-        let active = UInt64(stats.active_count) * UInt64(pageSize)
-        let wired = UInt64(stats.wire_count) * UInt64(pageSize)
-        let compressed = UInt64(stats.compressor_page_count) * UInt64(pageSize)
-        return (active + wired + compressed, total)
-    }
-
-    /// 磁盘数据（根卷）。
-    nonisolated static func getDiskData() -> (total: Int64, used: Int64) {
-        let url = URL(fileURLWithPath: "/")
-        guard let values = try? url.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey]),
-              let total = values.volumeTotalCapacity,
-              let available = values.volumeAvailableCapacity else {
-            return (0, 0)
+        if result == KERN_SUCCESS {
+            let active = UInt64(stats.active_count) * UInt64(pageSize)
+            let wired = UInt64(stats.wire_count) * UInt64(pageSize)
+            let compressed = UInt64(stats.compressor_page_count) * UInt64(pageSize)
+            // Approximate "Used" memory as App Memory (Active) + Wired + Compressed
+            let used = active + wired + compressed
+            return (used, total)
         }
-        return (Int64(total), Int64(total - available))
+
+        return (0, total)
     }
 
-    /// 电池数据（无电池设备返回 level 0 / 非充电）。
-    nonisolated static func getBatteryData() -> (level: Double, isCharging: Bool) {
+    private nonisolated func getDiskData() -> (total: Int64, used: Int64) {
+        let fileURL = URL(fileURLWithPath: "/")
+        do {
+            let values = try fileURL.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey])
+            if let total = values.volumeTotalCapacity, let available = values.volumeAvailableCapacity {
+                return (Int64(total), Int64(total - available))
+            }
+        } catch {
+            Self.logger.error("Failed to read disk capacity: \(error.localizedDescription)")
+        }
+        return (0, 0)
+    }
+
+    private nonisolated func getBatteryData() -> (level: Double, isCharging: Bool) {
         let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue()
         let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef]
 
-        guard let source = sources?.first else { return (0, false) }
-        let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any]
+        var level: Double = 0.0
+        var isCharging: Bool = false
 
-        let level: Double = if let current = description?[kIOPSCurrentCapacityKey] as? Int,
-                               let max = description?[kIOPSMaxCapacityKey] as? Int, max > 0 {
-            Double(current) / Double(max)
-        } else { 0 }
-        let isCharging = (description?[kIOPSIsChargingKey] as? Bool) ?? false
+        if let sources = sources, let source = sources.first {
+            let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any]
+
+            if let current = description?[kIOPSCurrentCapacityKey] as? Int,
+               let max = description?[kIOPSMaxCapacityKey] as? Int {
+                level = Double(current) / Double(max)
+            }
+
+            if let charging = description?[kIOPSIsChargingKey] as? Bool {
+                isCharging = charging
+            }
+        }
 
         return (level, isCharging)
     }
