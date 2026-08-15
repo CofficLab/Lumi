@@ -298,6 +298,7 @@ final class BuildPlanner: Sendable {
         let name: String
         let path: String?
         let sources: [String]
+        let exclude: [String]
     }
 
     /// 从 Package.swift 内容中提取 target 信息。
@@ -309,6 +310,7 @@ final class BuildPlanner: Sendable {
         let namePattern = /name:\s*"([^"]+)"/
         let pathPattern = /path:\s*"([^"]+)"/
         let sourcesPattern = /(?:^|[^a-zA-Z])sources:\s*\[([^\]]*)\]/
+        let excludePattern = /(?:^|[^a-zA-Z])exclude:\s*\[([^\]]*)\]/
         let characters = Array(content)
 
         for declaration in targetDeclarations(in: characters) {
@@ -328,7 +330,16 @@ final class BuildPlanner: Sendable {
                 }
             }
 
-            targets.append(TargetInfo(kind: declaration.kind, name: name, path: path, sources: sources))
+            var exclude: [String] = []
+            if let excludeMatch = body.firstMatch(of: excludePattern) {
+                let excludeBody = String(excludeMatch.1)
+                let excludeItemPattern = /"([^"]+)"/
+                for excludeMatch in excludeBody.matches(of: excludeItemPattern) {
+                    exclude.append(String(excludeMatch.1))
+                }
+            }
+
+            targets.append(TargetInfo(kind: declaration.kind, name: name, path: path, sources: sources, exclude: exclude))
         }
 
         return targets
@@ -429,6 +440,16 @@ final class BuildPlanner: Sendable {
         ).path
         guard filePath == resolvedDir || filePath.hasPrefix(resolvedDir + "/") else {
             return false
+        }
+
+        // 检查文件是否在 exclude 列表中
+        for excludedPath in target.exclude {
+            let absoluteExcludedPath = URL(fileURLWithPath: excludedPath, relativeTo: URL(fileURLWithPath: resolvedDir))
+                .standardizedFileURL
+                .path
+            if filePath == absoluteExcludedPath || filePath.hasPrefix(absoluteExcludedPath + "/") {
+                return false
+            }
         }
 
         guard !target.sources.isEmpty else {

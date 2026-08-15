@@ -22,7 +22,6 @@ struct BuildPlannerTests {
         let fileURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-            .deletingLastPathComponent()
             .appendingPathComponent("Sources/Scanner/PreviewScanner.swift")
         let result = planner.plan(for: fileURL)
 
@@ -69,7 +68,6 @@ struct BuildPlannerTests {
     func planHostAppTarget() {
         let planner = LumiPreviewFacade.BuildPlanner()
         let fileURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .appendingPathComponent("Sources/LumiPreviewHostApp/main.swift")
@@ -772,7 +770,7 @@ struct BuildPlannerTests {
         import SwiftUI
 
         #if DEBUG
-@MainActor
+        @MainActor
         struct DisabledWithReasonPreviews: View {
             var body: some View {
                 Text("Hello")
