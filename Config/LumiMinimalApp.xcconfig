@@ -1,0 +1,22 @@
+//
+// LumiMinimalApp.xcconfig
+// LumiMinimal target（Debug 与 Release 共用）。
+//
+
+#include "App-Shared.xcconfig"
+
+// 产物
+PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumiminimal
+INFOPLIST_KEY_CFBundleDisplayName = LumiMinimal
+INFOPLIST_FILE = LumiMinimalApp/LumiMinimalApp-Info.plist
+
+// 沙盒：关闭（与其它独立 app 一致）
+ENABLE_APP_SANDBOX = NO
+ENABLE_USER_SELECTED_FILES = readwrite
+
+// 权限
+CODE_SIGN_ENTITLEMENTS = LumiMinimalApp/App.entitlements
+
+// 版本号
+MARKETING_VERSION = 1.0.0
+CURRENT_PROJECT_VERSION = 1
