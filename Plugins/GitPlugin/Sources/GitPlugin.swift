@@ -197,18 +197,8 @@ public final class GitPlugin: LumiPlugin, SuperLog {
     public func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
-        public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                Label(LumiPluginLocalization.string("Git", bundle: .module),
-                      systemImage: "arrow.triangle.branch")
-                    .font(.headline)
-                Text(LumiPluginLocalization.string("Git version control integration with history view.", bundle: .module))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
+    public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
+        AnyView(GitPluginAboutView())
     }
     public func pluginManualView(kernel: KernelLumi) -> AnyView? {
         AnyView(GitManualView())
