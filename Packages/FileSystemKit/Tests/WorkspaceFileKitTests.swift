@@ -596,4 +596,36 @@ final class WorkspaceFileKitTests: XCTestCase {
         XCTAssertEqual(WorkspacePathResolver.fileURL(from: "file://\(path)").path, path)
         XCTAssertEqual(WorkspacePathResolver.fileURL(from: "file://localhost\(path)").path, path)
     }
+
+    func testPathResolverDecodesPercentEncodedFileURL() {
+        let path = temporaryDirectory.appendingPathComponent("encoded url.txt").path
+        let encoded = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!
+
+        XCTAssertEqual(WorkspacePathResolver.fileURL(from: "file://\(encoded)").path, path)
+        XCTAssertEqual(WorkspacePathResolver.fileURL(from: "file://localhost\(encoded)").path, path)
+    }
+
+    func testPathResolverDecodesUppercasePercentEncodingAndSpaces() {
+        let path = temporaryDirectory.appendingPathComponent("a b&c.txt").path
+        // URL(fileURLWithPath:) 的 absoluteString 产生大写百分号编码
+        let fileURLString = URL(fileURLWithPath: path).absoluteString
+
+        XCTAssertEqual(WorkspacePathResolver.fileURL(from: fileURLString).path, path)
+    }
+
+    func testPathResolverExpandsTilde() {
+        let url = WorkspacePathResolver.fileURL(from: "~/Desktop")
+
+        XCTAssertEqual(url.path, NSHomeDirectory() + "/Desktop")
+    }
+
+    func testPathResolverTreatsPlainPathAsFilePath() {
+        XCTAssertEqual(WorkspacePathResolver.fileURL(from: "/usr/local").path, "/usr/local")
+    }
+
+    func testPathResolverKeepsInvalidPercentSequenceVerbatim() {
+        // %zz 不是合法的百分号编码，URL(string:) 会失败并落入 file:// 兜底分支，
+        // 此时 removingPercentEncoding 返回 nil，应原样保留路径。
+        XCTAssertEqual(WorkspacePathResolver.fileURL(from: "file:///tmp/report%zz.txt").path, "/tmp/report%zz.txt")
+    }
 }
