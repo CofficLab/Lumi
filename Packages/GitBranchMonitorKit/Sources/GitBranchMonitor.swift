@@ -235,7 +235,7 @@ public final class GitBranchMonitor: ObservableObject, SuperLog {
             return branch.isEmpty ? nil : branch
         }
 
-        if trimmed.count == 40 && trimmed.allSatisfy(\.isHexDigit) {
+        if trimmed.count == 40 && trimmed.allSatisfy(\.isSHA1HexDigit) {
             return nil
         }
 
@@ -278,7 +278,9 @@ private struct SourceConfigurator {
 // MARK: - Character Extension
 
 private extension Character {
-    var isHexDigit: Bool {
-        self.isNumber || ("a"..."f").contains(self) || ("A"..."F").contains(self)
+    // 使用标准库的 isHexDigit（仅接受 ASCII 0-9A-Fa-f），
+    // isNumber 会误接受全角数字等 Unicode 数字字符。
+    var isSHA1HexDigit: Bool {
+        isHexDigit
     }
 }

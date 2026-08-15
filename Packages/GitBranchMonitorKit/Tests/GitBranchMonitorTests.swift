@@ -105,6 +105,13 @@ struct GitBranchMonitorTests {
         #expect(GitBranchMonitor.parseHeadContent("  ref: refs/heads/main  \n") == "main")
     }
 
+    @Test("解析 40 位全角数字内容返回 nil")
+    func parseHeadContent_fullWidthDigits() {
+        // 全角数字不是合法 SHA-1 十六进制，也不带 ref 前缀
+        let fullWidth = String(repeating: "１", count: 40)
+        #expect(GitBranchMonitor.parseHeadContent(fullWidth) == nil)
+    }
+
     @Test("解析分支名包含特殊字符")
     func parseHeadContent_specialChars() {
         #expect(GitBranchMonitor.parseHeadContent("ref: refs/heads/release/1.0.0") == "release/1.0.0")
