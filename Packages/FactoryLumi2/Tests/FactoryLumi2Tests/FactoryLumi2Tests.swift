@@ -3,6 +3,7 @@ import KernelCore
 import ProviderNetwork
 import ProviderProject
 import ProviderToast
+import ProviderToolbar
 import ProviderWindow
 import Testing
 @testable import FactoryLumi2
@@ -47,6 +48,15 @@ struct FactoryLumi2Tests {
         #expect(resolved is DefaultWindowProviding)
     }
 
+    @Test("makeKernel 创建内核并注册默认 ToolbarProviding")
+    func makeKernelRegistersDefaultToolbarProviding() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let resolved: (any ToolbarProviding)? = kernel.resolveProvider((any ToolbarProviding).self)
+        #expect(resolved != nil)
+        #expect(resolved is DefaultToolbarProviding)
+    }
+
     @Test("内核可解析出 ProjectProviding 并正常使用")
     func kernelResolvesUsableProvider() async throws {
         let kernel = try KernelFactory.makeKernel()
@@ -66,10 +76,12 @@ struct FactoryLumi2Tests {
         let toast = factory.makeToastProvider()
         let network = factory.makeNetworkProvider()
         let window = factory.makeWindowProvider()
+        let toolbar = factory.makeToolbarProvider()
 
         #expect(project is DefaultProjectProviding)
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
         #expect(window is DefaultWindowProviding)
+        #expect(toolbar is DefaultToolbarProviding)
     }
 }
