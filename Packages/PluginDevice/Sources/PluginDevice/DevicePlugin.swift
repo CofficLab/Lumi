@@ -1,6 +1,7 @@
 import KernelCore
 import ProviderContentView
 import ProviderDocsView
+import ProviderMenuBar
 import ProviderSettingView
 import SwiftUI
 
@@ -42,6 +43,16 @@ public final class DevicePlugin: SuperPlugin {
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
             docs.addAbout(DocsEntry(id: id, name: "设备信息") { DeviceInfoAboutView() })
             docs.addManual(DocsEntry(id: id, name: "设备信息") { DeviceInfoManualView() })
+        }
+
+        // 4. 贡献菜单栏内容与弹窗
+        if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
+            menuBar.addContent(MenuBarContentItem(id: "\(id).content", title: "设备信息") {
+                DeviceMenuBarContentView()
+            })
+            menuBar.addPopup(MenuBarPopupItem(id: "\(id).popup", title: "设备信息") {
+                DeviceMenuBarPopupView()
+            })
         }
     }
 }

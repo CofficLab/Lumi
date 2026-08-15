@@ -3,6 +3,7 @@ import KernelCore
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderMenuBar
 import ProviderNetwork
 import ProviderProject
 import ProviderRailView
@@ -182,5 +183,16 @@ struct FactoryLumi2Tests {
         #expect(docs is DefaultDocsViewProviding)
         #expect(docs?.aboutEntries.contains(where: { $0.id == "com.coffic.lumi.plugin.device" }) == true)
         #expect(docs?.manualEntries.contains(where: { $0.id == "com.coffic.lumi.plugin.device" }) == true)
+    }
+
+    @Test("makeKernel 注册 MenuBarProviding 且 DevicePlugin 已贡献菜单栏")
+    func makeKernelRegistersMenuBarProviding() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let menuBar = kernel.resolveProvider((any MenuBarProviding).self)
+        #expect(menuBar != nil)
+        #expect(menuBar is DefaultMenuBarProviding)
+        #expect(menuBar?.contentItems.contains(where: { $0.id.hasSuffix(".content") }) == true)
+        #expect(menuBar?.popupItems.contains(where: { $0.id.hasSuffix(".popup") }) == true)
     }
 }

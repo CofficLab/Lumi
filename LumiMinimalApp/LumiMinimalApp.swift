@@ -1,4 +1,6 @@
 import FactoryLumi2
+import KernelCore
+import ProviderMenuBar
 import PluginToolbarSettings
 import SwiftUI
 
@@ -7,10 +9,19 @@ import SwiftUI
 /// App 只需要视图，视图组装（内核装配 + 工具栏/ActivityBar/Rail/内容注入）
 /// 全部由 `KernelFactory.makeMainView()` 完成；设置窗口由
 /// `KernelFactory.makeSettingsView()` 提供；工具栏设置按钮通过通知
-/// （`lumiOpenSettings`）请求打开设置窗口。
+/// （`lumiOpenSettings`）请求打开设置窗口；菜单栏由 `MenuBarProviding` 贡献。
 @main
 struct LumiMinimalApp: App {
+    /// 共享内核：主窗口、设置、菜单栏共用同一实例。
+    @StateObject private var kernel: KernelCoreContainer
+
     @Environment(\.openWindow) private var openWindow
+
+    init() {
+        // 装配默认 Provider 不应失败；失败即配置错误。
+        let kernel = (try? KernelFactory.makeKernel()) ?? KernelCoreContainer()
+        _kernel = StateObject(wrappedValue: kernel)
+    }
 
     var body: some Scene {
         WindowGroup("LumiMinimal", id: "lumi-minimal.main") {
@@ -28,5 +39,14 @@ struct LumiMinimalApp: App {
             (try? KernelFactory.makeSettingsView()) ?? AnyView(Text("Failed to assemble settings view"))
         }
         .defaultSize(width: 360, height: 260)
+
+        // 菜单栏：由 MenuBarProviding 贡献的内容与弹窗
+        MenuBarExtra("设备信息", systemImage: "gauge.with.dots.needle.50percent") {
+            if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
+                menuBar.makePopupView()
+            } else {
+                Text("MenuBarProviding not registered")
+            }
+        }
     }
 }
