@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderProject
+import ProviderToast
 import Testing
 @testable import FactoryLumi2
 
@@ -17,6 +18,15 @@ struct FactoryLumi2Tests {
         #expect(resolved is DefaultProjectProviding)
     }
 
+    @Test("makeKernel 创建内核并注册默认 ToastProviding")
+    func makeKernelRegistersDefaultToastProviding() throws {
+        let kernel = try FactoryLumi2.makeKernel()
+
+        let resolved: (any ToastProviding)? = kernel.resolveProvider(ToastProviding.self)
+        #expect(resolved != nil)
+        #expect(resolved is DefaultToastProviding)
+    }
+
     @Test("makeKernel 支持注入自定义 ProjectProviding 实现")
     func makeKernelAcceptsCustomProvider() throws {
         let provider = CustomProjectProvider()
@@ -24,6 +34,15 @@ struct FactoryLumi2Tests {
 
         let resolved: (any ProjectProviding)? = kernel.resolveProvider(ProjectProviding.self)
         #expect(resolved as? CustomProjectProvider === provider)
+    }
+
+    @Test("makeKernel 支持注入自定义 ToastProviding 实现")
+    func makeKernelAcceptsCustomToastProvider() throws {
+        let provider = RecordingToastProvider()
+        let kernel = try FactoryLumi2.makeKernel(toastProvider: provider)
+
+        let resolved: (any ToastProviding)? = kernel.resolveProvider(ToastProviding.self)
+        #expect(resolved as? RecordingToastProvider === provider)
     }
 
     @Test("内核可解析出 ProjectProviding 并正常使用")
@@ -37,7 +56,7 @@ struct FactoryLumi2Tests {
         #expect(project?.currentProject?.path == "/Users/me/Code/Lumi")
     }
 
-    /// 测试用自定义实现。
+    /// 测试用自定义项目实现。
     private final class CustomProjectProvider: ProjectProviding {
         var currentProject: ProjectInfo?
         var projects: [ProjectInfo] = []
@@ -49,5 +68,14 @@ struct FactoryLumi2Tests {
         func closeProject() async {}
 
         func refreshProjects() async throws {}
+    }
+
+    /// 测试用自定义 Toast 实现。
+    private final class RecordingToastProvider: ToastProviding {
+        var received: [LumiToast] = []
+
+        func show(_ toast: LumiToast) {
+            received.append(toast)
+        }
     }
 }
