@@ -157,11 +157,11 @@ struct FactoryLumi2Tests {
         let kernel = try KernelFactory.makeKernel()
 
         #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.setting-general"))
-        #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.device"))
+        #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.device-info"))
 
         let settings = kernel.resolveProvider((any SettingViewProviding).self)
         #expect(settings?.entries.contains(where: { $0.id == "general" }) == true)
-        #expect(settings?.entries.contains(where: { $0.id == "device" }) == true)
+        #expect(settings?.entries.contains(where: { $0.id == "com.coffic.lumi.plugin.device-info.memory-settings" }) == true)
     }
 
     @Test("makeKernel 启动 SettingsToolbarPlugin 后工具栏含设置按钮")
@@ -182,8 +182,8 @@ struct FactoryLumi2Tests {
         let docs = kernel.resolveProvider((any DocsViewProviding).self)
         #expect(docs != nil)
         #expect(docs is DefaultDocsViewProviding)
-        #expect(docs?.aboutEntries.contains(where: { $0.id == "com.coffic.lumi.plugin.device" }) == true)
-        #expect(docs?.manualEntries.contains(where: { $0.id == "com.coffic.lumi.plugin.device" }) == true)
+        #expect(docs?.aboutEntries.contains(where: { $0.id == "com.coffic.lumi.plugin.device-info" }) == true)
+        #expect(docs?.manualEntries.contains(where: { $0.id == "com.coffic.lumi.plugin.device-info" }) == true)
     }
 
     @Test("makeKernel 注册 MenuBarProviding 且 DevicePlugin 已贡献菜单栏")
@@ -193,8 +193,9 @@ struct FactoryLumi2Tests {
         let menuBar = kernel.resolveProvider((any MenuBarProviding).self)
         #expect(menuBar != nil)
         #expect(menuBar is DefaultMenuBarProviding)
-        #expect(menuBar?.contentItems.contains(where: { $0.id.hasSuffix(".content") }) == true)
-        #expect(menuBar?.popupItems.contains(where: { $0.id.hasSuffix(".popup") }) == true)
+        #expect(menuBar?.contentItems.contains(where: { $0.id.hasSuffix(".metrics") }) == true)
+        #expect(menuBar?.popupItems.contains(where: { $0.id.hasSuffix(".cpu") }) == true)
+        #expect(menuBar?.popupItems.contains(where: { $0.id.hasSuffix(".memory") }) == true)
     }
 
     @Test("makeKernel 创建内核并注册默认 LogoProviding")
