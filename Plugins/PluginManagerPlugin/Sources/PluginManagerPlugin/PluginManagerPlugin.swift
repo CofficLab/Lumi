@@ -83,16 +83,7 @@ public final class PluginManagerPlugin: LumiPlugin {
     }
 
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 6) {
-                Text(PluginManagerText.string(PluginManagerText.plugins))
-                    .font(.headline)
-                Text(PluginManagerText.string(PluginManagerText.aboutDescription))
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 4)
-        )
+        AnyView(PluginManagerAboutView())
     }
 
     public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }
