@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.15.0</title>
-            <pubDate>Fri, 14 Aug 2026 15:16:57 +0000</pubDate>
-            <sparkle:version>610</sparkle:version>
-            <sparkle:shortVersionString>5.15.0</sparkle:shortVersionString>
+            <title>5.16.0</title>
+            <pubDate>Sat, 15 Aug 2026 13:26:54 +0000</pubDate>
+            <sparkle:version>611</sparkle:version>
+            <sparkle:shortVersionString>5.16.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.15.0</h2>
-<h3>Changes since v5.14.0</h3>
+            <description><![CDATA[<h2>Release v5.16.0</h2>
+<h3>Changes since v5.15.0</h3>
 <ul>
-<li>docs: add bug audit report (2026-08)</li>
-<li>docs: add UI performance audit report (2026-08)</li>
-<li>feat: add conversationDidCreate event for precise new conversation notifications</li>
-<li>feat: add standalone OpenCode Go provider plugin</li>
-<li>feat(context-size): refresh context size on conversation creation</li>
-<li>feat(conversation-speed): keep speed chip visible with unavailable state when no conversation selected</li>
-<li>feat(opencode-go): 支持注入 LLMAPIService 使请求进入 HTTP 交换记录</li>
-<li>feat(opencode-go): parse and persist token usage from non-streaming responses</li>
-<li>feat(quick-launcher): rebuild as Raycast-style global launcher with hotkey and federated search</li>
-<li>feat(rail): show exclusive rail tabs only when container owns one</li>
-<li>feat(resume-designer): add agent-built resume plugin with print-optimized PDF/PNG export</li>
-<li>fix(message-renderer): only show error summary in info popover for actual errors</li>
-<li>fix(opencode-go): fill latencyMs/TTFT metrics so ConversationSpeed works</li>
-<li>fix(promo-designer): configure storage when plugin is enabled at runtime</li>
-<li>refactor: extract token formatting utilities and simplify event observers in ConversationContextSizePlugin</li>
-<li>refactor: Migrate Add Custom Provider sheet to LumiUI components</li>
-<li>refactor(conversation-speed): shorten file names by dropping ConversationSpeed prefix</li>
-<li>refactor(conversation-speed): split toolbar view into models, extensions and views</li>
-<li>refactor(minimax): move token plan from status bar to chat toolbar</li>
-<li>refactor(opencode-go): reformat provider and set 1M context window for deepseek-v4-flash</li>
+<li>docs: add editor rearchitecture plan, refresh architecture notes</li>
+<li>docs: rewrite README with updated features, architecture, and plugin system</li>
+<li>docs(ui-performance): record P1/P8 verification and 88-message scroll jank findings</li>
+<li>feat: add guided empty state for projects list and finalize migration policy</li>
+<li>feat: add ProviderContentView so plugins can set the main content</li>
+<li>feat: add ProviderSettingView and assemble settings view into factory</li>
+<li>feat: add ProviderStorage and assemble it into FactoryLumi2</li>
+<li>feat: add requiresProject flag to prompt suggestions</li>
+<li>feat: add SettingGeneralPlugin that registers a General settings entry</li>
+<li>feat: add toolbar settings button that opens the settings window</li>
+<li>feat: assemble ActivityBarProviding and wire it into RootView</li>
+<li>feat: assemble RailViewProviding and wire it into RootView</li>
+<li>feat: assemble RootViewProviding and replace ProviderWindow with RootView</li>
+<li>feat: wire ContentViewProviding into the root view</li>
+<li>feat(app-icon-designer): add plugin manual view with localized guide</li>
+<li>feat(app-store-promo): add plugin manual view with localized guide</li>
+<li>feat(AppIconDesignerPlugin): revamp manual view into chaptered guide</li>
+<li>feat(AppStorePromoDesignerPlugin): rebuild about view with LumiUI landing components</li>
+<li>feat(AppUpdatePlugin): rebuild about view with LumiUI landing components</li>
+<li>feat(BookletMakerPlugin): rebuild about view with LumiUI landing components</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.15.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.15.0/Lumi_5.15.0_x86_64.dmg" length="51074510" type="application/octet-stream" sparkle:edSignature="+AAId6ZDr8s4gHXnWVK5kYb+InH14mLVuOerMZ/Mu70/1ioV8cE1nghqxXl8b+gdlekBXQZl2l8gkTRhEBpCDg=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.16.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.16.0/Lumi_5.16.0_x86_64.dmg" length="53522217" type="application/octet-stream" sparkle:edSignature="QH45JPAmW5sLnifz44DHMnl+rhg6xRlAXA2ErHXKVgUYPBdletHOvZxkFuMW6Sj5+iyMS92RexhbkDlv4vMcBQ=="/>
         </item>
     </channel>
 </rss>
