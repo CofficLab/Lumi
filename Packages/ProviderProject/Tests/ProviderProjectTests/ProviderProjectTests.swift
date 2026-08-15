@@ -64,4 +64,29 @@ struct ProviderProjectTests {
         #expect(provider.currentFileURL == nil)
         #expect(provider.openFileURLs.isEmpty)
     }
+
+    // MARK: - DefaultProjectProviding
+
+    @Test("DefaultProjectProviding 打开/关闭项目并维护列表")
+    func defaultProviderOpenClose() async throws {
+        let provider = DefaultProjectProviding()
+
+        try await provider.openProject(at: "/Users/me/Code/Lumi")
+        #expect(provider.currentProject?.name == "Lumi")
+        #expect(provider.projects.count == 1)
+
+        // 重复打开同一项目不会重复添加
+        try await provider.openProject(at: "/Users/me/Code/Lumi")
+        #expect(provider.projects.count == 1)
+
+        await provider.closeProject()
+        #expect(provider.currentProject == nil)
+    }
+
+    @Test("DefaultProjectProviding 可作为 any ProjectProviding 使用")
+    func defaultProviderAsExistential() async throws {
+        let provider: any ProjectProviding = DefaultProjectProviding()
+        try await provider.openProject(at: "/tmp/Demo")
+        #expect(provider.currentProject?.name == "Demo")
+    }
 }

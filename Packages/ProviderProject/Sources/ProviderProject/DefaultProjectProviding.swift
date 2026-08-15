@@ -1,11 +1,11 @@
 import Combine
 import Foundation
-import ProviderProject
 
 /// `ProjectProviding` 的内存默认实现。
 ///
-/// 骨架阶段使用：提供最基本的内存项目管理能力（无持久化）。
-/// 后续可由具体插件/宿主提供更完整的实现替换。
+/// 提供最基本的内存项目管理能力（无持久化）：
+/// 打开项目、关闭项目、维护内存中的项目列表。
+/// 需要持久化等完整能力的宿主应提供自己的实现替换。
 @MainActor
 public final class DefaultProjectProviding: ProjectProviding {
     @Published public var currentProject: ProjectInfo?
