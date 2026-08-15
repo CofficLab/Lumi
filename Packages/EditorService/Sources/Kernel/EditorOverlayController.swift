@@ -342,7 +342,7 @@ final class EditorOverlayController {
         let availableBelow = containerSize.height - symbolRect.maxY - outerPadding
         let presentAbove = availableAbove >= height + style.verticalGap || availableAbove >= availableBelow
 
-        let anchor: SwiftUI.UnitPoint = presentAbove ? .bottomLeading : .topLeading
+        let anchor: EditorOverlayAnchor = presentAbove ? .bottomLeading : .topLeading
         let targetY = presentAbove
             ? max(outerPadding, symbolRect.minY - style.verticalGap)
             : min(containerSize.height - outerPadding, symbolRect.maxY + style.verticalGap)

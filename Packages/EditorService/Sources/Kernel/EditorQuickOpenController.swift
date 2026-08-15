@@ -1,4 +1,5 @@
 import Foundation
+import KernelLumi
 import EditorSource
 import LanguageServerProtocol
 

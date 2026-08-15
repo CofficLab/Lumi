@@ -24,7 +24,7 @@ public enum EditorSettingsLifecycle {
     @available(*, deprecated, message: "Use Lumi plugin settings via PluginService instead.")
     public nonisolated(unsafe) static var setEditorFeaturePluginEnabled: ((String, Bool) -> Void)?
 
-    /// 由各主题插件的 `registerEditorExtensions` 注册编辑器语法主题 contributor。
+    /// 由 Host（EditorProvider 主题同步）注册编辑器语法主题 contributor。
     public nonisolated(unsafe) static var registerEditorThemeContributors: (@MainActor (EditorExtensionRegistry) -> Void)?
 
     /// 宿主注册多光标输入 swizzle（Lumi 中通常为 `MultiCursorInputInstaller`）。

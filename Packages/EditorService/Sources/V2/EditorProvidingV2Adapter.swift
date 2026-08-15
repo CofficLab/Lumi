@@ -58,6 +58,12 @@ public final class EditorProvidingV2Adapter: EditorProvidingV2 {
     private lazy var navigationCapability = NavigationCapability(adapter: self, selections: selectionCapability)
     private lazy var commandCapability = CommandCapability(adapter: self)
     private lazy var configurationCapability = ConfigurationCapability()
+    private lazy var diagnosticsCapability = DiagnosticsCapability(adapter: self)
+    private lazy var documentSymbolCapability = DocumentSymbolCapability(adapter: self)
+    private lazy var panelCapability = PanelCapability(adapter: self)
+    private lazy var referencesCapability = ReferencesCapability(adapter: self)
+    private lazy var callHierarchyCapability = CallHierarchyCapability(adapter: self)
+    private lazy var workspaceSearchCapability = WorkspaceSearchCapability(adapter: self)
 
     public var documents: any EditorDocumentProviding { documentCapability }
     public var sessions: any EditorSessionProviding { sessionCapability }
@@ -65,10 +71,19 @@ public final class EditorProvidingV2Adapter: EditorProvidingV2 {
     public var navigation: any EditorNavigationProviding { navigationCapability }
     public var commands: any EditorCommandProviding { commandCapability }
     public var configuration: any EditorConfigurationProviding { configurationCapability }
+    public var diagnostics: any EditorDiagnosticsProviding { diagnosticsCapability }
+    public var documentSymbols: any EditorDocumentSymbolProviding { documentSymbolCapability }
+    public var panels: any EditorPanelProviding { panelCapability }
+    public var references: any EditorReferencesProviding { referencesCapability }
+    public var callHierarchy: any EditorCallHierarchyProviding { callHierarchyCapability }
+    public var workspaceSearch: any EditorWorkspaceSearchProviding { workspaceSearchCapability }
     public let surface: any EditorSurfaceProviding
 
     /// Host 通过此 strongly-typed 句柄注入 Surface 视图构造闭包（与 `surface` 同一实例）。
     public let surfaceBox: EditorSurfaceBox
+
+    /// 贡献包宿主能力（EditorContributionRegistry，Phase 4 §9）。
+    public let extensions: any EditorExtensionHosting
 
     weak var service: EditorService?
 
@@ -76,13 +91,18 @@ public final class EditorProvidingV2Adapter: EditorProvidingV2 {
     /// 故 Session 即文档身份；未来多视图共享 Buffer 时改为 URL 级注册表。
     private var documentIDs: [EditorSession.ID: EditorDocumentID] = [:]
 
-    public init(service: EditorService, scope: EditorScope? = nil) {
+    public init(
+        service: EditorService,
+        scope: EditorScope? = nil,
+        extensions: (any EditorExtensionHosting)? = nil
+    ) {
         self.service = service
         self.scope = scope ?? EditorScope(windowID: .makeUnique(), workspaceID: .makeUnique())
         let surfaceBox = EditorSurfaceBox()
         self.surface = surfaceBox
         self.surfaceBox = surfaceBox
-
+        // Host 可注入共享的 EditorContributionRegistry（legacy 回放后重放需要同一实例）。
+        self.extensions = extensions ?? EditorContributionRegistry(registry: service.editorExtensionRegistry)
     }
 
     // MARK: - 身份映射
@@ -256,10 +276,15 @@ private final class DocumentCapability: EditorDocumentProviding {
         switch request.kind {
         case .activate, .preview:
             // 预览标签复用（preview tab）由 Phase 3 Session 重构接入，暂按常规打开。
-            guard let session = service.sessions.openFile(at: request.uri) else {
+            // 用 `open(at:)`（触发内容加载）；openFile(at:) 只建 pending session。
+            service.sessions.open(at: request.uri)
+            await adapter.waitForFileLoad()
+            let standardized = request.uri.standardizedFileURL
+            guard let session = service.sessionStore.sessions.first(where: {
+                $0.fileURL?.standardizedFileURL == standardized
+            }) else {
                 throw EditorContractError.capabilityUnavailable(feature: "editor.documents.open")
             }
-            await adapter.waitForFileLoad()
             return EditorSessionID(rawValue: session.id)
         case .background:
             let session = service.sessions.openFileSessionInBackground(at: request.uri)
@@ -473,6 +498,7 @@ private final class SessionCapability: EditorSessionProviding {
             EditorSessionTab(
                 id: EditorSessionID(rawValue: tab.sessionID),
                 documentID: adapter.documentID(for: tab.sessionID),
+                uri: tab.fileURL,
                 title: tab.title,
                 isDirty: tab.isDirty,
                 isPinned: tab.isPinned,
@@ -848,5 +874,489 @@ private final class ConfigurationCapability: EditorConfigurationProviding {
 
     func update(_ value: EditorSettingValue?, for key: EditorSettingKey, scope: EditorSettingScope) throws {
         throw EditorContractError.capabilityUnavailable(feature: "editor.configuration")
+    }
+}
+
+// MARK: - 诊断能力
+
+/// 诊断数据面：映射 `panelState.problemDiagnostics`（LSP `Diagnostic`）到契约快照。
+///
+/// 当前诊断按活动文档聚合（LSPService 只为当前 URI 发布诊断）；
+/// documentURI 取活动文档 URL。
+@MainActor
+private final class DiagnosticsCapability: EditorDiagnosticsProviding {
+    private weak var adapter: EditorProvidingV2Adapter?
+    private let subject: CurrentValueSubject<EditorDiagnosticsSnapshot, Never>
+    private var cancellables = Set<AnyCancellable>()
+
+    init(adapter: EditorProvidingV2Adapter) {
+        self.adapter = adapter
+        self.subject = CurrentValueSubject(Self.computeSnapshot(from: adapter))
+        adapter.service?.objectWillChange
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.refresh()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refresh() {
+        guard let adapter else { return }
+        subject.send(Self.computeSnapshot(from: adapter))
+    }
+
+    private static func computeSnapshot(from adapter: EditorProvidingV2Adapter) -> EditorDiagnosticsSnapshot {
+        guard let service = adapter.service else { return .empty }
+        let uri = service.files.currentFileURL
+            ?? URL(fileURLWithPath: "/untitled")
+        let items = service.panel.panelState.problemDiagnostics.map { diagnostic in
+            EditorDiagnosticItem(
+                id: Self.makeID(uri: uri, diagnostic: diagnostic),
+                documentURI: uri,
+                range: Self.mapRange(diagnostic.range),
+                severity: Self.mapSeverity(diagnostic.severity),
+                message: diagnostic.message,
+                source: diagnostic.source,
+                code: diagnostic.code.map { "\($0)" }
+            )
+        }
+        return EditorDiagnosticsSnapshot(diagnostics: items)
+    }
+
+    var snapshot: EditorDiagnosticsSnapshot {
+        guard let adapter else { return .empty }
+        return Self.computeSnapshot(from: adapter)
+    }
+
+    var statePublisher: AnyPublisher<EditorDiagnosticsSnapshot, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    private static func makeID(uri: URL, diagnostic: Diagnostic) -> String {
+        let range = diagnostic.range
+        return [
+            uri.path,
+            "\(range.start.line)-\(range.start.character)",
+            "\(range.end.line)-\(range.end.character)",
+            String(describing: diagnostic.severity),
+            diagnostic.message,
+        ].joined(separator: "#")
+    }
+
+    private static func mapRange(_ range: LSPRange) -> EditorV2Range {
+        EditorV2Range(
+            start: EditorPosition(line: Int(range.start.line), character: Int(range.start.character)),
+            end: EditorPosition(line: Int(range.end.line), character: Int(range.end.character))
+        )
+    }
+
+    private static func mapSeverity(_ severity: DiagnosticSeverity?) -> EditorDiagnosticSeverity {
+        switch severity {
+        case .error: return .error
+        case .warning: return .warning
+        case .information: return .information
+        case .hint, .none: return .hint
+        }
+    }
+}
+
+// MARK: - 文档符号能力
+
+/// 文档符号数据面：映射 `documentSymbolProvider`（`EditorDocumentSymbolItem`，LSP 语义）到契约符号树。
+@MainActor
+private final class DocumentSymbolCapability: EditorDocumentSymbolProviding {
+    private weak var adapter: EditorProvidingV2Adapter?
+    private let subject: CurrentValueSubject<EditorDocumentSymbolsState, Never>
+    private var cancellables = Set<AnyCancellable>()
+
+    init(adapter: EditorProvidingV2Adapter) {
+        self.adapter = adapter
+        self.subject = CurrentValueSubject(Self.computeState(from: adapter))
+        adapter.service?.objectWillChange
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.resample()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func resample() {
+        guard let adapter else { return }
+        subject.send(Self.computeState(from: adapter))
+    }
+
+    private static func computeState(from adapter: EditorProvidingV2Adapter) -> EditorDocumentSymbolsState {
+        guard let provider = adapter.service?.editorExtensionRegistry.documentSymbolProvider else {
+            return .empty
+        }
+        return EditorDocumentSymbolsState(
+            symbols: provider.symbols.map(Self.mapSymbol),
+            isLoading: provider.isLoading
+        )
+    }
+
+    var activeSymbols: [EditorDocumentSymbol] {
+        subject.value.symbols
+    }
+
+    var isLoading: Bool { subject.value.isLoading }
+
+    var statePublisher: AnyPublisher<EditorDocumentSymbolsState, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func refresh() {
+        adapter?.service?.editorExtensionRegistry.documentSymbolProvider?.refresh()
+    }
+
+    private static func mapSymbol(_ item: EditorDocumentSymbolItem) -> EditorDocumentSymbol {
+        EditorDocumentSymbol(
+            id: item.id,
+            name: item.name,
+            detail: item.detail,
+            kind: EditorDocumentSymbolKind(lspRawValue: Int(item.kind.rawValue)),
+            range: mapRange(item.range),
+            selectionRange: mapRange(item.selectionRange),
+            children: item.children.map(mapSymbol)
+        )
+    }
+
+    private static func mapRange(_ range: LSPRange) -> EditorV2Range {
+        EditorV2Range(
+            start: EditorPosition(line: Int(range.start.line), character: Int(range.start.character)),
+            end: EditorPosition(line: Int(range.end.line), character: Int(range.end.character))
+        )
+    }
+}
+
+// MARK: - 面板能力
+
+/// 底部面板控制：映射 `EditorPanelState` 的展示标志与 `EditorPanelService.presentBottomPanel`。
+@MainActor
+private final class PanelCapability: EditorPanelProviding {
+    private weak var adapter: EditorProvidingV2Adapter?
+    private let subject: CurrentValueSubject<EditorBottomPanel?, Never>
+    private var cancellables = Set<AnyCancellable>()
+
+    init(adapter: EditorProvidingV2Adapter) {
+        self.adapter = adapter
+        self.subject = CurrentValueSubject(Self.computePanel(from: adapter))
+        adapter.service?.objectWillChange
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.refresh()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refresh() {
+        guard let adapter else { return }
+        subject.send(Self.computePanel(from: adapter))
+    }
+
+    private static func computePanel(from adapter: EditorProvidingV2Adapter) -> EditorBottomPanel? {
+        guard let active = adapter.service?.panel.panelState.activeBottomPanel else { return nil }
+        return Self.mapKind(active)
+    }
+
+    var bottomPanel: EditorBottomPanel? {
+        guard let adapter else { return nil }
+        return Self.computePanel(from: adapter)
+    }
+
+    var statePublisher: AnyPublisher<EditorBottomPanel?, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func presentBottomPanel(_ panel: EditorBottomPanel?) {
+        guard let service = adapter?.service else { return }
+        service.panel.presentBottomPanel(panel.map(Self.mapPanel))
+    }
+
+    private static func mapKind(_ kind: EditorBottomPanelKind) -> EditorBottomPanel {
+        switch kind {
+        case .problems: return .problems
+        case .references: return .references
+        case .searchResults: return .searchResults
+        case .workspaceSymbols: return .workspaceSymbols
+        case .callHierarchy: return .callHierarchy
+        }
+    }
+
+    private static func mapPanel(_ panel: EditorBottomPanel) -> EditorBottomPanelKind {
+        switch panel {
+        case .problems: return .problems
+        case .references: return .references
+        case .searchResults: return .searchResults
+        case .workspaceSymbols: return .workspaceSymbols
+        case .callHierarchy: return .callHierarchy
+        }
+    }
+}
+
+// MARK: - 引用能力
+
+/// 引用数据面：映射 `panelState.referenceResults` / `selectedReferenceResult`。
+@MainActor
+private final class ReferencesCapability: EditorReferencesProviding {
+    private weak var adapter: EditorProvidingV2Adapter?
+    private let subject: CurrentValueSubject<EditorReferencesState, Never>
+    private var cancellables = Set<AnyCancellable>()
+
+    init(adapter: EditorProvidingV2Adapter) {
+        self.adapter = adapter
+        self.subject = CurrentValueSubject(Self.computeState(from: adapter))
+        adapter.service?.objectWillChange
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.refresh()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refresh() {
+        guard let adapter else { return }
+        subject.send(Self.computeState(from: adapter))
+    }
+
+    private static func computeState(from adapter: EditorProvidingV2Adapter) -> EditorReferencesState {
+        guard let panelState = adapter.service?.panel.panelState else { return .empty }
+        return EditorReferencesState(
+            results: panelState.referenceResults.map(Self.mapItem),
+            selected: panelState.selectedReferenceResult.map(Self.mapItem)
+        )
+    }
+
+    var references: EditorReferencesState {
+        guard let adapter else { return .empty }
+        return Self.computeState(from: adapter)
+    }
+
+    var statePublisher: AnyPublisher<EditorReferencesState, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    private static func mapItem(_ item: EditorReferenceResult) -> EditorReferenceItem {
+        EditorReferenceItem(
+            uri: item.url,
+            line: item.line,
+            column: item.column,
+            path: item.path,
+            preview: item.preview
+        )
+    }
+}
+
+// MARK: - 调用层级能力
+
+/// 调用层级数据面：映射 `callHierarchyProvider`。
+///
+/// LSP `CallHierarchyItem.data` 等宿主细节不进入契约；
+/// 节点 ID → 宿主 item 的映射由本适配器维护。
+@MainActor
+private final class CallHierarchyCapability: EditorCallHierarchyProviding {
+    private weak var adapter: EditorProvidingV2Adapter?
+    private let subject: CurrentValueSubject<EditorCallHierarchyState, Never>
+    private var cancellables = Set<AnyCancellable>()
+    /// 契约节点 ID → 宿主 `EditorCallHierarchyItem`（含 LSP data）。
+    private var hostItemsByID: [UUID: EditorCallHierarchyItem] = [:]
+
+    init(adapter: EditorProvidingV2Adapter) {
+        self.adapter = adapter
+        self.subject = CurrentValueSubject(.empty)
+        adapter.service?.objectWillChange
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.refresh()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refresh() {
+        guard let provider = adapter?.service?.editorExtensionRegistry.callHierarchyProvider else {
+            return
+        }
+        let state = EditorCallHierarchyState(
+            root: provider.rootItem.map(Self.mapNode),
+            incoming: provider.incomingCalls.map { Self.mapEdge($0, cache: &hostItemsByID) },
+            outgoing: provider.outgoingCalls.map { Self.mapEdge($0, cache: &hostItemsByID) },
+            isLoading: provider.isLoading
+        )
+        subject.send(state)
+    }
+
+    var hierarchy: EditorCallHierarchyState { subject.value }
+
+    var statePublisher: AnyPublisher<EditorCallHierarchyState, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func prepare(uri: URL, position: EditorPosition) {
+        guard let provider = adapter?.service?.editorExtensionRegistry.callHierarchyProvider else { return }
+        Task { @MainActor in
+            await provider.prepareCallHierarchy(
+                uri: uri.absoluteString,
+                line: position.line,
+                character: position.character
+            )
+        }
+    }
+
+    func fetchIncomingCalls(node: EditorCallHierarchyNode) {
+        guard let provider = adapter?.service?.editorExtensionRegistry.callHierarchyProvider,
+              let item = hostItemsByID[node.id] ?? hostItem(for: node) else { return }
+        Task { @MainActor in
+            await provider.fetchIncomingCalls(item: item)
+        }
+    }
+
+    func fetchOutgoingCalls(node: EditorCallHierarchyNode) {
+        guard let provider = adapter?.service?.editorExtensionRegistry.callHierarchyProvider,
+              let item = hostItemsByID[node.id] ?? hostItem(for: node) else { return }
+        Task { @MainActor in
+            await provider.fetchOutgoingCalls(item: item)
+        }
+    }
+
+    func clear() {
+        hostItemsByID.removeAll()
+        adapter?.service?.editorExtensionRegistry.callHierarchyProvider?.clear()
+    }
+
+    /// 节点没有缓存时，从 provider 根节点回查宿主 item（根节点未经 mapEdge 缓存，
+    /// 直接对根节点 fetch incoming/outgoing 时需要此回退）。
+    private func hostItem(for node: EditorCallHierarchyNode) -> EditorCallHierarchyItem? {
+        guard let root = adapter?.service?.editorExtensionRegistry.callHierarchyProvider?.rootItem,
+              root.id == node.id
+        else { return nil }
+        return root
+    }
+
+    private static func mapNode(_ item: EditorCallHierarchyItem) -> EditorCallHierarchyNode {
+        EditorCallHierarchyNode(
+            id: item.id,
+            name: item.name,
+            kind: EditorDocumentSymbolKind(lspRawValue: Int(item.kind.rawValue)),
+            uri: URL(string: item.uri) ?? URL(fileURLWithPath: item.uri),
+            range: mapRange(item.range),
+            selectionRange: mapRange(item.selectionRange)
+        )
+    }
+
+    private static func mapEdge(
+        _ call: EditorCallHierarchyCall,
+        cache: inout [UUID: EditorCallHierarchyItem]
+    ) -> EditorCallHierarchyEdge {
+        cache[call.item.id] = call.item
+        return EditorCallHierarchyEdge(
+            node: mapNode(call.item),
+            callRanges: call.fromRanges.map(mapRange)
+        )
+    }
+
+    private static func mapRange(_ range: LSPRange) -> EditorV2Range {
+        EditorV2Range(
+            start: EditorPosition(line: Int(range.start.line), character: Int(range.start.character)),
+            end: EditorPosition(line: Int(range.end.line), character: Int(range.end.character))
+        )
+    }
+}
+
+// MARK: - 工作区搜索能力
+
+/// 工作区搜索数据面：映射 `panelState` 搜索字段与 `EditorPanelService` 搜索操作。
+///
+/// 折叠/选中态属于视图局部状态，由插件自持。
+@MainActor
+private final class WorkspaceSearchCapability: EditorWorkspaceSearchProviding {
+    private weak var adapter: EditorProvidingV2Adapter?
+    private let subject: CurrentValueSubject<EditorWorkspaceSearchState, Never>
+    private var cancellables = Set<AnyCancellable>()
+
+    init(adapter: EditorProvidingV2Adapter) {
+        self.adapter = adapter
+        self.subject = CurrentValueSubject(Self.computeState(from: adapter))
+        adapter.service?.objectWillChange
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.refresh()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refresh() {
+        guard let adapter else { return }
+        subject.send(Self.computeState(from: adapter))
+    }
+
+    private static func computeState(from adapter: EditorProvidingV2Adapter) -> EditorWorkspaceSearchState {
+        guard let panelState = adapter.service?.panel.panelState else { return .empty }
+        return EditorWorkspaceSearchState(
+            results: panelState.workspaceSearchResults.map { result in
+                EditorSearchFileResult(
+                    uri: result.url,
+                    path: result.path,
+                    matches: result.matches.map(Self.mapMatch)
+                )
+            },
+            summary: panelState.workspaceSearchSummary.map { summary in
+                EditorSearchSummary(
+                    query: summary.query,
+                    totalMatches: summary.totalMatches,
+                    totalFiles: summary.totalFiles
+                )
+            },
+            errorMessage: panelState.workspaceSearchErrorMessage,
+            isLoading: panelState.isWorkspaceSearchLoading
+        )
+    }
+
+    var search: EditorWorkspaceSearchState {
+        guard let adapter else { return .empty }
+        return Self.computeState(from: adapter)
+    }
+
+    var statePublisher: AnyPublisher<EditorWorkspaceSearchState, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func performSearch(_ query: String) {
+        guard let service = adapter?.service else { return }
+        service.panel.panelController.setWorkspaceSearchQuery(query)
+        Task { @MainActor in
+            await service.panel.performWorkspaceSearch()
+        }
+    }
+
+    func openMatch(_ match: EditorSearchMatch) {
+        adapter?.service?.panel.openWorkspaceSearchMatch(
+            EditorWorkspaceSearchMatch(
+                url: match.uri,
+                line: match.line,
+                column: match.column,
+                path: match.path,
+                preview: match.preview
+            )
+        )
+    }
+
+    func openResultsInEditor() {
+        adapter?.service?.panel.openWorkspaceSearchResultsInEditor()
+    }
+
+    private static func mapMatch(_ match: EditorWorkspaceSearchMatch) -> EditorSearchMatch {
+        EditorSearchMatch(
+            uri: match.url,
+            line: match.line,
+            column: match.column,
+            path: match.path,
+            preview: match.preview
+        )
     }
 }

@@ -131,6 +131,7 @@ public typealias EditorStatusMessageCatalog = EditorKernel.EditorStatusMessageCa
 public typealias EditorSnippetSession = EditorKernel.EditorSnippetSession
 public typealias EditorSnippetParseResult = EditorKernel.EditorSnippetParseResult
 public typealias EditorSnippetParser = EditorKernel.EditorSnippetParser
+public typealias EditorOverlayAnchor = EditorKernel.EditorOverlayAnchor
 public typealias EditorHoverOverlayPlacement = EditorKernel.EditorHoverOverlayPlacement
 public typealias EditorCodeActionIndicatorPlacement = EditorKernel.EditorCodeActionIndicatorPlacement
 public typealias EditorSurfaceHighlightKind = EditorKernel.EditorSurfaceHighlightKind

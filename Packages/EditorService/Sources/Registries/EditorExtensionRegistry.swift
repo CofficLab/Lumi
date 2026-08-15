@@ -6,9 +6,7 @@ import SuperLogKit
 import os
 
 /// 编辑器扩展注册中心
-/// 同时承担原 `EditorPluginManager` 的插件安装职责：
-/// - 维护 `installedPlugins` 列表（按 order 排序）
-/// - 提供 `installPlugins` / `uninstallAll` 方法
+/// 维护 `installedPlugins` 列表（按 order 排序，由贡献包注册表同步）。
 ///
 /// ## 线程说明
 /// - 注册/注销：@MainActor（与 View 生命周期一致）
@@ -25,14 +23,11 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
     /// 已安装的编辑器插件（按 order 排序）
     @Published public private(set) var installedPlugins: [EditorInstalledPluginRecord] = []
 
-    /// 记录已安装的编辑器插件（由 RootViewContainer 在插件自注册后调用）
+    /// 记录已安装的编辑器插件（由贡献包注册表在安装/撤回后同步）
     ///
-    /// 注意：此方法仅用于记录 installedPlugins 列表，不再调用 registerEditorExtensions。
-    /// 插件的自注册应由调用方在调用此方法前完成。
+    /// 仅维护 installedPlugins 列表供诊断 UI 展示；贡献的安装/撤回
+    /// 由 `EditorContributionRegistry` 按插件维度原子完成。
     public func recordInstalledPlugins(_ records: [EditorInstalledPluginRecord]) {
-        // ⚠️ 不调用 reset()——注册阶段（registerEditorExtensions）已在之前完成，
-        // reset() 会清空所有已注册的 contributors（commandContributors、hoverContributors 等）。
-        // 仅清空 installedPlugins 列表本身再重新填充。
         installedPlugins.removeAll()
 
         // Sort by order, then by id
@@ -47,14 +42,6 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
 
         if Self.verbose {
                     Self.logger.info("\(self.t)recordInstalledPlugins: 记录 \(sorted.count) 个插件, ids=\(sorted.map(\.id))")
-        }
-    }
-
-    /// 卸载所有已安装的编辑器插件
-    public func uninstallAll() {
-        reset()
-        if Self.verbose {
-                    Self.logger.info("\(self.t)已卸载所有编辑器插件")
         }
     }
 
@@ -97,44 +84,6 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
     public var commandContributorsCount: Int { commandContributors.count }
 
     public init() {}
-
-    public func reset() {
-        installedPlugins.removeAll()
-        completionContributors.removeAll()
-        hoverContributors.removeAll()
-        hoverContentContributors.removeAll()
-        codeActionContributors.removeAll()
-        highlightProviderContributors.removeAll()
-        cachedHighlightProvidersByLanguageID.removeAll()
-        commandContributors.removeAll()
-        contextMenuContributors.removeAll()
-        gutterDecorationContributors.removeAll()
-        panelContributors.removeAll()
-        settingsContributors.removeAll()
-        statusItemContributors.removeAll()
-        quickOpenContributors.removeAll()
-        interactionContributors.removeAll()
-        sheetContributors.removeAll()
-        toolbarContributors.removeAll()
-        themeContributors.removeAll()
-        projectContextCapabilities.removeAll()
-        languageIntegrationCapabilities.removeAll()
-        semanticCapabilities.removeAll()
-        _editorLSPClient = nil
-        _signatureHelpProvider = nil
-        _inlayHintProvider = nil
-        _documentHighlightProvider = nil
-        _codeActionProvider = nil
-        _workspaceSymbolProvider = nil
-        _callHierarchyProvider = nil
-        _foldingRangeProvider = nil
-        _documentSymbolProvider = nil
-        _semanticTokenProvider = nil
-        _diagnosticsProvider = nil
-        railOutlineProvidersByLanguageID.removeAll()
-        LanguageRegistry.shared.reset()
-        LanguageQueryRegistry.shared.reset()
-    }
 
     // MARK: - Language Registration
 
@@ -201,6 +150,15 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
         }
         highlightProviderContributors.append(contributor)
         cachedHighlightProvidersByLanguageID.removeAll()
+    }
+
+    /// 按 id 撤回高亮贡献者（贡献包按插件撤回用，§9.3）。
+    public func unregisterHighlightProviderContributor(id: String) {
+        let before = highlightProviderContributors.count
+        highlightProviderContributors.removeAll { $0.id == id }
+        if highlightProviderContributors.count != before {
+            cachedHighlightProvidersByLanguageID.removeAll()
+        }
     }
 
     public func registerCommandContributor(_ contributor: any SuperEditorCommandContributor) {

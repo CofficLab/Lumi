@@ -44,9 +44,9 @@ private final class KernelHighlightContributorAdapter: SuperEditorHighlightProvi
     }
 }
 
-// MARK: - Editor Extension Registrar (Kernel Contract)
+// MARK: - Kernel → EditorService 贡献桥接（EditorContributionBundle 安装时使用）
 
-extension EditorExtensionRegistry: EditorExtensionRegistrar {
+extension EditorExtensionRegistry {
     /// 桥接内核侧的 `EditorLanguageDescriptor` 到编辑器内部使用的同名类型。
     public func registerLanguage(_ descriptor: KernelEditorLanguageDescriptor) {
         let converted = EditorLanguageRuntime.EditorLanguageDescriptor(
