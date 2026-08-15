@@ -117,8 +117,6 @@ public struct WindowMain: View, SuperLog {
                 Self.logger.info("\(Self.t)初始化完成，耗时 \(elapsed.formattedMilliseconds)")
             }
         } catch {
-            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startTime.uptimeNanoseconds) / 1_000_000
-            Self.logger.error("\(Self.t)初始化失败，耗时 \(elapsed.formattedMilliseconds)，错误：\(error.localizedDescription)")
             self.initializationError = error
         }
         self.isInitializing = false
