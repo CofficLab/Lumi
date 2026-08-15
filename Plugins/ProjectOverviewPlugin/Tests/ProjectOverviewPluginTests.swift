@@ -27,7 +27,7 @@ struct PluginProjectOverviewTests {
         let suggestions = ProjectOverviewPlugin().promptSuggestions(kernel: KernelLumi())
 
         #expect(suggestions.count == 1)
-        #expect(suggestions.first?.requiresProject == true)
+        #expect(suggestions.first?.visibility == .onlyWithProject)
     }
 
     @Test("tool name and description")

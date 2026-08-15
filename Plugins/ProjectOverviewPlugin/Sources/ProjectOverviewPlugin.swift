@@ -35,14 +35,14 @@ public final class ProjectOverviewPlugin: LumiPlugin, SuperLog {
     ///
     /// 本插件为 `alwaysOn` 且无独立视图容器，因此仅声明 `prompt`（不声明 `action`）：
     /// 点击时直接将该提示词作为消息发送，由 LLM 调用 `project_overview` 工具生成概览。
-    /// 概览依赖项目文件，仅在已选择项目时展示（`requiresProject`）。
+    /// 概览依赖项目文件，仅在已选择项目时展示（`onlyWithProject`）。
     public func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] {
         [
             LumiPromptSuggestion(
                 id: "\(id).overview",
                 title: PluginProjectOverviewLocalization.string("Prompt.Suggestion.Overview"),
                 systemImage: "doc.text.magnifyingglass",
-                requiresProject: true
+                visibility: .onlyWithProject
             )
         ]
     }
