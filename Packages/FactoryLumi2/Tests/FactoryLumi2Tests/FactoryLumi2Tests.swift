@@ -11,7 +11,7 @@ struct FactoryLumi2Tests {
 
     @Test("makeKernel 创建内核并注册默认 ProjectProviding")
     func makeKernelRegistersDefaultProjectProviding() throws {
-        let kernel = try FactoryLumi2.makeKernel()
+        let kernel = try KernelFactory.makeKernel()
 
         let resolved: (any ProjectProviding)? = kernel.resolveProvider((any ProjectProviding).self)
         #expect(resolved != nil)
@@ -20,7 +20,7 @@ struct FactoryLumi2Tests {
 
     @Test("makeKernel 创建内核并注册默认 ToastProviding")
     func makeKernelRegistersDefaultToastProviding() throws {
-        let kernel = try FactoryLumi2.makeKernel()
+        let kernel = try KernelFactory.makeKernel()
 
         let resolved: (any ToastProviding)? = kernel.resolveProvider((any ToastProviding).self)
         #expect(resolved != nil)
@@ -30,7 +30,7 @@ struct FactoryLumi2Tests {
     @Test("makeKernel 支持注入自定义 ProjectProviding 实现")
     func makeKernelAcceptsCustomProvider() throws {
         let provider = CustomProjectProvider()
-        let kernel = try FactoryLumi2.makeKernel(projectProvider: provider)
+        let kernel = try KernelFactory.makeKernel(projectProvider: provider)
 
         let resolved: (any ProjectProviding)? = kernel.resolveProvider((any ProjectProviding).self)
         #expect(resolved as? CustomProjectProvider === provider)
@@ -39,7 +39,7 @@ struct FactoryLumi2Tests {
     @Test("makeKernel 支持注入自定义 ToastProviding 实现")
     func makeKernelAcceptsCustomToastProvider() throws {
         let provider = CustomToastProvider()
-        let kernel = try FactoryLumi2.makeKernel(toastProvider: provider)
+        let kernel = try KernelFactory.makeKernel(toastProvider: provider)
 
         let resolved: (any ToastProviding)? = kernel.resolveProvider((any ToastProviding).self)
         #expect(resolved as? CustomToastProvider === provider)
@@ -47,7 +47,7 @@ struct FactoryLumi2Tests {
 
     @Test("内核可解析出 ProjectProviding 并正常使用")
     func kernelResolvesUsableProvider() async throws {
-        let kernel = try FactoryLumi2.makeKernel()
+        let kernel = try KernelFactory.makeKernel()
 
         let project: (any ProjectProviding)? = kernel.resolveProvider((any ProjectProviding).self)
         try await project?.openProject(at: "/Users/me/Code/Lumi")
@@ -70,7 +70,7 @@ struct FactoryLumi2Tests {
     @Test("makeKernel(providers:) 使用自定义 ProviderFactory 注册")
     func makeKernelWithCustomFactory() throws {
         let custom = CustomProviderFactory()
-        let kernel = try FactoryLumi2.makeKernel(providers: custom)
+        let kernel = try KernelFactory.makeKernel(providers: custom)
 
         let project: (any ProjectProviding)? = kernel.resolveProvider((any ProjectProviding).self)
         let toast: (any ToastProviding)? = kernel.resolveProvider((any ToastProviding).self)

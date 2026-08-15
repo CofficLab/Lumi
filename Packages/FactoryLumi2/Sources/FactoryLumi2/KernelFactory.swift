@@ -3,12 +3,12 @@ import KernelCore
 import ProviderProject
 import ProviderToast
 
-/// FactoryLumi2 — 工厂命名空间。
+/// KernelFactory — 内核工厂命名空间。
 ///
 /// 负责创建 KernelCore 内核，并通过 `ProviderFactory` 产出各 Provider
 /// （如 ProviderProject、ProviderToast）注册进内核。
 @MainActor
-public enum FactoryLumi2 {
+public enum KernelFactory {
 
     // MARK: - makeKernel
 

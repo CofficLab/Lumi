@@ -4,7 +4,7 @@ import ProviderToast
 
 /// 产出各种 Provider 实现的工厂协议。
 ///
-/// 集中管理 Provider 的构造逻辑；`FactoryLumi2.makeKernel` 直接调用它
+/// 集中管理 Provider 的构造逻辑；`KernelFactory.makeKernel` 直接调用它
 /// 产出各 Provider 并注册进 KernelCore。宿主可实现该协议覆盖
 /// 个别 Provider 的产出逻辑。
 @MainActor
