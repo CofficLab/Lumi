@@ -78,7 +78,7 @@ public final class GitHubAPIService: @unchecked Sendable {
         branch: String = "main"
     ) async throws -> GitHubFileContent {
         try await fetch(
-            "/repos/\(owner)/\(repo)/contents/\(path)",
+            "/repos/\(owner)/\(repo)/contents/\(Self.percentEncodePath(path))",
             params: ["ref": branch]
         )
     }
@@ -223,7 +223,13 @@ public final class GitHubAPIService: @unchecked Sendable {
             throw GitHubAPIError.invalidURL(rawURL)
         }
         if !params.isEmpty {
-            components.queryItems = params.map { URLQueryItem(name: $0.key, value: $0.value) }
+            // 使用 percentEncodedQueryItems，确保 `+` 等字符不会被服务端解释为空格。
+            components.percentEncodedQueryItems = params.map {
+                URLQueryItem(
+                    name: Self.percentEncodeQueryComponent($0.key),
+                    value: Self.percentEncodeQueryComponent($0.value)
+                )
+            }
         }
         guard let url = components.url else {
             throw GitHubAPIError.invalidURL(rawURL)
@@ -269,6 +275,20 @@ public final class GitHubAPIService: @unchecked Sendable {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         applyAuth(request: &request)
         return request
+    }
+
+    /// 对路径段进行百分号编码，保留 `/` 分隔符。
+    static func percentEncodePath(_ path: String) -> String {
+        var allowed = CharacterSet.urlPathAllowed
+        allowed.insert("/")
+        return path.addingPercentEncoding(withAllowedCharacters: allowed) ?? path
+    }
+
+    /// 对查询参数进行百分号编码，并显式编码 `+` 与 `&` 等保留字符。
+    static func percentEncodeQueryComponent(_ value: String) -> String {
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "+&=/?#:")
+        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
     }
 
     /// 应用认证头。

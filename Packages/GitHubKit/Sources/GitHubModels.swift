@@ -291,8 +291,8 @@ public struct GitHubIssue: Codable, Sendable {
     public let labels: [GitHubLabel]
     /// 关联的里程碑。
     public let milestone: GitHubMilestone?
-    /// 关联的 Pull Request 信息。
-    public let pulledThrough: [String]?
+    /// 关联的 Pull Request 信息。Issue 为 PR 时存在。
+    public let pulledThrough: GitHubPullRequestRef?
 
     /// 创建 GitHub Issue 信息。
     public init(
@@ -310,7 +310,7 @@ public struct GitHubIssue: Codable, Sendable {
         comments: Int,
         labels: [GitHubLabel],
         milestone: GitHubMilestone?,
-        pulledThrough: [String]?
+        pulledThrough: GitHubPullRequestRef?
     ) {
         self.id = id
         self.number = number
@@ -338,6 +338,33 @@ public struct GitHubIssue: Codable, Sendable {
         case closedAt = "closed_at"
         case comments, labels, milestone
         case pulledThrough = "pull_request"
+    }
+}
+
+/// Issue 关联的 Pull Request 链接信息。
+public struct GitHubPullRequestRef: Codable, Sendable {
+    /// Pull Request API URL。
+    public let url: String?
+    /// Pull Request 网页 URL。
+    public let htmlUrl: String?
+    /// Diff URL。
+    public let diffUrl: String?
+    /// Patch URL。
+    public let patchUrl: String?
+
+    /// 创建 Pull Request 链接信息。
+    public init(url: String?, htmlUrl: String?, diffUrl: String?, patchUrl: String?) {
+        self.url = url
+        self.htmlUrl = htmlUrl
+        self.diffUrl = diffUrl
+        self.patchUrl = patchUrl
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case url
+        case htmlUrl = "html_url"
+        case diffUrl = "diff_url"
+        case patchUrl = "patch_url"
     }
 }
 
