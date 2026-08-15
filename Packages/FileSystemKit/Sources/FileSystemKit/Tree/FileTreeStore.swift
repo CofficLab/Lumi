@@ -66,6 +66,11 @@ public final class FileTreeStore: SuperLog, @unchecked Sendable {
 
     deinit {
         persistTask?.cancel()
+        // 取消防抖任务后立即同步落盘，避免丢失最后一次未持久化的缓存变更。
+        // workItem 对 self 是弱引用，不会因队列持有 self 而死锁。
+        queue.sync {
+            persistDirtyCacheSync()
+        }
     }
 
     // MARK: - Public API
@@ -105,14 +110,19 @@ public final class FileTreeStore: SuperLog, @unchecked Sendable {
     /// - Parameter projectRoot: 项目根目录的绝对路径
     /// - Returns: 相对路径集合
     public func expandedPaths(for projectRoot: String) -> Set<String> {
+        queue.sync { expandedPathsLocked(for: projectRoot) }
+    }
+
+    /// 读取展开路径（必须在 queue 上调用，避免嵌套 queue.sync 死锁）
+    private func expandedPathsLocked(for projectRoot: String) -> Set<String> {
         // 优先从内存缓存读取
         if let cached = expandedPathsCache[projectRoot] {
             return cached
         }
-        
+
         // 缓存未命中，从磁盘加载
         let key = expandedPathsKey(for: projectRoot)
-        guard let paths = object(forKey: key) as? [String] else { return [] }
+        guard let paths = readDict()?[key] as? [String] else { return [] }
         let pathSet = Set(paths)
         expandedPathsCache[projectRoot] = pathSet
         return pathSet
@@ -125,32 +135,43 @@ public final class FileTreeStore: SuperLog, @unchecked Sendable {
     ///   - projectRoot: 项目根目录的绝对路径
     @discardableResult
     public func setExpandedPaths(_ paths: Set<String>, for projectRoot: String) -> Bool {
-        let key = expandedPathsKey(for: projectRoot)
-        let success = set(Array(paths), forKey: key)
-        if success {
-            expandedPathsCache[projectRoot] = paths
+        queue.sync {
+            let key = expandedPathsKey(for: projectRoot)
+            guard let dict = readDict() else { return false }
+            var nextDict = dict
+            nextDict[key] = Array(paths)
+            let success = writeDict(nextDict)
+            if success {
+                expandedPathsCache[projectRoot] = paths
+            }
+            return success
         }
-        return success
     }
 
     /// 添加一个展开的文件夹路径（内存缓存 + 防抖落盘）
     @discardableResult
     public func addExpandedPath(_ relativePath: String, for projectRoot: String) -> Bool {
-        var paths = expandedPaths(for: projectRoot)
-        paths.insert(relativePath)
-        expandedPathsCache[projectRoot] = paths
-        schedulePersist(for: projectRoot)
-        return true
+        mutateExpandedPaths(for: projectRoot) { $0.insert(relativePath) }
     }
 
     /// 移除一个折叠的文件夹路径（内存缓存 + 防抖落盘）
     @discardableResult
     public func removeExpandedPath(_ relativePath: String, for projectRoot: String) -> Bool {
-        var paths = expandedPaths(for: projectRoot)
-        paths.remove(relativePath)
-        expandedPathsCache[projectRoot] = paths
-        schedulePersist(for: projectRoot)
-        return true
+        mutateExpandedPaths(for: projectRoot) { $0.remove(relativePath) }
+    }
+
+    /// 在 queue 上原子地读取-修改-写入缓存并调度防抖落盘
+    private func mutateExpandedPaths(
+        for projectRoot: String,
+        _ mutate: (inout Set<String>) -> Void
+    ) -> Bool {
+        queue.sync {
+            var paths = expandedPathsLocked(for: projectRoot)
+            mutate(&paths)
+            expandedPathsCache[projectRoot] = paths
+            schedulePersistLocked()
+            return true
+        }
     }
 
     /// 立即将所有脏缓存落盘（用于应用退出等场景）
@@ -189,19 +210,19 @@ public final class FileTreeStore: SuperLog, @unchecked Sendable {
         } ?? key
     }
 
-    /// 调度防抖落盘任务
-    private func schedulePersist(for projectRoot: String) {
+    /// 调度防抖落盘任务（必须在 queue 上调用）
+    private func schedulePersistLocked() {
         hasDirtyCache = true
-        
+
         // 取消之前的任务
         persistTask?.cancel()
-        
+
         // 创建新的防抖任务
         let workItem = DispatchWorkItem { [weak self] in
             self?.persistDirtyCache()
         }
         persistTask = workItem
-        
+
         queue.asyncAfter(deadline: .now() + persistDebounceInterval, execute: workItem)
     }
 

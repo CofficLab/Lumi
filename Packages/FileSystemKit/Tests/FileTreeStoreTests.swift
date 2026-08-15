@@ -194,6 +194,83 @@ struct FileTreeStoreTests {
         #expect(reloadedStore.lastProjectPath() == "/project")
     }
 
+    @Test("non-dictionary plist root is quarantined and reads return empty")
+    func nonDictionaryPlistRootIsQuarantined() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FileTreeKitTest-NonDict-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        let settingsURL = tempDir.appendingPathComponent("settings.plist")
+        let corruptURL = tempDir.appendingPathComponent("settings.corrupt.plist")
+        let arrayPlistData = try PropertyListSerialization.data(
+            fromPropertyList: ["not", "a", "dictionary"],
+            format: .binary,
+            options: 0
+        )
+        try arrayPlistData.write(to: settingsURL)
+
+        let store = FileTreeStore(directory: tempDir)
+
+        // 根节点不是字典：读取返回空，原文件被隔离
+        #expect(store.object(forKey: "any") == nil)
+        #expect(FileManager.default.fileExists(atPath: corruptURL.path))
+        #expect((try? Data(contentsOf: corruptURL)) == arrayPlistData)
+
+        // 隔离后可正常写入与读取
+        #expect(store.setLastProjectPath("/project") == true)
+        #expect(store.lastProjectPath() == "/project")
+    }
+
+    @Test("flushDirtyCache persists debounced changes immediately")
+    func flushDirtyCachePersistsDebouncedChanges() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FileTreeKitTest-Flush-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        let store = FileTreeStore(directory: tempDir)
+        #expect(store.addExpandedPath("/src", for: "/project"))
+
+        // 防抖间隔内，新实例从磁盘读取应看不到未落盘的变更
+        let beforeFlush = FileTreeStore(directory: tempDir)
+        #expect(beforeFlush.expandedPaths(for: "/project").isEmpty)
+
+        // flush 后立即落盘，新实例可见
+        store.flushDirtyCache()
+        let afterFlush = FileTreeStore(directory: tempDir)
+        #expect(afterFlush.expandedPaths(for: "/project") == ["/src"])
+
+        // 无脏数据时 flush 不应崩溃或产生副作用
+        store.flushDirtyCache()
+        #expect(afterFlush.expandedPaths(for: "/project") == ["/src"])
+    }
+
+    @Test("pending debounced changes are persisted on deinit")
+    func debouncedChangesPersistOnDeinit() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FileTreeKitTest-Deinit-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        let storeBox = FileTreeStoreBox(FileTreeStore(directory: tempDir))
+        #expect(storeBox.store!.addExpandedPath("/src", for: "/project"))
+        #expect(storeBox.store!.addExpandedPath("/lib", for: "/project"))
+
+        // 释放实例触发 deinit 同步落盘
+        storeBox.release()
+
+        let reloaded = FileTreeStore(directory: tempDir)
+        #expect(reloaded.expandedPaths(for: "/project") == ["/src", "/lib"])
+    }
+
+    /// 用于在测试作用域内显式释放 FileTreeStore，触发 deinit
+    private final class FileTreeStoreBox {
+        var store: FileTreeStore?
+        init(_ store: FileTreeStore) { self.store = store }
+        func release() { store = nil }
+    }
+
     @Test("set reports failure when settings directory is blocked")
     func setReportsFailureWhenSettingsDirectoryIsBlocked() throws {
         let tempRoot = FileManager.default.temporaryDirectory
