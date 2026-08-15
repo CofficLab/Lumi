@@ -692,9 +692,13 @@ public final class EditorJumpToDefinitionDelegate: ObservableObject, JumpToDefin
     ) -> NSRange? {
         let escapedWord = NSRegularExpression.escapedPattern(for: word)
 
-        // 获取或编译正则表达式
+        // 获取或编译正则表达式（读取也必须持锁：并发读取时另一线程可能在淘汰条目，
+        // 无锁读 Dictionary 可能崩溃）
         let regexes: [NSRegularExpression]
-        if let cached = Self.regexCache[escapedWord] {
+        Self.regexCacheLock.lock()
+        let cached = Self.regexCache[escapedWord]
+        Self.regexCacheLock.unlock()
+        if let cached = cached {
             regexes = cached
         } else {
             // 多语言定义模式
