@@ -97,19 +97,7 @@ public final class SettingsPlugin: LumiPlugin, SuperLog {
     }
 
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 6) {
-                Text(LumiPluginLocalization.string("Settings Plugin", bundle: .module))
-                    .font(.headline)
-                Text(LumiPluginLocalization.string(
-                    "Provides the General and Appearance settings tabs.",
-                    bundle: .module
-                ))
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 4)
-        )
+        AnyView(SettingsAboutView())
     }
 
     // MARK: - LumiPlugin stubs
