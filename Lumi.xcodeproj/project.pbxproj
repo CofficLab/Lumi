@@ -28,6 +28,7 @@
 		LF000000000000000015 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* SuperLogKit */; };
 		LF00000000000000001A /* LocalizationKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000019 /* LocalizationKit */; };
 		LMFL00000000000000B001 /* FactoryLumi2 in Frameworks */ = {isa = PBXBuildFile; productRef = LM0000000000000000000001 /* FactoryLumi2 */; };
+		LMPLG00000000000000B001 /* ProviderLogo in Frameworks */ = {isa = PBXBuildFile; productRef = LMPLG000000000000000001 /* ProviderLogo */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -277,6 +278,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				LMFL00000000000000B001 /* FactoryLumi2 in Frameworks */,
+				LMPLG00000000000000B001 /* ProviderLogo in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -523,6 +525,7 @@
 			name = LumiMinimal;
 			packageProductDependencies = (
 				LM0000000000000000000001 /* FactoryLumi2 */,
+				LMPLG000000000000000001 /* ProviderLogo */,
 			);
 			productName = LumiMinimal;
 			productReference = LM0000000000000000000002 /* LumiMinimal.app */;
@@ -588,6 +591,7 @@
 				F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/ProjectRAGPlugin" */,
 				FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMakerMobile" */,
 				BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker2" */,
+				LMPLG000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderLogo" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1035,6 +1039,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LocalizationKit;
 		};
+		LMPLG000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderLogo" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ProviderLogo;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1127,6 +1135,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi2" */;
 			productName = FactoryLumi2;
+		};
+		LMPLG000000000000000001 /* ProviderLogo */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = LMPLG000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderLogo" */;
+			productName = ProviderLogo;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

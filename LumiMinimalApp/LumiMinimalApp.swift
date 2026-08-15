@@ -1,5 +1,6 @@
 import FactoryLumi2
 import KernelCore
+import ProviderLogo
 import ProviderMenuBar
 import PluginToolbarSettings
 import SwiftUI
@@ -44,13 +45,36 @@ struct LumiMinimalApp: App {
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 360, height: 260)
 
-        // 菜单栏：由 MenuBarProviding 贡献的内容与弹窗
-        MenuBarExtra("设备信息", systemImage: "gauge.with.dots.needle.50percent") {
+        // 菜单栏：由 MenuBarProviding 贡献的内容与弹窗；
+        // 图标优先展示最高优先级插件贡献的 Logo（statusBar 场景），无贡献时回退到默认 SF Symbol。
+        MenuBarExtra {
             if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
                 menuBar.makePopupView()
             } else {
                 Text("MenuBarProviding not registered")
             }
+        } label: {
+            LogoMenuBarLabel(kernel: kernel)
         }
+    }
+}
+
+/// 菜单栏图标：优先展示最高优先级插件贡献的 Logo，回退到默认 SF Symbol。
+///
+/// 观察共享内核：LogoProvider 注册时默认转发 `objectWillChange`，
+/// 因此 Logo 项增删或高亮状态变化时图标会自动刷新。
+private struct LogoMenuBarLabel: View {
+    @ObservedObject var kernel: KernelCoreContainer
+
+    var body: some View {
+        Group {
+            if let logo = kernel.resolveProvider((any LogoProviding).self),
+               let item = logo.highestPriorityLogoItem {
+                item.makeView(.statusBar)
+            } else {
+                Image(systemName: "gauge.with.dots.needle.50percent")
+            }
+        }
+        .frame(width: 22, height: 22)
     }
 }
