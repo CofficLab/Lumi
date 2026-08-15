@@ -11,9 +11,9 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../ProviderNetwork"),
         .package(path: "../ProviderProject"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../ProviderToast"),
         .package(path: "../ProviderToolbar"),
-        .package(path: "../ProviderWindow"),
     ],
     targets: [
         .target(
@@ -22,9 +22,9 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderNetwork", package: "ProviderNetwork"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderToast", package: "ProviderToast"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
-                .product(name: "ProviderWindow", package: "ProviderWindow"),
             ],
             path: "Sources/FactoryLumi2"
         ),

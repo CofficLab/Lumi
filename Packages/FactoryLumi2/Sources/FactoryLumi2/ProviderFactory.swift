@@ -1,9 +1,9 @@
 import Foundation
 import ProviderNetwork
 import ProviderProject
+import ProviderRootView
 import ProviderToast
 import ProviderToolbar
-import ProviderWindow
 
 /// 产出各种 Provider 实现的工厂协议。
 ///
@@ -21,11 +21,11 @@ public protocol ProviderFactory {
     /// 产出 `NetworkProviding` 实现。
     func makeNetworkProvider() -> any NetworkProviding
 
-    /// 产出 `WindowProviding` 实现。
-    func makeWindowProvider() -> any WindowProviding
-
     /// 产出 `ToolbarProviding` 实现。
     func makeToolbarProvider() -> any ToolbarProviding
+
+    /// 产出 `RootViewProviding` 实现。
+    func makeRootViewProvider() -> any RootViewProviding
 }
 
 /// 默认 `ProviderFactory` 实现：产出各 Provider 的默认实现。
@@ -48,13 +48,13 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultNetworkProviding()
     }
 
-    /// 产出 `WindowProviding` 实现（默认占位根视图）。
-    public func makeWindowProvider() -> any WindowProviding {
-        DefaultWindowProviding()
-    }
-
     /// 产出 `ToolbarProviding` 实现（默认按 placement 渲染的工具栏）。
     public func makeToolbarProvider() -> any ToolbarProviding {
         DefaultToolbarProviding()
+    }
+
+    /// 产出 `RootViewProviding` 实现（默认「工具栏 + 内容区」根布局）。
+    public func makeRootViewProvider() -> any RootViewProviding {
+        DefaultRootViewProviding()
     }
 }

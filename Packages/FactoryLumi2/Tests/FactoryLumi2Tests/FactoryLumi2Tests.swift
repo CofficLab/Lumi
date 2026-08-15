@@ -2,9 +2,9 @@ import Foundation
 import KernelCore
 import ProviderNetwork
 import ProviderProject
+import ProviderRootView
 import ProviderToast
 import ProviderToolbar
-import ProviderWindow
 import Testing
 @testable import FactoryLumi2
 
@@ -39,15 +39,6 @@ struct FactoryLumi2Tests {
         #expect(resolved is DefaultNetworkProviding)
     }
 
-    @Test("makeKernel 创建内核并注册默认 WindowProviding")
-    func makeKernelRegistersDefaultWindowProviding() throws {
-        let kernel = try KernelFactory.makeKernel()
-
-        let resolved: (any WindowProviding)? = kernel.resolveProvider((any WindowProviding).self)
-        #expect(resolved != nil)
-        #expect(resolved is DefaultWindowProviding)
-    }
-
     @Test("makeKernel 创建内核并注册默认 ToolbarProviding")
     func makeKernelRegistersDefaultToolbarProviding() throws {
         let kernel = try KernelFactory.makeKernel()
@@ -55,6 +46,15 @@ struct FactoryLumi2Tests {
         let resolved: (any ToolbarProviding)? = kernel.resolveProvider((any ToolbarProviding).self)
         #expect(resolved != nil)
         #expect(resolved is DefaultToolbarProviding)
+    }
+
+    @Test("makeKernel 创建内核并注册默认 RootViewProviding")
+    func makeKernelRegistersDefaultRootViewProviding() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let resolved: (any RootViewProviding)? = kernel.resolveProvider((any RootViewProviding).self)
+        #expect(resolved != nil)
+        #expect(resolved is DefaultRootViewProviding)
     }
 
     @Test("内核可解析出 ProjectProviding 并正常使用")
@@ -75,13 +75,13 @@ struct FactoryLumi2Tests {
         let project = factory.makeProjectProvider()
         let toast = factory.makeToastProvider()
         let network = factory.makeNetworkProvider()
-        let window = factory.makeWindowProvider()
         let toolbar = factory.makeToolbarProvider()
+        let rootView = factory.makeRootViewProvider()
 
         #expect(project is DefaultProjectProviding)
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
-        #expect(window is DefaultWindowProviding)
         #expect(toolbar is DefaultToolbarProviding)
+        #expect(rootView is DefaultRootViewProviding)
     }
 }
