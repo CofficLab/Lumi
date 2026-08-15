@@ -69,6 +69,7 @@ public final class AiRouterProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://airouter.org")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_AiRouter"
     )
     

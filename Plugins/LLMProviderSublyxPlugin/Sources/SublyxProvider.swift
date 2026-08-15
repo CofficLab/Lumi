@@ -102,6 +102,7 @@ public final class SublyxProvider: LumiLLMProvider, SuperLog, @unchecked Sendabl
             ),
         ],
         websiteURL: URL(string: "https://api.sublyx.org/")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_Sublyx"
     )
     

@@ -57,6 +57,7 @@ public final class ZhipuProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://www.bigmodel.cn/")!,
+        apiFormat: .anthropic,
         apiKeyStorageKey: "DevAssistant_ApiKey_Zhipu"
     )
     

@@ -49,6 +49,7 @@ public final class AnthropicProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://www.anthropic.com/")!,
+        apiFormat: .anthropic,
         apiKeyStorageKey: "DevAssistant_ApiKey_Anthropic"
     )
     

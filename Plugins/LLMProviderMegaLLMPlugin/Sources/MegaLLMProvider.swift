@@ -79,6 +79,7 @@ public final class MegaLLMProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://megallm.io")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_MegaLLM"
     )
     

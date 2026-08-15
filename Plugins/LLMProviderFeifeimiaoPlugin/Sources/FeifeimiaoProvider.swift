@@ -39,6 +39,7 @@ public final class FeifeimiaoProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://feifeimiao.top")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_Feifeimiao"
     )
     

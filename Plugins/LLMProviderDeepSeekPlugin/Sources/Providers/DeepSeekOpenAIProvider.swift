@@ -21,6 +21,7 @@ public final class DeepSeekOpenAIProvider: LumiLLMProvider, @unchecked Sendable 
             ),
         ],
         websiteURL: URL(string: "https://www.deepseek.com/")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: DeepSeekPlugin.apiKeyStorageKey
     )
 

@@ -49,6 +49,7 @@ public final class OpenAIProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://openai.com/")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_OpenAI"
     )
 

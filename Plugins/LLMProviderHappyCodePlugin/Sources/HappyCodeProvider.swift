@@ -19,6 +19,7 @@ public final class HappyCodeProvider: LumiLLMProvider, @unchecked Sendable {
             ),
         ],
         websiteURL: URL(string: "https://happycode.vip")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_HappyCode"
     )
     

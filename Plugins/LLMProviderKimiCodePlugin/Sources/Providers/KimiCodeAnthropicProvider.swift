@@ -19,6 +19,7 @@ public final class KimiCodeAnthropicProvider: LumiLLMProvider, @unchecked Sendab
                   capabilities: .init(supportsVision: true, supportsTools: true)),
         ],
         websiteURL: URL(string: "https://www.moonshot.cn/")!,
+        apiFormat: .anthropic,
         apiKeyStorageKey: KimiCodePlugin.apiKeyStorageKey
     )
 

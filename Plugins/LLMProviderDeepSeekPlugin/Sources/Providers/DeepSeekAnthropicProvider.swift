@@ -35,6 +35,7 @@ public final class DeepSeekAnthropicProvider: LumiLLMProvider, @unchecked Sendab
             ),
         ],
         websiteURL: URL(string: "https://www.deepseek.com/")!,
+        apiFormat: .anthropic,
         apiKeyStorageKey: DeepSeekPlugin.apiKeyStorageKey
     )
 

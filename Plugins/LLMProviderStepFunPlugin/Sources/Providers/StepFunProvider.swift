@@ -62,6 +62,7 @@ public final class StepFunProvider: LumiLLMProvider, SuperLog, @unchecked Sendab
             ),
         ],
         websiteURL: URL(string: "https://www.stepfun.com/")!,
+        apiFormat: .openAI,
         apiKeyStorageKey: "DevAssistant_ApiKey_StepFun"
     )
     
