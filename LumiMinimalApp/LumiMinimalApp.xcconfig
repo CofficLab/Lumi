@@ -3,7 +3,7 @@
 // LumiMinimal target（Debug 与 Release 共用）。
 //
 
-#include "App-Shared.xcconfig"
+#include "Config/App-Shared.xcconfig"
 
 // 产物
 PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumiminimal
