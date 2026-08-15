@@ -1,3 +1,4 @@
+import AppKit
 import FactoryLumi2
 import KernelCore
 import ProviderLogo
@@ -29,6 +30,14 @@ struct LumiMinimalApp: App {
             // App 只做一件事：让 Factory 给一个视图。
             // 注意：`.onReceive` 需应用到整个 `??` 表达式（否则会误绑到 fallback 分支）。
             ((try? KernelFactory.makeMainView()) ?? AnyView(Text("Failed to assemble main view")))
+                // 与旧版 Lumi（WindowMain.configureForLumiMainChrome）一致：
+                // 窗口内容延伸到标题栏区域（fullSizeContentView），
+                // 工具栏从窗口顶部开始渲染，红绿灯悬浮在工具栏上。
+                .background {
+                    WindowAccessor { window in
+                        window.configureForLumiMinimalChrome()
+                    }
+                }
                 // 工具栏「设置」按钮点击后，通知 → 打开设置窗口
                 .onReceive(NotificationCenter.default.publisher(for: .lumiOpenSettings)) { _ in
                     openWindow(id: "lumi-minimal.settings")
@@ -76,5 +85,56 @@ private struct LogoMenuBarLabel: View {
             }
         }
         .frame(width: 22, height: 22)
+    }
+}
+
+/// 配置窗口 chrome：与旧版 Lumi（`WindowMain.configureForLumiMainChrome`）一致，
+/// 内容延伸到标题栏区域（fullSizeContentView），红绿灯悬浮在工具栏上，
+/// 保证顶部工具栏从窗口最顶部开始渲染、尺寸与旧版完全一致。
+private extension NSWindow {
+    func configureForLumiMinimalChrome() {
+        titleVisibility = .hidden
+        titlebarAppearsTransparent = true
+        toolbar = nil
+        styleMask.insert(.fullSizeContentView)
+    }
+}
+
+/// 解析宿主 NSWindow 并应用 chrome 配置的辅助视图。
+private struct WindowAccessor: NSViewRepresentable {
+    let onResolve: (NSWindow) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = HostView(onResolve: onResolve)
+        view.resolveWindowIfAttached()
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        (nsView as? HostView)?.resolveWindowIfAttached()
+    }
+
+    private final class HostView: NSView {
+        let onResolve: (NSWindow) -> Void
+
+        init(onResolve: @escaping (NSWindow) -> Void) {
+            self.onResolve = onResolve
+            super.init(frame: .zero)
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            resolveWindowIfAttached()
+        }
+
+        func resolveWindowIfAttached() {
+            guard let window else { return }
+            onResolve(window)
+        }
     }
 }

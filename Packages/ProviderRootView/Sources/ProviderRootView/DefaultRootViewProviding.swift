@@ -62,6 +62,11 @@ public final class DefaultRootViewProviding: RootViewProviding {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            #if os(macOS)
+            // 与旧版 Lumi（AppLayoutView）一致：内容延伸进标题栏区域，
+            // 工具栏从窗口顶部开始渲染，红绿灯悬浮在工具栏上。
+            .ignoresSafeArea()
+            #endif
         )
     }
 }
