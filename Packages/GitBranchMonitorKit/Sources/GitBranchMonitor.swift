@@ -139,8 +139,13 @@ public final class GitBranchMonitor: ObservableObject, SuperLog {
         debounceTasks[projectPath]?.cancel()
         debounceTasks.removeValue(forKey: projectPath)
 
-        // 取消 DispatchSource（cancel handler 会关闭 fd）
-        state.dispatchSource?.cancel()
+        // 取消 DispatchSource（cancel handler 会关闭 fd）；
+        // 若没有 DispatchSource（如测试中手动注册的状态），需手动关闭 fd 避免泄漏
+        if let source = state.dispatchSource {
+            source.cancel()
+        } else if state.fileDescriptor >= 0 {
+            Darwin.close(state.fileDescriptor)
+        }
 
         monitors.removeValue(forKey: projectPath)
 
@@ -182,6 +187,9 @@ public final class GitBranchMonitor: ObservableObject, SuperLog {
             // 防抖等待
             try? await Task.sleep(nanoseconds: UInt64(self.debounceDelay * 1_000_000_000))
             guard !Task.isCancelled else { return }
+
+            // 防抖期间监听可能已被停止；不再通知已取消监听的路径
+            guard self.monitors[projectPath] != nil else { return }
 
             let headPath = Self.headPath(for: projectPath)
             let newBranch = Self.parseHeadFile(at: headPath)

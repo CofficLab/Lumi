@@ -333,6 +333,113 @@ struct GitBranchMonitorTests {
         #expect(monitor.monitoredPaths.isEmpty)
     }
 
+    @Test("handleFileChange 防抖期间停止监听后不触发回调")
+    func handleFileChange_noCallbackAfterStopDuringDebounce() async throws {
+        let repoURL = createTempRepo(headContent: "ref: refs/heads/main\n")
+        defer { cleanup(repoURL) }
+
+        let monitor = GitBranchMonitor()
+        monitor.debounceDelay = 0.1
+
+        monitor.monitors[repoURL.path] = GitBranchMonitor.MonitorState(
+            fileDescriptor: -1,
+            dispatchSource: nil,
+            lastBranch: "main",
+            lastUpdateTime: Date()
+        )
+
+        let callCount = LockedCounter()
+        monitor.onBranchChange { _, _ in callCount.increment() }
+
+        // 模拟分支切换后立即停止监听（在防抖等待期内）
+        try "ref: refs/heads/develop\n".write(
+            to: repoURL.appendingPathComponent(".git/HEAD"),
+            atomically: true, encoding: .utf8
+        )
+        monitor.handleFileChange(projectPath: repoURL.path)
+        monitor.stopMonitoring(projectPath: repoURL.path)
+
+        try await Task.sleep(for: .milliseconds(300))
+
+        #expect(callCount.value == 0)
+        #expect(monitor.debounceTasks[repoURL.path] == nil)
+    }
+
+    @Test("切换到分离头指针时回调收到 nil")
+    func handleFileChange_detachedHeadFiresCallbackWithNil() async throws {
+        let repoURL = createTempRepo(headContent: "ref: refs/heads/main\n")
+        defer { cleanup(repoURL) }
+
+        let monitor = GitBranchMonitor()
+        monitor.debounceDelay = 0.05
+
+        monitor.monitors[repoURL.path] = GitBranchMonitor.MonitorState(
+            fileDescriptor: -1,
+            dispatchSource: nil,
+            lastBranch: "main",
+            lastUpdateTime: Date()
+        )
+
+        let expectation = Expectation<String>()
+        monitor.onBranchChange { _, branch in
+            expectation.fulfill(with: branch ?? "<<nil>>")
+        }
+
+        try "abc1234567890abcdef1234567890abcdef12345678\n".write(
+            to: repoURL.appendingPathComponent(".git/HEAD"),
+            atomically: true, encoding: .utf8
+        )
+        monitor.handleFileChange(projectPath: repoURL.path)
+
+        try await Task.sleep(for: .milliseconds(200))
+
+        #expect(expectation.value == "<<nil>>")
+        #expect(monitor.currentBranch(for: repoURL.path) == nil)
+    }
+
+    @Test("分支变化后 currentBranch 缓存更新")
+    func handleFileChange_updatesCachedBranch() async throws {
+        let repoURL = createTempRepo(headContent: "ref: refs/heads/main\n")
+        defer { cleanup(repoURL) }
+
+        let monitor = GitBranchMonitor()
+        monitor.debounceDelay = 0.05
+
+        monitor.monitors[repoURL.path] = GitBranchMonitor.MonitorState(
+            fileDescriptor: -1,
+            dispatchSource: nil,
+            lastBranch: "main",
+            lastUpdateTime: Date()
+        )
+        monitor.onBranchChange { _, _ in }
+
+        try "ref: refs/heads/feature/x\n".write(
+            to: repoURL.appendingPathComponent(".git/HEAD"),
+            atomically: true, encoding: .utf8
+        )
+        monitor.handleFileChange(projectPath: repoURL.path)
+
+        try await Task.sleep(for: .milliseconds(200))
+
+        #expect(monitor.currentBranch(for: repoURL.path) == "feature/x")
+    }
+
+    // MARK: - startMonitoring (real DispatchSource)
+
+    @Test("startMonitoring 对真实 Git 项目注册监听并记录当前分支")
+    func startMonitoring_gitRepo() {
+        let repoURL = createTempRepo(headContent: "ref: refs/heads/main\n")
+        defer { cleanup(repoURL) }
+
+        let monitor = GitBranchMonitor()
+        monitor.startMonitoring(projectPath: repoURL.path)
+
+        #expect(monitor.monitoredPaths == [repoURL.path])
+        #expect(monitor.currentBranch(for: repoURL.path) == "main")
+
+        monitor.stopAll()
+    }
+
     // MARK: - stopAll
 
     @Test("stopAll 清除所有状态和回调")
