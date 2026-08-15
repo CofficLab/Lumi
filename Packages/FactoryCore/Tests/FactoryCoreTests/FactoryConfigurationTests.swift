@@ -64,7 +64,6 @@ final class FactoryConfigurationTests: XCTestCase {
         func logoItems(kernel: KernelLumi) -> [LogoItem] { [] }
         func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
         func onContainerActivated(kernel: KernelLumi, containerID: String) {}
-        func editorPlugins(kernel: KernelLumi) -> [any EditorPlugin] { [] }
     }
 
     @MainActor
