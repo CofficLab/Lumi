@@ -67,7 +67,7 @@ public enum CaptureModifier: Int8, CaseIterable, Sendable {
             return .definition
         case "readonly":
             return .readonly
-        case "static`":
+        case "static":
             return .static
         case "deprecated":
             return .deprecated
