@@ -73,18 +73,8 @@ public final class TextActionsPlugin: LumiPlugin, SuperLog {
     public func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView { content }
     public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] { [] }
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
-        public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                Label(LumiPluginLocalization.string("Text Actions", bundle: .module),
-                      systemImage: "text.badge.checkmark")
-                    .font(.headline)
-                Text(LumiPluginLocalization.string("Quick text manipulation actions.", bundle: .module))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-        )
+    public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
+        AnyView(TextActionsAboutView())
     }
     public func pluginManualView(kernel: KernelLumi) -> AnyView? {
         AnyView(TextActionsManualView())
