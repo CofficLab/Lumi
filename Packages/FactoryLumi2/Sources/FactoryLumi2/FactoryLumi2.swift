@@ -8,7 +8,8 @@ import ProviderProject
 @MainActor
 public enum FactoryLumi2 {
 
-    /// 创建 KernelCore 内核，并注册默认的 `ProjectProviding` 实现。
+    /// 创建 KernelCore 内核，并注册默认的 `ProjectProviding` 实现
+    /// （`ProviderProject.DefaultProjectProviding`）。
     ///
     /// - Returns: 已注册 `ProjectProviding` 的 KernelCore 容器。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
