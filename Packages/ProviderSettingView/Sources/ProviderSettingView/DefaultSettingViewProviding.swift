@@ -12,7 +12,18 @@ public final class DefaultSettingViewProviding: SettingViewProviding, Observable
     /// 当前选中入口的 id。
     @Published public private(set) var selectedEntryID: String?
 
+    /// 侧边栏顶部的自定义 Header（如 Logo + 应用名），由装配方注入。
+    ///
+    /// 使用 `AnyView` 注入使 Provider 不感知具体内容类型：宿主（如 FactoryLumi2）
+    /// 负责构造 Logo 头部视图，Provider 只负责渲染位置。
+    @Published public private(set) var sidebarHeader: AnyView?
+
     public init() {}
+
+    /// 注入侧边栏顶部 Header（如 Logo + 应用名 + 版本）。
+    public func setSidebarHeader(_ view: AnyView?) {
+        sidebarHeader = view
+    }
 
     public func registerEntries(_ entries: [SettingEntryItem]) {
         self.entries = entries.sorted { $0.order < $1.order }
@@ -44,33 +55,40 @@ private struct SettingView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // 左侧：入口列表
-            List {
-                ForEach(provider.entries) { entry in
-                    Button {
-                        selectedID = entry.id
-                        provider.selectEntry(id: entry.id)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: entry.systemImage)
-                                .frame(width: 20)
-                            Text(entry.title)
-                                .lineLimit(1)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.vertical, 4)
-                        .contentShape(Rectangle())
-                        .background(
-                            (selectedID ?? provider.selectedEntryID) == entry.id
-                                ? Color.accentColor.opacity(0.12)
-                                : Color.clear
-                        )
-                        .cornerRadius(6)
-                    }
-                    .buttonStyle(.plain)
+            // 左侧：顶部 Header（如 Logo）+ 入口列表
+            VStack(spacing: 0) {
+                if let header = provider.sidebarHeader {
+                    header
+                    Divider()
                 }
+
+                List {
+                    ForEach(provider.entries) { entry in
+                        Button {
+                            selectedID = entry.id
+                            provider.selectEntry(id: entry.id)
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: entry.systemImage)
+                                    .frame(width: 20)
+                                Text(entry.title)
+                                    .lineLimit(1)
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.vertical, 4)
+                            .contentShape(Rectangle())
+                            .background(
+                                (selectedID ?? provider.selectedEntryID) == entry.id
+                                    ? Color.accentColor.opacity(0.12)
+                                    : Color.clear
+                            )
+                            .cornerRadius(6)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .listStyle(.sidebar)
             }
-            .listStyle(.sidebar)
             .frame(width: 220)
 
             Divider()

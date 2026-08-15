@@ -98,6 +98,9 @@ public enum KernelFactory {
     /// 设置视图的入口由已启动的插件（如 SettingGeneralPlugin）贡献；
     /// 宿主只需把返回的视图放进设置窗口（如 `Window("设置")`）即可。
     ///
+    /// 复刻 LumiApp 设置体验：侧边栏顶部注入插件贡献的 Logo
+    /// （`SettingsSidebarHeaderView`，`about` 场景，无贡献时回退主题色图标）。
+    ///
     /// - Returns: 已装配的设置视图（`AnyView`）。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
     public static func makeSettingsView() throws -> AnyView {
@@ -105,6 +108,12 @@ public enum KernelFactory {
 
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
             return AnyView(Text("SettingViewProviding not registered"))
+        }
+
+        // 侧边栏顶部 Logo：取当前内核中最高优先级的插件 Logo（about 场景）。
+        let logo = kernel.resolveProvider((any LogoProviding).self)
+        if let defaultSettings = settings as? DefaultSettingViewProviding {
+            defaultSettings.setSidebarHeader(AnyView(SettingsSidebarHeaderView(logo: logo)))
         }
 
         return settings.makeSettingView()
