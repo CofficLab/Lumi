@@ -4,6 +4,7 @@ import ProviderNetwork
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import ProviderSettingView
 import ProviderToast
 import ProviderToolbar
 
@@ -34,6 +35,9 @@ public protocol ProviderFactory {
 
     /// 产出 `RailViewProviding` 实现。
     func makeRailViewProvider() -> any RailViewProviding
+
+    /// 产出 `SettingViewProviding` 实现。
+    func makeSettingViewProvider() -> any SettingViewProviding
 }
 
 /// 默认 `ProviderFactory` 实现：产出各 Provider 的默认实现。
@@ -74,5 +78,10 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `RailViewProviding` 实现（默认侧边栏标签 + 内容）。
     public func makeRailViewProvider() -> any RailViewProviding {
         DefaultRailViewProviding()
+    }
+
+    /// 产出 `SettingViewProviding` 实现（默认最简设置视图）。
+    public func makeSettingViewProvider() -> any SettingViewProviding {
+        DefaultSettingViewProviding()
     }
 }

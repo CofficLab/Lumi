@@ -5,8 +5,10 @@ import ProviderNetwork
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import ProviderSettingView
 import ProviderToast
 import ProviderToolbar
+import SwiftUI
 import Testing
 @testable import FactoryLumi2
 
@@ -77,6 +79,15 @@ struct FactoryLumi2Tests {
         #expect(resolved is DefaultRailViewProviding)
     }
 
+    @Test("makeKernel 创建内核并注册默认 SettingViewProviding")
+    func makeKernelRegistersDefaultSettingViewProviding() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let resolved: (any SettingViewProviding)? = kernel.resolveProvider((any SettingViewProviding).self)
+        #expect(resolved != nil)
+        #expect(resolved is DefaultSettingViewProviding)
+    }
+
     @Test("内核可解析出 ProjectProviding 并正常使用")
     func kernelResolvesUsableProvider() async throws {
         let kernel = try KernelFactory.makeKernel()
@@ -99,6 +110,7 @@ struct FactoryLumi2Tests {
         let rootView = factory.makeRootViewProvider()
         let activityBar = factory.makeActivityBarProvider()
         let railView = factory.makeRailViewProvider()
+        let settingView = factory.makeSettingViewProvider()
 
         #expect(project is DefaultProjectProviding)
         #expect(toast is DefaultToastProviding)
@@ -107,5 +119,20 @@ struct FactoryLumi2Tests {
         #expect(rootView is DefaultRootViewProviding)
         #expect(activityBar is DefaultActivityBarProviding)
         #expect(railView is DefaultRailViewProviding)
+        #expect(settingView is DefaultSettingViewProviding)
+    }
+
+    @Test("makeMainView 返回可渲染的根视图")
+    func makeMainViewReturnsRootView() throws {
+        let view = try KernelFactory.makeMainView()
+
+        #expect(type(of: view) == AnyView.self)
+    }
+
+    @Test("makeSettingsView 返回可渲染的设置视图")
+    func makeSettingsViewReturnsSettingsView() throws {
+        let view = try KernelFactory.makeSettingsView()
+
+        #expect(type(of: view) == AnyView.self)
     }
 }

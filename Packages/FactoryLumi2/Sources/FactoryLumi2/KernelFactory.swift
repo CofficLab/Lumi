@@ -5,6 +5,7 @@ import ProviderNetwork
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import ProviderSettingView
 import ProviderToast
 import ProviderToolbar
 import SwiftUI
@@ -12,8 +13,8 @@ import SwiftUI
 /// KernelFactory — 内核工厂。
 ///
 /// 负责创建 KernelCore 内核，内部通过 `DefaultProviderFactory` 装配各 Provider
-/// （Project / Toast / Network / Toolbar / RootView / ActivityBar / RailView）
-/// 并注册进内核。
+/// （Project / Toast / Network / Toolbar / RootView / ActivityBar / RailView /
+/// SettingView）并注册进内核。
 @MainActor
 public enum KernelFactory {
 
@@ -25,6 +26,7 @@ public enum KernelFactory {
     /// - `RootViewProviding` → `DefaultRootViewProviding`（工具栏 + 内容区）
     /// - `ActivityBarProviding` → `DefaultActivityBarProviding`（竖直入口栏）
     /// - `RailViewProviding` → `DefaultRailViewProviding`（侧边栏标签 + 内容）
+    /// - `SettingViewProviding` → `DefaultSettingViewProviding`（最简设置视图）
     ///
     /// - Returns: 已装配默认 Provider 的 KernelCore 容器。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
@@ -38,6 +40,7 @@ public enum KernelFactory {
         try kernel.registerProvider((any RootViewProviding).self, factory.makeRootViewProvider())
         try kernel.registerProvider((any ActivityBarProviding).self, factory.makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, factory.makeRailViewProvider())
+        try kernel.registerProvider((any SettingViewProviding).self, factory.makeSettingViewProvider())
         return kernel
     }
 
@@ -68,5 +71,23 @@ public enum KernelFactory {
         }
 
         return rootView.makeRootView()
+    }
+
+    // MARK: - Settings View Assembly
+
+    /// 创建内核并返回设置视图。
+    ///
+    /// 宿主只需把返回的视图放进设置窗口（如 `Window("设置")`）即可。
+    ///
+    /// - Returns: 已装配的设置视图（`AnyView`）。
+    /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
+    public static func makeSettingsView() throws -> AnyView {
+        let kernel = try makeKernel()
+
+        guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
+            return AnyView(Text("SettingViewProviding not registered"))
+        }
+
+        return settings.makeSettingView()
     }
 }
