@@ -40,5 +40,10 @@ let package = Package(
             ],
             path: "Sources/FactoryBookletMaker2"
         ),
+        .testTarget(
+            name: "FactoryBookletMaker2Tests",
+            dependencies: ["FactoryBookletMaker2"],
+            path: "Tests/FactoryBookletMaker2Tests"
+        ),
     ]
 )
