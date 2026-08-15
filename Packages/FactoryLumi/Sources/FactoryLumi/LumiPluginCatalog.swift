@@ -35,6 +35,7 @@ import ConversationListPlugin
 import ConversationMessageCountPlugin
 import ConversationContextSizePlugin
 import ConversationAgentTurnCountPlugin
+import ConversationCacheHitRatePlugin
 import ConversationNewPlugin
 import ConversationSpeedPlugin
 import ConversationManagerPlugin
@@ -240,6 +241,7 @@ public enum LumiPluginCatalog {
             ConversationMessageCountPlugin(),
             ConversationContextSizePlugin(),
             ConversationAgentTurnCountPlugin(),
+            ConversationCacheHitRatePlugin(),
             SettingsPlugin(),
             LogoPlugin(),
             LogoCofficPlugin(),
