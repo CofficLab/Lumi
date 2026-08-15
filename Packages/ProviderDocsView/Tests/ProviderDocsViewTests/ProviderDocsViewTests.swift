@@ -7,75 +7,70 @@ import Testing
 @MainActor
 struct ProviderDocsViewTests {
 
-    @Test("未设置时返回占位")
-    func defaultProviderReturnsPlaceholders() {
+    @Test("初始条目为空")
+    func defaultProviderStartsEmpty() {
         let provider = DefaultDocsViewProviding()
 
-        #expect(type(of: provider.makeAboutView()) == AnyView.self)
-        #expect(type(of: provider.makeManualView()) == AnyView.self)
+        #expect(provider.aboutEntries.isEmpty)
+        #expect(provider.manualEntries.isEmpty)
     }
 
-    @Test("设置后返回对应视图")
-    func defaultProviderReturnsSetViews() {
+    @Test("追加条目后可读取")
+    func defaultProviderStoresEntries() {
         let provider = DefaultDocsViewProviding()
-        provider.setAboutView(AnyView(Text("about")))
-        provider.setManualView(AnyView(Text("manual")))
+        provider.addAbout(DocsEntry(id: "device", name: "设备信息") { Text("about") })
+        provider.addManual(DocsEntry(id: "device", name: "设备信息") { Text("manual") })
 
-        #expect(type(of: provider.makeAboutView()) == AnyView.self)
-        #expect(type(of: provider.makeManualView()) == AnyView.self)
+        #expect(provider.aboutEntries.count == 1)
+        #expect(provider.aboutEntries[0].id == "device")
+        #expect(provider.aboutEntries[0].name == "设备信息")
+        #expect(provider.manualEntries.count == 1)
+        #expect(type(of: provider.aboutEntries[0].makeView()) == AnyView.self)
+        #expect(type(of: provider.manualEntries[0].makeView()) == AnyView.self)
     }
 
-    @Test("设置 nil 后回退到占位")
-    func defaultProviderClearsViews() {
+    @Test("同 id 追加去重")
+    func defaultProviderDeduplicatesEntries() {
         let provider = DefaultDocsViewProviding()
-        provider.setAboutView(AnyView(Text("about")))
-        provider.setManualView(AnyView(Text("manual")))
+        provider.addAbout(DocsEntry(id: "a", name: "A") { Text("a1") })
+        provider.addAbout(DocsEntry(id: "a", name: "A") { Text("a2") })
+        provider.addManual(DocsEntry(id: "b", name: "B") { Text("b1") })
+        provider.addManual(DocsEntry(id: "b", name: "B") { Text("b2") })
 
-        provider.setAboutView(nil)
-        provider.setManualView(nil)
-
-        #expect(type(of: provider.makeAboutView()) == AnyView.self)
-        #expect(type(of: provider.makeManualView()) == AnyView.self)
+        #expect(provider.aboutEntries.count == 1)
+        #expect(provider.manualEntries.count == 1)
     }
 
     @Test("DocsViewProviding 可作为 any DocsViewProviding 使用")
     func providerAccessibleThroughProtocol() {
         let provider: any DocsViewProviding = DefaultDocsViewProviding()
-        provider.setAboutView(AnyView(Text("about")))
-        provider.setManualView(AnyView(Text("manual")))
+        provider.addAbout(DocsEntry(id: "device", name: "设备信息") { Text("about") })
+        provider.addManual(DocsEntry(id: "device", name: "设备信息") { Text("manual") })
 
-        #expect(type(of: provider.makeAboutView()) == AnyView.self)
-        #expect(type(of: provider.makeManualView()) == AnyView.self)
+        #expect(provider.aboutEntries.count == 1)
+        #expect(provider.manualEntries.count == 1)
     }
 
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
         final class CustomDocsView: DocsViewProviding {
-            var aboutView: AnyView?
-            var manualView: AnyView?
+            var aboutEntries: [DocsEntry] = []
+            var manualEntries: [DocsEntry] = []
 
-            func setAboutView(_ view: AnyView?) {
-                aboutView = view
+            func replaceAboutEntries(_ entries: [DocsEntry]) {
+                aboutEntries = entries
             }
 
-            func setManualView(_ view: AnyView?) {
-                manualView = view
-            }
-
-            func makeAboutView() -> AnyView {
-                aboutView ?? AnyView(Text("custom about"))
-            }
-
-            func makeManualView() -> AnyView {
-                manualView ?? AnyView(Text("custom manual"))
+            func replaceManualEntries(_ entries: [DocsEntry]) {
+                manualEntries = entries
             }
         }
 
         let provider: any DocsViewProviding = CustomDocsView()
-        provider.setAboutView(AnyView(Text("custom about")))
-        provider.setManualView(AnyView(Text("custom manual")))
+        provider.addAbout(DocsEntry(id: "a", name: "A") { Text("about") })
+        provider.addManual(DocsEntry(id: "a", name: "A") { Text("manual") })
 
-        #expect(type(of: provider.makeAboutView()) == AnyView.self)
-        #expect(type(of: provider.makeManualView()) == AnyView.self)
+        #expect(provider.aboutEntries.count == 1)
+        #expect(provider.manualEntries.count == 1)
     }
 }
