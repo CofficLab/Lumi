@@ -11,6 +11,7 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
+import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 import SwiftUI
@@ -26,6 +27,7 @@ public enum KernelFactory {
 
     /// 创建 KernelCore 内核，装配并注册全部默认 Provider：
     /// - `StorageProviding` → `DefaultStorageProviding`（Application Support 磁盘存储）
+    /// - `ThemeProviding` → `DefaultThemeProviding`（内置主题注册表 + 选中持久化）
     /// - `ContentViewProviding` → `DefaultContentViewProviding`（当前内容视图）
     /// - `ProjectProviding` → `DefaultProjectProviding`
     /// - `ToastProviding` → `DefaultToastProviding`（no-op）
@@ -42,6 +44,16 @@ public enum KernelFactory {
         let factory = DefaultProviderFactory()
         let kernel = KernelCoreContainer()
         try kernel.registerProvider((any StorageProviding).self, factory.makeStorageProvider())
+
+        // 主题 Provider：选中主题持久化遵循 Storage 约定
+        // （<数据根目录>/Plugins/ThemeManager/theme-selection.plist）。
+        let themeProvider = factory.makeThemeProvider()
+        if let storage = kernel.resolveProvider((any StorageProviding).self),
+           let defaultTheme = themeProvider as? DefaultThemeProviding {
+            defaultTheme.setStorageDirectory(storage.pluginDataDirectory(for: "ThemeManager"))
+        }
+        try kernel.registerProvider((any ThemeProviding).self, themeProvider)
+
         try kernel.registerProvider((any ContentViewProviding).self, factory.makeContentViewProvider())
         try kernel.registerProvider((any DocsViewProviding).self, factory.makeDocsViewProvider())
         try kernel.registerProvider((any MenuBarProviding).self, factory.makeMenuBarProvider())

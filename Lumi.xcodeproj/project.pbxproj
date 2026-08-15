@@ -29,6 +29,7 @@
 		LF00000000000000001A /* LocalizationKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000019 /* LocalizationKit */; };
 		LMFL00000000000000B001 /* FactoryLumi2 in Frameworks */ = {isa = PBXBuildFile; productRef = LM0000000000000000000001 /* FactoryLumi2 */; };
 		LMPLG00000000000000B001 /* ProviderLogo in Frameworks */ = {isa = PBXBuildFile; productRef = LMPLG000000000000000001 /* ProviderLogo */; };
+		LMT00000000000000B001 /* ProviderTheme in Frameworks */ = {isa = PBXBuildFile; productRef = LMT000000000000000001 /* ProviderTheme */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -279,6 +280,7 @@
 			files = (
 				LMFL00000000000000B001 /* FactoryLumi2 in Frameworks */,
 				LMPLG00000000000000B001 /* ProviderLogo in Frameworks */,
+				LMT00000000000000B001 /* ProviderTheme in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -526,6 +528,7 @@
 			packageProductDependencies = (
 				LM0000000000000000000001 /* FactoryLumi2 */,
 				LMPLG000000000000000001 /* ProviderLogo */,
+				LMT000000000000000001 /* ProviderTheme */,
 			);
 			productName = LumiMinimal;
 			productReference = LM0000000000000000000002 /* LumiMinimal.app */;
@@ -592,6 +595,7 @@
 				FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMakerMobile" */,
 				BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker2" */,
 				LMPLG000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderLogo" */,
+				LMT000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderTheme" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -1043,6 +1047,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ProviderLogo;
 		};
+		LMT000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderTheme" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ProviderTheme;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1140,6 +1148,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = LMPLG000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderLogo" */;
 			productName = ProviderLogo;
+		};
+		LMT000000000000000001 /* ProviderTheme */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = LMT000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderTheme" */;
+			productName = ProviderTheme;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

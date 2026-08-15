@@ -10,6 +10,7 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
+import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 
@@ -22,6 +23,9 @@ import ProviderToolbar
 public protocol ProviderFactory {
     /// 产出 `StorageProviding` 实现。
     func makeStorageProvider() -> any StorageProviding
+
+    /// 产出 `ThemeProviding` 实现。
+    func makeThemeProvider() -> any ThemeProviding
 
     /// 产出 `ContentViewProviding` 实现。
     func makeContentViewProvider() -> any ContentViewProviding
@@ -68,6 +72,11 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `StorageProviding` 实现（默认 Application Support 磁盘存储）。
     public func makeStorageProvider() -> any StorageProviding {
         DefaultStorageProviding()
+    }
+
+    /// 产出 `ThemeProviding` 实现（默认内置主题注册表 + 选中持久化）。
+    public func makeThemeProvider() -> any ThemeProviding {
+        DefaultThemeProviding()
     }
 
     /// 产出 `ContentViewProviding` 实现（默认持有当前内容视图）。
