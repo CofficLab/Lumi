@@ -55,6 +55,20 @@ public final class PluginManagerPlugin: LumiPlugin {
 
     public func onReady(kernel: KernelLumi) async throws {}
 
+    /// 贡献「发现插件」动作胶囊：点击打开设置窗口并定位到本插件的
+    /// 「插件管理」标签页（终端动作，不发送消息）。
+    public func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] {
+        [
+            LumiPromptSuggestion(
+                id: "\(id).browse",
+                title: PluginManagerText.string(PluginManagerText.browsePlugins),
+                systemImage: "puzzlepiece.extension",
+                action: .openSettingsTab(id: id),
+                style: .additive
+            )
+        ]
+    }
+
     public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] {
         [
             SettingsTabItem(
