@@ -6,16 +6,21 @@ import UniformTypeIdentifiers
 import os
 
 /// 空态点击提示词的统一处理：
-/// 1. 若来源插件未启用，先启用它（含同步重建贡献——确保其视图容器等已注册）；
-/// 2. 执行提示词声明的动作（如激活来源插件的视图容器）；
-/// 3. 发送消息。
+/// 1. 终端动作（如 `.pickProjectFolder`）只执行动作、不发送消息；
+/// 2. 若来源插件未启用，先启用它（含同步重建贡献——确保其视图容器等已注册）；
+/// 3. 执行提示词声明的动作（如激活来源插件的视图容器）；
+/// 4. 发送消息。
 ///
 /// `conversationID` 传 `nil`，由 `MessageSender` 选取当前选中会话；
 /// 若当前未选中会话（`NoConversationSelectedView` 场景）则自动新建一个。
+///
+/// - Parameter onPickProjectFolder: 宿主接线的「打开项目文件夹选择器」回调，
+///   由持有 fileImporter 的空态视图提供；未接线时忽略 `.pickProjectFolder`。
 @MainActor
 private func handlePromptSuggestionTap(
     _ suggestion: LumiPromptSuggestion,
-    kernel: KernelLumi
+    kernel: KernelLumi,
+    onPickProjectFolder: (() -> Void)? = nil
 ) {
     let pluginID = suggestion.pluginID
     let needsEnable = suggestion.requiresEnable
@@ -25,6 +30,21 @@ private func handlePromptSuggestionTap(
     let sender = kernel.messageSender
     let workspace = kernel.workspace
     Task { @MainActor in
+        // 终端动作：只执行动作，不启用插件、不发送消息。
+        switch action {
+        case .pickProjectFolder:
+            onPickProjectFolder?()
+            return
+        case .openSettingsTab(let tabID):
+            NotificationCenter.default.post(
+                name: .lumiOpenSettingsTab,
+                object: nil,
+                userInfo: [LumiNotificationUserInfoKey.settingsTabID: tabID]
+            )
+            return
+        case nil, .activateViewContainer, .activateRailTab:
+            break
+        }
         if needsEnable, let pluginID, let control {
             if await control.enablePlugin(id: pluginID) {
                 let pluginName = kernel.pluginManager.plugin(id: pluginID)?.name ?? pluginID
@@ -58,6 +78,10 @@ private func performPromptAction(_ action: LumiPromptAction?, workspace: (any Wo
         // 先激活容器（确保其 rail 可见），再定位到指定 tab。
         workspace?.activateContainer(id: containerID)
         workspace?.presentRailTab(id: railTabID, for: containerID)
+    case .pickProjectFolder, .openSettingsTab:
+        // 终端动作：在 `handlePromptSuggestionTap` 里已先行处理（打开选择器/
+        // 设置标签、不发送消息），此处不会到达。
+        break
     }
 }
 
@@ -65,19 +89,25 @@ private func performPromptAction(_ action: LumiPromptAction?, workspace: (any Wo
 ///
 /// 镜像 `LumiUI.AppTag` 的强调风格（主题色玻璃底 + 悬停放大/高亮），
 /// 支持前置图标，用于替换空态里观感较「原始」的原生 `.bordered` 按钮。
+/// `.additive` 风格用于「添加型」动作胶囊：虚线描边、无底色，与提示词并列
+/// 展示但视觉可区分。
 private struct PromptSuggestionChip: View {
     @LumiTheme private var theme
     @LumiMotionPreferenceReader private var motionPreference
 
     private let title: String
     private let systemImage: String?
+    private let style: LumiPromptSuggestionStyle
 
     @State private var isHovered = false
 
-    init(title: String, systemImage: String?) {
+    init(title: String, systemImage: String?, style: LumiPromptSuggestionStyle = .standard) {
         self.title = title
         self.systemImage = systemImage
+        self.style = style
     }
+
+    private var isAdditive: Bool { style == .additive }
 
     var body: some View {
         HStack(spacing: 6) {
@@ -89,18 +119,25 @@ private struct PromptSuggestionChip: View {
                 .font(.appCaption)
                 .lineLimit(1)
         }
-        .foregroundStyle(theme.textPrimary)
+        .foregroundStyle(isAdditive ? theme.textSecondary : theme.textPrimary)
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
         .background(
             Capsule(style: .continuous)
-                .fill(isHovered ? theme.primary.opacity(0.22) : theme.primary.opacity(0.12))
+                .fill(
+                    isHovered
+                        ? theme.primary.opacity(0.22)
+                        : (isAdditive ? Color.clear : theme.primary.opacity(0.12))
+                )
         )
         .overlay(
             Capsule(style: .continuous)
                 .strokeBorder(
-                    isHovered ? theme.primary.opacity(0.40) : theme.primary.opacity(0.22),
-                    lineWidth: 1
+                    isHovered ? theme.primary.opacity(0.40) : theme.primary.opacity(isAdditive ? 0.35 : 0.22),
+                    style: StrokeStyle(
+                        lineWidth: 1,
+                        dash: isAdditive ? [4, 3] : []
+                    )
                 )
         )
         .scaleEffect(isHovered && motionPreference.allowsMotion ? LumiMotion.hoverScale : 1.0)
@@ -115,25 +152,99 @@ private struct PromptSuggestionChip: View {
 }
 
 /// 提示词胶囊按钮：点击发送该提示词（必要时先启用来源插件、执行声明动作）。
+/// 终端动作（如添加项目）只执行动作、不发送消息。
 private struct PromptSuggestionButton: View {
     private let suggestion: LumiPromptSuggestion
     private let kernel: KernelLumi
+    private let onPickProjectFolder: (() -> Void)?
 
-    init(_ suggestion: LumiPromptSuggestion, kernel: KernelLumi) {
+    init(
+        _ suggestion: LumiPromptSuggestion,
+        kernel: KernelLumi,
+        onPickProjectFolder: (() -> Void)? = nil
+    ) {
         self.suggestion = suggestion
         self.kernel = kernel
+        self.onPickProjectFolder = onPickProjectFolder
     }
 
     var body: some View {
         Button {
-            handlePromptSuggestionTap(suggestion, kernel: kernel)
+            handlePromptSuggestionTap(suggestion, kernel: kernel, onPickProjectFolder: onPickProjectFolder)
         } label: {
             PromptSuggestionChip(
                 title: suggestion.title,
-                systemImage: suggestion.systemImage
+                systemImage: suggestion.systemImage,
+                style: suggestion.style
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// 按项目可见性过滤提示词（空态通用规则）。
+@MainActor
+private func visibilityFilteredPromptSuggestions(
+    _ suggestions: [LumiPromptSuggestion],
+    hasProject: Bool
+) -> [LumiPromptSuggestion] {
+    suggestions.filter { suggestion in
+        switch suggestion.visibility {
+        case .always: true
+        case .onlyWithProject: hasProject
+        case .onlyWithoutProject: !hasProject
+        }
+    }
+}
+
+/// 「选择项目文件夹」的共用接线：fileImporter + 失败弹窗，选中目录后经
+/// `ProjectProviding.openProject(at:)` 添加并切换项目。
+///
+/// `errorMessage` 是共享错误通道：视图内其它项目操作（如标题菜单切换项目）失败时
+/// 也可写入以复用同一个弹窗。
+private struct ProjectFolderPicker: ViewModifier {
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.message-list.project-picker"
+    )
+
+    @Binding var isPresented: Bool
+    @Binding var errorMessage: String?
+    let projectService: (any ProjectProviding)?
+
+    func body(content: Content) -> some View {
+        content
+            .fileImporter(
+                isPresented: $isPresented,
+                allowedContentTypes: [.folder],
+                allowsMultipleSelection: false
+            ) { result in
+                guard case let .success(urls) = result, let url = urls.first else { return }
+                let service = projectService
+                Task { @MainActor in
+                    do {
+                        try await service?.openProject(at: url.path)
+                    } catch {
+                        Self.logger.error("📂 添加项目失败 \(url.path): \(error.localizedDescription)")
+                        errorMessage = error.localizedDescription
+                    }
+                }
+            }
+            .alert(
+                LumiPluginLocalization.string("Failed to Open Project", bundle: .module),
+                isPresented: Binding(
+                    get: { errorMessage != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            errorMessage = nil
+                        }
+                    }
+                )
+            ) {
+                Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
+            } message: {
+                Text(errorMessage ?? "")
+            }
     }
 }
 
@@ -182,14 +293,13 @@ struct NoConversationSelectedView: View {
 
     private var titleFont: Font { .system(size: 18, weight: .semibold) }
 
-    /// 内核聚合后的全部提示词（来自各启用插件，按 order 排序）。
-    /// 无当前项目时过滤掉声明了 `requiresProject` 的提示词（它们依赖项目上下文）。
+    /// 内核聚合后的全部提示词（来自各启用插件，按 order 排序），
+    /// 按项目可见性过滤（如「添加项目」胶囊仅在无项目时展示）。
     private var promptSuggestions: [LumiPromptSuggestion] {
-        let all = kernel.promptSuggestions?.allPromptSuggestions ?? []
-        guard currentProject != nil else {
-            return all.filter { !$0.requiresProject }
-        }
-        return all
+        visibilityFilteredPromptSuggestions(
+            kernel.promptSuggestions?.allPromptSuggestions ?? [],
+            hasProject: currentProject != nil
+        )
     }
 
     var body: some View {
@@ -200,10 +310,10 @@ struct NoConversationSelectedView: View {
 
             if projects.isEmpty {
                 // 无任何项目：项目可选，不显示嵌入项目菜单的标题（避免出现
-                // 「关于当前项目…」这类无指代对象的病句），改用通用问候语
-                // + 「添加项目」按钮（位于提示词上方）。
+                // 「关于当前项目…」这类无指代对象的病句），改用通用问候语。
+                // 「添加项目」入口由 Projects 插件以 `.additive` 动作胶囊贡献，
+                // 随提示词一并列展示。
                 noProjectTitleView
-                addProjectButton
             } else {
                 titleView
             }
@@ -214,28 +324,13 @@ struct NoConversationSelectedView: View {
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .fileImporter(
-            isPresented: $isImporterPresented,
-            allowedContentTypes: [.folder],
-            allowsMultipleSelection: false
-        ) { result in
-            handleAddProject(result)
-        }
-        .alert(
-            LumiPluginLocalization.string("Failed to Open Project", bundle: .module),
-            isPresented: Binding(
-                get: { errorMessage != nil },
-                set: { isPresented in
-                    if !isPresented {
-                        errorMessage = nil
-                    }
-                }
+        .modifier(
+            ProjectFolderPicker(
+                isPresented: $isImporterPresented,
+                errorMessage: $errorMessage,
+                projectService: project
             )
-        ) {
-            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
-        } message: {
-            Text(errorMessage ?? "")
-        }
+        )
     }
 
     /// 将标题模板按 `%@` 拆分为前缀/后缀，项目名作为中间的可交互元素。
@@ -254,17 +349,8 @@ struct NoConversationSelectedView: View {
             .multilineTextAlignment(.center)
     }
 
-    /// 无项目时的「添加项目」按钮（位于提示词上方）：点击打开文件夹选择器。
-    private var addProjectButton: some View {
-        AppButton(
-            LumiPluginLocalization.string("Add Project…", bundle: .module),
-            systemImage: "folder.badge.plus",
-            style: .secondary,
-            size: .small
-        ) {
-            isImporterPresented = true
-        }
-    }
+    /// 无项目时的「添加项目」按钮已改为由 Projects 插件贡献的 `.additive` 动作胶囊，
+    /// 随提示词一并列展示；此处仅保留选择器接线供胶囊与标题菜单共用。
 
     /// 标题：前缀 + 项目名下拉菜单 + 后缀，仅项目名是可交互元素。
     private var titleView: some View {
@@ -285,12 +371,17 @@ struct NoConversationSelectedView: View {
     }
 
     /// 标题下方的提示词芯片：点击直接发送该提示词（新建对话）；若来源插件未启用，
-    /// 会先启用它。带 `+` 徽标的芯片表示其插件当前未启用。
+    /// 会先启用它。带 `+` 徽标的芯片表示其插件当前未启用；虚线胶囊是动作入口
+    ///（如「添加项目」），点击不发送消息。
     private var promptChips: some View {
         FlowLayout(spacing: 8) {
             ForEach(Array(promptSuggestions.enumerated()), id: \.element.id) { index, suggestion in
-                PromptSuggestionButton(suggestion, kernel: kernel)
-                    .landingAppear(delay: Double(index) * 0.04)
+                PromptSuggestionButton(
+                    suggestion,
+                    kernel: kernel,
+                    onPickProjectFolder: { isImporterPresented = true }
+                )
+                .landingAppear(delay: Double(index) * 0.04)
             }
         }
         .frame(maxWidth: 480)
@@ -343,19 +434,6 @@ struct NoConversationSelectedView: View {
             }
         }
     }
-
-    private func handleAddProject(_ result: Result<[URL], any Error>) {
-        guard case let .success(urls) = result, let url = urls.first else { return }
-        let projectService = project
-        Task {
-            do {
-                try await projectService?.openProject(at: url.path)
-            } catch {
-                Self.logger.error("📂 添加项目失败 \(url.path): \(error.localizedDescription)")
-                errorMessage = error.localizedDescription
-            }
-        }
-    }
 }
 
 /// 将 `ProjectProviding` 的更新桥接给 SwiftUI，同时避免直接观察协议存在类型。
@@ -395,6 +473,10 @@ struct MessageEmptyStateView: View {
     @State private var apiKey = ""
     @State private var saveError: String?
 
+    /// 「添加项目」动作胶囊接线的文件夹选择器与共享错误通道。
+    @State private var isImporterPresented = false
+    @State private var projectErrorMessage: String?
+
     init(kernel: KernelLumi) {
         self.kernel = kernel
         _promptObserver = StateObject(
@@ -423,9 +505,13 @@ struct MessageEmptyStateView: View {
         provider?.apiKeyDiagnostic() == .configured
     }
 
-    /// 内核聚合后的全部提示词（来自各插件，按 order 排序）。
+    /// 内核聚合后的全部提示词（来自各插件，按 order 排序），
+    /// 按项目可见性过滤（与未选对话空态同一规则）。
     private var promptSuggestions: [LumiPromptSuggestion] {
-        kernel.promptSuggestions?.allPromptSuggestions ?? []
+        visibilityFilteredPromptSuggestions(
+            kernel.promptSuggestions?.allPromptSuggestions ?? [],
+            hasProject: kernel.project?.currentProject != nil
+        )
     }
 
     var body: some View {
@@ -448,8 +534,12 @@ struct MessageEmptyStateView: View {
                 if !promptSuggestions.isEmpty {
                     FlowLayout(spacing: 8) {
                         ForEach(Array(promptSuggestions.enumerated()), id: \.element.id) { index, suggestion in
-                            PromptSuggestionButton(suggestion, kernel: kernel)
-                                .landingAppear(delay: Double(index) * 0.04)
+                            PromptSuggestionButton(
+                                suggestion,
+                                kernel: kernel,
+                                onPickProjectFolder: { isImporterPresented = true }
+                            )
+                            .landingAppear(delay: Double(index) * 0.04)
                         }
                     }
                     .frame(maxWidth: 520)
@@ -487,6 +577,13 @@ struct MessageEmptyStateView: View {
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .modifier(
+            ProjectFolderPicker(
+                isPresented: $isImporterPresented,
+                errorMessage: $projectErrorMessage,
+                projectService: kernel.project
+            )
+        )
         .onAppear {
             apiKey = provider?.getApiKey() ?? ""
         }
