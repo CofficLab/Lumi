@@ -1,0 +1,22 @@
+//
+// BookletMakerApp2.xcconfig
+// BookletMakerApp2 target（Debug 与 Release 共用）。
+//
+
+#include "Config/App-Shared.xcconfig"
+
+// 产物
+PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmakerapp2
+INFOPLIST_KEY_CFBundleDisplayName = BookletMaker2
+INFOPLIST_FILE = BookletMakerApp2/BookletMakerApp2-Info.plist
+
+// 沙盒：关闭（与其它独立 app 一致）
+ENABLE_APP_SANDBOX = NO
+ENABLE_USER_SELECTED_FILES = readwrite
+
+// 权限
+CODE_SIGN_ENTITLEMENTS = BookletMakerApp2/App.entitlements
+
+// 版本号
+MARKETING_VERSION = 1.0.0
+CURRENT_PROJECT_VERSION = 1

@@ -12,6 +12,7 @@
 		0B7F9C3E30306DC5001526F4 /* ProjectRAGPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = F5CBA1A53020000000425FF6 /* ProjectRAGPlugin */; };
 		AIFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = AIFC000000000000000001 /* FactoryCore */; };
 		AIFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = AIFL000000000000000001 /* FactoryLumi */; };
+		BM2AFB000000000000000B001 /* FactoryBookletMaker2 in Frameworks */ = {isa = PBXBuildFile; productRef = BM2AFB0000000000000000001 /* FactoryBookletMaker2 */; };
 		BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFB000000000000000001 /* FactoryBookletMaker */; };
 		BMFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFC000000000000000001 /* FactoryCore */; };
 		CDFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = CDFC000000000000000001 /* FactoryCore */; };
@@ -64,6 +65,8 @@
 		AI0000000000000000000002 /* AppIconDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppIconDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BEB5089FCE8F5EB98AEF0906 /* LumiFinder-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "LumiFinder-Debug.xcconfig"; path = "Config/LumiFinder-Debug.xcconfig"; sourceTree = "<group>"; };
 		BM0000000000000000000002 /* BookletMaker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BookletMaker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BM2A00000000000000000002 /* BookletMakerApp2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BookletMakerApp2.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BM2A000000000000000000B1 /* BookletMakerApp2.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = BookletMakerApp2.xcconfig; path = BookletMakerApp2/BookletMakerApp2.xcconfig; sourceTree = "<group>"; };
 		CD0000000000000000000002 /* CADDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CADDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DB0000000000000000000002 /* DatabaseManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DatabaseManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD36141333F791471BC94F98 /* BookletMaker.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = BookletMaker.xcconfig; path = Config/BookletMaker.xcconfig; sourceTree = "<group>"; };
@@ -89,6 +92,13 @@
 				"BookletMaker-Info.plist",
 			);
 			target = BM0000000000000000000009 /* BookletMaker */;
+		};
+		BM2A00000000000000000003 /* Exceptions for "BookletMakerApp2" folder in "BookletMakerApp2" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"BookletMakerApp2-Info.plist",
+			);
+			target = BM2A00000000000000000009 /* BookletMakerApp2 */;
 		};
 		CD0000000000000000000003 /* Exceptions for "CADDesignerApp" folder in "CADDesigner" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -142,6 +152,14 @@
 				BM0000000000000000000003 /* Exceptions for "BookletMakerApp" folder in "BookletMaker" target */,
 			);
 			path = BookletMakerApp;
+			sourceTree = "<group>";
+		};
+		BM2A00000000000000000004 /* BookletMakerApp2 */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BM2A00000000000000000003 /* Exceptions for "BookletMakerApp2" folder in "BookletMakerApp2" target */,
+			);
+			path = BookletMakerApp2;
 			sourceTree = "<group>";
 		};
 		CD0000000000000000000004 /* CADDesignerApp */ = {
@@ -203,6 +221,14 @@
 				BMFC00000000000000B001 /* FactoryCore in Frameworks */,
 				BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */,
 				FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BM2A00000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BM2AFB000000000000000B001 /* FactoryBookletMaker2 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -271,6 +297,7 @@
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
 				AI0000000000000000000004 /* AppIconDesignerApp */,
 				BM0000000000000000000004 /* BookletMakerApp */,
+				BM2A00000000000000000004 /* BookletMakerApp2 */,
 				CD0000000000000000000004 /* CADDesignerApp */,
 				DB0000000000000000000004 /* DatabaseManagerApp */,
 				LM0000000000000000000004 /* LumiMinimalApp */,
@@ -281,6 +308,7 @@
 				CD0000000000000000000002 /* CADDesigner.app */,
 				DB0000000000000000000002 /* DatabaseManager.app */,
 				LM0000000000000000000002 /* LumiMinimal.app */,
+				BM2A00000000000000000002 /* BookletMakerApp2.app */,
 				LF000000000000000001 /* LumiFinder.appex */,
 				0BBD822C30067A13005CCD05 /* Frameworks */,
 				7BACB91084647EBF2FC35695 /* Project-Debug.xcconfig */,
@@ -290,6 +318,7 @@
 				70E0C23EA196F323323F057B /* CADDesigner.xcconfig */,
 				08B37721AB3348660D4B2D5E /* DatabaseManager.xcconfig */,
 				LM00000000000000000000B1 /* LumiMinimal.xcconfig */,
+				BM2A000000000000000000B1 /* BookletMakerApp2.xcconfig */,
 				4991976404FE2623D0C4E068 /* Lumi-Debug.xcconfig */,
 				57BB92AADE19B8FAE116DCAD /* Lumi-Release.xcconfig */,
 				BEB5089FCE8F5EB98AEF0906 /* LumiFinder-Debug.xcconfig */,
@@ -347,6 +376,29 @@
 			);
 			productName = BookletMaker;
 			productReference = BM0000000000000000000002 /* BookletMaker.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BM2A00000000000000000009 /* BookletMakerApp2 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BM2A0000000000000000000F /* Build configuration list for PBXNativeTarget "BookletMakerApp2" */;
+			buildPhases = (
+				BM2A00000000000000000007 /* Sources */,
+				BM2A00000000000000000005 /* Frameworks */,
+				BM2A00000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				BM2A00000000000000000004 /* BookletMakerApp2 */,
+			);
+			name = BookletMakerApp2;
+			packageProductDependencies = (
+				BM2AFB0000000000000000001 /* FactoryBookletMaker2 */,
+			);
+			productName = BookletMakerApp2;
+			productReference = BM2A00000000000000000002 /* BookletMakerApp2.app */;
 			productType = "com.apple.product-type.application";
 		};
 		CD0000000000000000000009 /* CADDesigner */ = {
@@ -492,6 +544,9 @@
 					BM0000000000000000000009 = {
 						CreatedOnToolsVersion = 16.4;
 					};
+					BM2A00000000000000000009 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 					CD0000000000000000000009 = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -532,6 +587,7 @@
 				F5DBBA0000000000DBGP0001 /* XCLocalSwiftPackageReference "Plugins/DebugBadgePlugin" */,
 				F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/ProjectRAGPlugin" */,
 				FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMakerMobile" */,
+				BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker2" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -544,6 +600,7 @@
 				CD0000000000000000000009 /* CADDesigner */,
 				DB0000000000000000000009 /* DatabaseManager */,
 				LM0000000000000000000009 /* LumiMinimal */,
+				BM2A00000000000000000009 /* BookletMakerApp2 */,
 				LF000000000000000002 /* LumiFinder */,
 			);
 		};
@@ -558,6 +615,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BM0000000000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BM2A00000000000000000006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -661,6 +725,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BM2A00000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CD0000000000000000000007 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -731,6 +802,20 @@
 		BM000000000000000000000E /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = DD36141333F791471BC94F98 /* BookletMaker.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		BM2A0000000000000000000D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = BM2A000000000000000000B1 /* BookletMakerApp2.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		BM2A0000000000000000000E /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = BM2A000000000000000000B1 /* BookletMakerApp2.xcconfig */;
 			buildSettings = {
 			};
 			name = Release;
@@ -840,6 +925,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		BM2A0000000000000000000F /* Build configuration list for PBXNativeTarget "BookletMakerApp2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BM2A0000000000000000000D /* Debug */,
+				BM2A0000000000000000000E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		CD000000000000000000000F /* Build configuration list for PBXNativeTarget "CADDesigner" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -897,6 +991,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker2" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FactoryBookletMaker2;
+		};
 		F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/AppUpdatePlugin" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Plugins/AppUpdatePlugin;
@@ -949,6 +1047,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
 			productName = FactoryLumi;
+		};
+		BM2AFB0000000000000000001 /* FactoryBookletMaker2 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker2" */;
+			productName = FactoryBookletMaker2;
 		};
 		BMFB000000000000000001 /* FactoryBookletMaker */ = {
 			isa = XCSwiftPackageProductDependency;
