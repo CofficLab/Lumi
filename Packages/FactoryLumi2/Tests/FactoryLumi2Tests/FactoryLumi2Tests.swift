@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import ProviderNetwork
 import ProviderProject
 import ProviderToast
 import Testing
@@ -56,15 +57,35 @@ struct FactoryLumi2Tests {
         #expect(project?.currentProject?.path == "/Users/me/Code/Lumi")
     }
 
+    @Test("makeKernel 创建内核并注册默认 NetworkProviding")
+    func makeKernelRegistersDefaultNetworkProviding() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let resolved: (any NetworkProviding)? = kernel.resolveProvider((any NetworkProviding).self)
+        #expect(resolved != nil)
+        #expect(resolved is DefaultNetworkProviding)
+    }
+
+    @Test("makeKernel 支持注入自定义 NetworkProviding 实现")
+    func makeKernelAcceptsCustomNetworkProvider() throws {
+        let provider = CustomNetworkProvider()
+        let kernel = try KernelFactory.makeKernel(networkProvider: provider)
+
+        let resolved: (any NetworkProviding)? = kernel.resolveProvider((any NetworkProviding).self)
+        #expect(resolved as? CustomNetworkProvider === provider)
+    }
+
     @Test("ProviderFactory 产出默认 Provider 实现")
     func providerFactoryMakesDefaults() {
         let factory = DefaultProviderFactory()
 
         let project = factory.makeProjectProvider()
         let toast = factory.makeToastProvider()
+        let network = factory.makeNetworkProvider()
 
         #expect(project is DefaultProjectProviding)
         #expect(toast is DefaultToastProviding)
+        #expect(network is DefaultNetworkProviding)
     }
 
     @Test("makeKernel(providers:) 使用自定义 ProviderFactory 注册")
@@ -74,12 +95,14 @@ struct FactoryLumi2Tests {
 
         let project: (any ProjectProviding)? = kernel.resolveProvider((any ProjectProviding).self)
         let toast: (any ToastProviding)? = kernel.resolveProvider((any ToastProviding).self)
+        let network: (any NetworkProviding)? = kernel.resolveProvider((any NetworkProviding).self)
 
         #expect(project is CustomProjectProvider)
         #expect(toast is CustomToastProvider)
+        #expect(network is CustomNetworkProvider)
     }
 
-    /// 测试用自定义工厂：覆盖两种 Provider 的产出。
+    /// 测试用自定义工厂：覆盖所有 Provider 的产出。
     private struct CustomProviderFactory: ProviderFactory {
         func makeProjectProvider() -> any ProjectProviding {
             CustomProjectProvider()
@@ -87,6 +110,10 @@ struct FactoryLumi2Tests {
 
         func makeToastProvider() -> any ToastProviding {
             CustomToastProvider()
+        }
+
+        func makeNetworkProvider() -> any NetworkProviding {
+            CustomNetworkProvider()
         }
     }
 
@@ -110,6 +137,21 @@ struct FactoryLumi2Tests {
 
         func show(_ toast: LumiToast) {
             received.append(toast)
+        }
+    }
+
+    /// 测试用自定义网络实现。
+    private final class CustomNetworkProvider: NetworkProviding {
+        func request(_ request: HTTPRequest) async throws -> HTTPResponse {
+            HTTPResponse(statusCode: 200, headers: [:], body: Data(), url: request.url)
+        }
+
+        func stream(
+            _ request: HTTPRequest,
+            onResponse: @Sendable @escaping (HTTPResponseMetadata) async -> Void,
+            onChunk: @Sendable @escaping (Data) async -> Bool
+        ) async throws {
+            await onResponse(HTTPResponseMetadata(statusCode: 200, headers: [:], url: request.url))
         }
     }
 }

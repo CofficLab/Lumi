@@ -1,4 +1,5 @@
 import Foundation
+import ProviderNetwork
 import ProviderProject
 import ProviderToast
 
@@ -14,6 +15,9 @@ public protocol ProviderFactory {
 
     /// 产出 `ToastProviding` 实现。
     func makeToastProvider() -> any ToastProviding
+
+    /// 产出 `NetworkProviding` 实现。
+    func makeNetworkProvider() -> any NetworkProviding
 }
 
 /// 默认 `ProviderFactory` 实现：产出各 Provider 的默认实现。
@@ -29,5 +33,10 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `ToastProviding` 实现（默认 no-op 实现）。
     public func makeToastProvider() -> any ToastProviding {
         DefaultToastProviding()
+    }
+
+    /// 产出 `NetworkProviding` 实现（默认 URLSession 实现）。
+    public func makeNetworkProvider() -> any NetworkProviding {
+        DefaultNetworkProviding()
     }
 }

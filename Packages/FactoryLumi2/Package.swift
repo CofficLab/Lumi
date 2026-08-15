@@ -9,6 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../ProviderNetwork"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderToast"),
     ],
@@ -17,6 +18,7 @@ let package = Package(
             name: "FactoryLumi2",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderNetwork", package: "ProviderNetwork"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderToast", package: "ProviderToast"),
             ],
