@@ -106,6 +106,10 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
         localeIdentifier: String
     ) throws -> AppStorePromoTask {
         let normalized = try Self.validatedSlug(slug)
+        let requestedLocale = localeIdentifier.isEmpty ? "en-US" : localeIdentifier
+        guard let normalizedLocale = AppStorePromoLocale.normalize(requestedLocale) else {
+            throw AppStorePromoStoreError.invalidLocale(localeIdentifier)
+        }
         let directory = try taskDirectoryURL(storagePath: storagePath, taskSlug: normalized)
         guard !fileManager.fileExists(atPath: directory.path) else {
             throw AppStorePromoStoreError.alreadyExists(directory.path)
@@ -114,10 +118,6 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
             at: directory.appendingPathComponent(Self.imagesDirectoryName, isDirectory: true),
             withIntermediateDirectories: true
         )
-        let requestedLocale = localeIdentifier.isEmpty ? "en-US" : localeIdentifier
-        guard let normalizedLocale = AppStorePromoLocale.normalize(requestedLocale) else {
-            throw AppStorePromoStoreError.invalidLocale(localeIdentifier)
-        }
         let task = AppStorePromoTask(
             id: normalized,
             title: title.isEmpty ? normalized : title,
@@ -154,6 +154,13 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
               !task.images.contains(where: { $0.id == normalizedImageSlug }) else {
             throw AppStorePromoStoreError.alreadyExists(imageDirectory.path)
         }
+        let resolvedHTML = html ?? AppStorePromoTemplateFactory.html(
+            title: title.isEmpty ? normalizedImageSlug : title,
+            appName: task.appName,
+            family: task.deviceFamily
+        )
+        let report = linter.lint(html: resolvedHTML, documentDirectory: imageDirectory)
+        guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
         try fileManager.createDirectory(
             at: imageDirectory.appendingPathComponent(Self.assetsDirectoryName, isDirectory: true),
             withIntermediateDirectories: true
@@ -167,13 +174,6 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
             createdAt: now,
             updatedAt: now
         )
-        let resolvedHTML = html ?? AppStorePromoTemplateFactory.html(
-            title: image.title,
-            appName: task.appName,
-            family: task.deviceFamily
-        )
-        let report = linter.lint(html: resolvedHTML, documentDirectory: imageDirectory)
-        guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
         try resolvedHTML.write(
             to: imageDirectory.appendingPathComponent(image.htmlFileName),
             atomically: true,
@@ -385,6 +385,7 @@ public struct AppStorePromoDocumentStore: @unchecked Sendable {
     }
 
     public static func resolvePath(_ path: String) -> String {
+        guard !path.isEmpty else { return "" }
         let expanded = (path as NSString).expandingTildeInPath
         let resolved = URL(fileURLWithPath: expanded).resolvingSymlinksInPath().standardizedFileURL.path
         return resolved.hasSuffix("/") ? String(resolved.dropLast()) : resolved
