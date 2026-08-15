@@ -8,15 +8,21 @@ let package = Package(
         .library(name: "FactoryLumi2", targets: ["FactoryLumi2"]),
     ],
     dependencies: [
+        .package(path: "../KernelCore"),
         .package(path: "../ProviderProject"),
     ],
     targets: [
         .target(
             name: "FactoryLumi2",
             dependencies: [
+                .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
             ],
             path: "Sources/FactoryLumi2"
         ),
+        .testTarget(
+            name: "FactoryLumi2Tests",
+            dependencies: ["FactoryLumi2"]
+        )
     ]
 )

@@ -1,11 +1,29 @@
 import Foundation
+import KernelCore
 import ProviderProject
 
-/// FactoryLumi2 — 占位命名空间。
+/// FactoryLumi2 — 工厂命名空间。
 ///
-/// 当前为骨架包，已依赖 ProviderProject（负责 ProjectProviding 相关内容）。
-/// 后续在此扩展。
+/// 负责创建 KernelCore 内核，并把各 Provider 包（如 ProviderProject）注册进内核。
+@MainActor
 public enum FactoryLumi2 {
-    /// 占位引用，确保 ProviderProject 依赖在编译期生效。
-    static let placeholder = ProjectProviding.self
+
+    /// 创建 KernelCore 内核，并注册默认的 `ProjectProviding` 实现。
+    ///
+    /// - Returns: 已注册 `ProjectProviding` 的 KernelCore 容器。
+    /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
+    public static func makeKernel() throws -> KernelCoreContainer {
+        try makeKernel(projectProvider: DefaultProjectProviding())
+    }
+
+    /// 创建 KernelCore 内核，并注册自定义的 `ProjectProviding` 实现。
+    ///
+    /// - Parameter projectProvider: 由调用方提供的项目管理实现。
+    /// - Returns: 已注册 `ProjectProviding` 的 KernelCore 容器。
+    /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
+    public static func makeKernel(projectProvider: any ProjectProviding) throws -> KernelCoreContainer {
+        let kernel = KernelCoreContainer()
+        try kernel.registerProvider((any ProjectProviding).self, projectProvider)
+        return kernel
+    }
 }
