@@ -1,5 +1,7 @@
 # Lumi 代码编辑器技术架构
 
+> 本文描述当前实现。面向目标架构、Kernel/插件完整重构、功能规划和分阶段迁移的实施蓝图，见 [`editor-kernel-plugin-rearchitecture-plan.md`](./editor-kernel-plugin-rearchitecture-plan.md)。
+
 ## 概述
 
 Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本渲染与语法高亮，中层承载无 UI 的编辑逻辑与服务门面，上层通过插件贡献命令、LSP 能力、面板与工作区 UI。依赖方向严格自下而上，内核不依赖插件，插件之间不互相依赖。
@@ -15,8 +17,13 @@ Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本�
                              │ 装配 & 注入
 ┌────────────────────────────▼────────────────────────────────────┐
 │ 插件扩展层 (Plugins/)                                            │
+│  ┌─ Editor Host ────────────────────────────────────────────┐  │
+│  │ EditorHostPlugin — 唯一持有 EditorService 的宿主插件:      │  │
+│  │ OnBoot 注册具象 EditorService、FileTree/TabStrip 协同器、  │  │
+│  │ legacy EditorProviding 与 V2 契约 kernel.editorV2         │  │
+│  └──────────────────────────────────────────────────────────┘  │
 │  ┌─ UI Shell ───────────────────────────────────────────────┐  │
-│  │ EditorPanelPlugin — 工作区布局、SourceEditor、Overlay     │  │
+│  │ EditorPanelPlugin — 工作区布局,经 kernel.editorV2.surface │  │
 │  │ EditorTabStrip / Breadcrumb / Rail* / Bottom* — 面板子插件  │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │  ┌─ 语言插件 ───────────────────────────────────────────────┐  │
@@ -147,6 +154,7 @@ Lumi 代码编辑器采用**分层 + 插件扩展**架构。底层负责文本�
 | `EditorKernel` | 内核逻辑层 | `Packages/EditorKernel` |
 | `EditorService` | 服务门面层 | `Packages/EditorService` |
 | `EditorChatInputKit` | 邻接（聊天输入） | `Packages/EditorChatInputKit` |
+| `EditorHostPlugin` | 插件 — Editor Host（唯一持有 EditorService） | `Plugins/EditorHostPlugin` |
 | `EditorPanelPlugin` | 插件 — UI Shell | `Plugins/EditorPanelPlugin` |
 
 ## LSP 配置注册机制

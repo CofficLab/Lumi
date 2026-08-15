@@ -59,6 +59,14 @@
 > 已验证无收益而放弃的假设:`.textSelection` 从每行提升到 List 级(SelectionOverlay/trackingArea churn 并非主因,5 次对比在噪声内)。
 > **遗留决策点**:剩余成本为 SwiftUI `List` 惰性行物化的结构性开销(AG 视图图重建 + 文本排版,无法在纯 SwiftUI 内跨物化复用)。若真机体感仍不达标,建议启用并完善 `MessageListAppKitPlugin`(已具 `heightOfRow` + `AppKitMessageLayoutCache` + cell 复用骨架,当前 disabled/.dev)——需另行立项评估回归风险。
 
+> **📎 滚动专项第二轮:SwiftUI 路径极限优化(2026-08-15)**
+> 在不动 AppKit 插件的前提下,清除生产行 chrome 渲染路径上所有"每次 body 求值/每次重物化都重做"的工作:
+> - **纯缓存化**:`NSFullUserName()` 目录服务查询、`Color(hex:)` 解析(AvatarView 预构建)、`LumiLocalization.string` 结果级记忆化(原每次调用做 bundle 路径探测,LocalizationKit 内修复惠及全部插件)、`ErrorMessageView` 解析器双跑、`MessageViewChrome` token/thinking 双计算、`CollapsiblePlainText` 无守卫整串切分、`ToolCallRowView` 注册表二次查找 + AnyView 闭包、`AppIdentityRow` 逐条 trim。
+> - **高影响修复**:① `ToolCallResolutionCache`——工具调用结果按消息 id 进程级缓存(仅全解析完成才缓存,进行中回合不钉死),行重物化不再逐个 await kernel;② `MessageAttachmentDecodeCache` + `AppImageDecodeCache`——用户消息附件 JSON/base64 解码与位图解码各缓存一次;③ `CopyMessageButton` 内容改惰性闭包(空消息的 metadata dump 不再进渲染路径)。
+> - **行结构精简(产品已确认 UX 变化)**:操作按钮组(复制/重发/思考/详情/info)仅在行悬停 150ms 后物化,离开即隐藏;防抖刻意防"滚动时光标下行的 hover 风暴"。时间戳/token 文本常驻。
+> - **按证据跳过**:状态行 `PulseRipple` 门控——数据模型中 status 行全部为瞬态(turn 结束即清除),不存在"终态 status 行",当前行为已等价于"仅进行中动画"意图。
+> - **测量教训**:本轮 harness 复测揭示环境噪声在 ±40% 量级主导(同一二进制在不同时间窗测得 2.3~4.5ms/趟);跨时间窗对比无效,只接受同一时间窗内的交错 A/B。chrome 层收益无法用纯 MarkdownKit harness 量化,以真机体感验收为准。
+
 ### 阶段 1:高收益、低风险(建议先做)
 
 **P1 — fittingSize 缓存失效**
