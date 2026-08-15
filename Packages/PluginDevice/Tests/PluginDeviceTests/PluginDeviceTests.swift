@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderContentView
+import ProviderDocsView
 import ProviderSettingView
 import SwiftUI
 import Testing
@@ -10,13 +11,15 @@ import Testing
 @MainActor
 struct PluginDeviceTests {
 
-    @Test("onBoot 注册设置入口并把设备信息设为主内容")
-    func onBootRegistersEntryAndContentView() throws {
+    @Test("onBoot 注册设置入口、主内容与文档")
+    func onBootRegistersEntryContentViewAndDocs() throws {
         let kernel = KernelCoreContainer()
         let settings = DefaultSettingViewProviding()
         let contentView = DefaultContentViewProviding()
+        let docs = DefaultDocsViewProviding()
         try kernel.registerProvider((any SettingViewProviding).self, settings)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)
+        try kernel.registerProvider((any DocsViewProviding).self, docs)
 
         let plugin = DevicePlugin()
         try plugin.onBoot(kernel: kernel)
@@ -30,6 +33,15 @@ struct PluginDeviceTests {
 
         // 主内容视图
         #expect(type(of: contentView.makeContentView()) == AnyView.self)
+
+        // 文档：关于 + 说明书
+        #expect(docs.aboutEntries.count == 1)
+        #expect(docs.aboutEntries[0].id == plugin.id)
+        #expect(docs.aboutEntries[0].name == "设备信息")
+        #expect(docs.manualEntries.count == 1)
+        #expect(docs.manualEntries[0].id == plugin.id)
+        #expect(type(of: docs.aboutEntries[0].makeView()) == AnyView.self)
+        #expect(type(of: docs.manualEntries[0].makeView()) == AnyView.self)
     }
 
     @Test("onBoot 追加语义不覆盖已有入口")

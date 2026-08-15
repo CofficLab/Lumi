@@ -1,6 +1,7 @@
 import Foundation
 import ProviderActivityBar
 import ProviderContentView
+import ProviderDocsView
 import ProviderNetwork
 import ProviderProject
 import ProviderRailView
@@ -22,6 +23,9 @@ public protocol ProviderFactory {
 
     /// 产出 `ContentViewProviding` 实现。
     func makeContentViewProvider() -> any ContentViewProviding
+
+    /// 产出 `DocsViewProviding` 实现。
+    func makeDocsViewProvider() -> any DocsViewProviding
 
     /// 产出 `ProjectProviding` 实现。
     func makeProjectProvider() -> any ProjectProviding
@@ -61,6 +65,11 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `ContentViewProviding` 实现（默认持有当前内容视图）。
     public func makeContentViewProvider() -> any ContentViewProviding {
         DefaultContentViewProviding()
+    }
+
+    /// 产出 `DocsViewProviding` 实现（默认持有文档条目数组）。
+    public func makeDocsViewProvider() -> any DocsViewProviding {
+        DefaultDocsViewProviding()
     }
 
     /// 产出 `ProjectProviding` 实现（默认内存实现）。

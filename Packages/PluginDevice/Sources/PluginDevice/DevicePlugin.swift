@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderContentView
+import ProviderDocsView
 import ProviderSettingView
 import SwiftUI
 
@@ -7,10 +8,10 @@ import SwiftUI
 ///
 /// 在设置视图中注册「设备信息」入口，详情展示设备静态信息与动态指标
 /// （CPU / 内存 / 磁盘 / 电池 / 运行时间）；并把设备信息视图注册为
-/// 当前主内容视图（ContentView）。
+/// 当前主内容视图（ContentView）；同时贡献「关于」与「说明书」文档。
 ///
-/// 通过 `SuperPlugin.onBoot(kernel:)` 解析内核中的 `SettingViewProviding`
-/// 与 `ContentViewProviding`，用追加语义注册，不覆盖其他插件的贡献。
+/// 通过 `SuperPlugin.onBoot(kernel:)` 解析内核中的各 Provider，
+/// 用追加语义注册，不覆盖其他插件的贡献。
 @MainActor
 public final class DevicePlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.device"
@@ -35,6 +36,12 @@ public final class DevicePlugin: SuperPlugin {
         // 2. 注册设备信息视图为主内容（ContentView）
         if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
             contentView.setContentView(AnyView(DeviceInfoView()))
+        }
+
+        // 3. 贡献「关于」与「说明书」文档
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: "设备信息") { DeviceInfoAboutView() })
+            docs.addManual(DocsEntry(id: id, name: "设备信息") { DeviceInfoManualView() })
         }
     }
 }

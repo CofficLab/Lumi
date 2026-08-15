@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import ProviderActivityBar
 import ProviderContentView
+import ProviderDocsView
 import ProviderNetwork
 import ProviderProject
 import ProviderRailView
@@ -172,14 +173,14 @@ struct FactoryLumi2Tests {
         #expect(toolbar?.toolbarItems.first(where: { $0.id == "settings" })?.placement == .trailing)
     }
 
-    @Test("makeKernel 注册 ContentViewProviding 且插件已设置内容")
-    func makeKernelRegistersContentViewProviding() throws {
+    @Test("makeKernel 注册 DocsViewProviding 且 DevicePlugin 已贡献文档")
+    func makeKernelRegistersDocsViewProviding() throws {
         let kernel = try KernelFactory.makeKernel()
 
-        let contentView = kernel.resolveProvider((any ContentViewProviding).self)
-        #expect(contentView != nil)
-        #expect(contentView is DefaultContentViewProviding)
-        let view = contentView?.makeContentView()
-        #expect(view != nil)
+        let docs = kernel.resolveProvider((any DocsViewProviding).self)
+        #expect(docs != nil)
+        #expect(docs is DefaultDocsViewProviding)
+        #expect(docs?.aboutEntries.contains(where: { $0.id == "com.coffic.lumi.plugin.device" }) == true)
+        #expect(docs?.manualEntries.contains(where: { $0.id == "com.coffic.lumi.plugin.device" }) == true)
     }
 }
