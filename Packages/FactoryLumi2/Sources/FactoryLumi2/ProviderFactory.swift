@@ -2,6 +2,7 @@ import Foundation
 import ProviderNetwork
 import ProviderProject
 import ProviderToast
+import ProviderWindow
 
 /// 产出各种 Provider 实现的工厂协议。
 ///
@@ -18,6 +19,9 @@ public protocol ProviderFactory {
 
     /// 产出 `NetworkProviding` 实现。
     func makeNetworkProvider() -> any NetworkProviding
+
+    /// 产出 `WindowProviding` 实现。
+    func makeWindowProvider() -> any WindowProviding
 }
 
 /// 默认 `ProviderFactory` 实现：产出各 Provider 的默认实现。
@@ -38,5 +42,10 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `NetworkProviding` 实现（默认 URLSession 实现）。
     public func makeNetworkProvider() -> any NetworkProviding {
         DefaultNetworkProviding()
+    }
+
+    /// 产出 `WindowProviding` 实现（默认占位根视图）。
+    public func makeWindowProvider() -> any WindowProviding {
+        DefaultWindowProviding()
     }
 }

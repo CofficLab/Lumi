@@ -3,11 +3,12 @@ import KernelCore
 import ProviderNetwork
 import ProviderProject
 import ProviderToast
+import ProviderWindow
 
 /// KernelFactory — 内核工厂命名空间。
 ///
 /// 负责创建 KernelCore 内核，并通过 `ProviderFactory` 产出各 Provider
-/// （如 ProviderProject、ProviderToast、ProviderNetwork）注册进内核。
+/// （如 ProviderProject、ProviderToast、ProviderNetwork、ProviderWindow）注册进内核。
 @MainActor
 public enum KernelFactory {
 
@@ -17,6 +18,7 @@ public enum KernelFactory {
     /// - `ProjectProviding` → `DefaultProjectProviding`
     /// - `ToastProviding` → `DefaultToastProviding`（no-op）
     /// - `NetworkProviding` → `DefaultNetworkProviding`（URLSession）
+    /// - `WindowProviding` → `DefaultWindowProviding`（占位根视图）
     ///
     /// - Returns: 已注册默认 Provider 的 KernelCore 容器。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
@@ -34,6 +36,7 @@ public enum KernelFactory {
         try kernel.registerProvider((any ProjectProviding).self, providers.makeProjectProvider())
         try kernel.registerProvider((any ToastProviding).self, providers.makeToastProvider())
         try kernel.registerProvider((any NetworkProviding).self, providers.makeNetworkProvider())
+        try kernel.registerProvider((any WindowProviding).self, providers.makeWindowProvider())
         return kernel
     }
 
@@ -64,6 +67,15 @@ public enum KernelFactory {
         try makeKernel(providers: ProviderOverrides(networkProvider: networkProvider))
     }
 
+    /// 创建 KernelCore 内核，注册自定义 `WindowProviding`，其余用默认实现。
+    ///
+    /// - Parameter windowProvider: 由调用方提供的主窗口根视图实现。
+    /// - Returns: 已注册 Provider 的 KernelCore 容器。
+    /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
+    public static func makeKernel(windowProvider: any WindowProviding) throws -> KernelCoreContainer {
+        try makeKernel(providers: ProviderOverrides(windowProvider: windowProvider))
+    }
+
     /// 创建 KernelCore 内核，注册自定义 `ProjectProviding` 与 `ToastProviding`。
     ///
     /// - Parameters:
@@ -88,15 +100,18 @@ public enum KernelFactory {
         var projectProvider: (any ProjectProviding)?
         var toastProvider: (any ToastProviding)?
         var networkProvider: (any NetworkProviding)?
+        var windowProvider: (any WindowProviding)?
 
         init(
             projectProvider: (any ProjectProviding)? = nil,
             toastProvider: (any ToastProviding)? = nil,
-            networkProvider: (any NetworkProviding)? = nil
+            networkProvider: (any NetworkProviding)? = nil,
+            windowProvider: (any WindowProviding)? = nil
         ) {
             self.projectProvider = projectProvider
             self.toastProvider = toastProvider
             self.networkProvider = networkProvider
+            self.windowProvider = windowProvider
         }
 
         func makeProjectProvider() -> any ProjectProviding {
@@ -109,6 +124,10 @@ public enum KernelFactory {
 
         func makeNetworkProvider() -> any NetworkProviding {
             networkProvider ?? base.makeNetworkProvider()
+        }
+
+        func makeWindowProvider() -> any WindowProviding {
+            windowProvider ?? base.makeWindowProvider()
         }
     }
 }

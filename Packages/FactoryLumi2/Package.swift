@@ -12,6 +12,7 @@ let package = Package(
         .package(path: "../ProviderNetwork"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderToast"),
+        .package(path: "../ProviderWindow"),
     ],
     targets: [
         .target(
@@ -21,6 +22,7 @@ let package = Package(
                 .product(name: "ProviderNetwork", package: "ProviderNetwork"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderToast", package: "ProviderToast"),
+                .product(name: "ProviderWindow", package: "ProviderWindow"),
             ],
             path: "Sources/FactoryLumi2"
         ),

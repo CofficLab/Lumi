@@ -3,6 +3,8 @@ import KernelCore
 import ProviderNetwork
 import ProviderProject
 import ProviderToast
+import ProviderWindow
+import SwiftUI
 import Testing
 @testable import FactoryLumi2
 
@@ -75,6 +77,24 @@ struct FactoryLumi2Tests {
         #expect(resolved as? CustomNetworkProvider === provider)
     }
 
+    @Test("makeKernel 创建内核并注册默认 WindowProviding")
+    func makeKernelRegistersDefaultWindowProviding() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let resolved: (any WindowProviding)? = kernel.resolveProvider((any WindowProviding).self)
+        #expect(resolved != nil)
+        #expect(resolved is DefaultWindowProviding)
+    }
+
+    @Test("makeKernel 支持注入自定义 WindowProviding 实现")
+    func makeKernelAcceptsCustomWindowProvider() throws {
+        let provider = CustomWindowProvider()
+        let kernel = try KernelFactory.makeKernel(windowProvider: provider)
+
+        let resolved: (any WindowProviding)? = kernel.resolveProvider((any WindowProviding).self)
+        #expect(resolved as? CustomWindowProvider === provider)
+    }
+
     @Test("ProviderFactory 产出默认 Provider 实现")
     func providerFactoryMakesDefaults() {
         let factory = DefaultProviderFactory()
@@ -82,10 +102,12 @@ struct FactoryLumi2Tests {
         let project = factory.makeProjectProvider()
         let toast = factory.makeToastProvider()
         let network = factory.makeNetworkProvider()
+        let window = factory.makeWindowProvider()
 
         #expect(project is DefaultProjectProviding)
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
+        #expect(window is DefaultWindowProviding)
     }
 
     @Test("makeKernel(providers:) 使用自定义 ProviderFactory 注册")
@@ -96,10 +118,12 @@ struct FactoryLumi2Tests {
         let project: (any ProjectProviding)? = kernel.resolveProvider((any ProjectProviding).self)
         let toast: (any ToastProviding)? = kernel.resolveProvider((any ToastProviding).self)
         let network: (any NetworkProviding)? = kernel.resolveProvider((any NetworkProviding).self)
+        let window: (any WindowProviding)? = kernel.resolveProvider((any WindowProviding).self)
 
         #expect(project is CustomProjectProvider)
         #expect(toast is CustomToastProvider)
         #expect(network is CustomNetworkProvider)
+        #expect(window is CustomWindowProvider)
     }
 
     /// 测试用自定义工厂：覆盖所有 Provider 的产出。
@@ -114,6 +138,10 @@ struct FactoryLumi2Tests {
 
         func makeNetworkProvider() -> any NetworkProviding {
             CustomNetworkProvider()
+        }
+
+        func makeWindowProvider() -> any WindowProviding {
+            CustomWindowProvider()
         }
     }
 
@@ -152,6 +180,13 @@ struct FactoryLumi2Tests {
             onChunk: @Sendable @escaping (Data) async -> Bool
         ) async throws {
             await onResponse(HTTPResponseMetadata(statusCode: 200, headers: [:], url: request.url))
+        }
+    }
+
+    /// 测试用自定义窗口实现。
+    private final class CustomWindowProvider: WindowProviding {
+        func makeRootView() -> AnyView {
+            AnyView(Text("custom window"))
         }
     }
 }
