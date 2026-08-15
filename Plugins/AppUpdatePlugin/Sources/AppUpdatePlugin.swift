@@ -94,16 +94,7 @@ public final class AppUpdatePlugin: LumiPlugin {
     public func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView { content }
     public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
     public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
-        AnyView(
-            VStack(alignment: .leading, spacing: 6) {
-                Text(LumiPluginLocalization.string("App Update", bundle: .module))
-                    .font(.headline)
-                Text(pluginDescription)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 4)
-        )
+        AnyView(AppUpdateAboutView())
     }
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
