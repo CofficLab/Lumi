@@ -440,32 +440,36 @@ private struct CachedMarkdownInlineText: View {
 
 /// 仅支持水平滚动的 NSScrollView 包装。
 /// 垂直方向的滚轮事件会被转发给视图层级中的外层 NSScrollView（即聊天列表），
-/// 从而实现：代码块水平可滚动、垂直滚动由外层列表接管。
+/// 从而实现：代码块水平可滚动、垂直滚动由外层 List 接管。
 ///
 /// 关键设计：使用 `sizeThatFits` 让 SwiftUI 布局系统感知到内容的真实高度，
 /// 避免 NSScrollView 作为 documentView 时高度被外层 List 行高估算截断。
 ///
 /// 性能优化：`NSHostingView.fittingSize` 是昂贵操作（每帧调用会阻塞主线程）。
-/// 这里按 proposal.width 分桶（16pt 一档）缓存高度。只要代码内容不变（`updateNSView`
-/// 不被调用），窗口缩放期间直接返回缓存高度，避免每帧重新测量。
-struct HorizontalScrollView<Content: View>: NSViewRepresentable {
+/// 测量结果按（内容指纹, proposal.width 分桶）缓存在 `HorizontalFittingSizeCache`
+/// （可单测的纯逻辑单元）中；`updateNSView` 在内容指纹未变时不重设 rootView、
+/// 不清缓存，流式间歇与父视图重求值不再触发全内容重测量（P1）。
+struct HorizontalScrollView<Fingerprint: Hashable, Content: View>: NSViewRepresentable {
+    /// 内容指纹：必须覆盖所有影响渲染结果的输入（文本、字体等）。
+    /// 指纹未变时跳过 rootView 重设并复用测量缓存。
+    let contentFingerprint: Fingerprint
     let content: Content
 
-    init(@ViewBuilder content: () -> Content) {
+    init(
+        contentFingerprint: Fingerprint,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.contentFingerprint = contentFingerprint
         self.content = content()
     }
 
     // MARK: - Coordinator
 
-    /// 持有按宽度分桶的高度缓存，避免每帧调用 `fittingSize`。
+    /// 持有高度测量缓存与已安装的内容指纹。
     final class Coordinator {
-        /// 最近一次测量的缓存。`bucketedWidth` 是 proposal.width 按 16pt 分桶后的值。
-        var cachedSize: CachedSize?
-
-        struct CachedSize {
-            let bucketedWidth: CGFloat
-            let height: CGFloat
-        }
+        var cache = HorizontalFittingSizeCache<Fingerprint>()
+        /// 当前已安装进 NSHostingView 的内容指纹。
+        var installedFingerprint: Fingerprint?
     }
 
     func makeCoordinator() -> Coordinator {
@@ -482,19 +486,21 @@ struct HorizontalScrollView<Content: View>: NSViewRepresentable {
         }
 
         let proposalWidth = proposal.width ?? 0
-        // 按 16pt 分桶，容忍小幅宽度变化，避免每帧重新测量
-        let bucketedWidth = (proposalWidth / 16).rounded(.down) * 16
 
-        // 检查缓存：如果宽度在同一分桶内，直接返回缓存高度
-        if let cached = context.coordinator.cachedSize,
-           cached.bucketedWidth == bucketedWidth {
-            return CGSize(width: proposalWidth, height: cached.height)
+        // 缓存命中（内容指纹 + 宽度分桶一致）：直接返回缓存高度，
+        // 不触碰昂贵的 fittingSize。
+        if let cachedHeight = context.coordinator.cache.cachedHeight(
+            fingerprint: contentFingerprint,
+            proposedWidth: proposalWidth
+        ) {
+            return CGSize(width: proposalWidth, height: cachedHeight)
         }
 
         // 缓存未命中：调用 fittingSize 并缓存结果
         let size = hostingView.fittingSize
-        context.coordinator.cachedSize = Coordinator.CachedSize(
-            bucketedWidth: bucketedWidth,
+        context.coordinator.cache.store(
+            fingerprint: contentFingerprint,
+            proposedWidth: proposalWidth,
             height: size.height
         )
         return CGSize(width: proposalWidth, height: size.height)
@@ -525,16 +531,23 @@ struct HorizontalScrollView<Content: View>: NSViewRepresentable {
             hostingView.widthAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.widthAnchor),
         ])
 
+        context.coordinator.installedFingerprint = contentFingerprint
         return scrollView
     }
 
     func updateNSView(_ nsView: HorizontalOnlyScrollView, context: Context) {
-        if let hostingView = nsView.documentView as? NSHostingView<Content> {
-            hostingView.rootView = content
+        guard let hostingView = nsView.documentView as? NSHostingView<Content> else {
+            return
         }
-        // Content changed — invalidate the cached measurement so the next
-        // `sizeThatFits` call recomputes the height for the new content.
-        context.coordinator.cachedSize = nil
+        // 内容指纹未变（流式间歇、父视图重求值等）：不重设 rootView、
+        // 保留测量缓存。旧实现此处无条件清缓存 + 重设 rootView，
+        // 是流式输出后期每帧全内容重测量的根因（P1）。
+        // 指纹变化时 `cachedHeight` 的指纹校验自然失效，无需显式清缓存。
+        guard context.coordinator.installedFingerprint != contentFingerprint else {
+            return
+        }
+        hostingView.rootView = content
+        context.coordinator.installedFingerprint = contentFingerprint
     }
 }
 

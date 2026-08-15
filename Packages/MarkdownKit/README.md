@@ -28,6 +28,10 @@ targets: [
 ]
 ```
 
+## Docs
+
+- [docs/rendering-performance.md](docs/rendering-performance.md) —— 渲染性能设计:缓存体系、`HorizontalScrollView` 测量缓存契约、可测试性模式与基准测量方法
+
 ## Testing
 
 From this package directory:

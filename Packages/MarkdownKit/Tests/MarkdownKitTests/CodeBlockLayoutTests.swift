@@ -267,7 +267,8 @@ struct CodeBlockLayoutTests {
         width: CGFloat,
         height: CGFloat = 50
     ) async throws -> (NSHostingView<some View>, HorizontalOnlyScrollView) {
-        let scrollView = HorizontalScrollView { content }
+        // 测量场景内容静态不变，用一次性指纹即可命中测量缓存路径
+        let scrollView = HorizontalScrollView(contentFingerprint: UUID()) { content }
 
         let hostingView = NSHostingView(rootView: scrollView.frame(width: width))
         hostingView.frame = CGRect(origin: .zero, size: CGSize(width: width, height: height))
