@@ -111,7 +111,7 @@ private struct RailView: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                     }
-                    .frame(minWidth: 200, idealWidth: 260, maxWidth: 360, maxHeight: .infinity)
+                    .frame(minWidth: 200, idealWidth: 228, maxWidth: 360, maxHeight: .infinity)
                     .background(Color.primary.opacity(0.015))
 
                     Divider()
