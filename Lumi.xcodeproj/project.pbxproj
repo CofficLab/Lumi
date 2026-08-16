@@ -27,9 +27,6 @@
 		LF000000000000000014 /* LumiFinder.appex in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = LF000000000000000001 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		LF000000000000000015 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* SuperLogKit */; };
 		LF00000000000000001A /* LocalizationKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000019 /* LocalizationKit */; };
-		LMFL00000000000000B001 /* FactoryLumi2 in Frameworks */ = {isa = PBXBuildFile; productRef = LM0000000000000000000001 /* FactoryLumi2 */; };
-		LMPLG00000000000000B001 /* ProviderLogo in Frameworks */ = {isa = PBXBuildFile; productRef = LMPLG000000000000000001 /* ProviderLogo */; };
-		LMT00000000000000B001 /* ProviderTheme in Frameworks */ = {isa = PBXBuildFile; productRef = LMT000000000000000001 /* ProviderTheme */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,8 +73,6 @@
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		LF000000000000000001 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		LM0000000000000000000002 /* LumiMinimal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LumiMinimal.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		LM00000000000000000000B1 /* LumiMinimal.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = LumiMinimal.xcconfig; path = LumiMinimalApp/LumiMinimalApp.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -129,13 +124,6 @@
 				Info.plist,
 			);
 			target = LF000000000000000002 /* LumiFinder */;
-		};
-		LM0000000000000000000003 /* Exceptions for "LumiMinimalApp" folder in "LumiMinimal" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"LumiMinimalApp-Info.plist",
-			);
-			target = LM0000000000000000000009 /* LumiMinimal */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -194,14 +182,6 @@
 				LF000000000000000010 /* Exceptions for "Plugins/RClickPlugin/FinderExtension" folder in "LumiFinder" target */,
 			);
 			path = Plugins/RClickPlugin/FinderExtension;
-			sourceTree = "<group>";
-		};
-		LM0000000000000000000004 /* LumiMinimalApp */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				LM0000000000000000000003 /* Exceptions for "LumiMinimalApp" folder in "LumiMinimal" target */,
-			);
-			path = LumiMinimalApp;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -274,18 +254,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		LM0000000000000000000005 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				LMFL00000000000000B001 /* FactoryLumi2 in Frameworks */,
-				LMPLG00000000000000B001 /* ProviderLogo in Frameworks */,
-				LMT00000000000000B001 /* ProviderTheme in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
-
 /* Begin PBXGroup section */
 		0BBD822C30067A13005CCD05 /* Frameworks */ = {
 			isa = PBXGroup;
@@ -304,14 +273,12 @@
 				BM2A00000000000000000004 /* BookletMakerApp2 */,
 				CD0000000000000000000004 /* CADDesignerApp */,
 				DB0000000000000000000004 /* DatabaseManagerApp */,
-				LM0000000000000000000004 /* LumiMinimalApp */,
 				LF000000000000000009 /* Plugins/RClickPlugin/FinderExtension */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				AI0000000000000000000002 /* AppIconDesigner.app */,
 				BM0000000000000000000002 /* BookletMaker.app */,
 				CD0000000000000000000002 /* CADDesigner.app */,
 				DB0000000000000000000002 /* DatabaseManager.app */,
-				LM0000000000000000000002 /* LumiMinimal.app */,
 				BM2A00000000000000000002 /* BookletMakerApp2.app */,
 				LF000000000000000001 /* LumiFinder.appex */,
 				0BBD822C30067A13005CCD05 /* Frameworks */,
@@ -321,7 +288,6 @@
 				DD36141333F791471BC94F98 /* BookletMaker.xcconfig */,
 				70E0C23EA196F323323F057B /* CADDesigner.xcconfig */,
 				08B37721AB3348660D4B2D5E /* DatabaseManager.xcconfig */,
-				LM00000000000000000000B1 /* LumiMinimal.xcconfig */,
 				BM2A000000000000000000B1 /* BookletMakerApp2.xcconfig */,
 				4991976404FE2623D0C4E068 /* Lumi-Debug.xcconfig */,
 				57BB92AADE19B8FAE116DCAD /* Lumi-Release.xcconfig */,
@@ -509,31 +475,6 @@
 			productReference = LF000000000000000001 /* LumiFinder.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		LM0000000000000000000009 /* LumiMinimal */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = LM000000000000000000000F /* Build configuration list for PBXNativeTarget "LumiMinimal" */;
-			buildPhases = (
-				LM0000000000000000000007 /* Sources */,
-				LM0000000000000000000005 /* Frameworks */,
-				LM0000000000000000000006 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				LM0000000000000000000004 /* LumiMinimalApp */,
-			);
-			name = LumiMinimal;
-			packageProductDependencies = (
-				LM0000000000000000000001 /* FactoryLumi2 */,
-				LMPLG000000000000000001 /* ProviderLogo */,
-				LMT000000000000000001 /* ProviderTheme */,
-			);
-			productName = LumiMinimal;
-			productReference = LM0000000000000000000002 /* LumiMinimal.app */;
-			productType = "com.apple.product-type.application";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -565,9 +506,6 @@
 					LF000000000000000002 = {
 						CreatedOnToolsVersion = 16.4;
 					};
-					LM0000000000000000000009 = {
-						CreatedOnToolsVersion = 16.4;
-					};
 				};
 			};
 			buildConfigurationList = F54F8C792F1A3B6500AABB2A /* Build configuration list for PBXProject "Lumi" */;
@@ -594,8 +532,6 @@
 				F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/ProjectRAGPlugin" */,
 				FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMakerMobile" */,
 				BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker2" */,
-				LMPLG000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderLogo" */,
-				LMT000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderTheme" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -607,7 +543,6 @@
 				AI0000000000000000000009 /* AppIconDesigner */,
 				CD0000000000000000000009 /* CADDesigner */,
 				DB0000000000000000000009 /* DatabaseManager */,
-				LM0000000000000000000009 /* LumiMinimal */,
 				BM2A00000000000000000009 /* BookletMakerApp2 */,
 				LF000000000000000002 /* LumiFinder */,
 			);
@@ -659,13 +594,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		LF000000000000000005 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		LM0000000000000000000006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -762,13 +690,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		LF000000000000000003 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		LM0000000000000000000007 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -898,20 +819,6 @@
 			};
 			name = Release;
 		};
-		LM000000000000000000000D /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = LM00000000000000000000B1 /* LumiMinimal.xcconfig */;
-			buildSettings = {
-			};
-			name = Debug;
-		};
-		LM000000000000000000000E /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = LM00000000000000000000B1 /* LumiMinimal.xcconfig */;
-			buildSettings = {
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -987,15 +894,6 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		LM000000000000000000000F /* Build configuration list for PBXNativeTarget "LumiMinimal" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				LM000000000000000000000D /* Debug */,
-				LM000000000000000000000E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -1042,14 +940,6 @@
 		LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/LocalizationKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/LocalizationKit;
-		};
-		LMPLG000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderLogo" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/ProviderLogo;
-		};
-		LMT000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderTheme" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/ProviderTheme;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -1138,21 +1028,6 @@
 		LF000000000000000019 /* LocalizationKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LocalizationKit;
-		};
-		LM0000000000000000000001 /* FactoryLumi2 */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi2" */;
-			productName = FactoryLumi2;
-		};
-		LMPLG000000000000000001 /* ProviderLogo */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = LMPLG000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderLogo" */;
-			productName = ProviderLogo;
-		};
-		LMT000000000000000001 /* ProviderTheme */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = LMT000000000000000002 /* XCLocalSwiftPackageReference "Packages/ProviderTheme" */;
-			productName = ProviderTheme;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
