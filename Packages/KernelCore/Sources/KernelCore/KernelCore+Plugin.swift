@@ -15,10 +15,10 @@ extension KernelCoreContainer {
 
     // MARK: - Enable-state persistence
 
-    /// 计算插件的有效启用状态：`required` 策略强制启用；
+    /// 计算插件的有效启用状态：`required` / `alwaysOn` 策略强制启用；
     /// 否则优先持久化覆盖（先查新 ID，再回退旧 ID 别名），无记录时默认启用。
     func effectiveEnabledState(for plugin: any SuperPlugin) -> Bool {
-        if plugin.metadata.policy == .required { return true }
+        if plugin.metadata.policy == .required || plugin.metadata.policy == .alwaysOn { return true }
         return storedEnabledState(for: plugin.id) ?? true
     }
 

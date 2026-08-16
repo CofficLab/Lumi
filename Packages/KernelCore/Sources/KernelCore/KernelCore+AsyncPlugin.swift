@@ -200,7 +200,7 @@ public extension KernelCoreContainer {
             throw KernelCoreError.pluginNotFound(id: id)
         }
         guard isPluginEnabled(id: id) else { return }
-        guard plugin.metadata.policy != .required else {
+        guard plugin.metadata.policy != .required && plugin.metadata.policy != .alwaysOn else {
             throw KernelCoreError.pluginRequired(id: id)
         }
         if let dependent = plugins.values.first(where: {

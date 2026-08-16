@@ -87,6 +87,35 @@ struct KernelCoreStatePersistenceTests {
         try await kernel2.stopAsync()
     }
 
+    @Test("alwaysOn 策略插件默认启用且不可禁用（对齐旧版 alwaysOn）")
+    func alwaysOnPolicyIsEnabledAndNotDisableable() async throws {
+        let (_, store) = freshStore()
+        let kernel = KernelCoreContainer()
+        kernel.stateStore = store
+        // 显式 alwaysOn 策略（协议默认值由 SuperPluginTests 单独断言）
+        let plugin = TestPlugin(id: "always-on", policy: .alwaysOn)
+
+        try await kernel.startAsync(plugins: [plugin])
+        #expect(plugin.metadata.policy == .alwaysOn)
+        #expect(!plugin.metadata.policy.isConfigurable)
+        #expect(kernel.isPluginEnabled(id: "always-on"))
+
+        // alwaysOn 插件不可被 disablePlugin 禁用
+        await #expect(throws: KernelCoreError.self) {
+            try await kernel.disablePlugin(id: "always-on")
+        }
+        #expect(kernel.isPluginEnabled(id: "always-on"))
+        try await kernel.stopAsync()
+
+        // 即使存储被手动写入 false，alwaysOn 插件仍强制启用
+        store.setEnabled(false, pluginID: "always-on")
+        let kernel2 = KernelCoreContainer()
+        kernel2.stateStore = store
+        try await kernel2.startAsync(plugins: [TestPlugin(id: "always-on", policy: .alwaysOn)])
+        #expect(kernel2.isPluginEnabled(id: "always-on"))
+        try await kernel2.stopAsync()
+    }
+
     @Test("旧插件 ID 别名回退查询启用状态")
     func legacyIDAliasFallback() async throws {
         let (_, store) = freshStore()

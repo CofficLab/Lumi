@@ -17,7 +17,10 @@ struct SuperPluginTests {
 
         #expect(plugin.id == "test.plugin")
         #expect(plugin.metadata.id == "test.plugin")
-        #expect(plugin.metadata.policy == .enabledByDefault)
+        // 默认启用策略为 alwaysOn（始终启用，不可禁用）
+        #expect(plugin.metadata.policy == .alwaysOn)
+        #expect(!plugin.metadata.policy.isConfigurable)
+        #expect(plugin.metadata.policy.enabledByDefault)
     }
 
     @Test("不同插件实例 id 独立")

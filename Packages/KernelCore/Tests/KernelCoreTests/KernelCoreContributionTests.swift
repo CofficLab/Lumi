@@ -6,6 +6,8 @@ import Testing
 struct KernelCoreContributionTests {
     private final class ContributionPlugin: SuperPlugin {
         let id = "contributor"
+        // 显式 enabledByDefault：该测试验证可配置插件的运行时禁用/启用流程
+        let metadata = PluginMetadata(id: "contributor", policy: .enabledByDefault)
         var cleanupEvents: [String] = []
 
         func onBoot(kernel: KernelCoreContainer) throws {

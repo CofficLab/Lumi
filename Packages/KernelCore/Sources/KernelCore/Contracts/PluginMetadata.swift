@@ -3,10 +3,34 @@ import Foundation
 public enum PluginEnablePolicy: String, Codable, Sendable {
     /// 宿主必需能力，不能由用户禁用。
     case required
+    /// 始终启用，用户不可禁用（对应旧版 `LumiPluginPolicy.alwaysOn`）。
+    case alwaysOn
     /// 默认启用，用户可以在运行时禁用。
     case enabledByDefault
     /// 默认不启动运行时资源，由用户显式启用。
     case disabledByDefault
+}
+
+public extension PluginEnablePolicy {
+    /// 用户是否可配置此插件的启用状态（对应旧版 `LumiPluginPolicy.isConfigurable`）。
+    var isConfigurable: Bool {
+        switch self {
+        case .enabledByDefault, .disabledByDefault:
+            true
+        case .required, .alwaysOn:
+            false
+        }
+    }
+
+    /// 默认是否启用（对应旧版 `LumiPluginPolicy.enabledByDefault`）。
+    var enabledByDefault: Bool {
+        switch self {
+        case .required, .alwaysOn, .enabledByDefault:
+            true
+        case .disabledByDefault:
+            false
+        }
+    }
 }
 
 public enum PluginCategory: String, Codable, Sendable {
@@ -55,7 +79,7 @@ public struct PluginMetadata: Equatable, Codable, Sendable {
         version: String = "1.0.0",
         category: PluginCategory = .general,
         stage: PluginStage = .stable,
-        policy: PluginEnablePolicy = .enabledByDefault,
+        policy: PluginEnablePolicy = .alwaysOn,
         permissions: [PluginPermission] = []
     ) {
         self.id = id
