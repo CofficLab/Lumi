@@ -4,8 +4,8 @@ let package = Package(
     name: "PluginConversationList",
     platforms: [.macOS(.v14)],
     products: [.library(name: "PluginConversationList", targets: ["PluginConversationList"])],
-    dependencies: [.package(path: "../KernelCore"), .package(path: "../ProviderConversation"), .package(path: "../ProviderChatSection")],
+    dependencies: [.package(path: "../KernelCore"), .package(path: "../ProviderConversation"), .package(path: "../ProviderChatSection"), .package(path: "../ProviderRailView")],
     targets: [.target(name: "PluginConversationList", dependencies: [
-        .product(name: "KernelCore", package: "KernelCore"), .product(name: "ProviderConversation", package: "ProviderConversation"), .product(name: "ProviderChatSection", package: "ProviderChatSection")
+        .product(name: "KernelCore", package: "KernelCore"), .product(name: "ProviderConversation", package: "ProviderConversation"), .product(name: "ProviderChatSection", package: "ProviderChatSection"), .product(name: "ProviderRailView", package: "ProviderRailView")
     ])]
 )
