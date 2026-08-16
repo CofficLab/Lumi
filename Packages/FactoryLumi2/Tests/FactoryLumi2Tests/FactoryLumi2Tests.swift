@@ -68,12 +68,12 @@ struct FactoryLumi2Tests {
     }
 
     @Test("makeKernel 创建内核并注册默认 StorageProviding")
-    func makeKernelRegistersDefaultStorageProviding() throws {
+    func makeKernelRegistersDefaultStorageProvider() throws {
         let kernel = try KernelFactory.makeKernel()
 
         let resolved: (any StorageProviding)? = kernel.resolveProvider((any StorageProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultStorageProviding)
+        #expect(resolved is DefaultStorageProvider)
     }
 
     @Test("makeKernel 创建内核并注册默认 ProjectProviding")
@@ -223,7 +223,7 @@ struct FactoryLumi2Tests {
         let railView = factory.makeRailViewProvider()
         let settingView = factory.makeSettingViewProvider()
 
-        #expect(storage is DefaultStorageProviding)
+        #expect(storage is DefaultStorageProvider)
         #expect(project is DefaultProjectProviding)
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)

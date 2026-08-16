@@ -1,4 +1,6 @@
 import Foundation
+import os
+import SuperLogKit
 
 /// `StorageProviding` 的默认实现
 ///
@@ -9,18 +11,24 @@ import Foundation
 ///
 /// 所有目录按需创建（`createDirectory`）。
 @MainActor
-public final class DefaultStorageProviding: StorageProviding {
+public final class DefaultStorageProvider: StorageProviding, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-storage", category: "ProviderStorage")
+    nonisolated public static let emoji = "💾"
+    nonisolated static let verbose = true
+
     /// 数据根目录
     public let dataRootDirectory: URL
 
-    /// - Parameter dataRootDirectory: 数据根目录；不传时按旧版规范自动计算
+    /// - Parameter dataRootDirectory: 数据根目录；不传时自动计算
     ///   （`~/Library/Application Support/<bundleID>/db_<debug|production>_v<majorVersion>/`）。
     public init(dataRootDirectory: URL? = nil) {
         if let dataRootDirectory {
             let root = dataRootDirectory.standardizedFileURL
-            // 与旧版 StorageService 一致：init 即确保根目录存在。
             Self.ensureDirectory(root)
             self.dataRootDirectory = root
+            if Self.verbose {
+                Self.logger.info("\(self.t)ProviderStorage initialized with root: \(root.path, privacy: .public)")
+            }
         } else {
             self.dataRootDirectory = Self.makeDefaultDataRootDirectory()
         }
@@ -31,6 +39,9 @@ public final class DefaultStorageProviding: StorageProviding {
         let dir = dataRootDirectory
             .appendingPathComponent(pluginID, isDirectory: true)
         Self.ensureDirectory(dir)
+        if Self.verbose {
+            Self.logger.debug("\(self.t)plugin data directory for \(pluginID): \(dir.path, privacy: .public)")
+        }
         return dir
     }
 
@@ -38,6 +49,9 @@ public final class DefaultStorageProviding: StorageProviding {
     public func coreDataDirectory() -> URL {
         let dir = dataRootDirectory.appendingPathComponent("Core", isDirectory: true)
         Self.ensureDirectory(dir)
+        if Self.verbose {
+            Self.logger.debug("\(self.t)core data directory: \(dir.path, privacy: .public)")
+        }
         return dir
     }
 
@@ -67,6 +81,9 @@ public final class DefaultStorageProviding: StorageProviding {
             .appendingPathComponent(bundleID, isDirectory: true)
             .appendingPathComponent(dbDirectoryName, isDirectory: true)
         Self.ensureDirectory(dataRoot)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)default data root computed: bundleID=\(bundleID, privacy: .public), version=\(version), majorVersion=\(majorVersion), dbDirectory=\(dbDirectoryName), root=\(dataRoot.path, privacy: .public)")
+        }
         return dataRoot
     }
 
@@ -83,6 +100,10 @@ public final class DefaultStorageProviding: StorageProviding {
 
     /// 确保目录存在（不存在则创建）。
     private static func ensureDirectory(_ url: URL) {
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        } catch {
+            Self.logger.error("\(Self.t)Failed to create directory \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        }
     }
 }

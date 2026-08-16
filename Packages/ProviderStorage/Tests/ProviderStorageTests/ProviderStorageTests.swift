@@ -13,10 +13,10 @@ import Testing
 struct ProviderStorageTests {
 
     /// 用临时目录创建默认实现，避免污染真实 Application Support。
-    private func makeProvider() -> DefaultStorageProviding {
+    private func makeProvider() -> DefaultStorageProvider {
         let tempRoot = FileManager.default.temporaryDirectory
             .appendingPathComponent("ProviderStorageTests-\(UUID().uuidString)", isDirectory: true)
-        return DefaultStorageProviding(dataRootDirectory: tempRoot)
+        return DefaultStorageProvider(dataRootDirectory: tempRoot)
     }
 
     @Test("数据根目录存在")
@@ -68,16 +68,16 @@ struct ProviderStorageTests {
 
     @Test("数据根目录名遵循 db_<debug|production>_v<major> 规则")
     func dataRootDirectoryNaming() {
-        #expect(DefaultStorageProviding.dataRootDirectoryName(debug: true, majorVersion: 5) == "db_debug_v5")
-        #expect(DefaultStorageProviding.dataRootDirectoryName(debug: false, majorVersion: 5) == "db_production_v5")
-        #expect(DefaultStorageProviding.dataRootDirectoryName(debug: false, majorVersion: 4) == "db_production_v4")
+        #expect(DefaultStorageProvider.dataRootDirectoryName(debug: true, majorVersion: 5) == "db_debug_v5")
+        #expect(DefaultStorageProvider.dataRootDirectoryName(debug: false, majorVersion: 5) == "db_production_v5")
+        #expect(DefaultStorageProvider.dataRootDirectoryName(debug: false, majorVersion: 4) == "db_production_v4")
     }
 
     @Test("主版本号解析：取版本号第一段，无法解析回退 4")
     func majorVersionParsing() {
-        #expect(DefaultStorageProviding.majorVersion(from: "5.3.1") == 5)
-        #expect(DefaultStorageProviding.majorVersion(from: "6") == 6)
-        #expect(DefaultStorageProviding.majorVersion(from: "abc") == 4)
-        #expect(DefaultStorageProviding.majorVersion(from: "") == 4)
+        #expect(DefaultStorageProvider.majorVersion(from: "5.3.1") == 5)
+        #expect(DefaultStorageProvider.majorVersion(from: "6") == 6)
+        #expect(DefaultStorageProvider.majorVersion(from: "abc") == 4)
+        #expect(DefaultStorageProvider.majorVersion(from: "") == 4)
     }
 }

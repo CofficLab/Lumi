@@ -23,7 +23,7 @@ import SwiftUI
 public enum KernelFactory {
 
     /// 创建 KernelCore 内核，装配并注册全部默认 Provider：
-    /// - `StorageProviding` → `DefaultStorageProviding`（Application Support 磁盘存储）
+    /// - `StorageProviding` → `DefaultStorageProvider`（Application Support 磁盘存储）
     /// - `ContentViewProviding` → `DefaultContentViewProviding`（当前内容视图）
     /// - `ProjectProviding` → `DefaultProjectProviding`
     /// - `ToastProviding` → `DefaultToastProviding`（no-op）

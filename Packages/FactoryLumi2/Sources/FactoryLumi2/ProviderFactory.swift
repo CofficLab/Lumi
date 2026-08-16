@@ -125,7 +125,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 产出 `StorageProviding` 实现（默认 Application Support 磁盘存储）。
     public func makeStorageProvider() -> any StorageProviding {
-        DefaultStorageProviding()
+        DefaultStorageProvider()
     }
 
     /// 产出 `ThemeProviding` 实现（默认内置主题注册表 + 选中持久化）。
