@@ -115,7 +115,7 @@ public enum KernelFactory {
         try kernel.registerProvider((any StorageProviding).self, factory.makeStorageProvider())
 
         // 主题 Provider：选中主题持久化遵循 Storage 约定
-        // （<数据根目录>/Plugins/ThemeManager/theme-selection.plist）。
+        // （<数据根目录>/ThemeManager/theme-selection.plist）。
         let themeProvider = factory.makeThemeProvider()
         if let storage = kernel.resolveProvider((any StorageProviding).self),
            let defaultTheme = themeProvider as? DefaultThemeProviding {
@@ -185,7 +185,7 @@ public enum KernelFactory {
         try kernel.registerProvider((any SettingViewProviding).self, factory.makeSettingViewProvider())
 
         // Agent 工具管理：默认实现 + SwiftData 调用记录（存储目录遵循 Storage 约定
-        // <数据根目录>/Plugins/ToolManager/tool_calls.sqlite）。
+        // <数据根目录>/ToolManager/tool_calls.sqlite）。
         let toolManager = factory.makeToolManagerProvider()
         if let storage = kernel.resolveProvider((any StorageProviding).self),
            let defaultToolManager = toolManager as? DefaultToolManagerProviding {

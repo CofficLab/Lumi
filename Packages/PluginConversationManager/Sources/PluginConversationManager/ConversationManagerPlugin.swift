@@ -47,7 +47,7 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // 1. 计算数据库目录（遵循 Storage 约定：<数据根目录>/Plugins/ConversationStore）。
+        // 1. 计算数据库目录（遵循 Storage 约定：<数据根目录>/ConversationStore）。
         let storage = kernel.resolveProvider((any StorageProviding).self)
         let databaseRootURL = storage?.pluginDataDirectory(for: "ConversationStore")
             ?? ConversationStore.defaultDatabaseRootURL

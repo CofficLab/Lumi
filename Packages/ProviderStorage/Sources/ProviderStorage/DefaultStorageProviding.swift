@@ -1,36 +1,34 @@
 import Foundation
 
-/// `StorageProviding` 的默认实现：基于应用支持目录（Application Support）
-/// 的磁盘存储。
+/// `StorageProviding` 的默认实现
 ///
 /// 目录结构：
-/// - 数据根目录：`~/Library/Application Support/<appName>/`
-/// - 插件数据目录：`<root>/Plugins/<pluginID>/`
+/// - 数据根目录：`~/Library/Application Support/<bundleID>/db_<debug|production>_v<majorVersion>/`
+/// - 插件数据目录：`<root>/<pluginID>/`（无 `Plugins/` 中间层）
 /// - 核心数据目录：`<root>/Core/`
 ///
 /// 所有目录按需创建（`createDirectory`）。
 @MainActor
 public final class DefaultStorageProviding: StorageProviding {
-    /// 应用名称；用于构造 Application Support 子目录。默认取主 bundle 名。
-    private let appName: String
+    /// 数据根目录
+    public let dataRootDirectory: URL
 
-    public init(appName: String? = nil) {
-        self.appName = appName ?? Self.defaultAppName
+    /// - Parameter dataRootDirectory: 数据根目录；不传时按旧版规范自动计算
+    ///   （`~/Library/Application Support/<bundleID>/db_<debug|production>_v<majorVersion>/`）。
+    public init(dataRootDirectory: URL? = nil) {
+        if let dataRootDirectory {
+            let root = dataRootDirectory.standardizedFileURL
+            // 与旧版 StorageService 一致：init 即确保根目录存在。
+            Self.ensureDirectory(root)
+            self.dataRootDirectory = root
+        } else {
+            self.dataRootDirectory = Self.makeDefaultDataRootDirectory()
+        }
     }
 
-    /// 数据根目录：`~/Library/Application Support/<appName>/`
-    public lazy var dataRootDirectory: URL = {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory
-        let root = base.appendingPathComponent(appName, isDirectory: true)
-        Self.ensureDirectory(root)
-        return root
-    }()
-
-    /// 插件数据目录：`<root>/Plugins/<pluginID>/`
+    /// 插件数据目录：`<root>/<pluginID>/`（与旧版 `StorageService` 一致，无 `Plugins/` 中间层）。
     public func pluginDataDirectory(for pluginID: String) -> URL {
         let dir = dataRootDirectory
-            .appendingPathComponent("Plugins", isDirectory: true)
             .appendingPathComponent(pluginID, isDirectory: true)
         Self.ensureDirectory(dir)
         return dir
@@ -45,19 +43,42 @@ public final class DefaultStorageProviding: StorageProviding {
 
     // MARK: - Helpers
 
-    /// 默认应用名：主 bundle 的显示名或 bundle 标识，回退到 "Lumi"。
-    private static var defaultAppName: String {
-        let bundle = Bundle.main
-        if let name = bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String, !name.isEmpty {
-            return name
-        }
-        if let name = bundle.object(forInfoDictionaryKey: "CFBundleName") as? String, !name.isEmpty {
-            return name
-        }
-        if let id = bundle.bundleIdentifier, !id.isEmpty {
-            return id
-        }
-        return "Lumi"
+    /// 按旧版规范生成默认数据根目录：
+    /// `<Application Support>/<bundleID>/db_<debug|production>_v<majorVersion>/`。
+    ///
+    /// 与旧版 `StoragePlugin.makeDefaultDataRootDirectory()` 完全一致：
+    /// - bundleID：主 bundle 标识，回退 `com.coffic.Lumi`；
+    /// - 环境名：DEBUG 构建 `db_debug_*`，Release 构建 `db_production_*`；
+    /// - 主版本号：取 `CFBundleShortVersionString` 第一段，回退 4。
+    public static func makeDefaultDataRootDirectory() -> URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.Lumi"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "4"
+        let majorVersion = Self.majorVersion(from: version)
+
+        #if DEBUG
+        let dbDirectoryName = dataRootDirectoryName(debug: true, majorVersion: majorVersion)
+        #else
+        let dbDirectoryName = dataRootDirectoryName(debug: false, majorVersion: majorVersion)
+        #endif
+
+        let dataRoot = appSupport
+            .appendingPathComponent(bundleID, isDirectory: true)
+            .appendingPathComponent(dbDirectoryName, isDirectory: true)
+        Self.ensureDirectory(dataRoot)
+        return dataRoot
+    }
+
+    /// 数据根目录名：`db_<debug|production>_v<majorVersion>`（与旧版命名规则一致）。
+    static func dataRootDirectoryName(debug: Bool, majorVersion: Int) -> String {
+        let environment = debug ? "debug" : "production"
+        return "db_\(environment)_v\(majorVersion)"
+    }
+
+    /// 解析主版本号：`"5.3.1" -> 5`；无法解析时回退 4。
+    static func majorVersion(from versionString: String) -> Int {
+        versionString.split(separator: ".").first.flatMap { Int($0) } ?? 4
     }
 
     /// 确保目录存在（不存在则创建）。

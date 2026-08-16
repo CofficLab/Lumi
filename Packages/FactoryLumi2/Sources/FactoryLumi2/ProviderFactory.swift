@@ -271,7 +271,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     public func makeIdleTimeProvider(storage: any StorageProviding) -> any IdleTimeProviding {
         // 完整实现：事件持久化 + 休息窗口推断，数据目录遵循 Storage 约定
-        // （<数据根目录>/Plugins/IdleTime/）。
+        // （<数据根目录>/IdleTime/）。
         IdleTimeService(store: IdleActivityStore(directoryURL: storage.pluginDataDirectory(for: "IdleTime")))
     }
 

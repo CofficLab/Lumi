@@ -143,6 +143,7 @@ struct FactoryLumi2Tests {
         #expect(activityBar?.items.map(\.id) == [
             "com.coffic.lumi.plugin.chat-panel.entry",
             "com.coffic.lumi.plugin.device-info.entry",
+            "com.coffic.lumi.plugin.hosts-manager.entry",
             "com.coffic.lumi.plugin.app-icon-designer.entry",
             "com.coffic.lumi.plugin.app-store-promo-designer.entry",
             "com.coffic.lumi.plugin.mind-map-designer.entry",
@@ -383,7 +384,7 @@ struct FactoryLumi2Tests {
         try kernel.start(plugins: DefaultPluginFactory().makePlugins())
         #expect(kernel.lifecycleState == .running)
         #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 22)
-        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 9)
+        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 10)
     }
 
     @Test("makeKernel 注册默认 LLMProviderManagerProviding")
