@@ -172,7 +172,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 产出 `ConversationManaging` 实现（默认内存实现，无持久化）。
     public func makeConversationProvider() -> any ConversationManaging {
-        DefaultConversationManaging()
+        DefaultConversationManager()
     }
 
     /// 产出 `DocsViewProviding` 实现（默认持有文档条目数组）。

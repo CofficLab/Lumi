@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import LumiUI
 import ProviderActivityBar
 import ProviderContentView
 import ProviderChatSection
@@ -45,7 +46,7 @@ import SwiftUI
 public enum KernelFactory {
 
     /// 创建 KernelCore 内核，装配并注册全部默认 Provider：
-    /// - `StorageProviding` → `DefaultStorageProviding`（Application Support 磁盘存储）
+    /// - `StorageProviding` → `DefaultStorageProvider`（Application Support 磁盘存储）
     /// - `ThemeProviding` → `DefaultThemeProviding`（内置主题注册表 + 选中持久化）
     /// - `ContentViewProviding` → `DefaultContentViewProviding`（当前内容视图）
     /// - `ConversationManaging` → `DefaultConversationManaging`（对话管理，内存实现）
@@ -134,6 +135,14 @@ public enum KernelFactory {
         let llmProvider = factory.makeLLMProvider()
         try kernel.registerProvider((any LLMProviding).self, llmProvider)
 
+        // 流式输出 store：先于 AgentLoop 注册，供回合循环写入临时行
+        // （高频变更，不转发 objectWillChange，由消费方窄播订阅）。
+        try kernel.registerProvider(
+            (any MessageStreamingProviding).self,
+            factory.makeMessageStreamingProvider(),
+            forwardsObjectWillChange: false
+        )
+
         // LLM Provider 管理器：各 LLM 供应商（ManagedLLMProvider）的注册表 +
         // 选中持久化 + 路由发送。管理器自身即 `LLMProviding`，AgentLoop 直接
         // 注入它，把请求路由到选中的供应商。
@@ -142,6 +151,26 @@ public enum KernelFactory {
 
         let agentLoop = factory.makeAgentLoopProvider(messages: messages)
         agentLoop.setLLMProvider(providerManager)
+        // 完整接线（复刻旧版 AgentTurnRunner 的依赖注入）：
+        // - 工具执行/授权（build 模式高风险调用需用户批准）
+        // - 流式输出（MessageStreaming 临时行，UI 读 store 渲染）
+        // - 会话设置（automationLevel / reasoningEffort / verbosity / language）
+        // - 回合生命周期事件 → 内核事件总线 + 旧 NotificationCenter 通知名
+        let toolManager = factory.makeToolManagerProvider()
+        if let storage = kernel.resolveProvider((any StorageProviding).self),
+           let defaultToolManager = toolManager as? DefaultToolManagerProviding {
+            defaultToolManager.recordStore = ToolCallRecordStore(
+                databaseRootURL: storage.pluginDataDirectory(for: "ToolManager")
+            )
+        }
+        try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
+        agentLoop.setToolManager(toolManager)
+        agentLoop.setStreaming(kernel.resolveProvider((any MessageStreamingProviding).self))
+        agentLoop.setConversations(conversations)
+        agentLoop.setEventHandler { [weak kernel] event in
+            guard let kernel else { return }
+            KernelFactory.bridge(agentLoopEvent: event, kernel: kernel)
+        }
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
 
         let messageSender = factory.makeMessageSenderProvider(
@@ -151,7 +180,6 @@ public enum KernelFactory {
         )
         try kernel.registerProvider((any MessageSendingProviding).self, messageSender)
         try kernel.registerProvider((any ConversationInputProviding).self, factory.makeConversationInputProvider())
-        try kernel.registerProvider((any MessageStreamingProviding).self, factory.makeMessageStreamingProvider(), forwardsObjectWillChange: false)
         try kernel.registerProvider((any MessageRenderingProviding).self, factory.makeMessageRenderingProvider())
         try kernel.registerProvider((any PromptSuggestionProviding).self, factory.makePromptSuggestionProvider())
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
@@ -181,17 +209,6 @@ public enum KernelFactory {
         try kernel.registerProvider((any ActivityBarProviding).self, factory.makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, factory.makeRailViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, factory.makeSettingViewProvider())
-
-        // Agent 工具管理：默认实现 + SwiftData 调用记录（存储目录遵循 Storage 约定
-        // <数据根目录>/ToolManager/tool_calls.sqlite）。
-        let toolManager = factory.makeToolManagerProvider()
-        if let storage = kernel.resolveProvider((any StorageProviding).self),
-           let defaultToolManager = toolManager as? DefaultToolManagerProviding {
-            defaultToolManager.recordStore = ToolCallRecordStore(
-                databaseRootURL: storage.pluginDataDirectory(for: "ToolManager")
-            )
-        }
-        try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
 
         // 默认目录与宿主附加插件在同一个依赖图中统一校验、排序、原子启动。
         // 后续复刻插件只需由 App/专用 Factory 传入，不必继续修改内核工厂。
@@ -285,7 +302,81 @@ public enum KernelFactory {
             defaultSettings.setSidebarHeader(AnyView(SettingsSidebarHeaderView(logo: logo)))
         }
 
+        // 先把选中主题桥接到 LumiUI 主题体系，避免首帧渲染时 LumiUI 组件
+        // （@LumiTheme / ChromeThemes）读到未配置的默认主题而闪烁。
+        if let theme = kernel.resolveProvider((any ThemeProviding).self) {
+            syncLumiTheme(theme)
+        }
+
         return themed(settings.makeSettingView(), kernel: kernel)
+    }
+
+    // MARK: - Agent Loop Event Bridging
+
+    /// 把 Agent 回合生命周期事件桥接到内核事件总线 + 旧 NotificationCenter 通知名。
+    ///
+    /// 复刻旧版 `LumiEventManager` 的 4 种通知（lumiTurnStarted / lumiMessageSaved /
+    /// lumiTurnCompleted / lumiTurnFinished），通知 userInfo 键与旧版一致，让
+    /// 尚未迁移的 NotificationCenter 消费者继续工作；同时发布类型化事件
+    /// （`AgentLoopBridgedEvent`），供新架构插件订阅。
+    fileprivate static func bridge(agentLoopEvent event: AgentLoopEvent, kernel: KernelCoreContainer) {
+        switch event {
+        case let .turnStarted(conversationID, turnID):
+            kernel.eventBus.publishAsLegacy(
+                AgentLoopBridgedEvent(event),
+                notificationName: .lumiTurnStarted,
+                userInfo: [
+                    "conversationID": conversationID,
+                    "turnID": turnID,
+                ]
+            )
+        case let .messageSaved(conversationID, messageID, role):
+            kernel.eventBus.publishAsLegacy(
+                AgentLoopBridgedEvent(event),
+                notificationName: .lumiMessageSaved,
+                userInfo: [
+                    "messageID": messageID,
+                    "conversationID": conversationID,
+                    "role": role,
+                ]
+            )
+        case let .turnCompleted(conversationID, turnID):
+            kernel.eventBus.publishAsLegacy(
+                AgentLoopBridgedEvent(event),
+                notificationName: .lumiTurnCompleted,
+                userInfo: [
+                    "conversationID": conversationID,
+                    "turnID": turnID,
+                ]
+            )
+        case let .turnFinished(conversationID, turnID, reason):
+            kernel.eventBus.publishAsLegacy(
+                AgentLoopBridgedEvent(event),
+                notificationName: .lumiTurnFinished,
+                userInfo: [
+                    "conversationID": conversationID,
+                    "turnID": turnID as Any,
+                    "reason": reason.rawValue,
+                ]
+            )
+        }
+    }
+
+    // MARK: - LumiUI Theme Bridging
+
+    /// 把 `ThemeProviding` 选中的主题桥接到 LumiUI 主题体系（`@LumiTheme` /
+    /// `ChromeThemes`），使 LumiUI 组件渲染出与旧版 Lumi 完全一致的颜色。
+    ///
+    /// 旧版设置窗口（`FactoryCore.SettingsView`）直接消费 `@LumiTheme`
+    /// （= `ChromeToUIThemeAdapter(chrome: ActiveChromeTheme.current)`）；
+    /// 新版统一走 `ThemeProviding` 的 palette。此处把 palette 适配回 chrome
+    /// 主题并同步全局状态，让 `ProviderSettingView` 中的 LumiUI 组件
+    /// （侧边栏、详情氛围渐变、窗口背景）拿到与旧版一致的配色。
+    fileprivate static func syncLumiTheme(_ provider: any ThemeProviding) {
+        guard let selected = provider.selectedTheme else { return }
+        let chrome = PaletteChromeTheme(theme: selected)
+        ActiveChromeTheme.current = chrome
+        LumiUIThemeStore.shared.setTheme(ChromeToUIThemeAdapter(chrome: chrome))
     }
 
     // MARK: - Theme Application
@@ -298,6 +389,17 @@ public enum KernelFactory {
             return view
         }
         return AnyView(ThemeHostingView(theme: theme, content: view))
+    }
+}
+
+/// 内核事件总线用的 AgentLoop 事件包装。
+///
+/// `AgentLoopEvent` 定义在 ProviderAgentLoop（不依赖 KernelCore），无法直接
+/// conform `KernelEvent`；此处包装为 `KernelEvent` 让新架构插件可订阅类型化事件。
+public struct AgentLoopBridgedEvent: KernelEvent {
+    public let event: AgentLoopEvent
+    public init(_ event: AgentLoopEvent) {
+        self.event = event
     }
 }
 
@@ -321,9 +423,12 @@ private struct ThemeHostingView<Content: View>: View {
         content
             .preferredColorScheme(preferredColorScheme)
             .background(backgroundColor)
+            .onAppear { KernelFactory.syncLumiTheme(theme) }
             .onReceive(theme.objectWillChange) { _ in
-                // 主题切换后强制 body 重算，应用新的明暗与背景。
+                // 主题切换后强制 body 重算，应用新的明暗与背景，
+                // 并把新主题桥接到 LumiUI 主题体系（@LumiTheme / ChromeThemes）。
                 refreshTick.toggle()
+                KernelFactory.syncLumiTheme(theme)
             }
     }
 

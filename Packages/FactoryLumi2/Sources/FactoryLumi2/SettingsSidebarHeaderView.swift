@@ -10,6 +10,8 @@ struct SettingsSidebarHeaderView: View {
     /// 从共享内核解析的 Logo 服务；`nil` 时仅显示回退图标。
     let logo: (any LogoProviding)?
 
+    @LumiTheme private var theme
+
     private let appInfo = AppBundleInfo()
 
     var body: some View {
@@ -30,15 +32,16 @@ struct SettingsSidebarHeaderView: View {
             .frame(width: 64, height: 64)
 
             Text(appInfo.name)
-                .font(.body.weight(.semibold))
+                .font(.appBodyEmphasized)
+                .foregroundColor(theme.textPrimary)
 
             VStack(spacing: 2) {
                 Text("v\(appInfo.version)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
                 Text("Build \(appInfo.build)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textTertiary)
             }
 
             Spacer().frame(height: 8)
