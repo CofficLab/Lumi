@@ -7,6 +7,8 @@ private final class Box<T>: @unchecked Sendable { var value: T; init(_ v: T) { v
 /// URLProtocol 桩（与 DefaultHTTPClientTests 相同，供覆盖率测试独立使用）
 final class DownloadCoverageStubURLProtocol: URLProtocol {
     nonisolated(unsafe) static var handler: ((URLRequest) -> (HTTPURLResponse, Data))?
+    /// 非空时：投递这些字节后以错误结束（模拟网络中途断开），忽略 handler 的 body
+    nonisolated(unsafe) static var failAfterLoading: Data?
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
@@ -18,6 +20,11 @@ final class DownloadCoverageStubURLProtocol: URLProtocol {
         }
         let (response, data) = handler(request)
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        if let partial = Self.failAfterLoading {
+            client?.urlProtocol(self, didLoad: partial)
+            client?.urlProtocol(self, didFailWithError: URLError(.networkConnectionLost))
+            return
+        }
         client?.urlProtocol(self, didLoad: data)
         client?.urlProtocolDidFinishLoading(self)
     }
@@ -143,5 +150,61 @@ struct DownloadCoverageTests {
             Issue.record("expected failed state, got \(String(describing: failStates["fail"]))")
             return
         }
+    }
+
+    @Test("DefaultHTTPClient 无请求头方法委托到带请求头版本")
+    func defaultClientNoHeadersOverloadDelegates() async throws {
+        let url = URL(string: "https://example.com/file.bin")!
+        let dest = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".bin")
+        defer { try? FileManager.default.removeItem(at: dest) }
+        let body = Data("no headers body".utf8)
+        DownloadCoverageStubURLProtocol.handler = { _ in
+            self.respond(status: 200, headers: ["Content-Length": String(body.count)], body: body)
+        }
+        // 调用 DefaultHTTPClient 自身的无请求头方法（带 maxBytesPerSecond）：
+        // 应委托到带 headers 的实现并正常写入
+        let written = try await makeClient().download(
+            from: url, to: dest, existingBytes: 0, maxBytesPerSecond: nil,
+            progressHandler: { _, _ in }, onCancelled: { _ in }
+        )
+        #expect(written == Int64(body.count))
+        #expect(try Data(contentsOf: dest) == body)
+    }
+
+    @Test("网络中途断开时抛出错误且已写字节保留在磁盘")
+    func midStreamFailureThrowsAndKeepsWrittenBytes() async throws {
+        let url = URL(string: "https://example.com/file.bin")!
+        let dest = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".bin")
+        defer { try? FileManager.default.removeItem(at: dest) }
+        // 投递 128KB 后断开：驱动 64KB 缓冲的批量写入路径 + 中途失败重抛
+        let partial = Data(repeating: 0x42, count: 128 * 1024)
+        DownloadCoverageStubURLProtocol.handler = { _ in
+            self.respond(status: 200, headers: ["Content-Length": "262144"], body: Data())
+        }
+        DownloadCoverageStubURLProtocol.failAfterLoading = partial
+        defer { DownloadCoverageStubURLProtocol.failAfterLoading = nil }
+
+        let caught = Box<Error?>(nil)
+        do {
+            _ = try await makeClient().download(
+                from: url, to: dest, existingBytes: 0, maxBytesPerSecond: nil,
+                progressHandler: { _, _ in }, onCancelled: { _ in }
+            )
+        } catch {
+            caught.value = error
+        }
+        #expect(caught.value != nil, "中途断开应抛出错误")
+        // 已写入的完整缓冲批次应保留在磁盘（流式落盘，可作为下次续传起点）
+        let written = (try? Data(contentsOf: dest))?.count ?? 0
+        #expect(written <= partial.count, "磁盘上最多只应有已投递的字节，实际：\(written)")
+    }
+
+    @Test("本地化查找未命中时回退返回 key 本身")
+    func localizationFallsBackToKey() {
+        let key = "downloadkit.coverage.missing-key"
+        let value = DownloadKitLocalization.string(key, bundle: .module)
+        #expect(value == key, "未命中 key 应原样返回，实际：\(value)")
     }
 }

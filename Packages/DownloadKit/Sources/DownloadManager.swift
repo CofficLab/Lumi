@@ -107,9 +107,10 @@ public actor DownloadManager {
         _ task: DownloadTask,
         progressHandler: (@Sendable (DownloadProgress) -> Void)? = nil
     ) async throws -> URL {
-        // 检查是否已有相同任务
-        if let existingState = taskStates[task.id],
-           case .downloading = existingState {
+        // 检查是否已有相同任务。以 activeTasks（同步写入，await 前生效）为准，
+        // 而非 taskStates 中的 .downloading：后者由派生的 Task 异步设置，
+        // 并发第二次调用可能在状态尚未更新时通过检查，导致同 id 双份下载并发执行。
+        if activeTasks[task.id] != nil {
             throw DownloadError.unknown("任务已在进行中: \(task.id)")
         }
 

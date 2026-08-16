@@ -141,4 +141,39 @@ struct RateLimiterTests {
         )
         #expect(limiter.bytesPerSecond == 100 * 1024, "更新后限速值应可读")
     }
+
+    @Test("限速值为 0 视为不限速（避免令牌永不累积导致死等）")
+    func zeroLimitTreatedAsUnlimited() async throws {
+        let limiter = RateLimiter(bytesPerSecond: 0)
+
+        let start = ContinuousClock.now
+        try await limiter.acquire(bytes: 1_000_000)
+        let elapsed = ContinuousClock.now - start
+        let elapsedMs = Double(elapsed.components.seconds) * 1000
+            + Double(elapsed.components.attoseconds) / 1e15
+
+        #expect(elapsedMs < 100, "限速 0 应视为不限速立即返回，实际：\(elapsedMs)ms")
+
+        // 运行时改为 0 同样立即放行
+        limiter.update(bytesPerSecond: 0)
+        try await limiter.acquire(bytes: 1_000_000)
+    }
+
+    @Test("等待令牌期间任务被取消时抛出 CancellationError")
+    func acquireThrowsCancellationWhenTaskCancelledWhileWaiting() async throws {
+        // 1000 字节/s：申请 1MB 需约 1000 秒，必然进入等待
+        let limiter = RateLimiter(bytesPerSecond: 1000)
+
+        let acquireTask = Task {
+            try await limiter.acquire(bytes: 1_000_000)
+        }
+
+        // 让 acquire 进入等待循环后取消
+        try await Task.sleep(for: .milliseconds(150))
+        acquireTask.cancel()
+
+        await #expect(throws: CancellationError.self) {
+            try await acquireTask.value
+        }
+    }
 }

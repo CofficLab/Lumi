@@ -87,7 +87,9 @@ public final class RateLimiter: Sendable {
             // 每轮循环重新读取 limit，使运行时 update() 生效：从不限速切到限速、
             // 或反之、或调整数值，都在下一轮立即按新值行为。
             let limit = bytesPerSecond
-            guard let limit else {
+            // limit <= 0 视为不限速：0 速率会使 refillRate 为 0，
+            // 令牌永远无法累积（deficit/0 = inf），acquire 将无限等待。
+            guard let limit, limit > 0 else {
                 return // 当前不限速，立即放行
             }
 
