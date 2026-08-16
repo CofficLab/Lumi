@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import ProviderActivityBar
 import ProviderContentView
+import ProviderConversation
 import ProviderDocsView
 import ProviderLogo
 import ProviderMenuBar
@@ -42,6 +43,21 @@ struct FactoryLumi2Tests {
         let resolved: (any ProjectProviding)? = kernel.resolveProvider((any ProjectProviding).self)
         #expect(resolved != nil)
         #expect(resolved is DefaultProjectProviding)
+    }
+
+    @Test("makeKernel 创建内核并注册默认 ConversationManaging")
+    func makeKernelRegistersDefaultConversationManaging() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let resolved: (any ConversationManaging)? = kernel.resolveProvider((any ConversationManaging).self)
+        #expect(resolved != nil)
+        #expect(resolved is DefaultConversationManaging)
+
+        // 复刻能力冒烟：创建 → 选中 → 查询。
+        let id = try resolved?.createConversation(title: "集成验证", projectPath: nil, providerID: nil, modelName: nil)
+        #expect(id != nil)
+        #expect(resolved?.selectedConversationID == id)
+        #expect(resolved?.currentTitle == "集成验证")
     }
 
     @Test("makeKernel 创建内核并注册默认 ToastProviding")

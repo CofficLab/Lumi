@@ -3,6 +3,11 @@ import KernelCore
 import ProviderActivityBar
 import ProviderContentView
 import ProviderChatSection
+import ProviderMessage
+import ProviderAgentLoop
+import ProviderLLM
+import ProviderMessageSender
+import ProviderConversation
 import ProviderDocsView
 import ProviderMenuBar
 import ProviderLogo
@@ -16,6 +21,17 @@ import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
+import ProviderAgentTurn
+import ProviderConversationInput
+import ProviderMessageStreaming
+import ProviderMessageRendering
+import ProviderPromptSuggestion
+import ProviderWorkspace
+import ProviderOnboarding
+import ProviderCommand
+import ProviderIdleTime
+import ProviderLegacyData
+import ProviderPluginControl
 import SwiftUI
 
 /// KernelFactory — 内核工厂。
@@ -31,6 +47,7 @@ public enum KernelFactory {
     /// - `StorageProviding` → `DefaultStorageProviding`（Application Support 磁盘存储）
     /// - `ThemeProviding` → `DefaultThemeProviding`（内置主题注册表 + 选中持久化）
     /// - `ContentViewProviding` → `DefaultContentViewProviding`（当前内容视图）
+    /// - `ConversationManaging` → `DefaultConversationManaging`（对话管理，内存实现）
     /// - `ProjectProviding` → `DefaultProjectProviding`
     /// - `ToastProviding` → `DefaultToastProviding`（no-op）
     /// - `NetworkProviding` → `DefaultNetworkProviding`（URLSession）
@@ -73,6 +90,37 @@ public enum KernelFactory {
 
         try kernel.registerProvider((any ContentViewProviding).self, factory.makeContentViewProvider())
         try kernel.registerProvider((any ChatSectionProviding).self, factory.makeChatSectionProvider())
+
+        let conversations = factory.makeConversationProvider()
+        try kernel.registerProvider((any ConversationManaging).self, conversations)
+
+        let messages = factory.makeMessageProvider()
+        try kernel.registerProvider((any MessageManaging).self, messages, forwardsObjectWillChange: false)
+
+        let llmProvider = factory.makeLLMProvider()
+        try kernel.registerProvider((any LLMProviding).self, llmProvider)
+
+        let agentLoop = factory.makeAgentLoopProvider(messages: messages)
+        agentLoop.setLLMProvider(llmProvider)
+        try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
+
+        let messageSender = factory.makeMessageSenderProvider(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: agentLoop
+        )
+        try kernel.registerProvider((any MessageSendingProviding).self, messageSender)
+        try kernel.registerProvider((any AgentTurnProviding).self, DefaultAgentTurnProviding())
+        try kernel.registerProvider((any ConversationInputProviding).self, DefaultConversationInputProviding())
+        try kernel.registerProvider((any MessageStreamingProviding).self, DefaultMessageStreamingProviding(), forwardsObjectWillChange: false)
+        try kernel.registerProvider((any MessageRenderingProviding).self, DefaultMessageRenderingProviding())
+        try kernel.registerProvider((any PromptSuggestionProviding).self, DefaultPromptSuggestionProviding())
+        try kernel.registerProvider((any WorkspaceProviding).self, DefaultWorkspaceProviding())
+        try kernel.registerProvider((any OnboardingProviding).self, DefaultOnboardingProviding())
+        try kernel.registerProvider((any CommandProviding).self, DefaultCommandProviding())
+        try kernel.registerProvider((any IdleTimeProviding).self, DefaultIdleTimeProviding())
+        try kernel.registerProvider((any LegacyDataProviding).self, DefaultLegacyDataProviding())
+        try kernel.registerProvider((any PluginControlling).self, DefaultPluginControlling())
         try kernel.registerProvider((any DocsViewProviding).self, factory.makeDocsViewProvider())
         try kernel.registerProvider((any MenuBarProviding).self, factory.makeMenuBarProvider())
         try kernel.registerProvider((any LogoProviding).self, factory.makeLogoProvider())

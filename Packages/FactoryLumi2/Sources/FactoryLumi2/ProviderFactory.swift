@@ -2,6 +2,11 @@ import Foundation
 import ProviderActivityBar
 import ProviderContentView
 import ProviderChatSection
+import ProviderMessage
+import ProviderAgentLoop
+import ProviderLLM
+import ProviderMessageSender
+import ProviderConversation
 import ProviderDocsView
 import ProviderLogo
 import ProviderMenuBar
@@ -34,6 +39,16 @@ public protocol ProviderFactory {
 
     /// 产出聊天区域 Provider。
     func makeChatSectionProvider() -> any ChatSectionProviding
+
+    func makeConversationProvider() -> any ConversationManaging
+    func makeMessageProvider() -> any MessageManaging
+    func makeAgentLoopProvider(messages: any MessageManaging) -> any AgentLoopProviding
+    func makeLLMProvider() -> any LLMProviding
+    func makeMessageSenderProvider(
+        conversations: any ConversationManaging,
+        messages: any MessageManaging,
+        agentLoop: any AgentLoopProviding
+    ) -> any MessageSendingProviding
 
     /// 产出 `DocsViewProviding` 实现。
     func makeDocsViewProvider() -> any DocsViewProviding
@@ -94,6 +109,35 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     public func makeChatSectionProvider() -> any ChatSectionProviding {
         DefaultChatSectionProviding()
+    }
+
+    public func makeMessageProvider() -> any MessageManaging {
+        DefaultMessageManaging()
+    }
+
+    public func makeAgentLoopProvider(messages: any MessageManaging) -> any AgentLoopProviding {
+        DefaultAgentLoopProviding(messages: messages)
+    }
+
+    public func makeLLMProvider() -> any LLMProviding {
+        DefaultLLMProviding()
+    }
+
+    public func makeMessageSenderProvider(
+        conversations: any ConversationManaging,
+        messages: any MessageManaging,
+        agentLoop: any AgentLoopProviding
+    ) -> any MessageSendingProviding {
+        DefaultMessageSendingProviding(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: agentLoop
+        )
+    }
+
+    /// 产出 `ConversationManaging` 实现（默认内存实现，无持久化）。
+    public func makeConversationProvider() -> any ConversationManaging {
+        DefaultConversationManaging()
     }
 
     /// 产出 `DocsViewProviding` 实现（默认持有文档条目数组）。
