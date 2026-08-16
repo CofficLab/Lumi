@@ -19,7 +19,7 @@ import SwiftUI
 public final class DefaultRootViewProviding: RootViewProviding, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-root-view", category: "ProviderRootView")
     nonisolated public static let emoji = "🏠"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     @Published fileprivate var toolbarView: AnyView?
     @Published fileprivate var activityBarView: AnyView?

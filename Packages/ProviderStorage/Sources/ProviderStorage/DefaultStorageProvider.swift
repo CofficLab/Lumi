@@ -14,7 +14,7 @@ import SuperLogKit
 public final class DefaultStorageProvider: StorageProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-storage", category: "ProviderStorage")
     nonisolated public static let emoji = "💾"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// 数据根目录
     public let dataRootDirectory: URL
