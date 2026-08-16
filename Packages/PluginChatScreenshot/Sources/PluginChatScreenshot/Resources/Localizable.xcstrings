@@ -1,7 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Cancel" : {
 
+    },
+    "Lumi needs Screen Recording permission to capture screenshots. Please grant access in System Settings, then try again." : {
+
+    },
+    "Open System Settings" : {
+
+    },
+    "Screen Recording Permission Required" : {
+
+    }
   },
   "version" : "1.0"
 }
