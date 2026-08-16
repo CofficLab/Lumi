@@ -16,12 +16,14 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../LumiUI"),
+        .package(path: "../ProviderRuntime"),
     ],
     targets: [
         .target(
             name: "ProviderRootView",
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "ProviderWorkspace", package: "ProviderRuntime"),
             ],
             path: "Sources/ProviderRootView"
         ),

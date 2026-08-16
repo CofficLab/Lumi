@@ -1,4 +1,5 @@
 import SwiftUI
+import ProviderWorkspace
 
 /// 根视图提供能力协议
 ///
@@ -48,8 +49,15 @@ public protocol RootViewProviding: AnyObject {
     /// 接入根布局。面板的显隐状态和尺寸元数据由 `RootTrailingPane` 持有。
     func setTrailingPane(_ pane: RootTrailingPane?)
 
+    /// 注入工作区状态机，使根 Host 按容器策略控制 Rail/Chat 显隐与持久化宽度。
+    func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?)
+
     /// 返回根布局视图（工具栏 + 内容区，内容区左侧可带 ActivityBar 与 Rail）。
     func makeRootView() -> AnyView
+}
+
+public extension RootViewProviding {
+    func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {}
 }
 
 /// 根布局的右侧面板描述。

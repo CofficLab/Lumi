@@ -1,4 +1,6 @@
 import SwiftUI
+import Combine
+import ProviderWorkspace
 
 /// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail
 /// 与主内容视图，组合成「顶部工具栏 + 内容区（左侧 ActivityBar，右侧 Rail）」
@@ -13,6 +15,8 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
     @Published fileprivate var railView: AnyView?
     @Published fileprivate var contentView: AnyView?
     @Published fileprivate var trailingPane: RootTrailingPane?
+    fileprivate var workspaceProvider: (any WorkspaceProviding)?
+    private var workspaceSubscription: AnyCancellable?
 
     public init() {}
 
@@ -34,6 +38,14 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
 
     public func setTrailingPane(_ pane: RootTrailingPane?) {
         trailingPane = pane
+    }
+
+    public func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {
+        workspaceProvider = provider
+        workspaceSubscription = provider?.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+        objectWillChange.send()
     }
 
     public func makeRootView() -> AnyView {
@@ -58,14 +70,7 @@ private struct DefaultRootHostView: View {
                     Divider()
                 }
 
-                if let railView = provider.railView {
-                    railView
-                }
-
-                RootMainContentView(
-                    contentView: provider.contentView,
-                    trailingPane: provider.trailingPane
-                )
+                WorkbenchSplitView(provider: provider)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -76,12 +81,54 @@ private struct DefaultRootHostView: View {
 }
 
 @MainActor
+private struct WorkbenchSplitView: View {
+    @ObservedObject var provider: DefaultRootViewProviding
+
+    private var workspace: (any WorkspaceProviding)? { provider.workspaceProvider }
+    private var containerID: String { workspace?.activeContainerID ?? "root" }
+    private var showsRail: Bool { provider.railView != nil && (workspace?.isRailVisible ?? true) }
+
+    var body: some View {
+        Group {
+            if showsRail {
+                #if os(macOS)
+                HSplitView {
+                    provider.railView!
+                        .frame(minWidth: 180, idealWidth: workspace?.railDivider(for: containerID, fallback: 240) ?? 240, maxWidth: 400)
+                    mainContent
+                }
+                .id("host.rail.\(containerID)")
+                #else
+                HStack(spacing: 0) { provider.railView!; Divider(); mainContent }
+                #endif
+            } else {
+                mainContent
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var mainContent: some View {
+        RootMainContentView(
+            contentView: provider.contentView,
+            trailingPane: provider.trailingPane,
+            workspaceShowsTrailingPane: workspace?.isChatVisible ?? true,
+            trailingWidth: workspace?.chatDivider(for: containerID, layout: .narrow, fallback: 320) ?? 320
+        )
+    }
+}
+
+@MainActor
 private struct RootMainContentView: View {
     let contentView: AnyView?
     @ObservedObject var trailingPane: RootTrailingPane
+    let workspaceShowsTrailingPane: Bool
+    let trailingWidth: CGFloat
 
-    init(contentView: AnyView?, trailingPane: RootTrailingPane?) {
+    init(contentView: AnyView?, trailingPane: RootTrailingPane?, workspaceShowsTrailingPane: Bool, trailingWidth: CGFloat) {
         self.contentView = contentView
+        self.workspaceShowsTrailingPane = workspaceShowsTrailingPane
+        self.trailingWidth = trailingWidth
         _trailingPane = ObservedObject(wrappedValue: trailingPane ?? RootTrailingPane(
             id: "root.empty",
             isVisible: false,
@@ -95,7 +142,7 @@ private struct RootMainContentView: View {
 
     var body: some View {
         Group {
-            if trailingPane.isVisible {
+            if trailingPane.isVisible && workspaceShowsTrailingPane {
                 #if os(macOS)
                 HSplitView {
                     mainContent
@@ -103,7 +150,7 @@ private struct RootMainContentView: View {
                     trailingPane.content
                         .frame(
                             minWidth: trailingPane.minWidth,
-                            idealWidth: trailingPane.idealWidth,
+                            idealWidth: trailingWidth,
                             maxWidth: trailingPane.maxWidth,
                             maxHeight: .infinity
                         )
