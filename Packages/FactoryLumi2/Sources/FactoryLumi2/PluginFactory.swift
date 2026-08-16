@@ -30,6 +30,7 @@ import PluginLLMProviderLPgpt
 import PluginLLMProviderMegaLLM
 import PluginLLMProviderMiniMax
 import PluginLLMProviderOpenAI
+import PluginLLMProviderSettings
 import PluginLLMProviderOpenCode
 import PluginLLMProviderOpenRouter
 import PluginLLMProviderStepFun
@@ -97,6 +98,7 @@ public struct DefaultPluginFactory: PluginFactory {
             XiaomiProviderPlugin(),
             XybbzProviderPlugin(),
             ZhipuProviderPlugin(),
+            LLMProviderSettingsPlugin(),
         ]
     }
 }

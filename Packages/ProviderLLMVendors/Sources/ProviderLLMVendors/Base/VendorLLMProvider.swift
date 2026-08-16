@@ -53,6 +53,18 @@ open class VendorLLMProvider: ManagedLLMProvider, @preconcurrency LLMProviding {
         VendorAPIKeyTools.has(storageKey: providerInfo.apiKeyStorageKey)
     }
 
+    public func getApiKey() -> String {
+        VendorAPIKeyTools.get(storageKey: providerInfo.apiKeyStorageKey)
+    }
+
+    public func setApiKey(_ apiKey: String) {
+        VendorAPIKeyTools.set(apiKey, storageKey: providerInfo.apiKeyStorageKey)
+    }
+
+    public func removeApiKey() {
+        VendorAPIKeyTools.remove(storageKey: providerInfo.apiKeyStorageKey)
+    }
+
     public func resolveAPIKey() throws -> String {
         try VendorAPIKeyTools.resolve(
             storageKey: providerInfo.apiKeyStorageKey,
