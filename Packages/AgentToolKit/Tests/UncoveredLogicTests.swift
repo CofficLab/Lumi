@@ -39,6 +39,90 @@ struct SuperAgentToolDefaultExtensionTests {
     }
 }
 
+// MARK: - SuperAgentTool 默认 execute / executeResult
+
+private struct UnimplementedTool: SuperAgentTool {
+    let name = "unimplemented_tool"
+
+    func description(for language: LanguagePreference) -> String { "Unimplemented" }
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { "Nothing" }
+}
+
+private struct FailingTool: SuperAgentTool {
+    let name = "failing_tool"
+
+    func description(for language: LanguagePreference) -> String { "Failing" }
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { "Fail" }
+
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        throw ToolExecutionError.permissionDenied(toolName: name)
+    }
+}
+
+private struct ContentTool: SuperAgentTool {
+    let name = "content_tool"
+
+    func description(for language: LanguagePreference) -> String { "Content" }
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .safe }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { "Run" }
+
+    func execute(arguments: [String: ToolArgument]) async throws -> String { "executed" }
+}
+
+struct SuperAgentToolExecuteTests {
+    @Test
+    func defaultExecuteThrowsExecutionFailed() async {
+        let tool = UnimplementedTool()
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await tool.execute(arguments: [:])
+        }
+    }
+
+    @Test
+    func defaultExecuteErrorMessageMentionsTool() async throws {
+        let tool = UnimplementedTool()
+        do {
+            _ = try await tool.execute(arguments: [:])
+            Issue.record("Expected execute to throw")
+        } catch let error as ToolExecutionError {
+            #expect(
+                error.errorDescription
+                    == "Failed to execute 'unimplemented_tool': unimplemented_tool does not implement execute(arguments:)"
+            )
+        }
+    }
+
+    @Test
+    func defaultExecuteResultWrapsContent() async throws {
+        let result = try await ContentTool().executeResult(arguments: [:])
+        #expect(result.content == "executed")
+        #expect(result.images.isEmpty)
+        #expect(!result.isError)
+        #expect(!result.awaitingUserResponse)
+    }
+
+    @Test
+    func defaultExecuteResultPropagatesErrors() async {
+        await #expect(throws: ToolExecutionError.self) {
+            _ = try await FailingTool().executeResult(arguments: [:])
+        }
+    }
+}
+
+// MARK: - LanguagePreference 空 locale 回退
+
+struct LanguagePreferenceFallbackTests {
+    @Test
+    func emptyLocaleFallsBackToIdentifierAndMapsToEnglish() {
+        #expect(LanguagePreference(locale: Locale(identifier: "")) == .english)
+    }
+}
+
 // MARK: - ToolCallInteractionState
 
 struct ToolCallInteractionStateTests {
