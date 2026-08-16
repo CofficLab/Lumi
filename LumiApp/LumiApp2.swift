@@ -20,6 +20,17 @@ struct LumiMinimalApp: App {
     /// 启动失败必须显式呈现，不能静默退化成一个没有 Provider 的空内核。
     private let bootstrapErrorDescription: String?
 
+    /// 主视图在 `init` 中一次性装配并缓存，绝不能在 `body` 求值期间调用
+    /// `makeMainView(kernel:)`：它会向 `DefaultRootViewProviding`
+    /// （ObservableObject）的 `@Published` 属性注入视图，在视图更新期间发布
+    /// `objectWillChange` 会触发 SwiftUI 的 "Publishing changes from within
+    /// view updates is not allowed"，且发布经 Kernel 转发后会让 `body` 重新
+    /// 求值 → 再次装配 → 无限循环刷屏。
+    private let mainView: AnyView
+
+    /// 设置视图同样在 `init` 中装配一次（避免每个窗口重复装配内核贡献）。
+    private let settingsView: AnyView
+
     @Environment(\.openWindow) private var openWindow
 
     init() {
@@ -28,9 +39,15 @@ struct LumiMinimalApp: App {
             let assembledKernel = try KernelFactory.makeKernel()
             _kernel = StateObject(wrappedValue: assembledKernel)
             bootstrapErrorDescription = nil
+            mainView = (try? KernelFactory.makeMainView(kernel: assembledKernel))
+                ?? AnyView(BootstrapFailureView(message: "Failed to assemble main view"))
+            settingsView = (try? KernelFactory.makeSettingsView(kernel: assembledKernel))
+                ?? AnyView(BootstrapFailureView(message: "Failed to assemble settings view"))
         } catch {
             _kernel = StateObject(wrappedValue: KernelCoreContainer())
             bootstrapErrorDescription = error.localizedDescription
+            mainView = AnyView(BootstrapFailureView(message: error.localizedDescription))
+            settingsView = AnyView(BootstrapFailureView(message: error.localizedDescription))
         }
     }
 
@@ -76,22 +93,6 @@ struct LumiMinimalApp: App {
         } label: {
             LogoMenuBarLabel(kernel: kernel)
         }
-    }
-
-    private var mainView: AnyView {
-        if let bootstrapErrorDescription {
-            return AnyView(BootstrapFailureView(message: bootstrapErrorDescription))
-        }
-        return (try? KernelFactory.makeMainView(kernel: kernel))
-            ?? AnyView(BootstrapFailureView(message: "Failed to assemble main view"))
-    }
-
-    private var settingsView: AnyView {
-        if let bootstrapErrorDescription {
-            return AnyView(BootstrapFailureView(message: bootstrapErrorDescription))
-        }
-        return (try? KernelFactory.makeSettingsView(kernel: kernel))
-            ?? AnyView(BootstrapFailureView(message: "Failed to assemble settings view"))
     }
 }
 
