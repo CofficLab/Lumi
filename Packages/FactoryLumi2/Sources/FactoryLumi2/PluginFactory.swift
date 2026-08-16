@@ -5,6 +5,8 @@ import PluginLogoCoffic
 import PluginSettingGeneral
 import PluginThemePack
 import PluginToolbarSettings
+import PluginVideoConverter
+import PluginWhiteNoise
 
 /// 产出各种插件的工厂协议。
 ///
@@ -33,6 +35,8 @@ public struct DefaultPluginFactory: PluginFactory {
             LogoCofficPlugin(),
             SettingsToolbarPlugin(),
             ThemePackPlugin(),
+            VideoConverterPlugin(),
+            WhiteNoisePlugin(),
         ]
     }
 }
