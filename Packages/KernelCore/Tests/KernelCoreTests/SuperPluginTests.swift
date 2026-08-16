@@ -16,6 +16,8 @@ struct SuperPluginTests {
         let plugin: any SuperPlugin = MockPlugin(id: "test.plugin")
 
         #expect(plugin.id == "test.plugin")
+        #expect(plugin.metadata.id == "test.plugin")
+        #expect(plugin.metadata.policy == .enabledByDefault)
     }
 
     @Test("不同插件实例 id 独立")
