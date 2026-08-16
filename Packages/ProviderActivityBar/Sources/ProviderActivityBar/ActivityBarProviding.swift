@@ -16,6 +16,9 @@ public protocol ActivityBarProviding: AnyObject {
     /// 当前已注入的全部 ActivityBar 项。
     var items: [ActivityBarItem] { get }
 
+    /// 当前激活入口；无入口时为 nil。
+    var activeItemID: String? { get }
+
     /// 注入 ActivityBar 项（替换当前全部项）。
     func registerItems(_ items: [ActivityBarItem])
 
@@ -27,11 +30,16 @@ public protocol ActivityBarProviding: AnyObject {
     /// 按 id 撤回插件贡献的入口项。
     func removeItems(ids: Set<String>)
 
+    /// 激活指定入口。未知 id 忽略；传 nil 表示清除激活。
+    func activateItem(id: String?)
+
     /// 返回 ActivityBar 视图（基于已注入的 items 渲染）。
     func makeActivityBarView() -> AnyView
 }
 
 public extension ActivityBarProviding {
+    var activeItemID: String? { nil }
+
     /// 追加语义的默认实现：合入已有项并按 `order` 排序（同 id 去重，保留先注册者）。
     func addItems(_ newItems: [ActivityBarItem]) {
         var merged = items
@@ -44,4 +52,6 @@ public extension ActivityBarProviding {
     func removeItems(ids: Set<String>) {
         registerItems(items.filter { !ids.contains($0.id) })
     }
+
+    func activateItem(id: String?) {}
 }

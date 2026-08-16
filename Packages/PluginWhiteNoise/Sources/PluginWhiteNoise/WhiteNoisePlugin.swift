@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import SwiftUI
@@ -19,9 +20,24 @@ public final class WhiteNoisePlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // 1. 注册白噪音视图为主内容（ContentView，沿用旧版 viewContainers）
-        if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
-            contentView.setContentView(AnyView(WhiteNoiseView()))
+        let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+
+        // 1. 注册 ActivityBar 入口；激活后由插件切换自己的主内容。
+        if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
+            let entryID = "\(id).entry"
+            activityBar.addItems([
+                ActivityBarItem(
+                    id: entryID,
+                    title: "白噪音",
+                    systemImage: "waveform",
+                    order: order
+                ) { activeItemID in
+                    guard activeItemID == entryID else { return }
+                    contentView?.setContentView(AnyView(WhiteNoiseView()))
+                },
+            ])
+        } else {
+            contentView?.setContentView(AnyView(WhiteNoiseView()))
         }
 
         // 2. 贡献「关于」与「说明书」文档（沿用旧版 pluginAboutView / pluginManualView）
@@ -32,7 +48,11 @@ public final class WhiteNoisePlugin: SuperPlugin {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if activityBar == nil || activityBar?.activeItemID == nil {
+            kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+        }
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

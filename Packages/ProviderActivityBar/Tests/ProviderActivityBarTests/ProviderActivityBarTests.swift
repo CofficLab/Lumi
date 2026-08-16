@@ -28,6 +28,59 @@ struct ProviderActivityBarTests {
 
         #expect(provider.items.count == 2)
         #expect(provider.items.map(\.id) == ["a", "b"])
+        #expect(provider.activeItemID == "a")
+    }
+
+    @Test("激活项变化会回调全部已注册入口")
+    func activationNotifiesRegisteredItems() {
+        let provider = DefaultActivityBarProviding()
+        var received: [String] = []
+        provider.registerItems([
+            ActivityBarItem(id: "a", title: "A", systemImage: "a") { activeID in
+                received.append("a:\(activeID ?? "nil")")
+            },
+            ActivityBarItem(id: "b", title: "B", systemImage: "b") { activeID in
+                received.append("b:\(activeID ?? "nil")")
+            },
+        ])
+
+        #expect(received == ["a:a", "b:a"])
+
+        provider.activateItem(id: "b")
+
+        #expect(provider.activeItemID == "b")
+        #expect(received.suffix(2) == ["a:b", "b:b"])
+    }
+
+    @Test("移除当前激活入口会回退并通知剩余入口")
+    func removingActiveItemActivatesFallback() {
+        let provider = DefaultActivityBarProviding()
+        var bActivations: [String?] = []
+        provider.registerItems([
+            ActivityBarItem(id: "a", title: "A", systemImage: "a"),
+            ActivityBarItem(id: "b", title: "B", systemImage: "b") { activeID in
+                bActivations.append(activeID)
+            },
+        ])
+        provider.activateItem(id: "b")
+
+        provider.removeItems(ids: ["b"])
+
+        #expect(provider.activeItemID == "a")
+        #expect(provider.items.map(\.id) == ["a"])
+        #expect(bActivations.last == "b")
+    }
+
+    @Test("未知入口不会改变当前激活项")
+    func unknownActivationIsIgnored() {
+        let provider = DefaultActivityBarProviding()
+        provider.registerItems([
+            ActivityBarItem(id: "a", title: "A", systemImage: "a"),
+        ])
+
+        provider.activateItem(id: "missing")
+
+        #expect(provider.activeItemID == "a")
     }
 
     @Test("注入 items 后返回可渲染的 ActivityBar 视图")

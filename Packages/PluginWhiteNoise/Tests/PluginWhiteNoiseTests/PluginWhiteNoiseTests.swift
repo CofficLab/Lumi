@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import SwiftUI
@@ -10,16 +11,21 @@ import Testing
 @MainActor
 struct PluginWhiteNoiseTests {
 
-    @Test("onBoot 注册主内容与文档")
+    @Test("onBoot 注册 ActivityBar 入口、主内容与文档")
     func onBootRegistersContentViewAndDocs() throws {
         let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
         let contentView = DefaultContentViewProviding()
         let docs = DefaultDocsViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
 
         let plugin = WhiteNoisePlugin()
         try plugin.onBoot(kernel: kernel)
+
+        #expect(activityBar.items.map(\.id) == ["\(plugin.id).entry"])
+        #expect(activityBar.activeItemID == "\(plugin.id).entry")
 
         // 主内容视图
         #expect(type(of: contentView.makeContentView()) == AnyView.self)
@@ -60,8 +66,10 @@ struct PluginWhiteNoiseTests {
     @Test("onShutdown 撤回贡献")
     func onShutdownRemovesContributions() throws {
         let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
         let contentView = DefaultContentViewProviding()
         let docs = DefaultDocsViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
 
@@ -69,6 +77,8 @@ struct PluginWhiteNoiseTests {
         try plugin.onBoot(kernel: kernel)
         try plugin.onShutdown(kernel: kernel)
 
+        #expect(activityBar.items.isEmpty)
+        #expect(activityBar.activeItemID == nil)
         #expect(docs.aboutEntries.isEmpty)
         #expect(docs.manualEntries.isEmpty)
         // setContentView(nil) 后回退到占位视图，不抛错

@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
+    "%lld%%" : {
+
+    },
     "Auto-stop after 15 / 30 / 60 minutes with a countdown." : {
       "localizations" : {
         "en" : {
@@ -133,6 +139,31 @@
         }
       }
     },
+    "independent volumes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "independent volumes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "独立音量"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "獨立音量"
+          }
+        }
+      }
+    },
+    "Master Volume" : {
+
+    },
     "Mix" : {
       "localizations" : {
         "en" : {
@@ -199,6 +230,28 @@
         }
       }
     },
+    "noise tracks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "noise tracks"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "噪声音轨"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "噪聲音軌"
+          }
+        }
+      }
+    },
     "Open the sidebar view" : {
       "localizations" : {
         "en" : {
@@ -220,6 +273,9 @@
           }
         }
       }
+    },
+    "Paused" : {
+
     },
     "Pink Noise" : {
       "localizations" : {
@@ -243,6 +299,9 @@
         }
       }
     },
+    "Playing" : {
+
+    },
     "Plays Along Your Music" : {
       "localizations" : {
         "en" : {
@@ -261,6 +320,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "與其它音訊共存"
+          }
+        }
+      }
+    },
+    "Real-time generated white, pink and brown noise for focus and sleep — no audio files, seamless loops, mixable tracks." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Real-time generated white, pink and brown noise for focus and sleep — no audio files, seamless loops, mixable tracks."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时生成白噪音、粉噪音、棕噪音,助力专注与助眠:无音频文件、真正无缝循环、多轨自由混合。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時生成白噪音、粉噪音、棕噪音,助力專注與助眠:無音訊檔案、真正無縫循環、多軌自由混音。"
           }
         }
       }
@@ -287,24 +368,24 @@
         }
       }
     },
-    "Real-time generated white, pink and brown noise for focus and sleep — no audio files, seamless loops, mixable tracks." : {
+    "sleep timer" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Real-time generated white, pink and brown noise for focus and sleep — no audio files, seamless loops, mixable tracks."
+            "value" : "sleep timer"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "实时生成白噪音、粉噪音、棕噪音,助力专注与助眠:无音频文件、真正无缝循环、多轨自由混合。"
+            "value" : "睡眠定时"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "即時生成白噪音、粉噪音、棕噪音,助力專注與助眠:無音訊檔案、真正無縫循環、多軌自由混音。"
+            "value" : "睡眠定時"
           }
         }
       }
@@ -352,6 +433,9 @@
           }
         }
       }
+    },
+    "This manual covers the interface and basic operations of White Noise: playing noise tracks, adjusting volumes, and setting the sleep timer." : {
+
     },
     "Three-track Mixer" : {
       "localizations" : {
@@ -459,72 +543,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "白噪音"
-          }
-        }
-      }
-    },
-    "independent volumes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "independent volumes"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "独立音量"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "獨立音量"
-          }
-        }
-      }
-    },
-    "noise tracks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "noise tracks"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "噪声音轨"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "噪聲音軌"
-          }
-        }
-      }
-    },
-    "sleep timer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sleep timer"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "睡眠定时"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "睡眠定時"
           }
         }
       }
