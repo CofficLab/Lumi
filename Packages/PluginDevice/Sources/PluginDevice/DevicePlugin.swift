@@ -3,6 +3,7 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderMenuBar
+import ProviderRailView
 import ProviderSettingView
 import ProviderStorage
 import SwiftUI
@@ -47,6 +48,7 @@ public final class DevicePlugin: SuperPlugin {
 
         // 2. 注册 ActivityBar 入口；入口被激活时由插件切换自己的主内容。
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
             activityBar.addItems([
@@ -58,6 +60,7 @@ public final class DevicePlugin: SuperPlugin {
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     contentView?.setContentView(AnyView(DeviceInfoView()))
+                    railView?.activateGroup(id: self.id)
                 },
             ])
         } else {
