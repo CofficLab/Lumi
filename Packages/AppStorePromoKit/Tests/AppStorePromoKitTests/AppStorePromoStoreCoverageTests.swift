@@ -251,6 +251,44 @@ struct AppStorePromoStoreCoverageTests {
                 .resolvingSymlinksInPath().standardizedFileURL.path)
         #expect(AppStorePromoDocumentStore.isPathAllowed("/tmp/project", allowedDirectories: ["/tmp/project/"]))
     }
+
+    @Test func storeErrorDescriptionsAreNonEmpty() {
+        let issues = [AppStorePromoLintIssue(severity: .error, code: "code", message: "message")]
+        let errors: [AppStorePromoStoreError] = [
+            .invalidStoragePath,
+            .invalidSlug("bad slug"),
+            .alreadyExists("/tmp/a"),
+            .notFound("/tmp/b"),
+            .imageNotFound("img"),
+            .invalidLocale("xx"),
+            .localeNotFound("fr-FR"),
+            .localeAlreadyExists("fr-FR"),
+            .invalidHTML(issues),
+            .patchTextMissing("old"),
+            .patchTextNotUnique("old"),
+            .pathNotAllowed("/etc"),
+        ]
+        for error in errors {
+            #expect(!(error.errorDescription ?? "").isEmpty)
+        }
+    }
+
+    @Test func readImageThrowsWhenHTMLFileIsMissingOnDisk() throws {
+        let root = try makeRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppStorePromoDocumentStore()
+        _ = try store.createTask(
+            storagePath: root.path, slug: "t", title: "T",
+            appName: "Lumi", deviceFamily: .mac, localeIdentifier: "en-US"
+        )
+        _ = try store.createImage(storagePath: root.path, taskSlug: "t", imageSlug: "i", title: "I")
+        let htmlURL = root.appendingPathComponent("tasks/t/images/i/index.html")
+        try FileManager.default.removeItem(at: htmlURL)
+
+        #expect(throws: AppStorePromoStoreError.imageNotFound("i")) {
+            _ = try store.readImage(storagePath: root.path, taskSlug: "t", imageSlug: "i")
+        }
+    }
 }
 
 @Suite("Template factory")

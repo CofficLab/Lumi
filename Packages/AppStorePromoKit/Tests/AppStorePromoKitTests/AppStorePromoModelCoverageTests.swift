@@ -35,6 +35,39 @@ final class AppStorePromoModelCoverageTests {
         #expect(AppStorePromoLocale.normalize("") == nil)
     }
 
+    @Test("locale normalization edge cases")
+    func localeNormalizationEdges() {
+        #expect(AppStorePromoLocale.normalize("  en-us  ") == "en-US")
+        #expect(AppStorePromoLocale.normalize("es-419") == "es-419")
+        #expect(AppStorePromoLocale.normalize("zh-hant-tw") == "zh-Hant-TW")
+        #expect(AppStorePromoLocale.normalize("en-GB-Cyrl") == "en-GB-Cyrl")
+        #expect(AppStorePromoLocale.normalize("toolonglocale-XX") == nil)
+        #expect(AppStorePromoLocale.normalize("e") == nil)
+        #expect(AppStorePromoLocale.normalize("en_US") == nil)
+    }
+
+    @Test("device family identifiers and localized names")
+    func familyIDsAndLocalizedNames() {
+        for family in AppStorePromoDeviceFamily.allCases {
+            #expect(family.id == family.rawValue)
+        }
+        let unknown = AppStorePromoLocale(identifier: "zz")
+        #expect(unknown.localizedName == "zz")
+        #expect(unknown.displayName == "zz · zz")
+    }
+
+    @Test("image decoding applies defaults for optional fields")
+    func imageDecodingAppliesDefaults() throws {
+        let json = """
+        {"id":"i","title":"T","order":0,"createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z"}
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let image = try decoder.decode(AppStorePromoImage.self, from: Data(json.utf8))
+        #expect(image.htmlFileName == "index.html")
+        #expect(image.localeIdentifiers.isEmpty)
+    }
+
     @Test("asset error descriptions are non-empty")
     func assetErrorDescriptions() {
         let errors: [AppStorePromoAssetError] = [

@@ -213,4 +213,67 @@ struct AppStorePromoKitTests {
         #expect(properties[kCGImagePropertyPixelWidth] as? Int == 320)
         #expect(properties[kCGImagePropertyPixelHeight] as? Int == 200)
     }
+
+    @MainActor
+    @Test func exporterLoadsFromDiskFileURL() async throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let fileURL = dir.appendingPathComponent("index.html")
+        let html = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width">
+        <style>html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#22aa44}</style>
+        </head><body></body></html>
+        """
+        try html.write(to: fileURL, atomically: true, encoding: .utf8)
+
+        let preset = AppStorePromoDisplayPreset(displayType: "TEST", family: .mac, width: 200, height: 100)
+        let data = try await AppStorePromoHTMLExporter.exportPNG(html: html, fileURL: fileURL, preset: preset)
+        #expect(!data.isEmpty)
+    }
+
+    @MainActor
+    @Test func exporterFailsWhenFileURLIsUnreachable() async {
+        let preset = AppStorePromoDisplayPreset(displayType: "TEST", family: .mac, width: 200, height: 100)
+        await #expect(throws: AppStorePromoExportError.loadTimedOut) {
+            _ = try await AppStorePromoHTMLExporter.exportPNG(
+                html: "",
+                fileURL: URL(fileURLWithPath: "/nonexistent-\(UUID().uuidString)/index.html"),
+                preset: preset,
+                loadTimeout: 10
+            )
+        }
+    }
+
+    @MainActor
+    @Test func exporterTimesOutWhenImagesNeverLoad() async throws {
+        let html = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width">
+        <style>html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#7138f4}</style>
+        </head><body><img src="definitely-missing.png" alt=""></body></html>
+        """
+        let preset = AppStorePromoDisplayPreset(displayType: "TEST", family: .mac, width: 200, height: 100)
+        await #expect(throws: AppStorePromoExportError.resourcesTimedOut) {
+            _ = try await AppStorePromoHTMLExporter.exportPNG(
+                html: html,
+                fileURL: nil,
+                preset: preset,
+                loadTimeout: 10,
+                resourceTimeout: 0.5
+            )
+        }
+    }
+
+    @Test func exportErrorDescriptionsAreNonEmpty() {
+        let errors: [AppStorePromoExportError] = [
+            .loadTimedOut,
+            .resourcesTimedOut,
+            .unexpectedImageSize(expectedWidth: 1290, expectedHeight: 2796, actualWidth: 1, actualHeight: 2),
+            .pngEncodingFailed,
+        ]
+        for error in errors {
+            #expect(!(error.errorDescription ?? "").isEmpty)
+        }
+    }
 }

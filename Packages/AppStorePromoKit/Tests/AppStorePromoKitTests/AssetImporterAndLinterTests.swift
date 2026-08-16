@@ -83,6 +83,40 @@ struct AppStorePromoAssetImporterTests {
             )
         }
     }
+
+    @Test func oversizedFileThrowsBeforeDecoding() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("huge.png")
+        try Data(count: 50 * 1024 * 1024 + 1).write(to: file)
+        let destDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
+
+        #expect(throws: AppStorePromoAssetError.fileTooLarge(50 * 1024 * 1024 + 1)) {
+            _ = try AppStorePromoAssetImporter().importImage(
+                sourceURL: file, destinationDirectory: destDir
+            )
+        }
+        #expect(try FileManager.default.contentsOfDirectory(atPath: destDir.path).isEmpty)
+    }
+
+    @Test func usesSourceFileNameWhenPreferredNameOmitted() throws {
+        let source = try makePNG()
+        defer { try? FileManager.default.removeItem(at: source.deletingLastPathComponent()) }
+        let destDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: destDir) }
+
+        let asset = try AppStorePromoAssetImporter().importImage(
+            sourceURL: source, destinationDirectory: destDir
+        )
+        #expect(asset.fileURL.lastPathComponent == "sample.png")
+        #expect(asset.relativePath == "./assets/sample.png")
+    }
 }
 
 @Suite("HTML linter edge cases")
@@ -152,6 +186,25 @@ struct AppStorePromoHTMLLinterTests {
 
     @Test func dataURIsAreSkipped() {
         let html = minimalHTML(body: #"<img src="data:image/png;base64,AAAA">"#)
+        let report = AppStorePromoHTMLLinter().lint(html: html, documentDirectory: FileManager.default.temporaryDirectory)
+        #expect(!report.errors.map(\.code).contains("missing_asset"))
+    }
+
+    @Test func percentEncodedAssetPathsAreResolved() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try Data([0xFF]).write(to: dir.appendingPathComponent("hero art.png"))
+
+        let html = minimalHTML(body: #"<img src="./hero%20art.png">"#)
+        let report = AppStorePromoHTMLLinter().lint(html: html, documentDirectory: dir)
+        #expect(!report.errors.map(\.code).contains("missing_asset"))
+        #expect(!report.errors.map(\.code).contains("unsafe_asset_path"))
+    }
+
+    @Test func fragmentOnlyLinksAreSkipped() {
+        let html = minimalHTML(body: ##"<a href="#section">Jump</a>"##)
         let report = AppStorePromoHTMLLinter().lint(html: html, documentDirectory: FileManager.default.temporaryDirectory)
         #expect(!report.errors.map(\.code).contains("missing_asset"))
     }
