@@ -1,0 +1,119 @@
+import AgentToolKit
+import KernelCore
+import ProviderActivityBar
+import ProviderContentView
+import ProviderDocsView
+import ProviderRailView
+import ProviderToolManager
+import SwiftUI
+
+/// KernelCore 版本的 App Store 促销图设计器插件。
+///
+/// 由旧版 `Plugins/AppStorePromoDesignerPlugin`（KernelLumi / LumiPlugin）复刻而来，
+/// 形态对齐 `PluginAppIconDesigner`：SuperPlugin + SuperAgentTool + Provider 注册表。
+@MainActor
+public final class AppStorePromoDesignerPlugin: SuperPlugin {
+    public let id = "com.coffic.lumi.plugin.app-store-promo-designer"
+    public let order = 80
+
+    public static let railTabID = "app-store-promo.tasks"
+
+    public var name: String {
+        PromoLocalization.string("App Store Promo Designer")
+    }
+
+    public init() {}
+
+    public func onBoot(kernel: KernelCoreContainer) throws {
+        PromoDesignerRuntime.configure(kernel: kernel, pluginID: id)
+
+        // 注册 Agent 工具到 ToolManagerProviding。
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            for tool in Self.agentTools {
+                toolManager.add(tool, pluginID: id)
+            }
+        }
+
+        let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+
+        // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
+        railView?.addTabs([
+            RailTabItem(
+                id: Self.railTabID,
+                groupID: id,
+                title: PromoLocalization.string("Promo Tasks"),
+                systemImage: "photo.stack",
+                order: order
+            ) {
+                PromoRailView()
+            },
+        ])
+
+        if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
+            let entryID = "\(id).entry"
+            activityBar.addItems([
+                ActivityBarItem(
+                    id: entryID,
+                    title: name,
+                    systemImage: "photo.artframe",
+                    order: order
+                ) { activeItemID in
+                    guard activeItemID == entryID else { return }
+                    WorkspaceStore.shared.reload()
+                    contentView?.setContentView(AnyView(PromoDesignerView()))
+                    railView?.activateGroup(id: self.id)
+                },
+            ])
+        } else {
+            WorkspaceStore.shared.reload()
+            contentView?.setContentView(AnyView(PromoDesignerView()))
+            railView?.activateGroup(id: id)
+        }
+
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { PromoAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { PromoManualView() })
+        }
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        // 撤回注册的 Agent 工具。
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            for tool in Self.agentTools {
+                toolManager.remove(id: tool.name)
+            }
+        }
+
+        kernel.resolveProvider((any RailViewProviding).self)?
+            .removeTabs(ids: [Self.railTabID])
+
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if activityBar == nil || activityBar?.activeItemID == nil {
+            kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+        }
+
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+        PromoDesignerRuntime.reset()
+    }
+
+    // MARK: - Agent Tools
+
+    /// 本插件贡献的 Agent 工具（复刻旧版 PromoDesignerPlugin.agentTools）。
+    public static let agentTools: [any SuperAgentTool] = [
+        ListPromoTasksTool(),
+        CreatePromoTaskTool(),
+        ReadPromoTaskTool(),
+        CreatePromoImageTool(),
+        AddPromoImageLocalizationTool(),
+        ReadPromoHTMLTool(),
+        ReplacePromoHTMLTool(),
+        PatchPromoHTMLTool(),
+        ImportPromoAssetTool(),
+        PreviewPromoImageTool(),
+        LintPromoTaskTool(),
+        ExportPromoTaskTool(),
+        ReviewPromoImageTool(),
+    ]
+}
