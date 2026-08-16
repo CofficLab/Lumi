@@ -39,6 +39,12 @@ public final class DefaultMessageSendingProviding: MessageSendingProviding {
                 modelName: nil
             )
         }
+        // A newly-created conversation must become the active timeline before
+        // the message list renders; otherwise the user message is persisted
+        // into an invisible, unselected conversation.
+        if conversations.selectedConversationID != targetID {
+            conversations.selectConversation(id: targetID)
+        }
 
         let userMessage = Message(conversationID: targetID, role: .user, content: trimmed)
         messages.insertMessage(userMessage, to: targetID)
