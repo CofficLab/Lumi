@@ -20,6 +20,7 @@ let package = Package(
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
+        .package(path: "../ProviderRailView"),
         .package(path: "../SuperLogKit"),
     ],
     targets: [
@@ -32,6 +33,7 @@ let package = Package(
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/PluginVideoConverter",
