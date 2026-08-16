@@ -43,6 +43,14 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/PluginDevice",
+            exclude: [
+                "Models/README.md",
+                "Services/README.md",
+                "ViewModels/README.md",
+                "Views/README.md",
+                "Views/MenuBar/README.md",
+                "Support/README.md",
+            ],
             resources: [
                 .process("Resources/Localizable.xcstrings")
             ]

@@ -1,40 +1,14 @@
 import AppKit
 import Combine
-import SwiftUI
-import SuperLogKit
 import os
+import SuperLogKit
+import SwiftUI
 
-// MARK: - Local Notification Names
-
-extension Notification.Name {
-    static let lumiMenuBarAppearanceDidChange = Notification.Name("lumiMenuBarAppearanceDidChange")
-}
-
-/// 菜单栏内容视图（CPU 每核瞬时柱状图 + 内存单柱）
-public struct DeviceInfoMenuBarContentView: View {
-
-    // MARK: - Properties
-
-    // 共享 ViewModel 保证 CPU/内存指标持续更新。
-    @ObservedObject private var viewModel = DeviceInfoMenuBarContentViewModel.shared
-
-    // MARK: - Body
-
-    public var body: some View {
-        HStack(spacing: 4) {
-            // CPU 柱状图
-            Image(nsImage: viewModel.snapshot.cpuImage)
-                .interpolation(.none)
-                .help(viewModel.snapshot.cpuHelpText)
-
-            // 内存柱状图
-            Image(nsImage: viewModel.snapshot.memoryImage)
-                .interpolation(.none)
-                .help(viewModel.snapshot.memoryHelpText)
-        }
-    }
-}
-
+/// 菜单栏 CPU/内存指标的共享 ViewModel。
+///
+/// 单例模式：CPU/内存柱状图持续更新由本 ViewModel 驱动，
+/// 订阅 `CPUService` / `MemoryService` 的发布者，经 80ms 防抖后
+/// 生成 `DeviceInfoMenuBarSnapshot`（内含预渲染的 NSImage）。
 @MainActor
 final class DeviceInfoMenuBarContentViewModel: ObservableObject, SuperLog {
     static let shared = DeviceInfoMenuBarContentViewModel()
@@ -130,6 +104,8 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject, SuperLog {
             .store(in: &cancellables)
     }
 }
+
+// MARK: - 菜单栏指标模型
 
 struct DeviceInfoMenuBarCPUMetrics: Equatable {
     var usagePercent: Int
