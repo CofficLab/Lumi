@@ -1,49 +1,29 @@
 import Foundation
 import KernelCore
+import PluginAgentRules
+import PluginAgentTempStorage
+import PluginAgentTurnNotification
 import PluginAppIconDesigner
 import PluginAppStorePromoDesigner
-import PluginMindMapDesigner
-import PluginResumeDesigner
-import PluginDevice
-import PluginDiskManager
+import PluginAskUser
 import PluginCaffeinate
-import PluginHostsManager
-import PluginDocxRead
-import PluginWebFetch
-import PluginWebSearch
-import PluginAgentTempStorage
-import PluginOcr
-import PluginAgentRules
-import PluginLogoCoffic
-import PluginSettingGeneral
-import PluginThemePack
-import PluginToolbarSettings
-import PluginVideoConverter
-import PluginWhiteNoise
-import PluginIdleTime
 import PluginChatFileAttachment
 import PluginChatPanel
 import PluginChatScreenshot
-import PluginConversationMode
 import PluginConversationBehavior
-import PluginConversationTitle
-import PluginConversationPendingMessage
 import PluginConversationFork
-import PluginAskUser
-import PluginOpenIn
-import PluginAgentTurnNotification
-import PluginSkill
-import PluginMemory
-import PluginModelSelector
 import PluginConversationInput
-import PluginProjects
-import PluginMessageList
-import PluginMessageRenderer
 import PluginConversationList
-import PluginConversationNew
 import PluginConversationManager
-import PluginMessageManager
-import PluginPluginManager
+import PluginConversationMode
+import PluginConversationNew
+import PluginConversationPendingMessage
+import PluginConversationTitle
+import PluginDevice
+import PluginDiskManager
+import PluginDocxRead
+import PluginHostsManager
+import PluginIdleTime
 import PluginLLMProviderAiRouter
 import PluginLLMProviderAliyun
 import PluginLLMProviderAnthropic
@@ -57,28 +37,35 @@ import PluginLLMProviderLPgpt
 import PluginLLMProviderMegaLLM
 import PluginLLMProviderMiniMax
 import PluginLLMProviderOpenAI
-import PluginLLMProviderSettings
 import PluginLLMProviderOpenCode
 import PluginLLMProviderOpenRouter
+import PluginLLMProviderSettings
 import PluginLLMProviderStepFun
 import PluginLLMProviderSublyx
 import PluginLLMProviderXiaomi
 import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
-
-/// 产出各种插件的工厂协议。
-///
-/// 集中管理插件的构造；`KernelFactory.makeKernel` 通过它产出插件并
-/// 用 `kernel.start(plugins:)` 启动。宿主可实现该协议覆盖插件列表。
-@MainActor
-public protocol PluginFactory {
-    /// 产出要启动的全部插件。
-    ///
-    /// 各插件在 `onBoot` 中解析内核已有 Provider 并注册自己的贡献
-    /// （如 SettingGeneralPlugin 注册「通用」入口、DevicePlugin 注册
-    ///  「设备信息」入口与主内容、SettingsToolbarPlugin 注册工具栏设置按钮）。
-    func makePlugins() -> [any SuperPlugin]
-}
+import PluginLogoCoffic
+import PluginMemory
+import PluginMessageList
+import PluginMessageManager
+import PluginMessageRenderer
+import PluginMessageSender
+import PluginMindMapDesigner
+import PluginModelSelector
+import PluginOcr
+import PluginOpenIn
+import PluginPluginManager
+import PluginProjects
+import PluginResumeDesigner
+import PluginSettingGeneral
+import PluginSkill
+import PluginThemePack
+import PluginToolbarSettings
+import PluginVideoConverter
+import PluginWebFetch
+import PluginWebSearch
+import PluginWhiteNoise
 
 /// 默认 `PluginFactory` 实现：产出默认插件。
 @MainActor
@@ -133,6 +120,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationNewPlugin(),
             ConversationManagerPlugin(),
             MessageManagerPlugin(),
+            MessageSenderPlugin(),
             PluginPluginManager(),
             AiRouterProviderPlugin(),
             AliyunProviderPlugin(),

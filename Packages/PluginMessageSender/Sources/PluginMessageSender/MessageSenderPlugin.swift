@@ -1,0 +1,55 @@
+import Foundation
+import KernelCore
+import ProviderAgentLoop
+import ProviderConversation
+import ProviderMessage
+import ProviderMessageSender
+
+/// 消息发送装配插件。
+///
+/// 在 `onBoot` 中解析内核已装配的 `ConversationManaging` / `MessageManaging` /
+/// `AgentLoopProviding`，构造插件自带的 `LumiMessageSender`（独立实现
+/// `MessageSendingProviding`，不复用 `ProviderMessageSender.DefaultMessageSender`）
+/// 并注册，供聊天输入、消息列表、渲染器等消费方共享同一实例。
+///
+/// 该能力原先由 `FactoryLumi2.ProviderFactory.registerProviders` 直接装配注册；
+/// 现改为插件贡献（对齐旧版 `Plugins/MessageSenderPlugin` 的职责），宿主可
+/// 通过裁剪/替换插件列表定制该能力。
+///
+/// 顺序说明：`order = 9` 晚于替换基础 Provider 的插件（`ConversationManagerPlugin`
+/// order=7、`MessageManagerPlugin` order=8），确保解析到最终实例；早于所有
+/// `MessageSendingProviding` 消费方（`ConversationForkPlugin` order=80 起），
+/// 保证其 `onBoot` 能 resolve 到本插件注册的实现。
+@MainActor
+public final class MessageSenderPlugin: SuperPlugin {
+    public let id = "com.coffic.lumi.plugin.message-sender"
+    public let order = 9
+
+    public init() {}
+
+    public var metadata: PluginMetadata {
+        PluginMetadata(
+            id: id,
+            name: "Message Sender",
+            description: "消息发送：挂起附件、pending 队列、取消与回合恢复",
+            category: .chat,
+            stage: .preview,
+            policy: .required
+        )
+    }
+
+    public func onBoot(kernel: KernelCoreContainer) throws {
+        guard let conversations = kernel.resolveProvider((any ConversationManaging).self),
+              let messages = kernel.resolveProvider((any MessageManaging).self),
+              let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self) else {
+            return
+        }
+        
+        let sender = LumiMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: agentLoop
+        )
+        try kernel.registerProvider((any MessageSendingProviding).self, sender)
+    }
+}

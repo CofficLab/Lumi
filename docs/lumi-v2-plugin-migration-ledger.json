@@ -3966,7 +3966,7 @@
    "order": 63,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginMessageSender",
    "wave": "P4",
    "owners": [],
    "dependencies": [
@@ -3975,7 +3975,9 @@
     "SuperLogKit"
    ],
    "providersConsumed": [],
-   "providersPublished": [],
+   "providersPublished": [
+    "MessageSendingProviding"
+   ],
    "contributions": [],
    "storage": [],
    "userDefaultsKeys": [],
@@ -3984,13 +3986,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test PluginMessageSender: 3 tests / 1 suite passed（onBoot 注册/缺依赖降级/sendMessage 完整链路）；swift test FactoryLumi2: 35 tests / 4 suites passed（无回归）",
+    "integrationBuild": "swift build FactoryLumi2 succeeded（依赖图含 PluginMessageSender）",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2.ProviderFactory 直接装配注册 → Packages/PluginMessageSender（SuperPlugin onBoot 解析 ConversationManaging/MessageManaging/AgentLoopProviding 并 registerProvider；ProviderFactory 移除注册避免重复，makeMessageSenderProvider 保留为宿主覆盖钩子）",
     "performance": null
    }
   },

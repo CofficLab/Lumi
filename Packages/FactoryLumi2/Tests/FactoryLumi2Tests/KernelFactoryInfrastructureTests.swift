@@ -1,6 +1,7 @@
 import FactoryLumi2
 import KernelCore
 import ProviderPluginControl
+import ProviderPluginManaging
 import ProviderWebServer
 import ProviderWorkspace
 import Testing
@@ -41,6 +42,10 @@ struct KernelFactoryInfrastructureTests {
 
         #expect(kernel.resolveProvider((any WebServerProviding).self) != nil)
         #expect(kernel.resolveProvider((any PluginControlling).self) != nil)
+        let managing = kernel.resolveProvider((any PluginManaging).self)
+        #expect(managing != nil)
+        #expect(managing?.pluginCount == kernel.registeredPluginCount)
+        #expect(managing?.isRegistered(id: "com.coffic.lumi.plugin.plugin-manager") == true)
         let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
         #expect(workspace?.activeContainerID == "com.coffic.lumi.plugin.chat-panel")
         #expect(workspace?.currentContainer?.chatVisibility == .alwaysVisible)
