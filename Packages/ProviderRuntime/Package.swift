@@ -4,7 +4,7 @@ import PackageDescription
 let targets = [
     "ProviderAgentTurn", "ProviderConversationInput", "ProviderMessageStreaming",
     "ProviderMessageRendering", "ProviderPromptSuggestion", "ProviderWorkspace",
-    "ProviderOnboarding", "ProviderCommand", "ProviderIdleTime",
+    "ProviderCommand", "ProviderIdleTime",
     "ProviderLegacyData", "ProviderPluginControl"
 ]
 
