@@ -1,6 +1,8 @@
 import Combine
 import LumiUI
+import os
 import ProviderWorkspace
+import SuperLogKit
 import SwiftUI
 
 /// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail
@@ -14,7 +16,11 @@ import SwiftUI
 /// - 根视图应用主题背景、`appThemedAppearance`、`ThemeWindowAppearanceBridge`
 ///   与 `AppThemeVM` 环境对象（复刻旧版主题链）。
 @MainActor
-public final class DefaultRootViewProviding: RootViewProviding, ObservableObject {
+public final class DefaultRootViewProviding: RootViewProviding, ObservableObject, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-root-view", category: "ProviderRootView")
+    nonisolated public static let emoji = "🏠"
+    nonisolated static let verbose = true
+
     @Published fileprivate var toolbarView: AnyView?
     @Published fileprivate var activityBarView: AnyView?
     @Published fileprivate var railView: AnyView?
@@ -23,26 +29,45 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
     fileprivate var workspaceProvider: (any WorkspaceProviding)?
     private var workspaceSubscription: AnyCancellable?
 
-    public init() {}
+    public init() {
+        if Self.verbose {
+            Self.logger.info("\(self.t)DefaultRootViewProviding initialized")
+        }
+    }
 
     public func setToolbarView(_ view: AnyView?) {
         toolbarView = view
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set toolbar view: \(view == nil ? "nil" : "injected")")
+        }
     }
 
     public func setActivityBarView(_ view: AnyView?) {
         activityBarView = view
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set activity bar view: \(view == nil ? "nil" : "injected")")
+        }
     }
 
     public func setRailView(_ view: AnyView?) {
         railView = view
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set rail view: \(view == nil ? "nil" : "injected")")
+        }
     }
 
     public func setContentView(_ view: AnyView?) {
         contentView = view
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set content view: \(view == nil ? "nil" : "injected")")
+        }
     }
 
     public func setTrailingPane(_ pane: RootTrailingPane?) {
         trailingPane = pane
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set trailing pane: \(pane.map { $0.id } ?? "nil")")
+        }
     }
 
     public func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {
@@ -51,10 +76,16 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
             self?.objectWillChange.send()
         }
         objectWillChange.send()
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set workspace provider: \(provider == nil ? "nil" : "injected")")
+        }
     }
 
     public func makeRootView() -> AnyView {
-        AnyView(DefaultRootHostView(provider: self))
+        if Self.verbose {
+            Self.logger.debug("\(self.t)make root view: toolbar=\(self.toolbarView == nil ? "nil" : "set"), activityBar=\(self.activityBarView == nil ? "nil" : "set"), rail=\(self.railView == nil ? "nil" : "set"), content=\(self.contentView == nil ? "nil" : "set"), activeContainer=\(self.containerID)")
+        }
+        return AnyView(DefaultRootHostView(provider: self))
     }
 
     // MARK: - 显示条件（复刻旧版 AppLayoutView）
