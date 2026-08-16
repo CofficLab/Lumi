@@ -26,6 +26,9 @@ public protocol SettingViewProviding: AnyObject {
     /// 供多个插件各自贡献入口时使用，互不覆盖。
     func addEntries(_ entries: [SettingEntryItem])
 
+    /// 按 id 撤回插件贡献的入口。
+    func removeEntries(ids: Set<String>)
+
     /// 返回设置视图（基于已注入的入口渲染）。
     func makeSettingView() -> AnyView
 }
@@ -38,5 +41,9 @@ public extension SettingViewProviding {
             merged.append(entry)
         }
         registerEntries(merged)
+    }
+
+    func removeEntries(ids: Set<String>) {
+        registerEntries(entries.filter { !ids.contains($0.id) })
     }
 }

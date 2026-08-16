@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import Testing
 @testable import ProviderContentView
@@ -24,6 +25,18 @@ struct ProviderContentViewTests {
         let view = provider.makeContentView()
 
         #expect(type(of: view) == AnyView.self)
+    }
+
+    @Test("切换内容会发布视图刷新事件")
+    func settingContentPublishesChange() {
+        let provider = DefaultContentViewProviding()
+        var changeCount = 0
+        let cancellable = provider.objectWillChange.sink { changeCount += 1 }
+
+        provider.setContentView(AnyView(Text("next")))
+
+        #expect(changeCount == 1)
+        cancellable.cancel()
     }
 
     @Test("设置 nil 后回退到占位")

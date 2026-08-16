@@ -58,6 +58,9 @@ public protocol DocsViewProviding: AnyObject {
 
     /// 追加一个「说明书」条目（同 id 去重，保留先注册者）。
     func addManual(_ entry: DocsEntry)
+
+    /// 同时撤回指定插件的关于与说明书贡献。
+    func removeEntries(id: String)
 }
 
 public extension DocsViewProviding {
@@ -77,5 +80,10 @@ public extension DocsViewProviding {
             merged.append(entry)
         }
         replaceManualEntries(merged)
+    }
+
+    func removeEntries(id: String) {
+        replaceAboutEntries(aboutEntries.filter { $0.id != id })
+        replaceManualEntries(manualEntries.filter { $0.id != id })
     }
 }

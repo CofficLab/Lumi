@@ -27,6 +27,9 @@ public protocol ToolbarProviding: AnyObject {
     /// 供多个插件各自贡献工具栏项时使用，互不覆盖。
     func addToolbarItems(_ items: [ToolbarItem])
 
+    /// 按 id 撤回插件贡献的工具栏项。
+    func removeToolbarItems(ids: Set<String>)
+
     /// 返回工具栏视图（基于已注入的 items 渲染）。
     func makeToolbarView() -> AnyView
 }
@@ -39,5 +42,9 @@ public extension ToolbarProviding {
             merged.append(item)
         }
         registerToolbarItems(merged)
+    }
+
+    func removeToolbarItems(ids: Set<String>) {
+        registerToolbarItems(toolbarItems.filter { !ids.contains($0.id) })
     }
 }

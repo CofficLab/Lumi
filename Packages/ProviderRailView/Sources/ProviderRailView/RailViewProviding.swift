@@ -21,6 +21,15 @@ public protocol RailViewProviding: AnyObject {
     /// 注入 Rail tab 项（替换当前全部项）。
     func registerTabs(_ tabs: [RailTabItem])
 
+    /// 按 id 撤回插件贡献的标签。
+    func removeTabs(ids: Set<String>)
+
     /// 返回 Rail 视图（基于已注入的 tabs 渲染）。
     func makeRailView() -> AnyView
+}
+
+public extension RailViewProviding {
+    func removeTabs(ids: Set<String>) {
+        registerTabs(tabs.filter { !ids.contains($0.id) })
+    }
 }

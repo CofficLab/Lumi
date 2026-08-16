@@ -32,6 +32,9 @@ public protocol MenuBarProviding: AnyObject {
     /// 追加一个弹窗项（同 id 去重，保留先注册者）。
     func addPopup(_ item: MenuBarPopupItem)
 
+    /// 按 id 撤回内容项与弹窗项。
+    func removeItems(ids: Set<String>)
+
     /// 返回菜单栏内容视图（合并多个内容项）。
     func makeContentView() -> AnyView
 
@@ -56,6 +59,11 @@ public extension MenuBarProviding {
             merged.append(item)
         }
         replacePopupItems(merged)
+    }
+
+    func removeItems(ids: Set<String>) {
+        replaceContentItems(contentItems.filter { !ids.contains($0.id) })
+        replacePopupItems(popupItems.filter { !ids.contains($0.id) })
     }
 
     /// 默认内容视图：按 order 排序后横向合并。
