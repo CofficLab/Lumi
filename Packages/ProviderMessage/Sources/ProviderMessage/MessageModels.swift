@@ -121,19 +121,25 @@ public struct MessageToolCall: Identifiable, Codable, Equatable, Sendable {
     /// 面向用户的操作描述，由对应的 Agent 工具根据参数生成。
     /// 这是持久化的展示快照，UI 不应直接展示 `name`。
     public var displayDescription: String?
+    /// 授权状态（`AgentToolKit.ToolCallAuthorizationState` 的 rawValue 字符串）：
+    /// `noRisk` / `autoApproved` / `userApproved` / `userRejected` / `pendingAuthorization`。
+    /// 缺失视为 `pendingAuthorization`（旧数据兼容）。
+    public var authorizationState: String?
 
     public init(
         id: String,
         name: String,
         arguments: String,
         result: MessageToolResult? = nil,
-        displayDescription: String? = nil
+        displayDescription: String? = nil,
+        authorizationState: String? = nil
     ) {
         self.id = id
         self.name = name
         self.arguments = arguments
         self.result = result
         self.displayDescription = displayDescription
+        self.authorizationState = authorizationState
     }
 }
 
@@ -143,17 +149,46 @@ public struct MessageToolResult: Codable, Equatable, Sendable {
     public let duration: TimeInterval?
     public let isError: Bool
     public let imageAttachments: [MessageImageAttachment]
+    /// 工具正在等待用户回答，Agent 循环应暂停（对齐 `ToolCallResult.awaitingUserResponse`）。
+    /// 缺失视为 `false`（旧数据兼容）。
+    public let awaitingUserResponse: Bool
 
     public init(
         content: String,
         duration: TimeInterval? = nil,
         isError: Bool = false,
-        imageAttachments: [MessageImageAttachment] = []
+        imageAttachments: [MessageImageAttachment] = [],
+        awaitingUserResponse: Bool = false
     ) {
         self.content = content
         self.duration = duration
         self.isError = isError
         self.imageAttachments = imageAttachments
+        self.awaitingUserResponse = awaitingUserResponse
+    }
+
+    // MARK: Codable（兼容旧数据：awaitingUserResponse 缺失视为 false）
+
+    private enum CodingKeys: String, CodingKey {
+        case content, duration, isError, imageAttachments, awaitingUserResponse
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        content = try c.decode(String.self, forKey: .content)
+        duration = try c.decodeIfPresent(TimeInterval.self, forKey: .duration)
+        isError = try c.decodeIfPresent(Bool.self, forKey: .isError) ?? false
+        imageAttachments = try c.decodeIfPresent([MessageImageAttachment].self, forKey: .imageAttachments) ?? []
+        awaitingUserResponse = try c.decodeIfPresent(Bool.self, forKey: .awaitingUserResponse) ?? false
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(content, forKey: .content)
+        if let duration { try c.encode(duration, forKey: .duration) }
+        if isError { try c.encode(isError, forKey: .isError) }
+        if !imageAttachments.isEmpty { try c.encode(imageAttachments, forKey: .imageAttachments) }
+        if awaitingUserResponse { try c.encode(awaitingUserResponse, forKey: .awaitingUserResponse) }
     }
 }
 
