@@ -11,10 +11,12 @@ import ProviderMessage
 /// status 行（"正在思考…"等）始终保留显示 —— 它是流式期间唯一的进度反馈，
 /// 由 `AgentTurn` 生命周期结束时清除，不在此处丢弃。
 ///
-/// 此外，**V1 (brief)** 模式下会剔除独立的 `.tool` 结果行 —— 其结果收入助手消息内联的
-/// 「可折叠工具步骤组」，避免重复展示；仅展示层过滤，持久化与 LLM 历史不受影响。
+/// 此外，这里**无条件剔除独立的 `.tool` 结果行**（对齐旧版行为：旧版分页在磁盘读取
+/// 时就用 `includesToolMessages=false` 排除了 `.tool` 行，UI 从不展示工具结果消息）。
+/// 工具信息仍通过助手消息内联的 toolCalls（`tool-step-group` / `turn-activity`）呈现，
+/// 避免重复展示；仅展示层过滤，持久化与 LLM 历史不受影响。
 ///
-/// V1 还会把**连续多条**「只含工具调用的助手消息」（`isToolExecutionOnly`）合并成
+/// 本 builder 还会把**连续多条**「只含工具调用的助手消息」（`isToolExecutionOnly`）合并成
 /// **一条合成消息**（`renderKind == "tool-step-group"`），其 `toolCalls` 为各消息的平铺。
 /// 这样它们在 UI 上呈现为一个整体（一个气泡 / 一个可折叠步骤组），而不是 N 个独立行。
 /// 合成消息只在展示层生成，绝不落库、不进 LLM 历史。
@@ -43,11 +45,13 @@ struct MessageListRowBuilder {
         verbosity: LumiResponseVerbosity,
         hidesStatus: Bool = false
     ) -> [Message] {
-        guard let conversationID else { return persisted }
+        guard conversationID != nil else { return persisted }
 
-        let dropToolRows = verbosity == .brief
+        // 无条件剔除独立的 .tool 结果行（对齐旧版：旧版分页在磁盘读取时即
+        // 用 includesToolMessages=false 排除 .tool 行，UI 从不展示工具结果消息）。
+        // 工具信息由助手消息内联的 toolCalls（tool-step-group / turn-activity）呈现。
         let filtered = persisted.filter { message in
-            if dropToolRows, message.role == .tool { return false }
+            if message.role == .tool { return false }
             if hidesStatus, message.role == .status { return false }
             return true
         }

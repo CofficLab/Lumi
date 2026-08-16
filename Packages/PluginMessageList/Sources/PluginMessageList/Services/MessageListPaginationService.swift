@@ -4,10 +4,13 @@ import ProviderMessage
 /// Message Timeline Pagination Service
 ///
 /// 封装消息时间线的"消息窗口管理"策略（沉淀自旧版同名服务）。
-/// 与旧版不同：新版 `MessageManaging` 是 `@MainActor` 隔离的内存存储，
-/// 没有 `messagePage` / `hasEarlierMessages` 分页 API，因此这里改为
-/// 对 `messages(for:)` 返回的全量数组做内存切片分页（数据本身就在内存中，
-/// 切片开销可忽略）。
+/// 与旧版不同：新版 `MessageManaging` 没有 `messagePage` / `hasEarlierMessages`
+/// 分页 API，因此这里改为对 `messages(for:)` 返回的全量数组做内存切片分页
+/// （数据本身就在内存中，切片开销可忽略）。
+///
+/// 与旧版一致：取数前先**剔除独立的 `.tool` 结果行**（旧版 `messagePage` 默认
+/// `includesToolMessages=false`，工具结果消息从不进入 UI 分页窗口；工具信息由
+/// 助手消息内联的 toolCalls 呈现）。`MessageListRowBuilder` 再做一层展示兜底。
 ///
 /// 1. **首屏加载** —— 加载最近一页（pageSize 条），并探测是否还有更早消息。
 /// 2. **向上翻页** —— 在当前最早一条之前加载更早一页并 prepend。
@@ -25,6 +28,17 @@ struct MessageListPaginationService {
         self.maxRetainedCount = maxRetainedCount
     }
 
+    /// 取某会话的展示窗口数据：剔除独立的 `.tool` 结果行（对齐旧版
+    /// `messagePage(includesToolMessages: false)` 语义），再按时间升序。
+    private func displayMessages(
+        for conversationID: UUID,
+        messageManager: any MessageManaging
+    ) -> [Message] {
+        messageManager.messages(for: conversationID)
+            .filter { $0.role != .tool }
+            .sorted(by: messageOrdering)
+    }
+
     /// 加载首屏（最近一页）+ 是否还有更早消息。
     func loadFirstPage(
         conversationID: UUID,
@@ -33,7 +47,7 @@ struct MessageListPaginationService {
         guard let messageManager else {
             return LoadFirstPageResult(messages: [], hasEarlierMessages: false)
         }
-        let all = messageManager.messages(for: conversationID).sorted(by: messageOrdering)
+        let all = displayMessages(for: conversationID, messageManager: messageManager)
         let safePage = Array(all.suffix(pageSize))
         let hasEarlier = all.count > safePage.count
         return LoadFirstPageResult(messages: safePage, hasEarlierMessages: hasEarlier)
@@ -51,7 +65,7 @@ struct MessageListPaginationService {
         guard hasEarlier,
               let currentFirstID,
               let messageManager else { return nil }
-        let all = messageManager.messages(for: conversationID).sorted(by: messageOrdering)
+        let all = displayMessages(for: conversationID, messageManager: messageManager)
         guard let currentIndex = all.firstIndex(where: { $0.id == currentFirstID }) else { return nil }
         let earlier = Array(all[max(0, currentIndex - pageSize)..<currentIndex])
         guard !earlier.isEmpty else { return nil }
@@ -73,7 +87,7 @@ struct MessageListPaginationService {
         current: [Message]
     ) -> RefreshTailResult? {
         guard let messageManager else { return nil }
-        let all = messageManager.messages(for: conversationID).sorted(by: messageOrdering)
+        let all = displayMessages(for: conversationID, messageManager: messageManager)
         let latestPage = Array(all.suffix(pageSize))
         guard !latestPage.isEmpty else { return nil }
 

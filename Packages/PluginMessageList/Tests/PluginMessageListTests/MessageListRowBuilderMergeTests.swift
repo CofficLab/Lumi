@@ -156,6 +156,23 @@ struct MessageListRowBuilderMergeTests {
         #expect(rows[0].renderKind == "tool-step-group")
     }
 
+    @Test("V2/V3(非 brief):同样剔除独立 .tool 结果行(与旧版一致)")
+    func standardDropsToolResultRows() {
+        let assistant = toolExec(id: UUID(), calls: ["a"])
+        let toolResult = Message(
+            conversationID: conversation, role: .tool, content: "result", toolCallID: "a"
+        )
+        let rows = builder.build(
+            persisted: [assistant, toolResult],
+            conversationID: conversation,
+            verbosity: .standard
+        )
+        // 旧版 UI 从不展示独立的 .tool 结果行（分页读取时即排除）；
+        // 新版展示层同样无条件过滤，工具信息由合成消息内联呈现。
+        #expect(rows.count == 1)
+        #expect(rows[0].renderKind == "tool-step-group")
+    }
+
     @Test("conversationID 为 nil 时不合并(原样返回)")
     func noMergeWithoutConversation() {
         let m1 = toolExec(id: UUID(), calls: ["a"])
