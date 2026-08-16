@@ -38,7 +38,10 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
 
     static func makeContainer(databaseRootURL: URL) throws -> ModelContainer {
         let schema = Schema([MessageModel.self])
-        let dbDir = databaseRootURL.appendingPathComponent("MessageManagerPlugin", isDirectory: true)
+        // `databaseRootURL` 已是插件专属数据目录（由调用方通过
+        // `StorageProviding.pluginDataDirectory(for:)` 传入），直接作为数据库目录，
+        // 不再追加插件名子目录（对齐 ConversationStore 的写法）。
+        let dbDir = databaseRootURL
         let dbURL = dbDir.appendingPathComponent("messages.sqlite")
         let fileManager = FileManager.default
 
@@ -46,7 +49,7 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
             quarantineFileIfItBlocksDirectory(at: dbDir)
             try fileManager.createDirectory(at: dbDir, withIntermediateDirectories: true)
         } catch {
-            throw MessageStoreError.initializationFailed("MessageManagerPlugin 数据库目录: \(error.localizedDescription)")
+            throw MessageStoreError.initializationFailed("消息数据库目录: \(error.localizedDescription)")
         }
 
         let config = ModelConfiguration(
