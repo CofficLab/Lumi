@@ -51,7 +51,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 
     public init() {
         if Self.verbose {
-            Self.logger.info("\(self.t)DefaultConversationManaging initialized, dataDirectory=\(self.dataDirectory.path, privacy: .public)")
+            Self.logger.info("\(self.t)DefaultConversationManager initialized, dataDirectory=\(self.dataDirectory.path, privacy: .public)")
         }
     }
 
@@ -463,7 +463,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
     }
 }
 
-/// `DefaultConversationManaging` 的选中观察者令牌实现。
+/// `DefaultConversationManager` 的选中观察者令牌实现。
 ///
 /// 弱引用 owner，避免与管理器形成引用环；令牌被外部释放后，管理器侧
 /// 持有的弱引用自动失效，并在下次广播时清理，因此调用方无需手动反注册。
