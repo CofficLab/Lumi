@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../LumiUI"),
         .package(path: "../ProviderToolbar"),
     ],
     targets: [
@@ -22,6 +23,7 @@ let package = Package(
             name: "PluginToolbarSettings",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
             ],
             path: "Sources/PluginToolbarSettings"
