@@ -1,9 +1,10 @@
+import Combine
 import Foundation
 import ProviderMessage
 
 public enum MessageStreamingStage: String, Sendable { case idle, sending, thinking, generating }
 @MainActor
-public protocol MessageStreamingProviding: ObservableObject {
+public protocol MessageStreamingProviding: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     func streamingMessage(for conversationID: UUID) -> Message?
     func stage(for conversationID: UUID) -> MessageStreamingStage
     func start(conversationID: UUID)

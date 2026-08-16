@@ -1,7 +1,8 @@
+import Combine
 import Foundation
 
 @MainActor
-public protocol MessageManaging: AnyObject, ObservableObject {
+public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     func messages(for conversationID: UUID) -> [Message]
     func message(id: UUID, in conversationID: UUID) -> Message?
     func lastMessage(in conversationID: UUID) -> Message?

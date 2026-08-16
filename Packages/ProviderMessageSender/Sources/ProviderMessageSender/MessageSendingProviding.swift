@@ -1,7 +1,8 @@
+import Combine
 import Foundation
 
 @MainActor
-public protocol MessageSendingProviding: AnyObject, ObservableObject {
+public protocol MessageSendingProviding: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     var isSending: Bool { get }
     func sendMessage(_ content: String, conversationID: UUID?) async throws
     func cancelCurrentRequest()
