@@ -18,18 +18,49 @@ public protocol RailViewProviding: AnyObject {
     /// 当前已注入的全部 Rail tab 项。
     var tabs: [RailTabItem] { get }
 
+    /// 当前展示的标签分组。分组可以暂时没有标签，此时 Rail 应折叠。
+    var activeGroupID: String? { get }
+
+    /// 当前分组内激活的标签。
+    var activeTabID: String? { get }
+
     /// 注入 Rail tab 项（替换当前全部项）。
     func registerTabs(_ tabs: [RailTabItem])
 
+    /// 追加插件贡献的标签，不覆盖其他插件的贡献。
+    func addTabs(_ tabs: [RailTabItem])
+
     /// 按 id 撤回插件贡献的标签。
     func removeTabs(ids: Set<String>)
+
+    /// 切换当前展示分组。未知分组合法，表示当前插件没有 Rail 内容。
+    func activateGroup(id: String?)
+
+    /// 切换当前分组内的标签；未知或不属于当前分组的 id 将被忽略。
+    func activateTab(id: String?)
 
     /// 返回 Rail 视图（基于已注入的 tabs 渲染）。
     func makeRailView() -> AnyView
 }
 
 public extension RailViewProviding {
+    var activeGroupID: String? { nil }
+
+    var activeTabID: String? { nil }
+
+    func addTabs(_ newTabs: [RailTabItem]) {
+        var merged = tabs
+        for tab in newTabs where !merged.contains(where: { $0.id == tab.id }) {
+            merged.append(tab)
+        }
+        registerTabs(merged)
+    }
+
     func removeTabs(ids: Set<String>) {
         registerTabs(tabs.filter { !ids.contains($0.id) })
     }
+
+    func activateGroup(id: String?) {}
+
+    func activateTab(id: String?) {}
 }

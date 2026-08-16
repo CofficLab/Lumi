@@ -8,79 +8,122 @@ import SwiftUI
 @MainActor
 public final class DefaultRailViewProviding: RailViewProviding, ObservableObject {
     @Published public private(set) var tabs: [RailTabItem] = []
-
-    /// 当前活跃 tab 的 id。
+    @Published public private(set) var activeGroupID: String?
     @Published public private(set) var activeTabID: String?
+
+    /// 记住每个分组最后一次选中的标签。
+    private var rememberedTabIDs: [String: String] = [:]
 
     public init() {}
 
     public func registerTabs(_ tabs: [RailTabItem]) {
         self.tabs = tabs.sorted { $0.order < $1.order }
-        // 保持当前选中；若为空则默认选中第一个。
-        if activeTabID == nil || !self.tabs.contains(where: { $0.id == activeTabID }) {
-            activeTabID = self.tabs.first?.id
-        }
+        reconcileActiveTab()
     }
 
-    /// 选中指定 tab。
-    public func selectTab(id: String?) {
+    public func activateGroup(id: String?) {
+        guard activeGroupID != id else {
+            reconcileActiveTab()
+            return
+        }
+        rememberActiveTab()
+        activeGroupID = id
+        reconcileActiveTab()
+    }
+
+    public func activateTab(id: String?) {
+        guard let groupID = activeGroupID else {
+            activeTabID = nil
+            return
+        }
+        guard let id else {
+            activeTabID = nil
+            rememberedTabIDs[groupID] = nil
+            return
+        }
+        guard visibleTabs.contains(where: { $0.id == id }) else { return }
         activeTabID = id
+        rememberedTabIDs[groupID] = id
     }
 
     public func makeRailView() -> AnyView {
         AnyView(RailView(provider: self))
+    }
+
+    fileprivate var visibleTabs: [RailTabItem] {
+        guard let activeGroupID else { return [] }
+        return tabs.filter { $0.groupID == activeGroupID }
+    }
+
+    private func rememberActiveTab() {
+        guard let groupID = activeGroupID, let activeTabID else { return }
+        rememberedTabIDs[groupID] = activeTabID
+    }
+
+    private func reconcileActiveTab() {
+        let candidates = visibleTabs
+        guard let groupID = activeGroupID, !candidates.isEmpty else {
+            activeTabID = nil
+            return
+        }
+        if let activeTabID, candidates.contains(where: { $0.id == activeTabID }) {
+            rememberedTabIDs[groupID] = activeTabID
+            return
+        }
+        if let remembered = rememberedTabIDs[groupID],
+           candidates.contains(where: { $0.id == remembered }) {
+            activeTabID = remembered
+        } else {
+            activeTabID = candidates[0].id
+        }
+        rememberedTabIDs[groupID] = activeTabID
     }
 }
 
 /// 渲染「标签栏 + 内容区」的 Rail 视图。
 private struct RailView: View {
     @ObservedObject var provider: DefaultRailViewProviding
-    @State private var activeID: String?
-
-    init(provider: DefaultRailViewProviding) {
-        self.provider = provider
-        _activeID = State(initialValue: provider.activeTabID)
-    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // 标签栏：仅在多于一个 tab 时显示。
-            if provider.tabs.count > 1 {
-                HStack(spacing: 4) {
-                    ForEach(provider.tabs) { tab in
-                        tabButton(tab)
+        Group {
+            if !provider.visibleTabs.isEmpty {
+                HStack(spacing: 0) {
+                    VStack(spacing: 0) {
+                        // 标签栏：仅在当前分组多于一个 tab 时显示。
+                        if provider.visibleTabs.count > 1 {
+                            HStack(spacing: 4) {
+                                ForEach(provider.visibleTabs) { tab in
+                                    tabButton(tab)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, 10)
+                            .frame(height: 40)
+                            .background(Color.primary.opacity(0.03))
+                            .overlay(alignment: .bottom) {
+                                Divider()
+                            }
+                        }
+
+                        if let active = provider.visibleTabs.first(where: { $0.id == provider.activeTabID }) {
+                            active.makeView()
+                                .id(active.id)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                     }
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 10)
-                .frame(height: 40)
-                .background(Color.primary.opacity(0.03))
-                .overlay(alignment: .bottom) {
+                    .frame(minWidth: 200, idealWidth: 260, maxWidth: 360, maxHeight: .infinity)
+                    .background(Color.primary.opacity(0.015))
+
                     Divider()
                 }
             }
-
-            // 内容区：显示当前活跃 tab 的内容。
-            Group {
-                if let active = provider.tabs.first(where: { $0.id == activeID ?? provider.activeTabID }) {
-                    active.makeView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    Text("No tab selected")
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
         }
-        .frame(minWidth: 200, maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.primary.opacity(0.015))
     }
 
     private func tabButton(_ tab: RailTabItem) -> some View {
-        let isActive = (activeID ?? provider.activeTabID) == tab.id
+        let isActive = provider.activeTabID == tab.id
         return Button {
-            activeID = tab.id
-            provider.selectTab(id: tab.id)
+            provider.activateTab(id: tab.id)
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: tab.systemImage)
