@@ -1,197 +1,166 @@
 import KernelCore
+import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
+import ProviderProject
 import ProviderRailView
+import ProviderToolManager
+import ProviderToolbar
 import SwiftUI
 
+/// 对话列表插件（新版 KernelCore 架构）
+///
+/// 完美复刻旧版 `ConversationListPlugin` 的体验，全部贡献迁移到新的
+/// KernelCore / Provider 体系：
+/// - **Rail 侧栏**：`chats` / `project-chats` 两个动态标签（有对话才出现），
+///   内含 HeaderBar + 分页列表（骨架屏 / 空态 / 错误态 / 三行元数据 /
+///   选中高亮 / 右键删除 / 活跃脉冲点 / 关注点）。
+/// - **全局标题栏**：`message.fill` 按钮弹出 300×480 popover，
+///   顶部 segmented Picker 切换「所有项目 / 当前项目」。
+/// - **Agent 工具**：`get_recent_conversations`（只读）。
+/// - **关注点**：回合结束时未选中的对话打上 attention 标记（复刻
+///   旧版 `onTurnFinished`）。
 @MainActor
 public final class ConversationListPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-list"
     public let order = 81
+
+    public var metadata: PluginMetadata {
+        PluginMetadata(
+            id: id,
+            name: "Conversation List",
+            description: "侧栏对话列表 + 标题栏会话浏览器，复刻旧版 ConversationListPlugin 体验",
+            version: "1.0.0",
+            category: .chat,
+            stage: .preview,
+            policy: .alwaysOn
+        )
+    }
+
     public init() {}
 
+    /// 关注点存储：回合结束时未选中对话被标记。
+    public let attentionStore = ConversationAttentionStore()
+    /// 粘性排序稳定器：防止高频消息导致列表跳动。
+    public let sortStabilizer = ConversationSortStabilizer()
+
+    private var context: ConversationListContext?
+    private var railTabController: ConversationRailTabController?
+    /// 复刻旧版 onTurnFinished：轮询 AgentTurn 状态迁移（running → 非 running）。
+    private var attentionMonitorTask: Task<Void, Never>?
+    private var runningConversationIDs: Set<UUID> = []
+
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // The list is a chat-side contribution in the new architecture. The
-        // actual chat message list remains owned by PluginMessageList.
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self),
               let chat = kernel.resolveProvider((any ChatSectionProviding).self) else { return }
         let rail = kernel.resolveProvider((any RailViewProviding).self)
-        let railGroupID = "com.coffic.lumi.plugin.chat-panel"
+        let project = kernel.resolveProvider((any ProjectProviding).self)
+        let agentTurn = kernel.resolveProvider((any AgentLoopProviding).self)
 
-        // The legacy chat workbench exposes its conversation browser in the
-        // Rail, with the tab strip above it. Keep the contribution owned by
-        // this plugin so the list can be removed independently at shutdown.
-        rail?.addTabs([
-            RailTabItem(
-                id: "\(id).explorer",
-                groupID: railGroupID,
-                title: "Explorer",
-                systemImage: "rectangle.grid.1x2",
-                order: 10
-            ) {
-                RailPlaceholderView(title: "Explorer", systemImage: "rectangle.grid.1x2")
+        let context = ConversationListContext(
+            conversations: conversations,
+            project: project,
+            agentTurn: agentTurn,
+            chat: chat
+        )
+        self.context = context
+
+        // 1. Rail 侧栏：chats / project-chats 动态注册（与旧版语义一致）。
+        let railGroupID = "com.coffic.lumi.plugin.chat-panel"
+        let controller = ConversationRailTabController(
+            context: context,
+            attentionStore: attentionStore,
+            sortStabilizer: sortStabilizer,
+            order: order,
+            groupID: railGroupID,
+            pluginID: id
+        )
+        controller.start(rail: rail)
+        railTabController = controller
+
+        // 2. 全局标题栏按钮 + popover（复刻旧版 titleToolbarItems / .trailing）。
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        toolbar?.addToolbarItems([
+            ToolbarItem(
+                id: "\(id).conversation-list",
+                title: "Chats",
+                placement: .trailing,
+                order: 200
+            ) { [self] in
+                ToolbarButton(
+                    context: context,
+                    attentionStore: attentionStore,
+                    sortStabilizer: sortStabilizer
+                )
             },
-            RailTabItem(
-                id: "\(id).chat",
-                groupID: railGroupID,
-                title: "Chat",
-                systemImage: "bubble.left.and.bubble.right",
-                order: 20
-            ) {
-                ConversationBrowserView(conversations: conversations)
-            },
-            RailTabItem(
-                id: "\(id).project",
-                groupID: railGroupID,
-                title: "Project",
-                systemImage: "folder",
-                order: 30
-            ) {
-                RailPlaceholderView(title: "Project", systemImage: "folder")
-            }
         ])
-        rail?.activateGroup(id: railGroupID)
-        rail?.activateTab(id: "\(id).chat")
-        chat.addBarItems([ChatSectionBarItem(id: id, order: 20, placement: .toolbarTrailing) {
-            ConversationListToolbar(conversations: conversations)
-        }])
+
+        // 3. Agent 工具（复刻旧版 agentTools）。
+        kernel.resolveProvider((any ToolManagerProviding).self)?.add(
+            GetRecentConversationsTool(conversations: conversations, project: project),
+            pluginID: id
+        )
+    }
+
+    public func onReady(kernel: KernelCoreContainer) throws {
+        guard let context else { return }
+
+        // 4. 回合结束 attention 监听（复刻旧版 onTurnFinished）：
+        //    轮询 AgentTurn 状态，检测 running → 非 running 的边缘，
+        //    结束时若对话未选中则标记关注，选中则标记已读。
+        attentionMonitorTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(500))
+                self.scanAttention(context: context)
+            }
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ChatSectionProviding).self)?.removeBarItem(id: id)
-        kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: ["\(id).explorer", "\(id).chat", "\(id).project"])
-    }
-}
+        attentionMonitorTask?.cancel()
+        attentionMonitorTask = nil
+        runningConversationIDs.removeAll()
 
-@MainActor
-private struct RailPlaceholderView: View {
-    let title: String
-    let systemImage: String
+        railTabController?.stop()
+        railTabController = nil
 
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: systemImage)
-                .font(.system(size: 22))
-                .foregroundStyle(.tertiary)
-            Text(title)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-@MainActor
-private struct ConversationBrowserView: View {
-    let conversations: any ConversationManaging
-    @State private var revision = 0
-
-    private var rows: [LumiConversationSummary] {
-        _ = revision
-        return conversations.sortedConversations
+        kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(
+            ids: ["\(id).conversation-list"]
+        )
+        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: "get_recent_conversations")
+        kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(
+            ids: ["\(id).chats", "\(id).project-chats"]
+        )
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("所有项目的对话")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if conversations.isLoadingConversations {
-                    ProgressView().controlSize(.small)
-                }
+    // MARK: - Attention Scan
+
+    /// 扫描一次回合状态：把从 running 变为非 running 的对话视为「回合结束」。
+    private func scanAttention(context: ConversationListContext) {
+        guard let agentTurn = context.agentTurn else { return }
+
+        let currentIDs = Set(context.conversations.sortedConversations.map(\.id))
+        var stillRunning: Set<UUID> = []
+        var finished: Set<UUID> = []
+
+        for conversation in context.conversations.sortedConversations {
+            if agentTurn.isRunning(for: conversation.id) {
+                stillRunning.insert(conversation.id)
+            } else if runningConversationIDs.contains(conversation.id) {
+                finished.insert(conversation.id)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+        }
 
-            Divider()
+        // 只保留仍存在的对话，避免已删除对话的 ID 残留。
+        runningConversationIDs = stillRunning.intersection(currentIDs)
 
-            if rows.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "bubble.left.and.bubble.right")
-                        .font(.system(size: 22))
-                        .foregroundStyle(.tertiary)
-                    Text("暂无对话")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        for id in finished where currentIDs.contains(id) {
+            if context.conversations.selectedConversationID == id {
+                attentionStore.markRead(conversationID: id)
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 2) {
-                        ForEach(rows) { conversation in
-                            ConversationRow(
-                                conversation: conversation,
-                                isSelected: conversations.selectedConversationID == conversation.id
-                            ) {
-                                conversations.selectConversation(id: conversation.id)
-                            }
-                        }
-                    }
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 6)
-                }
-                .scrollIndicators(.automatic)
+                attentionStore.markNeedsAttention(conversationID: id)
             }
         }
-        .task {
-            // ConversationManaging is an existential; polling keeps this
-            // package independent of a concrete store implementation while
-            // still refreshing after sends, renames, and selection changes.
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(200))
-                revision &+= 1
-            }
-        }
-    }
-}
-
-@MainActor
-private struct ConversationRow: View {
-    let conversation: LumiConversationSummary
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(conversation.displayTitle)
-                        .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                        .lineLimit(1)
-                    Spacer(minLength: 4)
-                    Text(conversation.updatedAt, format: .dateTime.month(.abbreviated).day())
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
-                }
-                if !conversation.preview.isEmpty {
-                    Text(conversation.preview)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-            }
-            .padding(.horizontal, 9)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isSelected ? Color.accentColor.opacity(0.14) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-@MainActor
-private struct ConversationListToolbar: View {
-    let conversations: any ConversationManaging
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "text.bubble")
-            Text(conversations.currentTitle)
-                .lineLimit(1)
-            Spacer()
-        }
-        .padding(.horizontal, 12)
     }
 }
