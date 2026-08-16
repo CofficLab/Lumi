@@ -2,8 +2,9 @@ import Foundation
 import Testing
 @testable import OpenInKit
 
-@Suite("OpenAppType", .serialized)
-struct OpenAppTypeTests {
+extension WorkspaceDependentTests {
+    @Suite("OpenAppType")
+    struct OpenAppTypeTests {
 
     @Test("bundle identifiers match MagicKit AppRegistry")
     func bundleIds() {
@@ -31,11 +32,10 @@ struct OpenAppTypeTests {
         let mock = MockWorkspace()
         mock.applicationURLs["com.apple.dt.Xcode"] = URL(fileURLWithPath: "/Applications/Xcode.app")
         WorkspaceEnvironment.workspace = mock
+        defer { WorkspaceEnvironment.workspace = SystemWorkspaceOpener.shared }
 
         #expect(OpenAppType.xcode.isInstalled)
         #expect(!OpenAppType.cursor.isInstalled)
-
-        WorkspaceEnvironment.workspace = SystemWorkspaceOpener.shared
     }
 
     #if os(macOS)
@@ -44,21 +44,20 @@ struct OpenAppTypeTests {
         let mock = MockWorkspace()
         mock.applicationURLs["com.todesktop.230313mzl4w4u92"] = URL(fileURLWithPath: "/Applications/Cursor.app")
         WorkspaceEnvironment.workspace = mock
+        defer { WorkspaceEnvironment.workspace = SystemWorkspaceOpener.shared }
 
         let icon = OpenAppType.cursor.realIcon()
         #expect(icon != nil)
-
-        WorkspaceEnvironment.workspace = SystemWorkspaceOpener.shared
     }
 
     @Test("realIcon returns nil when app is not installed")
     func realIconMissingApp() {
         let mock = MockWorkspace()
         WorkspaceEnvironment.workspace = mock
+        defer { WorkspaceEnvironment.workspace = SystemWorkspaceOpener.shared }
 
         #expect(OpenAppType.cursor.realIcon() == nil)
-
-        WorkspaceEnvironment.workspace = SystemWorkspaceOpener.shared
     }
     #endif
+    }
 }
