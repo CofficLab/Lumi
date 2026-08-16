@@ -1,0 +1,67 @@
+import AgentToolKit
+import KernelCore
+import os
+import ProviderDocsView
+import ProviderToolManager
+import SuperLogKit
+import SwiftUI
+
+/// OCR 文字识别插件（KernelCore 版本）
+///
+/// 由旧版 `Plugins/OcrPlugin`（KernelLumi / LumiPlugin 架构）复刻而来，
+/// 纯工具型插件：`onBoot` 向 `ToolManagerProviding` 注册 `OcrImageTool`，
+/// 并贡献「关于」文档。
+///
+/// 识别逻辑 `OcrEngine` 基于 macOS Vision，纯本地离线，无内核依赖。
+@MainActor
+public final class OcrPlugin: SuperPlugin {
+    public let id = "com.coffic.lumi.plugin.ocr"
+    public let order = 286
+
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.ocr")
+
+    public init() {}
+
+    public var name: String { OcrLocalization.string("OCR", "OCR 文字识别") }
+
+    public var metadata: PluginMetadata {
+        PluginMetadata(
+            id: id,
+            name: "OCR",
+            description: "Recognize text in local image files using on-device macOS Vision (fully offline).",
+            category: .system,
+            stage: .preview,
+            policy: .disabledByDefault
+        )
+    }
+
+    public func onBoot(kernel: KernelCoreContainer) throws {
+        // 注册 Agent 工具。
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            for tool in Self.agentTools {
+                toolManager.add(tool, pluginID: id)
+            }
+        }
+
+        // 「关于」文档（沿用旧版 pluginAboutView）。
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { OcrAboutView() })
+        }
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            for tool in Self.agentTools {
+                toolManager.remove(id: tool.name)
+            }
+        }
+        kernel.resolveProvider((any DocsViewProviding).self)?
+            .removeEntries(id: id)
+    }
+
+    // MARK: - Agent Tools
+
+    public static let agentTools: [any SuperAgentTool] = [
+        OcrImageTool(),
+    ]
+}

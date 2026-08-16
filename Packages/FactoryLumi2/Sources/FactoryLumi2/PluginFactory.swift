@@ -11,6 +11,9 @@ import PluginHostsManager
 import PluginDocxRead
 import PluginWebFetch
 import PluginWebSearch
+import PluginAgentTempStorage
+import PluginOcr
+import PluginAgentRules
 import PluginLogoCoffic
 import PluginSettingGeneral
 import PluginThemePack
@@ -26,6 +29,7 @@ import PluginMessageRenderer
 import PluginConversationList
 import PluginConversationNew
 import PluginConversationManager
+import PluginPluginManager
 import PluginLLMProviderAiRouter
 import PluginLLMProviderAliyun
 import PluginLLMProviderAnthropic
@@ -79,6 +83,9 @@ public struct DefaultPluginFactory: PluginFactory {
             DocxReadPlugin(),
             WebFetchPlugin(),
             WebSearchPlugin(),
+            AgentRulesPlugin(),
+            AgentTempStoragePlugin(),
+            OcrPlugin(),
             AppIconDesignerPlugin(),
             AppStorePromoDesignerPlugin(),
             MindMapDesignerPlugin(),
@@ -96,6 +103,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationListPlugin(),
             ConversationNewPlugin(),
             ConversationManagerPlugin(),
+            PluginPluginManager(),
             AiRouterProviderPlugin(),
             AliyunProviderPlugin(),
             AnthropicProviderPlugin(),
