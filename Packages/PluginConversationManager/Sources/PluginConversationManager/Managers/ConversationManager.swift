@@ -29,7 +29,12 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     public nonisolated static let verbose = false
 
     @Published public private(set) var conversations: [LumiConversationSummary] = []
-    @Published public private(set) var selectedConversationID: UUID?
+    @Published public private(set) var selectedConversationID: UUID? {
+        didSet {
+            guard selectedConversationID != oldValue else { return }
+            notifySelectedConversationObservers()
+        }
+    }
     @Published public private(set) var currentTitle: String = "No conversation"
     @Published public private(set) var isLoadingConversations = true
     @Published public private(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
@@ -347,6 +352,36 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         updateCurrentTitle()
         persistSelectedConversationID()
         notifySelectedConversationChanged()
+    }
+
+    /// 注册选中对话观察者：选中值实际变化时回调，令牌释放或 cancel 后自动停止。
+    @discardableResult
+    public func addSelectedConversationObserver(
+        _ callback: @escaping (UUID?) -> Void
+    ) -> any SelectedConversationObserverHandle {
+        let handle = ConversationSelectedConversationObserverHandle(owner: self, callback: callback)
+        selectedConversationObservers.append(WeakSelectedConversationObserver(handle))
+        return handle
+    }
+
+    /// 当前注册的选中对话观察者集合（弱引用持有令牌：外部释放令牌后自动失效）。
+    private var selectedConversationObservers: [WeakSelectedConversationObserver] = []
+
+    /// 从集合中移除指定观察者（供令牌 cancel 调用）。
+    fileprivate func removeSelectedConversationObserver(_ handle: SelectedConversationObserverHandle) {
+        selectedConversationObservers.removeAll { $0.handle === handle }
+    }
+
+    /// 向所有已注册观察者广播最新选中 ID。
+    ///
+    /// 先清理已释放令牌并复制再遍历，避免回调中注销自身导致数组在遍历期间变化。
+    private func notifySelectedConversationObservers() {
+        selectedConversationObservers.removeAll { $0.handle == nil }
+        let observers = selectedConversationObservers
+        let selectedID = selectedConversationID
+        for observer in observers {
+            observer.handle?.invoke(selectedID)
+        }
     }
 
     private func cache(_ summary: LumiConversationSummary) {
@@ -787,4 +822,44 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
 private struct ConversationState: Codable {
     let selectedConversationID: UUID?
+}
+
+// MARK: - Selected Conversation Observer
+
+/// `ConversationManager` 的选中对话观察者令牌实现。
+///
+/// 弱引用 owner，避免与管理器形成引用环；令牌被外部释放后，管理器侧
+/// 持有的弱引用自动失效，并在下次广播时清理，因此调用方无需手动反注册。
+@MainActor
+private final class ConversationSelectedConversationObserverHandle: SelectedConversationObserverHandle {
+    private weak var owner: ConversationManager?
+    private let callback: (UUID?) -> Void
+    private var isCancelled = false
+
+    init(owner: ConversationManager, callback: @escaping (UUID?) -> Void) {
+        self.owner = owner
+        self.callback = callback
+    }
+
+    func cancel() {
+        guard !isCancelled else { return }
+        isCancelled = true
+        owner?.removeSelectedConversationObserver(self)
+    }
+
+    /// 通知回调（已注销的令牌不再触发）。
+    fileprivate func invoke(_ selectedID: UUID?) {
+        guard !isCancelled else { return }
+        callback(selectedID)
+    }
+}
+
+/// 观察者集合的元素：弱引用持有令牌，令牌被外部释放后自动失效。
+@MainActor
+private final class WeakSelectedConversationObserver {
+    fileprivate weak var handle: ConversationSelectedConversationObserverHandle?
+
+    init(_ handle: ConversationSelectedConversationObserverHandle) {
+        self.handle = handle
+    }
 }
