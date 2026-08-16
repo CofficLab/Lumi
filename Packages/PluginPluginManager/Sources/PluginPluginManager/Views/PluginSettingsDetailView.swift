@@ -1,28 +1,45 @@
 import KernelCore
 import LumiUI
+import ProviderDocsView
 import SwiftUI
 
 /// 插件管理页右侧的详情面板。
 ///
 /// 展示插件元信息（分类图标 + 名称 + 阶段标签 + 描述）、启用状态控件，
-/// 以及只读的插件信息区（分类 / 版本 / 策略 / 标识）。
+/// 以及内容区。内容区优先展示插件通过 `DocsViewProviding` 贡献的 about 视图
+/// （按插件 id 匹配 `aboutEntries`）；未贡献时回退到默认 about 视图
+/// （基于 `metadata` 生成的 Hero + 只读信息区），保证每个插件都有 about 页。
 /// 不可配置的插件（required）会展示对应的策略标签。
 ///
-/// UI 结构对齐旧版：header + 分隔线 + 内容区。
-/// 旧版内容区展示插件自带的 about 视图；新版 `SuperPlugin` 无该声明点，
-/// 故改为展示插件元信息（当前阶段仅展示）。
+/// UI 结构对齐旧版：header + 分隔线 + 内容区。旧版直接调用
+/// `pluginAboutView(kernel:)` 展示 about 视图；新版 `SuperPlugin` 无该声明点，
+/// 由插件在 `onBoot` 中通过 `DocsViewProviding.addAbout(_:)` 注入，
+/// 此处按 id 匹配并展示。
 struct PluginSettingsDetailView: View {
     @LumiTheme private var theme
 
     let kernel: KernelCoreContainer
     let plugin: any SuperPlugin
 
+    /// 文档视图提供器：按插件 id 匹配 about 条目。
+    let docsProvider: (any DocsViewProviding)?
+
+    init(
+        kernel: KernelCoreContainer,
+        plugin: any SuperPlugin,
+        docsProvider: (any DocsViewProviding)? = nil
+    ) {
+        self.kernel = kernel
+        self.plugin = plugin
+        self.docsProvider = docsProvider
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
                 AppDivider()
-                pluginInfoContent
+                aboutContent
             }
             .padding(22)
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -79,7 +96,62 @@ struct PluginSettingsDetailView: View {
 
     // MARK: - Content
 
-    /// 只读插件信息区（当前阶段仅展示）。
+    /// 内容区：优先展示插件贡献的 about 视图；未贡献时回退到默认 about 视图。
+    @ViewBuilder
+    private var aboutContent: some View {
+        if let aboutEntry {
+            aboutEntry.makeView()
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        } else {
+            defaultAboutView
+        }
+    }
+
+    /// 当前插件贡献的 about 条目（按 id 匹配 `DocsViewProviding.aboutEntries`）。
+    private var aboutEntry: DocsEntry? {
+        docsProvider?.aboutEntries.first(where: { $0.id == plugin.id })
+    }
+
+    /// 默认 about 视图：基于 metadata 生成的 Hero + 只读信息区，
+    /// 保证未贡献 about 的插件也有完整的关于页。
+    private var defaultAboutView: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            LandingHero(
+                icon: plugin.metadata.category.systemImage,
+                tagline: aboutTagline,
+                chips: [
+                    plugin.metadata.category.displayName,
+                    plugin.metadata.stage.displayName,
+                ],
+                metrics: [
+                    .init(value: plugin.metadata.version, label: PluginPluginManagerText.versionLabel),
+                    .init(value: policyMetricValue, label: PluginPluginManagerText.policyLabel),
+                ]
+            )
+            pluginInfoContent
+        }
+    }
+
+    /// 默认 about 视图 Hero 的标语：优先插件描述，缺失时用兜底文案。
+    private var aboutTagline: String {
+        plugin.metadata.description.isEmpty
+            ? PluginPluginManagerText.noDetailsHint
+            : plugin.metadata.description
+    }
+
+    /// 策略指标的展示值（与 `policyDescription` 口径一致）。
+    private var policyMetricValue: String {
+        switch plugin.metadata.policy {
+        case .required, .alwaysOn:
+            PluginPluginManagerText.alwaysOn
+        case .enabledByDefault, .disabledByDefault:
+            kernel.isPluginEnabled(id: plugin.id)
+                ? PluginPluginManagerText.enabled
+                : PluginPluginManagerText.disabled
+        }
+    }
+
+    /// 只读插件信息区（默认 about 视图的补充信息区）。
     private var pluginInfoContent: some View {
         VStack(spacing: 8) {
             AppSettingRow(

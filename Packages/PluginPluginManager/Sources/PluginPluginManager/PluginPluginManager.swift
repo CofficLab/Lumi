@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderDocsView
 import ProviderSettingView
 import SwiftUI
 
@@ -38,13 +39,16 @@ public final class PluginPluginManager: SuperPlugin {
             return
         }
 
+        // 捕获 docs provider 引用，供插件管理详情面板展示各插件的 about 视图。
+        let docsProvider = kernel.resolveProvider((any DocsViewProviding).self)
+
         let entry = SettingEntryItem(
             id: "plugin-manager",
             title: "插件管理",
             systemImage: "puzzlepiece.extension",
             order: 3
-        ) {
-            PluginManagementView(kernel: kernel)
+        ) { [docsProvider] in
+            PluginManagementView(kernel: kernel, docsProvider: docsProvider)
         }
 
         settings.addEntries([entry])

@@ -1,5 +1,6 @@
 import KernelCore
 import LumiUI
+import ProviderDocsView
 import SwiftUI
 
 /// 插件管理设置页。
@@ -18,9 +19,18 @@ struct PluginManagementView: View {
     @LumiTheme private var theme
     @ObservedObject var kernel: KernelCoreContainer
 
+    /// 文档视图提供器：详情面板按插件 id 匹配 about 条目并展示。
+    /// 为 nil 时（宿主未提供 DocsViewProviding）详情面板回退到元信息展示。
+    let docsProvider: (any DocsViewProviding)?
+
     @State private var selectedPluginID: String?
     @State private var searchText = ""
     @State private var selectedCategory: PluginCategory?
+
+    init(kernel: KernelCoreContainer, docsProvider: (any DocsViewProviding)? = nil) {
+        self.kernel = kernel
+        self.docsProvider = docsProvider
+    }
 
     var body: some View {
         AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
@@ -180,7 +190,7 @@ struct PluginManagementView: View {
     @ViewBuilder
     private var pluginDetailPane: some View {
         if let selectedPlugin {
-            PluginSettingsDetailView(kernel: kernel, plugin: selectedPlugin)
+            PluginSettingsDetailView(kernel: kernel, plugin: selectedPlugin, docsProvider: docsProvider)
         } else {
             AppEmptyState(
                 icon: "puzzlepiece.extension",
