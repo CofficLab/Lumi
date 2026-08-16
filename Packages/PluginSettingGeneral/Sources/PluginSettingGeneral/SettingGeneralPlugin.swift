@@ -1,12 +1,16 @@
 import KernelCore
+import LumiUI
 import ProviderDocsView
 import ProviderSettingView
 import SwiftUI
 
 /// 设置 - 通用 插件
 ///
-/// 在设置视图中注册「通用」入口，详情展示当前 App 版本，以及各插件贡献的
-/// 「关于」与「说明书」文档（来自 `DocsViewProviding`）。
+/// 在设置视图中注册「通用」入口，详情 UI 与旧版 LumiApp 工具栏右上角
+/// 设置按钮 → 设置窗口 → 「通用」标签页（SettingsPlugin.GeneralSettingsView）
+/// **完全一致**：`AppSettingsContentScaffold` 包裹的四个分组卡片
+/// （新手引导 / Lumi / 网站 / 更新），每行均为 `AppSettingRow`
+/// （图标 + 标题 + 描述 + 右侧 `AppButton`）。
 ///
 /// 通过 `SuperPlugin.onBoot(kernel:)` 解析内核中的 `SettingViewProviding`
 /// 与 `DocsViewProviding`，用 `addEntries(_:)`（追加语义）注册入口，
@@ -53,7 +57,10 @@ public final class SettingGeneralPlugin: SuperPlugin {
     }
 }
 
-/// 通用设置详情视图：App 版本 + 文档（关于 / 说明书）。
+// MARK: - 通用设置详情视图
+
+/// 通用设置详情视图 —— 复刻旧版 LumiApp（SettingsPlugin.GeneralSettingsView）
+/// 设置窗口「通用」标签页：四个分组卡片，逐行、逐文案一致。
 private struct GeneralSettingsDetailView: View {
     let version: String?
     let docsProvider: (any DocsViewProviding)?
@@ -61,76 +68,213 @@ private struct GeneralSettingsDetailView: View {
     /// 是否展示说明书浏览器。
     @State private var isPresentingManuals = false
 
+    /// App bundle 元数据（名称 / 包名 / 版本 / 构建）。
+    private let bundleInfo = AppBundleInfo()
+
+    /// 所有提供了说明书的文档条目（来自 `DocsViewProviding`）。
+    private var manuals: [DocsEntry] {
+        docsProvider?.manualEntries ?? []
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("通用")
-                .font(.title2)
-
-            GroupBox("关于") {
-                HStack {
-                    Text("版本")
-                    Spacer()
-                    Text(version ?? "未知")
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 4)
+        AppSettingsContentScaffold(maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 24) {
+                onboardingSection
+                lumiSection
+                websiteSection
+                updatesSection
             }
-
-            // 文档：关于
-            if let about = docsProvider?.aboutEntries.first {
-                GroupBox("关于本应用") {
-                    Button {
-                        // 打开关于页（sheet 展示选中插件的 About）
-                    } label: {
-                        HStack {
-                            Text(about.name)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            // 文档：说明书浏览器入口
-            if let manuals = docsProvider?.manualEntries, !manuals.isEmpty {
-                GroupBox("说明书") {
-                    Button {
-                        isPresentingManuals = true
-                    } label: {
-                        HStack {
-                            Text("用户说明书")
-                            Spacer()
-                            Text("\(manuals.count) 本")
-                                .foregroundStyle(.secondary)
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .sheet(isPresented: $isPresentingManuals) {
-            if let manuals = docsProvider?.manualEntries {
+            if !manuals.isEmpty {
                 ManualsBrowserView(manuals: manuals)
+            }
+        }
+    }
+
+    // MARK: - 新手引导
+
+    private var onboardingSection: some View {
+        AppSettingSection(
+            title: "新手引导",
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: "重新查看新手引导",
+                    description: "重放首次启动引导流程。",
+                    icon: "graduationcap"
+                ) {
+                    AppButton(
+                        "开始",
+                        systemImage: "arrow.right",
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        // 与旧版一致：广播重放引导请求，由宿主监听并展示。
+                        NotificationCenter.default.post(
+                            name: .lumiShowOnboarding,
+                            object: nil,
+                            userInfo: [LumiOnboardingNotification.resetKey: true]
+                        )
+                    }
+                }
+
+                if !manuals.isEmpty {
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingRow(
+                        title: "说明书",
+                        description: "各功能的使用指南。",
+                        icon: "book"
+                    ) {
+                        AppButton(
+                            "打开",
+                            systemImage: "book.pages",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            isPresentingManuals = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Lumi（应用信息）
+
+    private var lumiSection: some View {
+        AppSettingSection(
+            title: "Lumi",
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: "Name",
+                    description: bundleInfo.name,
+                    icon: "app"
+                ) {
+                    EmptyView()
+                }
+                Divider()
+                    .padding(.vertical, 8)
+                AppSettingRow(
+                    title: "Bundle ID",
+                    description: bundleInfo.bundleIdentifier,
+                    icon: "number"
+                ) {
+                    EmptyView()
+                }
+                Divider()
+                    .padding(.vertical, 8)
+                AppSettingRow(
+                    title: "Version",
+                    description: bundleInfo.version ?? "Not Set",
+                    icon: "info.circle"
+                ) {
+                    EmptyView()
+                }
+                Divider()
+                    .padding(.vertical, 8)
+                AppSettingRow(
+                    title: "Build",
+                    description: bundleInfo.build ?? "Not Set",
+                    icon: "hammer"
+                ) {
+                    EmptyView()
+                }
+            }
+        }
+    }
+
+    // MARK: - 网站
+
+    private var websiteSection: some View {
+        AppSettingSection(
+            title: "网站",
+            titleAlignment: .leading
+        ) {
+            AppSettingRow(
+                title: "官方网站",
+                description: "coffic.cn/lumi",
+                icon: "globe"
+            ) {
+                AppButton(
+                    "访问",
+                    systemImage: "arrow.up.forward.square",
+                    style: .secondary,
+                    size: .small
+                ) {
+                    if let url = URL(string: "https://coffic.cn/lumi") {
+                        #if canImport(AppKit)
+                        NSWorkspace.shared.open(url)
+                        #elseif canImport(UIKit)
+                        UIApplication.shared.open(url)
+                        #endif
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - 更新
+
+    /// 与旧版一致：`allowsAppUpdates` 的宿主（Lumi 直营）展示「检查更新」行，
+    /// 点击广播 `checkForUpdates` 通知，由宿主（如 Sparkle 更新插件）消费。
+    private var updatesSection: some View {
+        AppSettingSection(
+            title: "Updates",
+            titleAlignment: .leading
+        ) {
+            AppSettingRow(
+                title: "Check for Updates",
+                description: "Check whether a newer version of Lumi is available.",
+                icon: "arrow.down.circle"
+            ) {
+                AppButton(
+                    "Check...",
+                    systemImage: "arrow.triangle.2.circlepath",
+                    style: .secondary,
+                    size: .small
+                ) {
+                    NotificationCenter.default.post(
+                        name: Notification.Name("checkForUpdates"),
+                        object: nil
+                    )
+                }
             }
         }
     }
 }
 
+// MARK: - Onboarding 通知
+
+/// 与旧版 KernelLumi.KernelEvents 一致的通知名与重置 key。
+private enum LumiOnboardingNotification {
+    /// 重放新手引导时置 true，宿主据此强制重置引导进度。
+    static let resetKey = "reset"
+}
+
+private extension Notification.Name {
+    /// 请求展示/重放新手引导（`Onboarding.Show`）。
+    static let lumiShowOnboarding = Notification.Name("Onboarding.Show")
+}
+
+// MARK: - 说明书浏览器
+
 /// 说明书浏览器 —— 主从式布局：左侧为提供了说明书的插件名列表，
 /// 右侧为选中插件的说明书内容。
 ///
-/// 复刻自 Lumi SettingsPlugin 的 ManualsBrowserView。
+/// 复刻自旧版 Lumi SettingsPlugin 的 ManualsBrowserView（布局、尺寸、
+/// 选中态、关闭按钮逐项一致）。
 private struct ManualsBrowserView: View {
     let manuals: [DocsEntry]
 
     @State private var selectedID: String?
+
     @Environment(\.dismiss) private var dismiss
 
     private var selectedManual: DocsEntry? {
@@ -143,7 +287,7 @@ private struct ManualsBrowserView: View {
             Divider()
             detail
         }
-        .frame(minWidth: 720, minHeight: 480)
+        .frame(minWidth: 860, minHeight: 560)
         .onAppear {
             if selectedID == nil {
                 selectedID = manuals.first?.id
@@ -158,7 +302,7 @@ private struct ManualsBrowserView: View {
             HStack(spacing: 8) {
                 Image(systemName: "book")
                     .foregroundStyle(.secondary)
-                Text("用户说明书")
+                Text("说明书")
                     .font(.headline)
             }
             .padding(.horizontal, 14)
@@ -175,7 +319,7 @@ private struct ManualsBrowserView: View {
                 .padding(10)
             }
         }
-        .frame(width: 200)
+        .frame(width: 220)
         .background(Color.primary.opacity(0.03))
     }
 
@@ -214,13 +358,9 @@ private struct ManualsBrowserView: View {
                     Text(manual.name)
                         .font(.headline)
                     Spacer()
-                    Button {
+                    AppIconButton(systemImage: "xmark") {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
                 }
                 .padding(16)
 
@@ -236,7 +376,7 @@ private struct ManualsBrowserView: View {
                     Image(systemName: "book")
                         .font(.system(size: 34))
                         .foregroundStyle(.secondary)
-                    Text("暂无说明书")
+                    Text("暂时还没有说明书。")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
