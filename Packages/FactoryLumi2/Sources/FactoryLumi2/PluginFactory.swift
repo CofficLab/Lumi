@@ -24,6 +24,16 @@ import PluginIdleTime
 import PluginChatFileAttachment
 import PluginChatPanel
 import PluginChatScreenshot
+import PluginConversationMode
+import PluginConversationBehavior
+import PluginConversationTitle
+import PluginConversationPendingMessage
+import PluginConversationFork
+import PluginAskUser
+import PluginOpenIn
+import PluginAgentTurnNotification
+import PluginSkill
+import PluginMemory
 import PluginModelSelector
 import PluginConversationInput
 import PluginProjects
@@ -32,6 +42,7 @@ import PluginMessageRenderer
 import PluginConversationList
 import PluginConversationNew
 import PluginConversationManager
+import PluginMessageManager
 import PluginPluginManager
 import PluginLLMProviderAiRouter
 import PluginLLMProviderAliyun
@@ -102,6 +113,18 @@ public struct DefaultPluginFactory: PluginFactory {
             ChatPanelPlugin(),
             ChatFileAttachmentPlugin(),
             ChatScreenshotPlugin(),
+            ConversationModePlugin(),
+            ConversationVerbosityPlugin(),
+            ConversationLanguagePlugin(),
+            ConversationReasoningPlugin(),
+            ConversationTitlePlugin(),
+            ConversationPendingMessagePlugin(),
+            ConversationForkPlugin(),
+            AskUserPlugin(),
+            OpenInPlugin(),
+            AgentTurnNotificationPlugin(),
+            SkillPlugin(),
+            MemoryPlugin(),
             ModelSelectorPlugin(),
             MessageListPlugin(),
             MessageRendererPlugin(),
@@ -109,6 +132,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationListPlugin(),
             ConversationNewPlugin(),
             ConversationManagerPlugin(),
+            MessageManagerPlugin(),
             PluginPluginManager(),
             AiRouterProviderPlugin(),
             AliyunProviderPlugin(),
