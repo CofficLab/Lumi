@@ -16,6 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderTheme"),
     ],
     targets: [
@@ -23,6 +24,7 @@ let package = Package(
             name: "PluginThemePack",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderTheme", package: "ProviderTheme"),
             ],
             path: "Sources/PluginThemePack"

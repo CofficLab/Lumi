@@ -264,4 +264,17 @@ struct FactoryLumi2Tests {
         try theme?.selectTheme(id: "dracula")
         #expect(theme?.selectedThemeId == "dracula")
     }
+
+    @Test("makeKernel 注册 ThemePackPlugin 外观设置入口")
+    func makeKernelRegistersAppearanceSettingEntry() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let settings = kernel.resolveProvider((any SettingViewProviding).self)
+        #expect(settings?.entries.contains(where: { $0.id == "appearance" }) == true)
+        #expect(settings?.entries.first(where: { $0.id == "appearance" })?.title == "外观")
+
+        // 详情视图可渲染（不崩溃）。
+        let detail = settings?.entries.first(where: { $0.id == "appearance" })?.makeDetailView()
+        #expect(detail != nil)
+    }
 }

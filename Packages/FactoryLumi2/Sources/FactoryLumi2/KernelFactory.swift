@@ -76,13 +76,20 @@ public enum KernelFactory {
     /// 创建内核并组装完整主视图（工具栏 + ActivityBar + Rail + 内容区）。
     ///
     /// 视图组装逻辑集中在此：宿主只需要一个视图，无需关心内核如何把
-    /// 各 Provider 的能力组合起来。
+    /// 各 Provider 的能力组合起来。返回的视图应用了当前选中主题
+    /// （明暗外观 + 背景色）。
     ///
     /// - Returns: 已装配的根视图（`AnyView`）。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
     public static func makeMainView() throws -> AnyView {
-        let kernel = try makeKernel()
+        try makeMainView(kernel: makeKernel())
+    }
 
+    /// 使用已装配的内核组装主视图（共享内核时使用）。
+    ///
+    /// 宿主传入自己持有的 `KernelCoreContainer`，使主窗口 / 设置窗口 /
+    /// 菜单栏共享同一内核与同一 `ThemeProviding`，主题切换即时同步。
+    public static func makeMainView(kernel: KernelCoreContainer) throws -> AnyView {
         guard let rootView = kernel.resolveProvider((any RootViewProviding).self) else {
             return AnyView(Text("RootViewProviding not registered"))
         }
@@ -100,7 +107,7 @@ public enum KernelFactory {
             rootView.setContentView(contentView.makeContentView())
         }
 
-        return rootView.makeRootView()
+        return themed(rootView.makeRootView(), kernel: kernel)
     }
 
     // MARK: - Settings View Assembly
@@ -116,8 +123,11 @@ public enum KernelFactory {
     /// - Returns: 已装配的设置视图（`AnyView`）。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
     public static func makeSettingsView() throws -> AnyView {
-        let kernel = try makeKernel()
+        try makeSettingsView(kernel: makeKernel())
+    }
 
+    /// 使用已装配的内核返回设置视图（共享内核时使用）。
+    public static func makeSettingsView(kernel: KernelCoreContainer) throws -> AnyView {
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
             return AnyView(Text("SettingViewProviding not registered"))
         }
@@ -128,6 +138,54 @@ public enum KernelFactory {
             defaultSettings.setSidebarHeader(AnyView(SettingsSidebarHeaderView(logo: logo)))
         }
 
-        return settings.makeSettingView()
+        return themed(settings.makeSettingView(), kernel: kernel)
+    }
+
+    // MARK: - Theme Application
+
+    /// 用当前选中主题包装视图：明暗外观（`preferredColorScheme`）+ 背景色。
+    ///
+    /// `ThemeProviding` 未注册时原样返回（精简宿主 no-op）。
+    private static func themed(_ view: AnyView, kernel: KernelCoreContainer) -> AnyView {
+        guard let theme = kernel.resolveProvider((any ThemeProviding).self) else {
+            return view
+        }
+        return AnyView(ThemeHostingView(theme: theme, content: view))
+    }
+}
+
+/// 主题感知的视图包装：根据 `ThemeProviding` 的选中主题应用
+/// 明暗外观与窗口背景色。
+///
+/// 通过 `onReceive(objectWillChange)` 感知主题切换（含其他窗口触发）。
+@MainActor
+private struct ThemeHostingView<Content: View>: View {
+    let theme: any ThemeProviding
+    let content: Content
+
+    @State private var refreshTick = false
+
+    var body: some View {
+        content
+            .preferredColorScheme(preferredColorScheme)
+            .background(backgroundColor)
+            .onReceive(theme.objectWillChange) { _ in
+                // 主题切换后强制 body 重算，应用新的明暗与背景。
+                refreshTick.toggle()
+            }
+    }
+
+    /// 按主题外观类型解析窗口明暗；跟随系统时返回 `nil`（不强制）。
+    private var preferredColorScheme: ColorScheme? {
+        switch theme.selectedTheme?.appearanceKind ?? .system {
+        case .dark: return .dark
+        case .light: return .light
+        case .system: return nil
+        }
+    }
+
+    /// 窗口背景色：主题的氛围中色（medium），无主题时回退系统窗口背景。
+    private var backgroundColor: Color {
+        theme.selectedTheme?.palette.atmosphere.medium ?? Color(nsColor: .windowBackgroundColor)
     }
 }

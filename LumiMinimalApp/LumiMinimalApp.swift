@@ -28,8 +28,10 @@ struct LumiMinimalApp: App {
     var body: some Scene {
         WindowGroup("LumiMinimal", id: "lumi-minimal.main") {
             // App 只做一件事：让 Factory 给一个视图。
+            // 主窗口 / 设置窗口 / 菜单栏共享同一内核（kernel），
+            // 主题切换后各窗口即时同步。
             // 注意：`.onReceive` 需应用到整个 `??` 表达式（否则会误绑到 fallback 分支）。
-            ((try? KernelFactory.makeMainView()) ?? AnyView(Text("Failed to assemble main view")))
+            ((try? KernelFactory.makeMainView(kernel: kernel)) ?? AnyView(Text("Failed to assemble main view")))
                 // 与旧版 Lumi（WindowMain.configureForLumiMainChrome）一致：
                 // 窗口内容延伸到标题栏区域（fullSizeContentView），
                 // 工具栏从窗口顶部开始渲染，红绿灯悬浮在工具栏上。
@@ -48,7 +50,7 @@ struct LumiMinimalApp: App {
         .defaultSize(width: 480, height: 320)
 
         Window("设置", id: "lumi-minimal.settings") {
-            (try? KernelFactory.makeSettingsView()) ?? AnyView(Text("Failed to assemble settings view"))
+            (try? KernelFactory.makeSettingsView(kernel: kernel)) ?? AnyView(Text("Failed to assemble settings view"))
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))

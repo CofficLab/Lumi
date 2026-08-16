@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 // MARK: - Theme 能力协议
@@ -17,8 +18,15 @@ import SwiftUI
 /// 采用与 `MenuBarProviding` / `LogoProviding` 一致的设计：协议只声明
 /// 能力，不关心具体实现；使用 `AnyView` 无关的存在类型约束
 /// （`any ThemeProviding`），可无泛型约束地注册进 KernelCore 的注册表。
+///
+/// 显式声明 `objectWillChange: ObservableObjectPublisher` 把
+/// `ObservableObject` 的关联类型固定为具体类型，使 `any ThemeProviding`
+/// 存在类型的 `objectWillChange` 可直接用于 `onReceive` / `sink`。
 @MainActor
 public protocol ThemeProviding: AnyObject, ObservableObject {
+    /// 变更事件发布器（固定为 `ObservableObjectPublisher`，@Published 合成类型）。
+    var objectWillChange: ObservableObjectPublisher { get }
+
     /// 全部已注册主题（按 `sortOrder` 升序）。
     var themes: [LumiTheme] { get }
 
