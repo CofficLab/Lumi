@@ -9,7 +9,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderRailView"),
-        .package(path: "../ProviderRuntime"),
+        .package(path: "../ProviderWorkspace"),
     ],
     targets: [.target(name: "PluginChatPanel", dependencies: [
         .product(name: "KernelCore", package: "KernelCore"),
@@ -17,6 +17,6 @@ let package = Package(
         .product(name: "ProviderChatSection", package: "ProviderChatSection"),
         .product(name: "ProviderContentView", package: "ProviderContentView"),
         .product(name: "ProviderRailView", package: "ProviderRailView"),
-        .product(name: "ProviderWorkspace", package: "ProviderRuntime"),
+        .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
     ])]
 )

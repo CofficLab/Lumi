@@ -19,7 +19,7 @@ let package = Package(
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderRailView"),
-        .package(path: "../ProviderRuntime"),
+        .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
     ],
@@ -39,7 +39,7 @@ let package = Package(
                 "ProviderRailView",
                 "ProviderStorage",
                 "ProviderToolManager",
-                .product(name: "ProviderConversationInput", package: "ProviderRuntime"),
+                .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
