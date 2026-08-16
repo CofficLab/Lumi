@@ -37,6 +37,15 @@ public protocol SuperAgentTool: Sendable {
     /// - Parameter arguments: 本次调用的参数
     /// - Returns: 人类可读的操作描述
     func displayDescription(for arguments: [String: ToolArgument]) -> String
+
+    /// 执行工具（必填）
+    ///
+    /// 由宿主（如 `ToolManagerProviding`）在授权/风险评估通过后调用。
+    /// 返回值会作为工具结果文本回传给 LLM；执行失败时抛出错误。
+    ///
+    /// - Parameter arguments: 本次调用的参数（由宿主从 `ToolCall.arguments` 解码）
+    /// - Returns: 工具执行结果文本
+    func execute(arguments: [String: ToolArgument]) async throws -> String
 }
 
 extension SuperAgentTool {
@@ -48,5 +57,16 @@ extension SuperAgentTool {
     /// 默认 inputSchema（英文）
     public var inputSchema: [String: Any] {
         inputSchema(for: .english)
+    }
+
+    /// 默认执行实现：抛错提示未实现。
+    ///
+    /// 提供默认实现以保持旧实现（未迁移 execute 的工具）可编译；
+    /// 新工具必须实现 `execute(arguments:)`，否则执行时返回该错误。
+    public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        throw ToolExecutionError.executionFailed(
+            toolName: name,
+            reason: "\(name) does not implement execute(arguments:)"
+        )
     }
 }
