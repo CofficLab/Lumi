@@ -19,6 +19,43 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
     public var metadata: [String: String]
     public var isError: Bool
 
+    // MARK: - Rendering metadata
+    //
+    // 复刻自旧版内核 KernelLumi 的 `LumiChatMessage` 渲染字段，供消息渲染器
+    // （PluginMessageRenderer）读取；全部为可选字段，合成 Codable 对缺失键
+    // 自动 decodeIfPresent，历史消息无需迁移即可解码。
+
+    /// LLM 供应商 ID（如 "openai"）。
+    public var providerID: String?
+    /// 模型名称（如 "gpt-4"）。
+    public var modelName: String?
+    /// 原始错误详情（未格式化的底层错误文本）。
+    public var rawErrorDetail: String?
+    /// HTTP 错误状态码。
+    public var httpStatusCode: Int?
+    /// HTTP 响应体文本。
+    public var httpBody: String?
+    /// 特殊渲染类型（"turn-completed" / "tool-step-group" / "turn-activity" 等）。
+    public var renderKind: String?
+    /// 期望的渲染器 ID（由消息生产者设置，用于显式路由）。
+    public var preferredRendererID: String?
+    /// 关联的工具调用 ID。
+    public var toolCallID: String?
+    /// 思考/推理内容（reasoning）。
+    public var reasoningContent: String?
+    /// 结构化工具调用列表。
+    public var toolCalls: [MessageToolCall]?
+    /// 输入 token 数。
+    public var inputTokenCount: Int?
+    /// 输出 token 数。
+    public var outputTokenCount: Int?
+    /// 端到端延迟（毫秒）。
+    public var latencyMs: Double?
+    /// 首 token 时间（毫秒）。
+    public var timeToFirstTokenMs: Double?
+    /// 流式总时长（毫秒）。
+    public var streamingDurationMs: Double?
+
     public init(
         id: UUID = UUID(),
         conversationID: UUID,
@@ -27,7 +64,22 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         createdAt: Date = Date(),
         turnID: UUID? = nil,
         metadata: [String: String] = [:],
-        isError: Bool = false
+        isError: Bool = false,
+        providerID: String? = nil,
+        modelName: String? = nil,
+        rawErrorDetail: String? = nil,
+        httpStatusCode: Int? = nil,
+        httpBody: String? = nil,
+        renderKind: String? = nil,
+        preferredRendererID: String? = nil,
+        toolCallID: String? = nil,
+        reasoningContent: String? = nil,
+        toolCalls: [MessageToolCall]? = nil,
+        inputTokenCount: Int? = nil,
+        outputTokenCount: Int? = nil,
+        latencyMs: Double? = nil,
+        timeToFirstTokenMs: Double? = nil,
+        streamingDurationMs: Double? = nil
     ) {
         self.id = id
         self.conversationID = conversationID
@@ -37,5 +89,81 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         self.turnID = turnID
         self.metadata = metadata
         self.isError = isError
+        self.providerID = providerID
+        self.modelName = modelName
+        self.rawErrorDetail = rawErrorDetail
+        self.httpStatusCode = httpStatusCode
+        self.httpBody = httpBody
+        self.renderKind = renderKind
+        self.preferredRendererID = preferredRendererID
+        self.toolCallID = toolCallID
+        self.reasoningContent = reasoningContent
+        self.toolCalls = toolCalls
+        self.inputTokenCount = inputTokenCount
+        self.outputTokenCount = outputTokenCount
+        self.latencyMs = latencyMs
+        self.timeToFirstTokenMs = timeToFirstTokenMs
+        self.streamingDurationMs = streamingDurationMs
+    }
+}
+
+// MARK: - Tool Calls
+//
+// 复刻自旧版内核 KernelLumi 的 `LumiToolCall` / `LumiToolResult`（渲染层所需
+// 字段）；去掉 `AgentTurnControl` 依赖，保持 Provider 层自包含。
+
+/// 一次工具调用的展示快照。
+public struct MessageToolCall: Identifiable, Codable, Equatable, Sendable {
+    public let id: String
+    public let name: String
+    public let arguments: String
+    public var result: MessageToolResult?
+    /// 面向用户的操作描述，由对应的 Agent 工具根据参数生成。
+    /// 这是持久化的展示快照，UI 不应直接展示 `name`。
+    public var displayDescription: String?
+
+    public init(
+        id: String,
+        name: String,
+        arguments: String,
+        result: MessageToolResult? = nil,
+        displayDescription: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.arguments = arguments
+        self.result = result
+        self.displayDescription = displayDescription
+    }
+}
+
+/// 一次工具调用的结果。
+public struct MessageToolResult: Codable, Equatable, Sendable {
+    public let content: String
+    public let duration: TimeInterval?
+    public let isError: Bool
+    public let imageAttachments: [MessageImageAttachment]
+
+    public init(
+        content: String,
+        duration: TimeInterval? = nil,
+        isError: Bool = false,
+        imageAttachments: [MessageImageAttachment] = []
+    ) {
+        self.content = content
+        self.duration = duration
+        self.isError = isError
+        self.imageAttachments = imageAttachments
+    }
+}
+
+/// 工具结果附带的图片附件（base64 数据）。
+public struct MessageImageAttachment: Codable, Equatable, Sendable {
+    public let data: String
+    public let mimeType: String
+
+    public init(data: String, mimeType: String = "image/png") {
+        self.data = data
+        self.mimeType = mimeType
     }
 }

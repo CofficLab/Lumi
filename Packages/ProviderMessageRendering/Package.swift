@@ -8,12 +8,16 @@ let package = Package(
         .library(name: "ProviderMessageRendering", targets: ["ProviderMessageRendering"]),
     ],
     dependencies: [
+        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
     ],
     targets: [
         .target(
             name: "ProviderMessageRendering",
-            dependencies: [.product(name: "ProviderMessage", package: "ProviderMessage")],
+            dependencies: [
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+            ],
             path: "Sources/ProviderMessageRendering"
         ),
     ]

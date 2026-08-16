@@ -3,6 +3,7 @@ import LumiUI
 import ProviderChatSection
 import ProviderConversation
 import ProviderMessage
+import ProviderMessageRendering
 import SwiftUI
 
 @MainActor
@@ -15,8 +16,9 @@ public final class MessageListPlugin: SuperPlugin {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else { return }
         let conversations = kernel.resolveProvider((any ConversationManaging).self)
         let messages = kernel.resolveProvider((any MessageManaging).self)
+        let rendering = kernel.resolveProvider((any MessageRenderingProviding).self)
         chat.addItems([ChatSectionItem(id: id, order: 100, fillsRemainingHeight: true) {
-            MessageListView(conversations: conversations, messages: messages)
+            MessageListView(conversations: conversations, messages: messages, rendering: rendering)
         }])
     }
 
@@ -29,6 +31,7 @@ public final class MessageListPlugin: SuperPlugin {
 private struct MessageListView: View {
     let conversations: (any ConversationManaging)?
     let messages: (any MessageManaging)?
+    let rendering: (any MessageRenderingProviding)?
     @State private var revision = 0
 
     var body: some View {
@@ -42,7 +45,11 @@ private struct MessageListView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ForEach(rows) { message in
-                        MessageRow(message: message)
+                        MessageRow(
+                            message: message,
+                            verbosity: verbosity(for: conversationID),
+                            rendering: rendering
+                        )
                     }
                 }
             }
@@ -56,23 +63,36 @@ private struct MessageListView: View {
             }
         }
     }
+
+    private func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
+        conversations?.verbosity(for: conversationID) ?? .standard
+    }
 }
 
 @MainActor
 private struct MessageRow: View {
     let message: Message
+    let verbosity: LumiResponseVerbosity
+    let rendering: (any MessageRenderingProviding)?
 
     var body: some View {
-        let isUser = message.role == .user
-        let bubbleRole: MessageBubbleRole = isUser ? .user : (message.isError ? .error : .assistant)
+        // 经渲染器注册表分发：无渲染器时兜底为纯文本行。
+        if let renderer = rendering?.renderer(for: message) {
+            renderer.render(message, verbosity)
+        } else {
+            fallbackRow
+        }
+    }
+
+    private var fallbackRow: some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(systemName: isUser ? "person.circle.fill" : "sparkles")
-                .foregroundStyle(isUser ? Color.secondary : Color.accentColor)
+            Image(systemName: message.role == .user ? "person.circle.fill" : "sparkles")
+                .foregroundStyle(message.role == .user ? Color.secondary : Color.accentColor)
                 .frame(width: 22)
             Text(message.content)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .appMessageBubble(role: bubbleRole, isError: message.isError)
+        .padding(10)
     }
 }

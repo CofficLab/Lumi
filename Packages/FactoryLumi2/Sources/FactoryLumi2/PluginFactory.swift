@@ -22,6 +22,7 @@ import PluginChatPanel
 import PluginConversationInput
 import PluginProjects
 import PluginMessageList
+import PluginMessageRenderer
 import PluginConversationList
 import PluginConversationNew
 import PluginConversationManager
@@ -90,6 +91,7 @@ public struct DefaultPluginFactory: PluginFactory {
             IdleTimePlugin(),
             ChatPanelPlugin(),
             MessageListPlugin(),
+            MessageRendererPlugin(),
             ConversationInputPlugin(),
             ConversationListPlugin(),
             ConversationNewPlugin(),
