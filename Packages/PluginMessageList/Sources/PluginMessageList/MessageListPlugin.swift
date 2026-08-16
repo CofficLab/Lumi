@@ -14,6 +14,16 @@ import SwiftUI
 public final class MessageListPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.message-list"
     public let order = 82
+
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.message-list",
+        name: "消息列表",
+        description: "会话消息时间线：brief/standard/detailed 三种展示模式（V1/V2/V3）",
+        category: .chat,
+        stage: .preview,
+        policy: .alwaysOn
+    )
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
