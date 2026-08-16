@@ -21,7 +21,6 @@ import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
-import ProviderAgentTurn
 import ProviderConversationInput
 import ProviderMessageStreaming
 import ProviderMessageRendering
@@ -151,7 +150,6 @@ public enum KernelFactory {
             agentLoop: agentLoop
         )
         try kernel.registerProvider((any MessageSendingProviding).self, messageSender)
-        try kernel.registerProvider((any AgentTurnProviding).self, factory.makeAgentTurnProvider())
         try kernel.registerProvider((any ConversationInputProviding).self, factory.makeConversationInputProvider())
         try kernel.registerProvider((any MessageStreamingProviding).self, factory.makeMessageStreamingProvider(), forwardsObjectWillChange: false)
         try kernel.registerProvider((any MessageRenderingProviding).self, factory.makeMessageRenderingProvider())

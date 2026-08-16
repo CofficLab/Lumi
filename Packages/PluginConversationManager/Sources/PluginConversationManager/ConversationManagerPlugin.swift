@@ -1,7 +1,7 @@
 import Foundation
 import KernelCore
 import os
-import ProviderAgentTurn
+import ProviderAgentLoop
 import ProviderConversation
 import ProviderLLMManager
 import ProviderMessage
@@ -66,7 +66,7 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
             llmProviderManager: kernel.resolveProvider((any LLMProviderManagerProviding).self),
             messageManager: kernel.resolveProvider((any MessageManaging).self),
             toolManager: kernel.resolveProvider((any ToolManagerProviding).self),
-            agentTurn: kernel.resolveProvider((any AgentTurnProviding).self),
+            agentTurn: kernel.resolveProvider((any AgentLoopProviding).self),
             eventBus: kernel.eventBus
         )
         kernel.unregisterProvider((any ConversationManaging).self)

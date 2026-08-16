@@ -20,7 +20,6 @@ import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
-import ProviderAgentTurn
 import ProviderConversationInput
 import ProviderMessageStreaming
 import ProviderMessageRendering
@@ -106,7 +105,6 @@ public protocol ProviderFactory {
     /// 产出 `ToolManagerProviding` 实现（Agent 工具注册/执行/记录）。
     func makeToolManagerProvider() -> any ToolManagerProviding
 
-    func makeAgentTurnProvider() -> any AgentTurnProviding
     func makeConversationInputProvider() -> any ConversationInputProviding
     func makeMessageStreamingProvider() -> any MessageStreamingProviding
     func makeMessageRenderingProvider() -> any MessageRenderingProviding
@@ -235,10 +233,6 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `ToolManagerProviding` 实现（默认内存注册表 + SwiftData 记录存储）。
     public func makeToolManagerProvider() -> any ToolManagerProviding {
         DefaultToolManagerProviding()
-    }
-
-    public func makeAgentTurnProvider() -> any AgentTurnProviding {
-        DefaultAgentTurnProviding()
     }
 
     public func makeConversationInputProvider() -> any ConversationInputProviding {

@@ -49,4 +49,37 @@ struct ProviderAgentLoopTests {
         #expect(outcome == .completed)
         #expect(messages.lastMessage(in: conversationID)?.content == "from provider")
     }
+
+    @Test("createTurn 返回句柄并置为运行态（合并自 AgentTurn）")
+    func createTurnSetsRunning() async throws {
+        let loop = DefaultAgentLoopProviding(messages: DefaultMessageManaging())
+        let conversationID = UUID()
+        let handle = try await loop.createTurn(AgentTurnRequest(conversationID: conversationID, prompt: "hi"))
+        #expect(loop.state(for: conversationID) == .running)
+        #expect(loop.isRunning(for: conversationID))
+        #expect(handle.id != UUID())
+    }
+
+    @Test("resumeTurn 可恢复被挂起/结束的回合（合并自 AgentTurn）")
+    func resumeTurnRuns() async throws {
+        let messages = DefaultMessageManaging()
+        let conversationID = UUID()
+        messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "hi"), to: conversationID)
+        let loop = DefaultAgentLoopProviding(messages: messages)
+        loop.setResponder { _ in "resumed" }
+
+        let outcome = try await loop.resumeTurn(in: conversationID)
+        #expect(outcome == .completed)
+        #expect(messages.lastMessage(in: conversationID)?.content == "resumed")
+        #expect(!loop.isRunning(for: conversationID))
+    }
+
+    @Test("AgentTurn 兼容类型别名指向 AgentLoop 状态机")
+    func agentTurnCompatibility() async throws {
+        let loop = DefaultAgentLoopProviding(messages: DefaultMessageManaging())
+        let conversationID = UUID()
+        #expect(AgentTurnState.idle == AgentLoopState.idle)
+        #expect(AgentTurnOutcome.completed == AgentLoopOutcome.completed)
+        #expect(loop.state(for: conversationID) == .idle)
+    }
 }

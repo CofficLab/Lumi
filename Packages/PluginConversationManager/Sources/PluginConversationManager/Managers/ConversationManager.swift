@@ -2,7 +2,7 @@ import Combine
 import Foundation
 import KernelCore
 import os
-import ProviderAgentTurn
+import ProviderAgentLoop
 import ProviderConversation
 import ProviderLLMManager
 import ProviderMessage
@@ -50,7 +50,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     private let llmProviderManager: (any LLMProviderManagerProviding)?
     private let messageManager: (any MessageManaging)?
     private let toolManager: (any ToolManagerProviding)?
-    private let agentTurn: (any AgentTurnProviding)?
+    private let agentTurn: (any AgentLoopProviding)?
     private let eventBus: KernelCoreEventBus?
 
     // MARK: - Initialization
@@ -62,7 +62,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         llmProviderManager: (any LLMProviderManagerProviding)? = nil,
         messageManager: (any MessageManaging)? = nil,
         toolManager: (any ToolManagerProviding)? = nil,
-        agentTurn: (any AgentTurnProviding)? = nil,
+        agentTurn: (any AgentLoopProviding)? = nil,
         eventBus: KernelCoreEventBus? = nil
     ) {
         self.store = store

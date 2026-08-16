@@ -29,6 +29,10 @@ public final class DefaultAgentLoopProviding: AgentLoopProviding {
         states[conversationID] ?? .idle
     }
 
+    public func isRunning(for conversationID: UUID) -> Bool {
+        state(for: conversationID) == .running
+    }
+
     public func cancelTurn(in conversationID: UUID) {
         tasks[conversationID]?.cancel()
         tasks[conversationID] = nil
@@ -36,8 +40,26 @@ public final class DefaultAgentLoopProviding: AgentLoopProviding {
         revision += 1
     }
 
+    /// 显式开始一个回合（由原 `AgentTurnProviding.createTurn` 合并而来）。
+    public func createTurn(_ request: AgentTurnRequest) async throws -> AgentTurnHandle {
+        states[request.conversationID] = .running
+        revision += 1
+        return AgentTurnHandle()
+    }
+
     public func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
         guard state(for: conversationID) != .running else { return .failed("turn already running") }
+        return try await executeTurn(in: conversationID)
+    }
+
+    /// 恢复被挂起的回合：语义上从 `suspended` 重新进入运行态。
+    public func resumeTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
+        guard state(for: conversationID) != .running else { return .failed("turn already running") }
+        return try await executeTurn(in: conversationID)
+    }
+
+    /// runTurn / resumeTurn 共用的回合执行逻辑。
+    private func executeTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
         guard responder != nil || llmProvider != nil else {
             states[conversationID] = .failed
             revision += 1
