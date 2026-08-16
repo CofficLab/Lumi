@@ -42,17 +42,19 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
-            path: "Sources/PluginDevice",
+            path: ".",
             exclude: [
-                "Models/README.md",
-                "Services/README.md",
-                "ViewModels/README.md",
-                "Views/README.md",
-                "Views/MenuBar/README.md",
-                "Support/README.md",
+                "Tests",
+                "build",
+                "Sources/PluginDevice/Models/README.md",
+                "Sources/PluginDevice/Services/README.md",
+                "Sources/PluginDevice/ViewModels/README.md",
+                "Sources/PluginDevice/Views/README.md",
+                "Sources/PluginDevice/Views/MenuBar/README.md",
+                "Sources/PluginDevice/Support/README.md",
             ],
             resources: [
-                .process("Resources/Localizable.xcstrings")
+                .process("Resources")
             ]
         ),
         .testTarget(
