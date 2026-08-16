@@ -1,13 +1,19 @@
 import Combine
 import Foundation
 import LumiUI
+import os
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageSender
+import SuperLogKit
 import SwiftUI
 
 /// Message List V2 View (standard / 标准模式)
-struct ListV2View: View {
+struct ListV2View: View, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-list", category: "ListV2View")
+    nonisolated public static let emoji = "📄"
+    nonisolated static let verbose = true
+
     let services: MessageListServices
     @StateObject private var viewModel: ListV2ViewModel
 
@@ -27,9 +33,13 @@ struct ListV2View: View {
     init(services: MessageListServices) {
         self.services = services
         _viewModel = StateObject(wrappedValue: ListV2ViewModel(services: services))
+        if Self.verbose {
+            Self.logger.info("\(Self.t)ListV2View initialized: selectedConversation=\(services.selectedConversationID?.uuidString ?? "nil")")
+        }
     }
 
     var body: some View {
+        let _ = logContentDecision()
         ZStack {
             if viewModel.hasPersistedMessages {
                 messageScrollView
@@ -45,12 +55,21 @@ struct ListV2View: View {
         .task {
             // 首次出现/容器切换重建：重置滚动位置，加载当前选中会话。
             atBottomBox.value = true
+            if Self.verbose {
+                Self.logger.debug("\(Self.t)activate conversation: \(viewModel.selectedConversationID?.uuidString ?? "nil")")
+            }
             await viewModel.activate(conversationID: viewModel.selectedConversationID)
         }
         // 选中对话变化：callback 机制（替代旧版 `.lumiSelectedConversationDidChange` 通知）。
         // 视图消失时释放令牌自动注销，无需手动反注册。
         .onAppear {
+            if Self.verbose {
+                Self.logger.debug("\(Self.t)onAppear: registering selected conversation observer")
+            }
             selectedObserverToken = services.addSelectedConversationObserver { newID in
+                if Self.verbose {
+                    Self.logger.debug("\(Self.t)selected conversation changed: \(newID?.uuidString ?? "nil")")
+                }
                 atBottomBox.value = true
                 Task { @MainActor in
                     await viewModel.activate(conversationID: newID)
@@ -64,8 +83,21 @@ struct ListV2View: View {
         // 会话设置变化（verbosity 等）：订阅 ConversationManaging 窄播
         // （替代旧版 `.lumiConversationsDidChange` 通知）。
         .onReceive(services.conversationsChangesPublisher) { _ in
+            if Self.verbose {
+                Self.logger.debug("\(Self.t)conversation settings changed, refreshing")
+            }
             viewModel.refreshConversationSettingsIfNeeded()
         }
+    }
+
+    /// 记录内容决策：空态 vs 列表 vs loading。
+    @discardableResult
+    private func logContentDecision() -> String {
+        guard Self.verbose else { return "" }
+        let state = viewModel.hasPersistedMessages ? "list" : (viewModel.isLoading ? "loading" : "empty")
+        let message = "\(Self.t)content decision: \(state), historyRows=\(viewModel.historyRows.count), isLoading=\(viewModel.isLoading)"
+        Self.logger.debug("\(message)")
+        return message
     }
 
     // MARK: - Scroll View
@@ -114,6 +146,9 @@ struct ListV2View: View {
             // 流式行出现（nil→非 nil）时跟随滚到底；内容增长期间沿用 atBottomBox
             // 判定（用户上滑则不跟随）。流式行用独立 id，此处按其 id 变化触发。
             .onChange(of: viewModel.streamingRow?.id) { _, _ in
+                if Self.verbose, viewModel.streamingRow != nil {
+                    Self.logger.debug("\(Self.t)streaming row appeared, following to bottom: atBottom=\(atBottomBox.value)")
+                }
                 guard viewModel.streamingRow != nil, atBottomBox.value else { return }
                 scrollTick &+= 1
             }
@@ -166,6 +201,9 @@ struct ListV2View: View {
                 && lastUserMessageID != previousLastUserMessageID
             guard wasAtBottom || isOwnSend else { return }
             if isOwnSend { atBottomBox.value = true }
+            if Self.verbose {
+                Self.logger.debug("\(Self.t)messages changed: didChange=true, wasAtBottom=\(wasAtBottom), isOwnSend=\(isOwnSend), scrolling to bottom")
+            }
 
             // 注意：这里不再用 `atBottomBox.value` 作为实时滚动条件。
             // 原因：新行追加后首次 scrollTo 常落点偏上，此时内容底沿
@@ -238,6 +276,9 @@ struct ListV2View: View {
 
     private func loadEarlier(proxy: ScrollViewProxy) async {
         guard let anchorID = await viewModel.loadEarlier(isAtBottom: atBottomBox.value) else { return }
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)loaded earlier messages, anchor=\(anchorID.uuidString)")
+        }
         await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
     }
 }
