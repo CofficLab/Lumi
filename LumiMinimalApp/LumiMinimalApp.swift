@@ -17,12 +17,21 @@ struct LumiMinimalApp: App {
     /// 共享内核：主窗口、设置、菜单栏共用同一实例。
     @StateObject private var kernel: KernelCoreContainer
 
+    /// 启动失败必须显式呈现，不能静默退化成一个没有 Provider 的空内核。
+    private let bootstrapErrorDescription: String?
+
     @Environment(\.openWindow) private var openWindow
 
     init() {
-        // 装配默认 Provider 不应失败；失败即配置错误。
-        let kernel = (try? KernelFactory.makeKernel()) ?? KernelCoreContainer()
-        _kernel = StateObject(wrappedValue: kernel)
+        do {
+            // 先在 StateObject 的非 throwing autoclosure 外完成可能失败的装配。
+            let assembledKernel = try KernelFactory.makeKernel()
+            _kernel = StateObject(wrappedValue: assembledKernel)
+            bootstrapErrorDescription = nil
+        } catch {
+            _kernel = StateObject(wrappedValue: KernelCoreContainer())
+            bootstrapErrorDescription = error.localizedDescription
+        }
     }
 
     var body: some Scene {
@@ -31,7 +40,7 @@ struct LumiMinimalApp: App {
             // 主窗口 / 设置窗口 / 菜单栏共享同一内核（kernel），
             // 主题切换后各窗口即时同步。
             // 注意：`.onReceive` 需应用到整个 `??` 表达式（否则会误绑到 fallback 分支）。
-            ((try? KernelFactory.makeMainView(kernel: kernel)) ?? AnyView(Text("Failed to assemble main view")))
+            mainView
                 // 与旧版 Lumi（WindowMain.configureForLumiMainChrome）一致：
                 // 窗口内容延伸到标题栏区域（fullSizeContentView），
                 // 工具栏从窗口顶部开始渲染，红绿灯悬浮在工具栏上。
@@ -50,7 +59,7 @@ struct LumiMinimalApp: App {
         .defaultSize(width: 480, height: 320)
 
         Window("设置", id: "lumi-minimal.settings") {
-            (try? KernelFactory.makeSettingsView(kernel: kernel)) ?? AnyView(Text("Failed to assemble settings view"))
+            settingsView
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -67,6 +76,36 @@ struct LumiMinimalApp: App {
         } label: {
             LogoMenuBarLabel(kernel: kernel)
         }
+    }
+
+    private var mainView: AnyView {
+        if let bootstrapErrorDescription {
+            return AnyView(BootstrapFailureView(message: bootstrapErrorDescription))
+        }
+        return (try? KernelFactory.makeMainView(kernel: kernel))
+            ?? AnyView(BootstrapFailureView(message: "Failed to assemble main view"))
+    }
+
+    private var settingsView: AnyView {
+        if let bootstrapErrorDescription {
+            return AnyView(BootstrapFailureView(message: bootstrapErrorDescription))
+        }
+        return (try? KernelFactory.makeSettingsView(kernel: kernel))
+            ?? AnyView(BootstrapFailureView(message: "Failed to assemble settings view"))
+    }
+}
+
+private struct BootstrapFailureView: View {
+    let message: String
+
+    var body: some View {
+        ContentUnavailableView(
+            "LumiMinimal 启动失败",
+            systemImage: "exclamationmark.triangle",
+            description: Text(message)
+        )
+        .textSelection(.enabled)
+        .padding(24)
     }
 }
 
