@@ -168,12 +168,16 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultLLMProviderManagerProviding()
     }
 
+    /// 产出 `MessageSendingProviding` 实现的工厂钩子。
+    ///
+    /// 默认注册职责已移交 `PluginMessageSender.MessageSenderPlugin`（onBoot 中
+    /// 解析基础 Provider 并注册），宿主如需定制实现，可覆盖本方法并自行注册。
     public func makeMessageSenderProvider(
         conversations: any ConversationManaging,
         messages: any MessageManaging,
         agentLoop: any AgentLoopProviding
     ) -> any MessageSendingProviding {
-        DefaultMessageSendingProviding(
+        DefaultMessageSender(
             conversations: conversations,
             messages: messages,
             agentLoop: agentLoop
@@ -359,12 +363,10 @@ public struct DefaultProviderFactory: ProviderFactory {
         }
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
 
-        let messageSender = makeMessageSenderProvider(
-            conversations: conversations,
-            messages: messages,
-            agentLoop: agentLoop
-        )
-        try kernel.registerProvider((any MessageSendingProviding).self, messageSender)
+        // `MessageSendingProviding` 不再由工厂装配注册：改由 `PluginMessageSender`
+        // （`MessageSenderPlugin`，order=9）在 onBoot 中解析上述 conversations /
+        // messages / agentLoop 并注册，与消费方插件共享同一实例。宿主如需定制
+        // 产出逻辑，可覆盖 `makeMessageSenderProvider` 或替换插件列表。
         try kernel.registerProvider((any ConversationInputProviding).self, makeConversationInputProvider())
         try kernel.registerProvider((any MessageRenderingProviding).self, makeMessageRenderingProvider())
         try kernel.registerProvider((any PromptSuggestionProviding).self, makePromptSuggestionProvider())
