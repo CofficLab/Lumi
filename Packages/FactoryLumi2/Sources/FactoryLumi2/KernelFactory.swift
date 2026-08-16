@@ -165,7 +165,7 @@ public enum KernelFactory {
         )
         try kernel.registerProvider((any OnboardingProviding).self, factory.makeOnboardingProvider())
         try kernel.registerProvider((any CommandProviding).self, factory.makeCommandProvider())
-        try kernel.registerProvider((any IdleTimeProviding).self, factory.makeIdleTimeProvider())
+        try kernel.registerProvider((any IdleTimeProviding).self, factory.makeIdleTimeProvider(storage: storage))
         try kernel.registerProvider((any LegacyDataProviding).self, factory.makeLegacyDataProvider())
         try kernel.registerProvider(
             (any PluginControlling).self,

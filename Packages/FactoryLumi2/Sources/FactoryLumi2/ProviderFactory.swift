@@ -114,7 +114,7 @@ public protocol ProviderFactory {
     func makeWorkspaceProvider(storage: any StorageProviding) -> any WorkspaceProviding
     func makeOnboardingProvider() -> any OnboardingProviding
     func makeCommandProvider() -> any CommandProviding
-    func makeIdleTimeProvider() -> any IdleTimeProviding
+    func makeIdleTimeProvider(storage: any StorageProviding) -> any IdleTimeProviding
     func makeLegacyDataProvider() -> any LegacyDataProviding
     func makePluginControlProvider(kernel: KernelCoreContainer) -> any PluginControlling
     func makeWebServerProvider() -> any WebServerProviding
@@ -269,8 +269,10 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultCommandProviding()
     }
 
-    public func makeIdleTimeProvider() -> any IdleTimeProviding {
-        DefaultIdleTimeProviding()
+    public func makeIdleTimeProvider(storage: any StorageProviding) -> any IdleTimeProviding {
+        // 完整实现：事件持久化 + 休息窗口推断，数据目录遵循 Storage 约定
+        // （<数据根目录>/Plugins/IdleTime/）。
+        IdleTimeService(store: IdleActivityStore(directoryURL: storage.pluginDataDirectory(for: "IdleTime")))
     }
 
     public func makeLegacyDataProvider() -> any LegacyDataProviding {

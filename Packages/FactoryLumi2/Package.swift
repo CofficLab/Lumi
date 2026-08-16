@@ -192,6 +192,7 @@ let package = Package(
                 .product(name: "PluginLLMProviderZhipu", package: "PluginLLMProviderZhipu"),
                 .product(name: "ProviderLLM", package: "ProviderLLM"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
             ]
         )
     ]
