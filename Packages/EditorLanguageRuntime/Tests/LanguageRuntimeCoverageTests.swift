@@ -126,11 +126,64 @@ final class LanguageRuntimeCoverageTests: XCTestCase {
         XCTAssertNil(provider.cachedQuery())
     }
 
+    func testLocalizationForwardsToLocalizationKit() {
+        let value = EditorLanguageRuntimeLocalization.string(
+            "some.key",
+            bundle: Bundle(for: Self.self)
+        )
+        XCTAssertFalse(value.isEmpty)
+    }
+
+    func testFakeProviderPathThroughTreeSitterAndHighlightQuery() {
+        let registry = LanguageRegistry.shared
+        registry.reset()
+        registry.register(makeDescriptor())
+        registry.registerGrammarProvider(FakeGrammarProvider(grammarId: "swift"))
+        let context = registry.context(for: "swift")!
+
+        // Provider returns nil language pointer -> nil Language, nil query.
+        XCTAssertNil(registry.treeSitterLanguage(for: context))
+        XCTAssertNil(registry.highlightQuery(for: context))
+
+        // Provider with empty query URLs also yields nil (no cache poison).
+        XCTAssertNil(registry.highlightQuery(for: context))
+        registry.reset()
+        LanguageQueryRegistry.shared.reset()
+    }
+
+    func testHighlightQueryWithParentGrammarProvider() {
+        let registry = LanguageRegistry.shared
+        registry.reset()
+        let descriptor = EditorLanguageDescriptor(
+            languageId: "cpp", displayName: "C++", fileExtensions: ["cpp"],
+            highlightLanguageId: "cpp", parentHighlightLanguageId: "c"
+        )
+        registry.register(descriptor)
+        registry.registerGrammarProvider(FakeGrammarProvider(grammarId: "cpp", highlightURLs: [URL(fileURLWithPath: "/nonexistent/highlights.scm")]))
+        registry.registerGrammarProvider(FakeGrammarProvider(grammarId: "c"))
+        let context = registry.context(for: "cpp")!
+        // Parent registered but no tree-sitter language available -> nil.
+        XCTAssertNil(registry.highlightQuery(for: context))
+        registry.reset()
+        LanguageQueryRegistry.shared.reset()
+    }
+
+    func testFakeProviderDefaultQueryImplementations() {
+        let provider = FakeGrammarProvider(grammarId: "x")
+        XCTAssertNil(provider.injectionQueryURL())
+        XCTAssertNil(provider.localsQueryURL())
+        XCTAssertNil(provider.foldsQueryURL())
+    }
+
     private final class FakeGrammarProvider: LanguageGrammarProviding {
         let grammarId: String
-        init(grammarId: String) { self.grammarId = grammarId }
+        private let highlightURLs: [URL]
+        init(grammarId: String, highlightURLs: [URL] = []) {
+            self.grammarId = grammarId
+            self.highlightURLs = highlightURLs
+        }
         func treeSitterLanguage() -> OpaquePointer? { nil }
-        func highlightQueryURLs() -> [URL] { [] }
+        func highlightQueryURLs() -> [URL] { highlightURLs }
         func injectionQueryURL() -> URL? { nil }
     }
 

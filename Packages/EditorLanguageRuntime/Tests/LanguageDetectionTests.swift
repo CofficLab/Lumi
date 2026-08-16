@@ -125,4 +125,65 @@ struct LanguageDetectionTests {
         )
         #expect(ctx.languageId == "ruby")
     }
+
+    @Test func shebangDoesNotMatchSubstringInsideTokens() {
+        // Extension "h" must not match the "h" inside "#!/bin/bash".
+        let cHeader = EditorLanguageDescriptor(
+            languageId: "c", displayName: "C", fileExtensions: ["h"]
+        )
+        let ctx = LanguageDetection.detect(
+            descriptors: [cHeader],
+            url: URL(fileURLWithPath: "/tmp/noext7"),
+            prefixBuffer: "#!/bin/bash\necho hi\n"
+        )
+        #expect(ctx.languageId == "plaintext")
+
+        // Alias "sh" must not match "#!/usr/bin/zsh".
+        let shell = EditorLanguageDescriptor(
+            languageId: "shell", displayName: "Shell", fileExtensions: ["sh"],
+            shebangAliases: ["sh"]
+        )
+        let ctx2 = LanguageDetection.detect(
+            descriptors: [shell],
+            url: URL(fileURLWithPath: "/tmp/noext8"),
+            prefixBuffer: "#!/usr/bin/zsh\n"
+        )
+        #expect(ctx2.languageId == "plaintext")
+
+        // Exact token match still works.
+        let ctx3 = LanguageDetection.detect(
+            descriptors: [shell],
+            url: URL(fileURLWithPath: "/tmp/noext9"),
+            prefixBuffer: "#!/bin/sh\n"
+        )
+        #expect(ctx3.languageId == "shell")
+    }
+
+    @Test func shebangMatchesVersionedInterpreter() {
+        // "python" alias should match a versioned interpreter like python3.2.
+        let ctx = LanguageDetection.detect(
+            descriptors: makeDescriptors(),
+            url: URL(fileURLWithPath: "/tmp/noext10"),
+            prefixBuffer: "#!/usr/bin/python3.2\n"
+        )
+        #expect(ctx.languageId == "python")
+
+        // But not a name that merely shares a prefix with extra letters.
+        let ctx2 = LanguageDetection.detect(
+            descriptors: makeDescriptors(),
+            url: URL(fileURLWithPath: "/tmp/noext11"),
+            prefixBuffer: "#!/usr/bin/pythonx\n"
+        )
+        #expect(ctx2.languageId == "plaintext")
+    }
+
+    @Test func modelineVimMarkerRequiresWordBoundary() {
+        // "svim:" must not be treated as a vim modeline marker.
+        let ctx = LanguageDetection.detect(
+            descriptors: makeDescriptors(),
+            url: URL(fileURLWithPath: "/tmp/noext12"),
+            prefixBuffer: "# svim: set ft=ruby\n"
+        )
+        #expect(ctx.languageId == "plaintext")
+    }
 }

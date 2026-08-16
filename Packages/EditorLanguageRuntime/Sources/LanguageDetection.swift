@@ -43,12 +43,21 @@ public enum LanguageDetection {
     ) -> EditorLanguageDescriptor? {
         guard contents.hasPrefix("#!") else { return nil }
         let line = contents.split(separator: "\n", maxSplits: 1).first.map(String.init) ?? contents
-        for descriptor in descriptors {
-            for alias in descriptor.shebangAliases {
-                if line.contains(alias.lowercased()) { return descriptor }
+        // Token-based matching: raw substring checks produce false positives,
+        // e.g. extension "h" matching "#!/bin/bash" or alias "sh" matching "#!/usr/bin/zsh".
+        let tokens = line.split { !($0.isLetter || $0.isNumber) }.map(String.init)
+        func matches(_ identifier: String) -> Bool {
+            let id = identifier.lowercased()
+            return tokens.contains {
+                $0 == id || ($0.hasPrefix(id) && $0.dropFirst(id.count).allSatisfy(\.isNumber))
             }
-            if line.contains(descriptor.highlightLanguageId.lowercased()) { return descriptor }
-            for ext in descriptor.fileExtensions where line.contains(ext.lowercased()) {
+        }
+        for descriptor in descriptors {
+            for alias in descriptor.shebangAliases where matches(alias) {
+                return descriptor
+            }
+            if matches(descriptor.highlightLanguageId) { return descriptor }
+            for ext in descriptor.fileExtensions where matches(ext) {
                 return descriptor
             }
         }
@@ -86,7 +95,7 @@ public enum LanguageDetection {
     private static func extractModelineValue(from buffer: String, key: String) -> String? {
         // \b prevents matching the key inside words (e.g. `soft=` must not parse as `ft=`).
         let patterns = [
-            "vim:.*\\b\(key)[=:]\\s*([a-zA-Z0-9_+-]+)",
+            "\\bvim:.*\\b\(key)[=:]\\s*([a-zA-Z0-9_+-]+)",
             "-\\*-\\s*\\b\(key)[=:]\\s*([a-zA-Z0-9_+-]+)",
         ]
         for pattern in patterns {
