@@ -46,6 +46,11 @@ public final class SettingGeneralPlugin: SuperPlugin {
 
         settings.addEntries([entry])
     }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: ["general"])
+    }
 }
 
 /// 通用设置详情视图：App 版本 + 文档（关于 / 说明书）。

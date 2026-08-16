@@ -33,6 +33,11 @@ public final class SettingsToolbarPlugin: SuperPlugin {
 
         toolbar.addToolbarItems([item])
     }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any ToolbarProviding).self)?
+            .removeToolbarItems(ids: ["settings"])
+    }
 }
 
 /// 设置按钮视图：点击发出「打开设置」通知。

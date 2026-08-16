@@ -32,4 +32,8 @@ public final class LogoCofficPlugin: SuperPlugin {
             )
         )
     }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any LogoProviding).self)?.unregisterLogoItem(id: id)
+    }
 }

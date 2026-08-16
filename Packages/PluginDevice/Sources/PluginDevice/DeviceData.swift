@@ -114,7 +114,7 @@ class DeviceData: ObservableObject {
 
     // MARK: - Data Fetching
 
-    private func updateDynamicData() {
+    func updateDynamicData() {
         guard samplingTask == nil else { return }
 
         // CPU 使用率已在主线程由 CPUService 维护，直接读取

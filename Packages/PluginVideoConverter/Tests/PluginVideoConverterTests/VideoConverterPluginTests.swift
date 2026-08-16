@@ -29,6 +29,7 @@ struct VideoConverterPluginTests {
         let entry = activityBar.items[0]
         #expect(entry.id == "\(plugin.id).entry")
         #expect(entry.systemImage == "video")
+        #expect(activityBar.activeItemID == entry.id)
 
         // 主内容视图
         #expect(type(of: contentView.makeContentView()) == AnyView.self)

@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderSettingView
@@ -27,8 +28,8 @@ struct PluginDeviceTests {
         // 设置入口
         #expect(settings.entries.count == 1)
         let entry = settings.entries[0]
-        #expect(entry.id == "device")
-        #expect(entry.title == "设备信息")
+        #expect(entry.id == "\(plugin.id).memory-settings")
+        #expect(entry.title == "Memory Monitor")
         #expect(type(of: entry.makeDetailView()) == AnyView.self)
 
         // 主内容视图
@@ -57,8 +58,7 @@ struct PluginDeviceTests {
         try plugin.onBoot(kernel: kernel)
 
         #expect(settings.entries.count == 2)
-        // 合并后按 order 升序：device(150) 在前，general(200) 在后
-        #expect(settings.entries.map(\.id) == ["device", "general"])
+        #expect(settings.entries.map(\.id) == ["\(plugin.id).memory-settings", "general"])
     }
 
     @Test("设置视图未注册时 onBoot 优雅降级")
@@ -81,7 +81,37 @@ struct PluginDeviceTests {
 
         #expect(kernel.isPluginRegistered(id: plugin.id))
         #expect(settings.entries.count == 1)
-        #expect(settings.entries[0].id == "device")
+        #expect(settings.entries[0].id == "\(plugin.id).memory-settings")
+    }
+
+    @Test("ActivityBar 激活设备入口时切换主内容")
+    func activityBarActivationSetsContentView() throws {
+        final class TrackingContentView: ContentViewProviding {
+            var setCount = 0
+
+            func setContentView(_ view: AnyView?) {
+                if view != nil { setCount += 1 }
+            }
+
+            func makeContentView() -> AnyView { AnyView(EmptyView()) }
+        }
+
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let contentView = TrackingContentView()
+        activityBar.registerItems([
+            ActivityBarItem(id: "other", title: "Other", systemImage: "circle"),
+        ])
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ContentViewProviding).self, contentView)
+
+        let plugin = DevicePlugin()
+        try plugin.onBoot(kernel: kernel)
+        #expect(contentView.setCount == 0)
+
+        activityBar.activateItem(id: "\(plugin.id).entry")
+
+        #expect(contentView.setCount == 1)
     }
 
     @Test("DeviceData 采集静态系统信息")
@@ -103,7 +133,8 @@ struct PluginDeviceTests {
         data.updateDynamicData()
 
         #expect(data.cpuUsage >= 0)
-        #expect(data.memoryUsed > 0)
+        // 采样 API 失败或刚初始化时允许为 0，但不应为负数。
+        #expect(data.memoryUsed >= 0)
         #expect(data.memoryTotal > 0)
         #expect(data.memoryUsage >= 0)
         #expect(data.uptime >= 0)

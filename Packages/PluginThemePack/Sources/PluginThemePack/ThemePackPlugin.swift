@@ -42,4 +42,14 @@ public final class ThemePackPlugin: SuperPlugin {
             ])
         }
     }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        if let theme = kernel.resolveProvider((any ThemeProviding).self) {
+            for legacy in LegacyThemeCatalog.all {
+                theme.unregisterTheme(id: legacy.id)
+            }
+        }
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: ["appearance"])
+    }
 }

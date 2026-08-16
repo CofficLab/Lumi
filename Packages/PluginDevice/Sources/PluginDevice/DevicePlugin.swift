@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderMenuBar
@@ -44,9 +45,24 @@ public final class DevicePlugin: SuperPlugin {
             settings.addEntries([entry])
         }
 
-        // 2. 注册设备信息视图为主内容（ContentView，沿用旧版 viewContainers）
-        if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
-            contentView.setContentView(AnyView(DeviceInfoView()))
+        // 2. 注册 ActivityBar 入口；入口被激活时由插件切换自己的主内容。
+        let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
+            let entryID = "\(id).entry"
+            activityBar.addItems([
+                ActivityBarItem(
+                    id: entryID,
+                    title: "设备信息",
+                    systemImage: "gauge.with.dots.needle.50percent",
+                    order: order
+                ) { activeItemID in
+                    guard activeItemID == entryID else { return }
+                    contentView?.setContentView(AnyView(DeviceInfoView()))
+                },
+            ])
+        } else {
+            // 无 ActivityBar 的精简宿主仍可直接展示插件主内容。
+            contentView?.setContentView(AnyView(DeviceInfoView()))
         }
 
         // 3. 贡献「关于」与「说明书」文档（沿用旧版 pluginAboutView / pluginManualView）
@@ -67,5 +83,21 @@ public final class DevicePlugin: SuperPlugin {
                 MemoryMenuBarPopupView()
             })
         }
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: ["\(id).memory-settings"])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if activityBar == nil || activityBar?.activeItemID == nil {
+            kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+        }
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+        kernel.resolveProvider((any MenuBarProviding).self)?.removeItems(ids: [
+            "\(id).metrics",
+            "\(id).cpu",
+            "\(id).memory",
+        ])
     }
 }

@@ -21,21 +21,24 @@ public final class VideoConverterPlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+
         // 1. 在 ActivityBar 注册「视频转换」入口（沿用旧版 ActivityBar 容器入口）
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
+            let entryID = "\(id).entry"
             activityBar.addItems([
                 ActivityBarItem(
-                    id: "\(id).entry",
+                    id: entryID,
                     title: VideoConverterLocalization.string("Video Converter"),
                     systemImage: "video",
                     order: order
-                ),
+                ) { activeItemID in
+                    guard activeItemID == entryID else { return }
+                    contentView?.setContentView(AnyView(VideoConverterMainView()))
+                },
             ])
-        }
-
-        // 2. 注册视频转换视图为主内容
-        if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
-            contentView.setContentView(AnyView(VideoConverterMainView()))
+        } else {
+            contentView?.setContentView(AnyView(VideoConverterMainView()))
         }
 
         // 3. 贡献「关于」与「说明书」文档
@@ -46,8 +49,11 @@ public final class VideoConverterPlugin: SuperPlugin {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
-        kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if activityBar == nil || activityBar?.activeItemID == nil {
+            kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+        }
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }
