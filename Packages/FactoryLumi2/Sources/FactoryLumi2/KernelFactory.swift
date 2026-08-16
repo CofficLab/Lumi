@@ -198,6 +198,16 @@ public enum KernelFactory {
         // 默认目录与宿主附加插件在同一个依赖图中统一校验、排序、原子启动。
         // 后续复刻插件只需由 App/专用 Factory 传入，不必继续修改内核工厂。
         try kernel.start(plugins: pluginFactory.makePlugins() + additionalPlugins)
+
+        // header / toolbar 可见性绑定（复刻旧版 ChatView 语义：无选中会话时
+        // 隐藏 header / toolbar，仅保留正文与输入区）。
+        // 必须在插件启动完成后执行：此时 ConversationManaging 已是最终实例
+        // （PluginConversationManager order=7 可能已替换默认内存实现）。
+        if let chat = kernel.resolveProvider((any ChatSectionProviding).self),
+           let conversations = kernel.resolveProvider((any ConversationManaging).self) {
+            chat.bindConversationSelection(conversations)
+        }
+
         return kernel
     }
 

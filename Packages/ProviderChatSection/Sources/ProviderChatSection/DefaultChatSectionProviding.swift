@@ -1,11 +1,19 @@
+import Combine
+import LumiUI
+import ProviderConversation
 import SwiftUI
 
 @MainActor
 public final class DefaultChatSectionProviding: ChatSectionProviding, ObservableObject {
     @Published public private(set) var isVisible: Bool = true
     @Published public private(set) var isContextActive: Bool = false
+    @Published public private(set) var isHeaderVisible: Bool = true
     @Published public private(set) var items: [ChatSectionItem] = []
     @Published public private(set) var barItems: [ChatSectionBarItem] = []
+    @Published public private(set) var rootWrappers: [ChatSectionRootWrapper] = []
+
+    /// 会话选择绑定订阅：随 Provider 生命周期持有（与内核同生命周期）。
+    private var conversationSelectionCancellable: AnyCancellable?
 
     public init() {}
 
@@ -29,6 +37,16 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         barItems.removeAll { $0.id == id }
     }
 
+    public func addRootWrappers(_ newWrappers: [ChatSectionRootWrapper]) {
+        var byID = Dictionary(uniqueKeysWithValues: rootWrappers.map { ($0.id, $0) })
+        for wrapper in newWrappers { byID[wrapper.id] = wrapper }
+        rootWrappers = byID.values.sorted { $0.order == $1.order ? $0.id < $1.id : $0.order < $1.order }
+    }
+
+    public func removeRootWrapper(id: String) {
+        rootWrappers.removeAll { $0.id == id }
+    }
+
     public func setVisible(_ visible: Bool) {
         isVisible = visible
     }
@@ -37,14 +55,50 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         isContextActive = active
     }
 
+    public func setHeaderVisible(_ visible: Bool) {
+        isHeaderVisible = visible
+    }
+
+    /// 把 header / toolbar 可见性绑定到会话选择状态（复刻旧版 `ChatView` 语义：
+    /// 无选中会话时隐藏 header / toolbar，仅保留正文与输入区）。
+    ///
+    /// 由集成层在插件全部启动、`ConversationManaging` 最终实例确定后调用一次；
+    /// 订阅由本 Provider 持有，随内核生命周期存续。
+    public func bindConversationSelection(_ conversations: any ConversationManaging) {
+        isHeaderVisible = conversations.selectedConversationID != nil
+        conversationSelectionCancellable = conversations.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self, weak conversations] _ in
+                MainActor.assumeIsolated {
+                    guard let self, let conversations else { return }
+                    self.isHeaderVisible = conversations.selectedConversationID != nil
+                }
+            }
+    }
+
     public func makeChatSectionView() -> AnyView {
         AnyView(ChatSectionHostView(provider: self))
     }
 }
 
+/// 聊天分区宿主视图（公开以便宿主复用 / 自定义宿主组合）。
+///
+/// 结构对应旧版 `Views/Layout/Chat` 目录：
+/// - `ChatView` → 本视图（组合入口）
+/// - `ChatHeaderView` → `ChatHeaderRow`
+/// - `ChatToolbarView` → `ChatToolbarRow`
+/// - `ChatSectionContentView` → `ChatStackView` + `ChatBottomFixedView`
+/// - `ChatActionBar` → `ChatActionBarView`
+///
+/// 样式对齐旧版：header / toolbar / action bar 均复用 `AppToolbarContainer` +
+/// `AppPanelChromeMetrics`，与旧版高度、内边距、背景、边框、阴影一致。
 @MainActor
-private struct ChatSectionHostView: View {
+public struct ChatSectionHostView: View {
     @ObservedObject var provider: DefaultChatSectionProviding
+
+    public init(provider: DefaultChatSectionProviding) {
+        self.provider = provider
+    }
 
     private var stackItems: [ChatSectionItem] {
         provider.items.filter { $0.placement == .stack }
@@ -58,12 +112,29 @@ private struct ChatSectionHostView: View {
         provider.barItems.filter { $0.placement == placement }
     }
 
-    var body: some View {
+    private var orderedRootWrappers: [ChatSectionRootWrapper] {
+        provider.rootWrappers.sorted { $0.order == $1.order ? $0.id < $1.id : $0.order < $1.order }
+    }
+
+    public var body: some View {
+        wrappedContent
+    }
+
+    /// 根包装器链式叠加：order 升序，先注册的先包（最小 order 在最外层）。
+    private var wrappedContent: AnyView {
+        var result = AnyView(baseContent)
+        for wrapper in orderedRootWrappers {
+            result = wrapper.wrap(result)
+        }
+        return result
+    }
+
+    private var baseContent: some View {
         Group {
             if provider.isVisible {
                 VStack(spacing: 0) {
-                    if provider.isContextActive {
-                        ChatBarRow(items: bars(.header), height: 40)
+                    if provider.isContextActive, provider.isHeaderVisible {
+                        ChatHeaderRow(items: bars(.header))
                         ChatToolbarRow(
                             leading: bars(.toolbarLeading),
                             trailing: bars(.toolbarTrailing)
@@ -72,6 +143,13 @@ private struct ChatSectionHostView: View {
 
                     ChatStackView(items: stackItems)
                         .frame(maxHeight: .infinity)
+
+                    // 复刻旧版 ChatSectionContentView：stack 与 bottomFixed 之间的分隔线，
+                    // 仅当两者都非空且 stack 最后一项声明显示分隔线时绘制。
+                    if !stackItems.isEmpty, !bottomItems.isEmpty,
+                       stackItems.last?.showsTrailingDivider ?? true {
+                        AppDivider()
+                    }
 
                     ChatBottomFixedView(items: bottomItems)
 
@@ -86,6 +164,7 @@ private struct ChatSectionHostView: View {
     }
 }
 
+/// 正文 stack 区：`fillsRemainingHeight` 的项占满剩余高度，未声明时第一项兜底。
 @MainActor
 private struct ChatStackView: View {
     let items: [ChatSectionItem]
@@ -101,7 +180,7 @@ private struct ChatStackView: View {
                     .layoutPriority(isPrimary ? 1 : 0)
 
                 if index < items.count - 1, item.showsTrailingDivider {
-                    Divider()
+                    AppDivider()
                 }
             }
         }
@@ -109,6 +188,7 @@ private struct ChatStackView: View {
     }
 }
 
+/// 底部固定区（输入框等）。
 @MainActor
 private struct ChatBottomFixedView: View {
     let items: [ChatSectionItem]
@@ -120,48 +200,69 @@ private struct ChatBottomFixedView: View {
                     .frame(maxWidth: .infinity, alignment: .bottom)
 
                 if index < items.count - 1, item.showsTrailingDivider {
-                    Divider()
+                    AppDivider()
                 }
             }
         }
     }
 }
 
+/// header 栏：对应旧版 `ChatHeaderView`（`AppToolbarContainer` height 40、
+/// `.panel` 背景、上下 8 / 左右 10 内边距、底部边框）。
 @MainActor
-private struct ChatBarRow: View {
+private struct ChatHeaderRow: View {
     let items: [ChatSectionBarItem]
-    let height: CGFloat
 
     var body: some View {
-        HStack(spacing: 8) {
-            ForEach(items) { $0.makeView() }
-            Spacer(minLength: 0)
+        AppToolbarContainer(
+            height: 40,
+            backgroundStyle: .panel,
+            padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
+        ) {
+            HStack(spacing: 8) {
+                ForEach(items) { $0.makeView() }
+                Spacer(minLength: 0)
+            }
         }
-        .padding(.horizontal, 10)
-        .frame(height: height)
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .bottom) { Divider() }
+        .borderBottom()
     }
 }
 
+/// toolbar 栏：对应旧版 `ChatToolbarView`（`breadcrumbBarHeight` 高度、
+/// `.panel` 背景、breadcrumb 内边距、底部边框 + `shadowMd`）。
 @MainActor
 private struct ChatToolbarRow: View {
     let leading: [ChatSectionBarItem]
     let trailing: [ChatSectionBarItem]
 
     var body: some View {
-        HStack(spacing: 8) {
-            ForEach(leading) { $0.makeView() }
-            Spacer(minLength: 0)
-            ForEach(trailing) { $0.makeView() }
+        AppToolbarContainer(
+            height: AppPanelChromeMetrics.breadcrumbBarHeight,
+            backgroundStyle: .panel,
+            padding: EdgeInsets(
+                top: AppPanelChromeMetrics.breadcrumbVerticalPadding,
+                leading: AppPanelChromeMetrics.breadcrumbHorizontalPadding,
+                bottom: AppPanelChromeMetrics.breadcrumbVerticalPadding,
+                trailing: AppPanelChromeMetrics.breadcrumbHorizontalPadding
+            )
+        ) {
+            HStack(alignment: .center, spacing: 8) {
+                ForEach(leading) { $0.makeView() }
+                Spacer(minLength: 0)
+                HStack(spacing: 8) {
+                    ForEach(trailing) { $0.makeView() }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: AppPanelChromeMetrics.breadcrumbContentHeight, alignment: .center)
         }
-        .padding(.horizontal, 10)
-        .frame(height: 36)
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .bottom) { Divider() }
+        .borderBottom()
+        .shadowMd()
     }
 }
 
+/// action bar：对应旧版 `ChatActionBar`（`actionBarHeight` 高度、`.panel` 背景、
+/// actionBar 内边距、`actionBarItemSpacing` 间距、顶部边框）。
 @MainActor
 private struct ChatActionBarView: View {
     let leading: [ChatSectionBarItem]
@@ -170,15 +271,26 @@ private struct ChatActionBarView: View {
     var body: some View {
         Group {
             if !leading.isEmpty || !trailing.isEmpty {
-                HStack(spacing: 8) {
-                    ForEach(leading) { $0.makeView() }
-                    Spacer(minLength: 0)
-                    ForEach(trailing) { $0.makeView() }
+                AppToolbarContainer(
+                    height: AppPanelChromeMetrics.actionBarHeight,
+                    backgroundStyle: .panel,
+                    padding: EdgeInsets(
+                        top: AppPanelChromeMetrics.actionBarVerticalPadding,
+                        leading: AppPanelChromeMetrics.breadcrumbHorizontalPadding,
+                        bottom: AppPanelChromeMetrics.actionBarVerticalPadding,
+                        trailing: AppPanelChromeMetrics.breadcrumbHorizontalPadding
+                    )
+                ) {
+                    HStack(spacing: AppPanelChromeMetrics.actionBarItemSpacing) {
+                        ForEach(leading) { $0.makeView() }
+                        Spacer(minLength: 0)
+                        HStack(spacing: AppPanelChromeMetrics.actionBarItemSpacing) {
+                            ForEach(trailing) { $0.makeView() }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal, 10)
-                .frame(height: 36)
-                .frame(maxWidth: .infinity)
-                .overlay(alignment: .top) { Divider() }
+                .borderTop()
             }
         }
     }

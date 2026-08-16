@@ -58,3 +58,26 @@ public struct ChatSectionBarItem: Identifiable, Sendable {
         self.makeView = { AnyView(content()) }
     }
 }
+
+/// 聊天分区根包装器：把整个 Chat 内容区（header / toolbar / 正文 / 输入区）
+/// 再包一层，对应旧版插件的 `chatSectionRootWrapper` 贡献点（如主题包、
+/// 权限蒙层等需要包裹整个聊天区的场景）。
+///
+/// 多个包装器按 `order` 升序链式叠加：`order` 小的先执行 `wrap`，因此
+/// `order` 最小者位于最外层。未注册任何包装器时内容原样返回。
+@MainActor
+public struct ChatSectionRootWrapper: Identifiable, Sendable {
+    public let id: String
+    public var order: Int
+    public let wrap: @MainActor @Sendable (AnyView) -> AnyView
+
+    public init(
+        id: String,
+        order: Int = 200,
+        wrap: @escaping @MainActor @Sendable (AnyView) -> AnyView
+    ) {
+        self.id = id
+        self.order = order
+        self.wrap = wrap
+    }
+}
