@@ -11,6 +11,7 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
+import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 import SwiftUI
@@ -237,5 +238,30 @@ struct FactoryLumi2Tests {
         // 注销后回退到下一个贡献者（Coffic Logo）
         logo?.unregisterLogoItem(id: "test.logo")
         #expect(logo?.highestPriorityLogoItem?.id == "com.lumi.plugin.logo-coffic")
+    }
+
+    @Test("makeKernel 启动 ThemePackPlugin 后注册全部复刻主题")
+    func makeKernelBootsThemePackAndRegistersThemes() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.theme-pack"))
+
+        let theme = kernel.resolveProvider((any ThemeProviding).self)
+        #expect(theme != nil)
+
+        // 内置 3 个（System/Dark/Light）+ 复刻 19 个 = 22 个。
+        #expect(theme?.themes.count == 22)
+
+        // 复刻主题 id 与旧版主题插件一致。
+        for id in ["lumi", "midnight", "sky", "aurora", "nebula", "void",
+                   "spring", "summer", "autumn", "winter", "github", "orchard",
+                   "mountain", "vscode-auto", "vscode-dark", "vscode-light",
+                   "river", "one-dark", "dracula"] {
+            #expect(theme?.themes.contains(where: { $0.id == id }) == true, "缺少复刻主题 \(id)")
+        }
+
+        // 切换复刻主题（如 Dracula）应成功。
+        try theme?.selectTheme(id: "dracula")
+        #expect(theme?.selectedThemeId == "dracula")
     }
 }

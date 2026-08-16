@@ -3,6 +3,7 @@ import KernelCore
 import PluginDevice
 import PluginLogoCoffic
 import PluginSettingGeneral
+import PluginThemePack
 import PluginToolbarSettings
 
 /// 产出各种插件的工厂协议。
@@ -31,6 +32,7 @@ public struct DefaultPluginFactory: PluginFactory {
             DevicePlugin(),
             LogoCofficPlugin(),
             SettingsToolbarPlugin(),
+            ThemePackPlugin(),
         ]
     }
 }
