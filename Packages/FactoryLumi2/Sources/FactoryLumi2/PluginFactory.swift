@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import PluginAppIconDesigner
 import PluginAppStorePromoDesigner
+import PluginMindMapDesigner
 import PluginDevice
 import PluginLogoCoffic
 import PluginSettingGeneral
@@ -41,6 +42,7 @@ public struct DefaultPluginFactory: PluginFactory {
             DevicePlugin(),
             AppIconDesignerPlugin(),
             AppStorePromoDesignerPlugin(),
+            MindMapDesignerPlugin(),
             LogoCofficPlugin(),
             SettingsToolbarPlugin(),
             ThemePackPlugin(),
