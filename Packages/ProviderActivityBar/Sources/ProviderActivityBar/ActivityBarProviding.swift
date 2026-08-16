@@ -19,6 +19,29 @@ public protocol ActivityBarProviding: AnyObject {
     /// 注入 ActivityBar 项（替换当前全部项）。
     func registerItems(_ items: [ActivityBarItem])
 
+    /// 追加 ActivityBar 项（保留已有项）。
+    ///
+    /// 供多个插件各自贡献入口时使用，互不覆盖。
+    func addItems(_ items: [ActivityBarItem])
+
+    /// 按 id 撤回插件贡献的入口项。
+    func removeItems(ids: Set<String>)
+
     /// 返回 ActivityBar 视图（基于已注入的 items 渲染）。
     func makeActivityBarView() -> AnyView
+}
+
+public extension ActivityBarProviding {
+    /// 追加语义的默认实现：合入已有项并按 `order` 排序（同 id 去重，保留先注册者）。
+    func addItems(_ newItems: [ActivityBarItem]) {
+        var merged = items
+        for item in newItems where !merged.contains(where: { $0.id == item.id }) {
+            merged.append(item)
+        }
+        registerItems(merged)
+    }
+
+    func removeItems(ids: Set<String>) {
+        registerItems(items.filter { !ids.contains($0.id) })
+    }
 }

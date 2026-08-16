@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import SwiftUI
@@ -10,16 +11,24 @@ import Testing
 @MainActor
 struct VideoConverterPluginTests {
 
-    @Test("onBoot 注册主内容与文档")
-    func onBootRegistersContentViewAndDocs() throws {
+    @Test("onBoot 注册 ActivityBar 入口、主内容与文档")
+    func onBootRegistersEntryContentViewAndDocs() throws {
         let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
         let contentView = DefaultContentViewProviding()
         let docs = DefaultDocsViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
 
         let plugin = VideoConverterPlugin()
         try plugin.onBoot(kernel: kernel)
+
+        // ActivityBar 入口
+        #expect(activityBar.items.count == 1)
+        let entry = activityBar.items[0]
+        #expect(entry.id == "\(plugin.id).entry")
+        #expect(entry.systemImage == "video")
 
         // 主内容视图
         #expect(type(of: contentView.makeContentView()) == AnyView.self)
@@ -34,18 +43,20 @@ struct VideoConverterPluginTests {
         #expect(type(of: docs.manualEntries[0].makeView()) == AnyView.self)
     }
 
-    @Test("onBoot 追加语义不覆盖已有文档")
-    func onBootAppendsToExistingDocs() throws {
+    @Test("onBoot 追加语义不覆盖已有入口")
+    func onBootAppendsToExistingItems() throws {
         let kernel = KernelCoreContainer()
-        let docs = DefaultDocsViewProviding()
-        docs.addManual(DocsEntry(id: "general", name: "通用") { Text("general") })
-        try kernel.registerProvider((any DocsViewProviding).self, docs)
+        let activityBar = DefaultActivityBarProviding()
+        activityBar.registerItems([
+            ActivityBarItem(id: "general", title: "通用", systemImage: "gearshape", order: 200),
+        ])
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
 
-        let plugin = VideoConverterPlugin()
+        let plugin = VideoConverterPlugin() // order 870
         try plugin.onBoot(kernel: kernel)
 
-        #expect(docs.manualEntries.count == 2)
-        #expect(docs.manualEntries.map(\.id).contains(plugin.id))
+        #expect(activityBar.items.count == 2)
+        #expect(activityBar.items.map(\.id).contains("\(plugin.id).entry"))
     }
 
     @Test("Provider 未注册时 onBoot 优雅降级")
@@ -60,8 +71,10 @@ struct VideoConverterPluginTests {
     @Test("插件可经 kernel.start 启动并注册贡献")
     func startViaKernelBootsPlugin() throws {
         let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
         let contentView = DefaultContentViewProviding()
         let docs = DefaultDocsViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
 
@@ -69,24 +82,29 @@ struct VideoConverterPluginTests {
         try kernel.start(plugins: [plugin])
 
         #expect(kernel.isPluginRegistered(id: plugin.id))
+        #expect(activityBar.items.count == 1)
         #expect(docs.aboutEntries.count == 1)
         #expect(docs.aboutEntries[0].id == plugin.id)
     }
 
-    @Test("onShutdown 撤回主内容与文档贡献")
+    @Test("onShutdown 撤回 ActivityBar 入口、主内容与文档贡献")
     func onShutdownWithdrawsContributions() throws {
         let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
         let contentView = DefaultContentViewProviding()
         let docs = DefaultDocsViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
 
         let plugin = VideoConverterPlugin()
         try kernel.start(plugins: [plugin])
+        #expect(activityBar.items.count == 1)
         #expect(docs.aboutEntries.count == 1)
 
         try kernel.stop()
 
+        #expect(activityBar.items.isEmpty)
         #expect(docs.aboutEntries.isEmpty)
         #expect(docs.manualEntries.isEmpty)
     }

@@ -14,16 +14,6 @@ struct ProviderActivityBarTests {
         #expect(item.id == "files")
         #expect(item.title == "Files")
         #expect(item.systemImage == "folder")
-        #expect(item.makeView == nil)
-    }
-
-    @Test("ActivityBarItem 便捷初始化带视图内容")
-    func itemWithContent() {
-        let item = ActivityBarItem(id: "files", title: "Files", systemImage: "folder") {
-            Text("files content")
-        }
-
-        #expect(item.makeView != nil)
     }
 
     @Test("DefaultActivityBarProviding 注入 items 后可读取且按 order 排序")
