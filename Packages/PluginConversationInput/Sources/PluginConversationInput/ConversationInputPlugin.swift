@@ -1,70 +1,88 @@
 import KernelCore
 import LumiUI
+import os
 import ProviderChatSection
 import ProviderConversationInput
 import ProviderMessageSender
+import SuperLogKit
 import SwiftUI
 
+/// Conversation Input Plugin（KernelCore 版本）
+///
+/// 由旧版 `Plugins/ConversationInputPlugin`（KernelLumi / LumiPlugin 架构）复刻而来：
+/// - `onBoot` 向 `ChatSectionProviding` 注册底部固定输入框（`ComposerView` +
+///   原生 AppKit 编辑器 `ChatInputEditorView`，含 IME / 拖放 / 粘贴折叠预览），
+///   并在 Action Bar 注册发送/停止按钮（`SendActionBarButton`）；
+/// - 输入状态使用内核已注册的 `ConversationInputProviding`，发送使用
+///   `MessageSendingProviding`，与「文件树 → 添加到对话」等消费方共享同一状态；
+/// - `onShutdown` 撤回全部贡献。
+///
+/// 与旧版的对应关系：
+/// - `registerConversationInputService(inputState)` → 内核 `ConversationInputProviding`
+///   （FactoryLumi2 已装配 `DefaultConversationInputProviding`）；
+/// - `chatSectionItems(.bottomFixed)` → `ChatSectionProviding.addItems`；
+/// - `chatSectionActionBarItems(.trailing)` → `ChatSectionProviding.addBarItems(.actionTrailing)`；
+/// - `kernel.messageSender`（isSending/send/stop）→ `MessageSendingProviding`
+///   （`isSending` / `sendMessage` / `cancelCurrentRequest`）。
+///
+/// 相比旧版移除：图片拖拽经 `messageSender.addAttachment` 作为附件发送——新版
+/// `MessageSendingProviding` 无附件管道，图片文件与其他文件一样以路径文本插入输入框。
 @MainActor
 public final class ConversationInputPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.conversation-input"
     public let order = 83
+
     public init() {}
+
+    public var name: String {
+        LumiPluginLocalization.string("Conversation Input", bundle: .module)
+    }
+
+    public var metadata: PluginMetadata {
+        PluginMetadata(
+            id: id,
+            name: "Conversation Input",
+            description: "Chat input editor with send and stop controls",
+            category: .chat,
+            stage: .preview,
+            policy: .enabledByDefault
+        )
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else { return }
+
         let input = kernel.resolveProvider((any ConversationInputProviding).self)
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
-        chat.addItems([ChatSectionItem(
-            id: id,
-            order: 900,
-            placement: .bottomFixed,
-            showsTrailingDivider: false
-        ) {
-            ConversationInputView(input: input, sender: sender)
-        }])
+
+        // 1. 底部固定输入框（沿用旧版 chatSectionItems .bottomFixed）。
+        chat.addItems([
+            ChatSectionItem(
+                id: id,
+                order: 900,
+                placement: .bottomFixed,
+                fillsRemainingHeight: false,
+                showsTrailingDivider: false
+            ) {
+                ConversationInputView(input: input, sender: sender)
+            },
+        ])
+
+        // 2. Action Bar 发送/停止按钮（沿用旧版 chatSectionActionBarItems .trailing）。
+        chat.addBarItems([
+            ChatSectionBarItem(
+                id: "\(id).send-button",
+                placement: .actionTrailing
+            ) {
+                SendActionBarButton(input: input, sender: sender)
+            },
+        ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ChatSectionProviding).self)?.removeItem(id: id)
-    }
-}
-
-@MainActor
-private struct ConversationInputView: View {
-    let input: (any ConversationInputProviding)?
-    let sender: (any MessageSendingProviding)?
-    @State private var draft = ""
-
-    var body: some View {
-        VStack(spacing: 0) {
-            AppDivider()
-            HStack(alignment: .bottom, spacing: 8) {
-                TextField("输入消息，按 Return 发送…", text: $draft, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .lineLimit(1...5)
-                    .padding(8)
-                    .foregroundStyle(.primary)
-                    .onAppear { draft = input?.text ?? "" }
-                Button {
-                    let value = draft
-                    draft = ""
-                    input?.text = ""
-                    Task { try? await sender?.sendMessage(value, conversationID: nil) }
-                } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 22))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.tint)
-                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-            .padding(.horizontal, 10)
-            .padding(.top, 8)
-            .padding(.bottom, 8)
-        }
-        .background(Color.clear)
-        .appSurface(style: .toolbar, cornerRadius: 0)
-        .onChange(of: draft) { _, value in input?.text = value }
+        kernel.resolveProvider((any ChatSectionProviding).self)?
+            .removeItem(id: id)
+        kernel.resolveProvider((any ChatSectionProviding).self)?
+            .removeBarItem(id: "\(id).send-button")
     }
 }
