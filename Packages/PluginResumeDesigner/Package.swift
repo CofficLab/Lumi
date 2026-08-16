@@ -51,9 +51,11 @@ let package = Package(
                 "KernelCore",
                 "ProviderActivityBar",
                 "ProviderContentView",
+                "ProviderDocsView",
                 "ProviderRailView",
                 "ProviderStorage",
                 "ProviderToolManager",
+                "ResumeKit",
             ]
         ),
     ]

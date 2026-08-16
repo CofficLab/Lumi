@@ -67,7 +67,7 @@ public struct PreviewResumePageTool: SuperAgentTool {
             )
         } catch {
             await MainActor.run {
-                WorkspaceStore.shared.setError(error.localizedDescription)
+                WorkspaceStore.shared.setError(error)
             }
             return ToolCallResult(
                 content: ResumeToolSupport.error(error, language: language),
