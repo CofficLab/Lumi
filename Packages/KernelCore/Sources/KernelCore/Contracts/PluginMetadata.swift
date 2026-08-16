@@ -1,0 +1,70 @@
+import Foundation
+
+public enum PluginEnablePolicy: String, Codable, Sendable {
+    /// 宿主必需能力，不能由用户禁用。
+    case required
+    /// 默认启用，用户可以在运行时禁用。
+    case enabledByDefault
+    /// 默认不启动运行时资源，由用户显式启用。
+    case disabledByDefault
+}
+
+public enum PluginCategory: String, Codable, Sendable {
+    case core
+    case chat
+    case llm
+    case editor
+    case project
+    case system
+    case design
+    case integration
+    case general
+}
+
+public enum PluginStage: String, Codable, Sendable {
+    case experimental
+    case preview
+    case stable
+    case deprecated
+}
+
+public struct PluginPermission: Hashable, Codable, Sendable {
+    public let id: String
+    public let reason: String
+
+    public init(id: String, reason: String) {
+        self.id = id
+        self.reason = reason
+    }
+}
+
+public struct PluginMetadata: Equatable, Codable, Sendable {
+    public let id: String
+    public let name: String
+    public let description: String
+    public let version: String
+    public let category: PluginCategory
+    public let stage: PluginStage
+    public let policy: PluginEnablePolicy
+    public let permissions: [PluginPermission]
+
+    public init(
+        id: String,
+        name: String? = nil,
+        description: String = "",
+        version: String = "1.0.0",
+        category: PluginCategory = .general,
+        stage: PluginStage = .stable,
+        policy: PluginEnablePolicy = .enabledByDefault,
+        permissions: [PluginPermission] = []
+    ) {
+        self.id = id
+        self.name = name ?? id
+        self.description = description
+        self.version = version
+        self.category = category
+        self.stage = stage
+        self.policy = policy
+        self.permissions = permissions
+    }
+}

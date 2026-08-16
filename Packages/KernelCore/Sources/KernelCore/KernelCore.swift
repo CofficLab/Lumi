@@ -46,6 +46,20 @@ public final class KernelCoreContainer: ObservableObject {
 
     var pluginStartOrder: [String] = []
     var activePluginID: String?
+    var pluginEnabledStates: [String: Bool] = [:]
+
+    /// 插件启用状态的持久化存储（宿主注入；`nil` 表示不持久化）。
+    public var stateStore: (any PluginStatePersisting)?
+
+    /// 旧插件 ID → 新插件 ID 的别名映射（用于兼容旧版存储的启用状态）。
+    /// key 为新 ID，value 为旧 ID；查询持久化状态时先查新 ID，再回退旧 ID。
+    public var legacyPluginIDAliases: [String: String] = [:]
+
+    /// 插件写入共享 Provider/Host 的贡献，由 Kernel 统一持有和撤回。
+    var contributionTokens: [String: [PluginContributionToken]] = [:]
+
+    /// 内核类型化事件总线（typed event bridge + 旧 Notification 兼容层）。
+    public let eventBus = KernelCoreEventBus()
 
     @Published public private(set) var lifecycleState: KernelLifecycleState = .stopped
 

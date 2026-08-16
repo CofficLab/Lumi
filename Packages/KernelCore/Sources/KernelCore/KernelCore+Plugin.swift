@@ -9,7 +9,37 @@ extension KernelCoreContainer {
             throw KernelCoreError.pluginAlreadyRegistered(id: plugin.id)
         }
         plugins[plugin.id] = plugin
+        pluginEnabledStates[plugin.id] = effectiveEnabledState(for: plugin)
         objectWillChange.send()
+    }
+
+    // MARK: - Enable-state persistence
+
+    /// 计算插件的有效启用状态：`required` 策略强制启用；
+    /// 否则优先持久化覆盖（先查新 ID，再回退旧 ID 别名），无记录时默认启用。
+    func effectiveEnabledState(for plugin: any SuperPlugin) -> Bool {
+        if plugin.metadata.policy == .required { return true }
+        return storedEnabledState(for: plugin.id) ?? true
+    }
+
+    func storedEnabledState(for pluginID: String) -> Bool? {
+        guard let store = stateStore else { return nil }
+        if let value = store.enabledState(pluginID: pluginID) { return value }
+        if let legacyID = legacyPluginIDAliases[pluginID],
+           let value = store.enabledState(pluginID: legacyID) {
+            return value
+        }
+        return nil
+    }
+
+    /// 持久化插件启用状态：写新 ID，同时同步写旧 ID 别名，
+    /// 保证回滚到旧版时状态仍然一致。
+    func persistEnabledState(_ enabled: Bool, pluginID: String) {
+        guard let store = stateStore else { return }
+        store.setEnabled(enabled, pluginID: pluginID)
+        if let legacyID = legacyPluginIDAliases[pluginID] {
+            store.setEnabled(enabled, pluginID: legacyID)
+        }
     }
 
     /// 原子启动一批插件。
@@ -23,6 +53,10 @@ extension KernelCoreContainer {
                 operation: "start plugins",
                 state: lifecycleState
             )
+        }
+
+        if let asyncPlugin = incomingPlugins.first(where: { $0 is any AsyncSuperPlugin }) {
+            throw KernelCoreError.asyncLifecycleRequired(pluginID: asyncPlugin.id)
         }
 
         let previousState = lifecycleState
@@ -67,6 +101,9 @@ extension KernelCoreContainer {
             if lifecycleState == .stopped { return }
             throw KernelCoreError.invalidLifecycleOperation(operation: "stop", state: lifecycleState)
         }
+        if let asyncPlugin = allPlugins.first(where: { $0 is any AsyncSuperPlugin }) {
+            throw KernelCoreError.asyncLifecycleRequired(pluginID: asyncPlugin.id)
+        }
 
         setLifecycleState(.stopping)
         var firstError: Error?
@@ -74,13 +111,15 @@ extension KernelCoreContainer {
             guard let plugin = plugins[id] else { continue }
             activePluginID = id
             do {
-                try plugin.onShutdown(kernel: self)
+            try plugin.onShutdown(kernel: self)
             } catch {
                 if firstError == nil { firstError = error }
             }
             activePluginID = nil
+            cancelContributions(ownedBy: id)
             removeProviders(ownedByPlugin: id)
             plugins.removeValue(forKey: id)
+            pluginEnabledStates.removeValue(forKey: id)
         }
         pluginStartOrder.removeAll()
         activePluginID = nil
@@ -107,16 +146,28 @@ extension KernelCoreContainer {
 
         activePluginID = id
         defer { activePluginID = nil }
-        try plugin.onShutdown(kernel: self)
+        var shutdownError: Error?
+        do {
+            try plugin.onShutdown(kernel: self)
+        } catch {
+            shutdownError = error
+        }
+        cancelContributions(ownedBy: id)
         removeProviders(ownedByPlugin: id)
         plugins.removeValue(forKey: id)
+        pluginEnabledStates.removeValue(forKey: id)
         pluginStartOrder.removeAll { $0 == id }
         objectWillChange.send()
+        if let shutdownError { throw shutdownError }
     }
 
     public func resolvePlugin(id: String) -> (any SuperPlugin)? { plugins[id] }
 
     public func isPluginRegistered(id: String) -> Bool { plugins[id] != nil }
+
+    public func isPluginEnabled(id: String) -> Bool {
+        pluginEnabledStates[id] == true
+    }
 
     public var registeredPluginCount: Int { plugins.count }
 
@@ -128,13 +179,15 @@ extension KernelCoreContainer {
 
     /// 低层注册表操作，不执行 Shutdown。运行中的插件优先使用 `unloadPlugin`。
     public func unregisterPlugin(id: String) {
+        cancelContributions(ownedBy: id)
         plugins.removeValue(forKey: id)
         pluginStartOrder.removeAll { $0 == id }
+        pluginEnabledStates.removeValue(forKey: id)
         removeProviders(ownedByPlugin: id)
         objectWillChange.send()
     }
 
-    private func sortedForStartup(_ incoming: [any SuperPlugin]) throws -> [any SuperPlugin] {
+    func sortedForStartup(_ incoming: [any SuperPlugin]) throws -> [any SuperPlugin] {
         var byID: [String: any SuperPlugin] = [:]
         var originalIndex: [String: Int] = [:]
         for (index, plugin) in incoming.enumerated() {
@@ -186,14 +239,16 @@ extension KernelCoreContainer {
             activePluginID = nil
         }
         for id in attemptedIDs {
+            cancelContributions(ownedBy: id)
             removeProviders(ownedByPlugin: id)
             plugins.removeValue(forKey: id)
+            pluginEnabledStates.removeValue(forKey: id)
             pluginStartOrder.removeAll { $0 == id }
         }
         objectWillChange.send()
     }
 
-    private func removeProviders(ownedByPlugin id: String) {
+    func removeProviders(ownedByPlugin id: String) {
         let keys = providerOwners.compactMap { key, owner in owner == id ? key : nil }
         for key in keys {
             providers.removeValue(forKey: key)

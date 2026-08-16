@@ -21,6 +21,9 @@ public protocol SuperPlugin: AnyObject {
     /// 必须先于当前插件启动的插件 id。默认无依赖。
     var dependencies: [String] { get }
 
+    /// 用于插件管理、诊断和权限展示的稳定元数据。
+    var metadata: PluginMetadata { get }
+
     /// 插件启动：向内核注入能力。
     ///
     /// 在此方法中调用 `kernel.registerProvider(...)`、`kernel.registerPlugin(...)`
@@ -33,6 +36,12 @@ public protocol SuperPlugin: AnyObject {
 
     /// 卸载时调用。插件应在这里撤回注册到共享 Provider 中的贡献。
     func onShutdown(kernel: KernelCoreContainer) throws
+
+    /// 运行时启用。插件可在这里恢复被禁用时停止的监听器与贡献。
+    func onEnable(kernel: KernelCoreContainer) async throws
+
+    /// 运行时禁用。Kernel 会在回调成功后自动撤回该插件登记的贡献。
+    func onDisable(kernel: KernelCoreContainer) async throws
 }
 
 public extension SuperPlugin {
@@ -40,9 +49,40 @@ public extension SuperPlugin {
 
     var dependencies: [String] { [] }
 
+    var metadata: PluginMetadata { PluginMetadata(id: id) }
+
     func onBoot(kernel: KernelCoreContainer) throws {}
 
     func onReady(kernel: KernelCoreContainer) throws {}
 
     func onShutdown(kernel: KernelCoreContainer) throws {}
+
+    func onEnable(kernel: KernelCoreContainer) async throws {}
+
+    func onDisable(kernel: KernelCoreContainer) async throws {}
+}
+
+/// 需要异步 Boot / Ready / Shutdown 的插件使用该协议。
+///
+/// 同步 `SuperPlugin` 保留为轻量插件和现有迁移代码的兼容入口；宿主必须通过
+/// `startAsync(plugins:)` 启动实现本协议的插件，避免异步初始化被静默跳过。
+@MainActor
+public protocol AsyncSuperPlugin: SuperPlugin {
+    func onBootAsync(kernel: KernelCoreContainer) async throws
+    func onReadyAsync(kernel: KernelCoreContainer) async throws
+    func onShutdownAsync(kernel: KernelCoreContainer) async throws
+}
+
+public extension AsyncSuperPlugin {
+    func onBootAsync(kernel: KernelCoreContainer) async throws {
+        try onBoot(kernel: kernel)
+    }
+
+    func onReadyAsync(kernel: KernelCoreContainer) async throws {
+        try onReady(kernel: kernel)
+    }
+
+    func onShutdownAsync(kernel: KernelCoreContainer) async throws {
+        try onShutdown(kernel: kernel)
+    }
 }
