@@ -172,6 +172,8 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         let executionImages: [ImageAttachment]
         let duration: TimeInterval
         let isError: Bool
+        let awaitingUserResponse: Bool
+        let interactionState: ToolCallInteractionState?
 
         do {
             let toolResult = try await tool.executeResult(arguments: arguments)
@@ -179,6 +181,10 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
             executionImages = toolResult.images
             duration = Date().timeIntervalSince(startedAt)
             isError = toolResult.isError
+            // 透传挂起语义：AskUser 等工具返回 awaitingUserResponse 让
+            // Agent 循环暂停等待用户回答。
+            awaitingUserResponse = toolResult.awaitingUserResponse
+            interactionState = toolResult.interactionState
         } catch {
             let result = ToolCallResult(
                 content: "Tool execution failed: \(error.localizedDescription)",
@@ -210,7 +216,9 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
             images: executionImages,
             isError: isError,
             executedAt: Date(),
-            duration: duration
+            duration: duration,
+            awaitingUserResponse: awaitingUserResponse,
+            interactionState: interactionState
         )
         cache(result, for: toolCall.id, conversationID: conversationID)
 
