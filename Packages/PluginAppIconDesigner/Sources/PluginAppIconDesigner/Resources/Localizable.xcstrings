@@ -965,6 +965,7 @@
       }
     },
     "Design app icons with shapes, layers, and export capabilities." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2504,6 +2505,7 @@
       }
     },
     "Prompt.Suggestion.Design" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
