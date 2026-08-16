@@ -1,5 +1,7 @@
 import Combine
 import Foundation
+import os
+import SuperLogKit
 
 /// `ConversationManaging` 的内存默认实现。
 ///
@@ -11,7 +13,11 @@ import Foundation
 /// 该实现不持久化（骨架阶段）。需要磁盘持久化（SQLite / SwiftData / JSON）
 /// 与项目切换迁移等完整能力的宿主应提供自己的实现替换，或子类化扩展。
 @MainActor
-public final class DefaultConversationManaging: ConversationManaging {
+public final class DefaultConversationManager: ConversationManaging, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-conversation", category: "ProviderConversation")
+    nonisolated public static let emoji = "💬"
+    nonisolated static let verbose = true
+
     private static let initialPageSize = 40
 
     @Published public private(set) var conversations: [LumiConversationSummary] = []
@@ -43,7 +49,11 @@ public final class DefaultConversationManaging: ConversationManaging {
             .appendingPathComponent("Conversations", isDirectory: true)
     }()
 
-    public init() {}
+    public init() {
+        if Self.verbose {
+            Self.logger.info("\(self.t)DefaultConversationManaging initialized, dataDirectory=\(self.dataDirectory.path, privacy: .public)")
+        }
+    }
 
     // MARK: - Load
 
@@ -52,6 +62,9 @@ public final class DefaultConversationManaging: ConversationManaging {
     /// 有持久化能力的实现应在启动时加载最近一页并恢复选中状态。
     public func loadConversations() {
         isLoadingConversations = false
+        if Self.verbose {
+            Self.logger.debug("\(self.t)load conversations finished, cached count=\(self.conversations.count)")
+        }
     }
 
     // MARK: - Fetch
@@ -184,17 +197,26 @@ public final class DefaultConversationManaging: ConversationManaging {
             selectedConversationID = id
             updateCurrentTitle()
         }
+        if Self.verbose {
+            Self.logger.info("\(self.t)created conversation id=\(id.uuidString), title=\(normalizedTitle ?? "nil"), parent=\(parentConversationID?.uuidString ?? "nil"), project=\(projectPath ?? "nil"), provider=\(providerID ?? "nil"), model=\(modelName ?? "nil")")
+        }
         return id
     }
 
     public func selectConversation(id: UUID) {
         selectedConversationID = id
         updateCurrentTitle()
+        if Self.verbose {
+            Self.logger.debug("\(self.t)selected conversation \(id.uuidString)")
+        }
     }
 
     public func deselectConversation() {
         selectedConversationID = nil
         updateCurrentTitle()
+        if Self.verbose {
+            Self.logger.debug("\(self.t)deselected conversation")
+        }
     }
 
     public func deleteConversation(id: UUID) {
@@ -203,6 +225,9 @@ public final class DefaultConversationManaging: ConversationManaging {
         if selectedConversationID == id {
             selectedConversationID = conversations.first?.id
             updateCurrentTitle()
+        }
+        if Self.verbose {
+            Self.logger.info("\(self.t)deleted conversation \(id.uuidString), remaining=\(self.conversations.count)")
         }
     }
 
@@ -239,6 +264,9 @@ public final class DefaultConversationManaging: ConversationManaging {
 
     public func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            if Self.verbose {
+                Self.logger.warning("\(self.t)update title failed: conversation \(conversationID.uuidString) not found")
+            }
             return false
         }
         let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -248,14 +276,25 @@ public final class DefaultConversationManaging: ConversationManaging {
         if conversationID == selectedConversationID {
             updateCurrentTitle()
         }
+        if Self.verbose {
+            Self.logger.debug("\(self.t)updated title for \(conversationID.uuidString): \(storedTitle ?? "nil")")
+        }
         return true
     }
 
     public func markConversationActive(id: UUID, messageDate: Date) {
-        guard let index = conversations.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = conversations.firstIndex(where: { $0.id == id }) else {
+            if Self.verbose {
+                Self.logger.warning("\(self.t)mark active skipped: conversation \(id.uuidString) not found")
+            }
+            return
+        }
         conversations[index].lastMessageAt = messageDate
         conversations[index].updatedAt = Date()
         conversations = conversations
+        if Self.verbose {
+            Self.logger.debug("\(self.t)marked conversation \(id.uuidString) active")
+        }
     }
 
     public func isSending(for conversationID: UUID?) -> Bool {
@@ -289,12 +328,15 @@ public final class DefaultConversationManaging: ConversationManaging {
     }
 
     public func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
-        guard let conversationID else { return .defaultVerbosity }
-        return conversations.first { $0.id == conversationID }?.verbosity ?? .defaultVerbosity
+        guard let conversationID else { return globalVerbosity }
+        return conversations.first { $0.id == conversationID }?.verbosity ?? globalVerbosity
     }
 
     public func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {
-        guard let conversationID else { return }
+        guard let conversationID else {
+            setGlobalVerbosity(verbosity)
+            return
+        }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].verbosity = verbosity
         conversations = conversations
@@ -307,24 +349,30 @@ public final class DefaultConversationManaging: ConversationManaging {
     }
 
     public func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort {
-        guard let conversationID else { return .defaultEffort }
-        return conversations.first { $0.id == conversationID }?.reasoningEffort ?? .defaultEffort
+        guard let conversationID else { return globalReasoningEffort ?? .defaultEffort }
+        return conversations.first { $0.id == conversationID }?.reasoningEffort ?? globalReasoningEffort ?? .defaultEffort
     }
 
     public func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? {
-        guard let conversationID else { return nil }
-        return conversations.first { $0.id == conversationID }?.reasoningEffort
+        guard let conversationID else { return globalReasoningEffort }
+        return conversations.first { $0.id == conversationID }?.reasoningEffort ?? globalReasoningEffort
     }
 
     public func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {
-        guard let conversationID else { return }
+        guard let conversationID else {
+            setGlobalReasoningEffort(reasoningEffort)
+            return
+        }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].reasoningEffort = reasoningEffort
         conversations = conversations
     }
 
     public func clearReasoningEffort(for conversationID: UUID?) {
-        guard let conversationID else { return }
+        guard let conversationID else {
+            setGlobalReasoningEffort(nil)
+            return
+        }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].reasoningEffort = nil
         conversations = conversations
@@ -337,12 +385,15 @@ public final class DefaultConversationManaging: ConversationManaging {
     }
 
     public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {
-        guard let conversationID else { return .build }
-        return conversations.first { $0.id == conversationID }?.automationLevel ?? .build
+        guard let conversationID else { return globalAutomationLevel }
+        return conversations.first { $0.id == conversationID }?.automationLevel ?? globalAutomationLevel
     }
 
     public func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {
-        guard let conversationID else { return }
+        guard let conversationID else {
+            setGlobalAutomationLevel(automationLevel)
+            return
+        }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].automationLevel = automationLevel
         conversations = conversations
@@ -360,7 +411,10 @@ public final class DefaultConversationManaging: ConversationManaging {
     }
 
     public func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {
-        guard let conversationID else { return }
+        guard let conversationID else {
+            setGlobalLanguage(language)
+            return
+        }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].language = language
     }
@@ -415,11 +469,11 @@ public final class DefaultConversationManaging: ConversationManaging {
 /// 持有的弱引用自动失效，并在下次广播时清理，因此调用方无需手动反注册。
 @MainActor
 private final class SelectedConversationObserverHandleImpl: SelectedConversationObserverHandle {
-    private weak var owner: DefaultConversationManaging?
+    private weak var owner: DefaultConversationManager?
     private let callback: (UUID?) -> Void
     private var isCancelled = false
 
-    init(owner: DefaultConversationManaging, callback: @escaping (UUID?) -> Void) {
+    init(owner: DefaultConversationManager, callback: @escaping (UUID?) -> Void) {
         self.owner = owner
         self.callback = callback
     }

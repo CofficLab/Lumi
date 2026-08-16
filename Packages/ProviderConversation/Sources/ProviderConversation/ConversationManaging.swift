@@ -210,13 +210,6 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
 public extension ConversationManaging {
     var isLoadingConversations: Bool { false }
 
-    /// 默认空实现：不维护选中观察者，返回 no-op 令牌（不会收到任何通知）。
-    /// 测试 mock 或轻量实现无需自行实现即可编译通过。
-    @discardableResult
-    func addSelectedConversationObserver(_ callback: @escaping (UUID?) -> Void) -> any SelectedConversationObserverHandle {
-        NoopSelectedConversationObserverHandle()
-    }
-
     func fetchConversationPage(
         limit: Int,
         beforeUpdatedAt: Date? = nil,
@@ -311,10 +304,10 @@ public extension ConversationManaging {
     func setGlobalLanguage(_ language: LumiConversationLanguage) {}
 }
 
-/// 协议默认实现使用的 no-op 注册令牌：注册后不接收任何通知。
+/// no-op 注册令牌：注册后不接收任何通知。
 ///
-/// 供未实现选中观察者能力的 `ConversationManaging` 轻量实现返回，
-/// 保证调用方拿到令牌后仍可按统一方式持有与释放。
+/// 协议不再提供默认实现，未实现选中观察者能力的轻量实现（如测试 mock）
+/// 可显式返回本令牌，保证调用方拿到令牌后仍可按统一方式持有与释放。
 @MainActor
 public final class NoopSelectedConversationObserverHandle: SelectedConversationObserverHandle {
     public init() {}

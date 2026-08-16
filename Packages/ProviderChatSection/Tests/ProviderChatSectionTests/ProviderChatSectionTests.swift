@@ -123,6 +123,9 @@ private final class MockConversationManaging: ConversationManaging {
     func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool { true }
     func markConversationActive(id: UUID, messageDate: Date) {}
     func isSending(for conversationID: UUID?) -> Bool { false }
+    func addSelectedConversationObserver(_ callback: @escaping (UUID?) -> Void) -> any SelectedConversationObserverHandle {
+        NoopSelectedConversationObserverHandle()
+    }
     func providerID(for conversationID: UUID?) -> String? { nil }
     func modelName(for conversationID: UUID?) -> String? { nil }
     func selectProvider(id: String, model: String?, for conversationID: UUID?) {}

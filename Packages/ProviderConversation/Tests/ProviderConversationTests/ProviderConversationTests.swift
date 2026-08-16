@@ -3,12 +3,12 @@ import Foundation
 import XCTest
 @testable import ProviderConversation
 
-/// `DefaultConversationManaging` 内存实现的单元测试。
+/// `DefaultConversationManager` 内存实现的单元测试。
 @MainActor
 final class ProviderConversationTests: XCTestCase {
 
     func testCreateConversationSelectsAndUpdatesTitle() throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
 
         let id = try manager.createConversation(
             title: "  你好 Lumi  ",
@@ -26,7 +26,7 @@ final class ProviderConversationTests: XCTestCase {
     }
 
     func testEmptyTitleFallsBackToUntitled() throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         let id = try manager.createConversation(title: "   ", projectPath: nil, providerID: nil, modelName: nil)
 
         XCTAssertNil(manager.conversations.first?.title)
@@ -36,7 +36,7 @@ final class ProviderConversationTests: XCTestCase {
     }
 
     func testSelectDeselectDelete() throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         let first = try manager.createConversation(title: "A", projectPath: nil, providerID: nil, modelName: nil)
         let second = try manager.createConversation(title: "B", projectPath: nil, providerID: nil, modelName: nil)
 
@@ -56,7 +56,7 @@ final class ProviderConversationTests: XCTestCase {
     }
 
     func testSortedConversationsByLastMessage() throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         let older = try manager.createConversation(title: "older", projectPath: nil, providerID: nil, modelName: nil)
         let newer = try manager.createConversation(title: "newer", projectPath: nil, providerID: nil, modelName: nil)
 
@@ -69,7 +69,7 @@ final class ProviderConversationTests: XCTestCase {
     }
 
     func testUpdateTitle() throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         let id = try manager.createConversation(title: "Old", projectPath: nil, providerID: nil, modelName: nil)
 
         XCTAssertTrue(manager.updateConversationTitle("New Title", for: id))
@@ -79,7 +79,7 @@ final class ProviderConversationTests: XCTestCase {
     }
 
     func testPerConversationPreferences() throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         let id = try manager.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil)
 
         // 默认继承全局设置
@@ -99,14 +99,14 @@ final class ProviderConversationTests: XCTestCase {
         XCTAssertEqual(manager.automationLevel(for: id), .autonomous)
         XCTAssertEqual(manager.language(for: id), .english)
 
-        // 清除推理强度 → nil
+        // 清除推理强度 → 回退全局默认（非 nil）
         manager.clearReasoningEffort(for: id)
-        XCTAssertNil(manager.reasoningEffortOptional(for: id))
+        XCTAssertEqual(manager.reasoningEffortOptional(for: id), .defaultEffort)
         XCTAssertEqual(manager.reasoningEffort(for: id), .defaultEffort)
     }
 
     func testGlobalPreferencesApplyToNewConversations() throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         manager.setGlobalVerbosity(.brief)
         manager.setGlobalReasoningEffort(.low)
         manager.setGlobalAutomationLevel(.chat)
@@ -121,7 +121,7 @@ final class ProviderConversationTests: XCTestCase {
     }
 
     func testConversationCountAndProjectCount() async throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         _ = try manager.createConversation(title: "A", projectPath: "/p1", providerID: nil, modelName: nil)
         _ = try manager.createConversation(title: "B", projectPath: "/p1", providerID: nil, modelName: nil)
         _ = try manager.createConversation(title: "C", projectPath: "/p2", providerID: nil, modelName: nil)
@@ -136,7 +136,7 @@ final class ProviderConversationTests: XCTestCase {
     }
 
     func testFetchConversationPageFiltersByProject() async throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         _ = try manager.createConversation(title: "A", projectPath: "/p1", providerID: nil, modelName: nil)
         _ = try manager.createConversation(title: "B", projectPath: "/p2", providerID: nil, modelName: nil)
 
@@ -147,7 +147,7 @@ final class ProviderConversationTests: XCTestCase {
     // MARK: - Selected Conversation Observation
 
     func testSelectedConversationObserverReceivesChanges() throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         var received: [UUID?] = []
         let token = manager.addSelectedConversationObserver { received.append($0) }
 
@@ -178,7 +178,7 @@ final class ProviderConversationTests: XCTestCase {
     }
 
     func testSelectedConversationObserverStopsAfterCancel() throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         var received: [UUID?] = []
         let token = manager.addSelectedConversationObserver { received.append($0) }
 
@@ -196,7 +196,7 @@ final class ProviderConversationTests: XCTestCase {
     }
 
     func testSelectedConversationObserverAutoUnregistersOnDeinit() throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         var received: [UUID?] = []
 
         do {
@@ -212,7 +212,7 @@ final class ProviderConversationTests: XCTestCase {
     }
 
     func testMultipleSelectedConversationObservers() throws {
-        let manager = DefaultConversationManaging()
+        let manager = DefaultConversationManager()
         var firstCount = 0
         var secondCount = 0
         let first = manager.addSelectedConversationObserver { _ in firstCount += 1 }
