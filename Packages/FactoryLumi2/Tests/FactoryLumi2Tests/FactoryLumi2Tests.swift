@@ -111,12 +111,14 @@ struct FactoryLumi2Tests {
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
 
         #expect(activityBar?.items.map(\.id) == [
+            "com.coffic.lumi.plugin.chat-panel.entry",
             "com.coffic.lumi.plugin.device-info.entry",
             "com.coffic.lumi.plugin.app-icon-designer.entry",
+            "com.coffic.lumi.plugin.app-store-promo-designer.entry",
             "com.coffic.lumi.plugin.white-noise.entry",
             "com.coffic.lumi.plugin.video-converter.entry",
         ])
-        #expect(activityBar?.activeItemID == "com.coffic.lumi.plugin.device-info.entry")
+        #expect(activityBar?.activeItemID == "com.coffic.lumi.plugin.chat-panel.entry")
 
         activityBar?.activateItem(id: "com.coffic.lumi.plugin.video-converter.entry")
         #expect(activityBar?.activeItemID == "com.coffic.lumi.plugin.video-converter.entry")
@@ -348,6 +350,6 @@ struct FactoryLumi2Tests {
         try kernel.start(plugins: DefaultPluginFactory().makePlugins())
         #expect(kernel.lifecycleState == .running)
         #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 22)
-        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 4)
+        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 6)
     }
 }

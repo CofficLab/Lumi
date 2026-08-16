@@ -185,17 +185,6 @@ public enum KernelFactory {
         if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
             rootView.setContentView(contentView.makeContentView())
         }
-        if let chatSection = kernel.resolveProvider((any ChatSectionProviding).self) {
-            let pane = RootTrailingPane(
-                id: "chat-section",
-                minWidth: 280,
-                idealWidth: 320,
-                isVisible: chatSection.isVisible,
-                content: chatSection.makeChatSectionView()
-            )
-            rootView.setTrailingPane(pane)
-        }
-
         return themed(rootView.makeRootView(), kernel: kernel)
     }
 

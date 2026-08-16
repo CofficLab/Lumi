@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import PluginAppIconDesigner
+import PluginAppStorePromoDesigner
 import PluginDevice
 import PluginLogoCoffic
 import PluginSettingGeneral
@@ -8,6 +9,11 @@ import PluginThemePack
 import PluginToolbarSettings
 import PluginVideoConverter
 import PluginWhiteNoise
+import PluginChatPanel
+import PluginConversationInput
+import PluginMessageList
+import PluginConversationList
+import PluginConversationNew
 
 /// 产出各种插件的工厂协议。
 ///
@@ -34,11 +40,17 @@ public struct DefaultPluginFactory: PluginFactory {
             SettingGeneralPlugin(),
             DevicePlugin(),
             AppIconDesignerPlugin(),
+            AppStorePromoDesignerPlugin(),
             LogoCofficPlugin(),
             SettingsToolbarPlugin(),
             ThemePackPlugin(),
             VideoConverterPlugin(),
             WhiteNoisePlugin(),
+            ChatPanelPlugin(),
+            MessageListPlugin(),
+            ConversationInputPlugin(),
+            ConversationListPlugin(),
+            ConversationNewPlugin(),
         ]
     }
 }
