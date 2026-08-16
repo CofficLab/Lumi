@@ -21,7 +21,9 @@ import PluginToolbarSettings
 import PluginVideoConverter
 import PluginWhiteNoise
 import PluginIdleTime
+import PluginChatFileAttachment
 import PluginChatPanel
+import PluginChatScreenshot
 import PluginModelSelector
 import PluginConversationInput
 import PluginProjects
@@ -98,6 +100,8 @@ public struct DefaultPluginFactory: PluginFactory {
             WhiteNoisePlugin(),
             IdleTimePlugin(),
             ChatPanelPlugin(),
+            ChatFileAttachmentPlugin(),
+            ChatScreenshotPlugin(),
             ModelSelectorPlugin(),
             MessageListPlugin(),
             MessageRendererPlugin(),
