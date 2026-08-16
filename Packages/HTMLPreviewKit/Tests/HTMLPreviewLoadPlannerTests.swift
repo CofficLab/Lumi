@@ -88,6 +88,25 @@ struct HTMLPreviewLoadPlannerTests {
         ))
     }
 
+    @Test("default file reader reads real files from disk and detects sync")
+    func defaultFileReaderUsesFileSystem() throws {
+        let html = "<html><body>on disk</body></html>"
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("HTMLPreviewKit DefaultReader", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let fileURL = directory.appendingPathComponent("index.html")
+        try Data(html.utf8).write(to: fileURL)
+
+        let planner = HTMLPreviewLoadPlanner()
+
+        #expect(planner.isHTMLInSyncWithFile(html, at: fileURL))
+        #expect(planner.loadRequest(html: html, fileURL: fileURL) == .file(
+            fileURL: fileURL,
+            readAccessURL: directory
+        ))
+        #expect(!planner.isHTMLInSyncWithFile("<p>stale</p>", at: fileURL))
+    }
+
     @Test("absoluteDirectoryURL always has a trailing slash")
     func absoluteDirectoryURLAddsTrailingSlash() {
         let directoryURL = URL(fileURLWithPath: "/tmp/HTMLPreviewKit Assets")
