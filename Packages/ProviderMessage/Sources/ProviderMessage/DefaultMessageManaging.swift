@@ -35,6 +35,18 @@ public final class DefaultMessageManaging: MessageManaging {
         storage[conversationID]?.removeAll { $0.id == id }
     }
 
+    public func updateToolCallResult(
+        _ result: MessageToolResult,
+        toolCallID: String,
+        assistantMessageID: UUID,
+        in conversationID: UUID
+    ) {
+        guard let index = storage[conversationID]?.firstIndex(where: { $0.id == assistantMessageID }),
+              let callIndex = storage[conversationID]?[index].toolCalls?.firstIndex(where: { $0.id == toolCallID })
+        else { return }
+        storage[conversationID]?[index].toolCalls?[callIndex].result = result
+    }
+
     public func clearMessages(in conversationID: UUID) {
         storage[conversationID] = []
     }
