@@ -36,6 +36,7 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
     }
 
     public func setToolbarView(_ view: AnyView?) {
+        guard !isSameView(toolbarView, view) else { return }
         toolbarView = view
         if Self.verbose {
             Self.logger.debug("\(self.t)set toolbar view: \(view == nil ? "nil" : "injected")")
@@ -43,6 +44,7 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
     }
 
     public func setActivityBarView(_ view: AnyView?) {
+        guard !isSameView(activityBarView, view) else { return }
         activityBarView = view
         if Self.verbose {
             Self.logger.debug("\(self.t)set activity bar view: \(view == nil ? "nil" : "injected")")
@@ -50,6 +52,7 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
     }
 
     public func setRailView(_ view: AnyView?) {
+        guard !isSameView(railView, view) else { return }
         railView = view
         if Self.verbose {
             Self.logger.debug("\(self.t)set rail view: \(view == nil ? "nil" : "injected")")
@@ -57,6 +60,7 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
     }
 
     public func setContentView(_ view: AnyView?) {
+        guard !isSameView(contentView, view) else { return }
         contentView = view
         if Self.verbose {
             Self.logger.debug("\(self.t)set content view: \(view == nil ? "nil" : "injected")")
@@ -64,6 +68,7 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
     }
 
     public func setTrailingPane(_ pane: RootTrailingPane?) {
+        guard pane !== trailingPane else { return }
         trailingPane = pane
         if Self.verbose {
             Self.logger.debug("\(self.t)set trailing pane: \(pane.map { $0.id } ?? "nil")")
@@ -71,6 +76,7 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
     }
 
     public func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {
+        guard provider !== workspaceProvider else { return }
         workspaceProvider = provider
         workspaceSubscription = provider?.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
@@ -79,6 +85,28 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
         if Self.verbose {
             Self.logger.debug("\(self.t)set workspace provider: \(provider == nil ? "nil" : "injected")")
         }
+    }
+
+    // MARK: - 注入守卫（值相同则跳过赋值）
+
+    /// 判断两次注入的视图是否「相同」：仅比较有值/无值状态。
+    ///
+    /// `AnyView` 不遵循 `Equatable`，SwiftUI 也未公开 unerase API（反射内部
+    /// storage 在 Release 下不可靠）。因此这里采用保守且可预测的判定：
+    /// - 状态相同（均为 nil 或均为非 nil）→ 视为相同，跳过赋值；
+    /// - 状态不同（nil ↔ 非 nil）→ 视为变化，正常更新。
+    ///
+    /// 目的：装配流程可能重复调用注入方法（如 Kernel 转发 `objectWillChange`
+    /// 导致 App body 重求值后再次装配），重复赋值 `@Published` 会在视图更新期间
+    /// 发布变更，触发 SwiftUI 的 "Publishing changes from within view updates
+    /// is not allowed" 并可能形成循环。状态相同即跳过，避免无意义发布。
+    ///
+    /// 注意：这是保守近似 —— 已注入非 nil 视图后，再次注入任意新视图（含不同
+    /// 类型）都会被跳过。Lumi 架构下视图内容更新由视图内部状态驱动（Provider
+    /// 的 `@Published`/`objectWillChange`），无需重新注入新 `AnyView`；若确有
+    /// Provider 需要强制替换，可先传 nil 再传新值。
+    private func isSameView(_ lhs: AnyView?, _ rhs: AnyView?) -> Bool {
+        (lhs == nil) == (rhs == nil)
     }
 
     public func makeRootView() -> AnyView {

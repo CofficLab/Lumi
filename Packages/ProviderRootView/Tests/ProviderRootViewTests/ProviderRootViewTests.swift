@@ -1,3 +1,4 @@
+import Combine
 import ProviderWorkspace
 import SwiftUI
 import Testing
@@ -179,5 +180,83 @@ struct ProviderRootViewTests {
         provider.setRailView(AnyView(Text("rail")))
 
         #expect(type(of: provider.makeRootView()) == AnyView.self)
+    }
+
+    // MARK: - 注入守卫（值相同则跳过赋值，避免视图更新期间发布 objectWillChange）
+
+    /// 订阅 objectWillChange 并返回发送次数计数。
+    private func makeChangeCounter(for provider: DefaultRootViewProviding) -> (() -> Int, AnyCancellable) {
+        var count = 0
+        let cancellable = provider.objectWillChange.sink { _ in
+            count += 1
+        }
+        return ({ count }, cancellable)
+    }
+
+    @Test("重复注入相同类型视图时跳过赋值（不发布 objectWillChange）")
+    func repeatedSameTypeInjectionSkipsPublish() {
+        let provider = DefaultRootViewProviding()
+        let (count, cancellable) = makeChangeCounter(for: provider)
+
+        provider.setToolbarView(AnyView(Text("toolbar")))
+        let afterFirst = count()
+        // 同类型视图重复注入 → 守卫跳过，不再发布。
+        provider.setToolbarView(AnyView(Text("toolbar")))
+        let afterSecond = count()
+
+        #expect(afterFirst == 1)
+        #expect(afterSecond == afterFirst)
+        withExtendedLifetime(cancellable) {}
+    }
+
+    @Test("注入状态变化（nil ↔ 非 nil）时正常更新（发布 objectWillChange）")
+    func valueTransitionStillPublishes() {
+        let provider = DefaultRootViewProviding()
+        let (count, cancellable) = makeChangeCounter(for: provider)
+
+        provider.setToolbarView(nil)
+        let afterNil = count()
+        // nil → 非 nil：状态变化，正常替换。
+        provider.setToolbarView(AnyView(Text("toolbar")))
+        let afterInjected = count()
+        // 非 nil → nil：状态变化，正常清空。
+        provider.setToolbarView(nil)
+        let afterCleared = count()
+
+        #expect(afterNil == 0)
+        #expect(afterInjected == 1)
+        #expect(afterCleared == 2)
+        withExtendedLifetime(cancellable) {}
+    }
+
+    @Test("重复注入 nil 时跳过赋值（不发布 objectWillChange）")
+    func repeatedNilInjectionSkipsPublish() {
+        let provider = DefaultRootViewProviding()
+        let (count, cancellable) = makeChangeCounter(for: provider)
+
+        provider.setToolbarView(nil)
+        let afterFirst = count()
+        provider.setToolbarView(nil)
+        let afterSecond = count()
+
+        #expect(afterFirst == 0)
+        #expect(afterSecond == afterFirst)
+        withExtendedLifetime(cancellable) {}
+    }
+
+    @Test("重复注入相同 workspace 实例时跳过（不重复订阅/发布）")
+    func repeatedWorkspaceInjectionSkipsPublish() {
+        let provider = DefaultRootViewProviding()
+        let workspace = makeWorkspace(containerCount: 1)
+        let (count, cancellable) = makeChangeCounter(for: provider)
+
+        provider.setWorkspaceProvider(workspace)
+        let afterFirst = count()
+        provider.setWorkspaceProvider(workspace)
+        let afterSecond = count()
+
+        #expect(afterFirst == 1)
+        #expect(afterSecond == afterFirst)
+        withExtendedLifetime(cancellable) {}
     }
 }
