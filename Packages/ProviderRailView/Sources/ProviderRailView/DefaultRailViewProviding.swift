@@ -1,10 +1,10 @@
+import LumiUI
 import SwiftUI
 
 /// `RailViewProviding` 的默认实现：持有注入的 `RailTabItem`，
-/// 渲染为「顶部标签栏 + 内容区」的侧边栏（类似 Lumi 的 RailView）。
+/// 渲染为「顶部标签栏 + 内容区」的侧边栏（与旧版 `FactoryCore.RailView` 视觉一致）。
 ///
-/// 骨架阶段使用：点击 tab 切换选中项并展示对应内容，无主题定制；
-/// 宿主可注入自己的实现（如基于 PanelRailTabItem 的完整 Rail）。
+/// 点击 tab 切换选中项并展示对应内容。
 @MainActor
 public final class DefaultRailViewProviding: RailViewProviding, ObservableObject {
     @Published public private(set) var tabs: [RailTabItem] = []
@@ -81,63 +81,58 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
 }
 
 /// 渲染「标签栏 + 内容区」的 Rail 视图。
+///
+/// 视觉与旧版 `FactoryCore` 的 `RailView` + `RailTabBarView` + `RailContentView`
+/// 完全一致：
+/// - 顶层 `VStack(spacing: 0)`：标签栏 + 内容区（无自带右侧分隔线，
+///   分隔线由宿主的 `HSplitView` / `AppDivider` 提供）；
+/// - 标签栏复用 `AppToolbarContainer`（height 40、`.panel` 背景、
+///   上下 8 / 左右 10 内边距）+ `AppTabBar(showText: false)`（图标式），
+///   并带 `borderBottom` + `shadowMd`；仅在当前分组多于一个 tab 时显示；
+/// - 内容区直接渲染激活 tab 视图（`.id` 保持切换动画），无内容时透明占位；
+/// - 整栏 `minWidth 200`、背景 `theme.surface`。
 private struct RailView: View {
     @ObservedObject var provider: DefaultRailViewProviding
+    @LumiTheme private var theme
 
     var body: some View {
-        Group {
-            if !provider.visibleTabs.isEmpty {
-                HStack(spacing: 0) {
-                    VStack(spacing: 0) {
-                        // 标签栏：仅在当前分组多于一个 tab 时显示。
-                        if provider.visibleTabs.count > 1 {
-                            HStack(spacing: 4) {
-                                ForEach(provider.visibleTabs) { tab in
-                                    tabButton(tab)
-                                }
-                                Spacer(minLength: 0)
-                            }
-                            .padding(.horizontal, 10)
-                            .frame(height: 40)
-                            .background(Color.primary.opacity(0.03))
-                            .overlay(alignment: .bottom) {
-                                Divider()
-                            }
-                        }
-
-                        if let active = provider.visibleTabs.first(where: { $0.id == provider.activeTabID }) {
-                            active.makeView()
-                                .id(active.id)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                    }
-                    .frame(minWidth: 200, idealWidth: 228, maxWidth: 360, maxHeight: .infinity)
-                    .background(Color.primary.opacity(0.015))
-
-                    Divider()
+        VStack(spacing: 0) {
+            // 标签栏：仅在当前分组多于一个 tab 时显示（复刻旧版 showsTabBar）。
+            if provider.visibleTabs.count > 1 {
+                AppToolbarContainer(
+                    height: 40,
+                    backgroundStyle: .panel,
+                    padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
+                ) {
+                    AppTabBar(
+                        tabs: provider.visibleTabs.map {
+                            AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id)
+                        },
+                        selectedTab: Binding(
+                            get: { provider.activeTabID ?? provider.visibleTabs[0].id },
+                            set: { provider.activateTab(id: $0) }
+                        ),
+                        showText: false
+                    )
                 }
+                .borderBottom()
+                .shadowMd()
             }
-        }
-    }
 
-    private func tabButton(_ tab: RailTabItem) -> some View {
-        let isActive = provider.activeTabID == tab.id
-        return Button {
-            provider.activateTab(id: tab.id)
-        } label: {
-            VStack(spacing: 2) {
-                Image(systemName: tab.systemImage)
-                    .font(.system(size: 13))
-                Text(tab.title)
-                    .font(.system(size: 9))
-                    .lineLimit(1)
+            // 内容区：激活 tab 视图；未命中时回退首个 tab；无任何 tab 时透明占位。
+            if let active = provider.visibleTabs.first(where: { $0.id == provider.activeTabID }) {
+                active.makeView()
+                    .id(active.id)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let first = provider.visibleTabs.first {
+                first.makeView()
+                    .id(first.id)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Color.clear
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 4)
-            .background(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .help(tab.title)
+        .frame(minWidth: 200, maxWidth: .infinity, maxHeight: .infinity)
+        .background(theme.surface)
     }
 }

@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 #if os(macOS)
@@ -11,9 +12,9 @@ import AppKit
 /// - 高度 44pt，左侧红绿灯预留 76pt（`trafficLightReserveWidth`）；
 /// - 整条工具栏可作为窗口拖拽区（macOS）；
 /// - center 项绝对居中（`maxWidth 420` + 水平 padding 88），
-///   不被 leading / trailing 内容位置影响。
-///
-/// 宿主可注入自己的实现（如基于 AppTitleToolbar 的完整工具栏）。
+///   不被 leading / trailing 内容位置影响；
+/// - 背景使用 `AppToolbarContainer(style: .toolbar)`、前景 `theme.textPrimary`
+///   （与旧版 `AppTitleToolbar` 一致）。
 @MainActor
 public final class DefaultToolbarProviding: ToolbarProviding {
     public private(set) var toolbarItems: [ToolbarItem] = []
@@ -31,6 +32,8 @@ public final class DefaultToolbarProviding: ToolbarProviding {
 
 /// 按 placement 渲染工具栏项的视图。
 private struct ToolbarView: View {
+    @LumiTheme private var theme
+
     let items: [ToolbarItem]
 
     /// 与旧版 `AppTitleToolbar` 保持一致的尺寸常量。
@@ -42,35 +45,42 @@ private struct ToolbarView: View {
         let center = items.filter { $0.placement == .center }
         let trailing = items.filter { $0.placement == .trailing }
 
-        ZStack {
-            #if os(macOS)
-            WindowDragRegion()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            #endif
+        AppToolbarContainer(
+            height: height,
+            backgroundStyle: .toolbar,
+            padding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        ) {
+            ZStack {
+                #if os(macOS)
+                WindowDragRegion()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                #endif
 
-            HStack(spacing: 8) {
-                // 红绿灯预留：hiddenTitleBar 下红绿灯悬浮于左上角，
-                // leading 项从此宽度之后开始排布（与旧版完全一致）。
-                Color.clear
-                    .frame(width: trafficLightReserveWidth, height: height)
-                    .accessibilityHidden(true)
+                HStack(spacing: 8) {
+                    // 红绿灯预留：hiddenTitleBar 下红绿灯悬浮于左上角，
+                    // leading 项从此宽度之后开始排布（与旧版完全一致）。
+                    Color.clear
+                        .frame(width: trafficLightReserveWidth, height: height)
+                        .accessibilityHidden(true)
 
-                group(leading)
+                    group(leading)
 
-                Spacer(minLength: 12)
+                    Spacer(minLength: 12)
 
-                group(trailing)
+                    group(trailing)
+                }
+                .padding(.trailing, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // center 项绝对居中，maxWidth 420，并左右留出红绿灯空间。
+                group(center)
+                    .frame(maxWidth: 420)
+                    .padding(.horizontal, trafficLightReserveWidth + 12)
             }
-            .padding(.trailing, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            // center 项绝对居中，maxWidth 420，并左右留出红绿灯空间。
-            group(center)
-                .frame(maxWidth: 420)
-                .padding(.horizontal, trafficLightReserveWidth + 12)
+            .frame(height: height)
+            .frame(maxWidth: .infinity)
         }
-        .frame(height: height)
-        .frame(maxWidth: .infinity)
+        .foregroundStyle(theme.textPrimary)
     }
 
     private func group(_ items: [ToolbarItem]) -> some View {

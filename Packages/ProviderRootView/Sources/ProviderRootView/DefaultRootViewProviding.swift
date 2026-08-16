@@ -1,6 +1,7 @@
-import SwiftUI
 import Combine
+import LumiUI
 import ProviderWorkspace
+import SwiftUI
 
 /// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail
 /// 与主内容视图，组合成「顶部工具栏 + 内容区（左侧 ActivityBar，右侧 Rail）」
@@ -61,13 +62,15 @@ private struct DefaultRootHostView: View {
         VStack(spacing: 0) {
             if let toolbarView = provider.toolbarView {
                 toolbarView
-                Divider()
+                // 与旧版 AppLayoutView 一致：工具栏下方使用主题分隔线。
+                AppDivider()
             }
 
             HStack(spacing: 0) {
                 if let activityBarView = provider.activityBarView {
                     activityBarView
-                    Divider()
+                    // 与旧版 AppLayoutView 一致：ActivityBar 右侧使用主题竖向分隔线。
+                    AppDivider(.vertical)
                 }
 
                 WorkbenchSplitView(provider: provider)
@@ -95,6 +98,10 @@ private struct WorkbenchSplitView: View {
                 HSplitView {
                     provider.railView!
                         .frame(minWidth: 180, idealWidth: workspace?.railDivider(for: containerID, fallback: 240) ?? 240, maxWidth: 400)
+                        // 与旧版 AppLayoutView 一致：Rail pane 的右侧分割线样式 + 拖拽后同步宽度。
+                        .appSplitDivider(.trailing, initialPosition: workspace?.railDivider(for: containerID, fallback: 240) ?? 240) { position in
+                            workspace?.setRailDivider(position, for: containerID)
+                        }
                     mainContent
                 }
                 .id("host.rail.\(containerID)")
@@ -113,7 +120,9 @@ private struct WorkbenchSplitView: View {
             contentView: provider.contentView,
             trailingPane: provider.trailingPane,
             workspaceShowsTrailingPane: workspace?.isChatVisible ?? true,
-            trailingWidth: workspace?.chatDivider(for: containerID, layout: .narrow, fallback: 320) ?? 320
+            trailingWidth: workspace?.chatDivider(for: containerID, layout: .narrow, fallback: 320) ?? 320,
+            containerID: containerID,
+            workspace: workspace
         )
     }
 }
@@ -124,11 +133,22 @@ private struct RootMainContentView: View {
     @ObservedObject var trailingPane: RootTrailingPane
     let workspaceShowsTrailingPane: Bool
     let trailingWidth: CGFloat
+    let containerID: String
+    let workspace: (any WorkspaceProviding)?
 
-    init(contentView: AnyView?, trailingPane: RootTrailingPane?, workspaceShowsTrailingPane: Bool, trailingWidth: CGFloat) {
+    init(
+        contentView: AnyView?,
+        trailingPane: RootTrailingPane?,
+        workspaceShowsTrailingPane: Bool,
+        trailingWidth: CGFloat,
+        containerID: String,
+        workspace: (any WorkspaceProviding)?
+    ) {
         self.contentView = contentView
         self.workspaceShowsTrailingPane = workspaceShowsTrailingPane
         self.trailingWidth = trailingWidth
+        self.containerID = containerID
+        self.workspace = workspace
         _trailingPane = ObservedObject(wrappedValue: trailingPane ?? RootTrailingPane(
             id: "root.empty",
             isVisible: false,
@@ -147,6 +167,10 @@ private struct RootMainContentView: View {
                 HSplitView {
                     mainContent
                         .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
+                        // 与旧版 AppLayoutView 一致：内容区 pane 的右侧分割线样式 + 拖拽后同步宽度。
+                        .appSplitDivider(.trailing, initialPosition: trailingWidth) { position in
+                            workspace?.setChatDivider(position, for: containerID, layout: .narrow)
+                        }
                     trailingPane.content
                         .frame(
                             minWidth: trailingPane.minWidth,
