@@ -89,7 +89,9 @@ struct ListView: View, SuperLog {
     /// 根据 verbosity 路由到对应的消息列表子视图。
     @ViewBuilder
     private var routedMessageList: some View {
-        let _ = logRoute()
+        if Self.verbose {
+            let _ = Self.logger.info("\(Self.t)route list: selected=\(selectedConversationID?.uuidString ?? "nil"), verbosity=\(verbosity.rawValue) → \(verbosityRouteName)")
+        }
         switch verbosity {
         case .brief:
             ListV1View(services: services)
@@ -98,15 +100,6 @@ struct ListView: View, SuperLog {
         case .detailed:
             ListV3View(services: services)
         }
-    }
-
-    /// 记录本次路由决策（空态由 body 处理，此处仅记录 verbosity → 子视图）。
-    @discardableResult
-    private func logRoute() -> String {
-        guard Self.verbose else { return "" }
-        let message = "\(Self.t)route list: selected=\(selectedConversationID?.uuidString ?? "nil"), verbosity=\(verbosity.rawValue) → \(verbosityRouteName)"
-        Self.logger.debug("\(message)")
-        return message
     }
 
     private var verbosityRouteName: String {
