@@ -5,6 +5,7 @@ import PluginAppStorePromoDesigner
 import PluginMindMapDesigner
 import PluginResumeDesigner
 import PluginDevice
+import PluginDiskManager
 import PluginLogoCoffic
 import PluginSettingGeneral
 import PluginThemePack
@@ -18,6 +19,7 @@ import PluginProjects
 import PluginMessageList
 import PluginConversationList
 import PluginConversationNew
+import PluginConversationManager
 import PluginLLMProviderAiRouter
 import PluginLLMProviderAliyun
 import PluginLLMProviderAnthropic
@@ -65,6 +67,7 @@ public struct DefaultPluginFactory: PluginFactory {
             SettingGeneralPlugin(),
             ProjectsPlugin(),
             DevicePlugin(),
+            DiskManagerPlugin(),
             AppIconDesignerPlugin(),
             AppStorePromoDesignerPlugin(),
             MindMapDesignerPlugin(),
@@ -80,6 +83,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationInputPlugin(),
             ConversationListPlugin(),
             ConversationNewPlugin(),
+            ConversationManagerPlugin(),
             AiRouterProviderPlugin(),
             AliyunProviderPlugin(),
             AnthropicProviderPlugin(),

@@ -15,6 +15,7 @@ let package = Package(
         .package(path: "../PluginMindMapDesigner"),
         .package(path: "../PluginResumeDesigner"),
         .package(path: "../PluginDevice"),
+        .package(path: "../PluginDiskManager"),
         .package(path: "../PluginLogoCoffic"),
         .package(path: "../PluginSettingGeneral"),
         .package(path: "../PluginThemePack"),
@@ -28,6 +29,7 @@ let package = Package(
         .package(path: "../PluginMessageList"),
         .package(path: "../PluginConversationList"),
         .package(path: "../PluginConversationNew"),
+        .package(path: "../PluginConversationManager"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderContentView"),
@@ -95,6 +97,7 @@ let package = Package(
                 .product(name: "PluginMindMapDesigner", package: "PluginMindMapDesigner"),
                 .product(name: "PluginResumeDesigner", package: "PluginResumeDesigner"),
                 .product(name: "PluginDevice", package: "PluginDevice"),
+                .product(name: "PluginDiskManager", package: "PluginDiskManager"),
                 .product(name: "PluginLogoCoffic", package: "PluginLogoCoffic"),
                 .product(name: "PluginSettingGeneral", package: "PluginSettingGeneral"),
                 .product(name: "PluginThemePack", package: "PluginThemePack"),
@@ -108,6 +111,7 @@ let package = Package(
                 .product(name: "PluginMessageList", package: "PluginMessageList"),
                 .product(name: "PluginConversationList", package: "PluginConversationList"),
                 .product(name: "PluginConversationNew", package: "PluginConversationNew"),
+                .product(name: "PluginConversationManager", package: "PluginConversationManager"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
@@ -195,6 +199,8 @@ let package = Package(
                 .product(name: "ProviderLLM", package: "ProviderLLM"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "PluginConversationManager", package: "PluginConversationManager"),
             ]
         )
     ]
