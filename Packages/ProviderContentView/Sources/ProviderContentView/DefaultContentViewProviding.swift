@@ -24,14 +24,10 @@ private struct ContentHostView: View {
     @ObservedObject var provider: DefaultContentViewProviding
 
     var body: some View {
-        Group {
-            if let contentView = provider.contentView {
-                contentView
-            } else {
-                ContentPlaceholderView()
-            }
+        if let contentView = provider.contentView {
+            contentView
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
