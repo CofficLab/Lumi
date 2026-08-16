@@ -11,13 +11,16 @@ import KernelLumi
 @MainActor
 public protocol EditorFeatureHostBridge: AnyObject {
     /// 当前活动文档的请求上下文（languageID 由调用方从 SuperEditor 上下文带入）。
-    func featureContext(languageID: String) -> KernelLumi.EditorFeatureRequestContext
+    func featureContext(languageID: String) -> EditorFeatureRequestContext
 
     /// 打开位置（Quick Open / Code Action 跳转）。
-    func open(_ location: KernelLumi.EditorLocation)
+    func open(_ location: EditorLocation)
 
     /// 应用工作区编辑（Code Action 的 edit 形态）。
-    func apply(_ edit: KernelLumi.EditorWorkspaceEdit)
+    func apply(_ edit: EditorWorkspaceEdit)
+
+    /// 应用 URI 寻址文本编辑（Code Action 的 textEdits 形态；未打开文档被忽略）。
+    func applyTextEdits(_ edits: [EditorURITextEdit])
 }
 
 /// 中立 Provider → SuperEditor 贡献者的命名空间化 id（§24）。
@@ -105,19 +108,29 @@ final class CodeActionProviderBridge: SuperEditorCodeActionContributor {
         let request = EditorCodeActionRequest(
             context: bridge.featureContext(languageID: context.languageId),
             position: position,
-            range: EditorRange(at: position),
+            range: EditorV2Range(at: position),
             selectedText: context.selectedText
         )
         return await provider.codeActions(for: request).map { item in
+            let bridge = self.bridge
             if let edit = item.edit {
                 // edit 形态：执行时通过宿主 apply（编辑闭环与 Agent 共用，§16）。
-                let bridge = self.bridge
                 return EditorCodeActionSuggestion(
                     id: item.id,
                     title: item.title,
                     command: item.id,
                     priority: item.priority
                 ).withExecution { bridge.apply(edit) }
+            }
+            if !item.textEdits.isEmpty {
+                // textEdits 形态：URI 寻址，宿主解析为已打开文档后应用。
+                let edits = item.textEdits
+                return EditorCodeActionSuggestion(
+                    id: item.id,
+                    title: item.title,
+                    command: item.id,
+                    priority: item.priority
+                ).withExecution { bridge.applyTextEdits(edits) }
             }
             return EditorCodeActionSuggestion(
                 id: item.id,

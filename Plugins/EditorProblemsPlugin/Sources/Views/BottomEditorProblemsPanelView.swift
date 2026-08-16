@@ -54,8 +54,17 @@ public struct BottomEditorProblemsPanelView: View {
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                // 语义问题（EditorSemanticProblem）暂无 V2 等价能力，
-                // 该分区在 Phase 5 语义能力落地后恢复。
+                if !model.semanticProblems.isEmpty {
+                    sectionLabel(LumiPluginLocalization.string("Project Context", bundle: .module))
+                    ForEach(model.semanticProblems) { problem in
+                        panelCard(
+                            title: problem.title,
+                            subtitle: problem.message,
+                            badge: "semantic",
+                            severity: semanticSeverity(problem.severity)
+                        )
+                    }
+                }
                 if model.diagnostics.isEmpty {
                     emptyState(LumiPluginLocalization.string("No Problems", bundle: .module), systemImage: "checkmark.circle")
                 } else {
@@ -91,6 +100,15 @@ public struct BottomEditorProblemsPanelView: View {
         Text(text)
             .font(.appMicroEmphasized)
             .foregroundColor(theme.textSecondary)
+    }
+
+    /// 语义问题严重级别 → 诊断严重级别（共用图标/配色）。
+    private func semanticSeverity(_ severity: EditorV2SemanticProblem.Severity) -> EditorDiagnosticSeverity? {
+        switch severity {
+        case .info: return .information
+        case .warning: return .warning
+        case .error: return .error
+        }
     }
 
     private func panelCard(title: String, subtitle: String, badge: String, severity: EditorDiagnosticSeverity? = nil) -> some View {

@@ -35,7 +35,10 @@ public final class GitPlugin: LumiPlugin, SuperLog {
 
     public func onBoot(kernel: KernelLumi) async throws {}
 
-    public func onReady(kernel: KernelLumi) async throws {}
+    public func onReady(kernel: KernelLumi) async throws {
+        // Phase 7 §15.6：注册 SCM 中立契约实现（编辑器侧消费者经服务注册表获取）。
+        try kernel.registerService(SourceControlProviding.self, GitSourceControlAdapter())
+    }
 
     public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }
     public func messageRenderers(kernel: KernelLumi) -> [LumiMessageRendererItem] { [] }

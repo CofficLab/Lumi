@@ -20,6 +20,7 @@ final class MockEditorProvidingV2: EditorProvidingV2 {
     let references: any EditorReferencesProviding
     let callHierarchy: any EditorCallHierarchyProviding
     let workspaceSearch: any EditorWorkspaceSearchProviding
+    let diff: any EditorDiffProviding
     let surface: any EditorSurfaceProviding
     let extensions: any EditorExtensionHosting
 
@@ -37,6 +38,7 @@ final class MockEditorProvidingV2: EditorProvidingV2 {
         self.references = StubReferencesProviding()
         self.callHierarchy = StubCallHierarchyProviding()
         self.workspaceSearch = StubWorkspaceSearchProviding()
+        self.diff = StubDiffProviding()
         self.surface = StubSurfaceProviding()
         self.extensions = extensions
     }
@@ -230,6 +232,18 @@ private final class StubWorkspaceSearchProviding: EditorWorkspaceSearchProviding
     func performSearch(_ query: String) {}
     func openMatch(_ match: EditorSearchMatch) {}
     func openResultsInEditor() {}
+}
+
+@MainActor
+private final class StubDiffProviding: EditorDiffProviding {
+    var workingDiff: EditorV2DiffDocument? { nil }
+    var statePublisher: AnyPublisher<EditorV2DiffDocument?, Never> {
+        Just(nil).eraseToAnyPublisher()
+    }
+
+    func computeDiff(oldText: String, newText: String) -> [EditorV2DiffHunk] { [] }
+
+    func accept(hunks: [EditorV2DiffHunk], in document: EditorDocumentID) async throws {}
 }
 
 @MainActor

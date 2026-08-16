@@ -6,6 +6,7 @@ import KernelLumi
 @MainActor
 public final class ProblemsEditorModel: ObservableObject {
     @Published public private(set) var diagnostics: [EditorDiagnosticItem] = []
+    @Published public private(set) var semanticProblems: [EditorV2SemanticProblem] = []
     @Published public private(set) var activeDocumentURI: URL?
 
     public let editor: any EditorProvidingV2
@@ -15,12 +16,17 @@ public final class ProblemsEditorModel: ObservableObject {
     public init(editor: any EditorProvidingV2) {
         self.editor = editor
         diagnostics = editor.diagnostics.snapshot.diagnostics
+        semanticProblems = editor.diagnostics.snapshot.semanticProblems
         activeDocumentURI = editor.documents.activeDocument?.uri
 
         editor.diagnostics.statePublisher
             .receive(on: DispatchQueue.main)
             .map(\.diagnostics)
             .assign(to: &$diagnostics)
+        editor.diagnostics.statePublisher
+            .receive(on: DispatchQueue.main)
+            .map(\.semanticProblems)
+            .assign(to: &$semanticProblems)
         editor.documents.statePublisher
             .receive(on: DispatchQueue.main)
             .map(\.activeDocument?.uri)

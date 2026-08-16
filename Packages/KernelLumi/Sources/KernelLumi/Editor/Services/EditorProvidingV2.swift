@@ -57,6 +57,9 @@ public protocol EditorProvidingV2: AnyObject {
     /// 工作区搜索能力：搜索执行与结果数据面。
     var workspaceSearch: any EditorWorkspaceSearchProviding { get }
 
+    /// Diff 能力：工作副本 diff、任意两文本 diff 与逐块接受（Phase 7 §15.5）。
+    var diff: any EditorDiffProviding { get }
+
     /// 扩展宿主能力：贡献包原子安装/撤回与能力可用性（§9）。
     var extensions: any EditorExtensionHosting { get }
 }

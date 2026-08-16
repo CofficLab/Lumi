@@ -59,6 +59,15 @@ public final class EditorHostPlugin: LumiPlugin, SuperLog {
 
         // 4. 契约 V2（kernel.editorV2），Surface 视图工厂注入。
         let adapter = EditorProvidingV2Adapter(service: service, extensions: contributionRegistry)
+        // Phase 5：中立语言功能 Provider 的宿主桥（活动文档上下文/打开/应用编辑）。
+        contributionRegistry.hostBridge = adapter
+
+        // Phase 7 §15.5：working diff 的 SCM 基线（Git HEAD，经 SourceControlProviding；
+        // 无 SCM 插件注册时适配器回退磁盘内容）。
+        adapter.scmBaselineResolver = { [weak kernel] uri in
+            guard let scm = kernel?.resolveService(SourceControlProviding.self) else { return nil }
+            return await scm.baselineContent(of: uri)
+        }
         adapter.surfaceBox.makeView = { [weak service] in
             guard let service else {
                 return AnyView(

@@ -53,6 +53,33 @@ public struct EditorDiagnosticItem: Identifiable, Equatable, Sendable {
     public var lineNumber: Int { range.start.line + 1 }
 }
 
+/// 语义问题（项目上下文/语言服务的可用性提示，非诊断）。
+///
+/// 如「项目索引不可用」「语义引擎降级」等宿主状态说明；
+/// 与按文档的诊断互补，Problems 面板附加展示。
+public struct EditorSemanticProblem: Identifiable, Equatable, Sendable {
+    public enum Severity: String, Equatable, Sendable {
+        case info
+        case warning
+        case error
+    }
+
+    public let id: String
+
+    public let severity: Severity
+
+    public let title: String
+
+    public let message: String
+
+    public init(id: String, severity: Severity, title: String, message: String) {
+        self.id = id
+        self.severity = severity
+        self.title = title
+        self.message = message
+    }
+}
+
 /// 诊断快照（State，可随时读取与重放，§8.9）。
 ///
 /// 当前阶段诊断按活动文档聚合（与底层 LSP 管线一致）；
@@ -60,8 +87,15 @@ public struct EditorDiagnosticItem: Identifiable, Equatable, Sendable {
 public struct EditorDiagnosticsSnapshot: Equatable, Sendable {
     public let diagnostics: [EditorDiagnosticItem]
 
-    public init(diagnostics: [EditorDiagnosticItem]) {
+    /// 语义问题（项目级，不隶属单个文档）。
+    public let semanticProblems: [EditorSemanticProblem]
+
+    public init(
+        diagnostics: [EditorDiagnosticItem],
+        semanticProblems: [EditorSemanticProblem] = []
+    ) {
         self.diagnostics = diagnostics
+        self.semanticProblems = semanticProblems
     }
 
     public static let empty = EditorDiagnosticsSnapshot(diagnostics: [])
@@ -74,3 +108,11 @@ public struct EditorDiagnosticsSnapshot: Equatable, Sendable {
         diagnostics.filter { $0.severity == .warning }.count
     }
 }
+
+// MARK: - 跨包消歧别名
+
+/// `EditorSemanticProblem`（V2 契约）的消歧别名。
+///
+/// EditorService 等包 re-export 了 EditorKernel 的同名历史类型，
+/// 未限定名会解析到历史类型一侧；需要同时引用两侧的包使用本别名。
+public typealias EditorV2SemanticProblem = EditorSemanticProblem

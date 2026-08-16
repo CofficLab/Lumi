@@ -371,3 +371,78 @@ final class EditorProvidingV2AdapterCapabilityTests: XCTestCase {
     }
 }
 #endif
+
+// MARK: - Diff（Phase 7 §15.5）
+
+extension EditorProvidingV2AdapterCapabilityTests {
+    func testComputeDiffProducesHunksWithLineKinds() {
+        let hunks = adapter.diff.computeDiff(
+            oldText: "a\nb\nc\n",
+            newText: "a\nB\nc\n"
+        )
+        XCTAssertEqual(hunks.count, 1)
+        XCTAssertEqual(hunks[0].removedContents, ["b"])
+        XCTAssertEqual(hunks[0].addedContents, ["B"])
+        XCTAssertEqual(hunks[0].oldChangeRange, 2...2)
+        XCTAssertEqual(hunks[0].newChangeRange, 2...2)
+    }
+
+    func testWorkingDiffEmptyWithoutDocument() {
+        XCTAssertNil(adapter.diff.workingDiff)
+    }
+
+    func testWorkingDiffReflectsBufferVersusDisk() async throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("V2AdapterDiffTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("Diff.swift")
+        try Data("alpha\nbeta\ngamma\n".utf8).write(to: url)
+
+        _ = try await adapter.documents.open(EditorOpenRequest(uri: url, kind: .activate))
+        await flushAsync()
+
+        // 缓冲与磁盘一致 → 空 hunks。
+        let clean = try XCTUnwrap(adapter.diff.workingDiff)
+        XCTAssertEqual(clean.uri.standardizedFileURL, url.standardizedFileURL)
+        XCTAssertTrue(clean.isEmpty)
+
+        // 修改缓冲 → workingDiff 出现 hunk。
+        _ = service.files.replaceCurrentDocumentText("alpha\nBETA\ngamma\n", reason: "test")
+        await flushAsync()
+        let dirty = try XCTUnwrap(adapter.diff.workingDiff)
+        XCTAssertEqual(dirty.hunks.count, 1)
+        XCTAssertEqual(dirty.hunks[0].removedContents, ["beta"])
+        XCTAssertEqual(dirty.hunks[0].addedContents, ["BETA"])
+    }
+
+    func testAcceptHunksAppliesOnlyAcceptedHunks() async throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("V2AdapterDiffAcceptTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        // 两处远距变更 → 两个独立 hunk；只接受其一验证逐块接受语义。
+        let oldText = (1...20).map { "line\($0)" }.joined(separator: "\n") + "\n"
+        let newText = (1...20).map { $0 == 2 ? "CHANGED-2" : ($0 == 18 ? "CHANGED-18" : "line\($0)") }
+            .joined(separator: "\n") + "\n"
+        let url = dir.appendingPathComponent("Accept.swift")
+        try Data(oldText.utf8).write(to: url)
+
+        _ = try await adapter.documents.open(EditorOpenRequest(uri: url, kind: .activate))
+        await flushAsync()
+        let documentID = try XCTUnwrap(adapter.activeDocumentID())
+
+        let hunks = adapter.diff.computeDiff(oldText: oldText, newText: newText)
+        XCTAssertEqual(hunks.count, 2, "distant changes split into two hunks")
+
+        // 只接受第二个 hunk（line-18 变更）。
+        let acceptedHunk = try XCTUnwrap(hunks.last)
+        try await adapter.diff.accept(hunks: [acceptedHunk], in: documentID)
+        await flushAsync()
+
+        let text = service.state.content?.string ?? ""
+        XCTAssertTrue(text.contains("CHANGED-18"), "accepted hunk applied: \(text)")
+        XCTAssertFalse(text.contains("CHANGED-2"), "rejected hunk not applied: \(text)")
+        XCTAssertTrue(text.contains("line2\n"), "rejected region intact: \(text)")
+    }
+}

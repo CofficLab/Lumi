@@ -64,6 +64,7 @@ public final class EditorProvidingV2Adapter: EditorProvidingV2, EditorFeatureHos
     private lazy var referencesCapability = ReferencesCapability(adapter: self)
     private lazy var callHierarchyCapability = CallHierarchyCapability(adapter: self)
     private lazy var workspaceSearchCapability = WorkspaceSearchCapability(adapter: self)
+    private lazy var diffCapability = DiffCapability(adapter: self)
 
     public var documents: any EditorDocumentProviding { documentCapability }
     public var sessions: any EditorSessionProviding { sessionCapability }
@@ -77,6 +78,7 @@ public final class EditorProvidingV2Adapter: EditorProvidingV2, EditorFeatureHos
     public var references: any EditorReferencesProviding { referencesCapability }
     public var callHierarchy: any EditorCallHierarchyProviding { callHierarchyCapability }
     public var workspaceSearch: any EditorWorkspaceSearchProviding { workspaceSearchCapability }
+    public var diff: any EditorDiffProviding { diffCapability }
     public let surface: any EditorSurfaceProviding
 
     /// Host 通过此 strongly-typed 句柄注入 Surface 视图构造闭包（与 `surface` 同一实例）。
@@ -90,6 +92,12 @@ public final class EditorProvidingV2Adapter: EditorProvidingV2, EditorFeatureHos
     /// session ID → 文档 ID。当前运行时 Session 与打开的文件一一对应，
     /// 故 Session 即文档身份；未来多视图共享 Buffer 时改为 URL 级注册表。
     private var documentIDs: [EditorSession.ID: EditorDocumentID] = [:]
+
+    /// SCM 基线解析器（Host 注入，Phase 7 §15.5「工作区对 Git 基线 diff」）。
+    ///
+    /// 返回 nil（无 SCM 实现/无历史）时回退磁盘内容作为基线。
+    @MainActor
+    public var scmBaselineResolver: ((URL) async -> String?)?
 
     public init(
         service: EditorService,
@@ -133,7 +141,7 @@ public final class EditorProvidingV2Adapter: EditorProvidingV2, EditorFeatureHos
 
     // MARK: - EditorFeatureHostBridge（Phase 5 §10）
 
-    func featureContext(languageID: String) -> EditorFeatureRequestContext {
+    public func featureContext(languageID: String) -> EditorFeatureRequestContext {
         EditorFeatureRequestContext(
             uri: service?.files.currentFileURL,
             languageID: languageID,
@@ -141,7 +149,7 @@ public final class EditorProvidingV2Adapter: EditorProvidingV2, EditorFeatureHos
         )
     }
 
-    func open(_ location: KernelLumi.EditorLocation) {
+    public func open(_ location: EditorLocation) {
         guard let service else { return }
         service.sessions.openFile(at: location.uri)
         // 打开后把光标落到目标位置（zero-based UTF-16 → 文本偏移）。
@@ -151,7 +159,34 @@ public final class EditorProvidingV2Adapter: EditorProvidingV2, EditorFeatureHos
         }
     }
 
-    func apply(_ edit: KernelLumi.EditorWorkspaceEdit) {
+    public func apply(_ edit: EditorWorkspaceEdit) {
+        Task { @MainActor in
+            _ = try? await documentCapability.apply(edit, expectedRevisions: [:], options: EditorEditOptions())
+        }
+    }
+
+    /// revision 校验的应用入口（Diff hunk 接受等内部流程共用编辑闭环，§16）。
+    func applyEdit(
+        _ edit: EditorWorkspaceEdit,
+        expectedRevisions: [EditorDocumentID: UInt64],
+        options: EditorEditOptions
+    ) async throws -> EditorWorkspaceEditResult {
+        try await documentCapability.apply(edit, expectedRevisions: expectedRevisions, options: options)
+    }
+
+    public func applyTextEdits(_ edits: [EditorURITextEdit]) {
+        guard let service else { return }
+        // URI → 已打开文档：当前运行时 Session 与文件一一对应，
+        // 只解析当前活动文档（未打开 URI 属正常能力缺失，静默忽略）。
+        let currentURL = service.files.currentFileURL?
+            .standardizedFileURL
+        let matched = edits.first {
+            $0.uri.standardizedFileURL == currentURL
+        }
+        guard let matched, let activeID = activeDocumentID() else { return }
+        let edit = EditorWorkspaceEdit(documentEdits: [
+            EditorDocumentEdit(documentID: activeID, edits: matched.edits)
+        ])
         Task { @MainActor in
             _ = try? await documentCapability.apply(edit, expectedRevisions: [:], options: EditorEditOptions())
         }
@@ -947,7 +982,25 @@ private final class DiagnosticsCapability: EditorDiagnosticsProviding {
                 code: diagnostic.code.map { "\($0)" }
             )
         }
-        return EditorDiagnosticsSnapshot(diagnostics: items)
+        let semanticProblems = service.panel.panelState.semanticProblems.map { problem in
+            EditorV2SemanticProblem(
+                id: problem.id,
+                severity: Self.mapSemanticSeverity(problem.severity),
+                title: problem.title,
+                message: problem.message
+            )
+        }
+        return EditorDiagnosticsSnapshot(diagnostics: items, semanticProblems: semanticProblems)
+    }
+
+    private static func mapSemanticSeverity(
+        _ severity: EditorSemanticAvailabilitySeverity
+    ) -> EditorV2SemanticProblem.Severity {
+        switch severity {
+        case .info: return .info
+        case .warning: return .warning
+        case .error: return .error
+        }
     }
 
     var snapshot: EditorDiagnosticsSnapshot {
@@ -1384,5 +1437,157 @@ private final class WorkspaceSearchCapability: EditorWorkspaceSearchProviding {
             path: match.path,
             preview: match.preview
         )
+    }
+}
+
+// MARK: - Diff 能力（Phase 7 §15.5）
+
+/// Diff 数据面：基于 `EditorTextDiffEngine`（EditorKernel 纯逻辑）。
+///
+/// - `workingDiff`：活动文档缓冲 vs 磁盘基线；按 (uri, revision, isDirty)
+///   缓存避免每次 objectWillChange 重读磁盘。
+/// - `accept`：hunk 旧文本行号 → 以行首为锚点的文本编辑，经
+///   `documents.apply` 应用（revision 校验与 Agent 编辑共用同一闭环，§16）。
+@MainActor
+private final class DiffCapability: EditorDiffProviding {
+    private weak var adapter: EditorProvidingV2Adapter?
+    private let subject: CurrentValueSubject<EditorV2DiffDocument?, Never>
+    private var cancellables = Set<AnyCancellable>()
+
+    /// workingDiff 缓存键：输入未变时不重算（磁盘读取代价高）。
+    private var cachedURI: URL?
+    private var cachedRevision: UInt64?
+    private var cachedWasDirty: Bool?
+
+    init(adapter: EditorProvidingV2Adapter) {
+        self.adapter = adapter
+        self.subject = CurrentValueSubject(nil)
+        adapter.service?.objectWillChange
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.refresh()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refresh() async {
+        guard let service = adapter?.service else { return }
+        let uri = service.files.currentFileURL
+        let revision = service.state.contentRevision
+        let isDirty = service.files.hasUnsavedChanges
+        // 输入未变（同文档、同 revision、同 dirty 态）直接跳过重算。
+        guard uri != cachedURI || revision != cachedRevision || isDirty != cachedWasDirty else {
+            return
+        }
+        // SCM 基线（Git HEAD）优先；无 SCM 实现或无历史时回退磁盘内容。
+        let scmBaseline: String?
+        if let uri, let resolver = adapter?.scmBaselineResolver {
+            scmBaseline = await resolver(uri)
+        } else {
+            scmBaseline = nil
+        }
+        subject.send(Self.computeWorkingDiff(service: service, baselineOverride: scmBaseline))
+    }
+
+    var workingDiff: EditorV2DiffDocument? {
+        // 缓存值优先（含 SCM 基线版本）；未触发过重算时同步回退磁盘基线。
+        if let cached = subject.value { return cached }
+        guard let service = adapter?.service else { return nil }
+        return Self.computeWorkingDiff(service: service, baselineOverride: nil)
+    }
+
+    var statePublisher: AnyPublisher<EditorV2DiffDocument?, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func computeDiff(oldText: String, newText: String) -> [EditorV2DiffHunk] {
+        Self.mapResult(
+            EditorKernel.EditorTextDiffEngine.diff(oldText: oldText, newText: newText)
+        )
+    }
+
+    func accept(hunks: [EditorV2DiffHunk], in documentID: EditorDocumentID) async throws {
+        guard let adapter, let service = adapter.service else {
+            throw EditorContractError.capabilityUnavailable(feature: "editor.diff")
+        }
+        guard adapter.activeDocumentID() == documentID,
+              let text = service.state.content?.string else {
+            throw EditorContractError.documentNotFound(documentID)
+        }
+
+        // hunk 旧文本行号（1-based）→ 行首锚点文本编辑（zero-based UTF-16 line）。
+        // 编辑互不重叠且都基于当前缓冲，可一次性事务应用。
+        let textEdits: [EditorTextEdit] = hunks.compactMap { hunk in
+            let replacement = hunk.addedContents.joined(separator: "\n")
+            if let removed = hunk.oldChangeRange {
+                // 替换：removed 首行行首 → 末行下一行行首（含末行换行）。
+                return EditorTextEdit(
+                    range: EditorV2Range(
+                        start: EditorPosition(line: removed.lowerBound - 1, character: 0),
+                        end: EditorPosition(line: removed.upperBound, character: 0)
+                    ),
+                    newText: replacement
+                )
+            }
+            if hunk.addedContents.isEmpty {
+                return nil
+            }
+            // 纯新增：插在 oldStart（1-based）前一行的行尾之后 = 该行行首位置。
+            return EditorTextEdit(
+                range: EditorV2Range(
+                    at: EditorPosition(line: max(0, hunk.oldStart - 1), character: 0)
+                ),
+                newText: replacement + "\n"
+            )
+        }
+        guard !textEdits.isEmpty else { return }
+
+        let edit = EditorWorkspaceEdit(documentEdits: [
+            EditorDocumentEdit(documentID: documentID, edits: textEdits)
+        ])
+        _ = try await adapter.applyEdit(
+            edit,
+            expectedRevisions: [documentID: service.state.contentRevision],
+            options: EditorEditOptions(label: "diff.accept-hunks")
+        )
+    }
+
+    // MARK: - 工作副本 diff
+
+    private static func computeWorkingDiff(
+        service: EditorService,
+        baselineOverride: String?
+    ) -> EditorV2DiffDocument? {
+        guard let uri = service.files.currentFileURL else { return nil }
+        let buffer = service.state.content?.string ?? ""
+        let baseline = baselineOverride ?? (try? String(contentsOf: uri, encoding: .utf8)) ?? buffer
+        let result = EditorKernel.EditorTextDiffEngine.diff(oldText: baseline, newText: buffer)
+        return EditorV2DiffDocument(uri: uri, hunks: mapResult(result))
+    }
+
+    private static func mapResult(_ result: EditorKernel.EditorDiffResult) -> [EditorV2DiffHunk] {
+        result.hunks.map { hunk in
+            EditorV2DiffHunk(
+                oldStart: hunk.oldStart,
+                newStart: hunk.newStart,
+                lines: hunk.lines.map { line in
+                    EditorV2DiffLine(
+                        kind: mapKind(line.kind),
+                        oldLineNumber: line.oldLineNumber,
+                        newLineNumber: line.newLineNumber,
+                        content: line.content
+                    )
+                }
+            )
+        }
+    }
+
+    private static func mapKind(_ kind: EditorKernel.EditorDiffLine.Kind) -> EditorV2DiffLine.Kind {
+        switch kind {
+        case .unchanged: return .unchanged
+        case .added: return .added
+        case .removed: return .removed
+        }
     }
 }

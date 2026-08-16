@@ -173,3 +173,104 @@ private final class TestGrammarProvider: LanguageGrammarProviding {
     func treeSitterLanguage() -> OpaquePointer? { nil }
     func highlightQueryURLs() -> [URL] { [] }
 }
+
+/// Phase 5：中立语言功能 Provider 桥接安装/撤回测试（§21.1）。
+@MainActor
+private final class TestFeatureHostBridge: EditorFeatureHostBridge {
+    func featureContext(languageID: String) -> EditorFeatureRequestContext {
+        EditorFeatureRequestContext(uri: nil, languageID: languageID)
+    }
+
+    func open(_ location: EditorLocation) {}
+    func apply(_ edit: EditorWorkspaceEdit) {}
+    func applyTextEdits(_ edits: [EditorURITextEdit]) {}
+}
+
+private final class TestCompletionProvider: EditorCompletionProvider, @unchecked Sendable {
+    let id = "completion.test"
+    let selector = EditorDocumentSelector(languageID: "swift")
+
+    func completions(for request: EditorCompletionRequest) async -> [EditorCompletionItem] {
+        guard request.context.languageID == "swift" else { return [] }
+        return [EditorCompletionItem(label: "Int", kind: .keyword, priority: 10)]
+    }
+}
+
+private final class TestHoverProvider: EditorHoverProvider, @unchecked Sendable {
+    let id = "hover.test"
+
+    func hover(for request: EditorHoverRequest) async -> [EditorHoverSection] {
+        [EditorHoverSection(markdown: "doc", priority: 1)]
+    }
+}
+
+private final class TestQuickOpenProvider: EditorQuickOpenProvider, @unchecked Sendable {
+    let id = "quickopen.test"
+
+    func quickOpenItems(for request: EditorQuickOpenRequest) async -> [EditorQuickOpenItem] {
+        []
+    }
+}
+
+extension EditorContributionRegistryTests {
+    @Test("Provider 经宿主桥安装为 SuperEditor 贡献者，撤回后移除")
+    func featureProviderBridgeInstallsAndWithdraws() async throws {
+        let extensionRegistry = EditorExtensionRegistry()
+        // hostBridge 为 weak（避免 adapter↔registry 循环），测试需强持有。
+        let hostBridge = TestFeatureHostBridge()
+        let registry = EditorContributionRegistry(registry: extensionRegistry, hostBridge: hostBridge)
+
+        let bundle = EditorContributionBundle(
+            pluginID: "test.feature.plugin",
+            providers: [
+                TestCompletionProvider(),
+                TestHoverProvider(),
+                TestQuickOpenProvider(),
+            ]
+        )
+        try await registry.replaceBundle(
+            for: "test.feature.plugin",
+            with: bundle.stamped(pluginID: "test.feature.plugin", generation: 1)
+        )
+
+        // 命名空间化 id（§24）：pluginID/providerID。
+        let suggestions = await extensionRegistry.completionSuggestions(
+            for: EditorCompletionContext(
+                languageId: "swift",
+                line: 0,
+                character: 0,
+                prefix: "In",
+                isTypeContext: true
+            )
+        )
+        #expect(suggestions.contains { $0.label == "Int" })
+
+        let hoverSuggestions = await extensionRegistry.hoverSuggestions(
+            for: EditorHoverContext(languageId: "swift", line: 0, character: 0, symbol: "actor")
+        )
+        #expect(hoverSuggestions.contains { $0.markdown == "doc" })
+
+        // availability：已装 Provider 按 selector 判定（§9）。
+        let swiftDocument = makeDocument(languageID: "swift")
+        let pythonDocument = makeDocument(languageID: "python")
+        #expect(
+            registry.availability(for: .completion, document: swiftDocument).state == .available
+        )
+        #expect(
+            registry.availability(for: .completion, document: pythonDocument).state == .noProvider
+        )
+
+        // 撤回后贡献者移除。
+        try await registry.replaceBundle(for: "test.feature.plugin", with: nil)
+        let afterWithdraw = await extensionRegistry.completionSuggestions(
+            for: EditorCompletionContext(
+                languageId: "swift",
+                line: 0,
+                character: 0,
+                prefix: "In",
+                isTypeContext: true
+            )
+        )
+        #expect(!afterWithdraw.contains { $0.label == "Int" })
+    }
+}

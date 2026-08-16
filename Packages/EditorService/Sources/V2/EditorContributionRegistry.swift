@@ -30,7 +30,10 @@ public final class EditorContributionRegistry: EditorExtensionHosting {
     private let registry: EditorExtensionRegistry
     /// 宿主桥（Phase 5）：中立 Provider 适配所需的活动文档上下文与执行入口。
     /// Host 在装配完 V2 Adapter 后注入（Adapter 即桥实现）。
-    weak var hostBridge: (any EditorFeatureHostBridge)?
+    public weak var hostBridge: (any EditorFeatureHostBridge)?
+
+    /// 已安装 Provider 的 selector 表（命名空间化 id → selector，availability 用）。
+    private var providerSelectors: [String: EditorDocumentSelector] = [:]
     private var installed: [String: InstalledContribution] = [:]
     private var nextGeneration: UInt64 = 1
 
@@ -96,6 +99,8 @@ public final class EditorContributionRegistry: EditorExtensionHosting {
         var quickOpenIds: [String] = []
         if let hostBridge {
             for provider in bundle.providers {
+                let namespacedID = EditorFeatureBridgeID.namespaced(pluginID: pluginID, providerID: provider.id)
+                providerSelectors[namespacedID] = provider.selector
                 if let completion = provider as? any EditorCompletionProvider {
                     let bridge = CompletionProviderBridge(pluginID: pluginID, provider: completion, bridge: hostBridge)
                     registry.registerCompletionContributor(bridge)
@@ -137,18 +142,39 @@ public final class EditorContributionRegistry: EditorExtensionHosting {
     }
 
     public func availability(for feature: EditorFeature, document: EditorDocumentSummary) -> EditorFeatureAvailability {
-        // Phase 4：语法能力已可判定；其余 Feature 的 Provider 解析管线在 Phase 5 接入，
-        // 当前如实返回 noProvider（能力缺失是正常状态，§4.5）。
-        guard feature == .syntax else {
+        // Phase 5：语言功能 Provider 已可判定；其余 Feature（LSP 驱动）由宿主
+        // 内部管线提供，此处如实返回 noProvider（能力缺失是正常状态，§4.5）。
+        switch feature {
+        case .syntax:
+            guard let descriptor = LanguageRegistry.shared.descriptor(for: document.languageID) else {
+                return EditorFeatureAvailability(.noProvider)
+            }
+            let hasGrammar = LanguageRegistry.shared.grammar(for: descriptor.highlightLanguageId) != nil
+            return EditorFeatureAvailability(
+                hasGrammar ? .available : .temporarilyUnavailable(reason: "no grammar for \(document.languageID)")
+            )
+        case .completion, .hover, .codeAction:
+            let hasMatch = providerIDs(for: feature).contains { id in
+                providerSelectors[id]?.matches(document) ?? false
+            }
+            return EditorFeatureAvailability(hasMatch ? .available : .noProvider)
+        default:
             return EditorFeatureAvailability(.noProvider)
         }
-        guard let descriptor = LanguageRegistry.shared.descriptor(for: document.languageID) else {
-            return EditorFeatureAvailability(.noProvider)
+    }
+
+    /// 命中某能力的已安装 Provider id 列表（按贡献记录）。
+    private func providerIDs(for feature: EditorFeature) -> [String] {
+        switch feature {
+        case .completion:
+            return installed.values.flatMap(\.completionProviderIds)
+        case .hover:
+            return installed.values.flatMap(\.hoverProviderIds)
+        case .codeAction:
+            return installed.values.flatMap(\.codeActionProviderIds)
+        default:
+            return []
         }
-        let hasGrammar = LanguageRegistry.shared.grammar(for: descriptor.highlightLanguageId) != nil
-        return EditorFeatureAvailability(
-            hasGrammar ? .available : .temporarilyUnavailable(reason: "no grammar for \(document.languageID)")
-        )
     }
 
     // MARK: - Private
@@ -192,6 +218,12 @@ public final class EditorContributionRegistry: EditorExtensionHosting {
         }
         for providerId in contribution.quickOpenProviderIds {
             registry.unregisterQuickOpenContributor(id: providerId)
+        }
+        for providerId in contribution.completionProviderIds
+            + contribution.hoverProviderIds
+            + contribution.codeActionProviderIds
+            + contribution.quickOpenProviderIds {
+            providerSelectors.removeValue(forKey: providerId)
         }
         lastChangeDescription = "withdrew \(pluginID) gen=\(contribution.generation)"
         syncInstalledPlugins()

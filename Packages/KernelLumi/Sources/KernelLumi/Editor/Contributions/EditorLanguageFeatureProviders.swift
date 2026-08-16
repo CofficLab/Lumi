@@ -159,12 +159,31 @@ public protocol EditorHoverProvider: EditorFeatureProvider {
     func hover(for request: EditorHoverRequest) async -> [EditorHoverSection]
 }
 
+// MARK: - URI 寻址编辑（Provider 贡献用）
+//
+// `EditorWorkspaceEdit` 按宿主私有 `EditorDocumentID` 寻址（Agent/内部流程经
+// documents 契约取得）；语言功能 Provider 只持有 URI，故提供 URI 寻址形态，
+// 由宿主在应用时解析为已打开文档。
+
+/// 对单个 URI 文档的一组编辑。
+public struct EditorURITextEdit: Equatable, Sendable {
+    public let uri: URL
+
+    public let edits: [EditorTextEdit]
+
+    public init(uri: URL, edits: [EditorTextEdit]) {
+        self.uri = uri
+        self.edits = edits
+    }
+}
+
 // MARK: - Code Action
 
 /// 代码动作条目。
 ///
-/// 两种执行形态（二选一，都为空时条目不可执行）：
-/// - `edit`：Host 通过 `documents.apply` 应用工作区编辑（Agent 编辑同一闭环，§16）。
+/// 执行形态（优先级从上到下，都为空时条目不可执行）：
+/// - `edit`：按 documentID 寻址的工作区编辑（Agent/内部流程）。
+/// - `textEdits`：按 URI 寻址的文本编辑（语言 Provider；宿主解析为已打开文档）。
 /// - `commandID`：路由到编辑器命令系统执行。
 public struct EditorCodeActionItem: Equatable, Sendable {
     public enum Kind: String, Hashable, Sendable {
@@ -188,8 +207,11 @@ public struct EditorCodeActionItem: Equatable, Sendable {
 
     public let priority: Int
 
-    /// 应用的工作区编辑（nil 表示走命令形态）。
+    /// 应用的工作区编辑（documentID 寻址；Agent/内部流程）。
     public let edit: EditorWorkspaceEdit?
+
+    /// URI 寻址的文本编辑（语言 Provider 形态）。
+    public let textEdits: [EditorURITextEdit]
 
     /// 命令形态：要执行的命令 id。
     public let commandID: String?
@@ -201,6 +223,7 @@ public struct EditorCodeActionItem: Equatable, Sendable {
         isPreferred: Bool = false,
         priority: Int = 0,
         edit: EditorWorkspaceEdit? = nil,
+        textEdits: [EditorURITextEdit] = [],
         commandID: String? = nil
     ) {
         self.id = id
@@ -209,6 +232,7 @@ public struct EditorCodeActionItem: Equatable, Sendable {
         self.isPreferred = isPreferred
         self.priority = priority
         self.edit = edit
+        self.textEdits = textEdits
         self.commandID = commandID
     }
 }

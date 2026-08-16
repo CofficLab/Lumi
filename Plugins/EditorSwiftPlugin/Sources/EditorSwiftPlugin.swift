@@ -68,6 +68,11 @@ public final class EditorSwiftPlugin: LumiPlugin {
                     language: EditorSwiftPluginDescriptor.swift,
                     grammar: EditorSwiftGrammarProvider()
                 )
+            ],
+            providers: [
+                SwiftPrimitiveTypeCompletionProvider(),
+                SwiftKeywordHoverProvider(),
+                SwiftSelectionCodeActionProvider(),
             ]
         )
     }

@@ -78,8 +78,18 @@ private struct ProblemsDiagnosticStatusBarDetailView: View {
             content: {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
-                        // 语义问题（EditorSemanticProblem）暂无 V2 等价能力，
-                        // 该分区在 Phase 5 语义能力落地后恢复。
+                        if !model.semanticProblems.isEmpty {
+                            sectionLabel(LumiPluginLocalization.string("Project Context", bundle: .module))
+                            ForEach(model.semanticProblems) { problem in
+                                diagnosticRow(
+                                    title: problem.title,
+                                    message: problem.message,
+                                    badge: "semantic",
+                                    systemImage: semanticIcon(for: problem.severity),
+                                    tint: semanticColor(for: problem.severity)
+                                )
+                            }
+                        }
                         if model.diagnostics.isEmpty {
                             Text(LumiPluginLocalization.string("No problems in the current file.", bundle: .module))
                                 .foregroundColor(theme.textSecondary)
@@ -198,6 +208,22 @@ private struct ProblemsDiagnosticStatusBarDetailView: View {
         let line = diagnostic.range.start.line + 1
         let column = diagnostic.range.start.character + 1
         return "\(model.relativeFilePath):\(line):\(column)"
+    }
+
+    private func semanticIcon(for severity: EditorV2SemanticProblem.Severity) -> String {
+        switch severity {
+        case .info: return "info.circle"
+        case .warning: return "exclamationmark.triangle"
+        case .error: return "xmark.circle"
+        }
+    }
+
+    private func semanticColor(for severity: EditorV2SemanticProblem.Severity) -> SwiftUI.Color {
+        switch severity {
+        case .info: return theme.textSecondary
+        case .warning: return severityColor(for: .warning)
+        case .error: return severityColor(for: .error)
+        }
     }
 
     private func severityIcon(for severity: EditorDiagnosticSeverity?) -> String {
