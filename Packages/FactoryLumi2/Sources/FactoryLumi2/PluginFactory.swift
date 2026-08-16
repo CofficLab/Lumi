@@ -6,6 +6,11 @@ import PluginMindMapDesigner
 import PluginResumeDesigner
 import PluginDevice
 import PluginDiskManager
+import PluginCaffeinate
+import PluginHostsManager
+import PluginDocxRead
+import PluginWebFetch
+import PluginWebSearch
 import PluginLogoCoffic
 import PluginSettingGeneral
 import PluginThemePack
@@ -64,10 +69,15 @@ public struct DefaultPluginFactory: PluginFactory {
     /// 产出默认插件列表。
     public func makePlugins() -> [any SuperPlugin] {
         [
+            CaffeinatePlugin(),
             SettingGeneralPlugin(),
             ProjectsPlugin(),
             DevicePlugin(),
+            HostsManagerPlugin(),
             DiskManagerPlugin(),
+            DocxReadPlugin(),
+            WebFetchPlugin(),
+            WebSearchPlugin(),
             AppIconDesignerPlugin(),
             AppStorePromoDesignerPlugin(),
             MindMapDesignerPlugin(),

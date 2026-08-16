@@ -1,0 +1,88 @@
+import AgentToolKit
+import Foundation
+
+/// 激活防休眠工具
+///
+/// 通过 IOKit 电源断言阻止系统进入休眠状态，
+/// 可选择是否同时阻止屏幕休眠，以及设置持续时间。
+struct CaffeinateActivateTool: SuperAgentTool {
+    let name = "caffeinate_activate"
+
+    func description(for language: LanguagePreference) -> String {
+        "Activate caffeinate to prevent the system from sleeping. Supports two modes: 'systemAndDisplay' (prevent both system and display sleep, keep screen on) and 'systemOnly' (prevent system sleep but allow display to turn off). Supports timed duration or indefinite activation."
+    }
+
+    func inputSchema(for language: LanguagePreference) -> [String: Any] {
+        [
+            "type": "object",
+            "properties": [
+                "mode": [
+                    "type": "string",
+                    "description": "Sleep prevention mode: 'systemAndDisplay' (default, prevents system sleep and keeps screen on) or 'systemOnly' (prevents system sleep but allows screen to turn off)",
+                    "enum": ["systemOnly", "systemAndDisplay"],
+                ],
+                "duration": [
+                    "type": "number",
+                    "description": "Duration in seconds. 0 means indefinite (default: 0). Common values: 600 (10 min), 3600 (1 hour), 7200 (2 hours), 18000 (5 hours).",
+                ],
+            ],
+        ]
+    }
+
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { "阻止系统睡眠" }
+
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel {
+        .low
+    }
+
+    
+    @MainActor
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        let modeString = arguments["mode"]?.value as? String ?? "systemAndDisplay"
+        let duration = (arguments["duration"]?.value as? NSNumber)?.doubleValue
+            ?? (arguments["duration"]?.value as? Double)
+            ?? 0
+
+        let mode: CaffeinateManager.SleepMode
+        switch modeString {
+        case "systemOnly":
+            mode = .systemOnly
+        default:
+            mode = .systemAndDisplay
+        }
+
+        let manager = CaffeinateManager.shared
+
+        if manager.isActive {
+            // Already active — deactivate first, then reactivate with new params
+            manager.deactivate()
+        }
+
+        manager.activate(mode: mode, duration: duration)
+
+        let modeDisplay = mode == .systemAndDisplay
+            ? "System & Display (prevent sleep, keep screen on)"
+            : "System Only (prevent sleep, allow screen off)"
+        let durationDisplay = duration > 0 ? formatDuration(duration) : "Indefinite"
+
+        return """
+        ## Caffeinate Activated ✅
+        
+        - **Mode**: \(modeDisplay)
+        - **Duration**: \(durationDisplay)
+        - **Started**: \(Date().formatted(date: .omitted, time: .standard))
+        
+        System will stay awake. Use `caffeinate_deactivate` to stop, or `caffeinate_status` to check current state.
+        """
+    }
+
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        if seconds >= 3600 {
+            let hours = Int(seconds) / 3600
+            return "\(hours) hour\(hours > 1 ? "s" : "")"
+        } else {
+            let minutes = Int(seconds) / 60
+            return "\(minutes) minute\(minutes > 1 ? "s" : "")"
+        }
+    }
+}
