@@ -38,7 +38,7 @@ public enum LLMProviderManagerError: Error, LocalizedError, Sendable, Equatable 
 /// 与旧版不同，本协议不依赖 KernelLumi 类型，也不持有内核引用；选中/注册变化
 /// 通过 `@Published`（`ObservableObject`）广播，由 UI 自行订阅。
 @MainActor
-public protocol LLMProviderManagerProviding: AnyObject, ObservableObject, LLMProviding {
+public protocol LLMProviderManagerProviding: AnyObject, ObservableObject, LLMProviding where ObjectWillChangePublisher == ObservableObjectPublisher {
 
     // MARK: - Registration（LLM Provider 插件调用）
 

@@ -14,7 +14,7 @@ import ProviderLLM
 /// 线程模型：`@MainActor`（注册、选中、发送入口均在主线程），选择变化经
 /// `@Published` 广播，UI 直接订阅该对象即可。
 @MainActor
-public final class DefaultLLMProviderManagerProviding: LLMProviderManagerProviding, @preconcurrency LLMProviding {
+public final class DefaultLLMProviderManagerProviding: LLMProviderManagerProviding, @preconcurrency LLMProviding, LLMStreamingProviding {
 
     public var providerID: String { Self.managerProviderID }
 
@@ -108,6 +108,27 @@ public final class DefaultLLMProviderManagerProviding: LLMProviderManagerProvidi
             messages: request.messages,
             model: model
         )
+        return try await resolved.provider.complete(routedRequest)
+    }
+
+    // MARK: - Send（LLMStreamingProviding）
+
+    /// 流式发送：路由到选中的供应商。供应商实现了 `LLMStreamingProviding` 时
+    /// 走流式；否则回退 `complete(_:)`（体验降级但功能可用）。
+    public func streamComplete(
+        _ request: LLMRequest,
+        onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+    ) async throws -> LLMResponse {
+        let resolved = try resolveSelected()
+        let model = request.model ?? resolved.model
+        let routedRequest = LLMRequest(
+            conversationID: request.conversationID,
+            messages: request.messages,
+            model: model
+        )
+        if let streamingProvider = resolved.provider as? any LLMStreamingProviding {
+            return try await streamingProvider.streamComplete(routedRequest, onChunk: onChunk)
+        }
         return try await resolved.provider.complete(routedRequest)
     }
 
