@@ -11,6 +11,7 @@ import PluginThemePack
 import PluginToolbarSettings
 import PluginVideoConverter
 import PluginWhiteNoise
+import PluginIdleTime
 import PluginChatPanel
 import PluginConversationInput
 import PluginProjects
@@ -73,6 +74,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ThemePackPlugin(),
             VideoConverterPlugin(),
             WhiteNoisePlugin(),
+            IdleTimePlugin(),
             ChatPanelPlugin(),
             MessageListPlugin(),
             ConversationInputPlugin(),
